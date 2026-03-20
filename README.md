@@ -17,6 +17,22 @@ If you are new to this repository, use this path:
 4. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
 5. Read [ROADMAP](ROADMAP.md) for the current direction.
 
+For the shortest next route by intent:
+- if you need the ecosystem center and layer map, go to [`Agents-of-Abyss`](https://github.com/8Dionysus/Agents-of-Abyss)
+- if you need navigation and dispatch rather than derived substrate work, go to [`aoa-routing`](https://github.com/8Dionysus/aoa-routing)
+- if you need source-authored knowledge world material, go to [`Tree-of-Sophia`](https://github.com/8Dionysus/Tree-of-Sophia)
+- if you need authored practice, execution, or proof meaning, go to [`aoa-techniques`](https://github.com/8Dionysus/aoa-techniques), [`aoa-skills`](https://github.com/8Dionysus/aoa-skills), or [`aoa-evals`](https://github.com/8Dionysus/aoa-evals)
+
+## Quick route table
+
+| repository | owns | go here when |
+|---|---|---|
+| `aoa-kag` | derived knowledge-ready structures, provenance-aware lifts, graph-ready projections, retrieval substrate contracts | you need derived substrate work built from source-first repositories |
+| `Agents-of-Abyss` | ecosystem identity, layer map, federation rules, program-level direction | you need the center and the constitutional view of AoA |
+| `aoa-routing` | navigation and dispatch surfaces | you need the smallest next object rather than a derived substrate layer |
+| `Tree-of-Sophia` | living knowledge architecture for philosophy and world thought | you need source-authored knowledge world material rather than derived structures |
+| `aoa-techniques` / `aoa-skills` / `aoa-evals` | authored practice, execution, and proof meaning | you need source-owned meaning rather than KAG projections |
+
 ## What this repository is for
 
 `aoa-kag` should own KAG-layer meaning about:
