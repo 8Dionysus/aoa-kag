@@ -14,9 +14,10 @@ If you are new to this repository, use this path:
 1. Read [CHARTER](CHARTER.md) for the role and boundaries of the KAG layer.
 2. Read [docs/KAG_MODEL](docs/KAG_MODEL.md) for the conceptual model.
 3. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
-4. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-5. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-6. Read [ROADMAP](ROADMAP.md) for the current direction.
+4. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
+5. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+6. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+7. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -64,6 +65,10 @@ It also includes a bridge retrieval schema and example at:
 - `schemas/bridge-retrieval-surface.schema.json`
 - `examples/tos_retrieval_axis_surface.example.json`
 
+It now also includes a counterpart-edge schema and example at:
+- `schemas/counterpart-edge-surface.schema.json`
+- `examples/counterpart_edge_view.example.json`
+
 To validate the current KAG-layer surface locally, run:
 
 ```bash
@@ -73,7 +78,7 @@ python scripts/validate_kag.py
 ## Current status
 
 `aoa-kag` is in bootstrap.
-The goal of this first public baseline is to define the role, boundaries, and first machine-readable KAG-layer surface without overbuilding a graph engine too early.
+The goal of this public baseline is to define the role, boundaries, and bounded machine-readable KAG-layer surfaces without overbuilding a graph engine too early.
 
 ## Principles
 

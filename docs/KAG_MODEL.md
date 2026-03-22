@@ -44,6 +44,17 @@ A derived surface that makes source linkage and origin handles visible for retri
 
 A graph-friendly normalization of source-derived units into node-like or edge-like forms without claiming that the projected form is the new source of truth.
 
+### Counterpart edge view
+
+A bounded edge-oriented projection that links a ToS concept ref to an AoA operational ref through a named mode such as `analogy`, `support`, `tension`, or `calibration`.
+
+This kind of view remains:
+
+- derived
+- optional
+- source-linked
+- explicitly non-identity
+
 ## What a KAG surface must not do
 
 A KAG surface should not silently become:
@@ -78,6 +89,12 @@ Bridge-ready retrieval surfaces should preserve source refs and, where relevant:
 - bounded axis summary
 
 See [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the compact contract.
+
+The third-wave counterpart rule is:
+
+**KAG may project counterpart edges, but the projection does not prove conceptual and operational identity**
+
+See [COUNTERPART_EDGE_CONTRACTS](COUNTERPART_EDGE_CONTRACTS.md) for the compact contract.
 
 ## Relationship to neighboring layers
 

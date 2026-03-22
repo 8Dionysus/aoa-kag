@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/counterpart-edge-surface.schema.json",
+  "title": "AoA-ToS counterpart edge surface",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "surface_id",
+    "mappings"
+  ],
+  "properties": {
+    "surface_id": {
+      "type": "string",
+      "const": "AOA-K-0008"
+    },
+    "mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mapping_id",
+          "concept_ref",
+          "operational_ref",
+          "counterpart_mode",
+          "evidence_note",
+          "non_identity_note"
+        ],
+        "properties": {
+          "mapping_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "concept_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operational_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "counterpart_mode": {
+            "type": "string",
+            "enum": ["analogy", "support", "tension", "calibration"]
+          },
+          "evidence_note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "non_identity_note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "supporting_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

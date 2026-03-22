@@ -10,13 +10,16 @@ REGISTRY_PATH = REPO_ROOT / "generated" / "kag_registry.min.json"
 SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-registry.schema.json"
 BRIDGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"
 BRIDGE_EXAMPLE_PATH = REPO_ROOT / "examples" / "tos_retrieval_axis_surface.example.json"
+COUNTERPART_SCHEMA_PATH = REPO_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
+COUNTERPART_EXAMPLE_PATH = REPO_ROOT / "examples" / "counterpart_edge_view.example.json"
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
-ALLOWED_SOURCE_CLASS = {"technique_bundle", "skill_bundle", "eval_bundle", "memo_object", "tos_text", "review_surface"}
+ALLOWED_SOURCE_CLASS = {"technique_bundle", "skill_bundle", "eval_bundle", "playbook_bundle", "memo_object", "tos_text", "review_surface"}
 ALLOWED_DERIVED_KIND = {"section_manifest", "metadata_spine", "relation_view", "provenance_view", "chunk_map", "node_projection", "edge_projection", "retrieval_surface"}
 ALLOWED_PROVENANCE = {"strict_source_linked", "bounded_source_linked", "derived_with_handles"}
 ALLOWED_FRAMEWORK = {"neutral", "hipporag_ready", "llamaindex_ready", "multi_consumer_ready"}
 ALLOWED_SOURCE_INPUT_ROLE = {"primary", "supporting"}
+ALLOWED_COUNTERPART_MODE = {"analogy", "support", "tension", "calibration"}
 
 
 class ValidationError(RuntimeError):
@@ -56,6 +59,16 @@ def validate_bridge_schema_surface() -> None:
         fail(f"bridge schema is missing required top-level keys: {', '.join(missing)}")
 
 
+def validate_counterpart_schema_surface() -> None:
+    schema = read_json(COUNTERPART_SCHEMA_PATH)
+    if not isinstance(schema, dict):
+        fail("counterpart schema file must contain a JSON object")
+    required_top_level = {"$schema", "$id", "title", "type", "properties", "required"}
+    missing = sorted(required_top_level - set(schema))
+    if missing:
+        fail(f"counterpart schema is missing required top-level keys: {', '.join(missing)}")
+
+
 def validate_registry() -> dict[str, dict[str, object]]:
     payload = read_json(REGISTRY_PATH)
     if not isinstance(payload, dict):
@@ -82,6 +95,8 @@ def validate_registry() -> dict[str, dict[str, object]]:
         "provenance-note-view",
         "tos-text-chunk-map",
         "cross-source-node-projection",
+        "tos-retrieval-axis-surface",
+        "counterpart-edge-view",
     }
     seen_names: set[str] = set()
     surfaces_by_id: dict[str, dict[str, object]] = {}
@@ -127,6 +142,8 @@ def validate_registry() -> dict[str, dict[str, object]]:
 
         if not isinstance(name, str) or len(name) < 3:
             fail(f"{location}.name must be a string of length >= 3")
+        if name in seen_names:
+            fail(f"duplicate KAG surface name in registry: '{name}'")
         seen_names.add(name)
         if status not in ALLOWED_STATUS:
             fail(f"{location}.status '{status}' is not allowed")
@@ -192,7 +209,47 @@ def validate_registry() -> dict[str, dict[str, object]]:
     missing_seed = sorted(required_seed - seen_names)
     if missing_seed:
         fail(f"KAG registry is missing required seed surfaces: {', '.join(missing_seed)}")
+    validate_special_registry_surfaces(surfaces_by_id)
     return surfaces_by_id
+
+
+def validate_special_registry_surfaces(surfaces_by_id: dict[str, dict[str, object]]) -> None:
+    surface_0007 = surfaces_by_id.get("AOA-K-0007")
+    if surface_0007 is None:
+        fail("KAG registry is missing required surface 'AOA-K-0007'")
+    if surface_0007.get("name") != "tos-retrieval-axis-surface":
+        fail("AOA-K-0007 must keep name 'tos-retrieval-axis-surface'")
+    if surface_0007.get("status") != "planned":
+        fail("AOA-K-0007 must remain planned")
+
+    surface_0008 = surfaces_by_id.get("AOA-K-0008")
+    if surface_0008 is None:
+        fail("KAG registry is missing required surface 'AOA-K-0008'")
+    if surface_0008.get("name") != "counterpart-edge-view":
+        fail("AOA-K-0008 must keep name 'counterpart-edge-view'")
+    if surface_0008.get("status") != "planned":
+        fail("AOA-K-0008 must remain planned")
+    if surface_0008.get("source_class") != "tos_text":
+        fail("AOA-K-0008 must keep 'tos_text' as its primary source_class")
+    if surface_0008.get("derived_kind") != "edge_projection":
+        fail("AOA-K-0008 must keep 'edge_projection' as its derived_kind")
+
+    source_inputs = surface_0008.get("source_inputs")
+    if not isinstance(source_inputs, list):
+        fail("AOA-K-0008 must declare source_inputs")
+    expected_inputs = {
+        ("Tree-of-Sophia", "tos_text", "primary"),
+        ("aoa-techniques", "technique_bundle", "supporting"),
+        ("aoa-playbooks", "playbook_bundle", "supporting"),
+        ("aoa-evals", "eval_bundle", "supporting"),
+    }
+    actual_inputs = {
+        (item.get("repo"), item.get("source_class"), item.get("role"))
+        for item in source_inputs
+        if isinstance(item, dict)
+    }
+    if actual_inputs != expected_inputs:
+        fail("AOA-K-0008 source_inputs must match the current counterpart bridge source contract")
 
 
 def validate_bridge_example(surfaces_by_id: dict[str, dict[str, object]]) -> None:
@@ -239,20 +296,118 @@ def validate_bridge_example(surfaces_by_id: dict[str, dict[str, object]]) -> Non
         fail("bridge example 'axis_summary' must be a string of length >= 20")
 
 
+def validate_counterpart_example(surfaces_by_id: dict[str, dict[str, object]]) -> None:
+    payload = read_json(COUNTERPART_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart example must be a JSON object")
+
+    surface_id = payload.get("surface_id")
+    if surface_id != "AOA-K-0008":
+        fail("counterpart example surface_id must equal 'AOA-K-0008'")
+    if surface_id not in surfaces_by_id:
+        fail("counterpart example surface_id must exist in generated/kag_registry.min.json")
+
+    registry_entry = surfaces_by_id[surface_id]
+    if registry_entry["derived_kind"] != "edge_projection":
+        fail("AOA-K-0008 must remain an edge_projection")
+    if registry_entry["status"] != "planned":
+        fail("AOA-K-0008 must remain planned in the registry")
+    if registry_entry["source_class"] != "tos_text":
+        fail("AOA-K-0008 must keep 'tos_text' as its primary source_class")
+
+    mappings = payload.get("mappings")
+    if not isinstance(mappings, list) or not mappings:
+        fail("counterpart example 'mappings' must be a non-empty list")
+
+    seen_mapping_ids: set[str] = set()
+    seen_modes: set[str] = set()
+    source_inputs = registry_entry.get("source_inputs")
+    supporting_repos = {
+        item["repo"]
+        for item in source_inputs
+        if isinstance(item, dict) and item.get("role") == "supporting"
+    }
+
+    for index, mapping in enumerate(mappings):
+        location = f"counterpart example mappings[{index}]"
+        if not isinstance(mapping, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "mapping_id",
+            "concept_ref",
+            "operational_ref",
+            "counterpart_mode",
+            "evidence_note",
+            "non_identity_note",
+        ):
+            if key not in mapping:
+                fail(f"{location} is missing required key '{key}'")
+
+        mapping_id = mapping["mapping_id"]
+        concept_ref = mapping["concept_ref"]
+        operational_ref = mapping["operational_ref"]
+        counterpart_mode = mapping["counterpart_mode"]
+        evidence_note = mapping["evidence_note"]
+        non_identity_note = mapping["non_identity_note"]
+        supporting_refs = mapping.get("supporting_refs")
+
+        if not isinstance(mapping_id, str) or len(mapping_id) < 1:
+            fail(f"{location}.mapping_id must be a non-empty string")
+        if mapping_id in seen_mapping_ids:
+            fail(f"{location}.mapping_id '{mapping_id}' is duplicated")
+        seen_mapping_ids.add(mapping_id)
+
+        if not isinstance(concept_ref, str) or not concept_ref.startswith("Tree-of-Sophia/"):
+            fail(f"{location}.concept_ref must point to a Tree-of-Sophia surface")
+        if not isinstance(operational_ref, str) or "/" not in operational_ref:
+            fail(f"{location}.operational_ref must be a non-empty repo-qualified string")
+        operational_repo = operational_ref.split("/", 1)[0]
+        if operational_repo not in supporting_repos:
+            fail(f"{location}.operational_ref repo '{operational_repo}' must match a supporting source repo")
+
+        if counterpart_mode not in ALLOWED_COUNTERPART_MODE:
+            fail(f"{location}.counterpart_mode '{counterpart_mode}' is not allowed")
+        seen_modes.add(counterpart_mode)
+
+        if not isinstance(evidence_note, str) or len(evidence_note) < 20:
+            fail(f"{location}.evidence_note must be a string of length >= 20")
+        if not isinstance(non_identity_note, str) or len(non_identity_note) < 20:
+            fail(f"{location}.non_identity_note must be a string of length >= 20")
+
+        if supporting_refs is not None:
+            if not isinstance(supporting_refs, list):
+                fail(f"{location}.supporting_refs must be a list when present")
+            if len(supporting_refs) != len(set(supporting_refs)):
+                fail(f"{location}.supporting_refs must not contain duplicates")
+            for supporting_ref in supporting_refs:
+                if not isinstance(supporting_ref, str) or "/" not in supporting_ref:
+                    fail(f"{location}.supporting_refs contains an invalid repo-qualified ref")
+                supporting_repo = supporting_ref.split("/", 1)[0]
+                if supporting_repo not in supporting_repos:
+                    fail(f"{location}.supporting_refs repo '{supporting_repo}' must match a supporting source repo")
+
+    if seen_modes != ALLOWED_COUNTERPART_MODE:
+        fail("counterpart example must cover all supported counterpart modes at least once")
+
+
 def main() -> int:
     try:
         validate_schema_surface()
         validate_bridge_schema_surface()
+        validate_counterpart_schema_surface()
         surfaces_by_id = validate_registry()
         validate_bridge_example(surfaces_by_id)
+        validate_counterpart_example(surfaces_by_id)
     except ValidationError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 1
 
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")
+    print("[ok] validated counterpart edge surface schema")
     print("[ok] validated generated/kag_registry.min.json")
     print("[ok] validated bridge retrieval example")
+    print("[ok] validated counterpart edge example")
     return 0
 
 

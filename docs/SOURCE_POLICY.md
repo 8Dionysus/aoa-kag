@@ -11,7 +11,7 @@ Examples of authoritative sources include:
 - `aoa-skills` markdown bundles and manifests
 - `aoa-evals` markdown bundles and manifests
 - `aoa-memo` memory-layer sources
-- `aoa-playbooks` scenario-layer sources
+- `aoa-playbooks` playbook bundles and scenario-layer sources
 - authored Tree of Sophia texts and structured surfaces
 
 ## Derived-not-authored rule
@@ -25,6 +25,7 @@ Every meaningful KAG surface should preserve enough provenance to answer:
 - what source class fed this?
 - what source repository or corpus fed this?
 - what kind of transformation happened?
+- what non-identity boundary still limits the projection?
 
 ## Bounded readiness rule
 
@@ -39,3 +40,5 @@ HippoRAG, LlamaIndex, and future systems may consume the KAG layer, but they sho
 ## Compact rule
 
 The KAG layer should make derived knowledge surfaces portable without weakening source-of-truth discipline.
+
+Counterpart-edge views are allowed only when they remain suggestive, source-linked, and explicitly non-identity.
