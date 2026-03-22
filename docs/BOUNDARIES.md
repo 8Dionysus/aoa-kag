@@ -57,6 +57,15 @@ If `aoa-kag` returns lineage-aware or conflict-aware retrieval bundles to AoA, t
 
 They should guide AoA toward stronger authored sources rather than claiming to be the new home of truth.
 
+## Rule 9: counterpart mappings stay suggestive and non-identity
+
+If `aoa-kag` materializes counterpart edges between ToS concepts and AoA operational forms, those edges stay derived and optional.
+
+They should not:
+- claim philosophical proof
+- imply every concept needs an operational twin
+- rewrite authored operational meaning into KAG-owned doctrine
+
 ## Compact rule
 
 `aoa-kag` should help AoA and ToS lift knowledge without letting the derived layer quietly replace the sources that feed it.

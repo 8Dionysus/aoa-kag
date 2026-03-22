@@ -1,0 +1,49 @@
+{
+  "surface_id": "AOA-K-0008",
+  "mappings": [
+    {
+      "mapping_id": "CP-0001",
+      "concept_ref": "Tree-of-Sophia/docs/COUNTERPART_POLICY.md#counterpart-layered-meaning",
+      "operational_ref": "aoa-playbooks/playbooks/self-agent-checkpoint-rollout/PLAYBOOK.md",
+      "counterpart_mode": "analogy",
+      "evidence_note": "The playbook keeps trigger boundary, decision points, evidence posture, and memory writeback distinct instead of flattening the route into one procedural block.",
+      "non_identity_note": "Operational layering organizes execution and handoff clarity; it does not reproduce the semantic depth of layered meaning as such.",
+      "supporting_refs": [
+        "aoa-playbooks/generated/playbook_registry.min.json"
+      ]
+    },
+    {
+      "mapping_id": "CP-0002",
+      "concept_ref": "Tree-of-Sophia/docs/COUNTERPART_POLICY.md#counterpart-sources-before-abstraction",
+      "operational_ref": "aoa-techniques/docs/DONOR_REFINERY_RUBRIC.md",
+      "counterpart_mode": "support",
+      "evidence_note": "The donor refinery starts from explicit donors, extracts bounded patterns, and rejects foreign doctrine before abstraction can outrun origin.",
+      "non_identity_note": "A donor-refinement rule supports source discipline in practice, but it does not exhaust the epistemic meaning of source authority in ToS.",
+      "supporting_refs": [
+        "aoa-techniques/techniques/docs/source-of-truth-layout/TECHNIQUE.md"
+      ]
+    },
+    {
+      "mapping_id": "CP-0003",
+      "concept_ref": "Tree-of-Sophia/docs/COUNTERPART_POLICY.md#counterpart-calibration",
+      "operational_ref": "aoa-evals/bundles/aoa-approval-boundary-adherence/EVAL.md",
+      "counterpart_mode": "calibration",
+      "evidence_note": "The eval keeps approval and authority claims bounded, reviewable, and explicit instead of treating uncertainty as permission.",
+      "non_identity_note": "An approval-boundary eval calibrates operational claims; it does not become the living philosophical axis that ToS uses to orient meaning.",
+      "supporting_refs": [
+        "aoa-playbooks/playbooks/self-agent-checkpoint-rollout/PLAYBOOK.md"
+      ]
+    },
+    {
+      "mapping_id": "CP-0004",
+      "concept_ref": "Tree-of-Sophia/docs/COUNTERPART_POLICY.md#counterpart-lineage",
+      "operational_ref": "aoa-evals/bundles/aoa-bounded-change-quality/EVAL.md",
+      "counterpart_mode": "tension",
+      "evidence_note": "A bounded workflow-quality read can reveal whether a route coheres in the present, but it compresses long-horizon origin and adaptation into one current signal.",
+      "non_identity_note": "Workflow quality can sit in productive tension with lineage thinking, but it cannot replace provenance, ancestry, or conceptual genealogy.",
+      "supporting_refs": [
+        "aoa-techniques/docs/DONOR_REFINERY_RUBRIC.md"
+      ]
+    }
+  ]
+}
