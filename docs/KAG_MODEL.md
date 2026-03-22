@@ -12,7 +12,8 @@ The KAG layer exists to make lifted knowledge surfaces explicit rather than hidi
 ## What counts as a KAG surface here
 
 Within `aoa-kag`, a KAG surface should mean a derived knowledge-ready structure described through surfaces such as:
-- source class
+- primary source class
+- full source inputs when more than one repo contributes
 - derived kind
 - provenance mode
 - normalization scope
@@ -56,11 +57,27 @@ A KAG surface may support all of those layers, but does not replace them.
 ## KAG posture
 
 A good KAG surface should make it easier to answer:
-- what source did this come from?
+- what source did this primarily come from?
+- what supporting sources also shaped it?
 - what was lifted or normalized?
 - what provenance remains visible?
 - what graph or retrieval readiness is real right now?
 - what is still explicitly deferred?
+
+## Bridge contracts
+
+The first-wave bridge rule is:
+
+**KAG may return bounded retrieval context, but it does not replace authored source truth**
+
+Bridge-ready retrieval surfaces should preserve source refs and, where relevant:
+
+- lineage refs
+- conflict refs
+- practice refs
+- bounded axis summary
+
+See [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the compact contract.
 
 ## Relationship to neighboring layers
 

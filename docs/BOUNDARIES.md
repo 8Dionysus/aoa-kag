@@ -51,6 +51,12 @@ They should not define the ontology of the KAG layer itself too early.
 If KAG surfaces become giant opaque graph machinery with unclear provenance, the layer will stop being trustworthy.
 Compactness and explicit source linkage matter.
 
+## Rule 8: bridge returns stay derived and explicit
+
+If `aoa-kag` returns lineage-aware or conflict-aware retrieval bundles to AoA, those surfaces should stay explicitly derived.
+
+They should guide AoA toward stronger authored sources rather than claiming to be the new home of truth.
+
 ## Compact rule
 
 `aoa-kag` should help AoA and ToS lift knowledge without letting the derived layer quietly replace the sources that feed it.
