@@ -13,9 +13,10 @@ If you are new to this repository, use this path:
 
 1. Read [CHARTER](CHARTER.md) for the role and boundaries of the KAG layer.
 2. Read [docs/KAG_MODEL](docs/KAG_MODEL.md) for the conceptual model.
-3. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-4. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-5. Read [ROADMAP](ROADMAP.md) for the current direction.
+3. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
+4. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+5. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+6. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -59,6 +60,10 @@ Within AoA:
 This repository includes a compact machine-readable KAG-layer registry at:
 - `generated/kag_registry.min.json`
 
+It also includes a bridge retrieval schema and example at:
+- `schemas/bridge-retrieval-surface.schema.json`
+- `examples/tos_retrieval_axis_surface.example.json`
+
 To validate the current KAG-layer surface locally, run:
 
 ```bash
@@ -75,6 +80,7 @@ The goal of this first public baseline is to define the role, boundaries, and fi
 - source repositories keep authored meaning
 - derived knowledge surfaces should stay explicit and reviewable
 - provenance should stay visible where possible
+- bridges should return bounded retrieval context rather than pretending to be source truth
 - graph readiness should be bounded, not theatrical
 - framework adapters should stay downstream of the substrate
 - the KAG layer should not swallow neighboring AoA layers
