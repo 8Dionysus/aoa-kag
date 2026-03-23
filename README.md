@@ -16,9 +16,11 @@ If you are new to this repository, use this path:
 3. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
 4. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
 5. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
-6. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-7. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-8. Read [ROADMAP](ROADMAP.md) for the current direction.
+6. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
+7. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
+8. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+9. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+10. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -60,7 +62,14 @@ Within AoA:
 ## Local validation
 
 This repository includes a compact machine-readable KAG-layer registry at:
+- `generated/kag_registry.json`
 - `generated/kag_registry.min.json`
+
+It also now includes the first manifest-driven technique lift pack at:
+- `generated/technique_lift_pack.json`
+- `generated/technique_lift_pack.min.json`
+- `manifests/technique_lift_pack.json`
+- `docs/TECHNIQUE_LIFT_PACK.md`
 
 It also includes a bridge retrieval schema and example at:
 - `schemas/bridge-retrieval-surface.schema.json`
@@ -74,16 +83,35 @@ It now also includes a reasoning handoff guardrail schema and example at:
 - `schemas/reasoning-handoff-guardrail.schema.json`
 - `examples/reasoning_handoff_guardrail.example.json`
 
+It now also includes a multi-source reasoning handoff pack at:
+- `generated/reasoning_handoff_pack.json`
+- `generated/reasoning_handoff_pack.min.json`
+- `manifests/reasoning_handoff_pack.json`
+- `docs/REASONING_HANDOFF_PACK.md`
+
 To validate the current KAG-layer surface locally, run:
 
 ```bash
+python scripts/generate_kag.py
 python scripts/validate_kag.py
 ```
+
+If the neighboring donor repositories are not checked out beside `aoa-kag`,
+set:
+
+- `AOA_TECHNIQUES_ROOT`
+- `AOA_PLAYBOOKS_ROOT`
+- `AOA_EVALS_ROOT`
+- `TREE_OF_SOPHIA_ROOT`
+- `AOA_MEMO_ROOT`
+- `AOA_AGENTS_ROOT`
 
 ## Current status
 
 `aoa-kag` is in bootstrap.
-The goal of this public baseline is to define the role, boundaries, and bounded machine-readable KAG-layer surfaces without overbuilding a graph engine too early.
+The current baseline now includes the first manifest-driven generated lift seam from `aoa-techniques`.
+It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
+The goal remains to define the role, boundaries, and bounded machine-readable KAG-layer surfaces without overbuilding a graph engine too early.
 
 ## Principles
 

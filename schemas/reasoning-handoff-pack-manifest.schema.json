@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/reasoning-handoff-pack-manifest.schema.json",
+  "title": "AoA KAG reasoning handoff pack manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "pack_type",
+    "source_root_envs",
+    "source_inputs",
+    "scenario_bindings",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "reasoning_handoff_pack"
+    },
+    "source_root_envs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "aoa-playbooks",
+        "aoa-evals",
+        "aoa-memo",
+        "aoa-agents"
+      ],
+      "properties": {
+        "aoa-playbooks": {
+          "type": "string",
+          "const": "AOA_PLAYBOOKS_ROOT"
+        },
+        "aoa-evals": {
+          "type": "string",
+          "const": "AOA_EVALS_ROOT"
+        },
+        "aoa-memo": {
+          "type": "string",
+          "const": "AOA_MEMO_ROOT"
+        },
+        "aoa-agents": {
+          "type": "string",
+          "const": "AOA_AGENTS_ROOT"
+        }
+      }
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "enum": [
+              "aoa-kag",
+              "aoa-playbooks",
+              "aoa-evals",
+              "aoa-memo",
+              "aoa-agents"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "kag_guardrail_doc",
+              "playbook_doc",
+              "eval_hook_schema",
+              "eval_hook_fixture",
+              "memo_contract_fixture",
+              "memo_schema",
+              "memo_doc"
+            ]
+          }
+        }
+      }
+    },
+    "scenario_bindings": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario_ref",
+          "playbook_input",
+          "eval_hook_input",
+          "memo_contract_inputs",
+          "continuity_input",
+          "optional_trace_inputs"
+        ],
+        "properties": {
+          "scenario_ref": {
+            "type": "string",
+            "pattern": "^AOA-P-[0-9]{4}$"
+          },
+          "playbook_input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "eval_hook_input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "memo_contract_inputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "continuity_input": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optional_trace_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "minLength": 1
+        },
+        "min": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "routing_ownership",
+        "memory_truth_ownership",
+        "canon_authorship",
+        "verdict_ownership"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "routing_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "memory_truth_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "canon_authorship": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "verdict_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        }
+      }
+    }
+  }
+}

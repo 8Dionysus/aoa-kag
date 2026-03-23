@@ -7,6 +7,7 @@ This roadmap tracks the bootstrap and early shaping of the AoA KAG layer.
 `aoa-kag` is in bootstrap.
 The current goal is not to build a giant graph engine immediately.
 The goal is to define what the KAG layer is for, what it owns, and what it must not silently absorb.
+The current repository now also carries the first manifest-driven generated technique lift pack so bootstrap doctrine begins to harden into reproducible substrate output.
 
 ## Phase 1: KAG layer definition
 

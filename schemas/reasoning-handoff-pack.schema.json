@@ -1,0 +1,463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/reasoning-handoff-pack.schema.json",
+  "title": "AoA KAG reasoning handoff pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_manifest_ref",
+    "source_inputs",
+    "scenario_count",
+    "scenarios",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "reasoning_handoff_pack"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/reasoning_handoff_pack.json"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "role",
+          "ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "scenario_count": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario_ref",
+          "playbook_ref",
+          "artifact_spine",
+          "eval_bridge",
+          "memo_bridge",
+          "compatible_query_modes",
+          "authoritative_refs",
+          "return_contract",
+          "boundary_guardrails"
+        ],
+        "properties": {
+          "scenario_ref": {
+            "type": "string",
+            "pattern": "^AOA-P-[0-9]{4}$"
+          },
+          "playbook_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact_spine": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "verification_surface",
+              "continuity_surface",
+              "supporting_artifacts",
+              "optional_trace_sidecars"
+            ],
+            "properties": {
+              "verification_surface": {
+                "$ref": "#/$defs/artifactDescriptor"
+              },
+              "continuity_surface": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/artifactDescriptor"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "supporting_artifacts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/artifactDescriptor"
+                }
+              },
+              "optional_trace_sidecars": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/artifactDescriptor"
+                }
+              }
+            }
+          },
+          "eval_bridge": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "eval_anchor_refs",
+              "verification_surface",
+              "trace_surfaces",
+              "artifact_contract_refs",
+              "report_expectation"
+            ],
+            "properties": {
+              "eval_anchor_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "verification_surface": {
+                "type": "string",
+                "minLength": 1
+              },
+              "trace_surfaces": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "artifact_contract_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "report_expectation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "report_format",
+                  "verdict_shape",
+                  "review_required"
+                ],
+                "properties": {
+                  "report_format": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "verdict_shape": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "review_required": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "memo_bridge": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "memo_contract_refs",
+              "memo_writeback_targets",
+              "delta_split"
+            ],
+            "properties": {
+              "memo_contract_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "memo_writeback_targets": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "delta_split": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/deltaSplit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "compatible_query_modes": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "authoritative_refs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "playbook_refs",
+              "eval_refs",
+              "memo_refs",
+              "kag_guardrail_refs",
+              "artifact_schema_refs"
+            ],
+            "properties": {
+              "playbook_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "eval_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "memo_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "kag_guardrail_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "artifact_schema_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "return_contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "must_include",
+              "may_include",
+              "normalized_return_fields"
+            ],
+            "properties": {
+              "must_include": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "may_include": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "normalized_return_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "boundary_guardrails": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "routing_owner",
+              "memory_owner",
+              "canon_owner",
+              "direct_canon_authorship"
+            ],
+            "properties": {
+              "routing_owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "memory_owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "canon_owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "direct_canon_authorship": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "routing_ownership",
+        "memory_truth_ownership",
+        "canon_authorship",
+        "verdict_ownership"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean"
+        },
+        "source_replacement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "routing_ownership": {
+          "type": "string",
+          "minLength": 1
+        },
+        "memory_truth_ownership": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canon_authorship": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verdict_ownership": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "artifactDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_name",
+        "contract_strength",
+        "artifact_contract_refs"
+      ],
+      "properties": {
+        "artifact_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contract_strength": {
+          "type": "string",
+          "enum": [
+            "schema_backed",
+            "doc_backed",
+            "playbook_declared"
+          ]
+        },
+        "artifact_contract_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "deltaSplit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memory_delta",
+        "canon_delta"
+      ],
+      "properties": {
+        "memory_delta": {
+          "$ref": "#/$defs/deltaField"
+        },
+        "canon_delta": {
+          "$ref": "#/$defs/deltaField"
+        }
+      }
+    },
+    "deltaField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_name",
+        "checkpoint_field",
+        "field_contract_ref"
+      ],
+      "properties": {
+        "artifact_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checkpoint_field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field_contract_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
