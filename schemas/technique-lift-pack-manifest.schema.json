@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/technique-lift-pack-manifest.schema.json",
+  "title": "AoA KAG technique lift pack manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "pack_type",
+    "source_repo",
+    "source_root_env",
+    "source_inputs",
+    "surface_bindings",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "technique_lift_pack"
+    },
+    "source_repo": {
+      "type": "string",
+      "const": "aoa-techniques"
+    },
+    "source_root_env": {
+      "type": "string",
+      "const": "AOA_TECHNIQUES_ROOT"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "section_manifest",
+              "metadata_spine",
+              "provenance_handles"
+            ]
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          },
+          "surface_name": {
+            "type": "string",
+            "minLength": 3
+          },
+          "derived_kind": {
+            "type": "string",
+            "enum": [
+              "section_manifest",
+              "metadata_spine",
+              "relation_view",
+              "provenance_view"
+            ]
+          },
+          "derived_slot": {
+            "type": "string",
+            "enum": [
+              "section_lift",
+              "metadata_spine",
+              "relation_view",
+              "provenance_view"
+            ]
+          },
+          "source_input": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "minLength": 1
+        },
+        "min": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "graph_sovereignty"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "graph_sovereignty": {
+          "type": "string",
+          "const": "forbidden"
+        }
+      }
+    }
+  }
+}

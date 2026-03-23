@@ -1,0 +1,62 @@
+{
+  "manifest_version": 1,
+  "pack_type": "technique_lift_pack",
+  "source_repo": "aoa-techniques",
+  "source_root_env": "AOA_TECHNIQUES_ROOT",
+  "source_inputs": [
+    {
+      "name": "technique_section_manifest",
+      "path": "generated/technique_section_manifest.min.json",
+      "role": "section_manifest"
+    },
+    {
+      "name": "technique_catalog",
+      "path": "generated/technique_catalog.json",
+      "role": "metadata_spine"
+    },
+    {
+      "name": "technique_evidence_note_manifest",
+      "path": "generated/technique_evidence_note_manifest.min.json",
+      "role": "provenance_handles"
+    }
+  ],
+  "surface_bindings": [
+    {
+      "surface_id": "AOA-K-0001",
+      "surface_name": "technique-section-lift",
+      "derived_kind": "section_manifest",
+      "derived_slot": "section_lift",
+      "source_input": "technique_section_manifest"
+    },
+    {
+      "surface_id": "AOA-K-0002",
+      "surface_name": "metadata-spine-projection",
+      "derived_kind": "metadata_spine",
+      "derived_slot": "metadata_spine",
+      "source_input": "technique_catalog"
+    },
+    {
+      "surface_id": "AOA-K-0003",
+      "surface_name": "bounded-relation-view",
+      "derived_kind": "relation_view",
+      "derived_slot": "relation_view",
+      "source_input": "technique_catalog"
+    },
+    {
+      "surface_id": "AOA-K-0004",
+      "surface_name": "provenance-note-view",
+      "derived_kind": "provenance_view",
+      "derived_slot": "provenance_view",
+      "source_input": "technique_evidence_note_manifest"
+    }
+  ],
+  "output_paths": {
+    "full": "generated/technique_lift_pack.json",
+    "min": "generated/technique_lift_pack.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "graph_sovereignty": "forbidden"
+  }
+}

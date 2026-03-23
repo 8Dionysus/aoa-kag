@@ -25,13 +25,51 @@ jobs:
           repository: 8Dionysus/aoa-memo
           path: .deps/aoa-memo
 
+      - name: Checkout aoa-playbooks
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: 8Dionysus/aoa-playbooks
+          path: .deps/aoa-playbooks
+
+      - name: Checkout aoa-evals
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: 8Dionysus/aoa-evals
+          path: .deps/aoa-evals
+
+      - name: Checkout aoa-agents
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: 8Dionysus/aoa-agents
+          path: .deps/aoa-agents
+
+      - name: Checkout aoa-techniques
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: 8Dionysus/aoa-techniques
+          path: .deps/aoa-techniques
+
       - name: Setup Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
 
-      - name: Run KAG validator
+      - name: Regenerate KAG outputs
         env:
+          AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
+          AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
+          AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
           TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
           AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
+          AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+        run: python scripts/generate_kag.py
+
+      - name: Run KAG validator
+        env:
+          AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
+          AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
+          AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
+          TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+          AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
+          AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
         run: python scripts/validate_kag.py
