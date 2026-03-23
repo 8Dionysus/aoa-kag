@@ -13,10 +13,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
+      - name: Checkout Tree-of-Sophia
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: 8Dionysus/Tree-of-Sophia
+          path: .deps/Tree-of-Sophia
+
+      - name: Checkout aoa-memo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: 8Dionysus/aoa-memo
+          path: .deps/aoa-memo
+
       - name: Setup Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
 
       - name: Run KAG validator
+        env:
+          TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+          AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
         run: python scripts/validate_kag.py

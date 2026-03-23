@@ -1,0 +1,45 @@
+{
+  "surface_type": "reasoning_handoff_guardrail",
+  "handoff_id": "aoa-kag-reasoning-handoff-v1",
+  "supported_query_modes": [
+    "local_search",
+    "global_search",
+    "drift_search"
+  ],
+  "authoritative_source_refs": [
+    "Tree-of-Sophia/docs/NODE_CONTRACT.md",
+    "Tree-of-Sophia/docs/PRACTICE_BRANCH.md",
+    "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md"
+  ],
+  "derived_surface_refs": [
+    "docs/BRIDGE_CONTRACTS.md#retrieval-axis-contract",
+    "examples/tos_retrieval_axis_surface.example.json",
+    "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "examples/counterpart_edge_view.example.json"
+  ],
+  "provenance_posture": {
+    "primary_source_required": true,
+    "supporting_sources_allowed": true,
+    "source_trace_required": true,
+    "derived_summary_posture": "guide_to_source_not_source_replacement"
+  },
+  "return_contract": {
+    "must_include": [
+      "source_refs",
+      "axis_summary",
+      "provenance_note"
+    ],
+    "may_include": [
+      "lineage_refs",
+      "conflict_refs",
+      "practice_refs",
+      "counterpart_refs"
+    ]
+  },
+  "boundary_guardrails": {
+    "routing_owner": "aoa-routing",
+    "memory_owner": "aoa-memo",
+    "canon_owner": "Tree-of-Sophia",
+    "direct_canon_authorship": "forbidden"
+  }
+}

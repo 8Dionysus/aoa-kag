@@ -9,6 +9,7 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 - Read [CHARTER](../CHARTER.md) for the role and boundaries of the KAG layer.
 - Read [KAG_MODEL](KAG_MODEL.md) for the conceptual model.
 - Read [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the first-wave AoA-ToS bridge posture.
+- Read [REASONING_HANDOFF](REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
 - Read [BOUNDARIES](BOUNDARIES.md) for ownership discipline relative to neighboring AoA layers.
 - Read [SOURCE_POLICY](SOURCE_POLICY.md) for source-first rules.
 - Read [ROADMAP](../ROADMAP.md) for the current direction.
@@ -17,9 +18,11 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 
 - [KAG_MODEL](KAG_MODEL.md) — what the KAG layer is for
 - [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) — how the derived layer returns retrieval context without replacing authored sources
+- [REASONING_HANDOFF](REASONING_HANDOFF.md) — how runtime handoff may ask KAG for derived retrieval context without promoting it into source truth
 - [BOUNDARIES](BOUNDARIES.md) — what the KAG layer owns and must not absorb
 - [SOURCE_POLICY](SOURCE_POLICY.md) — how authoritative sources and derived KAG surfaces should relate
 - `../examples/tos_retrieval_axis_surface.example.json` — compact example of the bridge retrieval surface
+- `../examples/reasoning_handoff_guardrail.example.json` — compact example of the runtime-to-KAG guardrail surface
 
 ## Notes
 

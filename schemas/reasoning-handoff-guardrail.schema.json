@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/reasoning-handoff-guardrail.schema.json",
+  "title": "AoA KAG reasoning handoff guardrail",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "surface_type",
+    "handoff_id",
+    "supported_query_modes",
+    "authoritative_source_refs",
+    "derived_surface_refs",
+    "provenance_posture",
+    "return_contract",
+    "boundary_guardrails"
+  ],
+  "properties": {
+    "surface_type": {
+      "type": "string",
+      "const": "reasoning_handoff_guardrail"
+    },
+    "handoff_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "supported_query_modes": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "local_search",
+          "global_search",
+          "drift_search"
+        ]
+      }
+    },
+    "authoritative_source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "derived_surface_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "provenance_posture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_source_required",
+        "supporting_sources_allowed",
+        "source_trace_required",
+        "derived_summary_posture"
+      ],
+      "properties": {
+        "primary_source_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "supporting_sources_allowed": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "derived_summary_posture": {
+          "type": "string",
+          "const": "guide_to_source_not_source_replacement"
+        }
+      }
+    },
+    "return_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "must_include",
+        "may_include"
+      ],
+      "properties": {
+        "must_include": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "may_include": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "boundary_guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routing_owner",
+        "memory_owner",
+        "canon_owner",
+        "direct_canon_authorship"
+      ],
+      "properties": {
+        "routing_owner": {
+          "type": "string",
+          "const": "aoa-routing"
+        },
+        "memory_owner": {
+          "type": "string",
+          "const": "aoa-memo"
+        },
+        "canon_owner": {
+          "type": "string",
+          "const": "Tree-of-Sophia"
+        },
+        "direct_canon_authorship": {
+          "type": "string",
+          "const": "forbidden"
+        }
+      }
+    }
+  }
+}
