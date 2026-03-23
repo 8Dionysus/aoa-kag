@@ -14,10 +14,11 @@ If you are new to this repository, use this path:
 1. Read [CHARTER](CHARTER.md) for the role and boundaries of the KAG layer.
 2. Read [docs/KAG_MODEL](docs/KAG_MODEL.md) for the conceptual model.
 3. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
-4. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
-5. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-6. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-7. Read [ROADMAP](ROADMAP.md) for the current direction.
+4. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
+5. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
+6. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+7. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+8. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -68,6 +69,10 @@ It also includes a bridge retrieval schema and example at:
 It now also includes a counterpart-edge schema and example at:
 - `schemas/counterpart-edge-surface.schema.json`
 - `examples/counterpart_edge_view.example.json`
+
+It now also includes a reasoning handoff guardrail schema and example at:
+- `schemas/reasoning-handoff-guardrail.schema.json`
+- `examples/reasoning_handoff_guardrail.example.json`
 
 To validate the current KAG-layer surface locally, run:
 

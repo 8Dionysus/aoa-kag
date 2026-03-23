@@ -2,24 +2,106 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def repo_root_from_env(env_name: str, default: Path) -> Path:
+    override = os.environ.get(env_name)
+    if not override:
+        return default
+    return Path(override).expanduser().resolve()
+
+
+TREE_OF_SOPHIA_ROOT = repo_root_from_env(
+    "TREE_OF_SOPHIA_ROOT", REPO_ROOT.parent / "Tree-of-Sophia"
+)
+AOA_MEMO_ROOT = repo_root_from_env("AOA_MEMO_ROOT", REPO_ROOT.parent / "aoa-memo")
+
 REGISTRY_PATH = REPO_ROOT / "generated" / "kag_registry.min.json"
 SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-registry.schema.json"
 BRIDGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"
 BRIDGE_EXAMPLE_PATH = REPO_ROOT / "examples" / "tos_retrieval_axis_surface.example.json"
 COUNTERPART_SCHEMA_PATH = REPO_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
 COUNTERPART_EXAMPLE_PATH = REPO_ROOT / "examples" / "counterpart_edge_view.example.json"
+REASONING_HANDOFF_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
+)
+REASONING_HANDOFF_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "reasoning_handoff_guardrail.example.json"
+)
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
-ALLOWED_SOURCE_CLASS = {"technique_bundle", "skill_bundle", "eval_bundle", "playbook_bundle", "memo_object", "tos_text", "review_surface"}
-ALLOWED_DERIVED_KIND = {"section_manifest", "metadata_spine", "relation_view", "provenance_view", "chunk_map", "node_projection", "edge_projection", "retrieval_surface"}
-ALLOWED_PROVENANCE = {"strict_source_linked", "bounded_source_linked", "derived_with_handles"}
-ALLOWED_FRAMEWORK = {"neutral", "hipporag_ready", "llamaindex_ready", "multi_consumer_ready"}
+ALLOWED_SOURCE_CLASS = {
+    "technique_bundle",
+    "skill_bundle",
+    "eval_bundle",
+    "playbook_bundle",
+    "memo_object",
+    "tos_text",
+    "review_surface",
+}
+ALLOWED_DERIVED_KIND = {
+    "section_manifest",
+    "metadata_spine",
+    "relation_view",
+    "provenance_view",
+    "chunk_map",
+    "node_projection",
+    "edge_projection",
+    "retrieval_surface",
+}
+ALLOWED_PROVENANCE = {
+    "strict_source_linked",
+    "bounded_source_linked",
+    "derived_with_handles",
+}
+ALLOWED_FRAMEWORK = {
+    "neutral",
+    "hipporag_ready",
+    "llamaindex_ready",
+    "multi_consumer_ready",
+}
 ALLOWED_SOURCE_INPUT_ROLE = {"primary", "supporting"}
 ALLOWED_COUNTERPART_MODE = {"analogy", "support", "tension", "calibration"}
+ALLOWED_QUERY_MODES = {"local_search", "global_search", "drift_search"}
+EXPECTED_AUTHORITATIVE_SOURCE_REFS = {
+    "Tree-of-Sophia/docs/NODE_CONTRACT.md",
+    "Tree-of-Sophia/docs/PRACTICE_BRANCH.md",
+    "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md",
+}
+EXPECTED_DERIVED_SURFACE_REFS = {
+    "docs/BRIDGE_CONTRACTS.md#retrieval-axis-contract",
+    "examples/tos_retrieval_axis_surface.example.json",
+    "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "examples/counterpart_edge_view.example.json",
+}
+EXPECTED_PROVENANCE_POSTURE = {
+    "primary_source_required": True,
+    "supporting_sources_allowed": True,
+    "source_trace_required": True,
+    "derived_summary_posture": "guide_to_source_not_source_replacement",
+}
+EXPECTED_BOUNDARY_GUARDRAILS = {
+    "routing_owner": "aoa-routing",
+    "memory_owner": "aoa-memo",
+    "canon_owner": "Tree-of-Sophia",
+    "direct_canon_authorship": "forbidden",
+}
+EXPECTED_RETURN_MUST_INCLUDE = {"source_refs", "axis_summary", "provenance_note"}
+EXPECTED_RETURN_MAY_INCLUDE = {
+    "lineage_refs",
+    "conflict_refs",
+    "practice_refs",
+    "counterpart_refs",
+}
+MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
+VISIBLE_ROOTS = (REPO_ROOT, TREE_OF_SOPHIA_ROOT, AOA_MEMO_ROOT)
 
 
 class ValidationError(RuntimeError):
@@ -30,43 +112,132 @@ def fail(message: str) -> None:
     raise ValidationError(message)
 
 
+def display_path(path: Path) -> str:
+    for root in VISIBLE_ROOTS:
+        try:
+            return path.relative_to(root).as_posix()
+        except ValueError:
+            continue
+    return path.as_posix()
+
+
 def read_json(path: Path) -> object:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        fail(f"missing required file: {path.relative_to(REPO_ROOT).as_posix()}")
+        fail(f"missing required file: {display_path(path)}")
     except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {path.relative_to(REPO_ROOT).as_posix()}: {exc}")
+        fail(f"invalid JSON in {display_path(path)}: {exc}")
+
+
+def markdown_anchor(text: str) -> str:
+    anchor = text.strip().lower()
+    anchor = re.sub(r"[^\w\s-]", "", anchor)
+    anchor = re.sub(r"\s+", "-", anchor)
+    anchor = re.sub(r"-+", "-", anchor)
+    return anchor.strip("-")
+
+
+@lru_cache(maxsize=None)
+def markdown_anchors(path: Path) -> set[str]:
+    anchors: set[str] = set()
+    seen: dict[str, int] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = MARKDOWN_HEADING.match(line)
+        if not match:
+            continue
+        base = markdown_anchor(match.group(2))
+        if not base:
+            continue
+        suffix = seen.get(base, 0)
+        seen[base] = suffix + 1
+        anchors.add(base if suffix == 0 else f"{base}-{suffix}")
+    return anchors
+
+
+def validate_top_level_schema(path: Path, label: str) -> None:
+    schema = read_json(path)
+    if not isinstance(schema, dict):
+        fail(f"{label} schema file must contain a JSON object")
+    required_top_level = {"$schema", "$id", "title", "type", "properties", "required"}
+    missing = sorted(required_top_level - set(schema))
+    if missing:
+        fail(f"{label} schema is missing required top-level keys: {', '.join(missing)}")
 
 
 def validate_schema_surface() -> None:
-    schema = read_json(SCHEMA_PATH)
-    if not isinstance(schema, dict):
-        fail("schema file must contain a JSON object")
-    required_top_level = {"$schema", "$id", "title", "type", "properties", "required"}
-    missing = sorted(required_top_level - set(schema))
-    if missing:
-        fail(f"schema is missing required top-level keys: {', '.join(missing)}")
+    validate_top_level_schema(SCHEMA_PATH, "registry")
 
 
 def validate_bridge_schema_surface() -> None:
-    schema = read_json(BRIDGE_SCHEMA_PATH)
-    if not isinstance(schema, dict):
-        fail("bridge schema file must contain a JSON object")
-    required_top_level = {"$schema", "$id", "title", "type", "properties", "required"}
-    missing = sorted(required_top_level - set(schema))
-    if missing:
-        fail(f"bridge schema is missing required top-level keys: {', '.join(missing)}")
+    validate_top_level_schema(BRIDGE_SCHEMA_PATH, "bridge")
 
 
 def validate_counterpart_schema_surface() -> None:
-    schema = read_json(COUNTERPART_SCHEMA_PATH)
-    if not isinstance(schema, dict):
-        fail("counterpart schema file must contain a JSON object")
-    required_top_level = {"$schema", "$id", "title", "type", "properties", "required"}
-    missing = sorted(required_top_level - set(schema))
-    if missing:
-        fail(f"counterpart schema is missing required top-level keys: {', '.join(missing)}")
+    validate_top_level_schema(COUNTERPART_SCHEMA_PATH, "counterpart")
+
+
+def validate_reasoning_handoff_schema_surface() -> None:
+    validate_top_level_schema(REASONING_HANDOFF_SCHEMA_PATH, "reasoning handoff")
+
+
+def validate_unique_string_list(
+    value: object,
+    *,
+    label: str,
+    allow_empty: bool = False,
+) -> list[str]:
+    if not isinstance(value, list):
+        fail(f"{label} must be a list")
+    if not value and not allow_empty:
+        fail(f"{label} must be a non-empty list")
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or len(item) < 1:
+            fail(f"{label} contains an invalid entry")
+        result.append(item)
+    if len(result) != len(set(result)):
+        fail(f"{label} must not contain duplicates")
+    return result
+
+
+def resolve_relative_ref(root: Path, raw_ref: str, *, label: str) -> Path:
+    path_text, _, anchor = raw_ref.partition("#")
+    target = root / path_text
+    if not target.exists():
+        fail(f"{label} references a missing path: {raw_ref}")
+    if anchor:
+        if target.suffix.lower() != ".md":
+            fail(f"{label} uses a markdown anchor on a non-markdown target: {raw_ref}")
+        if anchor not in markdown_anchors(target):
+            fail(f"{label} references a missing markdown anchor: {raw_ref}")
+    return target
+
+
+def resolve_authoritative_ref(raw_ref: str, *, label: str) -> Path:
+    if raw_ref.startswith("Tree-of-Sophia/"):
+        return resolve_relative_ref(
+            TREE_OF_SOPHIA_ROOT,
+            raw_ref.split("/", 1)[1],
+            label=label,
+        )
+    if raw_ref.startswith("aoa-memo/"):
+        return resolve_relative_ref(
+            AOA_MEMO_ROOT,
+            raw_ref.split("/", 1)[1],
+            label=label,
+        )
+    fail(f"{label} must reference Tree-of-Sophia or aoa-memo: {raw_ref}")
+
+
+def validate_exact_set(
+    values: list[str],
+    expected: set[str],
+    *,
+    label: str,
+) -> None:
+    if set(values) != expected:
+        fail(f"{label} must match the exact expected set")
 
 
 def validate_registry() -> dict[str, dict[str, object]]:
@@ -198,7 +369,9 @@ def validate_registry() -> dict[str, dict[str, object]]:
                 if input_role == "primary":
                     primary_count += 1
                     if input_source_class != source_class:
-                        fail(f"{input_location}.source_class must match top-level source_class for the primary input")
+                        fail(
+                            f"{input_location}.source_class must match top-level source_class for the primary input"
+                        )
 
             if primary_count != 1:
                 fail(f"{location}.source_inputs must contain exactly one primary input")
@@ -271,25 +444,13 @@ def validate_bridge_example(surfaces_by_id: dict[str, dict[str, object]]) -> Non
 
     for key in ("source_refs", "lineage_refs"):
         value = payload.get(key)
-        if not isinstance(value, list) or not value:
-            fail(f"bridge example '{key}' must be a non-empty list")
-        if len(value) != len(set(value)):
-            fail(f"bridge example '{key}' must not contain duplicates")
-        for item in value:
-            if not isinstance(item, str) or len(item) < 1:
-                fail(f"bridge example '{key}' contains an invalid entry")
+        validate_unique_string_list(value, label=f"bridge example '{key}'")
 
     for key in ("conflict_refs", "practice_refs"):
         value = payload.get(key)
         if value is None:
             continue
-        if not isinstance(value, list):
-            fail(f"bridge example '{key}' must be a list when present")
-        if len(value) != len(set(value)):
-            fail(f"bridge example '{key}' must not contain duplicates")
-        for item in value:
-            if not isinstance(item, str) or len(item) < 1:
-                fail(f"bridge example '{key}' contains an invalid entry")
+        validate_unique_string_list(value, label=f"bridge example '{key}'")
 
     axis_summary = payload.get("axis_summary")
     if not isinstance(axis_summary, str) or len(axis_summary) < 20:
@@ -375,12 +536,12 @@ def validate_counterpart_example(surfaces_by_id: dict[str, dict[str, object]]) -
             fail(f"{location}.non_identity_note must be a string of length >= 20")
 
         if supporting_refs is not None:
-            if not isinstance(supporting_refs, list):
-                fail(f"{location}.supporting_refs must be a list when present")
-            if len(supporting_refs) != len(set(supporting_refs)):
-                fail(f"{location}.supporting_refs must not contain duplicates")
-            for supporting_ref in supporting_refs:
-                if not isinstance(supporting_ref, str) or "/" not in supporting_ref:
+            refs = validate_unique_string_list(
+                supporting_refs,
+                label=f"{location}.supporting_refs",
+            )
+            for supporting_ref in refs:
+                if "/" not in supporting_ref:
                     fail(f"{location}.supporting_refs contains an invalid repo-qualified ref")
                 supporting_repo = supporting_ref.split("/", 1)[0]
                 if supporting_repo not in supporting_repos:
@@ -390,14 +551,119 @@ def validate_counterpart_example(surfaces_by_id: dict[str, dict[str, object]]) -
         fail("counterpart example must cover all supported counterpart modes at least once")
 
 
+def validate_reasoning_handoff_example() -> None:
+    payload = read_json(REASONING_HANDOFF_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("reasoning handoff example must be a JSON object")
+
+    for key in (
+        "surface_type",
+        "handoff_id",
+        "supported_query_modes",
+        "authoritative_source_refs",
+        "derived_surface_refs",
+        "provenance_posture",
+        "return_contract",
+        "boundary_guardrails",
+    ):
+        if key not in payload:
+            fail(f"reasoning handoff example is missing required key '{key}'")
+
+    if payload["surface_type"] != "reasoning_handoff_guardrail":
+        fail("reasoning handoff example surface_type must equal 'reasoning_handoff_guardrail'")
+
+    handoff_id = payload["handoff_id"]
+    if not isinstance(handoff_id, str) or len(handoff_id) < 3:
+        fail("reasoning handoff example handoff_id must be a string of length >= 3")
+
+    query_modes = validate_unique_string_list(
+        payload["supported_query_modes"],
+        label="reasoning handoff example supported_query_modes",
+    )
+    validate_exact_set(
+        query_modes,
+        ALLOWED_QUERY_MODES,
+        label="reasoning handoff example supported_query_modes",
+    )
+
+    authoritative_source_refs = validate_unique_string_list(
+        payload["authoritative_source_refs"],
+        label="reasoning handoff example authoritative_source_refs",
+    )
+    validate_exact_set(
+        authoritative_source_refs,
+        EXPECTED_AUTHORITATIVE_SOURCE_REFS,
+        label="reasoning handoff example authoritative_source_refs",
+    )
+    for ref in authoritative_source_refs:
+        resolve_authoritative_ref(ref, label="reasoning handoff example authoritative_source_refs")
+
+    derived_surface_refs = validate_unique_string_list(
+        payload["derived_surface_refs"],
+        label="reasoning handoff example derived_surface_refs",
+    )
+    validate_exact_set(
+        derived_surface_refs,
+        EXPECTED_DERIVED_SURFACE_REFS,
+        label="reasoning handoff example derived_surface_refs",
+    )
+    for ref in derived_surface_refs:
+        resolve_relative_ref(
+            REPO_ROOT,
+            ref,
+            label="reasoning handoff example derived_surface_refs",
+        )
+
+    provenance_posture = payload["provenance_posture"]
+    if provenance_posture != EXPECTED_PROVENANCE_POSTURE:
+        fail("reasoning handoff example provenance_posture must match the bounded guardrail contract")
+
+    return_contract = payload["return_contract"]
+    if not isinstance(return_contract, dict):
+        fail("reasoning handoff example return_contract must be an object")
+
+    for key in ("must_include", "may_include"):
+        if key not in return_contract:
+            fail(f"reasoning handoff example return_contract is missing '{key}'")
+
+    must_include = validate_unique_string_list(
+        return_contract["must_include"],
+        label="reasoning handoff example return_contract.must_include",
+    )
+    validate_exact_set(
+        must_include,
+        EXPECTED_RETURN_MUST_INCLUDE,
+        label="reasoning handoff example return_contract.must_include",
+    )
+
+    may_include = validate_unique_string_list(
+        return_contract["may_include"],
+        label="reasoning handoff example return_contract.may_include",
+    )
+    validate_exact_set(
+        may_include,
+        EXPECTED_RETURN_MAY_INCLUDE,
+        label="reasoning handoff example return_contract.may_include",
+    )
+
+    if set(must_include) & set(may_include):
+        fail("reasoning handoff example return_contract must not overlap must_include and may_include")
+
+    boundary_guardrails = payload["boundary_guardrails"]
+    if boundary_guardrails != EXPECTED_BOUNDARY_GUARDRAILS:
+        fail("reasoning handoff example boundary_guardrails must match the bounded guardrail contract")
+
+
 def main() -> int:
     try:
         validate_schema_surface()
         validate_bridge_schema_surface()
         validate_counterpart_schema_surface()
+        validate_reasoning_handoff_schema_surface()
         surfaces_by_id = validate_registry()
         validate_bridge_example(surfaces_by_id)
         validate_counterpart_example(surfaces_by_id)
+        validate_reasoning_handoff_example()
     except ValidationError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 1
@@ -405,9 +671,11 @@ def main() -> int:
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")
     print("[ok] validated counterpart edge surface schema")
+    print("[ok] validated reasoning handoff guardrail schema")
     print("[ok] validated generated/kag_registry.min.json")
     print("[ok] validated bridge retrieval example")
     print("[ok] validated counterpart edge example")
+    print("[ok] validated reasoning handoff guardrail example")
     return 0
 
 
