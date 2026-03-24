@@ -109,6 +109,7 @@
         "surface_id",
         "surface_status",
         "posture",
+        "federation_exposure_review_ref",
         "allowed_refs",
         "forbidden_active_payload_refs",
         "forbidden_interpretations"
@@ -125,6 +126,10 @@
         "posture": {
           "type": "string",
           "const": "planned_contract_only"
+        },
+        "federation_exposure_review_ref": {
+          "type": "string",
+          "const": "generated/counterpart_federation_exposure_review.min.json"
         },
         "allowed_refs": {
           "type": "array",

@@ -27,6 +27,17 @@ The current binding is:
 This keeps the first named consumer of counterpart material inside the existing
 reasoning handoff guardrail rather than moving it into routing or federation.
 
+## Required federation exposure review
+
+This consumer contract must now also point to the current reviewed federation
+posture at:
+
+- `generated/counterpart_federation_exposure_review.min.json`
+- `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`
+
+That closes the current federation-exposure gate for the `planned` posture
+without activating a generated `AOA-K-0008` payload.
+
 ## Required counterpart contract refs
 
 This consumer contract must stay tied to the current counterpart surfaces:
@@ -46,6 +57,8 @@ contract-or-example surfaces such as:
 - `examples/counterpart_edge_view.example.json`
 
 This keeps the seam reference-driven and bounded.
+The separate federation exposure review stays adjacent as a review surface, not
+as a returned counterpart payload.
 
 ## Forbidden interpretations
 
@@ -61,4 +74,5 @@ Do not read this contract as:
 - no generated `AOA-K-0008` payload in this wave
 - no counterpart ranking or scoring
 - no hidden routing or scenario ownership
-- no implicit federation exposure for counterpart material
+- no implicit federation exposure for counterpart material outside the reviewed
+  planned posture

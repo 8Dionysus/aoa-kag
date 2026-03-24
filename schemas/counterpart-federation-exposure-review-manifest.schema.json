@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/counterpart-federation-exposure-review-manifest.schema.json",
+  "title": "AoA KAG counterpart federation exposure review manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "review_type",
+    "source_inputs",
+    "review_bindings",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "review_type": {
+      "type": "string",
+      "const": "counterpart_federation_exposure_review"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "const": "aoa-kag"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "reviewed_surface",
+              "counterpart_contract"
+            ]
+          }
+        }
+      }
+    },
+    "review_bindings": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_name",
+          "surface_input",
+          "exposure_posture",
+          "review_note"
+        ],
+        "properties": {
+          "surface_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "surface_input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "exposure_posture": {
+            "type": "string",
+            "enum": [
+              "contract_only_counterpart_refs",
+              "planned_contract_only",
+              "no_counterpart_exposure",
+              "counterpart_activation_forbidden",
+              "contract_reference_surface",
+              "planned_contract_surface",
+              "planned_example_surface"
+            ]
+          },
+          "review_note": {
+            "type": "string",
+            "minLength": 20
+          },
+          "allowed_counterpart_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "forbidden_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "minLength": 1
+        },
+        "min": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "silent_federation_exposure",
+        "generated_counterpart_payload_inference",
+        "routing_ownership",
+        "source_replacement"
+      ],
+      "properties": {
+        "silent_federation_exposure": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "generated_counterpart_payload_inference": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "routing_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        }
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@
     "surface_status",
     "consumer_surface_type",
     "allowed_return_field",
+    "federation_exposure_review_ref",
     "required_contract_refs",
     "allowed_refs",
     "forbidden_interpretations"
@@ -34,6 +35,10 @@
     "allowed_return_field": {
       "type": "string",
       "const": "counterpart_refs"
+    },
+    "federation_exposure_review_ref": {
+      "type": "string",
+      "const": "generated/counterpart_federation_exposure_review.min.json"
     },
     "required_contract_refs": {
       "type": "object",

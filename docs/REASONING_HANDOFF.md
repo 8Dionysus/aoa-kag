@@ -81,6 +81,7 @@ contract-or-example refs through:
 
 - `docs/COUNTERPART_CONSUMER_CONTRACT.md`
 - `examples/counterpart_consumer_contract.example.json`
+- `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`
 
 They may not point to a generated `AOA-K-0008` payload, because `AOA-K-0008`
 remains planned.
@@ -105,6 +106,7 @@ The current handoff seam should reuse and respect the existing bridge surfaces:
 - `examples/tos_retrieval_axis_surface.example.json`
 - `docs/COUNTERPART_EDGE_CONTRACTS.md`
 - `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`
 - `examples/counterpart_edge_view.example.json`
 - `examples/counterpart_consumer_contract.example.json`
 

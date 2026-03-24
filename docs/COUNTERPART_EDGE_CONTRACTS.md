@@ -67,17 +67,19 @@ That planned posture is deliberate:
 
 ## Activation gates
 
-`AOA-K-0008` remains blocked.
+`AOA-K-0008` remains `planned`.
 
-Closed gates in the current wave:
+All current prerequisite gates are now review-closed for the `planned`
+posture:
 
 - the current `AOA-K-0006` projection pairing law is manifest-driven and validator-backed
 - the current external source-owned exports are covered by an explicit dependency contract
 - a dedicated downstream consumer contract now exists at `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- federation exposure is now explicitly reviewed through `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md` and `generated/counterpart_federation_exposure_review.min.json`
 
-Remaining open gate:
+Promotion is still deferred:
 
-- federation exposure for counterpart edges must still be explicitly reviewed rather than inferred from retrieval, projection, or tiny-bundle surfaces
+- moving `AOA-K-0008` to `experimental` requires a separate activation wave with its own generated surface and promotion review
 
 ## Anti-goals
 

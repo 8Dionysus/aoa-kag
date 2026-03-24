@@ -14,6 +14,9 @@ from kag_generation import (
     AOA_MEMO_ROOT,
     AOA_PLAYBOOKS_ROOT,
     AOA_TECHNIQUES_ROOT,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
     CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH,
     CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
     CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
@@ -49,6 +52,7 @@ from kag_generation import (
     TOS_TINY_ENTRY_ROUTE_ID,
     TOS_TINY_ENTRY_ROUTE_PATH,
     build_cross_source_node_projection_payload,
+    build_counterpart_federation_exposure_review_payload,
     build_federation_spine_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
@@ -83,6 +87,15 @@ BRIDGE_ENVELOPE_EXAMPLE_PATH = (
 )
 COUNTERPART_SCHEMA_PATH = REPO_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
 COUNTERPART_EXAMPLE_PATH = REPO_ROOT / "examples" / "counterpart_edge_view.example.json"
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "counterpart-federation-exposure-review-manifest.schema.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "counterpart-federation-exposure-review.schema.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "counterpart_federation_exposure_review.example.json"
+)
 COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
 )
@@ -198,6 +211,7 @@ EXPECTED_DERIVED_SURFACE_REFS = {
     "docs/BRIDGE_CONTRACTS.md#retrieval-axis-contract",
     "examples/tos_retrieval_axis_surface.example.json",
     "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
     "examples/counterpart_edge_view.example.json",
     "docs/COUNTERPART_CONSUMER_CONTRACT.md",
     "examples/counterpart_consumer_contract.example.json",
@@ -213,6 +227,9 @@ EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS = [
     "docs/COUNTERPART_EDGE_CONTRACTS.md",
     "examples/counterpart_edge_view.example.json",
 ]
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF = (
+    "generated/counterpart_federation_exposure_review.min.json"
+)
 EXPECTED_COUNTERPART_CONSUMER_FORBIDDEN_INTERPRETATIONS = [
     "identity_proof",
     "routing_authority",
@@ -355,6 +372,7 @@ EXPECTED_REASONING_HANDOFF_INPUTS = {
     ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "kag_guardrail_doc"),
     ("counterpart_consumer_contract_schema", "aoa-kag", "schemas/counterpart-consumer-contract.schema.json", "kag_guardrail_schema"),
     ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "kag_guardrail_example"),
+    ("counterpart_federation_exposure_review_doc", "aoa-kag", "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md", "kag_guardrail_doc"),
     ("artifact_to_verdict_hook_schema", "aoa-evals", "schemas/artifact-to-verdict-hook.schema.json", "eval_hook_schema"),
     ("aoa_p_0008_playbook", "aoa-playbooks", "playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md", "playbook_doc"),
     ("aoa_p_0008_hook", "aoa-evals", "examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json", "eval_hook_fixture"),
@@ -388,6 +406,7 @@ EXPECTED_REASONING_HANDOFF_KAG_GUARDRAIL_REFS = [
     "docs/COUNTERPART_CONSUMER_CONTRACT.md",
     "schemas/counterpart-consumer-contract.schema.json",
     "examples/counterpart_consumer_contract.example.json",
+    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
 ]
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
@@ -478,12 +497,53 @@ EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART = {
     "surface_id": "AOA-K-0008",
     "surface_status": "planned",
     "posture": "planned_contract_only",
+    "federation_exposure_review_ref": EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
     "allowed_refs": EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS,
     "forbidden_active_payload_refs": ["examples/counterpart_edge_view.example.json"],
     "forbidden_interpretations": [
         "active_retrieval_payload",
         "active_projection_payload",
     ],
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_INPUTS = {
+    ("reasoning_handoff_pack", "aoa-kag", "generated/reasoning_handoff_pack.min.json", "reviewed_surface"),
+    ("tiny_consumer_bundle", "aoa-kag", "generated/tiny_consumer_bundle.min.json", "reviewed_surface"),
+    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "reviewed_surface"),
+    ("cross_source_node_projection", "aoa-kag", "generated/cross_source_node_projection.min.json", "reviewed_surface"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "counterpart_contract"),
+    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "counterpart_contract"),
+    ("counterpart_edge_contract_doc", "aoa-kag", "docs/COUNTERPART_EDGE_CONTRACTS.md", "counterpart_contract"),
+    ("counterpart_edge_contract_example", "aoa-kag", "examples/counterpart_edge_view.example.json", "counterpart_contract"),
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER = [
+    "reasoning_handoff_pack",
+    "tiny_consumer_bundle",
+    "federation_spine",
+    "cross_source_node_projection",
+    "counterpart_consumer_contract_doc",
+    "counterpart_consumer_contract_example",
+    "counterpart_edge_contract_doc",
+    "counterpart_edge_contract_example",
+]
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATHS = {
+    "full": "generated/counterpart_federation_exposure_review.json",
+    "min": "generated/counterpart_federation_exposure_review.min.json",
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_CONTRACT = {
+    "silent_federation_exposure": "forbidden",
+    "generated_counterpart_payload_inference": "forbidden",
+    "routing_ownership": "forbidden",
+    "source_replacement": "forbidden",
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_POSTURES = {
+    "reasoning_handoff_pack": "contract_only_counterpart_refs",
+    "tiny_consumer_bundle": "planned_contract_only",
+    "federation_spine": "no_counterpart_exposure",
+    "cross_source_node_projection": "counterpart_activation_forbidden",
+    "counterpart_consumer_contract_doc": "contract_reference_surface",
+    "counterpart_consumer_contract_example": "contract_reference_surface",
+    "counterpart_edge_contract_doc": "planned_contract_surface",
+    "counterpart_edge_contract_example": "planned_example_surface",
 }
 EXPECTED_AOA_K_0006_SOURCE_INPUTS = [
     {
@@ -597,6 +657,20 @@ def validate_bridge_envelope_schema_surface() -> None:
 
 def validate_counterpart_schema_surface() -> None:
     validate_top_level_schema(COUNTERPART_SCHEMA_PATH, "counterpart")
+
+
+def validate_counterpart_federation_exposure_review_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_SCHEMA_PATH,
+        "counterpart federation exposure review manifest",
+    )
+
+
+def validate_counterpart_federation_exposure_review_schema_surface() -> None:
+    validate_top_level_schema(
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_SCHEMA_PATH,
+        "counterpart federation exposure review",
+    )
 
 
 def validate_counterpart_consumer_contract_schema_surface() -> None:
@@ -725,6 +799,19 @@ def validate_unique_string_list(
     if len(result) != len(set(result)):
         fail(f"{label} must not contain duplicates")
     return result
+
+
+def iter_string_values(value: object):
+    if isinstance(value, str):
+        yield value
+        return
+    if isinstance(value, dict):
+        for nested_value in value.values():
+            yield from iter_string_values(nested_value)
+        return
+    if isinstance(value, list):
+        for nested_value in value:
+            yield from iter_string_values(nested_value)
 
 
 def resolve_relative_ref(root: Path, raw_ref: str, *, label: str) -> Path:
@@ -2096,6 +2183,10 @@ def validate_tiny_consumer_bundle_manifest(
         fail("tiny consumer bundle manifest deferred_counterpart.surface_id must exist in the registry")
     if surfaces_by_id[surface_id].get("status") != "planned":
         fail("tiny consumer bundle manifest deferred_counterpart.surface_id must remain planned in the registry")
+    resolve_known_ref(
+        deferred_counterpart["federation_exposure_review_ref"],
+        label="tiny consumer bundle manifest deferred_counterpart.federation_exposure_review_ref",
+    )
     for index, ref in enumerate(deferred_counterpart["allowed_refs"]):
         resolve_known_ref(
             ref,
@@ -2112,6 +2203,154 @@ def validate_tiny_consumer_bundle_manifest(
 
     if payload["output_paths"] != EXPECTED_TINY_CONSUMER_BUNDLE_OUTPUT_PATHS:
         fail("tiny consumer bundle manifest output_paths must match the committed generated output paths")
+
+
+def validate_counterpart_federation_exposure_review_manifest() -> None:
+    payload = read_json(COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart federation exposure review manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "review_type",
+        "source_inputs",
+        "review_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(
+                "counterpart federation exposure review manifest is missing required "
+                f"key '{key}'"
+            )
+
+    if payload["manifest_version"] != 1:
+        fail("counterpart federation exposure review manifest manifest_version must equal 1")
+    if payload["review_type"] != "counterpart_federation_exposure_review":
+        fail(
+            "counterpart federation exposure review manifest review_type must equal "
+            "'counterpart_federation_exposure_review'"
+        )
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("counterpart federation exposure review manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    source_input_order: list[str] = []
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"counterpart federation exposure review manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        source_input_order.append(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_INPUTS:
+        fail(
+            "counterpart federation exposure review manifest source_inputs must match "
+            "the current reviewed donor set"
+        )
+    if source_input_order != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER:
+        fail(
+            "counterpart federation exposure review manifest source_inputs must keep "
+            "the current reviewed surface order"
+        )
+
+    review_bindings = payload["review_bindings"]
+    if not isinstance(review_bindings, list) or not review_bindings:
+        fail("counterpart federation exposure review manifest review_bindings must be a non-empty list")
+    actual_review_order: list[str] = []
+    seen_review_names: set[str] = set()
+    for index, binding in enumerate(review_bindings):
+        location = f"counterpart federation exposure review manifest review_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_name = binding.get("surface_name")
+        surface_input = binding.get("surface_input")
+        exposure_posture = binding.get("exposure_posture")
+        review_note = binding.get("review_note")
+        if not all(
+            isinstance(value, str) and value
+            for value in (surface_name, surface_input, exposure_posture, review_note)
+        ):
+            fail(
+                f"{location} must keep surface_name, surface_input, exposure_posture, "
+                "and review_note"
+            )
+        if surface_name in seen_review_names:
+            fail(f"{location} duplicates review binding '{surface_name}'")
+        seen_review_names.add(surface_name)
+        actual_review_order.append(surface_name)
+        if surface_name != surface_input:
+            fail(f"{location}.surface_name must match surface_input in the current wave")
+        if exposure_posture != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_POSTURES.get(surface_name):
+            fail(
+                f"{location}.exposure_posture must match the current reviewed posture "
+                f"for '{surface_name}'"
+            )
+
+        allowed_counterpart_refs = binding.get("allowed_counterpart_refs")
+        forbidden_refs = binding.get("forbidden_refs")
+        if surface_name in {"reasoning_handoff_pack", "tiny_consumer_bundle"}:
+            if allowed_counterpart_refs != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.allowed_counterpart_refs must match the current "
+                    "contract-only counterpart refs"
+                )
+            for ref_index, ref in enumerate(allowed_counterpart_refs):
+                resolve_known_ref(
+                    ref,
+                    label=f"{location}.allowed_counterpart_refs[{ref_index}]",
+                )
+            if forbidden_refs is not None:
+                fail(f"{location}.forbidden_refs must stay absent when counterpart refs are allowed")
+        elif surface_name in {"federation_spine", "cross_source_node_projection"}:
+            if forbidden_refs != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.forbidden_refs must match the current forbidden "
+                    "counterpart exposure set"
+                )
+            for ref_index, ref in enumerate(forbidden_refs):
+                resolve_known_ref(
+                    ref,
+                    label=f"{location}.forbidden_refs[{ref_index}]",
+                )
+            if allowed_counterpart_refs is not None:
+                fail(
+                    f"{location}.allowed_counterpart_refs must stay absent for "
+                    "non-exposing surfaces"
+                )
+        else:
+            if allowed_counterpart_refs is not None or forbidden_refs is not None:
+                fail(
+                    f"{location} must not declare allowed_counterpart_refs or "
+                    "forbidden_refs for contract/example review surfaces"
+                )
+
+    if actual_review_order != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER:
+        fail(
+            "counterpart federation exposure review manifest review_bindings must keep "
+            "the current reviewed surface order"
+        )
+    if payload["output_paths"] != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATHS:
+        fail(
+            "counterpart federation exposure review manifest output_paths must match "
+            "the committed generated output paths"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_CONTRACT:
+        fail(
+            "counterpart federation exposure review manifest bounded_output_contract "
+            "must match the current review guardrail"
+        )
 
 
 def validate_tos_text_chunk_map_pack(
@@ -2860,6 +3099,15 @@ def validate_federation_spine_pack(
         fail("federation spine pack bounded_output_contract must match the current source-first guardrail")
     if payload["source_inputs"] != expected_payload["source_inputs"]:
         fail("federation spine pack source_inputs must match the manifest-driven donor set")
+    forbidden_counterpart_refs = set(EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS) | {
+        EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
+        "AOA-K-0008",
+    }
+    if any(value in forbidden_counterpart_refs for value in iter_string_values(payload)):
+        fail(
+            "federation spine pack must not expose counterpart refs or AOA-K-0008 "
+            "activation hints in the current review-closed posture"
+        )
 
     for index, source_input in enumerate(payload["source_inputs"]):
         location = f"federation spine pack source_inputs[{index}]"
@@ -2982,6 +3230,15 @@ def validate_cross_source_node_projection_pack(
         fail("cross-source node projection pack source_inputs must match the manifest-driven donor set")
     if payload["surface_bindings"] != expected_payload["surface_bindings"]:
         fail("cross-source node projection pack surface_bindings must match the current bounded projection binding")
+    forbidden_counterpart_refs = set(EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS) | {
+        EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
+        "AOA-K-0008",
+    }
+    if any(value in forbidden_counterpart_refs for value in iter_string_values(payload)):
+        fail(
+            "cross-source node projection pack must not expose counterpart refs or "
+            "AOA-K-0008 activation hints in the current review-closed posture"
+        )
 
     surface_0006 = surfaces_by_id.get("AOA-K-0006")
     if surface_0006 is None or surface_0006.get("status") != "experimental":
@@ -3083,6 +3340,10 @@ def validate_tiny_consumer_bundle_pack(expected_payload: dict[str, object]) -> N
         fail("tiny consumer bundle pack bundle_items must keep the current stable bundle order")
     if payload["deferred_counterpart"] != EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART:
         fail("tiny consumer bundle pack deferred_counterpart must match the contract-only posture")
+    resolve_known_ref(
+        payload["deferred_counterpart"]["federation_exposure_review_ref"],
+        label="tiny consumer bundle pack deferred_counterpart.federation_exposure_review_ref",
+    )
     if payload != expected_payload:
         fail("tiny consumer bundle pack must match the committed manifest-driven bundle payload")
 
@@ -3091,6 +3352,127 @@ def validate_tiny_consumer_bundle_example(expected_payload: dict[str, object]) -
     payload = read_json(TINY_CONSUMER_BUNDLE_EXAMPLE_PATH)
     if payload != expected_payload:
         fail("tiny consumer bundle example must match the current bundle payload")
+
+
+def validate_counterpart_federation_exposure_review_pack(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart federation exposure review pack must be a JSON object")
+
+    for key in (
+        "review_version",
+        "review_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_id",
+        "surface_status",
+        "review_status",
+        "reviewed_surface_count",
+        "reviewed_surfaces",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(
+                "counterpart federation exposure review pack is missing required key "
+                f"'{key}'"
+            )
+
+    if payload["review_version"] != 1:
+        fail("counterpart federation exposure review pack review_version must equal 1")
+    if payload["review_type"] != "counterpart_federation_exposure_review":
+        fail(
+            "counterpart federation exposure review pack review_type must equal "
+            "'counterpart_federation_exposure_review'"
+        )
+    if payload["source_manifest_ref"] != "manifests/counterpart_federation_exposure_review.json":
+        fail(
+            "counterpart federation exposure review pack source_manifest_ref must point "
+            "to manifests/counterpart_federation_exposure_review.json"
+        )
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail(
+            "counterpart federation exposure review pack source_inputs must match the "
+            "manifest-driven donor set"
+        )
+    if payload["surface_id"] != "AOA-K-0008":
+        fail("counterpart federation exposure review pack surface_id must equal 'AOA-K-0008'")
+    if payload["surface_status"] != "planned":
+        fail("counterpart federation exposure review pack surface_status must equal 'planned'")
+    if payload["review_status"] != "passed_for_planned_posture":
+        fail(
+            "counterpart federation exposure review pack review_status must equal "
+            "'passed_for_planned_posture'"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_CONTRACT:
+        fail(
+            "counterpart federation exposure review pack bounded_output_contract must "
+            "match the current review guardrail"
+        )
+
+    reviewed_surfaces = payload["reviewed_surfaces"]
+    if not isinstance(reviewed_surfaces, list) or not reviewed_surfaces:
+        fail("counterpart federation exposure review pack reviewed_surfaces must be a non-empty list")
+    if payload["reviewed_surface_count"] != len(reviewed_surfaces):
+        fail(
+            "counterpart federation exposure review pack reviewed_surface_count must "
+            "equal the number of reviewed_surfaces"
+        )
+
+    observed_order: list[str] = []
+    for index, reviewed_surface in enumerate(reviewed_surfaces):
+        location = f"counterpart federation exposure review pack reviewed_surfaces[{index}]"
+        if not isinstance(reviewed_surface, dict):
+            fail(f"{location} must be an object")
+        for key in ("surface_name", "surface_ref", "exposure_posture", "review_note"):
+            if key not in reviewed_surface:
+                fail(f"{location} is missing required key '{key}'")
+        surface_name = reviewed_surface["surface_name"]
+        surface_ref = reviewed_surface["surface_ref"]
+        exposure_posture = reviewed_surface["exposure_posture"]
+        observed_order.append(surface_name)
+        resolve_known_ref(surface_ref, label=f"{location}.surface_ref")
+        expected_posture = EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_POSTURES.get(surface_name)
+        if exposure_posture != expected_posture:
+            fail(
+                f"{location}.exposure_posture must match the current reviewed posture "
+                f"for '{surface_name}'"
+            )
+        if surface_name in {"reasoning_handoff_pack", "tiny_consumer_bundle"}:
+            if reviewed_surface.get("allowed_counterpart_refs") != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.allowed_counterpart_refs must match the current "
+                    "contract-only counterpart refs"
+                )
+        elif surface_name in {"federation_spine", "cross_source_node_projection"}:
+            if reviewed_surface.get("forbidden_refs") != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.forbidden_refs must match the current forbidden "
+                    "counterpart exposure set"
+                )
+
+    if observed_order != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER:
+        fail(
+            "counterpart federation exposure review pack reviewed_surfaces must keep "
+            "the current reviewed surface order"
+        )
+    if payload != expected_payload:
+        fail(
+            "counterpart federation exposure review pack must match the committed "
+            "manifest-driven review payload"
+        )
+
+
+def validate_counterpart_federation_exposure_review_example(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(COUNTERPART_FEDERATION_EXPOSURE_REVIEW_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail(
+            "counterpart federation exposure review example must match the current "
+            "review payload"
+        )
 
 
 def validate_generated_text(path: Path, expected_text: str, *, label: str) -> None:
@@ -3543,6 +3925,7 @@ def validate_counterpart_consumer_contract_example(
         "surface_status",
         "consumer_surface_type",
         "allowed_return_field",
+        "federation_exposure_review_ref",
         "required_contract_refs",
         "allowed_refs",
         "forbidden_interpretations",
@@ -3569,6 +3952,18 @@ def validate_counterpart_consumer_contract_example(
             "counterpart consumer contract example allowed_return_field must equal "
             "'counterpart_refs'"
         )
+    if (
+        payload["federation_exposure_review_ref"]
+        != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF
+    ):
+        fail(
+            "counterpart consumer contract example federation_exposure_review_ref must "
+            "point to the current review artifact"
+        )
+    resolve_known_ref(
+        payload["federation_exposure_review_ref"],
+        label="counterpart consumer contract example federation_exposure_review_ref",
+    )
 
     registry_surface = surfaces_by_id.get("AOA-K-0008")
     if registry_surface is None:
@@ -3827,6 +4222,8 @@ def main() -> int:
         validate_bridge_schema_surface()
         validate_bridge_envelope_schema_surface()
         validate_counterpart_schema_surface()
+        validate_counterpart_federation_exposure_review_manifest_schema_surface()
+        validate_counterpart_federation_exposure_review_schema_surface()
         validate_counterpart_consumer_contract_schema_surface()
         validate_reasoning_handoff_schema_surface()
         validate_technique_lift_manifest_schema_surface()
@@ -3869,6 +4266,7 @@ def main() -> int:
             source_owned_export_dependencies,
         )
         validate_tiny_consumer_bundle_manifest(registry_manifest_surfaces)
+        validate_counterpart_federation_exposure_review_manifest()
 
         expected_registry_payload = build_registry_payload()
         expected_technique_lift_pack_payload = build_technique_lift_pack_payload(
@@ -3886,6 +4284,9 @@ def main() -> int:
         )
         expected_cross_source_node_projection_payload = (
             build_cross_source_node_projection_payload(expected_registry_payload)
+        )
+        expected_counterpart_federation_exposure_review_payload = (
+            build_counterpart_federation_exposure_review_payload(expected_registry_payload)
         )
         expected_tiny_consumer_bundle_payload = build_tiny_consumer_bundle_payload(
             expected_registry_payload
@@ -3962,6 +4363,16 @@ def main() -> int:
             label="generated compact cross-source node projection pack",
         )
         validate_generated_text(
+            COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
+            encode_json(expected_counterpart_federation_exposure_review_payload, pretty=True),
+            label="generated counterpart federation exposure review",
+        )
+        validate_generated_text(
+            COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
+            encode_json(expected_counterpart_federation_exposure_review_payload, pretty=False),
+            label="generated compact counterpart federation exposure review",
+        )
+        validate_generated_text(
             TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
             encode_json(expected_tiny_consumer_bundle_payload, pretty=True),
             label="generated tiny consumer bundle",
@@ -4004,6 +4415,9 @@ def main() -> int:
             generated_surfaces_by_id,
             expected_cross_source_node_projection_payload,
         )
+        validate_counterpart_federation_exposure_review_pack(
+            expected_counterpart_federation_exposure_review_payload
+        )
         validate_tiny_consumer_bundle_pack(expected_tiny_consumer_bundle_payload)
         validate_bridge_example(generated_surfaces_by_id)
         validate_bridge_envelope_example()
@@ -4016,6 +4430,9 @@ def main() -> int:
         validate_cross_source_node_projection_example(
             expected_cross_source_node_projection_payload
         )
+        validate_counterpart_federation_exposure_review_example(
+            expected_counterpart_federation_exposure_review_payload
+        )
         validate_tiny_consumer_bundle_example(expected_tiny_consumer_bundle_payload)
     except ValidationError as exc:
         print(f"[error] {exc}", file=sys.stderr)
@@ -4025,6 +4442,8 @@ def main() -> int:
     print("[ok] validated bridge retrieval surface schema")
     print("[ok] validated bridge envelope schema")
     print("[ok] validated counterpart edge surface schema")
+    print("[ok] validated counterpart federation exposure review manifest schema")
+    print("[ok] validated counterpart federation exposure review schema")
     print("[ok] validated counterpart consumer contract schema")
     print("[ok] validated reasoning handoff guardrail schema")
     print("[ok] validated technique lift manifest schema")
@@ -4051,6 +4470,7 @@ def main() -> int:
     print("[ok] validated manifests/source_owned_export_dependencies.json")
     print("[ok] validated manifests/federation_spine.json")
     print("[ok] validated manifests/cross_source_node_projection.json")
+    print("[ok] validated manifests/counterpart_federation_exposure_review.json")
     print("[ok] validated manifests/tiny_consumer_bundle.json")
     print("[ok] validated generated registry outputs are up to date")
     print("[ok] validated generated technique lift pack outputs are up to date")
@@ -4059,6 +4479,7 @@ def main() -> int:
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
     print("[ok] validated generated cross-source node projection outputs are up to date")
+    print("[ok] validated generated counterpart federation exposure review outputs are up to date")
     print("[ok] validated generated tiny consumer bundle outputs are up to date")
     print("[ok] validated generated technique lift pack structure")
     print("[ok] validated generated ToS text chunk map structure")
@@ -4066,6 +4487,7 @@ def main() -> int:
     print("[ok] validated generated reasoning handoff pack structure")
     print("[ok] validated generated federation spine structure")
     print("[ok] validated generated cross-source node projection structure")
+    print("[ok] validated generated counterpart federation exposure review structure")
     print("[ok] validated generated tiny consumer bundle structure")
     print("[ok] validated bridge retrieval example")
     print("[ok] validated bridge envelope example")
@@ -4076,6 +4498,7 @@ def main() -> int:
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated federation KAG export example")
     print("[ok] validated cross-source node projection example")
+    print("[ok] validated counterpart federation exposure review example")
     print("[ok] validated tiny consumer bundle example")
     return 0
 

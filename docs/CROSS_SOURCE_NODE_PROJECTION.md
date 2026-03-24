@@ -75,3 +75,7 @@ python scripts/release_check.py
 For the current deferred counterpart posture, see
 `COUNTERPART_CONSUMER_CONTRACT.md` and
 `COUNTERPART_EDGE_CONTRACTS.md#activation-gates`.
+
+The current projection is also explicitly covered by
+`COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md` so its non-identity posture remains
+reviewable without implying counterpart activation.
