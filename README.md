@@ -19,10 +19,11 @@ If you are new to this repository, use this path:
 6. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
 7. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
 8. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
-9. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
-10. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-11. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-12. Read [ROADMAP](ROADMAP.md) for the current direction.
+9. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
+10. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
+11. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+12. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+13. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -72,6 +73,16 @@ It also now includes the first manifest-driven technique lift pack at:
 - `generated/technique_lift_pack.min.json`
 - `manifests/technique_lift_pack.json`
 - `docs/TECHNIQUE_LIFT_PACK.md`
+
+It now also includes the first experimental ToS text chunk map pilot at:
+- `generated/tos_text_chunk_map.json`
+- `generated/tos_text_chunk_map.min.json`
+- `manifests/tos_text_chunk_map.json`
+- `docs/TOS_TEXT_CHUNK_MAP.md`
+
+It also includes a ToS text chunk map schema and example at:
+- `schemas/tos-text-chunk-map.schema.json`
+- `examples/tos_text_chunk_map.example.json`
 
 It also includes a bridge retrieval schema and example at:
 - `schemas/bridge-retrieval-surface.schema.json`
@@ -126,6 +137,7 @@ set:
 
 `aoa-kag` is in bootstrap.
 The current baseline now includes the first manifest-driven generated lift seam from `aoa-techniques`.
+It now also includes the first experimental ToS text chunk-map pilot built from the current source-owned Zarathustra authority surface plus the current tiny-entry route and capsule surfaces in `Tree-of-Sophia`.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
 It now also includes the first public federation-facing KAG export contract and one experimental federation spine pilot built from existing `aoa-techniques` generated surfaces plus the current source-owned Tree-of-Sophia tiny-entry seam.
 `aoa-routing` now consumes that widened spine through separate `kag_view` entries for `aoa-techniques` and `Tree-of-Sophia`, while the spine itself remains experimental and non-authoritative.

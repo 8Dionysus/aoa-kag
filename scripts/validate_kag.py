@@ -26,6 +26,9 @@ from kag_generation import (
     TECHNIQUE_LIFT_MANIFEST_PATH,
     TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
     TECHNIQUE_LIFT_OUTPUT_PATH,
+    TOS_TEXT_CHUNK_MAP_MANIFEST_PATH,
+    TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+    TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
     TOS_REPO,
     TOS_ROOT_README_PATH,
     TOS_TINY_ENTRY_AUTHORITY_PATH,
@@ -39,6 +42,7 @@ from kag_generation import (
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
     build_technique_lift_pack_payload,
+    build_tos_text_chunk_map_payload,
     encode_json,
     repo_ref,
 )
@@ -76,6 +80,15 @@ TECHNIQUE_LIFT_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "technique-lift-pack-manifest.schema.json"
 )
 TECHNIQUE_LIFT_PACK_SCHEMA_PATH = REPO_ROOT / "schemas" / "technique-lift-pack.schema.json"
+TOS_TEXT_CHUNK_MAP_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-text-chunk-map-manifest.schema.json"
+)
+TOS_TEXT_CHUNK_MAP_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-text-chunk-map.schema.json"
+)
+TOS_TEXT_CHUNK_MAP_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tos_text_chunk_map.example.json"
+)
 REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-pack-manifest.schema.json"
 )
@@ -200,6 +213,30 @@ EXPECTED_TECHNIQUE_LIFT_CONTRACT = {
     "source_trace_required": True,
     "source_replacement": "forbidden",
     "graph_sovereignty": "forbidden",
+}
+EXPECTED_TOS_TEXT_CHUNK_MAP_INPUTS = {
+    ("tos_source_node", TOS_TINY_ENTRY_AUTHORITY_PATH, "authority_surface"),
+    ("tos_tiny_entry_route_doc", TOS_TINY_ENTRY_DOCTRINE_PATH, "route_surface"),
+    ("tos_zarathustra_capsule", TOS_TINY_ENTRY_CAPSULE_PATH, "capsule_surface"),
+}
+EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS = {
+    (
+        "AOA-K-0005",
+        "tos-text-chunk-map",
+        "chunk_map",
+        "chunks",
+        "tos_source_node",
+    ),
+}
+EXPECTED_TOS_TEXT_CHUNK_MAP_OUTPUT_PATHS = {
+    "full": "generated/tos_text_chunk_map.json",
+    "min": "generated/tos_text_chunk_map.min.json",
+}
+EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "counterpart_projection": "forbidden",
+    "federation_export_activation": "forbidden",
 }
 ALLOWED_CONTRACT_STRENGTH = {
     "schema_backed",
@@ -408,6 +445,17 @@ def validate_technique_lift_manifest_schema_surface() -> None:
 
 def validate_technique_lift_pack_schema_surface() -> None:
     validate_top_level_schema(TECHNIQUE_LIFT_PACK_SCHEMA_PATH, "technique lift pack")
+
+
+def validate_tos_text_chunk_map_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_TEXT_CHUNK_MAP_MANIFEST_SCHEMA_PATH,
+        "ToS text chunk map manifest",
+    )
+
+
+def validate_tos_text_chunk_map_schema_surface() -> None:
+    validate_top_level_schema(TOS_TEXT_CHUNK_MAP_SCHEMA_PATH, "ToS text chunk map")
 
 
 def validate_reasoning_handoff_pack_manifest_schema_surface() -> None:
@@ -798,6 +846,26 @@ def validate_special_registry_surfaces(
     *,
     label: str,
 ) -> None:
+    surface_0005 = surfaces_by_id.get("AOA-K-0005")
+    if surface_0005 is None:
+        fail(f"{label} is missing required surface 'AOA-K-0005'")
+    if surface_0005.get("name") != "tos-text-chunk-map":
+        fail(f"{label} AOA-K-0005 must keep name 'tos-text-chunk-map'")
+    if surface_0005.get("status") != "experimental":
+        fail(f"{label} AOA-K-0005 must be experimental in the current Wave 2 pilot")
+    if surface_0005.get("source_class") != "tos_text":
+        fail(f"{label} AOA-K-0005 must keep 'tos_text' as its primary source_class")
+    if surface_0005.get("derived_kind") != "chunk_map":
+        fail(f"{label} AOA-K-0005 must keep 'chunk_map' as its derived_kind")
+    if surface_0005.get("provenance_mode") != "strict_source_linked":
+        fail(f"{label} AOA-K-0005 must keep 'strict_source_linked' as its provenance_mode")
+    if surface_0005.get("normalization_scope") != "text_chunks":
+        fail(f"{label} AOA-K-0005 must keep 'text_chunks' as its normalization_scope")
+    if surface_0005.get("framework_readiness") != "llamaindex_ready":
+        fail(f"{label} AOA-K-0005 must keep 'llamaindex_ready' as its framework_readiness")
+    if surface_0005.get("source_repos") != [TOS_REPO]:
+        fail(f"{label} AOA-K-0005 must keep source_repos ['{TOS_REPO}']")
+
     surface_0007 = surfaces_by_id.get("AOA-K-0007")
     if surface_0007 is None:
         fail(f"{label} is missing required surface 'AOA-K-0007'")
@@ -960,6 +1028,108 @@ def validate_technique_lift_manifest(
 
     if payload["bounded_output_contract"] != EXPECTED_TECHNIQUE_LIFT_CONTRACT:
         fail("technique lift manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_tos_text_chunk_map_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(TOS_TEXT_CHUNK_MAP_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS text chunk map manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_repo",
+        "source_root_env",
+        "source_inputs",
+        "surface_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS text chunk map manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("ToS text chunk map manifest manifest_version must equal 1")
+    if payload["pack_type"] != "tos_text_chunk_map":
+        fail("ToS text chunk map manifest pack_type must equal 'tos_text_chunk_map'")
+    if payload["source_repo"] != TOS_REPO:
+        fail("ToS text chunk map manifest source_repo must equal 'Tree-of-Sophia'")
+    if payload["source_root_env"] != "TREE_OF_SOPHIA_ROOT":
+        fail("ToS text chunk map manifest source_root_env must equal 'TREE_OF_SOPHIA_ROOT'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS text chunk map manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"ToS text chunk map manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, path, role)):
+            fail(f"{location} must keep name, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, path, role))
+        resolve_known_ref(repo_ref(TOS_REPO, path), label=location)
+    if actual_source_inputs != EXPECTED_TOS_TEXT_CHUNK_MAP_INPUTS:
+        fail("ToS text chunk map manifest source_inputs must match the current bounded donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS text chunk map manifest surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"ToS text chunk map manifest surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("name") != surface_name:
+            fail(f"{location} does not match registry surface name")
+        if surface.get("derived_kind") != derived_kind:
+            fail(f"{location} does not match registry derived_kind")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+        if surface.get("source_repos") != [TOS_REPO]:
+            fail(
+                f"{location} must point to Tree-of-Sophia-only experimental surfaces in this Wave 2 pilot"
+            )
+
+    if actual_bindings != EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS:
+        fail("ToS text chunk map manifest surface_bindings must match the current bounded chunk-map contract")
+
+    if payload["output_paths"] != EXPECTED_TOS_TEXT_CHUNK_MAP_OUTPUT_PATHS:
+        fail("ToS text chunk map manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT:
+        fail("ToS text chunk map manifest bounded_output_contract must match the current source-first guardrail")
 
 
 def validate_reasoning_handoff_manifest() -> None:
@@ -1181,6 +1351,297 @@ def validate_federation_spine_manifest(
         fail("federation spine manifest output_paths must match the committed generated output paths")
     if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
         fail("federation spine manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_tos_text_chunk_map_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("ToS text chunk map pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_repo",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "node_id",
+        "node_type",
+        "source_anchor",
+        "authority_surface_ref",
+        "route_ref",
+        "capsule_ref",
+        "interpretation_layers",
+        "chunk_count",
+        "chunks",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS text chunk map pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("ToS text chunk map pack pack_version must equal 1")
+    if payload["pack_type"] != "tos_text_chunk_map":
+        fail("ToS text chunk map pack pack_type must equal 'tos_text_chunk_map'")
+    if payload["source_repo"] != TOS_REPO:
+        fail("ToS text chunk map pack source_repo must equal 'Tree-of-Sophia'")
+    if payload["source_manifest_ref"] != "manifests/tos_text_chunk_map.json":
+        fail(
+            "ToS text chunk map pack source_manifest_ref must point to manifests/tos_text_chunk_map.json"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT:
+        fail("ToS text chunk map pack bounded_output_contract must match the current source-first guardrail")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS text chunk map pack source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str]] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"ToS text chunk map pack source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        role = source_input.get("role")
+        ref = source_input.get("ref")
+        if not all(isinstance(value, str) and value for value in (name, role, ref)):
+            fail(f"{location} must keep name, role, and ref")
+        resolve_known_ref(ref, label=location)
+        actual_source_inputs.add((name, role, ref))
+    expected_source_inputs = {
+        (
+            source_input["name"],
+            source_input["role"],
+            source_input["ref"],
+        )
+        for source_input in expected_payload["source_inputs"]
+        if isinstance(source_input, dict)
+    }
+    if actual_source_inputs != expected_source_inputs:
+        fail("ToS text chunk map pack source_inputs must match the manifest-driven donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS text chunk map pack surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"ToS text chunk map pack surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+    if actual_bindings != EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS:
+        fail("ToS text chunk map pack surface_bindings must match the current bounded chunk-map contract")
+
+    surface_id = payload["surface_id"]
+    if surface_id != "AOA-K-0005":
+        fail("ToS text chunk map pack surface_id must equal 'AOA-K-0005'")
+    registry_surface = surfaces_by_id.get(surface_id)
+    if registry_surface is None:
+        fail("ToS text chunk map pack surface_id must exist in the generated registry")
+    if registry_surface.get("status") != "experimental":
+        fail("AOA-K-0005 must remain experimental in the generated registry")
+    if payload["surface_name"] != "tos-text-chunk-map":
+        fail("ToS text chunk map pack surface_name must equal 'tos-text-chunk-map'")
+    if payload["node_id"] != expected_payload["node_id"]:
+        fail("ToS text chunk map pack node_id must stay aligned with the current ToS authority surface")
+    if payload["node_type"] != "source":
+        fail("ToS text chunk map pack node_type must stay 'source'")
+    if payload["source_anchor"] != expected_payload["source_anchor"]:
+        fail("ToS text chunk map pack source_anchor must match the current ToS authority surface")
+
+    for key in ("authority_surface_ref", "route_ref", "capsule_ref"):
+        value = payload[key]
+        if not isinstance(value, str) or not value:
+            fail(f"ToS text chunk map pack {key} must be a non-empty string")
+        resolve_known_ref(value, label=f"ToS text chunk map pack {key}")
+        if value != expected_payload[key]:
+            fail(f"ToS text chunk map pack {key} must stay aligned with the current bounded ToS route")
+
+    interpretation_layers = validate_unique_string_list(
+        payload["interpretation_layers"],
+        label="ToS text chunk map pack interpretation_layers",
+    )
+    if interpretation_layers != expected_payload["interpretation_layers"]:
+        fail("ToS text chunk map pack interpretation_layers must match the authority surface")
+
+    chunks = payload["chunks"]
+    if not isinstance(chunks, list) or not chunks:
+        fail("ToS text chunk map pack chunks must be a non-empty list")
+    chunk_count = payload["chunk_count"]
+    if not isinstance(chunk_count, int) or chunk_count != len(chunks):
+        fail("ToS text chunk map pack chunk_count must equal the number of chunks")
+
+    expected_chunks = expected_payload["chunks"]
+    if not isinstance(expected_chunks, list):
+        fail("expected ToS text chunk map payload must declare chunks")
+    expected_chunks_by_segment = {
+        chunk["segment_id"]: chunk
+        for chunk in expected_chunks
+        if isinstance(chunk, dict) and isinstance(chunk.get("segment_id"), str)
+    }
+    if chunk_count != len(expected_chunks_by_segment):
+        fail("ToS text chunk map pack chunk_count must equal the number of unique donor segment_ids")
+
+    seen_segment_ids: set[str] = set()
+    for index, chunk in enumerate(chunks):
+        location = f"ToS text chunk map pack chunks[{index}]"
+        if not isinstance(chunk, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "chunk_id",
+            "node_id",
+            "segment_id",
+            "source_anchor",
+            "source_ref",
+            "route_ref",
+            "capsule_ref",
+            "interpretation_layers",
+            "witness_count",
+            "witnesses",
+        ):
+            if key not in chunk:
+                fail(f"{location} is missing required key '{key}'")
+        segment_id = chunk["segment_id"]
+        if not isinstance(segment_id, str) or not segment_id:
+            fail(f"{location}.segment_id must be a non-empty string")
+        if segment_id in seen_segment_ids:
+            fail(f"{location}.segment_id '{segment_id}' is duplicated")
+        seen_segment_ids.add(segment_id)
+        expected_chunk = expected_chunks_by_segment.get(segment_id)
+        if expected_chunk is None:
+            fail(f"{location}.segment_id '{segment_id}' is not present in the bounded ToS authority surface")
+
+        witnesses = chunk["witnesses"]
+        if not isinstance(witnesses, list) or not witnesses:
+            fail(f"{location}.witnesses must be a non-empty list")
+        witness_count = chunk["witness_count"]
+        if not isinstance(witness_count, int) or witness_count != len(witnesses):
+            fail(f"{location}.witness_count must equal the number of witnesses")
+        for witness_index, witness in enumerate(witnesses):
+            witness_location = f"{location}.witnesses[{witness_index}]"
+            if not isinstance(witness, dict):
+                fail(f"{witness_location} must be an object")
+            for key in ("language", "role", "text"):
+                if key not in witness:
+                    fail(f"{witness_location} is missing required key '{key}'")
+                if not isinstance(witness[key], str) or not witness[key]:
+                    fail(f"{witness_location}.{key} must be a non-empty string")
+
+        translation_tension = chunk.get("translation_tension")
+        if translation_tension is not None:
+            if not isinstance(translation_tension, dict):
+                fail(f"{location}.translation_tension must be an object when present")
+            if translation_tension.get("segment_id") != segment_id:
+                fail(f"{location}.translation_tension.segment_id must match the chunk segment_id")
+            if not isinstance(translation_tension.get("note"), str) or not translation_tension["note"]:
+                fail(f"{location}.translation_tension.note must be a non-empty string")
+
+        if chunk != expected_chunk:
+            fail(f"{location} must match the committed source-linked chunk payload for segment '{segment_id}'")
+
+    if seen_segment_ids != set(expected_chunks_by_segment):
+        fail("ToS text chunk map pack must cover every unique donor segment_id exactly once")
+
+
+def validate_tos_text_chunk_map_example(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(TOS_TEXT_CHUNK_MAP_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS text chunk map example must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_repo",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "node_id",
+        "node_type",
+        "source_anchor",
+        "authority_surface_ref",
+        "route_ref",
+        "capsule_ref",
+        "interpretation_layers",
+        "chunk_count",
+        "chunks",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS text chunk map example is missing required key '{key}'")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_repo",
+        "source_manifest_ref",
+        "surface_id",
+        "surface_name",
+        "node_id",
+        "node_type",
+        "source_anchor",
+        "authority_surface_ref",
+        "route_ref",
+        "capsule_ref",
+        "interpretation_layers",
+        "bounded_output_contract",
+    ):
+        if payload[key] != expected_payload[key]:
+            fail(f"ToS text chunk map example {key} must match the current bounded pilot payload")
+
+    source_inputs = payload["source_inputs"]
+    if source_inputs != expected_payload["source_inputs"]:
+        fail("ToS text chunk map example source_inputs must match the current bounded donor set")
+    surface_bindings = payload["surface_bindings"]
+    if surface_bindings != expected_payload["surface_bindings"]:
+        fail("ToS text chunk map example surface_bindings must match the current bounded chunk-map binding")
+
+    chunks = payload["chunks"]
+    if not isinstance(chunks, list) or len(chunks) != 1:
+        fail("ToS text chunk map example must contain exactly one chunk")
+    if payload["chunk_count"] != 1:
+        fail("ToS text chunk map example chunk_count must equal 1")
+
+    expected_chunks = expected_payload["chunks"]
+    if not isinstance(expected_chunks, list):
+        fail("expected ToS text chunk map payload must declare chunks")
+    expected_chunk = next(
+        (
+            chunk
+            for chunk in expected_chunks
+            if isinstance(chunk, dict) and chunk.get("segment_id") == "prologue-overflow"
+        ),
+        None,
+    )
+    if expected_chunk is None:
+        fail("expected ToS text chunk map payload must keep the prologue-overflow segment")
+    if chunks[0] != expected_chunk:
+        fail("ToS text chunk map example must mirror the bounded prologue-overflow chunk with translation tension")
 
 
 def validate_reasoning_artifact_descriptor(
@@ -2374,6 +2835,8 @@ def main() -> int:
         validate_reasoning_handoff_schema_surface()
         validate_technique_lift_manifest_schema_surface()
         validate_technique_lift_pack_schema_surface()
+        validate_tos_text_chunk_map_manifest_schema_surface()
+        validate_tos_text_chunk_map_schema_surface()
         validate_reasoning_handoff_pack_manifest_schema_surface()
         validate_reasoning_handoff_pack_schema_surface()
         validate_federation_kag_export_schema_surface()
@@ -2386,11 +2849,15 @@ def main() -> int:
             label="registry manifest",
         )
         validate_technique_lift_manifest(registry_manifest_surfaces)
+        validate_tos_text_chunk_map_manifest(registry_manifest_surfaces)
         validate_reasoning_handoff_manifest()
         validate_federation_spine_manifest(registry_manifest_surfaces)
 
         expected_registry_payload = build_registry_payload()
         expected_technique_lift_pack_payload = build_technique_lift_pack_payload(
+            expected_registry_payload
+        )
+        expected_tos_text_chunk_map_payload = build_tos_text_chunk_map_payload(
             expected_registry_payload
         )
         expected_reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
@@ -2417,6 +2884,16 @@ def main() -> int:
             TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
             encode_json(expected_technique_lift_pack_payload, pretty=False),
             label="generated compact technique lift pack",
+        )
+        validate_generated_text(
+            TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
+            encode_json(expected_tos_text_chunk_map_payload, pretty=True),
+            label="generated ToS text chunk map",
+        )
+        validate_generated_text(
+            TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+            encode_json(expected_tos_text_chunk_map_payload, pretty=False),
+            label="generated compact ToS text chunk map",
         )
         validate_generated_text(
             REASONING_HANDOFF_OUTPUT_PATH,
@@ -2448,6 +2925,11 @@ def main() -> int:
             read_json(TECHNIQUE_LIFT_MIN_OUTPUT_PATH),
             generated_surfaces_by_id,
         )
+        validate_tos_text_chunk_map_pack(
+            read_json(TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+            expected_tos_text_chunk_map_payload,
+        )
         validate_reasoning_handoff_pack(
             read_json(REASONING_HANDOFF_MIN_OUTPUT_PATH),
         )
@@ -2458,6 +2940,7 @@ def main() -> int:
         validate_bridge_example(generated_surfaces_by_id)
         validate_bridge_envelope_example()
         validate_counterpart_example(generated_surfaces_by_id)
+        validate_tos_text_chunk_map_example(expected_tos_text_chunk_map_payload)
         validate_reasoning_handoff_example()
         validate_federation_kag_export_example()
     except ValidationError as exc:
@@ -2471,6 +2954,8 @@ def main() -> int:
     print("[ok] validated reasoning handoff guardrail schema")
     print("[ok] validated technique lift manifest schema")
     print("[ok] validated technique lift pack schema")
+    print("[ok] validated ToS text chunk map manifest schema")
+    print("[ok] validated ToS text chunk map schema")
     print("[ok] validated reasoning handoff pack manifest schema")
     print("[ok] validated reasoning handoff pack schema")
     print("[ok] validated federation KAG export schema")
@@ -2478,18 +2963,22 @@ def main() -> int:
     print("[ok] validated federation spine schema")
     print("[ok] validated manifests/kag_registry.json")
     print("[ok] validated manifests/technique_lift_pack.json")
+    print("[ok] validated manifests/tos_text_chunk_map.json")
     print("[ok] validated manifests/reasoning_handoff_pack.json")
     print("[ok] validated manifests/federation_spine.json")
     print("[ok] validated generated registry outputs are up to date")
     print("[ok] validated generated technique lift pack outputs are up to date")
+    print("[ok] validated generated ToS text chunk map outputs are up to date")
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
     print("[ok] validated generated technique lift pack structure")
+    print("[ok] validated generated ToS text chunk map structure")
     print("[ok] validated generated reasoning handoff pack structure")
     print("[ok] validated generated federation spine structure")
     print("[ok] validated bridge retrieval example")
     print("[ok] validated bridge envelope example")
     print("[ok] validated counterpart edge example")
+    print("[ok] validated ToS text chunk map example")
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated federation KAG export example")
     return 0

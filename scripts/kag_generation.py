@@ -39,6 +39,7 @@ TREE_OF_SOPHIA_ROOT = repo_root_from_env(
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
 TECHNIQUE_LIFT_MANIFEST_PATH = REPO_ROOT / "manifests" / "technique_lift_pack.json"
+TOS_TEXT_CHUNK_MAP_MANIFEST_PATH = REPO_ROOT / "manifests" / "tos_text_chunk_map.json"
 REASONING_HANDOFF_MANIFEST_PATH = REPO_ROOT / "manifests" / "reasoning_handoff_pack.json"
 FEDERATION_SPINE_MANIFEST_PATH = REPO_ROOT / "manifests" / "federation_spine.json"
 REASONING_HANDOFF_GUARDRAIL_PATH = REPO_ROOT / "docs" / "REASONING_HANDOFF.md"
@@ -47,6 +48,10 @@ REGISTRY_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.json"
 REGISTRY_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.min.json"
 TECHNIQUE_LIFT_OUTPUT_PATH = REPO_ROOT / "generated" / "technique_lift_pack.json"
 TECHNIQUE_LIFT_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "technique_lift_pack.min.json"
+TOS_TEXT_CHUNK_MAP_OUTPUT_PATH = REPO_ROOT / "generated" / "tos_text_chunk_map.json"
+TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "tos_text_chunk_map.min.json"
+)
 REASONING_HANDOFF_OUTPUT_PATH = REPO_ROOT / "generated" / "reasoning_handoff_pack.json"
 REASONING_HANDOFF_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "reasoning_handoff_pack.min.json"
@@ -218,6 +223,56 @@ def load_tos_tiny_entry_route_payload() -> dict[str, object]:
         fail(
             f"{route_label}.non_identity_boundary must explicitly keep aoa-kag and aoa-routing downstream"
         )
+
+    return payload
+
+
+def load_tos_source_node_payload() -> dict[str, object]:
+    source_node_path = TREE_OF_SOPHIA_ROOT / TOS_TINY_ENTRY_AUTHORITY_PATH
+    payload = read_json(source_node_path)
+    if not isinstance(payload, dict):
+        fail("Tree-of-Sophia source node authority surface must be a JSON object")
+
+    source_label = repo_ref(TOS_REPO, TOS_TINY_ENTRY_AUTHORITY_PATH)
+    route_label = repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)
+    route_payload = load_tos_tiny_entry_route_payload()
+    expected_node_id = require_string(
+        route_payload.get("node_id"),
+        label=f"{route_label}.node_id",
+    )
+
+    node_id = require_string(payload.get("node_id"), label=f"{source_label}.node_id")
+    if node_id != expected_node_id:
+        fail(f"{source_label}.node_id must stay aligned with {route_label}.node_id")
+
+    node_type = require_string(
+        payload.get("node_type"),
+        label=f"{source_label}.node_type",
+    )
+    if node_type != "source":
+        fail(f"{source_label}.node_type must stay 'source' in the current KAG wave")
+
+    require_string(
+        payload.get("source_anchor"),
+        label=f"{source_label}.source_anchor",
+    )
+
+    interpretation_layers = payload.get("interpretation_layers")
+    if not isinstance(interpretation_layers, list) or not interpretation_layers:
+        fail(f"{source_label}.interpretation_layers must be a non-empty list")
+    for index, interpretation_layer in enumerate(interpretation_layers):
+        if not isinstance(interpretation_layer, str) or not interpretation_layer:
+            fail(
+                f"{source_label}.interpretation_layers[{index}] must be a non-empty string"
+            )
+
+    language_witnesses = payload.get("language_witnesses")
+    if not isinstance(language_witnesses, list) or not language_witnesses:
+        fail(f"{source_label}.language_witnesses must be a non-empty list")
+
+    translation_tensions = payload.get("translation_tensions", [])
+    if translation_tensions is not None and not isinstance(translation_tensions, list):
+        fail(f"{source_label}.translation_tensions must be a list when present")
 
     return payload
 
@@ -484,6 +539,305 @@ def build_technique_lift_pack_payload(
         "section_scope": section_scope,
         "technique_count": len(techniques),
         "techniques": techniques,
+    }
+
+
+def build_tos_text_chunk_map_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(TOS_TEXT_CHUNK_MAP_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("ToS text chunk map manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    surface_bindings = manifest.get("surface_bindings")
+    if manifest.get("source_repo") != TOS_REPO:
+        fail("ToS text chunk map manifest source_repo must equal 'Tree-of-Sophia'")
+    if manifest.get("source_root_env") != "TREE_OF_SOPHIA_ROOT":
+        fail(
+            "ToS text chunk map manifest source_root_env must equal 'TREE_OF_SOPHIA_ROOT'"
+        )
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS text chunk map manifest must declare source_inputs")
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS text chunk map manifest must declare surface_bindings")
+
+    registry_surfaces = registry_payload.get("surfaces")
+    if not isinstance(registry_surfaces, list):
+        fail("registry manifest must declare surfaces")
+
+    registry_by_id = {
+        surface["id"]: surface
+        for surface in registry_surfaces
+        if isinstance(surface, dict) and isinstance(surface.get("id"), str)
+    }
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail("ToS text chunk map manifest source_inputs entries must be objects")
+        name = source_input.get("name")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, path, role)):
+            fail("ToS text chunk map manifest source_inputs must keep name, path, and role")
+        if name in inputs_by_name:
+            fail(f"duplicate ToS text chunk map source input '{name}'")
+
+        donor_path = TREE_OF_SOPHIA_ROOT / path
+        if not donor_path.exists():
+            fail(f"ToS text chunk map donor input does not exist: {repo_ref(TOS_REPO, path)}")
+
+        normalized_input = {"path": path, "role": role}
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "role": role,
+                "ref": repo_ref(TOS_REPO, path),
+            }
+        )
+
+    source_node_input = inputs_by_name.get("tos_source_node")
+    if source_node_input is None:
+        fail("ToS text chunk map manifest must include tos_source_node")
+    if source_node_input["path"] != TOS_TINY_ENTRY_AUTHORITY_PATH:
+        fail(
+            "ToS text chunk map manifest tos_source_node must point to the current source node authority surface"
+        )
+
+    route_doc_input = inputs_by_name.get("tos_tiny_entry_route_doc")
+    if route_doc_input is None:
+        fail("ToS text chunk map manifest must include tos_tiny_entry_route_doc")
+    if route_doc_input["path"] != TOS_TINY_ENTRY_DOCTRINE_PATH:
+        fail(
+            "ToS text chunk map manifest tos_tiny_entry_route_doc must point to the current tiny-entry doctrine"
+        )
+
+    capsule_input = inputs_by_name.get("tos_zarathustra_capsule")
+    if capsule_input is None:
+        fail("ToS text chunk map manifest must include tos_zarathustra_capsule")
+    if capsule_input["path"] != TOS_TINY_ENTRY_CAPSULE_PATH:
+        fail(
+            "ToS text chunk map manifest tos_zarathustra_capsule must point to the current Zarathustra capsule"
+        )
+
+    seen_surface_ids: set[str] = set()
+    binding_surface: dict[str, object] | None = None
+    for binding in surface_bindings:
+        if not isinstance(binding, dict):
+            fail("ToS text chunk map manifest surface_bindings entries must be objects")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(
+                "ToS text chunk map manifest surface_bindings must keep id, name, kind, slot, and source input"
+            )
+        if surface_id in seen_surface_ids:
+            fail(f"duplicate ToS text chunk map surface binding '{surface_id}'")
+        seen_surface_ids.add(surface_id)
+        if source_input not in inputs_by_name:
+            fail(
+                f"ToS text chunk map binding '{surface_id}' references unknown source input '{source_input}'"
+            )
+
+        surface = registry_by_id.get(surface_id)
+        if surface is None:
+            fail(
+                f"ToS text chunk map binding '{surface_id}' does not exist in the registry manifest"
+            )
+        if surface.get("name") != surface_name:
+            fail(f"ToS text chunk map binding '{surface_id}' does not match registry surface name")
+        if surface.get("derived_kind") != derived_kind:
+            fail(
+                f"ToS text chunk map binding '{surface_id}' does not match registry derived_kind"
+            )
+        if surface.get("status") != "experimental":
+            fail(
+                f"ToS text chunk map binding '{surface_id}' must point to an experimental registry surface"
+            )
+        binding_surface = surface
+
+    if binding_surface is None:
+        fail("ToS text chunk map manifest must declare one experimental surface binding")
+
+    route_payload = load_tos_tiny_entry_route_payload()
+    source_node_payload = load_tos_source_node_payload()
+    if require_string(
+        route_payload.get("authority_surface"),
+        label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)}.authority_surface",
+    ) != source_node_input["path"]:
+        fail("ToS text chunk map source node must stay aligned with the tiny-entry authority surface")
+    if require_string(
+        route_payload.get("capsule_surface"),
+        label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)}.capsule_surface",
+    ) != capsule_input["path"]:
+        fail("ToS text chunk map capsule input must stay aligned with the tiny-entry capsule surface")
+
+    source_label = repo_ref(TOS_REPO, TOS_TINY_ENTRY_AUTHORITY_PATH)
+    node_id = require_string(
+        source_node_payload.get("node_id"),
+        label=f"{source_label}.node_id",
+    )
+    node_type = require_string(
+        source_node_payload.get("node_type"),
+        label=f"{source_label}.node_type",
+    )
+    source_anchor = require_string(
+        source_node_payload.get("source_anchor"),
+        label=f"{source_label}.source_anchor",
+    )
+    interpretation_layers = source_node_payload.get("interpretation_layers")
+    if not isinstance(interpretation_layers, list) or not interpretation_layers:
+        fail(f"{source_label}.interpretation_layers must be a non-empty list")
+
+    raw_language_witnesses = source_node_payload.get("language_witnesses")
+    if not isinstance(raw_language_witnesses, list) or not raw_language_witnesses:
+        fail(f"{source_label}.language_witnesses must be a non-empty list")
+
+    segment_order: list[str] = []
+    expected_segment_order: list[str] | None = None
+    seen_languages: set[str] = set()
+    witness_entries_by_segment: dict[str, list[dict[str, str]]] = {}
+
+    for witness_index, witness in enumerate(raw_language_witnesses):
+        witness_label = f"{source_label}.language_witnesses[{witness_index}]"
+        if not isinstance(witness, dict):
+            fail(f"{witness_label} must be an object")
+        language = require_string(
+            witness.get("language"),
+            label=f"{witness_label}.language",
+        )
+        role = require_string(
+            witness.get("role"),
+            label=f"{witness_label}.role",
+        )
+        if language in seen_languages:
+            fail(f"{witness_label}.language '{language}' is duplicated")
+        seen_languages.add(language)
+
+        raw_segments = witness.get("segments")
+        if not isinstance(raw_segments, list) or not raw_segments:
+            fail(f"{witness_label}.segments must be a non-empty list")
+
+        current_segment_order: list[str] = []
+        seen_segment_ids: set[str] = set()
+        for segment_index, segment in enumerate(raw_segments):
+            segment_label = f"{witness_label}.segments[{segment_index}]"
+            if not isinstance(segment, dict):
+                fail(f"{segment_label} must be an object")
+            segment_id = require_string(
+                segment.get("segment_id"),
+                label=f"{segment_label}.segment_id",
+            )
+            text = require_string(
+                segment.get("text"),
+                label=f"{segment_label}.text",
+            )
+            if segment_id in seen_segment_ids:
+                fail(f"{segment_label}.segment_id '{segment_id}' is duplicated")
+            seen_segment_ids.add(segment_id)
+            current_segment_order.append(segment_id)
+            witness_entries_by_segment.setdefault(segment_id, []).append(
+                {
+                    "language": language,
+                    "role": role,
+                    "text": text,
+                }
+            )
+
+        if expected_segment_order is None:
+            expected_segment_order = current_segment_order
+            segment_order = list(current_segment_order)
+        elif current_segment_order != expected_segment_order:
+            fail(
+                f"{witness_label}.segments must keep the same segment_id order as the canonical source witness"
+            )
+
+    translation_tensions_by_segment: dict[str, dict[str, str]] = {}
+    raw_translation_tensions = source_node_payload.get("translation_tensions", [])
+    if raw_translation_tensions is not None and not isinstance(raw_translation_tensions, list):
+        fail(f"{source_label}.translation_tensions must be a list when present")
+    for tension_index, tension in enumerate(raw_translation_tensions or []):
+        tension_label = f"{source_label}.translation_tensions[{tension_index}]"
+        if not isinstance(tension, dict):
+            fail(f"{tension_label} must be an object")
+        segment_id = require_string(
+            tension.get("segment_id"),
+            label=f"{tension_label}.segment_id",
+        )
+        note = require_string(
+            tension.get("note"),
+            label=f"{tension_label}.note",
+        )
+        if segment_id not in witness_entries_by_segment:
+            fail(f"{tension_label}.segment_id '{segment_id}' must match a chunked witness segment")
+        if segment_id in translation_tensions_by_segment:
+            fail(f"{tension_label}.segment_id '{segment_id}' is duplicated")
+        translation_tensions_by_segment[segment_id] = {
+            "segment_id": segment_id,
+            "note": note,
+        }
+
+    chunks: list[dict[str, object]] = []
+    source_ref = repo_ref(TOS_REPO, source_node_input["path"])
+    route_ref = repo_ref(TOS_REPO, route_doc_input["path"])
+    capsule_ref = repo_ref(TOS_REPO, capsule_input["path"])
+    witness_count = len(raw_language_witnesses)
+
+    for segment_id in segment_order:
+        chunk = {
+            "chunk_id": f"{node_id}::{segment_id}",
+            "node_id": node_id,
+            "segment_id": segment_id,
+            "source_anchor": source_anchor,
+            "source_ref": source_ref,
+            "route_ref": route_ref,
+            "capsule_ref": capsule_ref,
+            "interpretation_layers": interpretation_layers,
+            "witness_count": witness_count,
+            "witnesses": witness_entries_by_segment[segment_id],
+        }
+        translation_tension = translation_tensions_by_segment.get(segment_id)
+        if translation_tension is not None:
+            chunk["translation_tension"] = translation_tension
+        chunks.append(chunk)
+
+    return {
+        "pack_version": manifest["manifest_version"],
+        "pack_type": manifest["pack_type"],
+        "source_repo": manifest["source_repo"],
+        "source_manifest_ref": "manifests/tos_text_chunk_map.json",
+        "source_inputs": emitted_source_inputs,
+        "surface_bindings": surface_bindings,
+        "surface_id": binding_surface["id"],
+        "surface_name": binding_surface["name"],
+        "node_id": node_id,
+        "node_type": node_type,
+        "source_anchor": source_anchor,
+        "authority_surface_ref": source_ref,
+        "route_ref": route_ref,
+        "capsule_ref": capsule_ref,
+        "interpretation_layers": interpretation_layers,
+        "chunk_count": len(chunks),
+        "chunks": chunks,
+        "bounded_output_contract": manifest["bounded_output_contract"],
     }
 
 
@@ -1279,6 +1633,7 @@ def build_federation_spine_payload(
 def write_generated_outputs() -> list[Path]:
     registry_payload = build_registry_payload()
     technique_lift_pack_payload = build_technique_lift_pack_payload(registry_payload)
+    tos_text_chunk_map_payload = build_tos_text_chunk_map_payload(registry_payload)
     reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
     federation_spine_payload = build_federation_spine_payload(registry_payload)
 
@@ -1286,6 +1641,12 @@ def write_generated_outputs() -> list[Path]:
     write_json(REGISTRY_MIN_OUTPUT_PATH, registry_payload, pretty=False)
     write_json(TECHNIQUE_LIFT_OUTPUT_PATH, technique_lift_pack_payload, pretty=True)
     write_json(TECHNIQUE_LIFT_MIN_OUTPUT_PATH, technique_lift_pack_payload, pretty=False)
+    write_json(TOS_TEXT_CHUNK_MAP_OUTPUT_PATH, tos_text_chunk_map_payload, pretty=True)
+    write_json(
+        TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+        tos_text_chunk_map_payload,
+        pretty=False,
+    )
     write_json(REASONING_HANDOFF_OUTPUT_PATH, reasoning_handoff_pack_payload, pretty=True)
     write_json(
         REASONING_HANDOFF_MIN_OUTPUT_PATH,
@@ -1304,6 +1665,8 @@ def write_generated_outputs() -> list[Path]:
         REGISTRY_MIN_OUTPUT_PATH,
         TECHNIQUE_LIFT_OUTPUT_PATH,
         TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
+        TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
+        TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
         REASONING_HANDOFF_OUTPUT_PATH,
         REASONING_HANDOFF_MIN_OUTPUT_PATH,
         FEDERATION_SPINE_OUTPUT_PATH,
