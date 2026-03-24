@@ -13,14 +13,16 @@ If you are new to this repository, use this path:
 
 1. Read [CHARTER](CHARTER.md) for the role and boundaries of the KAG layer.
 2. Read [docs/KAG_MODEL](docs/KAG_MODEL.md) for the conceptual model.
-3. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
-4. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
-5. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
-6. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
-7. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
-8. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-9. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-10. Read [ROADMAP](ROADMAP.md) for the current direction.
+3. Read [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md) for the first public federation-facing export contract.
+4. Read [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md) for the first experimental federation spine pilot.
+5. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
+6. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
+7. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
+8. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
+9. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
+10. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+11. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+12. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -89,6 +91,16 @@ It now also includes a multi-source reasoning handoff pack at:
 - `manifests/reasoning_handoff_pack.json`
 - `docs/REASONING_HANDOFF_PACK.md`
 
+It now also includes the first experimental federation spine pilot at:
+- `generated/federation_spine.json`
+- `generated/federation_spine.min.json`
+- `manifests/federation_spine.json`
+- `docs/FEDERATION_SPINE.md`
+
+It now also includes the first federation KAG export contract surface at:
+- `schemas/federation-kag-export.schema.json`
+- `examples/federation_kag_export.example.json`
+
 To validate the current KAG-layer surface locally, run:
 
 ```bash
@@ -111,6 +123,7 @@ set:
 `aoa-kag` is in bootstrap.
 The current baseline now includes the first manifest-driven generated lift seam from `aoa-techniques`.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
+It now also includes the first public federation-facing KAG export contract and one experimental federation spine pilot built from existing `aoa-techniques` generated surfaces.
 The goal remains to define the role, boundaries, and bounded machine-readable KAG-layer surfaces without overbuilding a graph engine too early.
 
 ## Principles

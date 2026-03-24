@@ -14,6 +14,9 @@ from kag_generation import (
     AOA_MEMO_ROOT,
     AOA_PLAYBOOKS_ROOT,
     AOA_TECHNIQUES_ROOT,
+    FEDERATION_SPINE_MANIFEST_PATH,
+    FEDERATION_SPINE_MIN_OUTPUT_PATH,
+    FEDERATION_SPINE_OUTPUT_PATH,
     REGISTRY_MANIFEST_PATH,
     REGISTRY_MIN_OUTPUT_PATH,
     REGISTRY_OUTPUT_PATH,
@@ -23,6 +26,7 @@ from kag_generation import (
     TECHNIQUE_LIFT_MANIFEST_PATH,
     TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
     TECHNIQUE_LIFT_OUTPUT_PATH,
+    build_federation_spine_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
     build_technique_lift_pack_payload,
@@ -65,6 +69,16 @@ REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH = (
 REASONING_HANDOFF_PACK_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-pack.schema.json"
 )
+FEDERATION_KAG_EXPORT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "federation-kag-export.schema.json"
+)
+FEDERATION_KAG_EXPORT_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "federation_kag_export.example.json"
+)
+FEDERATION_SPINE_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "federation-spine-manifest.schema.json"
+)
+FEDERATION_SPINE_SCHEMA_PATH = REPO_ROOT / "schemas" / "federation-spine.schema.json"
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
 ALLOWED_SOURCE_CLASS = {
@@ -214,6 +228,35 @@ EXPECTED_REASONING_HANDOFF_CONTRACT = {
     "verdict_ownership": "forbidden",
 }
 EXPECTED_REASONING_HANDOFF_SCENARIOS = {"AOA-P-0008", "AOA-P-0009"}
+EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
+    ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
+    ("repo_doc_surface_manifest", "aoa-techniques", "generated/repo_doc_surface_manifest.min.json", "entry_surfaces"),
+    ("technique_catalog", "aoa-techniques", "generated/technique_catalog.min.json", "object_spine"),
+}
+EXPECTED_FEDERATION_SPINE_BINDINGS = {
+    (
+        "AOA-K-0009",
+        "aoa-techniques",
+        "existing_generated_surfaces",
+        ("repo_doc_surface_manifest",),
+        "technique_catalog",
+        3,
+        "aoa-techniques/generated/kag_export.min.json",
+    )
+}
+EXPECTED_FEDERATION_SPINE_OUTPUT_PATHS = {
+    "full": "generated/federation_spine.json",
+    "min": "generated/federation_spine.min.json",
+}
+EXPECTED_FEDERATION_SPINE_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+    "full_federation_claim": "forbidden",
+}
+EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques"}
+PLANNED_EXPORT_REF_RE = re.compile(r"^[A-Za-z0-9-]+/generated/kag_export\.min\.json$")
 MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 VISIBLE_ROOTS = (
@@ -323,6 +366,27 @@ def validate_reasoning_handoff_pack_schema_surface() -> None:
     validate_top_level_schema(
         REASONING_HANDOFF_PACK_SCHEMA_PATH,
         "reasoning handoff pack",
+    )
+
+
+def validate_federation_kag_export_schema_surface() -> None:
+    validate_top_level_schema(
+        FEDERATION_KAG_EXPORT_SCHEMA_PATH,
+        "federation KAG export",
+    )
+
+
+def validate_federation_spine_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        FEDERATION_SPINE_MANIFEST_SCHEMA_PATH,
+        "federation spine manifest",
+    )
+
+
+def validate_federation_spine_schema_surface() -> None:
+    validate_top_level_schema(
+        FEDERATION_SPINE_SCHEMA_PATH,
+        "federation spine",
     )
 
 
@@ -480,6 +544,7 @@ def validate_registry_payload(
         "cross-source-node-projection",
         "tos-retrieval-axis-surface",
         "counterpart-edge-view",
+        "federation-readiness-spine",
     }
     seen_names: set[str] = set()
     surfaces_by_id: dict[str, dict[str, object]] = {}
@@ -639,6 +704,26 @@ def validate_special_registry_surfaces(
     }
     if actual_inputs != expected_inputs:
         fail(f"{label} AOA-K-0008 source_inputs must match the current counterpart bridge source contract")
+
+    surface_0009 = surfaces_by_id.get("AOA-K-0009")
+    if surface_0009 is None:
+        fail(f"{label} is missing required surface 'AOA-K-0009'")
+    if surface_0009.get("name") != "federation-readiness-spine":
+        fail(f"{label} AOA-K-0009 must keep name 'federation-readiness-spine'")
+    if surface_0009.get("status") != "experimental":
+        fail(f"{label} AOA-K-0009 must remain experimental")
+    if surface_0009.get("source_class") != "review_surface":
+        fail(f"{label} AOA-K-0009 must keep 'review_surface' as its primary source_class")
+    if surface_0009.get("derived_kind") != "metadata_spine":
+        fail(f"{label} AOA-K-0009 must keep 'metadata_spine' as its derived_kind")
+    if surface_0009.get("provenance_mode") != "derived_with_handles":
+        fail(f"{label} AOA-K-0009 must keep 'derived_with_handles' as its provenance_mode")
+    if surface_0009.get("normalization_scope") != "repo_entry_surfaces":
+        fail(f"{label} AOA-K-0009 must keep 'repo_entry_surfaces' as its normalization_scope")
+    if surface_0009.get("framework_readiness") != "neutral":
+        fail(f"{label} AOA-K-0009 must keep 'neutral' as its framework_readiness")
+    if surface_0009.get("source_repos") != ["aoa-techniques"]:
+        fail(f"{label} AOA-K-0009 must keep source_repos ['aoa-techniques']")
 
 
 def validate_technique_lift_manifest(
@@ -835,6 +920,127 @@ def validate_reasoning_handoff_manifest() -> None:
         fail("reasoning handoff manifest output_paths must match the committed generated output paths")
     if payload["bounded_output_contract"] != EXPECTED_REASONING_HANDOFF_CONTRACT:
         fail("reasoning handoff manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_federation_spine_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(FEDERATION_SPINE_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("federation spine manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "repo_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"federation spine manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("federation spine manifest manifest_version must equal 1")
+    if payload["pack_type"] != "federation_spine":
+        fail("federation spine manifest pack_type must equal 'federation_spine'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("federation spine manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"federation spine manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS:
+        fail("federation spine manifest source_inputs must match the current bounded donor set")
+
+    repo_bindings = payload["repo_bindings"]
+    if not isinstance(repo_bindings, list) or not repo_bindings:
+        fail("federation spine manifest repo_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, tuple[str, ...], str, int, str]] = set()
+    for index, binding in enumerate(repo_bindings):
+        location = f"federation spine manifest repo_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        repo_name = binding.get("repo")
+        pilot_posture = binding.get("pilot_posture")
+        entry_surface_inputs = binding.get("entry_surface_inputs")
+        object_surface_input = binding.get("object_surface_input")
+        example_object_count = binding.get("example_object_count")
+        planned_export_ref = binding.get("planned_export_ref")
+        provenance_note = binding.get("provenance_note")
+        non_identity_boundary = binding.get("non_identity_boundary")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                repo_name,
+                pilot_posture,
+                object_surface_input,
+                planned_export_ref,
+                provenance_note,
+                non_identity_boundary,
+            )
+        ):
+            fail(
+                f"{location} must keep surface_id, repo, pilot_posture, object_surface_input, planned_export_ref, provenance_note, and non_identity_boundary"
+            )
+        if not isinstance(entry_surface_inputs, list) or not entry_surface_inputs:
+            fail(f"{location}.entry_surface_inputs must be a non-empty list")
+        if not isinstance(example_object_count, int) or example_object_count < 1:
+            fail(f"{location}.example_object_count must be a positive integer")
+        if not PLANNED_EXPORT_REF_RE.match(planned_export_ref):
+            fail(f"{location}.planned_export_ref must match '<repo>/generated/kag_export.min.json'")
+        if len(provenance_note) < 20:
+            fail(f"{location}.provenance_note must be a string of length >= 20")
+        if len(non_identity_boundary) < 20:
+            fail(f"{location}.non_identity_boundary must be a string of length >= 20")
+
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must point to an experimental registry surface")
+
+        entry_input_names: list[str] = []
+        for input_name in entry_surface_inputs:
+            if not isinstance(input_name, str) or not input_name:
+                fail(f"{location}.entry_surface_inputs contains an invalid entry")
+            entry_input_names.append(input_name)
+
+        actual_bindings.add(
+            (
+                surface_id,
+                repo_name,
+                pilot_posture,
+                tuple(entry_input_names),
+                object_surface_input,
+                example_object_count,
+                planned_export_ref,
+            )
+        )
+    if actual_bindings != EXPECTED_FEDERATION_SPINE_BINDINGS:
+        fail("federation spine manifest repo_bindings must match the current bounded spine contract")
+
+    if payload["output_paths"] != EXPECTED_FEDERATION_SPINE_OUTPUT_PATHS:
+        fail("federation spine manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
+        fail("federation spine manifest bounded_output_contract must match the current source-first guardrail")
 
 
 def validate_reasoning_artifact_descriptor(
@@ -1187,6 +1393,158 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
         seen_scenarios,
         EXPECTED_REASONING_HANDOFF_SCENARIOS,
         label="reasoning handoff pack scenarios",
+    )
+
+
+def validate_federation_spine_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("federation spine pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "repo_count",
+        "repos",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"federation spine pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("federation spine pack pack_version must equal 1")
+    if payload["pack_type"] != "federation_spine":
+        fail("federation spine pack pack_type must equal 'federation_spine'")
+    if payload["source_manifest_ref"] != "manifests/federation_spine.json":
+        fail("federation spine pack source_manifest_ref must point to manifests/federation_spine.json")
+    if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
+        fail("federation spine pack bounded_output_contract must match the current source-first guardrail")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("federation spine pack source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"federation spine pack source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        role = source_input.get("role")
+        ref = source_input.get("ref")
+        if not all(isinstance(value, str) and value for value in (name, repo, role, ref)):
+            fail(f"{location} must keep name, repo, role, and ref")
+        resolve_known_ref(ref, label=location)
+        relative_ref = ref if repo == "aoa-kag" else ref.split("/", 1)[1]
+        actual_source_inputs.add((name, repo, relative_ref, role))
+    if actual_source_inputs != EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS:
+        fail("federation spine pack source_inputs must match the manifest-driven donor set")
+
+    repos = payload["repos"]
+    if not isinstance(repos, list) or not repos:
+        fail("federation spine pack repos must be a non-empty list")
+    repo_count = payload["repo_count"]
+    if not isinstance(repo_count, int) or repo_count != len(repos):
+        fail("federation spine pack repo_count must equal the number of repos")
+
+    technique_catalog_payload = read_json(AOA_TECHNIQUES_ROOT / "generated" / "technique_catalog.min.json")
+    if not isinstance(technique_catalog_payload, dict):
+        fail("federation spine validation requires technique_catalog.min.json to be a JSON object")
+    catalog_techniques = technique_catalog_payload.get("techniques")
+    if not isinstance(catalog_techniques, list) or not catalog_techniques:
+        fail("federation spine validation requires techniques in technique_catalog.min.json")
+    expected_example_object_ids = [
+        technique["id"]
+        for technique in catalog_techniques
+        if isinstance(technique, dict)
+        and isinstance(technique.get("id"), str)
+        and technique.get("export_ready") is True
+    ][:3]
+    if len(expected_example_object_ids) != 3:
+        fail("federation spine validation requires at least three export-ready techniques")
+
+    seen_repos: set[str] = set()
+    for index, repo_entry in enumerate(repos):
+        location = f"federation spine pack repos[{index}]"
+        if not isinstance(repo_entry, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "repo",
+            "pilot_posture",
+            "current_entry_surface_refs",
+            "current_object_surface_ref",
+            "example_object_ids",
+            "planned_export_ref",
+            "provenance_note",
+            "non_identity_boundary",
+        ):
+            if key not in repo_entry:
+                fail(f"{location} is missing required key '{key}'")
+
+        repo_name = repo_entry["repo"]
+        pilot_posture = repo_entry["pilot_posture"]
+        current_entry_surface_refs = repo_entry["current_entry_surface_refs"]
+        current_object_surface_ref = repo_entry["current_object_surface_ref"]
+        example_object_ids = repo_entry["example_object_ids"]
+        planned_export_ref = repo_entry["planned_export_ref"]
+        provenance_note = repo_entry["provenance_note"]
+        non_identity_boundary = repo_entry["non_identity_boundary"]
+
+        if not isinstance(repo_name, str) or not repo_name:
+            fail(f"{location}.repo must be a non-empty string")
+        if repo_name in seen_repos:
+            fail(f"{location}.repo '{repo_name}' is duplicated")
+        seen_repos.add(repo_name)
+        if not isinstance(pilot_posture, str) or not pilot_posture:
+            fail(f"{location}.pilot_posture must be a non-empty string")
+        if not isinstance(current_object_surface_ref, str) or not current_object_surface_ref:
+            fail(f"{location}.current_object_surface_ref must be a non-empty string")
+        if not isinstance(provenance_note, str) or len(provenance_note) < 20:
+            fail(f"{location}.provenance_note must be a string of length >= 20")
+        if not isinstance(non_identity_boundary, str) or len(non_identity_boundary) < 20:
+            fail(f"{location}.non_identity_boundary must be a string of length >= 20")
+        if not isinstance(planned_export_ref, str) or not PLANNED_EXPORT_REF_RE.match(planned_export_ref):
+            fail(f"{location}.planned_export_ref must match '<repo>/generated/kag_export.min.json'")
+        if not planned_export_ref.startswith(f"{repo_name}/"):
+            fail(f"{location}.planned_export_ref must point to the same repo as the repo entry")
+
+        refs = validate_unique_string_list(
+            current_entry_surface_refs,
+            label=f"{location}.current_entry_surface_refs",
+        )
+        for ref in refs:
+            resolve_known_ref(ref, label=f"{location}.current_entry_surface_refs")
+            if not ref.startswith(f"{repo_name}/"):
+                fail(f"{location}.current_entry_surface_refs must point to repo '{repo_name}'")
+
+        resolve_known_ref(current_object_surface_ref, label=f"{location}.current_object_surface_ref")
+        if not current_object_surface_ref.startswith(f"{repo_name}/"):
+            fail(f"{location}.current_object_surface_ref must point to repo '{repo_name}'")
+
+        object_ids = validate_unique_string_list(
+            example_object_ids,
+            label=f"{location}.example_object_ids",
+        )
+        if object_ids != expected_example_object_ids:
+            fail(f"{location}.example_object_ids must match the first three export-ready techniques in catalog order")
+
+        if repo_name not in EXPECTED_FEDERATION_SPINE_REPOS:
+            fail(f"{location}.repo '{repo_name}' is not part of the current bounded pilot set")
+        if pilot_posture != "existing_generated_surfaces":
+            fail(f"{location}.pilot_posture must equal 'existing_generated_surfaces'")
+
+        surface_0009 = surfaces_by_id.get("AOA-K-0009")
+        if surface_0009 is None or surface_0009.get("status") != "experimental":
+            fail("federation spine pack requires AOA-K-0009 to remain experimental in the generated registry")
+
+    validate_exact_set(
+        seen_repos,
+        EXPECTED_FEDERATION_SPINE_REPOS,
+        label="federation spine pack repos",
     )
 
 
@@ -1662,6 +2020,108 @@ def validate_reasoning_handoff_example() -> None:
         fail("reasoning handoff example boundary_guardrails must match the bounded guardrail contract")
 
 
+def validate_federation_kag_export_example() -> None:
+    payload = read_json(FEDERATION_KAG_EXPORT_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("federation KAG export example must be a JSON object")
+
+    for key in (
+        "owner_repo",
+        "kind",
+        "object_id",
+        "primary_question",
+        "summary_50",
+        "summary_200",
+        "source_inputs",
+        "entry_surface",
+        "section_handles",
+        "direct_relations",
+        "provenance_note",
+        "non_identity_boundary",
+    ):
+        if key not in payload:
+            fail(f"federation KAG export example is missing required key '{key}'")
+
+    owner_repo = payload["owner_repo"]
+    kind = payload["kind"]
+    object_id = payload["object_id"]
+    primary_question = payload["primary_question"]
+    summary_50 = payload["summary_50"]
+    summary_200 = payload["summary_200"]
+    provenance_note = payload["provenance_note"]
+    non_identity_boundary = payload["non_identity_boundary"]
+
+    if owner_repo != "aoa-techniques":
+        fail("federation KAG export example owner_repo must equal 'aoa-techniques'")
+    if kind != "technique":
+        fail("federation KAG export example kind must equal 'technique'")
+    if not isinstance(object_id, str) or not re.match(r"^AOA-T-[0-9]{4}$", object_id):
+        fail("federation KAG export example object_id must be an AOA technique id")
+    for label, value, min_length in (
+        ("primary_question", primary_question, 10),
+        ("summary_50", summary_50, 10),
+        ("summary_200", summary_200, 20),
+        ("provenance_note", provenance_note, 10),
+        ("non_identity_boundary", non_identity_boundary, 10),
+    ):
+        if not isinstance(value, str) or len(value) < min_length:
+            fail(f"federation KAG export example {label} must be a string of length >= {min_length}")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("federation KAG export example source_inputs must be a non-empty list")
+    primary_count = 0
+    for index, source_input in enumerate(source_inputs):
+        location = f"federation KAG export example source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        repo = source_input.get("repo")
+        source_class = source_input.get("source_class")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (repo, source_class, role)):
+            fail(f"{location} must keep repo, source_class, and role")
+        if role == "primary":
+            primary_count += 1
+    if primary_count != 1:
+        fail("federation KAG export example source_inputs must contain exactly one primary input")
+
+    entry_surface = payload["entry_surface"]
+    if not isinstance(entry_surface, dict):
+        fail("federation KAG export example entry_surface must be an object")
+    for key in ("repo", "path", "match_key", "match_value"):
+        if key not in entry_surface:
+            fail(f"federation KAG export example entry_surface is missing '{key}'")
+    entry_repo = entry_surface["repo"]
+    entry_path = entry_surface["path"]
+    match_key = entry_surface["match_key"]
+    match_value = entry_surface["match_value"]
+    if not all(isinstance(value, str) and value for value in (entry_repo, entry_path, match_key, match_value)):
+        fail("federation KAG export example entry_surface fields must be non-empty strings")
+    resolve_known_ref(repo_ref(entry_repo, entry_path), label="federation KAG export example entry_surface")
+    if match_value != object_id:
+        fail("federation KAG export example entry_surface.match_value must equal object_id")
+
+    section_handles = validate_unique_string_list(
+        payload["section_handles"],
+        label="federation KAG export example section_handles",
+    )
+    if not section_handles:
+        fail("federation KAG export example section_handles must not be empty")
+
+    direct_relations = payload["direct_relations"]
+    if not isinstance(direct_relations, list):
+        fail("federation KAG export example direct_relations must be a list")
+    for index, relation in enumerate(direct_relations):
+        location = f"federation KAG export example direct_relations[{index}]"
+        if not isinstance(relation, dict):
+            fail(f"{location} must be an object")
+        relation_type = relation.get("relation_type")
+        target_ref = relation.get("target_ref")
+        if not all(isinstance(value, str) and value for value in (relation_type, target_ref)):
+            fail(f"{location} must keep relation_type and target_ref")
+        resolve_known_ref(target_ref, label=location)
+
+
 def main() -> int:
     try:
         validate_schema_surface()
@@ -1672,6 +2132,9 @@ def main() -> int:
         validate_technique_lift_pack_schema_surface()
         validate_reasoning_handoff_pack_manifest_schema_surface()
         validate_reasoning_handoff_pack_schema_surface()
+        validate_federation_kag_export_schema_surface()
+        validate_federation_spine_manifest_schema_surface()
+        validate_federation_spine_schema_surface()
 
         registry_manifest_payload = read_json(REGISTRY_MANIFEST_PATH)
         registry_manifest_surfaces = validate_registry_payload(
@@ -1680,12 +2143,16 @@ def main() -> int:
         )
         validate_technique_lift_manifest(registry_manifest_surfaces)
         validate_reasoning_handoff_manifest()
+        validate_federation_spine_manifest(registry_manifest_surfaces)
 
         expected_registry_payload = build_registry_payload()
         expected_technique_lift_pack_payload = build_technique_lift_pack_payload(
             expected_registry_payload
         )
         expected_reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
+        expected_federation_spine_payload = build_federation_spine_payload(
+            expected_registry_payload
+        )
 
         validate_generated_text(
             REGISTRY_OUTPUT_PATH,
@@ -1717,6 +2184,16 @@ def main() -> int:
             encode_json(expected_reasoning_handoff_pack_payload, pretty=False),
             label="generated compact reasoning handoff pack",
         )
+        validate_generated_text(
+            FEDERATION_SPINE_OUTPUT_PATH,
+            encode_json(expected_federation_spine_payload, pretty=True),
+            label="generated federation spine",
+        )
+        validate_generated_text(
+            FEDERATION_SPINE_MIN_OUTPUT_PATH,
+            encode_json(expected_federation_spine_payload, pretty=False),
+            label="generated compact federation spine",
+        )
 
         generated_registry_payload = read_json(REGISTRY_MIN_OUTPUT_PATH)
         generated_surfaces_by_id = validate_registry_payload(
@@ -1730,9 +2207,14 @@ def main() -> int:
         validate_reasoning_handoff_pack(
             read_json(REASONING_HANDOFF_MIN_OUTPUT_PATH),
         )
+        validate_federation_spine_pack(
+            read_json(FEDERATION_SPINE_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+        )
         validate_bridge_example(generated_surfaces_by_id)
         validate_counterpart_example(generated_surfaces_by_id)
         validate_reasoning_handoff_example()
+        validate_federation_kag_export_example()
     except ValidationError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 1
@@ -1745,17 +2227,24 @@ def main() -> int:
     print("[ok] validated technique lift pack schema")
     print("[ok] validated reasoning handoff pack manifest schema")
     print("[ok] validated reasoning handoff pack schema")
+    print("[ok] validated federation KAG export schema")
+    print("[ok] validated federation spine manifest schema")
+    print("[ok] validated federation spine schema")
     print("[ok] validated manifests/kag_registry.json")
     print("[ok] validated manifests/technique_lift_pack.json")
     print("[ok] validated manifests/reasoning_handoff_pack.json")
+    print("[ok] validated manifests/federation_spine.json")
     print("[ok] validated generated registry outputs are up to date")
     print("[ok] validated generated technique lift pack outputs are up to date")
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
+    print("[ok] validated generated federation spine outputs are up to date")
     print("[ok] validated generated technique lift pack structure")
     print("[ok] validated generated reasoning handoff pack structure")
+    print("[ok] validated generated federation spine structure")
     print("[ok] validated bridge retrieval example")
     print("[ok] validated counterpart edge example")
     print("[ok] validated reasoning handoff guardrail example")
+    print("[ok] validated federation KAG export example")
     return 0
 
 

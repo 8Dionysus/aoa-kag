@@ -37,6 +37,7 @@ AOA_AGENTS_ROOT = repo_root_from_env("AOA_AGENTS_ROOT", REPO_ROOT.parent / "aoa-
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
 TECHNIQUE_LIFT_MANIFEST_PATH = REPO_ROOT / "manifests" / "technique_lift_pack.json"
 REASONING_HANDOFF_MANIFEST_PATH = REPO_ROOT / "manifests" / "reasoning_handoff_pack.json"
+FEDERATION_SPINE_MANIFEST_PATH = REPO_ROOT / "manifests" / "federation_spine.json"
 REASONING_HANDOFF_GUARDRAIL_PATH = REPO_ROOT / "docs" / "REASONING_HANDOFF.md"
 
 REGISTRY_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.json"
@@ -47,6 +48,8 @@ REASONING_HANDOFF_OUTPUT_PATH = REPO_ROOT / "generated" / "reasoning_handoff_pac
 REASONING_HANDOFF_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "reasoning_handoff_pack.min.json"
 )
+FEDERATION_SPINE_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.json"
+FEDERATION_SPINE_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.min.json"
 
 QUERY_MODE_HEADING = re.compile(r"^###\s+`([^`]+)`\s*$")
 KNOWN_REPO_ROOTS = {
@@ -970,10 +973,198 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
     }
 
 
+def build_federation_spine_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(FEDERATION_SPINE_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("federation spine manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    repo_bindings = manifest.get("repo_bindings")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("federation spine manifest must declare source_inputs")
+    if not isinstance(repo_bindings, list) or not repo_bindings:
+        fail("federation spine manifest must declare repo_bindings")
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail("federation spine manifest source_inputs entries must be objects")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail("federation spine manifest source_inputs must keep name, repo, path, and role")
+        if name in inputs_by_name:
+            fail(f"duplicate federation spine source input '{name}'")
+
+        normalized_input = {
+            "name": name,
+            "repo": repo,
+            "path": path,
+            "role": role,
+        }
+        if not manifest_input_path(normalized_input).exists():
+            fail(f"federation spine donor input does not exist: {repo_ref(repo, path)}")
+
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "repo": repo,
+                "role": role,
+                "ref": manifest_input_ref(normalized_input),
+            }
+        )
+
+    registry_surface_input = inputs_by_name.get("kag_registry_manifest")
+    if registry_surface_input is None:
+        fail("federation spine manifest must include kag_registry_manifest")
+    if manifest_input_ref(registry_surface_input) != "manifests/kag_registry.json":
+        fail("federation spine manifest kag_registry_manifest must point to manifests/kag_registry.json")
+
+    repo_doc_surface_input = inputs_by_name.get("repo_doc_surface_manifest")
+    if repo_doc_surface_input is None:
+        fail("federation spine manifest must include repo_doc_surface_manifest")
+    repo_doc_surface_payload = read_json(manifest_input_path(repo_doc_surface_input))
+    if not isinstance(repo_doc_surface_payload, dict):
+        fail("repo doc surface manifest donor must be a JSON object")
+    repo_doc_entries = repo_doc_surface_payload.get("docs")
+    if not isinstance(repo_doc_entries, list) or not repo_doc_entries:
+        fail("repo doc surface manifest donor must declare docs")
+
+    technique_catalog_input = inputs_by_name.get("technique_catalog")
+    if technique_catalog_input is None:
+        fail("federation spine manifest must include technique_catalog")
+    technique_catalog_payload = read_json(manifest_input_path(technique_catalog_input))
+    if not isinstance(technique_catalog_payload, dict):
+        fail("technique catalog donor must be a JSON object")
+    catalog_techniques = technique_catalog_payload.get("techniques")
+    if not isinstance(catalog_techniques, list) or not catalog_techniques:
+        fail("technique catalog donor must declare techniques")
+
+    export_ready_ids: list[str] = []
+    for technique in catalog_techniques:
+        if not isinstance(technique, dict):
+            fail("technique catalog donor entries must be objects")
+        technique_id = technique.get("id")
+        export_ready = technique.get("export_ready")
+        if isinstance(technique_id, str) and isinstance(export_ready, bool) and export_ready:
+            export_ready_ids.append(technique_id)
+
+    registry_surfaces = registry_payload.get("surfaces")
+    if not isinstance(registry_surfaces, list):
+        fail("registry manifest must declare surfaces")
+    registry_by_id = {
+        surface["id"]: surface
+        for surface in registry_surfaces
+        if isinstance(surface, dict) and isinstance(surface.get("id"), str)
+    }
+
+    repos: list[dict[str, object]] = []
+    seen_repos: set[str] = set()
+
+    for binding in repo_bindings:
+        if not isinstance(binding, dict):
+            fail("federation spine manifest repo_bindings entries must be objects")
+
+        surface_id = binding.get("surface_id")
+        repo_name = binding.get("repo")
+        pilot_posture = binding.get("pilot_posture")
+        entry_surface_inputs = binding.get("entry_surface_inputs")
+        object_surface_input_name = binding.get("object_surface_input")
+        example_object_count = binding.get("example_object_count")
+        planned_export_ref = binding.get("planned_export_ref")
+        provenance_note = binding.get("provenance_note")
+        non_identity_boundary = binding.get("non_identity_boundary")
+
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                repo_name,
+                pilot_posture,
+                object_surface_input_name,
+                planned_export_ref,
+                provenance_note,
+                non_identity_boundary,
+            )
+        ):
+            fail("federation spine repo binding must keep required string fields")
+        if not isinstance(entry_surface_inputs, list) or not entry_surface_inputs:
+            fail("federation spine repo binding entry_surface_inputs must be a non-empty list")
+        if not isinstance(example_object_count, int) or example_object_count < 1:
+            fail("federation spine repo binding example_object_count must be a positive integer")
+        if repo_name in seen_repos:
+            fail(f"duplicate federation spine repo binding '{repo_name}'")
+        seen_repos.add(repo_name)
+
+        surface = registry_by_id.get(surface_id)
+        if surface is None:
+            fail(f"federation spine binding '{surface_id}' does not exist in the registry manifest")
+        if repo_name != "aoa-techniques":
+            fail("federation spine v1 currently supports only the aoa-techniques pilot repo")
+
+        current_entry_surface_refs: list[str] = []
+        for input_name in entry_surface_inputs:
+            if not isinstance(input_name, str) or not input_name:
+                fail("federation spine repo binding entry_surface_inputs must keep non-empty names")
+            entry_input = inputs_by_name.get(input_name)
+            if entry_input is None:
+                fail(f"federation spine repo binding references unknown entry surface input '{input_name}'")
+            if entry_input["repo"] != repo_name:
+                fail(f"federation spine entry surface input '{input_name}' must point to repo '{repo_name}'")
+            current_entry_surface_refs.append(manifest_input_ref(entry_input))
+
+        object_surface_input = inputs_by_name.get(object_surface_input_name)
+        if object_surface_input is None:
+            fail(
+                f"federation spine repo binding references unknown object surface input '{object_surface_input_name}'"
+            )
+        if object_surface_input["repo"] != repo_name:
+            fail(
+                f"federation spine object surface input '{object_surface_input_name}' must point to repo '{repo_name}'"
+            )
+
+        if len(export_ready_ids) < example_object_count:
+            fail("federation spine donor surfaces do not expose enough export-ready objects for the requested sample")
+
+        repos.append(
+            {
+                "repo": repo_name,
+                "pilot_posture": pilot_posture,
+                "current_entry_surface_refs": current_entry_surface_refs,
+                "current_object_surface_ref": manifest_input_ref(object_surface_input),
+                "example_object_ids": export_ready_ids[:example_object_count],
+                "planned_export_ref": planned_export_ref,
+                "provenance_note": provenance_note,
+                "non_identity_boundary": non_identity_boundary,
+            }
+        )
+
+    return {
+        "pack_version": manifest["manifest_version"],
+        "pack_type": manifest["pack_type"],
+        "source_manifest_ref": "manifests/federation_spine.json",
+        "source_inputs": emitted_source_inputs,
+        "repo_count": len(repos),
+        "repos": repos,
+        "bounded_output_contract": manifest["bounded_output_contract"],
+    }
+
+
 def write_generated_outputs() -> list[Path]:
     registry_payload = build_registry_payload()
     technique_lift_pack_payload = build_technique_lift_pack_payload(registry_payload)
     reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
+    federation_spine_payload = build_federation_spine_payload(registry_payload)
 
     write_json(REGISTRY_OUTPUT_PATH, registry_payload, pretty=True)
     write_json(REGISTRY_MIN_OUTPUT_PATH, registry_payload, pretty=False)
@@ -985,6 +1176,12 @@ def write_generated_outputs() -> list[Path]:
         reasoning_handoff_pack_payload,
         pretty=False,
     )
+    write_json(FEDERATION_SPINE_OUTPUT_PATH, federation_spine_payload, pretty=True)
+    write_json(
+        FEDERATION_SPINE_MIN_OUTPUT_PATH,
+        federation_spine_payload,
+        pretty=False,
+    )
 
     return [
         REGISTRY_OUTPUT_PATH,
@@ -993,4 +1190,6 @@ def write_generated_outputs() -> list[Path]:
         TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
         REASONING_HANDOFF_OUTPUT_PATH,
         REASONING_HANDOFF_MIN_OUTPUT_PATH,
+        FEDERATION_SPINE_OUTPUT_PATH,
+        FEDERATION_SPINE_MIN_OUTPUT_PATH,
     ]

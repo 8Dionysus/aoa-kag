@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/federation-kag-export.schema.json",
+  "title": "AoA federation KAG export",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "owner_repo",
+    "kind",
+    "object_id",
+    "primary_question",
+    "summary_50",
+    "summary_200",
+    "source_inputs",
+    "entry_surface",
+    "section_handles",
+    "direct_relations",
+    "provenance_note",
+    "non_identity_boundary"
+  ],
+  "properties": {
+    "owner_repo": {
+      "type": "string",
+      "minLength": 2
+    },
+    "kind": {
+      "type": "string",
+      "minLength": 2
+    },
+    "object_id": {
+      "type": "string",
+      "minLength": 2
+    },
+    "primary_question": {
+      "type": "string",
+      "minLength": 10
+    },
+    "summary_50": {
+      "type": "string",
+      "minLength": 10
+    },
+    "summary_200": {
+      "type": "string",
+      "minLength": 20
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repo",
+          "source_class",
+          "role"
+        ],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "minLength": 2
+          },
+          "source_class": {
+            "type": "string",
+            "minLength": 2
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "supporting"
+            ]
+          }
+        }
+      }
+    },
+    "entry_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "path",
+        "match_key",
+        "match_value"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 2
+        },
+        "path": {
+          "type": "string",
+          "minLength": 3
+        },
+        "match_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "match_value": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "section_handles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "direct_relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relation_type",
+          "target_ref"
+        ],
+        "properties": {
+          "relation_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target_ref": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    },
+    "provenance_note": {
+      "type": "string",
+      "minLength": 10
+    },
+    "non_identity_boundary": {
+      "type": "string",
+      "minLength": 10
+    }
+  }
+}
