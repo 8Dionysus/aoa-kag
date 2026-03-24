@@ -60,6 +60,10 @@ TREE_OF_SOPHIA_ROOT = repo_root_from_env(
 SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-registry.schema.json"
 BRIDGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"
 BRIDGE_EXAMPLE_PATH = REPO_ROOT / "examples" / "tos_retrieval_axis_surface.example.json"
+BRIDGE_ENVELOPE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-envelope.schema.json"
+BRIDGE_ENVELOPE_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "aoa_tos_bridge_envelope.example.json"
+)
 COUNTERPART_SCHEMA_PATH = REPO_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
 COUNTERPART_EXAMPLE_PATH = REPO_ROOT / "examples" / "counterpart_edge_view.example.json"
 REASONING_HANDOFF_SCHEMA_PATH = (
@@ -384,6 +388,10 @@ def validate_schema_surface() -> None:
 
 def validate_bridge_schema_surface() -> None:
     validate_top_level_schema(BRIDGE_SCHEMA_PATH, "bridge")
+
+
+def validate_bridge_envelope_schema_surface() -> None:
+    validate_top_level_schema(BRIDGE_ENVELOPE_SCHEMA_PATH, "bridge envelope")
 
 
 def validate_counterpart_schema_surface() -> None:
@@ -1990,6 +1998,74 @@ def validate_bridge_example(surfaces_by_id: dict[str, dict[str, object]]) -> Non
         fail("bridge example 'axis_summary' must be a string of length >= 20")
 
 
+def validate_bridge_envelope_example() -> None:
+    payload = read_json(BRIDGE_ENVELOPE_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("bridge envelope example must be a JSON object")
+
+    if payload.get("bridge_id") != "aoa-tos-bridge-envelope-v1":
+        fail("bridge envelope example bridge_id must equal 'aoa-tos-bridge-envelope-v1'")
+    if payload.get("source_class") != "tos_text":
+        fail("bridge envelope example source_class must remain 'tos_text'")
+    if payload.get("kag_lift_status") != "candidate":
+        fail("bridge envelope example kag_lift_status must remain 'candidate'")
+
+    source_inputs = payload.get("source_inputs")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("bridge envelope example source_inputs must be a non-empty list")
+    expected_inputs = {
+        ("Tree-of-Sophia", "tos_text", "primary"),
+        ("aoa-memo", "memo_object", "supporting"),
+    }
+    actual_inputs: set[tuple[str, str, str]] = set()
+    primary_count = 0
+    for index, item in enumerate(source_inputs):
+        location = f"bridge envelope example source_inputs[{index}]"
+        if not isinstance(item, dict):
+            fail(f"{location} must be an object")
+        repo = item.get("repo")
+        source_class = item.get("source_class")
+        role = item.get("role")
+        if not isinstance(repo, str) or not repo:
+            fail(f"{location}.repo must be a non-empty string")
+        if not isinstance(source_class, str) or not source_class:
+            fail(f"{location}.source_class must be a non-empty string")
+        if not isinstance(role, str) or not role:
+            fail(f"{location}.role must be a non-empty string")
+        if role == "primary":
+            primary_count += 1
+        actual_inputs.add((repo, source_class, role))
+    if actual_inputs != expected_inputs:
+        fail("bridge envelope example source_inputs must match the current strict bridge contract")
+    if primary_count != 1:
+        fail("bridge envelope example must keep exactly one primary source input")
+
+    for index, ref in enumerate(
+        validate_unique_string_list(payload.get("tos_refs"), label="bridge envelope example tos_refs")
+    ):
+        resolve_known_ref(ref, label=f"bridge envelope example tos_refs[{index}]")
+    for index, ref in enumerate(
+        validate_unique_string_list(payload.get("memory_refs"), label="bridge envelope example memory_refs")
+    ):
+        resolve_known_ref(ref, label=f"bridge envelope example memory_refs[{index}]")
+
+    faces = payload.get("faces")
+    if not isinstance(faces, dict):
+        fail("bridge envelope example faces must be an object")
+    expected_faces = {
+        "retrieval_surface": "examples/tos_retrieval_axis_surface.example.json",
+        "chunk_face": "aoa-memo/examples/memory_chunk_face.bridge.example.json",
+        "graph_face": "aoa-memo/examples/memory_graph_face.bridge.example.json",
+    }
+    if set(faces) != set(expected_faces):
+        fail("bridge envelope example faces must expose retrieval_surface, chunk_face, and graph_face")
+    for key, expected_ref in expected_faces.items():
+        value = faces.get(key)
+        if value != expected_ref:
+            fail(f"bridge envelope example faces.{key} must equal '{expected_ref}'")
+        resolve_known_ref(value, label=f"bridge envelope example faces.{key}")
+
+
 def validate_counterpart_example(surfaces_by_id: dict[str, dict[str, object]]) -> None:
     payload = read_json(COUNTERPART_EXAMPLE_PATH)
     if not isinstance(payload, dict):
@@ -2293,6 +2369,7 @@ def main() -> int:
     try:
         validate_schema_surface()
         validate_bridge_schema_surface()
+        validate_bridge_envelope_schema_surface()
         validate_counterpart_schema_surface()
         validate_reasoning_handoff_schema_surface()
         validate_technique_lift_manifest_schema_surface()
@@ -2379,6 +2456,7 @@ def main() -> int:
             generated_surfaces_by_id,
         )
         validate_bridge_example(generated_surfaces_by_id)
+        validate_bridge_envelope_example()
         validate_counterpart_example(generated_surfaces_by_id)
         validate_reasoning_handoff_example()
         validate_federation_kag_export_example()
@@ -2388,6 +2466,7 @@ def main() -> int:
 
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")
+    print("[ok] validated bridge envelope schema")
     print("[ok] validated counterpart edge surface schema")
     print("[ok] validated reasoning handoff guardrail schema")
     print("[ok] validated technique lift manifest schema")
@@ -2409,6 +2488,7 @@ def main() -> int:
     print("[ok] validated generated reasoning handoff pack structure")
     print("[ok] validated generated federation spine structure")
     print("[ok] validated bridge retrieval example")
+    print("[ok] validated bridge envelope example")
     print("[ok] validated counterpart edge example")
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated federation KAG export example")
