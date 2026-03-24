@@ -1,9 +1,20 @@
 # AoA-ToS Bridge Contracts
 
 This document records the first-wave bridge posture at the KAG layer.
+It is the primary coordination note for the Dionysus seed
+`archive/seed_rootline/seed.8dionysus.aoa-shared.bridges.md`.
 
 It does not replace ToS ontology, memory contracts, or runtime implementation.
 It names the derived bridge surfaces that make AoA-ToS exchange explicit.
+
+## Coordination surfaces
+
+The current explicit bridge home is split like this:
+
+- this document is the primary coordination note for the first-wave bridge seed
+- `schemas/bridge-retrieval-surface.schema.json` and `examples/tos_retrieval_axis_surface.example.json` define the KAG-side retrieval contract
+- `aoa-memo/docs/KAG_TOS_BRIDGE_CONTRACT.md` defines the memo-side writeback and export companion contract
+- `aoa-routing/docs/FEDERATION_ENTRY_ABI.md` defines the orientation-only entry companion and does not become bridge authority
 
 ## Core rule
 
@@ -55,6 +66,7 @@ When KAG returns a bridge-ready retrieval surface, it should be able to expose:
 This keeps retrieval richer than a similarity dump while still remaining derived and reviewable.
 
 See `examples/tos_retrieval_axis_surface.example.json` for a compact bridge-ready example tied to `AOA-K-0007`.
+The schema-backed contract for that surface is `schemas/bridge-retrieval-surface.schema.json`.
 
 ## Writeback caution
 
