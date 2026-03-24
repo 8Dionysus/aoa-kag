@@ -1314,9 +1314,9 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep one canonical rule source and distribute it to multiple agent-facing instruction surfaces without turning each target into a hand-maintained source of truth.",
-        "maturity_score": 4,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
@@ -1333,9 +1333,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-20",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-03-23",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/docs/single-source-rule-distribution/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -1806,13 +1811,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Lift stable technique markdown sections into derived section-level units while keeping the bundle markdown authoritative.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -1825,9 +1830,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-19",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-03-23",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/docs/markdown-technique-section-lift/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3325,13 +3335,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Turn sensitive technical material into a shareable artifact by removing, redacting, or generalizing details while preserving the lesson and staying distinct from approval gating or execution planning.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3339,9 +3349,14 @@
         "relations": []
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-22",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-03-23",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/docs/public-safe-artifact-sanitization/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",

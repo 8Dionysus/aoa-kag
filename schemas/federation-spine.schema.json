@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/federation-spine.schema.json",
+  "title": "AoA federation spine pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_manifest_ref",
+    "source_inputs",
+    "repo_count",
+    "repos",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "federation_spine"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/federation_spine.json"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "role",
+          "ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "minLength": 2
+          },
+          "role": {
+            "type": "string",
+            "minLength": 2
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    },
+    "repo_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "repos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repo",
+          "pilot_posture",
+          "current_entry_surface_refs",
+          "current_object_surface_ref",
+          "example_object_ids",
+          "planned_export_ref",
+          "provenance_note",
+          "non_identity_boundary"
+        ],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "minLength": 2
+          },
+          "pilot_posture": {
+            "type": "string",
+            "minLength": 3
+          },
+          "current_entry_surface_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          "current_object_surface_ref": {
+            "type": "string",
+            "minLength": 3
+          },
+          "example_object_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 2
+            }
+          },
+          "planned_export_ref": {
+            "type": "string",
+            "minLength": 3
+          },
+          "provenance_note": {
+            "type": "string",
+            "minLength": 10
+          },
+          "non_identity_boundary": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "routing_ownership",
+        "canon_authorship",
+        "full_federation_claim"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean"
+        },
+        "source_replacement": {
+          "type": "string",
+          "minLength": 3
+        },
+        "routing_ownership": {
+          "type": "string",
+          "minLength": 3
+        },
+        "canon_authorship": {
+          "type": "string",
+          "minLength": 3
+        },
+        "full_federation_claim": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "manifest_version": 1,
+  "pack_type": "federation_spine",
+  "source_inputs": [
+    {
+      "name": "kag_registry_manifest",
+      "repo": "aoa-kag",
+      "path": "manifests/kag_registry.json",
+      "role": "registry_manifest"
+    },
+    {
+      "name": "repo_doc_surface_manifest",
+      "repo": "aoa-techniques",
+      "path": "generated/repo_doc_surface_manifest.min.json",
+      "role": "entry_surfaces"
+    },
+    {
+      "name": "technique_catalog",
+      "repo": "aoa-techniques",
+      "path": "generated/technique_catalog.min.json",
+      "role": "object_spine"
+    }
+  ],
+  "repo_bindings": [
+    {
+      "surface_id": "AOA-K-0009",
+      "repo": "aoa-techniques",
+      "pilot_posture": "existing_generated_surfaces",
+      "entry_surface_inputs": [
+        "repo_doc_surface_manifest"
+      ],
+      "object_surface_input": "technique_catalog",
+      "example_object_count": 3,
+      "planned_export_ref": "aoa-techniques/generated/kag_export.min.json",
+      "provenance_note": "Built from existing repo-owned generated entry and object surfaces while source-owned federation exports remain a later wave.",
+      "non_identity_boundary": "This derived spine guides entry and export readiness; it does not replace authored technique meaning or claim a completed federation export loop."
+    }
+  ],
+  "output_paths": {
+    "full": "generated/federation_spine.json",
+    "min": "generated/federation_spine.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+    "full_federation_claim": "forbidden"
+  }
+}

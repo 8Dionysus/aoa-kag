@@ -8,6 +8,7 @@ This roadmap tracks the bootstrap and early shaping of the AoA KAG layer.
 The current goal is not to build a giant graph engine immediately.
 The goal is to define what the KAG layer is for, what it owns, and what it must not silently absorb.
 The current repository now also carries the first manifest-driven generated technique lift pack so bootstrap doctrine begins to harden into reproducible substrate output.
+It now also carries the first public federation export contract and one experimental federation spine pilot built from existing `aoa-techniques` generated surfaces rather than from a live source-owned export loop.
 
 ## Phase 1: KAG layer definition
 
@@ -47,6 +48,7 @@ Goals:
 - connect `aoa-kag` cleanly to `aoa-techniques`, `aoa-skills`, `aoa-evals`, `aoa-memo`, `aoa-playbooks`, and `Tree-of-Sophia`
 - preserve clear boundaries relative to `aoa-routing`
 - keep source-of-truth discipline explicit as the KAG layer grows
+- make room for source-owned federation exports and bounded derived spine pilots before any full cross-repo export claim
 
 ## Standing discipline
 

@@ -1,0 +1,37 @@
+{
+  "owner_repo": "aoa-techniques",
+  "kind": "technique",
+  "object_id": "AOA-T-0019",
+  "primary_question": "How should a bounded frontmatter spine support routing without replacing markdown meaning?",
+  "summary_50": "Source-owned metadata spine export for bounded routing and KAG entry.",
+  "summary_200": "Source-owned export capsule for a technique that keeps routing-friendly metadata, source inputs, section handles, and direct relations visible without replacing the authored bundle.",
+  "source_inputs": [
+    {
+      "repo": "aoa-techniques",
+      "source_class": "technique_bundle",
+      "role": "primary"
+    }
+  ],
+  "entry_surface": {
+    "repo": "aoa-techniques",
+    "path": "generated/technique_capsules.json",
+    "match_key": "id",
+    "match_value": "AOA-T-0019"
+  },
+  "section_handles": [
+    "intent",
+    "inputs",
+    "outputs",
+    "contracts",
+    "risks",
+    "validation"
+  ],
+  "direct_relations": [
+    {
+      "relation_type": "supports",
+      "target_ref": "aoa-techniques/techniques/docs/markdown-technique-section-lift/TECHNIQUE.md"
+    }
+  ],
+  "provenance_note": "Guide to source, not source replacement.",
+  "non_identity_boundary": "Derived export capsule for KAG consumers; authored technique meaning remains in aoa-techniques markdown."
+}
