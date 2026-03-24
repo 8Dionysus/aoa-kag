@@ -19,6 +19,24 @@
       "repo": "aoa-techniques",
       "path": "generated/technique_catalog.min.json",
       "role": "object_spine"
+    },
+    {
+      "name": "tos_root_readme",
+      "repo": "Tree-of-Sophia",
+      "path": "README.md",
+      "role": "entry_surface"
+    },
+    {
+      "name": "tos_tiny_entry_doctrine",
+      "repo": "Tree-of-Sophia",
+      "path": "docs/TINY_ENTRY_ROUTE.md",
+      "role": "entry_surface"
+    },
+    {
+      "name": "tos_tiny_entry_route",
+      "repo": "Tree-of-Sophia",
+      "path": "examples/tos_tiny_entry_route.example.json",
+      "role": "object_surface"
     }
   ],
   "repo_bindings": [
@@ -34,6 +52,20 @@
       "planned_export_ref": "aoa-techniques/generated/kag_export.min.json",
       "provenance_note": "Built from existing repo-owned generated entry and object surfaces while source-owned federation exports remain a later wave.",
       "non_identity_boundary": "This derived spine guides entry and export readiness; it does not replace authored technique meaning or claim a completed federation export loop."
+    },
+    {
+      "surface_id": "AOA-K-0009",
+      "repo": "Tree-of-Sophia",
+      "pilot_posture": "source_owned_tiny_entry_route",
+      "entry_surface_inputs": [
+        "tos_root_readme",
+        "tos_tiny_entry_doctrine"
+      ],
+      "object_surface_input": "tos_tiny_entry_route",
+      "example_object_count": 1,
+      "planned_export_ref": "Tree-of-Sophia/generated/kag_export.min.json",
+      "provenance_note": "Built from the current source-owned ToS tiny-entry seam while broader source-owned federation exports remain a later wave.",
+      "non_identity_boundary": "This derived spine points to the current ToS tiny-entry route for orientation readiness; it does not replace ToS-authored authority or claim a completed federation export loop."
     }
   ],
   "output_paths": {
