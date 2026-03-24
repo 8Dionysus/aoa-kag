@@ -104,6 +104,32 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_tiny_consumer_bundle_builder_matches_generated_outputs(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        self.assert_builder_matches_generated(
+            kag_generation.build_tiny_consumer_bundle_payload,
+            kag_generation.TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
+            kag_generation.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+            registry_payload=registry_payload,
+        )
+
+    def test_tiny_consumer_bundle_builder_keeps_stable_bundle_order(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        payload = kag_generation.build_tiny_consumer_bundle_payload(registry_payload)
+        bundle_items = payload["bundle_items"]
+        self.assertEqual(
+            [bundle_item["name"] for bundle_item in bundle_items],
+            [
+                "tos_text_chunk_map",
+                "tos_retrieval_axis_pack",
+                "federation_spine",
+                "cross_source_node_projection",
+                "consumer_guide",
+                "counterpart_consumer_contract_doc",
+                "counterpart_consumer_contract_example",
+            ],
+        )
+
     def test_dependency_failure_names_dependency_id_and_consumer_surface(self) -> None:
         broken_export = load_json(
             kag_generation.AOA_TECHNIQUES_ROOT / "generated" / "kag_export.min.json"
@@ -150,6 +176,67 @@ class KagGenerationTestCase(unittest.TestCase):
                             kag_generation.build_registry_payload()
                         )
                 self.assertIn("projection_pairings", str(context.exception))
+
+    def test_counterpart_consumer_contract_requires_aoa_k_0008_to_remain_planned(self) -> None:
+        registry_manifest = load_json(kag_generation.REGISTRY_MANIFEST_PATH)
+        assert isinstance(registry_manifest, dict)
+        surfaces = registry_manifest["surfaces"]
+        assert isinstance(surfaces, list)
+        broken_registry_manifest = copy.deepcopy(registry_manifest)
+        for surface in broken_registry_manifest["surfaces"]:
+            if surface["id"] == "AOA-K-0008":
+                surface["status"] = "experimental"
+                break
+
+        with self.patched_read_json(
+            {
+                kag_generation.REGISTRY_MANIFEST_PATH: broken_registry_manifest,
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                registry_payload = kag_generation.build_registry_payload()
+                kag_generation.build_tiny_consumer_bundle_payload(registry_payload)
+
+        self.assertIn("AOA-K-0008", str(context.exception))
+        self.assertIn("planned", str(context.exception))
+
+    def test_reasoning_handoff_builder_requires_counterpart_contract_refs(self) -> None:
+        manifest = load_json(kag_generation.REASONING_HANDOFF_MANIFEST_PATH)
+        assert isinstance(manifest, dict)
+        broken_manifest = copy.deepcopy(manifest)
+        broken_manifest["source_inputs"] = [
+            source_input
+            for source_input in broken_manifest["source_inputs"]
+            if source_input["name"] != "counterpart_consumer_contract_example"
+        ]
+
+        with self.patched_read_json(
+            {
+                kag_generation.REASONING_HANDOFF_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_reasoning_handoff_pack_payload()
+
+        self.assertIn("KAG guardrail refs", str(context.exception))
+
+    def test_tiny_consumer_bundle_order_failures_are_bundle_order_specific(self) -> None:
+        manifest = load_json(kag_generation.TINY_CONSUMER_BUNDLE_MANIFEST_PATH)
+        assert isinstance(manifest, dict)
+        broken_manifest = copy.deepcopy(manifest)
+        broken_manifest["bundle_order"] = list(reversed(broken_manifest["bundle_order"]))
+
+        with self.patched_read_json(
+            {
+                kag_generation.TINY_CONSUMER_BUNDLE_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_tiny_consumer_bundle_payload(
+                    kag_generation.build_registry_payload()
+                )
+
+        self.assertIn("bundle_order", str(context.exception))
 
 
 if __name__ == "__main__":

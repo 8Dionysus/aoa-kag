@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/counterpart-consumer-contract.schema.json",
+  "title": "AoA KAG counterpart consumer contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_type",
+    "surface_id",
+    "surface_status",
+    "consumer_surface_type",
+    "allowed_return_field",
+    "required_contract_refs",
+    "allowed_refs",
+    "forbidden_interpretations"
+  ],
+  "properties": {
+    "contract_type": {
+      "type": "string",
+      "const": "counterpart_consumer_contract"
+    },
+    "surface_id": {
+      "type": "string",
+      "const": "AOA-K-0008"
+    },
+    "surface_status": {
+      "type": "string",
+      "const": "planned"
+    },
+    "consumer_surface_type": {
+      "type": "string",
+      "const": "reasoning_handoff_guardrail"
+    },
+    "allowed_return_field": {
+      "type": "string",
+      "const": "counterpart_refs"
+    },
+    "required_contract_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "counterpart_contract_doc",
+        "counterpart_contract_schema",
+        "counterpart_contract_example"
+      ],
+      "properties": {
+        "counterpart_contract_doc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "counterpart_contract_schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "counterpart_contract_example": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "allowed_refs": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "forbidden_interpretations": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "identity_proof",
+          "routing_authority",
+          "graph_sovereign_activation",
+          "silent_federation_exposure"
+        ]
+      }
+    }
+  }
+}

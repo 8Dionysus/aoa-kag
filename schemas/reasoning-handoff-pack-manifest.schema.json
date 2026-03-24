@@ -52,7 +52,7 @@
     },
     "source_inputs": {
       "type": "array",
-      "minItems": 10,
+      "minItems": 14,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -85,6 +85,8 @@
             "type": "string",
             "enum": [
               "kag_guardrail_doc",
+              "kag_guardrail_schema",
+              "kag_guardrail_example",
               "playbook_doc",
               "eval_hook_schema",
               "eval_hook_fixture",

@@ -76,6 +76,15 @@ These returns stay derived.
 They should guide the caller toward stronger authored sources and existing
 KAG-layer derived surfaces, not silently replace either.
 
+When `counterpart_refs` are returned in the current wave, they must stay
+contract-or-example refs through:
+
+- `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- `examples/counterpart_consumer_contract.example.json`
+
+They may not point to a generated `AOA-K-0008` payload, because `AOA-K-0008`
+remains planned.
+
 ## Boundary guardrails
 
 - `aoa-routing` owns navigation and dispatch
@@ -95,7 +104,9 @@ The current handoff seam should reuse and respect the existing bridge surfaces:
 - `docs/BRIDGE_CONTRACTS.md`
 - `examples/tos_retrieval_axis_surface.example.json`
 - `docs/COUNTERPART_EDGE_CONTRACTS.md`
+- `docs/COUNTERPART_CONSUMER_CONTRACT.md`
 - `examples/counterpart_edge_view.example.json`
+- `examples/counterpart_consumer_contract.example.json`
 
 The reasoning handoff guardrail exists to keep those surfaces usable at runtime
 without promoting them into a second canon.

@@ -36,6 +36,9 @@ from kag_generation import (
     TOS_RETRIEVAL_AXIS_MANIFEST_PATH,
     TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
     TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+    TINY_CONSUMER_BUNDLE_MANIFEST_PATH,
+    TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+    TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
     TOS_REPO,
     TOS_ROOT_README_PATH,
     TOS_TINY_ENTRY_AUTHORITY_PATH,
@@ -50,6 +53,7 @@ from kag_generation import (
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
     build_technique_lift_pack_payload,
+    build_tiny_consumer_bundle_payload,
     build_tos_text_chunk_map_payload,
     build_tos_retrieval_axis_pack_payload,
     encode_json,
@@ -79,6 +83,12 @@ BRIDGE_ENVELOPE_EXAMPLE_PATH = (
 )
 COUNTERPART_SCHEMA_PATH = REPO_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
 COUNTERPART_EXAMPLE_PATH = REPO_ROOT / "examples" / "counterpart_edge_view.example.json"
+COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
+)
+COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "counterpart_consumer_contract.example.json"
+)
 REASONING_HANDOFF_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
 )
@@ -135,6 +145,15 @@ CROSS_SOURCE_NODE_PROJECTION_SCHEMA_PATH = (
 CROSS_SOURCE_NODE_PROJECTION_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "cross_source_node_projection.example.json"
 )
+TINY_CONSUMER_BUNDLE_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tiny-consumer-bundle-manifest.schema.json"
+)
+TINY_CONSUMER_BUNDLE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tiny-consumer-bundle.schema.json"
+)
+TINY_CONSUMER_BUNDLE_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tiny_consumer_bundle.example.json"
+)
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
 ALLOWED_SOURCE_CLASS = {
@@ -180,7 +199,26 @@ EXPECTED_DERIVED_SURFACE_REFS = {
     "examples/tos_retrieval_axis_surface.example.json",
     "docs/COUNTERPART_EDGE_CONTRACTS.md",
     "examples/counterpart_edge_view.example.json",
+    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+    "examples/counterpart_consumer_contract.example.json",
 }
+EXPECTED_COUNTERPART_CONSUMER_CONTRACT_REFS = {
+    "counterpart_contract_doc": "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "counterpart_contract_schema": "schemas/counterpart-edge-surface.schema.json",
+    "counterpart_contract_example": "examples/counterpart_edge_view.example.json",
+}
+EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS = [
+    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+    "examples/counterpart_consumer_contract.example.json",
+    "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "examples/counterpart_edge_view.example.json",
+]
+EXPECTED_COUNTERPART_CONSUMER_FORBIDDEN_INTERPRETATIONS = [
+    "identity_proof",
+    "routing_authority",
+    "graph_sovereign_activation",
+    "silent_federation_exposure",
+]
 EXPECTED_PROVENANCE_POSTURE = {
     "primary_source_required": True,
     "supporting_sources_allowed": True,
@@ -313,6 +351,10 @@ EXPECTED_REASONING_HANDOFF_SOURCE_ROOT_ENVS = {
 }
 EXPECTED_REASONING_HANDOFF_INPUTS = {
     ("reasoning_handoff_doc", "aoa-kag", "docs/REASONING_HANDOFF.md", "kag_guardrail_doc"),
+    ("reasoning_handoff_schema", "aoa-kag", "schemas/reasoning-handoff-guardrail.schema.json", "kag_guardrail_schema"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "kag_guardrail_doc"),
+    ("counterpart_consumer_contract_schema", "aoa-kag", "schemas/counterpart-consumer-contract.schema.json", "kag_guardrail_schema"),
+    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "kag_guardrail_example"),
     ("artifact_to_verdict_hook_schema", "aoa-evals", "schemas/artifact-to-verdict-hook.schema.json", "eval_hook_schema"),
     ("aoa_p_0008_playbook", "aoa-playbooks", "playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md", "playbook_doc"),
     ("aoa_p_0008_hook", "aoa-evals", "examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json", "eval_hook_fixture"),
@@ -340,6 +382,13 @@ EXPECTED_REASONING_HANDOFF_CONTRACT = {
     "verdict_ownership": "forbidden",
 }
 EXPECTED_REASONING_HANDOFF_SCENARIOS = {"AOA-P-0008", "AOA-P-0009"}
+EXPECTED_REASONING_HANDOFF_KAG_GUARDRAIL_REFS = [
+    "docs/REASONING_HANDOFF.md",
+    "schemas/reasoning-handoff-guardrail.schema.json",
+    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+    "schemas/counterpart-consumer-contract.schema.json",
+    "examples/counterpart_consumer_contract.example.json",
+]
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
     ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "source_owned_export"),
@@ -402,6 +451,39 @@ EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT = {
     "counterpart_activation": "forbidden",
     "graph_expansion": "forbidden",
     "routing_ownership": "forbidden",
+}
+EXPECTED_TINY_CONSUMER_BUNDLE_INPUTS = {
+    ("tos_text_chunk_map", "aoa-kag", "generated/tos_text_chunk_map.min.json", "generated_surface"),
+    ("tos_retrieval_axis_pack", "aoa-kag", "generated/tos_retrieval_axis_pack.min.json", "generated_surface"),
+    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "generated_surface"),
+    ("cross_source_node_projection", "aoa-kag", "generated/cross_source_node_projection.min.json", "generated_surface"),
+    ("consumer_guide", "aoa-kag", "docs/CONSUMER_GUIDE.md", "consumer_doc"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "counterpart_contract"),
+    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "counterpart_contract"),
+}
+EXPECTED_TINY_CONSUMER_BUNDLE_ORDER = [
+    "tos_text_chunk_map",
+    "tos_retrieval_axis_pack",
+    "federation_spine",
+    "cross_source_node_projection",
+    "consumer_guide",
+    "counterpart_consumer_contract_doc",
+    "counterpart_consumer_contract_example",
+]
+EXPECTED_TINY_CONSUMER_BUNDLE_OUTPUT_PATHS = {
+    "full": "generated/tiny_consumer_bundle.json",
+    "min": "generated/tiny_consumer_bundle.min.json",
+}
+EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART = {
+    "surface_id": "AOA-K-0008",
+    "surface_status": "planned",
+    "posture": "planned_contract_only",
+    "allowed_refs": EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS,
+    "forbidden_active_payload_refs": ["examples/counterpart_edge_view.example.json"],
+    "forbidden_interpretations": [
+        "active_retrieval_payload",
+        "active_projection_payload",
+    ],
 }
 EXPECTED_AOA_K_0006_SOURCE_INPUTS = [
     {
@@ -517,6 +599,13 @@ def validate_counterpart_schema_surface() -> None:
     validate_top_level_schema(COUNTERPART_SCHEMA_PATH, "counterpart")
 
 
+def validate_counterpart_consumer_contract_schema_surface() -> None:
+    validate_top_level_schema(
+        COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH,
+        "counterpart consumer contract",
+    )
+
+
 def validate_reasoning_handoff_schema_surface() -> None:
     validate_top_level_schema(REASONING_HANDOFF_SCHEMA_PATH, "reasoning handoff")
 
@@ -605,6 +694,17 @@ def validate_cross_source_node_projection_schema_surface() -> None:
         CROSS_SOURCE_NODE_PROJECTION_SCHEMA_PATH,
         "cross-source node projection",
     )
+
+
+def validate_tiny_consumer_bundle_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TINY_CONSUMER_BUNDLE_MANIFEST_SCHEMA_PATH,
+        "tiny consumer bundle manifest",
+    )
+
+
+def validate_tiny_consumer_bundle_schema_surface() -> None:
+    validate_top_level_schema(TINY_CONSUMER_BUNDLE_SCHEMA_PATH, "tiny consumer bundle")
 
 
 def validate_unique_string_list(
@@ -1930,6 +2030,90 @@ def validate_cross_source_node_projection_manifest(
         fail("cross-source node projection manifest bounded_output_contract must match the current source-first guardrail")
 
 
+def validate_tiny_consumer_bundle_manifest(
+    surfaces_by_id: dict[str, dict[str, object]]
+) -> None:
+    payload = read_json(TINY_CONSUMER_BUNDLE_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("tiny consumer bundle manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "bundle_type",
+        "source_inputs",
+        "bundle_order",
+        "deferred_counterpart",
+        "output_paths",
+    ):
+        if key not in payload:
+            fail(f"tiny consumer bundle manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("tiny consumer bundle manifest manifest_version must equal 1")
+    if payload["bundle_type"] != "tiny_consumer_bundle":
+        fail("tiny consumer bundle manifest bundle_type must equal 'tiny_consumer_bundle'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("tiny consumer bundle manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"tiny consumer bundle manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_TINY_CONSUMER_BUNDLE_INPUTS:
+        fail("tiny consumer bundle manifest source_inputs must match the current bounded donor set")
+
+    bundle_order = validate_unique_string_list(
+        payload["bundle_order"],
+        label="tiny consumer bundle manifest bundle_order",
+    )
+    if bundle_order != EXPECTED_TINY_CONSUMER_BUNDLE_ORDER:
+        fail("tiny consumer bundle manifest bundle_order must keep the current stable bundle order")
+    if set(bundle_order) != {name for name, _, _, _ in EXPECTED_TINY_CONSUMER_BUNDLE_INPUTS}:
+        fail("tiny consumer bundle manifest bundle_order must reference each declared source input exactly once")
+
+    deferred_counterpart = payload["deferred_counterpart"]
+    if not isinstance(deferred_counterpart, dict):
+        fail("tiny consumer bundle manifest deferred_counterpart must be an object")
+    if deferred_counterpart != EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART:
+        fail("tiny consumer bundle manifest deferred_counterpart must match the contract-only posture")
+
+    surface_id = deferred_counterpart["surface_id"]
+    if surface_id not in surfaces_by_id:
+        fail("tiny consumer bundle manifest deferred_counterpart.surface_id must exist in the registry")
+    if surfaces_by_id[surface_id].get("status") != "planned":
+        fail("tiny consumer bundle manifest deferred_counterpart.surface_id must remain planned in the registry")
+    for index, ref in enumerate(deferred_counterpart["allowed_refs"]):
+        resolve_known_ref(
+            ref,
+            label=f"tiny consumer bundle manifest deferred_counterpart.allowed_refs[{index}]",
+        )
+    for index, ref in enumerate(deferred_counterpart["forbidden_active_payload_refs"]):
+        resolve_known_ref(
+            ref,
+            label=(
+                "tiny consumer bundle manifest "
+                f"deferred_counterpart.forbidden_active_payload_refs[{index}]"
+            ),
+        )
+
+    if payload["output_paths"] != EXPECTED_TINY_CONSUMER_BUNDLE_OUTPUT_PATHS:
+        fail("tiny consumer bundle manifest output_paths must match the committed generated output paths")
+
+
 def validate_tos_text_chunk_map_pack(
     payload: object,
     surfaces_by_id: dict[str, dict[str, object]],
@@ -2468,10 +2652,7 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
             authoritative_refs.get("kag_guardrail_refs"),
             label=f"{location}.authoritative_refs.kag_guardrail_refs",
         )
-        if set(guardrail_refs) != {
-            "docs/REASONING_HANDOFF.md",
-            "schemas/reasoning-handoff-guardrail.schema.json",
-        }:
+        if guardrail_refs != EXPECTED_REASONING_HANDOFF_KAG_GUARDRAIL_REFS:
             fail(f"{location}.authoritative_refs.kag_guardrail_refs must match the local KAG guardrail refs")
         for ref in guardrail_refs:
             resolve_known_ref(ref, label=f"{location}.authoritative_refs.kag_guardrail_refs")
@@ -2842,6 +3023,74 @@ def validate_cross_source_node_projection_example(expected_payload: dict[str, ob
     payload = read_json(CROSS_SOURCE_NODE_PROJECTION_EXAMPLE_PATH)
     if payload != expected_payload:
         fail("cross-source node projection example must match the current bounded projection payload")
+
+
+def validate_tiny_consumer_bundle_pack(expected_payload: dict[str, object]) -> None:
+    payload = read_json(TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH)
+    if not isinstance(payload, dict):
+        fail("tiny consumer bundle pack must be a JSON object")
+
+    for key in (
+        "bundle_version",
+        "bundle_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "bundle_item_count",
+        "bundle_items",
+        "deferred_counterpart",
+    ):
+        if key not in payload:
+            fail(f"tiny consumer bundle pack is missing required key '{key}'")
+
+    if payload["bundle_version"] != 1:
+        fail("tiny consumer bundle pack bundle_version must equal 1")
+    if payload["bundle_type"] != "tiny_consumer_bundle":
+        fail("tiny consumer bundle pack bundle_type must equal 'tiny_consumer_bundle'")
+    if payload["source_manifest_ref"] != "manifests/tiny_consumer_bundle.json":
+        fail(
+            "tiny consumer bundle pack source_manifest_ref must point to "
+            "manifests/tiny_consumer_bundle.json"
+        )
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("tiny consumer bundle pack source_inputs must match the manifest-driven donor set")
+
+    bundle_items = payload["bundle_items"]
+    if not isinstance(bundle_items, list) or not bundle_items:
+        fail("tiny consumer bundle pack bundle_items must be a non-empty list")
+    if payload["bundle_item_count"] != len(bundle_items):
+        fail("tiny consumer bundle pack bundle_item_count must equal the number of bundle_items")
+
+    observed_order: list[str] = []
+    for index, bundle_item in enumerate(bundle_items):
+        location = f"tiny consumer bundle pack bundle_items[{index}]"
+        if not isinstance(bundle_item, dict):
+            fail(f"{location} must be an object")
+        for key in ("order", "name", "role", "ref"):
+            if key not in bundle_item:
+                fail(f"{location} is missing required key '{key}'")
+        if bundle_item["order"] != index + 1:
+            fail(f"{location}.order must keep the stable 1-based bundle order")
+        if not isinstance(bundle_item["name"], str) or not bundle_item["name"]:
+            fail(f"{location}.name must be a non-empty string")
+        if not isinstance(bundle_item["role"], str) or not bundle_item["role"]:
+            fail(f"{location}.role must be a non-empty string")
+        if not isinstance(bundle_item["ref"], str) or not bundle_item["ref"]:
+            fail(f"{location}.ref must be a non-empty string")
+        resolve_known_ref(bundle_item["ref"], label=f"{location}.ref")
+        observed_order.append(bundle_item["name"])
+
+    if observed_order != EXPECTED_TINY_CONSUMER_BUNDLE_ORDER:
+        fail("tiny consumer bundle pack bundle_items must keep the current stable bundle order")
+    if payload["deferred_counterpart"] != EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART:
+        fail("tiny consumer bundle pack deferred_counterpart must match the contract-only posture")
+    if payload != expected_payload:
+        fail("tiny consumer bundle pack must match the committed manifest-driven bundle payload")
+
+
+def validate_tiny_consumer_bundle_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(TINY_CONSUMER_BUNDLE_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail("tiny consumer bundle example must match the current bundle payload")
 
 
 def validate_generated_text(path: Path, expected_text: str, *, label: str) -> None:
@@ -3281,6 +3530,92 @@ def validate_counterpart_example(surfaces_by_id: dict[str, dict[str, object]]) -
         fail("counterpart example must cover all supported counterpart modes at least once")
 
 
+def validate_counterpart_consumer_contract_example(
+    surfaces_by_id: dict[str, dict[str, object]]
+) -> None:
+    payload = read_json(COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart consumer contract example must be a JSON object")
+
+    for key in (
+        "contract_type",
+        "surface_id",
+        "surface_status",
+        "consumer_surface_type",
+        "allowed_return_field",
+        "required_contract_refs",
+        "allowed_refs",
+        "forbidden_interpretations",
+    ):
+        if key not in payload:
+            fail(f"counterpart consumer contract example is missing required key '{key}'")
+
+    if payload["contract_type"] != "counterpart_consumer_contract":
+        fail(
+            "counterpart consumer contract example contract_type must equal "
+            "'counterpart_consumer_contract'"
+        )
+    if payload["surface_id"] != "AOA-K-0008":
+        fail("counterpart consumer contract example surface_id must equal 'AOA-K-0008'")
+    if payload["surface_status"] != "planned":
+        fail("counterpart consumer contract example surface_status must equal 'planned'")
+    if payload["consumer_surface_type"] != "reasoning_handoff_guardrail":
+        fail(
+            "counterpart consumer contract example consumer_surface_type must equal "
+            "'reasoning_handoff_guardrail'"
+        )
+    if payload["allowed_return_field"] != "counterpart_refs":
+        fail(
+            "counterpart consumer contract example allowed_return_field must equal "
+            "'counterpart_refs'"
+        )
+
+    registry_surface = surfaces_by_id.get("AOA-K-0008")
+    if registry_surface is None:
+        fail("counterpart consumer contract example requires AOA-K-0008 in the generated registry")
+    if registry_surface.get("status") != "planned":
+        fail("counterpart consumer contract example requires AOA-K-0008 to remain planned")
+
+    required_contract_refs = payload["required_contract_refs"]
+    if not isinstance(required_contract_refs, dict):
+        fail("counterpart consumer contract example required_contract_refs must be an object")
+    if required_contract_refs != EXPECTED_COUNTERPART_CONSUMER_CONTRACT_REFS:
+        fail(
+            "counterpart consumer contract example required_contract_refs must match the "
+            "current counterpart contract surfaces"
+        )
+    for key, ref in required_contract_refs.items():
+        resolve_known_ref(
+            ref,
+            label=f"counterpart consumer contract example required_contract_refs.{key}",
+        )
+
+    allowed_refs = validate_unique_string_list(
+        payload["allowed_refs"],
+        label="counterpart consumer contract example allowed_refs",
+    )
+    if allowed_refs != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+        fail(
+            "counterpart consumer contract example allowed_refs must keep the current "
+            "contract/example-only posture"
+        )
+    for index, ref in enumerate(allowed_refs):
+        resolve_known_ref(
+            ref,
+            label=f"counterpart consumer contract example allowed_refs[{index}]",
+        )
+
+    forbidden_interpretations = validate_unique_string_list(
+        payload["forbidden_interpretations"],
+        label="counterpart consumer contract example forbidden_interpretations",
+    )
+    if forbidden_interpretations != EXPECTED_COUNTERPART_CONSUMER_FORBIDDEN_INTERPRETATIONS:
+        fail(
+            "counterpart consumer contract example forbidden_interpretations must match "
+            "the bounded contract"
+        )
+
+
 def validate_reasoning_handoff_example() -> None:
     payload = read_json(REASONING_HANDOFF_EXAMPLE_PATH)
     if not isinstance(payload, dict):
@@ -3492,6 +3827,7 @@ def main() -> int:
         validate_bridge_schema_surface()
         validate_bridge_envelope_schema_surface()
         validate_counterpart_schema_surface()
+        validate_counterpart_consumer_contract_schema_surface()
         validate_reasoning_handoff_schema_surface()
         validate_technique_lift_manifest_schema_surface()
         validate_technique_lift_pack_schema_surface()
@@ -3507,6 +3843,8 @@ def main() -> int:
         validate_federation_spine_schema_surface()
         validate_cross_source_node_projection_manifest_schema_surface()
         validate_cross_source_node_projection_schema_surface()
+        validate_tiny_consumer_bundle_manifest_schema_surface()
+        validate_tiny_consumer_bundle_schema_surface()
 
         registry_manifest_payload = read_json(REGISTRY_MANIFEST_PATH)
         registry_manifest_surfaces = validate_registry_payload(
@@ -3530,6 +3868,7 @@ def main() -> int:
             registry_manifest_surfaces,
             source_owned_export_dependencies,
         )
+        validate_tiny_consumer_bundle_manifest(registry_manifest_surfaces)
 
         expected_registry_payload = build_registry_payload()
         expected_technique_lift_pack_payload = build_technique_lift_pack_payload(
@@ -3547,6 +3886,9 @@ def main() -> int:
         )
         expected_cross_source_node_projection_payload = (
             build_cross_source_node_projection_payload(expected_registry_payload)
+        )
+        expected_tiny_consumer_bundle_payload = build_tiny_consumer_bundle_payload(
+            expected_registry_payload
         )
 
         validate_generated_text(
@@ -3619,6 +3961,16 @@ def main() -> int:
             encode_json(expected_cross_source_node_projection_payload, pretty=False),
             label="generated compact cross-source node projection pack",
         )
+        validate_generated_text(
+            TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
+            encode_json(expected_tiny_consumer_bundle_payload, pretty=True),
+            label="generated tiny consumer bundle",
+        )
+        validate_generated_text(
+            TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+            encode_json(expected_tiny_consumer_bundle_payload, pretty=False),
+            label="generated compact tiny consumer bundle",
+        )
 
         generated_registry_payload = read_json(REGISTRY_MIN_OUTPUT_PATH)
         generated_surfaces_by_id = validate_registry_payload(
@@ -3652,9 +4004,11 @@ def main() -> int:
             generated_surfaces_by_id,
             expected_cross_source_node_projection_payload,
         )
+        validate_tiny_consumer_bundle_pack(expected_tiny_consumer_bundle_payload)
         validate_bridge_example(generated_surfaces_by_id)
         validate_bridge_envelope_example()
         validate_counterpart_example(generated_surfaces_by_id)
+        validate_counterpart_consumer_contract_example(generated_surfaces_by_id)
         validate_tos_text_chunk_map_example(expected_tos_text_chunk_map_payload)
         validate_tos_retrieval_axis_example(expected_tos_retrieval_axis_payload)
         validate_reasoning_handoff_example()
@@ -3662,6 +4016,7 @@ def main() -> int:
         validate_cross_source_node_projection_example(
             expected_cross_source_node_projection_payload
         )
+        validate_tiny_consumer_bundle_example(expected_tiny_consumer_bundle_payload)
     except ValidationError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 1
@@ -3670,6 +4025,7 @@ def main() -> int:
     print("[ok] validated bridge retrieval surface schema")
     print("[ok] validated bridge envelope schema")
     print("[ok] validated counterpart edge surface schema")
+    print("[ok] validated counterpart consumer contract schema")
     print("[ok] validated reasoning handoff guardrail schema")
     print("[ok] validated technique lift manifest schema")
     print("[ok] validated technique lift pack schema")
@@ -3685,6 +4041,8 @@ def main() -> int:
     print("[ok] validated federation spine schema")
     print("[ok] validated cross-source node projection manifest schema")
     print("[ok] validated cross-source node projection schema")
+    print("[ok] validated tiny consumer bundle manifest schema")
+    print("[ok] validated tiny consumer bundle schema")
     print("[ok] validated manifests/kag_registry.json")
     print("[ok] validated manifests/technique_lift_pack.json")
     print("[ok] validated manifests/tos_text_chunk_map.json")
@@ -3693,6 +4051,7 @@ def main() -> int:
     print("[ok] validated manifests/source_owned_export_dependencies.json")
     print("[ok] validated manifests/federation_spine.json")
     print("[ok] validated manifests/cross_source_node_projection.json")
+    print("[ok] validated manifests/tiny_consumer_bundle.json")
     print("[ok] validated generated registry outputs are up to date")
     print("[ok] validated generated technique lift pack outputs are up to date")
     print("[ok] validated generated ToS text chunk map outputs are up to date")
@@ -3700,20 +4059,24 @@ def main() -> int:
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
     print("[ok] validated generated cross-source node projection outputs are up to date")
+    print("[ok] validated generated tiny consumer bundle outputs are up to date")
     print("[ok] validated generated technique lift pack structure")
     print("[ok] validated generated ToS text chunk map structure")
     print("[ok] validated generated ToS retrieval axis pack structure")
     print("[ok] validated generated reasoning handoff pack structure")
     print("[ok] validated generated federation spine structure")
     print("[ok] validated generated cross-source node projection structure")
+    print("[ok] validated generated tiny consumer bundle structure")
     print("[ok] validated bridge retrieval example")
     print("[ok] validated bridge envelope example")
     print("[ok] validated counterpart edge example")
+    print("[ok] validated counterpart consumer contract example")
     print("[ok] validated ToS text chunk map example")
     print("[ok] validated ToS retrieval axis example")
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated federation KAG export example")
     print("[ok] validated cross-source node projection example")
+    print("[ok] validated tiny consumer bundle example")
     return 0
 
 

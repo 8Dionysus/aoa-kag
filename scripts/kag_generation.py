@@ -51,7 +51,22 @@ FEDERATION_SPINE_MANIFEST_PATH = REPO_ROOT / "manifests" / "federation_spine.jso
 CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "cross_source_node_projection.json"
 )
+TINY_CONSUMER_BUNDLE_MANIFEST_PATH = (
+    REPO_ROOT / "manifests" / "tiny_consumer_bundle.json"
+)
 REASONING_HANDOFF_GUARDRAIL_PATH = REPO_ROOT / "docs" / "REASONING_HANDOFF.md"
+REASONING_HANDOFF_GUARDRAIL_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
+)
+COUNTERPART_CONSUMER_CONTRACT_DOC_PATH = (
+    REPO_ROOT / "docs" / "COUNTERPART_CONSUMER_CONTRACT.md"
+)
+COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
+)
+COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "counterpart_consumer_contract.example.json"
+)
 
 REGISTRY_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.json"
 REGISTRY_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.min.json"
@@ -77,6 +92,10 @@ CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH = (
 CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "cross_source_node_projection.min.json"
 )
+TINY_CONSUMER_BUNDLE_OUTPUT_PATH = REPO_ROOT / "generated" / "tiny_consumer_bundle.json"
+TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "tiny_consumer_bundle.min.json"
+)
 
 QUERY_MODE_HEADING = re.compile(r"^###\s+`([^`]+)`\s*$")
 TOS_REPO = "Tree-of-Sophia"
@@ -97,6 +116,21 @@ TOS_TINY_ENTRY_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
 TOS_TINY_ENTRY_AUTHORITY_PATH = "examples/source_node.example.json"
 TOS_TINY_ENTRY_HOP_PATH = "examples/concept_node.example.json"
 TOS_TINY_ENTRY_FALLBACK_PATH = "docs/KNOWLEDGE_MODEL.md"
+REASONING_HANDOFF_GUARDRAIL_REF = "docs/REASONING_HANDOFF.md"
+REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF = (
+    "schemas/reasoning-handoff-guardrail.schema.json"
+)
+COUNTERPART_EDGE_CONTRACT_DOC_REF = "docs/COUNTERPART_EDGE_CONTRACTS.md"
+COUNTERPART_EDGE_SCHEMA_REF = "schemas/counterpart-edge-surface.schema.json"
+COUNTERPART_EDGE_EXAMPLE_REF = "examples/counterpart_edge_view.example.json"
+COUNTERPART_CONSUMER_CONTRACT_DOC_REF = "docs/COUNTERPART_CONSUMER_CONTRACT.md"
+COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF = (
+    "schemas/counterpart-consumer-contract.schema.json"
+)
+COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF = (
+    "examples/counterpart_consumer_contract.example.json"
+)
+TINY_CONSUMER_BUNDLE_MANIFEST_REF = "manifests/tiny_consumer_bundle.json"
 
 
 def read_json(path: Path) -> object:
@@ -183,6 +217,14 @@ def ensure_tos_relative_surface_path(raw_path: object, *, label: str) -> str:
     if not (TREE_OF_SOPHIA_ROOT / relative_path).exists():
         fail(f"{label} target is missing inside Tree-of-Sophia: {relative_path}")
     return relative_path
+
+
+def ensure_local_ref_exists(raw_ref: object, *, label: str) -> str:
+    relative_ref = ensure_repo_relative_path(raw_ref, label=label)
+    target = REPO_ROOT / relative_ref
+    if not target.exists():
+        fail(f"{label} target is missing: {relative_ref}")
+    return relative_ref
 
 
 def load_tos_tiny_entry_route_payload() -> dict[str, object]:
@@ -1419,6 +1461,161 @@ def extract_boundary_guardrails_from_doc(path: Path) -> dict[str, str]:
     return boundary_guardrails
 
 
+def load_counterpart_consumer_contract_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    payload = read_json(COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart consumer contract example must be a JSON object")
+
+    registry_surfaces = registry_payload.get("surfaces")
+    if not isinstance(registry_surfaces, list):
+        fail("registry payload must declare surfaces")
+    registry_by_id = {
+        surface["id"]: surface
+        for surface in registry_surfaces
+        if isinstance(surface, dict) and isinstance(surface.get("id"), str)
+    }
+
+    surface_id = require_string(
+        payload.get("surface_id"),
+        label="counterpart consumer contract example surface_id",
+    )
+    if surface_id != "AOA-K-0008":
+        fail("counterpart consumer contract example surface_id must equal 'AOA-K-0008'")
+
+    registry_surface = registry_by_id.get(surface_id)
+    if registry_surface is None:
+        fail("counterpart consumer contract example surface_id must exist in the registry")
+    if registry_surface.get("status") != "planned":
+        fail("counterpart consumer contract example requires AOA-K-0008 to remain planned")
+
+    contract_type = require_string(
+        payload.get("contract_type"),
+        label="counterpart consumer contract example contract_type",
+    )
+    if contract_type != "counterpart_consumer_contract":
+        fail(
+            "counterpart consumer contract example contract_type must equal "
+            "'counterpart_consumer_contract'"
+        )
+
+    surface_status = require_string(
+        payload.get("surface_status"),
+        label="counterpart consumer contract example surface_status",
+    )
+    if surface_status != "planned":
+        fail("counterpart consumer contract example surface_status must equal 'planned'")
+
+    consumer_surface_type = require_string(
+        payload.get("consumer_surface_type"),
+        label="counterpart consumer contract example consumer_surface_type",
+    )
+    if consumer_surface_type != "reasoning_handoff_guardrail":
+        fail(
+            "counterpart consumer contract example consumer_surface_type must equal "
+            "'reasoning_handoff_guardrail'"
+        )
+
+    allowed_return_field = require_string(
+        payload.get("allowed_return_field"),
+        label="counterpart consumer contract example allowed_return_field",
+    )
+    if allowed_return_field != "counterpart_refs":
+        fail(
+            "counterpart consumer contract example allowed_return_field must equal "
+            "'counterpart_refs'"
+        )
+
+    required_contract_refs = payload.get("required_contract_refs")
+    if not isinstance(required_contract_refs, dict):
+        fail("counterpart consumer contract example required_contract_refs must be an object")
+    expected_required_contract_refs = {
+        "counterpart_contract_doc": COUNTERPART_EDGE_CONTRACT_DOC_REF,
+        "counterpart_contract_schema": COUNTERPART_EDGE_SCHEMA_REF,
+        "counterpart_contract_example": COUNTERPART_EDGE_EXAMPLE_REF,
+    }
+    for key, expected_ref in expected_required_contract_refs.items():
+        actual_ref = ensure_local_ref_exists(
+            required_contract_refs.get(key),
+            label=f"counterpart consumer contract example required_contract_refs.{key}",
+        )
+        if actual_ref != expected_ref:
+            fail(
+                "counterpart consumer contract example "
+                f"required_contract_refs.{key} must equal '{expected_ref}'"
+            )
+
+    allowed_refs = payload.get("allowed_refs")
+    if not isinstance(allowed_refs, list) or not allowed_refs:
+        fail("counterpart consumer contract example allowed_refs must be a non-empty list")
+    normalized_allowed_refs = ordered_unique(
+        [
+            ensure_local_ref_exists(
+                raw_ref,
+                label=f"counterpart consumer contract example allowed_refs[{index}]",
+            )
+            for index, raw_ref in enumerate(allowed_refs)
+        ]
+    )
+    if len(normalized_allowed_refs) != len(allowed_refs):
+        fail("counterpart consumer contract example allowed_refs must not contain duplicates")
+    expected_allowed_refs = [
+        COUNTERPART_CONSUMER_CONTRACT_DOC_REF,
+        COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF,
+        COUNTERPART_EDGE_CONTRACT_DOC_REF,
+        COUNTERPART_EDGE_EXAMPLE_REF,
+    ]
+    if normalized_allowed_refs != expected_allowed_refs:
+        fail(
+            "counterpart consumer contract example allowed_refs must match the current "
+            "contract/example-only posture"
+        )
+
+    forbidden_interpretations = payload.get("forbidden_interpretations")
+    if (
+        not isinstance(forbidden_interpretations, list)
+        or not forbidden_interpretations
+    ):
+        fail(
+            "counterpart consumer contract example forbidden_interpretations must be "
+            "a non-empty list"
+        )
+    normalized_forbidden_interpretations = ordered_unique(
+        [
+            require_string(
+                raw_value,
+                label=(
+                    "counterpart consumer contract example "
+                    f"forbidden_interpretations[{index}]"
+                ),
+            )
+            for index, raw_value in enumerate(forbidden_interpretations)
+        ]
+    )
+    if len(normalized_forbidden_interpretations) != len(forbidden_interpretations):
+        fail(
+            "counterpart consumer contract example forbidden_interpretations must not "
+            "contain duplicates"
+        )
+    expected_forbidden_interpretations = [
+        "identity_proof",
+        "routing_authority",
+        "graph_sovereign_activation",
+        "silent_federation_exposure",
+    ]
+    if normalized_forbidden_interpretations != expected_forbidden_interpretations:
+        fail(
+            "counterpart consumer contract example forbidden_interpretations must match "
+            "the bounded counterpart contract"
+        )
+
+    return payload
+
+
 def build_artifact_descriptor(
     artifact_name: str,
     contract_strength: str,
@@ -1450,6 +1647,7 @@ def build_reasoning_handoff_scenario(
     query_modes: list[str],
     return_contract: dict[str, object],
     boundary_guardrails: dict[str, str],
+    kag_guardrail_refs: list[str],
 ) -> dict[str, object]:
     scenario_ref = binding["scenario_ref"]
     playbook_input = inputs_by_name[binding["playbook_input"]]
@@ -1713,10 +1911,7 @@ def build_reasoning_handoff_scenario(
             "playbook_refs": [playbook_ref],
             "eval_refs": eval_refs,
             "memo_refs": memo_refs,
-            "kag_guardrail_refs": [
-                repo_ref("aoa-kag", "docs/REASONING_HANDOFF.md"),
-                repo_ref("aoa-kag", "schemas/reasoning-handoff-guardrail.schema.json"),
-            ],
+            "kag_guardrail_refs": kag_guardrail_refs,
             "artifact_schema_refs": artifact_schema_refs,
         },
         "return_contract": return_contract,
@@ -1782,6 +1977,13 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
     if not isinstance(hook_schema_payload, dict):
         fail("artifact_to_verdict_hook_schema must be a JSON object")
 
+    counterpart_consumer_contract = load_counterpart_consumer_contract_payload()
+    if counterpart_consumer_contract["consumer_surface_type"] != "reasoning_handoff_guardrail":
+        fail(
+            "counterpart consumer contract must stay bound to the reasoning handoff "
+            "guardrail in the current wave"
+        )
+
     guardrail_text = read_text(guardrail_doc_path)
     query_modes = extract_query_modes_from_doc(guardrail_doc_path)
     return_contract = {
@@ -1796,6 +1998,27 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
         "normalized_return_fields": ["axis_summary"],
     }
     boundary_guardrails = extract_boundary_guardrails_from_doc(guardrail_doc_path)
+    kag_guardrail_refs = ordered_unique(
+        [
+            manifest_input_ref(source_input)
+            for source_input in inputs_by_name.values()
+            if source_input["repo"] == "aoa-kag"
+            and source_input["role"]
+            in {
+                "kag_guardrail_doc",
+                "kag_guardrail_schema",
+                "kag_guardrail_example",
+            }
+        ]
+    )
+    if kag_guardrail_refs != [
+        REASONING_HANDOFF_GUARDRAIL_REF,
+        REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF,
+        COUNTERPART_CONSUMER_CONTRACT_DOC_REF,
+        COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF,
+        COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF,
+    ]:
+        fail("reasoning handoff manifest must keep the current ordered KAG guardrail refs")
 
     scenarios = [
         build_reasoning_handoff_scenario(
@@ -1804,6 +2027,7 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
             query_modes,
             return_contract,
             boundary_guardrails,
+            kag_guardrail_refs,
         )
         for binding in scenario_bindings
         if isinstance(binding, dict)
@@ -2612,6 +2836,266 @@ def build_cross_source_node_projection_payload(
     }
 
 
+def build_tiny_consumer_bundle_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(TINY_CONSUMER_BUNDLE_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("tiny consumer bundle manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    bundle_order = manifest.get("bundle_order")
+    deferred_counterpart = manifest.get("deferred_counterpart")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("tiny consumer bundle manifest must declare source_inputs")
+    if not isinstance(bundle_order, list) or not bundle_order:
+        fail("tiny consumer bundle manifest must declare bundle_order")
+    if not isinstance(deferred_counterpart, dict):
+        fail("tiny consumer bundle manifest must declare deferred_counterpart")
+
+    counterpart_consumer_contract = load_counterpart_consumer_contract_payload(
+        registry_payload
+    )
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+    allow_same_run_generated_inputs = {
+        "generated/tos_text_chunk_map.min.json",
+        "generated/tos_retrieval_axis_pack.min.json",
+        "generated/federation_spine.min.json",
+        "generated/cross_source_node_projection.min.json",
+    }
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail("tiny consumer bundle manifest source_inputs entries must be objects")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(
+                "tiny consumer bundle manifest source_inputs must keep name, repo, path, "
+                "and role"
+            )
+        if name in inputs_by_name:
+            fail(f"duplicate tiny consumer bundle source input '{name}'")
+
+        normalized_input = {
+            "name": name,
+            "repo": repo,
+            "path": path,
+            "role": role,
+        }
+        input_path = manifest_input_path(normalized_input)
+        allow_same_run_generated_input = (
+            repo == "aoa-kag" and path in allow_same_run_generated_inputs
+        )
+        if not input_path.exists() and not allow_same_run_generated_input:
+            fail(
+                "tiny consumer bundle donor input does not exist: "
+                + repo_ref(repo, path)
+            )
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "repo": repo,
+                "role": role,
+                "ref": manifest_input_ref(normalized_input),
+            }
+        )
+
+    ordered_input_names = [
+        require_string(
+            raw_name,
+            label=f"tiny consumer bundle manifest bundle_order[{index}]",
+        )
+        for index, raw_name in enumerate(bundle_order)
+    ]
+    if len(ordered_unique(ordered_input_names)) != len(ordered_input_names):
+        fail("tiny consumer bundle manifest bundle_order must not contain duplicates")
+    if set(ordered_input_names) != set(inputs_by_name):
+        fail(
+            "tiny consumer bundle manifest bundle_order must reference each declared "
+            "source input exactly once"
+        )
+    if ordered_input_names != [
+        "tos_text_chunk_map",
+        "tos_retrieval_axis_pack",
+        "federation_spine",
+        "cross_source_node_projection",
+        "consumer_guide",
+        "counterpart_consumer_contract_doc",
+        "counterpart_consumer_contract_example",
+    ]:
+        fail(
+            "tiny consumer bundle manifest bundle_order must keep the current stable "
+            "consumer chain order"
+        )
+
+    surface_id = require_string(
+        deferred_counterpart.get("surface_id"),
+        label="tiny consumer bundle manifest deferred_counterpart.surface_id",
+    )
+    surface_status = require_string(
+        deferred_counterpart.get("surface_status"),
+        label="tiny consumer bundle manifest deferred_counterpart.surface_status",
+    )
+    posture = require_string(
+        deferred_counterpart.get("posture"),
+        label="tiny consumer bundle manifest deferred_counterpart.posture",
+    )
+    if surface_id != counterpart_consumer_contract["surface_id"]:
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart.surface_id must stay "
+            "aligned with the counterpart consumer contract"
+        )
+    if surface_status != counterpart_consumer_contract["surface_status"]:
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart.surface_status must stay "
+            "aligned with the counterpart consumer contract"
+        )
+    if posture != "planned_contract_only":
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart.posture must equal "
+            "'planned_contract_only'"
+        )
+
+    allowed_refs = deferred_counterpart.get("allowed_refs")
+    if not isinstance(allowed_refs, list) or not allowed_refs:
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart.allowed_refs must be a "
+            "non-empty list"
+        )
+    normalized_allowed_refs = ordered_unique(
+        [
+            ensure_local_ref_exists(
+                raw_ref,
+                label=(
+                    "tiny consumer bundle manifest deferred_counterpart."
+                    f"allowed_refs[{index}]"
+                ),
+            )
+            for index, raw_ref in enumerate(allowed_refs)
+        ]
+    )
+    if len(normalized_allowed_refs) != len(allowed_refs):
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart.allowed_refs must not "
+            "contain duplicates"
+        )
+    if normalized_allowed_refs != counterpart_consumer_contract["allowed_refs"]:
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart.allowed_refs must stay "
+            "aligned with the counterpart consumer contract"
+        )
+
+    forbidden_active_payload_refs = deferred_counterpart.get(
+        "forbidden_active_payload_refs"
+    )
+    if (
+        not isinstance(forbidden_active_payload_refs, list)
+        or not forbidden_active_payload_refs
+    ):
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "forbidden_active_payload_refs must be a non-empty list"
+        )
+    normalized_forbidden_active_payload_refs = ordered_unique(
+        [
+            ensure_local_ref_exists(
+                raw_ref,
+                label=(
+                    "tiny consumer bundle manifest deferred_counterpart."
+                    f"forbidden_active_payload_refs[{index}]"
+                ),
+            )
+            for index, raw_ref in enumerate(forbidden_active_payload_refs)
+        ]
+    )
+    if (
+        len(normalized_forbidden_active_payload_refs)
+        != len(forbidden_active_payload_refs)
+    ):
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "forbidden_active_payload_refs must not contain duplicates"
+        )
+    if normalized_forbidden_active_payload_refs != [COUNTERPART_EDGE_EXAMPLE_REF]:
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "forbidden_active_payload_refs must keep the current deferred counterpart "
+            "payload boundary"
+        )
+
+    forbidden_interpretations = deferred_counterpart.get("forbidden_interpretations")
+    if (
+        not isinstance(forbidden_interpretations, list)
+        or not forbidden_interpretations
+    ):
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "forbidden_interpretations must be a non-empty list"
+        )
+    normalized_forbidden_interpretations = ordered_unique(
+        [
+            require_string(
+                raw_value,
+                label=(
+                    "tiny consumer bundle manifest deferred_counterpart."
+                    f"forbidden_interpretations[{index}]"
+                ),
+            )
+            for index, raw_value in enumerate(forbidden_interpretations)
+        ]
+    )
+    if len(normalized_forbidden_interpretations) != len(forbidden_interpretations):
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "forbidden_interpretations must not contain duplicates"
+        )
+    if normalized_forbidden_interpretations != [
+        "active_retrieval_payload",
+        "active_projection_payload",
+    ]:
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "forbidden_interpretations must keep the current deferred posture"
+        )
+
+    bundle_items = [
+        {
+            "order": index + 1,
+            "name": input_name,
+            "role": inputs_by_name[input_name]["role"],
+            "ref": manifest_input_ref(inputs_by_name[input_name]),
+        }
+        for index, input_name in enumerate(ordered_input_names)
+    ]
+
+    return {
+        "bundle_version": manifest["manifest_version"],
+        "bundle_type": manifest["bundle_type"],
+        "source_manifest_ref": TINY_CONSUMER_BUNDLE_MANIFEST_REF,
+        "source_inputs": emitted_source_inputs,
+        "bundle_item_count": len(bundle_items),
+        "bundle_items": bundle_items,
+        "deferred_counterpart": {
+            "surface_id": surface_id,
+            "surface_status": surface_status,
+            "posture": posture,
+            "allowed_refs": normalized_allowed_refs,
+            "forbidden_active_payload_refs": (
+                normalized_forbidden_active_payload_refs
+            ),
+            "forbidden_interpretations": normalized_forbidden_interpretations,
+        },
+    }
+
+
 def write_generated_outputs() -> list[Path]:
     registry_payload = build_registry_payload()
     technique_lift_pack_payload = build_technique_lift_pack_payload(registry_payload)
@@ -2624,6 +3108,7 @@ def write_generated_outputs() -> list[Path]:
     cross_source_node_projection_payload = build_cross_source_node_projection_payload(
         registry_payload
     )
+    tiny_consumer_bundle_payload = build_tiny_consumer_bundle_payload(registry_payload)
 
     write_json(REGISTRY_OUTPUT_PATH, registry_payload, pretty=True)
     write_json(REGISTRY_MIN_OUTPUT_PATH, registry_payload, pretty=False)
@@ -2667,6 +3152,12 @@ def write_generated_outputs() -> list[Path]:
         cross_source_node_projection_payload,
         pretty=False,
     )
+    write_json(TINY_CONSUMER_BUNDLE_OUTPUT_PATH, tiny_consumer_bundle_payload, pretty=True)
+    write_json(
+        TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+        tiny_consumer_bundle_payload,
+        pretty=False,
+    )
 
     return [
         REGISTRY_OUTPUT_PATH,
@@ -2683,4 +3174,6 @@ def write_generated_outputs() -> list[Path]:
         FEDERATION_SPINE_MIN_OUTPUT_PATH,
         CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
         CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+        TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
+        TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
     ]

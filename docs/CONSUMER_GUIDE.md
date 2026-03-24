@@ -6,6 +6,9 @@ surfaces in `aoa-kag`.
 Read these surfaces as bounded guides to source-owned meaning, not as
 replacements for that meaning.
 
+If you want the current machine-readable package for this path, start with
+`generated/tiny_consumer_bundle.min.json`.
+
 ## Recommended read path
 
 1. Start with `generated/tos_text_chunk_map.min.json`.
@@ -21,6 +24,18 @@ replacements for that meaning.
    This gives the current one-hop projection that pairs one primary AoA export
    with one supporting ToS export while keeping non-identity explicit.
 
+## Counterpart posture
+
+`counterpart_refs` remain contract-only in the current wave.
+
+Use:
+
+- `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- `examples/counterpart_consumer_contract.example.json`
+
+Do not treat `examples/counterpart_edge_view.example.json` as an active
+generated retrieval or projection payload.
+
 ## Recommended consumer posture
 
 - use chunk maps when you need stable source-linked retrieval units
@@ -30,6 +45,8 @@ replacements for that meaning.
   source-owned exports
 - use cross-source projection only as a reviewable one-hop pairing, never as an
   ontology merger
+- use the tiny consumer bundle when you want this same path as one stable
+  machine-readable package
 
 ## Anti-goals
 
@@ -38,6 +55,7 @@ Do not treat these surfaces as:
 - replacements for authored source meaning
 - routing authority
 - proof of counterpart identity
+- activation of a generated counterpart surface
 - graph-sovereign canon
 
 ## Verification posture

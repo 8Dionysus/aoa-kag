@@ -1,0 +1,24 @@
+{
+  "contract_type": "counterpart_consumer_contract",
+  "surface_id": "AOA-K-0008",
+  "surface_status": "planned",
+  "consumer_surface_type": "reasoning_handoff_guardrail",
+  "allowed_return_field": "counterpart_refs",
+  "required_contract_refs": {
+    "counterpart_contract_doc": "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "counterpart_contract_schema": "schemas/counterpart-edge-surface.schema.json",
+    "counterpart_contract_example": "examples/counterpart_edge_view.example.json"
+  },
+  "allowed_refs": [
+    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+    "examples/counterpart_consumer_contract.example.json",
+    "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "examples/counterpart_edge_view.example.json"
+  ],
+  "forbidden_interpretations": [
+    "identity_proof",
+    "routing_authority",
+    "graph_sovereign_activation",
+    "silent_federation_exposure"
+  ]
+}

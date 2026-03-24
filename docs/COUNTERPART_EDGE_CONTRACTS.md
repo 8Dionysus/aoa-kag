@@ -61,18 +61,23 @@ The current public example surface for this contract is:
 It is intentionally compact and remains `planned` in the KAG registry.
 That planned posture is deliberate:
 
-- no downstream consumer contract depends on this surface yet
+- the first downstream consumer contract now exists at `docs/COUNTERPART_CONSUMER_CONTRACT.md`
 - federation exposure is still deferred
 - the current example is meant to preserve bounded bridge grammar before promotion, not to imply an active public graph layer
 
 ## Activation gates
 
-`AOA-K-0008` remains blocked until all of these conditions are true:
+`AOA-K-0008` remains blocked.
+
+Closed gates in the current wave:
 
 - the current `AOA-K-0006` projection pairing law is manifest-driven and validator-backed
 - the current external source-owned exports are covered by an explicit dependency contract
-- a dedicated downstream consumer contract for counterpart edges exists as a later wave artifact
-- federation exposure for counterpart edges is explicitly reviewed rather than inferred from retrieval or projection surfaces
+- a dedicated downstream consumer contract now exists at `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+
+Remaining open gate:
+
+- federation exposure for counterpart edges must still be explicitly reviewed rather than inferred from retrieval, projection, or tiny-bundle surfaces
 
 ## Anti-goals
 
