@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aoa-kag/schemas/federation-spine-manifest.schema.json",
-  "title": "AoA federation spine manifest",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tos-retrieval-axis-pack-manifest.schema.json",
+  "title": "AoA KAG ToS retrieval axis pack manifest",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "manifest_version",
     "pack_type",
     "source_inputs",
-    "repo_bindings",
+    "surface_bindings",
     "output_paths",
     "bounded_output_contract"
   ],
@@ -19,11 +19,11 @@
     },
     "pack_type": {
       "type": "string",
-      "const": "federation_spine"
+      "const": "tos_retrieval_axis_pack"
     },
     "source_inputs": {
       "type": "array",
-      "minItems": 3,
+      "minItems": 10,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -48,12 +48,22 @@
           },
           "role": {
             "type": "string",
-            "minLength": 2
+            "enum": [
+              "chunk_map",
+              "bridge_doctrine",
+              "bridge_surface",
+              "bridge_envelope",
+              "memo_chunk_face",
+              "memo_graph_face",
+              "tos_contract",
+              "authority_surface",
+              "lineage_surface"
+            ]
           }
         }
       }
     },
-    "repo_bindings": {
+    "surface_bindings": {
       "type": "array",
       "minItems": 1,
       "items": {
@@ -61,36 +71,31 @@
         "additionalProperties": false,
         "required": [
           "surface_id",
-          "repo",
-          "pilot_posture",
-          "export_input",
-          "provenance_note",
-          "non_identity_boundary"
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
         ],
         "properties": {
           "surface_id": {
             "type": "string",
-            "minLength": 3
+            "pattern": "^AOA-K-[0-9]{4}$"
           },
-          "repo": {
+          "surface_name": {
             "type": "string",
-            "minLength": 2
+            "const": "tos-retrieval-axis-surface"
           },
-          "pilot_posture": {
+          "derived_kind": {
             "type": "string",
-            "minLength": 3
+            "const": "retrieval_surface"
           },
-          "export_input": {
+          "derived_slot": {
+            "type": "string",
+            "const": "axes"
+          },
+          "source_input": {
             "type": "string",
             "minLength": 1
-          },
-          "provenance_note": {
-            "type": "string",
-            "minLength": 10
-          },
-          "non_identity_boundary": {
-            "type": "string",
-            "minLength": 10
           }
         }
       }
@@ -119,29 +124,30 @@
       "required": [
         "source_trace_required",
         "source_replacement",
+        "scoring_or_ranking",
         "routing_ownership",
-        "canon_authorship",
-        "full_federation_claim"
+        "graph_normalization"
       ],
       "properties": {
         "source_trace_required": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "source_replacement": {
           "type": "string",
-          "minLength": 3
+          "const": "forbidden"
+        },
+        "scoring_or_ranking": {
+          "type": "string",
+          "const": "forbidden"
         },
         "routing_ownership": {
           "type": "string",
-          "minLength": 3
+          "const": "forbidden"
         },
-        "canon_authorship": {
+        "graph_normalization": {
           "type": "string",
-          "minLength": 3
-        },
-        "full_federation_claim": {
-          "type": "string",
-          "minLength": 3
+          "const": "forbidden"
         }
       }
     }

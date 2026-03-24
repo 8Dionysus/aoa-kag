@@ -1,0 +1,86 @@
+{
+  "manifest_version": 1,
+  "pack_type": "tos_retrieval_axis_pack",
+  "source_inputs": [
+    {
+      "name": "tos_text_chunk_map",
+      "repo": "aoa-kag",
+      "path": "generated/tos_text_chunk_map.min.json",
+      "role": "chunk_map"
+    },
+    {
+      "name": "bridge_contract_doc",
+      "repo": "aoa-kag",
+      "path": "docs/BRIDGE_CONTRACTS.md",
+      "role": "bridge_doctrine"
+    },
+    {
+      "name": "bridge_surface_example",
+      "repo": "aoa-kag",
+      "path": "examples/tos_retrieval_axis_surface.example.json",
+      "role": "bridge_surface"
+    },
+    {
+      "name": "bridge_envelope_example",
+      "repo": "aoa-kag",
+      "path": "examples/aoa_tos_bridge_envelope.example.json",
+      "role": "bridge_envelope"
+    },
+    {
+      "name": "memo_chunk_face",
+      "repo": "aoa-memo",
+      "path": "examples/memory_chunk_face.bridge.example.json",
+      "role": "memo_chunk_face"
+    },
+    {
+      "name": "memo_graph_face",
+      "repo": "aoa-memo",
+      "path": "examples/memory_graph_face.bridge.example.json",
+      "role": "memo_graph_face"
+    },
+    {
+      "name": "tos_node_contract",
+      "repo": "Tree-of-Sophia",
+      "path": "docs/NODE_CONTRACT.md",
+      "role": "tos_contract"
+    },
+    {
+      "name": "tos_practice_branch",
+      "repo": "Tree-of-Sophia",
+      "path": "docs/PRACTICE_BRANCH.md",
+      "role": "tos_contract"
+    },
+    {
+      "name": "tos_authority_surface",
+      "repo": "Tree-of-Sophia",
+      "path": "examples/source_node.example.json",
+      "role": "authority_surface"
+    },
+    {
+      "name": "tos_lineage_hop",
+      "repo": "Tree-of-Sophia",
+      "path": "examples/concept_node.example.json",
+      "role": "lineage_surface"
+    }
+  ],
+  "surface_bindings": [
+    {
+      "surface_id": "AOA-K-0007",
+      "surface_name": "tos-retrieval-axis-surface",
+      "derived_kind": "retrieval_surface",
+      "derived_slot": "axes",
+      "source_input": "tos_text_chunk_map"
+    }
+  ],
+  "output_paths": {
+    "full": "generated/tos_retrieval_axis_pack.json",
+    "min": "generated/tos_retrieval_axis_pack.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "scoring_or_ranking": "forbidden",
+    "routing_ownership": "forbidden",
+    "graph_normalization": "forbidden"
+  }
+}

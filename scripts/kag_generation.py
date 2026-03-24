@@ -40,8 +40,14 @@ TREE_OF_SOPHIA_ROOT = repo_root_from_env(
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
 TECHNIQUE_LIFT_MANIFEST_PATH = REPO_ROOT / "manifests" / "technique_lift_pack.json"
 TOS_TEXT_CHUNK_MAP_MANIFEST_PATH = REPO_ROOT / "manifests" / "tos_text_chunk_map.json"
+TOS_RETRIEVAL_AXIS_MANIFEST_PATH = (
+    REPO_ROOT / "manifests" / "tos_retrieval_axis_pack.json"
+)
 REASONING_HANDOFF_MANIFEST_PATH = REPO_ROOT / "manifests" / "reasoning_handoff_pack.json"
 FEDERATION_SPINE_MANIFEST_PATH = REPO_ROOT / "manifests" / "federation_spine.json"
+CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH = (
+    REPO_ROOT / "manifests" / "cross_source_node_projection.json"
+)
 REASONING_HANDOFF_GUARDRAIL_PATH = REPO_ROOT / "docs" / "REASONING_HANDOFF.md"
 
 REGISTRY_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.json"
@@ -52,12 +58,22 @@ TOS_TEXT_CHUNK_MAP_OUTPUT_PATH = REPO_ROOT / "generated" / "tos_text_chunk_map.j
 TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "tos_text_chunk_map.min.json"
 )
+TOS_RETRIEVAL_AXIS_OUTPUT_PATH = REPO_ROOT / "generated" / "tos_retrieval_axis_pack.json"
+TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "tos_retrieval_axis_pack.min.json"
+)
 REASONING_HANDOFF_OUTPUT_PATH = REPO_ROOT / "generated" / "reasoning_handoff_pack.json"
 REASONING_HANDOFF_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "reasoning_handoff_pack.min.json"
 )
 FEDERATION_SPINE_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.json"
 FEDERATION_SPINE_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.min.json"
+CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "cross_source_node_projection.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "cross_source_node_projection.min.json"
+)
 
 QUERY_MODE_HEADING = re.compile(r"^###\s+`([^`]+)`\s*$")
 TOS_REPO = "Tree-of-Sophia"
@@ -78,6 +94,25 @@ TOS_TINY_ENTRY_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
 TOS_TINY_ENTRY_AUTHORITY_PATH = "examples/source_node.example.json"
 TOS_TINY_ENTRY_HOP_PATH = "examples/concept_node.example.json"
 TOS_TINY_ENTRY_FALLBACK_PATH = "docs/KNOWLEDGE_MODEL.md"
+AOA_TECHNIQUES_FEDERATION_EXPORT_PATH = "generated/kag_export.min.json"
+AOA_TECHNIQUES_FEDERATION_OBJECT_ID = "AOA-T-0043"
+AOA_TECHNIQUES_FEDERATION_KIND = "technique"
+TOS_FEDERATION_EXPORT_PATH = "generated/kag_export.min.json"
+TOS_FEDERATION_KIND = "source_node"
+FEDERATION_EXPORT_REQUIRED_FIELDS = (
+    "owner_repo",
+    "kind",
+    "object_id",
+    "primary_question",
+    "summary_50",
+    "summary_200",
+    "source_inputs",
+    "entry_surface",
+    "section_handles",
+    "direct_relations",
+    "provenance_note",
+    "non_identity_boundary",
+)
 
 
 def read_json(path: Path) -> object:
@@ -273,6 +308,119 @@ def load_tos_source_node_payload() -> dict[str, object]:
     translation_tensions = payload.get("translation_tensions", [])
     if translation_tensions is not None and not isinstance(translation_tensions, list):
         fail(f"{source_label}.translation_tensions must be a list when present")
+
+    return payload
+
+
+def load_federation_export_payload(
+    source_input: dict[str, str],
+    *,
+    expected_repo: str,
+    expected_kind: str,
+    expected_object_id: str,
+) -> dict[str, object]:
+    payload = read_json(manifest_input_path(source_input))
+    if not isinstance(payload, dict):
+        fail(f"{manifest_input_ref(source_input)} must be a JSON object")
+
+    for key in FEDERATION_EXPORT_REQUIRED_FIELDS:
+        if key not in payload:
+            fail(f"{manifest_input_ref(source_input)} is missing required key '{key}'")
+
+    owner_repo = require_string(
+        payload.get("owner_repo"),
+        label=f"{manifest_input_ref(source_input)}.owner_repo",
+    )
+    kind = require_string(
+        payload.get("kind"),
+        label=f"{manifest_input_ref(source_input)}.kind",
+    )
+    object_id = require_string(
+        payload.get("object_id"),
+        label=f"{manifest_input_ref(source_input)}.object_id",
+    )
+    if owner_repo != expected_repo:
+        fail(f"{manifest_input_ref(source_input)}.owner_repo must equal '{expected_repo}'")
+    if kind != expected_kind:
+        fail(f"{manifest_input_ref(source_input)}.kind must equal '{expected_kind}'")
+    if object_id != expected_object_id:
+        fail(f"{manifest_input_ref(source_input)}.object_id must equal '{expected_object_id}'")
+
+    source_inputs = payload.get("source_inputs")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail(f"{manifest_input_ref(source_input)}.source_inputs must be a non-empty list")
+    primary_count = 0
+    for index, export_source_input in enumerate(source_inputs):
+        location = f"{manifest_input_ref(source_input)}.source_inputs[{index}]"
+        if not isinstance(export_source_input, dict):
+            fail(f"{location} must be an object")
+        repo = require_string(export_source_input.get("repo"), label=f"{location}.repo")
+        require_string(
+            export_source_input.get("source_class"),
+            label=f"{location}.source_class",
+        )
+        role = require_string(export_source_input.get("role"), label=f"{location}.role")
+        if role == "primary":
+            primary_count += 1
+        if role not in {"primary", "supporting"}:
+            fail(f"{location}.role must be 'primary' or 'supporting'")
+        if repo != expected_repo:
+            fail(f"{location}.repo must equal '{expected_repo}' in the current pilot export")
+    if primary_count != 1:
+        fail(f"{manifest_input_ref(source_input)}.source_inputs must contain exactly one primary input")
+
+    entry_surface = payload.get("entry_surface")
+    if not isinstance(entry_surface, dict):
+        fail(f"{manifest_input_ref(source_input)}.entry_surface must be an object")
+    entry_repo = require_string(
+        entry_surface.get("repo"),
+        label=f"{manifest_input_ref(source_input)}.entry_surface.repo",
+    )
+    entry_path = require_string(
+        entry_surface.get("path"),
+        label=f"{manifest_input_ref(source_input)}.entry_surface.path",
+    )
+    require_string(
+        entry_surface.get("match_key"),
+        label=f"{manifest_input_ref(source_input)}.entry_surface.match_key",
+    )
+    match_value = require_string(
+        entry_surface.get("match_value"),
+        label=f"{manifest_input_ref(source_input)}.entry_surface.match_value",
+    )
+    if entry_repo != expected_repo:
+        fail(f"{manifest_input_ref(source_input)}.entry_surface.repo must equal '{expected_repo}'")
+    if match_value != expected_object_id:
+        fail(f"{manifest_input_ref(source_input)}.entry_surface.match_value must equal '{expected_object_id}'")
+    resolve_repo_path(entry_repo, entry_path)
+
+    section_handles = payload.get("section_handles")
+    if not isinstance(section_handles, list) or not section_handles:
+        fail(f"{manifest_input_ref(source_input)}.section_handles must be a non-empty list")
+    direct_relations = payload.get("direct_relations")
+    if not isinstance(direct_relations, list):
+        fail(f"{manifest_input_ref(source_input)}.direct_relations must be a list")
+
+    require_string(
+        payload.get("summary_50"),
+        label=f"{manifest_input_ref(source_input)}.summary_50",
+    )
+    require_string(
+        payload.get("summary_200"),
+        label=f"{manifest_input_ref(source_input)}.summary_200",
+    )
+    require_string(
+        payload.get("primary_question"),
+        label=f"{manifest_input_ref(source_input)}.primary_question",
+    )
+    require_string(
+        payload.get("provenance_note"),
+        label=f"{manifest_input_ref(source_input)}.provenance_note",
+    )
+    require_string(
+        payload.get("non_identity_boundary"),
+        label=f"{manifest_input_ref(source_input)}.non_identity_boundary",
+    )
 
     return payload
 
@@ -1427,6 +1575,238 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
     }
 
 
+def build_tos_retrieval_axis_pack_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(TOS_RETRIEVAL_AXIS_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("ToS retrieval axis manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    surface_bindings = manifest.get("surface_bindings")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS retrieval axis manifest must declare source_inputs")
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS retrieval axis manifest must declare surface_bindings")
+
+    registry_surfaces = registry_payload.get("surfaces")
+    if not isinstance(registry_surfaces, list):
+        fail("registry manifest must declare surfaces")
+    registry_by_id = {
+        surface["id"]: surface
+        for surface in registry_surfaces
+        if isinstance(surface, dict) and isinstance(surface.get("id"), str)
+    }
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail("ToS retrieval axis manifest source_inputs entries must be objects")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail("ToS retrieval axis manifest source_inputs must keep name, repo, path, and role")
+        if name in inputs_by_name:
+            fail(f"duplicate ToS retrieval axis source input '{name}'")
+
+        normalized_input = {
+            "name": name,
+            "repo": repo,
+            "path": path,
+            "role": role,
+        }
+        if not manifest_input_path(normalized_input).exists():
+            fail(f"ToS retrieval axis donor input does not exist: {repo_ref(repo, path)}")
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "repo": repo,
+                "role": role,
+                "ref": manifest_input_ref(normalized_input),
+            }
+        )
+
+    required_input_names = (
+        "tos_text_chunk_map",
+        "bridge_contract_doc",
+        "bridge_surface_example",
+        "bridge_envelope_example",
+        "memo_chunk_face",
+        "memo_graph_face",
+        "tos_node_contract",
+        "tos_practice_branch",
+        "tos_authority_surface",
+        "tos_lineage_hop",
+    )
+    missing_inputs = [name for name in required_input_names if name not in inputs_by_name]
+    if missing_inputs:
+        fail(
+            "ToS retrieval axis manifest is missing required inputs: "
+            + ", ".join(sorted(missing_inputs))
+        )
+
+    chunk_map_input = inputs_by_name["tos_text_chunk_map"]
+    if manifest_input_ref(chunk_map_input) != "generated/tos_text_chunk_map.min.json":
+        fail(
+            "ToS retrieval axis manifest tos_text_chunk_map must point to generated/tos_text_chunk_map.min.json"
+        )
+    if manifest_input_ref(inputs_by_name["bridge_contract_doc"]) != "docs/BRIDGE_CONTRACTS.md":
+        fail("ToS retrieval axis manifest bridge_contract_doc must point to docs/BRIDGE_CONTRACTS.md")
+    if manifest_input_ref(inputs_by_name["bridge_surface_example"]) != "examples/tos_retrieval_axis_surface.example.json":
+        fail(
+            "ToS retrieval axis manifest bridge_surface_example must point to examples/tos_retrieval_axis_surface.example.json"
+        )
+    if manifest_input_ref(inputs_by_name["bridge_envelope_example"]) != "examples/aoa_tos_bridge_envelope.example.json":
+        fail(
+            "ToS retrieval axis manifest bridge_envelope_example must point to examples/aoa_tos_bridge_envelope.example.json"
+        )
+    if manifest_input_ref(inputs_by_name["memo_chunk_face"]) != "aoa-memo/examples/memory_chunk_face.bridge.example.json":
+        fail(
+            "ToS retrieval axis manifest memo_chunk_face must point to aoa-memo/examples/memory_chunk_face.bridge.example.json"
+        )
+    if manifest_input_ref(inputs_by_name["memo_graph_face"]) != "aoa-memo/examples/memory_graph_face.bridge.example.json":
+        fail(
+            "ToS retrieval axis manifest memo_graph_face must point to aoa-memo/examples/memory_graph_face.bridge.example.json"
+        )
+    if manifest_input_ref(inputs_by_name["tos_node_contract"]) != "Tree-of-Sophia/docs/NODE_CONTRACT.md":
+        fail("ToS retrieval axis manifest tos_node_contract must point to Tree-of-Sophia/docs/NODE_CONTRACT.md")
+    if manifest_input_ref(inputs_by_name["tos_practice_branch"]) != "Tree-of-Sophia/docs/PRACTICE_BRANCH.md":
+        fail(
+            "ToS retrieval axis manifest tos_practice_branch must point to Tree-of-Sophia/docs/PRACTICE_BRANCH.md"
+        )
+    if manifest_input_ref(inputs_by_name["tos_authority_surface"]) != "Tree-of-Sophia/examples/source_node.example.json":
+        fail(
+            "ToS retrieval axis manifest tos_authority_surface must point to Tree-of-Sophia/examples/source_node.example.json"
+        )
+    if manifest_input_ref(inputs_by_name["tos_lineage_hop"]) != "Tree-of-Sophia/examples/concept_node.example.json":
+        fail(
+            "ToS retrieval axis manifest tos_lineage_hop must point to Tree-of-Sophia/examples/concept_node.example.json"
+        )
+
+    seen_surface_ids: set[str] = set()
+    binding_surface: dict[str, object] | None = None
+    for binding in surface_bindings:
+        if not isinstance(binding, dict):
+            fail("ToS retrieval axis manifest surface_bindings entries must be objects")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(
+                "ToS retrieval axis manifest surface_bindings must keep id, name, kind, slot, and source input"
+            )
+        if surface_id in seen_surface_ids:
+            fail(f"duplicate ToS retrieval axis surface binding '{surface_id}'")
+        seen_surface_ids.add(surface_id)
+        if source_input not in inputs_by_name:
+            fail(
+                f"ToS retrieval axis binding '{surface_id}' references unknown source input '{source_input}'"
+            )
+
+        surface = registry_by_id.get(surface_id)
+        if surface is None:
+            fail(
+                f"ToS retrieval axis binding '{surface_id}' does not exist in the registry manifest"
+            )
+        if surface.get("name") != surface_name:
+            fail(f"ToS retrieval axis binding '{surface_id}' does not match registry surface name")
+        if surface.get("derived_kind") != derived_kind:
+            fail(
+                f"ToS retrieval axis binding '{surface_id}' does not match registry derived_kind"
+            )
+        if surface.get("status") != "experimental":
+            fail(
+                f"ToS retrieval axis binding '{surface_id}' must point to an experimental registry surface"
+            )
+        binding_surface = surface
+
+    if binding_surface is None:
+        fail("ToS retrieval axis manifest must declare one experimental surface binding")
+
+    chunk_map_payload = build_tos_text_chunk_map_payload(registry_payload)
+    chunks = chunk_map_payload.get("chunks")
+    if not isinstance(chunks, list) or not chunks:
+        fail("ToS retrieval axis requires a non-empty ToS text chunk map")
+    chunk_ids = []
+    for chunk in chunks:
+        if not isinstance(chunk, dict):
+            fail("ToS retrieval axis requires chunk-map chunks to be objects")
+        chunk_id = chunk.get("chunk_id")
+        if not isinstance(chunk_id, str) or not chunk_id:
+            fail("ToS retrieval axis requires every chunk-map chunk to keep chunk_id")
+        chunk_ids.append(chunk_id)
+
+    source_node_id = require_string(
+        chunk_map_payload.get("node_id"),
+        label="ToS retrieval axis source_node_id",
+    )
+    axis_summary = (
+        "Bundles the current Zarathustra prologue chunk set with bounded source, "
+        "lineage, conflict, practice, and memo bridge handles so AoA consumers can "
+        "retrieve context without ranking, routing ownership, or graph claims."
+    )
+
+    axis = {
+        "axis_id": f"AOA-K-0007::{source_node_id}",
+        "source_node_id": source_node_id,
+        "chunk_map_ref": manifest_input_ref(chunk_map_input),
+        "chunk_ids": chunk_ids,
+        "source_refs": [
+            manifest_input_ref(inputs_by_name["tos_authority_surface"]),
+            manifest_input_ref(inputs_by_name["tos_node_contract"]),
+            manifest_input_ref(inputs_by_name["tos_practice_branch"]),
+        ],
+        "lineage_refs": [
+            manifest_input_ref(inputs_by_name["tos_lineage_hop"]),
+            manifest_input_ref(inputs_by_name["tos_node_contract"]),
+        ],
+        "conflict_refs": [
+            manifest_input_ref(inputs_by_name["tos_node_contract"]),
+        ],
+        "practice_refs": [
+            manifest_input_ref(inputs_by_name["tos_practice_branch"]),
+        ],
+        "bridge_surface_ref": manifest_input_ref(inputs_by_name["bridge_surface_example"]),
+        "bridge_envelope_ref": manifest_input_ref(inputs_by_name["bridge_envelope_example"]),
+        "memo_face_refs": [
+            manifest_input_ref(inputs_by_name["memo_chunk_face"]),
+            manifest_input_ref(inputs_by_name["memo_graph_face"]),
+        ],
+        "axis_summary": axis_summary,
+    }
+
+    return {
+        "pack_version": manifest["manifest_version"],
+        "pack_type": manifest["pack_type"],
+        "source_manifest_ref": "manifests/tos_retrieval_axis_pack.json",
+        "source_inputs": emitted_source_inputs,
+        "surface_bindings": surface_bindings,
+        "surface_id": binding_surface["id"],
+        "surface_name": binding_surface["name"],
+        "axis_count": 1,
+        "axes": [axis],
+        "bounded_output_contract": manifest["bounded_output_contract"],
+    }
+
+
 def build_federation_spine_payload(
     registry_payload: dict[str, object] | None = None,
 ) -> dict[str, object]:
@@ -1482,36 +1862,33 @@ def build_federation_spine_payload(
     if registry_surface_input is None:
         fail("federation spine manifest must include kag_registry_manifest")
     if manifest_input_ref(registry_surface_input) != "manifests/kag_registry.json":
-        fail("federation spine manifest kag_registry_manifest must point to manifests/kag_registry.json")
+        fail(
+            "federation spine manifest kag_registry_manifest must point to manifests/kag_registry.json"
+        )
 
-    repo_doc_surface_input = inputs_by_name.get("repo_doc_surface_manifest")
-    if repo_doc_surface_input is None:
-        fail("federation spine manifest must include repo_doc_surface_manifest")
-    repo_doc_surface_payload = read_json(manifest_input_path(repo_doc_surface_input))
-    if not isinstance(repo_doc_surface_payload, dict):
-        fail("repo doc surface manifest donor must be a JSON object")
-    repo_doc_entries = repo_doc_surface_payload.get("docs")
-    if not isinstance(repo_doc_entries, list) or not repo_doc_entries:
-        fail("repo doc surface manifest donor must declare docs")
+    technique_export_input = inputs_by_name.get("aoa_techniques_kag_export")
+    if technique_export_input is None:
+        fail("federation spine manifest must include aoa_techniques_kag_export")
+    technique_export_payload = load_federation_export_payload(
+        technique_export_input,
+        expected_repo="aoa-techniques",
+        expected_kind=AOA_TECHNIQUES_FEDERATION_KIND,
+        expected_object_id=AOA_TECHNIQUES_FEDERATION_OBJECT_ID,
+    )
 
-    technique_catalog_input = inputs_by_name.get("technique_catalog")
-    if technique_catalog_input is None:
-        fail("federation spine manifest must include technique_catalog")
-    technique_catalog_payload = read_json(manifest_input_path(technique_catalog_input))
-    if not isinstance(technique_catalog_payload, dict):
-        fail("technique catalog donor must be a JSON object")
-    catalog_techniques = technique_catalog_payload.get("techniques")
-    if not isinstance(catalog_techniques, list) or not catalog_techniques:
-        fail("technique catalog donor must declare techniques")
-
-    export_ready_ids: list[str] = []
-    for technique in catalog_techniques:
-        if not isinstance(technique, dict):
-            fail("technique catalog donor entries must be objects")
-        technique_id = technique.get("id")
-        export_ready = technique.get("export_ready")
-        if isinstance(technique_id, str) and isinstance(export_ready, bool) and export_ready:
-            export_ready_ids.append(technique_id)
+    tos_export_input = inputs_by_name.get("tos_kag_export")
+    if tos_export_input is None:
+        fail("federation spine manifest must include tos_kag_export")
+    tos_source_payload = load_tos_source_node_payload()
+    tos_export_payload = load_federation_export_payload(
+        tos_export_input,
+        expected_repo=TOS_REPO,
+        expected_kind=TOS_FEDERATION_KIND,
+        expected_object_id=require_string(
+            tos_source_payload.get("node_id"),
+            label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_AUTHORITY_PATH)}.node_id",
+        ),
+    )
 
     registry_surfaces = registry_payload.get("surfaces")
     if not isinstance(registry_surfaces, list):
@@ -1524,7 +1901,6 @@ def build_federation_spine_payload(
 
     repos: list[dict[str, object]] = []
     seen_repos: set[str] = set()
-    tos_tiny_entry_route_payload: dict[str, object] | None = None
 
     for binding in repo_bindings:
         if not isinstance(binding, dict):
@@ -1533,10 +1909,7 @@ def build_federation_spine_payload(
         surface_id = binding.get("surface_id")
         repo_name = binding.get("repo")
         pilot_posture = binding.get("pilot_posture")
-        entry_surface_inputs = binding.get("entry_surface_inputs")
-        object_surface_input_name = binding.get("object_surface_input")
-        example_object_count = binding.get("example_object_count")
-        planned_export_ref = binding.get("planned_export_ref")
+        export_input_name = binding.get("export_input")
         provenance_note = binding.get("provenance_note")
         non_identity_boundary = binding.get("non_identity_boundary")
 
@@ -1546,17 +1919,12 @@ def build_federation_spine_payload(
                 surface_id,
                 repo_name,
                 pilot_posture,
-                object_surface_input_name,
-                planned_export_ref,
+                export_input_name,
                 provenance_note,
                 non_identity_boundary,
             )
         ):
             fail("federation spine repo binding must keep required string fields")
-        if not isinstance(entry_surface_inputs, list) or not entry_surface_inputs:
-            fail("federation spine repo binding entry_surface_inputs must be a non-empty list")
-        if not isinstance(example_object_count, int) or example_object_count < 1:
-            fail("federation spine repo binding example_object_count must be a positive integer")
         if repo_name in seen_repos:
             fail(f"duplicate federation spine repo binding '{repo_name}'")
         seen_repos.add(repo_name)
@@ -1564,56 +1932,49 @@ def build_federation_spine_payload(
         surface = registry_by_id.get(surface_id)
         if surface is None:
             fail(f"federation spine binding '{surface_id}' does not exist in the registry manifest")
-
-        current_entry_surface_refs: list[str] = []
-        for input_name in entry_surface_inputs:
-            if not isinstance(input_name, str) or not input_name:
-                fail("federation spine repo binding entry_surface_inputs must keep non-empty names")
-            entry_input = inputs_by_name.get(input_name)
-            if entry_input is None:
-                fail(f"federation spine repo binding references unknown entry surface input '{input_name}'")
-            if entry_input["repo"] != repo_name:
-                fail(f"federation spine entry surface input '{input_name}' must point to repo '{repo_name}'")
-            current_entry_surface_refs.append(manifest_input_ref(entry_input))
-
-        object_surface_input = inputs_by_name.get(object_surface_input_name)
-        if object_surface_input is None:
+        if surface.get("status") != "experimental":
             fail(
-                f"federation spine repo binding references unknown object surface input '{object_surface_input_name}'"
+                f"federation spine binding '{surface_id}' must point to an experimental registry surface"
             )
-        if object_surface_input["repo"] != repo_name:
+
+        export_input = inputs_by_name.get(export_input_name)
+        if export_input is None:
             fail(
-                f"federation spine object surface input '{object_surface_input_name}' must point to repo '{repo_name}'"
+                f"federation spine repo binding references unknown export input '{export_input_name}'"
+            )
+        if export_input["repo"] != repo_name:
+            fail(
+                f"federation spine export input '{export_input_name}' must point to repo '{repo_name}'"
             )
 
         if repo_name == "aoa-techniques":
-            if len(export_ready_ids) < example_object_count:
-                fail(
-                    "federation spine donor surfaces do not expose enough export-ready objects for the requested sample"
-                )
-            example_object_ids = export_ready_ids[:example_object_count]
+            export_payload = technique_export_payload
         elif repo_name == TOS_REPO:
-            if example_object_count != 1:
-                fail("Tree-of-Sophia federation spine binding must keep example_object_count equal to 1")
-            if tos_tiny_entry_route_payload is None:
-                tos_tiny_entry_route_payload = load_tos_tiny_entry_route_payload()
-            example_object_ids = [
-                require_string(
-                    tos_tiny_entry_route_payload.get("route_id"),
-                    label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)}.route_id",
-                )
-            ]
+            export_payload = tos_export_payload
         else:
             fail("federation spine currently supports only aoa-techniques and Tree-of-Sophia pilot repos")
+
+        entry_surface = export_payload.get("entry_surface")
+        if not isinstance(entry_surface, dict):
+            fail(f"{manifest_input_ref(export_input)}.entry_surface must be an object")
+        entry_surface_repo = require_string(
+            entry_surface.get("repo"),
+            label=f"{manifest_input_ref(export_input)}.entry_surface.repo",
+        )
+        entry_surface_path = require_string(
+            entry_surface.get("path"),
+            label=f"{manifest_input_ref(export_input)}.entry_surface.path",
+        )
 
         repos.append(
             {
                 "repo": repo_name,
                 "pilot_posture": pilot_posture,
-                "current_entry_surface_refs": current_entry_surface_refs,
-                "current_object_surface_ref": manifest_input_ref(object_surface_input),
-                "example_object_ids": example_object_ids,
-                "planned_export_ref": planned_export_ref,
+                "export_ref": manifest_input_ref(export_input),
+                "kind": export_payload["kind"],
+                "object_id": export_payload["object_id"],
+                "entry_surface_ref": repo_ref(entry_surface_repo, entry_surface_path),
+                "summary_50": export_payload["summary_50"],
                 "provenance_note": provenance_note,
                 "non_identity_boundary": non_identity_boundary,
             }
@@ -1630,12 +1991,272 @@ def build_federation_spine_payload(
     }
 
 
+def build_cross_source_node_projection_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("cross-source node projection manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    surface_bindings = manifest.get("surface_bindings")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("cross-source node projection manifest must declare source_inputs")
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("cross-source node projection manifest must declare surface_bindings")
+
+    registry_surfaces = registry_payload.get("surfaces")
+    if not isinstance(registry_surfaces, list):
+        fail("registry manifest must declare surfaces")
+    registry_by_id = {
+        surface["id"]: surface
+        for surface in registry_surfaces
+        if isinstance(surface, dict) and isinstance(surface.get("id"), str)
+    }
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail("cross-source node projection manifest source_inputs entries must be objects")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(
+                "cross-source node projection manifest source_inputs must keep name, repo, path, and role"
+            )
+        if name in inputs_by_name:
+            fail(f"duplicate cross-source node projection source input '{name}'")
+
+        normalized_input = {
+            "name": name,
+            "repo": repo,
+            "path": path,
+            "role": role,
+        }
+        input_path = manifest_input_path(normalized_input)
+        allow_same_run_generated_input = (
+            repo == "aoa-kag"
+            and path in {
+                "generated/tos_retrieval_axis_pack.min.json",
+                "generated/federation_spine.min.json",
+            }
+        )
+        if not input_path.exists() and not allow_same_run_generated_input:
+            fail(
+                "cross-source node projection donor input does not exist: "
+                + repo_ref(repo, path)
+            )
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "repo": repo,
+                "role": role,
+                "ref": manifest_input_ref(normalized_input),
+            }
+        )
+
+    required_input_names = (
+        "aoa_techniques_kag_export",
+        "tos_kag_export",
+        "tos_retrieval_axis_pack",
+        "federation_spine",
+    )
+    missing_inputs = [name for name in required_input_names if name not in inputs_by_name]
+    if missing_inputs:
+        fail(
+            "cross-source node projection manifest is missing required inputs: "
+            + ", ".join(sorted(missing_inputs))
+        )
+
+    if manifest_input_ref(inputs_by_name["aoa_techniques_kag_export"]) != "aoa-techniques/generated/kag_export.min.json":
+        fail(
+            "cross-source node projection manifest aoa_techniques_kag_export must point to aoa-techniques/generated/kag_export.min.json"
+        )
+    if manifest_input_ref(inputs_by_name["tos_kag_export"]) != "Tree-of-Sophia/generated/kag_export.min.json":
+        fail(
+            "cross-source node projection manifest tos_kag_export must point to Tree-of-Sophia/generated/kag_export.min.json"
+        )
+    if manifest_input_ref(inputs_by_name["tos_retrieval_axis_pack"]) != "generated/tos_retrieval_axis_pack.min.json":
+        fail(
+            "cross-source node projection manifest tos_retrieval_axis_pack must point to generated/tos_retrieval_axis_pack.min.json"
+        )
+    if manifest_input_ref(inputs_by_name["federation_spine"]) != "generated/federation_spine.min.json":
+        fail(
+            "cross-source node projection manifest federation_spine must point to generated/federation_spine.min.json"
+        )
+
+    seen_surface_ids: set[str] = set()
+    binding_surface: dict[str, object] | None = None
+    for binding in surface_bindings:
+        if not isinstance(binding, dict):
+            fail("cross-source node projection manifest surface_bindings entries must be objects")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(
+                "cross-source node projection manifest surface_bindings must keep id, name, kind, slot, and source input"
+            )
+        if surface_id in seen_surface_ids:
+            fail(f"duplicate cross-source node projection surface binding '{surface_id}'")
+        seen_surface_ids.add(surface_id)
+        if source_input not in inputs_by_name:
+            fail(
+                "cross-source node projection binding "
+                f"'{surface_id}' references unknown source input '{source_input}'"
+            )
+
+        surface = registry_by_id.get(surface_id)
+        if surface is None:
+            fail(
+                f"cross-source node projection binding '{surface_id}' does not exist in the registry manifest"
+            )
+        if surface.get("name") != surface_name:
+            fail(
+                f"cross-source node projection binding '{surface_id}' does not match registry surface name"
+            )
+        if surface.get("derived_kind") != derived_kind:
+            fail(
+                f"cross-source node projection binding '{surface_id}' does not match registry derived_kind"
+            )
+        if surface.get("status") != "experimental":
+            fail(
+                f"cross-source node projection binding '{surface_id}' must point to an experimental registry surface"
+            )
+        binding_surface = surface
+
+    if binding_surface is None:
+        fail("cross-source node projection manifest must declare one experimental surface binding")
+
+    tos_source_payload = load_tos_source_node_payload()
+    expected_tos_object_id = require_string(
+        tos_source_payload.get("node_id"),
+        label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_AUTHORITY_PATH)}.node_id",
+    )
+    technique_export_payload = load_federation_export_payload(
+        inputs_by_name["aoa_techniques_kag_export"],
+        expected_repo="aoa-techniques",
+        expected_kind=AOA_TECHNIQUES_FEDERATION_KIND,
+        expected_object_id=AOA_TECHNIQUES_FEDERATION_OBJECT_ID,
+    )
+    tos_export_payload = load_federation_export_payload(
+        inputs_by_name["tos_kag_export"],
+        expected_repo=TOS_REPO,
+        expected_kind=TOS_FEDERATION_KIND,
+        expected_object_id=expected_tos_object_id,
+    )
+    retrieval_axis_payload = build_tos_retrieval_axis_pack_payload(registry_payload)
+    axes = retrieval_axis_payload.get("axes")
+    if not isinstance(axes, list) or len(axes) != 1 or not isinstance(axes[0], dict):
+        fail("cross-source node projection requires exactly one retrieval axis in the current pilot")
+    axis = axes[0]
+    axis_id = require_string(axis.get("axis_id"), label="cross-source node projection axis_id")
+    if require_string(
+        axis.get("source_node_id"),
+        label="cross-source node projection source_node_id",
+    ) != tos_export_payload["object_id"]:
+        fail(
+            "cross-source node projection retrieval axis must stay aligned with the Tree-of-Sophia export object_id"
+        )
+
+    federation_spine_payload = build_federation_spine_payload(registry_payload)
+    federation_repos = federation_spine_payload.get("repos")
+    if not isinstance(federation_repos, list) or len(federation_repos) != 2:
+        fail("cross-source node projection requires exactly two repo entries in the current federation spine")
+    federation_repo_map = {
+        repo_entry["repo"]: repo_entry
+        for repo_entry in federation_repos
+        if isinstance(repo_entry, dict) and isinstance(repo_entry.get("repo"), str)
+    }
+    if set(federation_repo_map) != {"aoa-techniques", TOS_REPO}:
+        fail("cross-source node projection requires aoa-techniques and Tree-of-Sophia federation entries")
+
+    technique_spine_entry = federation_repo_map["aoa-techniques"]
+    tos_spine_entry = federation_repo_map[TOS_REPO]
+    if technique_spine_entry.get("export_ref") != manifest_input_ref(inputs_by_name["aoa_techniques_kag_export"]):
+        fail("cross-source node projection primary export must stay aligned with the federation spine")
+    if tos_spine_entry.get("export_ref") != manifest_input_ref(inputs_by_name["tos_kag_export"]):
+        fail("cross-source node projection supporting export must stay aligned with the federation spine")
+
+    projection_summary = (
+        "Pairs the multi-source primary-input provenance technique with the current "
+        "Zarathustra prologue source node as a one-hop, non-identity projection for "
+        "provenance-visible bridge work."
+    )
+    non_identity_boundary = (
+        "The projection aligns an operational technique with a supporting ToS source "
+        "node for downstream inspection without claiming identity, ontology merger, "
+        "counterpart activation, or routing ownership."
+    )
+    projection = {
+        "projection_id": (
+            f"AOA-K-0006::{technique_export_payload['object_id']}::{tos_export_payload['object_id']}"
+        ),
+        "primary_input": {
+            "repo": "aoa-techniques",
+            "export_ref": manifest_input_ref(inputs_by_name["aoa_techniques_kag_export"]),
+            "kind": technique_export_payload["kind"],
+            "object_id": technique_export_payload["object_id"],
+        },
+        "supporting_inputs": [
+            {
+                "repo": TOS_REPO,
+                "export_ref": manifest_input_ref(inputs_by_name["tos_kag_export"]),
+                "kind": tos_export_payload["kind"],
+                "object_id": tos_export_payload["object_id"],
+            }
+        ],
+        "retrieval_axis_ref": manifest_input_ref(inputs_by_name["tos_retrieval_axis_pack"]),
+        "axis_id": axis_id,
+        "federation_spine_ref": manifest_input_ref(inputs_by_name["federation_spine"]),
+        "projection_summary": projection_summary,
+        "non_identity_boundary": non_identity_boundary,
+    }
+
+    return {
+        "pack_version": manifest["manifest_version"],
+        "pack_type": manifest["pack_type"],
+        "source_manifest_ref": "manifests/cross_source_node_projection.json",
+        "source_inputs": emitted_source_inputs,
+        "surface_bindings": surface_bindings,
+        "surface_id": binding_surface["id"],
+        "surface_name": binding_surface["name"],
+        "projection_count": 1,
+        "projections": [projection],
+        "bounded_output_contract": manifest["bounded_output_contract"],
+    }
+
+
 def write_generated_outputs() -> list[Path]:
     registry_payload = build_registry_payload()
     technique_lift_pack_payload = build_technique_lift_pack_payload(registry_payload)
     tos_text_chunk_map_payload = build_tos_text_chunk_map_payload(registry_payload)
+    tos_retrieval_axis_pack_payload = build_tos_retrieval_axis_pack_payload(
+        registry_payload
+    )
     reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
     federation_spine_payload = build_federation_spine_payload(registry_payload)
+    cross_source_node_projection_payload = build_cross_source_node_projection_payload(
+        registry_payload
+    )
 
     write_json(REGISTRY_OUTPUT_PATH, registry_payload, pretty=True)
     write_json(REGISTRY_MIN_OUTPUT_PATH, registry_payload, pretty=False)
@@ -1645,6 +2266,16 @@ def write_generated_outputs() -> list[Path]:
     write_json(
         TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
         tos_text_chunk_map_payload,
+        pretty=False,
+    )
+    write_json(
+        TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+        tos_retrieval_axis_pack_payload,
+        pretty=True,
+    )
+    write_json(
+        TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+        tos_retrieval_axis_pack_payload,
         pretty=False,
     )
     write_json(REASONING_HANDOFF_OUTPUT_PATH, reasoning_handoff_pack_payload, pretty=True)
@@ -1659,6 +2290,16 @@ def write_generated_outputs() -> list[Path]:
         federation_spine_payload,
         pretty=False,
     )
+    write_json(
+        CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
+        cross_source_node_projection_payload,
+        pretty=True,
+    )
+    write_json(
+        CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+        cross_source_node_projection_payload,
+        pretty=False,
+    )
 
     return [
         REGISTRY_OUTPUT_PATH,
@@ -1667,8 +2308,12 @@ def write_generated_outputs() -> list[Path]:
         TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
         TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
         TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+        TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+        TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
         REASONING_HANDOFF_OUTPUT_PATH,
         REASONING_HANDOFF_MIN_OUTPUT_PATH,
         FEDERATION_SPINE_OUTPUT_PATH,
         FEDERATION_SPINE_MIN_OUTPUT_PATH,
+        CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
+        CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
     ]
