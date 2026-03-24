@@ -72,5 +72,6 @@ Use:
 python scripts/release_check.py
 ```
 
-For the current deferred counterpart-edge posture, see
+For the current deferred counterpart posture, see
+`COUNTERPART_CONSUMER_CONTRACT.md` and
 `COUNTERPART_EDGE_CONTRACTS.md#activation-gates`.

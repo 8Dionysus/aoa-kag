@@ -13,6 +13,7 @@ It now also carries the first experimental ToS retrieval-axis pack built from th
 It now also carries the first public federation export contract and one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`.
 It now also carries the first bounded cross-source node projection built from that real export loop plus the current retrieval-axis pack.
 It now also carries one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, one narrow consumer guide, and one canonical release-check path for hardening the current experimental stack without activating `AOA-K-0008`.
+It now also carries one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so the current experimental path can be consumed without activating counterpart generation.
 
 ## Phase 1: KAG layer definition
 

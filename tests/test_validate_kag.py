@@ -74,6 +74,79 @@ class ValidateKagTestCase(unittest.TestCase):
                         )
                 self.assertIn("projection_pairings", str(context.exception))
 
+    def test_counterpart_consumer_contract_validator_rejects_non_planned_status(self) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        example_payload = load_json(validate_kag.COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH)
+        assert isinstance(example_payload, dict)
+        broken_payload = copy.deepcopy(example_payload)
+        broken_payload["surface_status"] = "experimental"
+
+        with self.patched_read_json(
+            {
+                validate_kag.COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_counterpart_consumer_contract_example(
+                    registry_surfaces
+                )
+
+        self.assertIn("surface_status", str(context.exception))
+
+    def test_reasoning_handoff_validator_requires_counterpart_contract_refs(self) -> None:
+        example_payload = load_json(validate_kag.REASONING_HANDOFF_EXAMPLE_PATH)
+        assert isinstance(example_payload, dict)
+        broken_payload = copy.deepcopy(example_payload)
+        broken_payload["derived_surface_refs"] = [
+            ref
+            for ref in broken_payload["derived_surface_refs"]
+            if ref != "docs/COUNTERPART_CONSUMER_CONTRACT.md"
+        ]
+
+        with self.patched_read_json(
+            {
+                validate_kag.REASONING_HANDOFF_EXAMPLE_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_reasoning_handoff_example()
+
+        self.assertIn("derived_surface_refs", str(context.exception))
+
+    def test_tiny_consumer_bundle_manifest_rejects_bundle_order_drift(self) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        manifest_payload = load_json(validate_kag.TINY_CONSUMER_BUNDLE_MANIFEST_PATH)
+        assert isinstance(manifest_payload, dict)
+        broken_manifest = copy.deepcopy(manifest_payload)
+        broken_manifest["bundle_order"] = list(reversed(broken_manifest["bundle_order"]))
+
+        with self.patched_read_json(
+            {
+                validate_kag.TINY_CONSUMER_BUNDLE_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_tiny_consumer_bundle_manifest(registry_surfaces)
+
+        self.assertIn("bundle_order", str(context.exception))
+
+    def test_tiny_consumer_bundle_pack_rejects_deferred_counterpart_drift(self) -> None:
+        expected_payload = validate_kag.build_tiny_consumer_bundle_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["deferred_counterpart"]["posture"] = "activated"
+
+        with self.patched_read_json(
+            {
+                validate_kag.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_tiny_consumer_bundle_pack(expected_payload)
+
+        self.assertIn("deferred_counterpart", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
