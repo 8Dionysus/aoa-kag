@@ -77,6 +77,10 @@ It also includes a bridge retrieval schema and example at:
 - `schemas/bridge-retrieval-surface.schema.json`
 - `examples/tos_retrieval_axis_surface.example.json`
 
+It also includes a shared AoA-ToS bridge envelope schema and example at:
+- `schemas/bridge-envelope.schema.json`
+- `examples/aoa_tos_bridge_envelope.example.json`
+
 It now also includes a counterpart-edge schema and example at:
 - `schemas/counterpart-edge-surface.schema.json`
 - `examples/counterpart_edge_view.example.json`

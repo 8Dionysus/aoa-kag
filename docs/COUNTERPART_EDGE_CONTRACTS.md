@@ -59,6 +59,11 @@ The current public example surface for this contract is:
 - `examples/counterpart_edge_view.example.json`
 
 It is intentionally compact and remains `planned` in the KAG registry.
+That planned posture is deliberate:
+
+- no downstream consumer contract depends on this surface yet
+- federation exposure is still deferred
+- the current example is meant to preserve bounded bridge grammar before promotion, not to imply an active public graph layer
 
 ## Anti-goals
 

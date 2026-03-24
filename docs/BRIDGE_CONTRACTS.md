@@ -56,6 +56,33 @@ This keeps retrieval richer than a similarity dump while still remaining derived
 
 See `examples/tos_retrieval_axis_surface.example.json` for a compact bridge-ready example tied to `AOA-K-0007`.
 
+## Shared bridge envelope contract
+
+Strict first-wave closure for the AoA-ToS bridge now uses one shared linkage object:
+
+- `schemas/bridge-envelope.schema.json`
+- `examples/aoa_tos_bridge_envelope.example.json`
+
+This envelope is intentionally narrow.
+It keeps only:
+
+- `bridge_id`
+- `source_class`
+- `source_inputs`
+- `tos_refs`
+- `memory_refs`
+- `kag_lift_status`
+- `faces`
+
+The envelope does not duplicate retrieval, chunk-face, or graph-face payload bodies.
+It links the stronger authored and derived surfaces together so a reviewer can inspect one bounded cross-repo bridge contract without confusing linkage with ownership.
+
+The current example ties together:
+
+- the KAG retrieval face in `examples/tos_retrieval_axis_surface.example.json`
+- the memo chunk face in `aoa-memo/examples/memory_chunk_face.bridge.example.json`
+- the memo graph face in `aoa-memo/examples/memory_graph_face.bridge.example.json`
+
 ## Writeback caution
 
 KAG may support writeback preparation, but it does not own the final authored writeback into ToS or the explicit memory write into `aoa-memo`.
