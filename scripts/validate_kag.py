@@ -14,6 +14,9 @@ from kag_generation import (
     AOA_MEMO_ROOT,
     AOA_PLAYBOOKS_ROOT,
     AOA_TECHNIQUES_ROOT,
+    CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
     FEDERATION_SPINE_MANIFEST_PATH,
     FEDERATION_SPINE_MIN_OUTPUT_PATH,
     FEDERATION_SPINE_OUTPUT_PATH,
@@ -29,6 +32,9 @@ from kag_generation import (
     TOS_TEXT_CHUNK_MAP_MANIFEST_PATH,
     TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
     TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
+    TOS_RETRIEVAL_AXIS_MANIFEST_PATH,
+    TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+    TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
     TOS_REPO,
     TOS_ROOT_README_PATH,
     TOS_TINY_ENTRY_AUTHORITY_PATH,
@@ -38,11 +44,13 @@ from kag_generation import (
     TOS_TINY_ENTRY_HOP_PATH,
     TOS_TINY_ENTRY_ROUTE_ID,
     TOS_TINY_ENTRY_ROUTE_PATH,
+    build_cross_source_node_projection_payload,
     build_federation_spine_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
     build_technique_lift_pack_payload,
     build_tos_text_chunk_map_payload,
+    build_tos_retrieval_axis_pack_payload,
     encode_json,
     repo_ref,
 )
@@ -89,6 +97,15 @@ TOS_TEXT_CHUNK_MAP_SCHEMA_PATH = (
 TOS_TEXT_CHUNK_MAP_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "tos_text_chunk_map.example.json"
 )
+TOS_RETRIEVAL_AXIS_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-retrieval-axis-pack-manifest.schema.json"
+)
+TOS_RETRIEVAL_AXIS_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-retrieval-axis-pack.schema.json"
+)
+TOS_RETRIEVAL_AXIS_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tos_retrieval_axis_pack.example.json"
+)
 REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-pack-manifest.schema.json"
 )
@@ -105,6 +122,15 @@ FEDERATION_SPINE_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "federation-spine-manifest.schema.json"
 )
 FEDERATION_SPINE_SCHEMA_PATH = REPO_ROOT / "schemas" / "federation-spine.schema.json"
+CROSS_SOURCE_NODE_PROJECTION_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "cross-source-node-projection-manifest.schema.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "cross-source-node-projection.schema.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "cross_source_node_projection.example.json"
+)
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
 ALLOWED_SOURCE_CLASS = {
@@ -238,6 +264,38 @@ EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT = {
     "counterpart_projection": "forbidden",
     "federation_export_activation": "forbidden",
 }
+EXPECTED_TOS_RETRIEVAL_AXIS_INPUTS = {
+    ("tos_text_chunk_map", "aoa-kag", "generated/tos_text_chunk_map.min.json", "chunk_map"),
+    ("bridge_contract_doc", "aoa-kag", "docs/BRIDGE_CONTRACTS.md", "bridge_doctrine"),
+    ("bridge_surface_example", "aoa-kag", "examples/tos_retrieval_axis_surface.example.json", "bridge_surface"),
+    ("bridge_envelope_example", "aoa-kag", "examples/aoa_tos_bridge_envelope.example.json", "bridge_envelope"),
+    ("memo_chunk_face", "aoa-memo", "examples/memory_chunk_face.bridge.example.json", "memo_chunk_face"),
+    ("memo_graph_face", "aoa-memo", "examples/memory_graph_face.bridge.example.json", "memo_graph_face"),
+    ("tos_node_contract", TOS_REPO, "docs/NODE_CONTRACT.md", "tos_contract"),
+    ("tos_practice_branch", TOS_REPO, "docs/PRACTICE_BRANCH.md", "tos_contract"),
+    ("tos_authority_surface", TOS_REPO, "examples/source_node.example.json", "authority_surface"),
+    ("tos_lineage_hop", TOS_REPO, "examples/concept_node.example.json", "lineage_surface"),
+}
+EXPECTED_TOS_RETRIEVAL_AXIS_BINDINGS = {
+    (
+        "AOA-K-0007",
+        "tos-retrieval-axis-surface",
+        "retrieval_surface",
+        "axes",
+        "tos_text_chunk_map",
+    ),
+}
+EXPECTED_TOS_RETRIEVAL_AXIS_OUTPUT_PATHS = {
+    "full": "generated/tos_retrieval_axis_pack.json",
+    "min": "generated/tos_retrieval_axis_pack.min.json",
+}
+EXPECTED_TOS_RETRIEVAL_AXIS_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "scoring_or_ranking": "forbidden",
+    "routing_ownership": "forbidden",
+    "graph_normalization": "forbidden",
+}
 ALLOWED_CONTRACT_STRENGTH = {
     "schema_backed",
     "doc_backed",
@@ -280,38 +338,26 @@ EXPECTED_REASONING_HANDOFF_CONTRACT = {
 EXPECTED_REASONING_HANDOFF_SCENARIOS = {"AOA-P-0008", "AOA-P-0009"}
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
-    ("repo_doc_surface_manifest", "aoa-techniques", "generated/repo_doc_surface_manifest.min.json", "entry_surfaces"),
-    ("technique_catalog", "aoa-techniques", "generated/technique_catalog.min.json", "object_spine"),
-    ("tos_root_readme", TOS_REPO, TOS_ROOT_README_PATH, "entry_surface"),
-    ("tos_tiny_entry_doctrine", TOS_REPO, TOS_TINY_ENTRY_DOCTRINE_PATH, "entry_surface"),
-    ("tos_tiny_entry_route", TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH, "object_surface"),
+    ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "source_owned_export"),
+    ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "source_owned_export"),
 }
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER = [
     "kag_registry_manifest",
-    "repo_doc_surface_manifest",
-    "technique_catalog",
-    "tos_root_readme",
-    "tos_tiny_entry_doctrine",
-    "tos_tiny_entry_route",
+    "aoa_techniques_kag_export",
+    "tos_kag_export",
 ]
 EXPECTED_FEDERATION_SPINE_BINDINGS = {
     (
         "AOA-K-0009",
         "aoa-techniques",
-        "existing_generated_surfaces",
-        ("repo_doc_surface_manifest",),
-        "technique_catalog",
-        3,
-        "aoa-techniques/generated/kag_export.min.json",
+        "source_owned_export_tiny",
+        "aoa_techniques_kag_export",
     ),
     (
         "AOA-K-0009",
         TOS_REPO,
-        "source_owned_tiny_entry_route",
-        ("tos_root_readme", "tos_tiny_entry_doctrine"),
-        "tos_tiny_entry_route",
-        1,
-        f"{TOS_REPO}/generated/kag_export.min.json",
+        "source_owned_export_tiny",
+        "tos_kag_export",
     )
 }
 EXPECTED_FEDERATION_SPINE_REPO_ORDER = ["aoa-techniques", TOS_REPO]
@@ -327,11 +373,44 @@ EXPECTED_FEDERATION_SPINE_CONTRACT = {
     "full_federation_claim": "forbidden",
 }
 EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques", TOS_REPO}
-EXPECTED_TOS_SPINE_ENTRY_REFS = [
-    repo_ref(TOS_REPO, TOS_ROOT_README_PATH),
-    repo_ref(TOS_REPO, TOS_TINY_ENTRY_DOCTRINE_PATH),
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_INPUTS = {
+    ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "primary_export"),
+    ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "supporting_export"),
+    ("tos_retrieval_axis_pack", "aoa-kag", "generated/tos_retrieval_axis_pack.min.json", "retrieval_axis"),
+    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "federation_spine"),
+}
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_BINDINGS = {
+    (
+        "AOA-K-0006",
+        "cross-source-node-projection",
+        "node_projection",
+        "projections",
+        "aoa_techniques_kag_export",
+    ),
+}
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATHS = {
+    "full": "generated/cross_source_node_projection.json",
+    "min": "generated/cross_source_node_projection.min.json",
+}
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "counterpart_activation": "forbidden",
+    "graph_expansion": "forbidden",
+    "routing_ownership": "forbidden",
+}
+EXPECTED_AOA_K_0006_SOURCE_INPUTS = [
+    {
+        "repo": "aoa-techniques",
+        "source_class": "technique_bundle",
+        "role": "primary",
+    },
+    {
+        "repo": TOS_REPO,
+        "source_class": "tos_text",
+        "role": "supporting",
+    },
 ]
-EXPECTED_TOS_SPINE_OBJECT_REF = repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)
 EXPECTED_AOA_K_0009_SOURCE_INPUTS = [
     {
         "repo": "aoa-techniques",
@@ -344,7 +423,6 @@ EXPECTED_AOA_K_0009_SOURCE_INPUTS = [
         "role": "supporting",
     },
 ]
-PLANNED_EXPORT_REF_RE = re.compile(r"^[A-Za-z0-9-]+/generated/kag_export\.min\.json$")
 MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 VISIBLE_ROOTS = (
@@ -458,6 +536,17 @@ def validate_tos_text_chunk_map_schema_surface() -> None:
     validate_top_level_schema(TOS_TEXT_CHUNK_MAP_SCHEMA_PATH, "ToS text chunk map")
 
 
+def validate_tos_retrieval_axis_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_RETRIEVAL_AXIS_MANIFEST_SCHEMA_PATH,
+        "ToS retrieval axis manifest",
+    )
+
+
+def validate_tos_retrieval_axis_schema_surface() -> None:
+    validate_top_level_schema(TOS_RETRIEVAL_AXIS_SCHEMA_PATH, "ToS retrieval axis pack")
+
+
 def validate_reasoning_handoff_pack_manifest_schema_surface() -> None:
     validate_top_level_schema(
         REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH,
@@ -490,6 +579,20 @@ def validate_federation_spine_schema_surface() -> None:
     validate_top_level_schema(
         FEDERATION_SPINE_SCHEMA_PATH,
         "federation spine",
+    )
+
+
+def validate_cross_source_node_projection_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        CROSS_SOURCE_NODE_PROJECTION_MANIFEST_SCHEMA_PATH,
+        "cross-source node projection manifest",
+    )
+
+
+def validate_cross_source_node_projection_schema_surface() -> None:
+    validate_top_level_schema(
+        CROSS_SOURCE_NODE_PROJECTION_SCHEMA_PATH,
+        "cross-source node projection",
     )
 
 
@@ -866,13 +969,47 @@ def validate_special_registry_surfaces(
     if surface_0005.get("source_repos") != [TOS_REPO]:
         fail(f"{label} AOA-K-0005 must keep source_repos ['{TOS_REPO}']")
 
+    surface_0006 = surfaces_by_id.get("AOA-K-0006")
+    if surface_0006 is None:
+        fail(f"{label} is missing required surface 'AOA-K-0006'")
+    if surface_0006.get("name") != "cross-source-node-projection":
+        fail(f"{label} AOA-K-0006 must keep name 'cross-source-node-projection'")
+    if surface_0006.get("status") != "experimental":
+        fail(f"{label} AOA-K-0006 must be experimental in the current Wave 5 pilot")
+    if surface_0006.get("source_class") != "technique_bundle":
+        fail(f"{label} AOA-K-0006 must keep 'technique_bundle' as its primary source_class")
+    if surface_0006.get("derived_kind") != "node_projection":
+        fail(f"{label} AOA-K-0006 must keep 'node_projection' as its derived_kind")
+    if surface_0006.get("provenance_mode") != "derived_with_handles":
+        fail(f"{label} AOA-K-0006 must keep 'derived_with_handles' as its provenance_mode")
+    if surface_0006.get("normalization_scope") != "cross_source_nodes":
+        fail(f"{label} AOA-K-0006 must keep 'cross_source_nodes' as its normalization_scope")
+    if surface_0006.get("framework_readiness") != "multi_consumer_ready":
+        fail(f"{label} AOA-K-0006 must keep 'multi_consumer_ready' as its framework_readiness")
+    if surface_0006.get("source_repos") != ["aoa-techniques", TOS_REPO]:
+        fail(f"{label} AOA-K-0006 must keep source_repos ['aoa-techniques', '{TOS_REPO}']")
+    if surface_0006.get("source_inputs") != EXPECTED_AOA_K_0006_SOURCE_INPUTS:
+        fail(f"{label} AOA-K-0006 must keep the current primary/supporting source_inputs mapping")
+
     surface_0007 = surfaces_by_id.get("AOA-K-0007")
     if surface_0007 is None:
         fail(f"{label} is missing required surface 'AOA-K-0007'")
     if surface_0007.get("name") != "tos-retrieval-axis-surface":
         fail(f"{label} AOA-K-0007 must keep name 'tos-retrieval-axis-surface'")
-    if surface_0007.get("status") != "planned":
-        fail(f"{label} AOA-K-0007 must remain planned")
+    if surface_0007.get("status") != "experimental":
+        fail(f"{label} AOA-K-0007 must be experimental in the current Wave 3 pilot")
+    if surface_0007.get("source_class") != "tos_text":
+        fail(f"{label} AOA-K-0007 must keep 'tos_text' as its primary source_class")
+    if surface_0007.get("derived_kind") != "retrieval_surface":
+        fail(f"{label} AOA-K-0007 must keep 'retrieval_surface' as its derived_kind")
+    if surface_0007.get("provenance_mode") != "derived_with_handles":
+        fail(f"{label} AOA-K-0007 must keep 'derived_with_handles' as its provenance_mode")
+    if surface_0007.get("normalization_scope") != "axis_bundles":
+        fail(f"{label} AOA-K-0007 must keep 'axis_bundles' as its normalization_scope")
+    if surface_0007.get("framework_readiness") != "hipporag_ready":
+        fail(f"{label} AOA-K-0007 must keep 'hipporag_ready' as its framework_readiness")
+    if surface_0007.get("source_repos") != [TOS_REPO, "aoa-memo"]:
+        fail(f"{label} AOA-K-0007 must keep source_repos ['{TOS_REPO}', 'aoa-memo']")
 
     surface_0008 = surfaces_by_id.get("AOA-K-0008")
     if surface_0008 is None:
@@ -1132,6 +1269,93 @@ def validate_tos_text_chunk_map_manifest(
         fail("ToS text chunk map manifest bounded_output_contract must match the current source-first guardrail")
 
 
+def validate_tos_retrieval_axis_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(TOS_RETRIEVAL_AXIS_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS retrieval axis manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "surface_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS retrieval axis manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("ToS retrieval axis manifest manifest_version must equal 1")
+    if payload["pack_type"] != "tos_retrieval_axis_pack":
+        fail("ToS retrieval axis manifest pack_type must equal 'tos_retrieval_axis_pack'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS retrieval axis manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"ToS retrieval axis manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_TOS_RETRIEVAL_AXIS_INPUTS:
+        fail("ToS retrieval axis manifest source_inputs must match the current bounded donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS retrieval axis manifest surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"ToS retrieval axis manifest surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+    if actual_bindings != EXPECTED_TOS_RETRIEVAL_AXIS_BINDINGS:
+        fail("ToS retrieval axis manifest surface_bindings must match the current bounded retrieval contract")
+
+    if payload["output_paths"] != EXPECTED_TOS_RETRIEVAL_AXIS_OUTPUT_PATHS:
+        fail("ToS retrieval axis manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_TOS_RETRIEVAL_AXIS_CONTRACT:
+        fail("ToS retrieval axis manifest bounded_output_contract must match the current source-first guardrail")
+
+
 def validate_reasoning_handoff_manifest() -> None:
     payload = read_json(REASONING_HANDOFF_MANIFEST_PATH)
     if not isinstance(payload, dict):
@@ -1277,7 +1501,7 @@ def validate_federation_spine_manifest(
     repo_bindings = payload["repo_bindings"]
     if not isinstance(repo_bindings, list) or not repo_bindings:
         fail("federation spine manifest repo_bindings must be a non-empty list")
-    actual_bindings: set[tuple[str, str, str, tuple[str, ...], str, int, str]] = set()
+    actual_bindings: set[tuple[str, str, str, str]] = set()
     repo_binding_order: list[str] = []
     for index, binding in enumerate(repo_bindings):
         location = f"federation spine manifest repo_bindings[{index}]"
@@ -1286,10 +1510,7 @@ def validate_federation_spine_manifest(
         surface_id = binding.get("surface_id")
         repo_name = binding.get("repo")
         pilot_posture = binding.get("pilot_posture")
-        entry_surface_inputs = binding.get("entry_surface_inputs")
-        object_surface_input = binding.get("object_surface_input")
-        example_object_count = binding.get("example_object_count")
-        planned_export_ref = binding.get("planned_export_ref")
+        export_input = binding.get("export_input")
         provenance_note = binding.get("provenance_note")
         non_identity_boundary = binding.get("non_identity_boundary")
         if not all(
@@ -1298,21 +1519,14 @@ def validate_federation_spine_manifest(
                 surface_id,
                 repo_name,
                 pilot_posture,
-                object_surface_input,
-                planned_export_ref,
+                export_input,
                 provenance_note,
                 non_identity_boundary,
             )
         ):
             fail(
-                f"{location} must keep surface_id, repo, pilot_posture, object_surface_input, planned_export_ref, provenance_note, and non_identity_boundary"
+                f"{location} must keep surface_id, repo, pilot_posture, export_input, provenance_note, and non_identity_boundary"
             )
-        if not isinstance(entry_surface_inputs, list) or not entry_surface_inputs:
-            fail(f"{location}.entry_surface_inputs must be a non-empty list")
-        if not isinstance(example_object_count, int) or example_object_count < 1:
-            fail(f"{location}.example_object_count must be a positive integer")
-        if not PLANNED_EXPORT_REF_RE.match(planned_export_ref):
-            fail(f"{location}.planned_export_ref must match '<repo>/generated/kag_export.min.json'")
         if len(provenance_note) < 20:
             fail(f"{location}.provenance_note must be a string of length >= 20")
         if len(non_identity_boundary) < 20:
@@ -1325,23 +1539,7 @@ def validate_federation_spine_manifest(
             fail(f"{location} must point to an experimental registry surface")
         repo_binding_order.append(repo_name)
 
-        entry_input_names: list[str] = []
-        for input_name in entry_surface_inputs:
-            if not isinstance(input_name, str) or not input_name:
-                fail(f"{location}.entry_surface_inputs contains an invalid entry")
-            entry_input_names.append(input_name)
-
-        actual_bindings.add(
-            (
-                surface_id,
-                repo_name,
-                pilot_posture,
-                tuple(entry_input_names),
-                object_surface_input,
-                example_object_count,
-                planned_export_ref,
-            )
-        )
+        actual_bindings.add((surface_id, repo_name, pilot_posture, export_input))
     if actual_bindings != EXPECTED_FEDERATION_SPINE_BINDINGS:
         fail("federation spine manifest repo_bindings must match the current bounded spine contract")
     if repo_binding_order != EXPECTED_FEDERATION_SPINE_REPO_ORDER:
@@ -1351,6 +1549,93 @@ def validate_federation_spine_manifest(
         fail("federation spine manifest output_paths must match the committed generated output paths")
     if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
         fail("federation spine manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_cross_source_node_projection_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("cross-source node projection manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "surface_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"cross-source node projection manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("cross-source node projection manifest manifest_version must equal 1")
+    if payload["pack_type"] != "cross_source_node_projection":
+        fail("cross-source node projection manifest pack_type must equal 'cross_source_node_projection'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("cross-source node projection manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"cross-source node projection manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_INPUTS:
+        fail("cross-source node projection manifest source_inputs must match the current bounded donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("cross-source node projection manifest surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"cross-source node projection manifest surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+    if actual_bindings != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_BINDINGS:
+        fail("cross-source node projection manifest surface_bindings must match the current bounded projection contract")
+
+    if payload["output_paths"] != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATHS:
+        fail("cross-source node projection manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT:
+        fail("cross-source node projection manifest bounded_output_contract must match the current source-first guardrail")
 
 
 def validate_tos_text_chunk_map_pack(
@@ -1642,6 +1927,81 @@ def validate_tos_text_chunk_map_example(
         fail("expected ToS text chunk map payload must keep the prologue-overflow segment")
     if chunks[0] != expected_chunk:
         fail("ToS text chunk map example must mirror the bounded prologue-overflow chunk with translation tension")
+
+
+def validate_tos_retrieval_axis_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("ToS retrieval axis pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "axis_count",
+        "axes",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS retrieval axis pack is missing required key '{key}'")
+
+    if payload["pack_type"] != "tos_retrieval_axis_pack":
+        fail("ToS retrieval axis pack pack_type must equal 'tos_retrieval_axis_pack'")
+    if payload["bounded_output_contract"] != EXPECTED_TOS_RETRIEVAL_AXIS_CONTRACT:
+        fail("ToS retrieval axis pack bounded_output_contract must match the current source-first guardrail")
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("ToS retrieval axis pack source_inputs must match the manifest-driven donor set")
+    if payload["surface_bindings"] != expected_payload["surface_bindings"]:
+        fail("ToS retrieval axis pack surface_bindings must match the current bounded retrieval binding")
+
+    surface_0007 = surfaces_by_id.get("AOA-K-0007")
+    if surface_0007 is None or surface_0007.get("status") != "experimental":
+        fail("ToS retrieval axis pack requires AOA-K-0007 to remain experimental in the generated registry")
+
+    axes = payload["axes"]
+    if not isinstance(axes, list) or len(axes) != 1:
+        fail("ToS retrieval axis pack must contain exactly one axis in the current pilot")
+    if payload["axis_count"] != 1:
+        fail("ToS retrieval axis pack axis_count must equal 1 in the current pilot")
+    axis = axes[0]
+    if not isinstance(axis, dict):
+        fail("ToS retrieval axis pack axis must be an object")
+    for key in (
+        "chunk_map_ref",
+        "source_refs",
+        "lineage_refs",
+        "conflict_refs",
+        "practice_refs",
+        "bridge_surface_ref",
+        "bridge_envelope_ref",
+        "memo_face_refs",
+    ):
+        value = axis.get(key)
+        if value is None:
+            fail(f"ToS retrieval axis pack axis is missing required key '{key}'")
+    resolve_known_ref(axis["chunk_map_ref"], label="ToS retrieval axis pack chunk_map_ref")
+    resolve_known_ref(axis["bridge_surface_ref"], label="ToS retrieval axis pack bridge_surface_ref")
+    resolve_known_ref(axis["bridge_envelope_ref"], label="ToS retrieval axis pack bridge_envelope_ref")
+    for ref_list_key in ("source_refs", "lineage_refs", "conflict_refs", "practice_refs", "memo_face_refs"):
+        refs = validate_unique_string_list(axis[ref_list_key], label=f"ToS retrieval axis pack {ref_list_key}")
+        for ref in refs:
+            resolve_known_ref(ref, label=f"ToS retrieval axis pack {ref_list_key}")
+
+    if payload != expected_payload:
+        fail("ToS retrieval axis pack must match the committed manifest-driven retrieval-axis payload")
+
+
+def validate_tos_retrieval_axis_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(TOS_RETRIEVAL_AXIS_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail("ToS retrieval axis example must match the current bounded retrieval-axis payload")
 
 
 def validate_reasoning_artifact_descriptor(
@@ -2000,6 +2360,7 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
 def validate_federation_spine_pack(
     payload: object,
     surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
 ) -> None:
     if not isinstance(payload, dict):
         fail("federation spine pack must be a JSON object")
@@ -2024,30 +2385,17 @@ def validate_federation_spine_pack(
         fail("federation spine pack source_manifest_ref must point to manifests/federation_spine.json")
     if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
         fail("federation spine pack bounded_output_contract must match the current source-first guardrail")
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("federation spine pack source_inputs must match the manifest-driven donor set")
 
-    source_inputs = payload["source_inputs"]
-    if not isinstance(source_inputs, list) or not source_inputs:
-        fail("federation spine pack source_inputs must be a non-empty list")
-    actual_source_inputs: set[tuple[str, str, str, str]] = set()
-    source_input_order: list[str] = []
-    for index, source_input in enumerate(source_inputs):
+    for index, source_input in enumerate(payload["source_inputs"]):
         location = f"federation spine pack source_inputs[{index}]"
         if not isinstance(source_input, dict):
             fail(f"{location} must be an object")
-        name = source_input.get("name")
-        repo = source_input.get("repo")
-        role = source_input.get("role")
         ref = source_input.get("ref")
-        if not all(isinstance(value, str) and value for value in (name, repo, role, ref)):
-            fail(f"{location} must keep name, repo, role, and ref")
+        if not isinstance(ref, str) or not ref:
+            fail(f"{location}.ref must be a non-empty string")
         resolve_known_ref(ref, label=location)
-        relative_ref = ref if repo == "aoa-kag" else ref.split("/", 1)[1]
-        source_input_order.append(name)
-        actual_source_inputs.add((name, repo, relative_ref, role))
-    if actual_source_inputs != EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS:
-        fail("federation spine pack source_inputs must match the manifest-driven donor set")
-    if source_input_order != EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER:
-        fail("federation spine pack source_inputs must keep the current additive donor order")
 
     repos = payload["repos"]
     if not isinstance(repos, list) or not repos:
@@ -2055,43 +2403,6 @@ def validate_federation_spine_pack(
     repo_count = payload["repo_count"]
     if not isinstance(repo_count, int) or repo_count != len(repos):
         fail("federation spine pack repo_count must equal the number of repos")
-
-    technique_catalog_payload = read_json(AOA_TECHNIQUES_ROOT / "generated" / "technique_catalog.min.json")
-    if not isinstance(technique_catalog_payload, dict):
-        fail("federation spine validation requires technique_catalog.min.json to be a JSON object")
-    catalog_techniques = technique_catalog_payload.get("techniques")
-    if not isinstance(catalog_techniques, list) or not catalog_techniques:
-        fail("federation spine validation requires techniques in technique_catalog.min.json")
-    expected_example_object_ids = [
-        technique["id"]
-        for technique in catalog_techniques
-        if isinstance(technique, dict)
-        and isinstance(technique.get("id"), str)
-        and technique.get("export_ready") is True
-    ][:3]
-    if len(expected_example_object_ids) != 3:
-        fail("federation spine validation requires at least three export-ready techniques")
-    tos_tiny_entry_route = validate_tos_tiny_entry_route()
-    expected_repo_contracts = {
-        "aoa-techniques": {
-            "pilot_posture": "existing_generated_surfaces",
-            "current_entry_surface_refs": [
-                repo_ref("aoa-techniques", "generated/repo_doc_surface_manifest.min.json")
-            ],
-            "current_object_surface_ref": repo_ref(
-                "aoa-techniques", "generated/technique_catalog.min.json"
-            ),
-            "example_object_ids": expected_example_object_ids,
-            "planned_export_ref": "aoa-techniques/generated/kag_export.min.json",
-        },
-        TOS_REPO: {
-            "pilot_posture": "source_owned_tiny_entry_route",
-            "current_entry_surface_refs": EXPECTED_TOS_SPINE_ENTRY_REFS,
-            "current_object_surface_ref": EXPECTED_TOS_SPINE_OBJECT_REF,
-            "example_object_ids": [tos_tiny_entry_route["route_id"]],
-            "planned_export_ref": f"{TOS_REPO}/generated/kag_export.min.json",
-        },
-    }
 
     seen_repos: set[str] = set()
     repo_order: list[str] = []
@@ -2102,10 +2413,11 @@ def validate_federation_spine_pack(
         for key in (
             "repo",
             "pilot_posture",
-            "current_entry_surface_refs",
-            "current_object_surface_ref",
-            "example_object_ids",
-            "planned_export_ref",
+            "export_ref",
+            "kind",
+            "object_id",
+            "entry_surface_ref",
+            "summary_50",
             "provenance_note",
             "non_identity_boundary",
         ):
@@ -2114,10 +2426,11 @@ def validate_federation_spine_pack(
 
         repo_name = repo_entry["repo"]
         pilot_posture = repo_entry["pilot_posture"]
-        current_entry_surface_refs = repo_entry["current_entry_surface_refs"]
-        current_object_surface_ref = repo_entry["current_object_surface_ref"]
-        example_object_ids = repo_entry["example_object_ids"]
-        planned_export_ref = repo_entry["planned_export_ref"]
+        export_ref = repo_entry["export_ref"]
+        kind = repo_entry["kind"]
+        object_id = repo_entry["object_id"]
+        entry_surface_ref = repo_entry["entry_surface_ref"]
+        summary_50 = repo_entry["summary_50"]
         provenance_note = repo_entry["provenance_note"]
         non_identity_boundary = repo_entry["non_identity_boundary"]
 
@@ -2129,47 +2442,26 @@ def validate_federation_spine_pack(
         repo_order.append(repo_name)
         if not isinstance(pilot_posture, str) or not pilot_posture:
             fail(f"{location}.pilot_posture must be a non-empty string")
-        if not isinstance(current_object_surface_ref, str) or not current_object_surface_ref:
-            fail(f"{location}.current_object_surface_ref must be a non-empty string")
+        if not isinstance(export_ref, str) or not export_ref:
+            fail(f"{location}.export_ref must be a non-empty string")
+        if not isinstance(kind, str) or not kind:
+            fail(f"{location}.kind must be a non-empty string")
+        if not isinstance(object_id, str) or not object_id:
+            fail(f"{location}.object_id must be a non-empty string")
+        if not isinstance(entry_surface_ref, str) or not entry_surface_ref:
+            fail(f"{location}.entry_surface_ref must be a non-empty string")
+        if not isinstance(summary_50, str) or len(summary_50) < 10:
+            fail(f"{location}.summary_50 must be a string of length >= 10")
         if not isinstance(provenance_note, str) or len(provenance_note) < 20:
             fail(f"{location}.provenance_note must be a string of length >= 20")
         if not isinstance(non_identity_boundary, str) or len(non_identity_boundary) < 20:
             fail(f"{location}.non_identity_boundary must be a string of length >= 20")
-        if not isinstance(planned_export_ref, str) or not PLANNED_EXPORT_REF_RE.match(planned_export_ref):
-            fail(f"{location}.planned_export_ref must match '<repo>/generated/kag_export.min.json'")
-        if not planned_export_ref.startswith(f"{repo_name}/"):
-            fail(f"{location}.planned_export_ref must point to the same repo as the repo entry")
-
-        refs = validate_unique_string_list(
-            current_entry_surface_refs,
-            label=f"{location}.current_entry_surface_refs",
-        )
-        for ref in refs:
-            resolve_known_ref(ref, label=f"{location}.current_entry_surface_refs")
-            if not ref.startswith(f"{repo_name}/"):
-                fail(f"{location}.current_entry_surface_refs must point to repo '{repo_name}'")
-
-        resolve_known_ref(current_object_surface_ref, label=f"{location}.current_object_surface_ref")
-        if not current_object_surface_ref.startswith(f"{repo_name}/"):
-            fail(f"{location}.current_object_surface_ref must point to repo '{repo_name}'")
-
-        object_ids = validate_unique_string_list(
-            example_object_ids,
-            label=f"{location}.example_object_ids",
-        )
-        expected_repo = expected_repo_contracts.get(repo_name)
-        if expected_repo is None:
-            fail(f"{location}.repo '{repo_name}' is not part of the current bounded pilot set")
-        if pilot_posture != expected_repo["pilot_posture"]:
-            fail(f"{location}.pilot_posture must match the current repo-specific pilot posture")
-        if refs != expected_repo["current_entry_surface_refs"]:
-            fail(f"{location}.current_entry_surface_refs must match the current repo-specific entry surfaces")
-        if current_object_surface_ref != expected_repo["current_object_surface_ref"]:
-            fail(f"{location}.current_object_surface_ref must match the current repo-specific object surface")
-        if object_ids != expected_repo["example_object_ids"]:
-            fail(f"{location}.example_object_ids must match the current repo-specific object sample")
-        if planned_export_ref != expected_repo["planned_export_ref"]:
-            fail(f"{location}.planned_export_ref must match the current repo-specific planned export path")
+        resolve_known_ref(export_ref, label=f"{location}.export_ref")
+        resolve_known_ref(entry_surface_ref, label=f"{location}.entry_surface_ref")
+        if not export_ref.startswith(f"{repo_name}/"):
+            fail(f"{location}.export_ref must point to the same repo as the repo entry")
+        if not entry_surface_ref.startswith(f"{repo_name}/"):
+            fail(f"{location}.entry_surface_ref must point to the same repo as the repo entry")
 
         surface_0009 = surfaces_by_id.get("AOA-K-0009")
         if surface_0009 is None or surface_0009.get("status") != "experimental":
@@ -2182,6 +2474,82 @@ def validate_federation_spine_pack(
         EXPECTED_FEDERATION_SPINE_REPOS,
         label="federation spine pack repos",
     )
+    if payload != expected_payload:
+        fail("federation spine pack must match the committed manifest-driven federation payload")
+
+
+def validate_cross_source_node_projection_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("cross-source node projection pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "projection_count",
+        "projections",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"cross-source node projection pack is missing required key '{key}'")
+
+    if payload["pack_type"] != "cross_source_node_projection":
+        fail("cross-source node projection pack pack_type must equal 'cross_source_node_projection'")
+    if payload["bounded_output_contract"] != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT:
+        fail("cross-source node projection pack bounded_output_contract must match the current source-first guardrail")
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("cross-source node projection pack source_inputs must match the manifest-driven donor set")
+    if payload["surface_bindings"] != expected_payload["surface_bindings"]:
+        fail("cross-source node projection pack surface_bindings must match the current bounded projection binding")
+
+    surface_0006 = surfaces_by_id.get("AOA-K-0006")
+    if surface_0006 is None or surface_0006.get("status") != "experimental":
+        fail("cross-source node projection pack requires AOA-K-0006 to remain experimental in the generated registry")
+
+    projections = payload["projections"]
+    if not isinstance(projections, list) or len(projections) != 1:
+        fail("cross-source node projection pack must contain exactly one projection in the current pilot")
+    if payload["projection_count"] != 1:
+        fail("cross-source node projection pack projection_count must equal 1 in the current pilot")
+    projection = projections[0]
+    if not isinstance(projection, dict):
+        fail("cross-source node projection pack projection must be an object")
+    for input_key in ("primary_input",):
+        input_payload = projection.get(input_key)
+        if not isinstance(input_payload, dict):
+            fail(f"cross-source node projection pack {input_key} must be an object")
+        resolve_known_ref(input_payload["export_ref"], label=f"cross-source node projection pack {input_key}.export_ref")
+    supporting_inputs = projection.get("supporting_inputs")
+    if not isinstance(supporting_inputs, list) or len(supporting_inputs) != 1:
+        fail("cross-source node projection pack supporting_inputs must contain exactly one supporting export in the current pilot")
+    resolve_known_ref(
+        supporting_inputs[0]["export_ref"],
+        label="cross-source node projection pack supporting_inputs[0].export_ref",
+    )
+    resolve_known_ref(
+        projection["retrieval_axis_ref"],
+        label="cross-source node projection pack retrieval_axis_ref",
+    )
+    resolve_known_ref(
+        projection["federation_spine_ref"],
+        label="cross-source node projection pack federation_spine_ref",
+    )
+    if payload != expected_payload:
+        fail("cross-source node projection pack must match the committed manifest-driven projection payload")
+
+
+def validate_cross_source_node_projection_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(CROSS_SOURCE_NODE_PROJECTION_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail("cross-source node projection example must match the current bounded projection payload")
 
 
 def validate_generated_text(path: Path, expected_text: str, *, label: str) -> None:
@@ -2837,11 +3205,15 @@ def main() -> int:
         validate_technique_lift_pack_schema_surface()
         validate_tos_text_chunk_map_manifest_schema_surface()
         validate_tos_text_chunk_map_schema_surface()
+        validate_tos_retrieval_axis_manifest_schema_surface()
+        validate_tos_retrieval_axis_schema_surface()
         validate_reasoning_handoff_pack_manifest_schema_surface()
         validate_reasoning_handoff_pack_schema_surface()
         validate_federation_kag_export_schema_surface()
         validate_federation_spine_manifest_schema_surface()
         validate_federation_spine_schema_surface()
+        validate_cross_source_node_projection_manifest_schema_surface()
+        validate_cross_source_node_projection_schema_surface()
 
         registry_manifest_payload = read_json(REGISTRY_MANIFEST_PATH)
         registry_manifest_surfaces = validate_registry_payload(
@@ -2850,8 +3222,10 @@ def main() -> int:
         )
         validate_technique_lift_manifest(registry_manifest_surfaces)
         validate_tos_text_chunk_map_manifest(registry_manifest_surfaces)
+        validate_tos_retrieval_axis_manifest(registry_manifest_surfaces)
         validate_reasoning_handoff_manifest()
         validate_federation_spine_manifest(registry_manifest_surfaces)
+        validate_cross_source_node_projection_manifest(registry_manifest_surfaces)
 
         expected_registry_payload = build_registry_payload()
         expected_technique_lift_pack_payload = build_technique_lift_pack_payload(
@@ -2860,9 +3234,15 @@ def main() -> int:
         expected_tos_text_chunk_map_payload = build_tos_text_chunk_map_payload(
             expected_registry_payload
         )
+        expected_tos_retrieval_axis_payload = build_tos_retrieval_axis_pack_payload(
+            expected_registry_payload
+        )
         expected_reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
         expected_federation_spine_payload = build_federation_spine_payload(
             expected_registry_payload
+        )
+        expected_cross_source_node_projection_payload = (
+            build_cross_source_node_projection_payload(expected_registry_payload)
         )
 
         validate_generated_text(
@@ -2896,6 +3276,16 @@ def main() -> int:
             label="generated compact ToS text chunk map",
         )
         validate_generated_text(
+            TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+            encode_json(expected_tos_retrieval_axis_payload, pretty=True),
+            label="generated ToS retrieval axis pack",
+        )
+        validate_generated_text(
+            TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+            encode_json(expected_tos_retrieval_axis_payload, pretty=False),
+            label="generated compact ToS retrieval axis pack",
+        )
+        validate_generated_text(
             REASONING_HANDOFF_OUTPUT_PATH,
             encode_json(expected_reasoning_handoff_pack_payload, pretty=True),
             label="generated reasoning handoff pack",
@@ -2915,6 +3305,16 @@ def main() -> int:
             encode_json(expected_federation_spine_payload, pretty=False),
             label="generated compact federation spine",
         )
+        validate_generated_text(
+            CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
+            encode_json(expected_cross_source_node_projection_payload, pretty=True),
+            label="generated cross-source node projection pack",
+        )
+        validate_generated_text(
+            CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+            encode_json(expected_cross_source_node_projection_payload, pretty=False),
+            label="generated compact cross-source node projection pack",
+        )
 
         generated_registry_payload = read_json(REGISTRY_MIN_OUTPUT_PATH)
         generated_surfaces_by_id = validate_registry_payload(
@@ -2930,19 +3330,34 @@ def main() -> int:
             generated_surfaces_by_id,
             expected_tos_text_chunk_map_payload,
         )
+        validate_tos_retrieval_axis_pack(
+            read_json(TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+            expected_tos_retrieval_axis_payload,
+        )
         validate_reasoning_handoff_pack(
             read_json(REASONING_HANDOFF_MIN_OUTPUT_PATH),
         )
         validate_federation_spine_pack(
             read_json(FEDERATION_SPINE_MIN_OUTPUT_PATH),
             generated_surfaces_by_id,
+            expected_federation_spine_payload,
+        )
+        validate_cross_source_node_projection_pack(
+            read_json(CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+            expected_cross_source_node_projection_payload,
         )
         validate_bridge_example(generated_surfaces_by_id)
         validate_bridge_envelope_example()
         validate_counterpart_example(generated_surfaces_by_id)
         validate_tos_text_chunk_map_example(expected_tos_text_chunk_map_payload)
+        validate_tos_retrieval_axis_example(expected_tos_retrieval_axis_payload)
         validate_reasoning_handoff_example()
         validate_federation_kag_export_example()
+        validate_cross_source_node_projection_example(
+            expected_cross_source_node_projection_payload
+        )
     except ValidationError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 1
@@ -2956,31 +3371,43 @@ def main() -> int:
     print("[ok] validated technique lift pack schema")
     print("[ok] validated ToS text chunk map manifest schema")
     print("[ok] validated ToS text chunk map schema")
+    print("[ok] validated ToS retrieval axis manifest schema")
+    print("[ok] validated ToS retrieval axis pack schema")
     print("[ok] validated reasoning handoff pack manifest schema")
     print("[ok] validated reasoning handoff pack schema")
     print("[ok] validated federation KAG export schema")
     print("[ok] validated federation spine manifest schema")
     print("[ok] validated federation spine schema")
+    print("[ok] validated cross-source node projection manifest schema")
+    print("[ok] validated cross-source node projection schema")
     print("[ok] validated manifests/kag_registry.json")
     print("[ok] validated manifests/technique_lift_pack.json")
     print("[ok] validated manifests/tos_text_chunk_map.json")
+    print("[ok] validated manifests/tos_retrieval_axis_pack.json")
     print("[ok] validated manifests/reasoning_handoff_pack.json")
     print("[ok] validated manifests/federation_spine.json")
+    print("[ok] validated manifests/cross_source_node_projection.json")
     print("[ok] validated generated registry outputs are up to date")
     print("[ok] validated generated technique lift pack outputs are up to date")
     print("[ok] validated generated ToS text chunk map outputs are up to date")
+    print("[ok] validated generated ToS retrieval axis pack outputs are up to date")
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
+    print("[ok] validated generated cross-source node projection outputs are up to date")
     print("[ok] validated generated technique lift pack structure")
     print("[ok] validated generated ToS text chunk map structure")
+    print("[ok] validated generated ToS retrieval axis pack structure")
     print("[ok] validated generated reasoning handoff pack structure")
     print("[ok] validated generated federation spine structure")
+    print("[ok] validated generated cross-source node projection structure")
     print("[ok] validated bridge retrieval example")
     print("[ok] validated bridge envelope example")
     print("[ok] validated counterpart edge example")
     print("[ok] validated ToS text chunk map example")
+    print("[ok] validated ToS retrieval axis example")
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated federation KAG export example")
+    print("[ok] validated cross-source node projection example")
     return 0
 
 

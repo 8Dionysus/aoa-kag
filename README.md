@@ -17,13 +17,15 @@ If you are new to this repository, use this path:
 4. Read [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md) for the current experimental federation spine pilot.
 5. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
 6. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
-7. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current third-wave counterpart-edge posture.
-8. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
-9. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
-10. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
-11. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-12. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-13. Read [ROADMAP](ROADMAP.md) for the current direction.
+7. Read [docs/TOS_RETRIEVAL_AXIS_PACK](docs/TOS_RETRIEVAL_AXIS_PACK.md) for the current third-wave generated retrieval-axis pack.
+8. Read [docs/CROSS_SOURCE_NODE_PROJECTION](docs/CROSS_SOURCE_NODE_PROJECTION.md) for the current fifth-wave bounded cross-source projection pilot.
+9. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current deferred counterpart-edge posture.
+10. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
+11. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
+12. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
+13. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+14. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+15. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -80,9 +82,19 @@ It now also includes the first experimental ToS text chunk map pilot at:
 - `manifests/tos_text_chunk_map.json`
 - `docs/TOS_TEXT_CHUNK_MAP.md`
 
+It now also includes the first experimental ToS retrieval-axis pack at:
+- `generated/tos_retrieval_axis_pack.json`
+- `generated/tos_retrieval_axis_pack.min.json`
+- `manifests/tos_retrieval_axis_pack.json`
+- `docs/TOS_RETRIEVAL_AXIS_PACK.md`
+
 It also includes a ToS text chunk map schema and example at:
 - `schemas/tos-text-chunk-map.schema.json`
 - `examples/tos_text_chunk_map.example.json`
+
+It also includes a ToS retrieval-axis pack schema and example at:
+- `schemas/tos-retrieval-axis-pack.schema.json`
+- `examples/tos_retrieval_axis_pack.example.json`
 
 It also includes a bridge retrieval schema and example at:
 - `schemas/bridge-retrieval-surface.schema.json`
@@ -95,6 +107,10 @@ It also includes a shared AoA-ToS bridge envelope schema and example at:
 It now also includes a counterpart-edge schema and example at:
 - `schemas/counterpart-edge-surface.schema.json`
 - `examples/counterpart_edge_view.example.json`
+
+It now also includes a cross-source node projection schema and example at:
+- `schemas/cross-source-node-projection.schema.json`
+- `examples/cross_source_node_projection.example.json`
 
 It now also includes a reasoning handoff guardrail schema and example at:
 - `schemas/reasoning-handoff-guardrail.schema.json`
@@ -111,6 +127,12 @@ It now also includes the current experimental federation spine pilot at:
 - `generated/federation_spine.min.json`
 - `manifests/federation_spine.json`
 - `docs/FEDERATION_SPINE.md`
+
+It now also includes the first bounded cross-source node projection pack at:
+- `generated/cross_source_node_projection.json`
+- `generated/cross_source_node_projection.min.json`
+- `manifests/cross_source_node_projection.json`
+- `docs/CROSS_SOURCE_NODE_PROJECTION.md`
 
 It now also includes the first federation KAG export contract surface at:
 - `schemas/federation-kag-export.schema.json`
@@ -138,9 +160,10 @@ set:
 `aoa-kag` is in bootstrap.
 The current baseline now includes the first manifest-driven generated lift seam from `aoa-techniques`.
 It now also includes the first experimental ToS text chunk-map pilot built from the current source-owned Zarathustra authority surface plus the current tiny-entry route and capsule surfaces in `Tree-of-Sophia`.
+It now also includes the first experimental ToS retrieval-axis pack built from that chunk map plus the current bounded bridge and memo-side bridge faces.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
-It now also includes the first public federation-facing KAG export contract and one experimental federation spine pilot built from existing `aoa-techniques` generated surfaces plus the current source-owned Tree-of-Sophia tiny-entry seam.
-`aoa-routing` now consumes that widened spine through separate `kag_view` entries for `aoa-techniques` and `Tree-of-Sophia`, while the spine itself remains experimental and non-authoritative.
+It now also includes the first public federation-facing KAG export contract, one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`, and the first bounded cross-source node projection built on top of that loop.
+`aoa-routing` now consumes that widened spine through separate `kag_view` entries for `aoa-techniques` and `Tree-of-Sophia`, while the spine and projection surfaces remain experimental and non-authoritative.
 The goal remains to define the role, boundaries, and bounded machine-readable KAG-layer surfaces without overbuilding a graph engine too early.
 
 ## Principles

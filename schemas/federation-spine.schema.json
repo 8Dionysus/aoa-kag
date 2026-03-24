@@ -28,7 +28,7 @@
     },
     "source_inputs": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 3,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -71,10 +71,11 @@
         "required": [
           "repo",
           "pilot_posture",
-          "current_entry_surface_refs",
-          "current_object_surface_ref",
-          "example_object_ids",
-          "planned_export_ref",
+          "export_ref",
+          "kind",
+          "object_id",
+          "entry_surface_ref",
+          "summary_50",
           "provenance_note",
           "non_identity_boundary"
         ],
@@ -87,29 +88,25 @@
             "type": "string",
             "minLength": 3
           },
-          "current_entry_surface_refs": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "string",
-              "minLength": 3
-            }
-          },
-          "current_object_surface_ref": {
+          "export_ref": {
             "type": "string",
             "minLength": 3
           },
-          "example_object_ids": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "string",
-              "minLength": 2
-            }
+          "kind": {
+            "type": "string",
+            "minLength": 2
           },
-          "planned_export_ref": {
+          "object_id": {
+            "type": "string",
+            "minLength": 2
+          },
+          "entry_surface_ref": {
             "type": "string",
             "minLength": 3
+          },
+          "summary_50": {
+            "type": "string",
+            "minLength": 10
           },
           "provenance_note": {
             "type": "string",

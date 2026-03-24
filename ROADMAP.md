@@ -9,7 +9,9 @@ The current goal is not to build a giant graph engine immediately.
 The goal is to define what the KAG layer is for, what it owns, and what it must not silently absorb.
 The current repository now also carries the first manifest-driven generated technique lift pack so bootstrap doctrine begins to harden into reproducible substrate output.
 It now also carries the first experimental ToS text chunk map pilot built from the current source-owned Zarathustra authority surface plus supporting tiny-entry route and capsule surfaces.
-It now also carries the first public federation export contract and one experimental federation spine pilot built from existing `aoa-techniques` generated surfaces plus the current source-owned Tree-of-Sophia tiny-entry seam rather than from a live source-owned export loop.
+It now also carries the first experimental ToS retrieval-axis pack built from that chunk map plus bounded bridge and memo-side bridge surfaces.
+It now also carries the first public federation export contract and one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`.
+It now also carries the first bounded cross-source node projection built from that real export loop plus the current retrieval-axis pack.
 
 ## Phase 1: KAG layer definition
 

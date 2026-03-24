@@ -55,6 +55,12 @@ When KAG returns a bridge-ready retrieval surface, it should be able to expose:
 This keeps retrieval richer than a similarity dump while still remaining derived and reviewable.
 
 See `examples/tos_retrieval_axis_surface.example.json` for a compact bridge-ready example tied to `AOA-K-0007`.
+The current generated pack that materializes that same bounded axis posture now
+lives at:
+
+- `generated/tos_retrieval_axis_pack.json`
+- `generated/tos_retrieval_axis_pack.min.json`
+- `docs/TOS_RETRIEVAL_AXIS_PACK.md`
 
 ## Shared bridge envelope contract
 

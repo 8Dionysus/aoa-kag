@@ -9,9 +9,9 @@ It is the current bounded pilot for federation KAG readiness.
 This wave is intentionally narrow:
 
 - materialize one reviewable federation spine surface
-- keep the landing entirely inside `aoa-kag`
-- prove the pack shape before any source repository publishes a dedicated
-  `generated/kag_export.min.json`
+- keep the landing entirely inside `aoa-kag` as a derived spine
+- prove the first real two-repo source-owned export loop before widening beyond
+  `tiny`
 - keep the new surface experimental rather than claiming a finished federation
   export loop
 
@@ -19,16 +19,13 @@ This wave is intentionally narrow:
 
 The current spine is a two-repo experimental pilot.
 
-For `aoa-techniques`, it derives from existing generated source-owned surfaces:
+For `aoa-techniques`, it now derives from:
 
-- `generated/repo_doc_surface_manifest.min.json`
-- `generated/technique_catalog.min.json`
+- `generated/kag_export.min.json`
 
-For `Tree-of-Sophia`, it derives from the current source-owned tiny-entry seam:
+For `Tree-of-Sophia`, it now derives from:
 
-- `README.md`
-- `docs/TINY_ENTRY_ROUTE.md`
-- `examples/tos_tiny_entry_route.example.json`
+- `generated/kag_export.min.json`
 
 Those donor surfaces are declared in `manifests/federation_spine.json`.
 
@@ -41,18 +38,16 @@ The generated outputs live at:
 
 For each current pilot repo, the generated pack keeps:
 
-- the current bounded entry surface refs
-- the current bounded object-spine ref
-- a small deterministic sample of object ids
-- the planned future export ref
+- the source-owned export ref
+- the bounded exported object id and kind
+- the current exported entry surface ref
+- one short exported summary
 - explicit provenance and non-identity notes
 
 ## What the spine does not do
 
 This wave does not:
 
-- claim that `aoa-techniques` already publishes `generated/kag_export.min.json`
-- claim that `Tree-of-Sophia` already publishes `generated/kag_export.min.json`
 - claim that all AoA or ToS repositories now expose the same export contract
 - move routing ownership into `aoa-kag`
 - move canon authorship into `aoa-kag`
@@ -60,20 +55,14 @@ This wave does not:
 
 ## Why the pilot starts this way
 
-`aoa-techniques` already exposes bounded generated surfaces that are strong
-enough for a reviewable pilot:
+`aoa-techniques` now publishes one bounded source-owned tiny export for the
+current pilot object.
 
-- repo-level entry surfaces
-- object-level metadata spine surfaces
+`Tree-of-Sophia` now also publishes one bounded source-owned tiny export for
+the current Zarathustra authority slice.
 
-That makes it a good first donor without forcing cross-repo edits in the same
-wave.
-
-`Tree-of-Sophia` now also exposes one narrow source-owned tiny-entry route with
-an explicit capsule, authority, and bounded hop.
-
-That makes it a good second donor without turning the spine into a wider ToS
-catalog or a federation export loop.
+That keeps the pilot source-owned and reviewable without turning the spine into
+a wider federation claim.
 
 ## Downstream note
 

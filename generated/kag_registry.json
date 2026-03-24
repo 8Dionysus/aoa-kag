@@ -75,8 +75,8 @@
     {
       "id": "AOA-K-0006",
       "name": "cross-source-node-projection",
-      "status": "planned",
-      "summary": "Creates a bounded cross-source node projection for later graph consumers while preserving source-first provenance.",
+      "status": "experimental",
+      "summary": "Creates a bounded one-hop cross-source node projection from source-owned exports while preserving explicit primary versus supporting provenance.",
       "source_class": "technique_bundle",
       "source_inputs": [
         {
@@ -102,8 +102,8 @@
     {
       "id": "AOA-K-0007",
       "name": "tos-retrieval-axis-surface",
-      "status": "planned",
-      "summary": "Returns bounded lineage, conflict, practice, and source handles as a bridge-ready retrieval surface for AoA consumers.",
+      "status": "experimental",
+      "summary": "Returns bounded lineage, conflict, practice, and source handles for one ToS chunk set as a bridge-ready retrieval surface for AoA consumers.",
       "source_class": "tos_text",
       "source_inputs": [
         {
@@ -169,7 +169,7 @@
       "id": "AOA-K-0009",
       "name": "federation-readiness-spine",
       "status": "experimental",
-      "summary": "Materializes a bounded federation entry spine from existing aoa-techniques generated surfaces and the current source-owned Tree-of-Sophia tiny-entry route without claiming completed source-owned KAG exports.",
+      "summary": "Materializes a bounded federation entry spine from current source-owned tiny KAG exports in aoa-techniques and Tree-of-Sophia without claiming a wider completed federation.",
       "source_class": "review_surface",
       "source_inputs": [
         {
