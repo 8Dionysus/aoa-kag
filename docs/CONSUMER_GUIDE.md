@@ -30,6 +30,7 @@ If you want the current machine-readable package for this path, start with
 
 Use:
 
+- `generated/counterpart_federation_exposure_review.min.json`
 - `docs/COUNTERPART_CONSUMER_CONTRACT.md`
 - `examples/counterpart_consumer_contract.example.json`
 

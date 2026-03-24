@@ -10,6 +10,7 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 - Read [KAG_MODEL](KAG_MODEL.md) for the conceptual model.
 - Read [CONSUMER_GUIDE](CONSUMER_GUIDE.md) for the current narrow consumer path through experimental surfaces.
 - Read [COUNTERPART_CONSUMER_CONTRACT](COUNTERPART_CONSUMER_CONTRACT.md) for the first explicit downstream consumer contract for `counterpart_refs`.
+- Read [COUNTERPART_FEDERATION_EXPOSURE_REVIEW](COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md) for the current review-closed federation posture for `AOA-K-0008` while it remains planned.
 - Read [FEDERATION_KAG_READINESS](FEDERATION_KAG_READINESS.md) for the first public federation export contract.
 - Read [FEDERATION_SPINE](FEDERATION_SPINE.md) for the current experimental federation spine pilot.
 - Read [SOURCE_OWNED_EXPORT_DEPENDENCIES](SOURCE_OWNED_EXPORT_DEPENDENCIES.md) for the explicit source-owned export dependency contract.
@@ -29,6 +30,7 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 - [KAG_MODEL](KAG_MODEL.md) — what the KAG layer is for
 - [CONSUMER_GUIDE](CONSUMER_GUIDE.md) — the current narrow consumer path through chunk maps, retrieval axes, the federation spine, and bounded cross-source projection
 - [COUNTERPART_CONSUMER_CONTRACT](COUNTERPART_CONSUMER_CONTRACT.md) — the first explicit downstream consumer contract for `counterpart_refs` while `AOA-K-0008` remains planned
+- [COUNTERPART_FEDERATION_EXPOSURE_REVIEW](COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md) — the current review artifact that closes the federation-exposure gate for `AOA-K-0008` without promoting it
 - [FEDERATION_KAG_READINESS](FEDERATION_KAG_READINESS.md) — the public contract for future source-owned federation exports
 - [FEDERATION_SPINE](FEDERATION_SPINE.md) — the current experimental federation spine pack built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`
 - [SOURCE_OWNED_EXPORT_DEPENDENCIES](SOURCE_OWNED_EXPORT_DEPENDENCIES.md) — the explicit contract for the current external source-owned exports consumed by `aoa-kag`
@@ -44,6 +46,7 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 - `../examples/tos_retrieval_axis_surface.example.json` — compact example of the bridge retrieval surface
 - `../examples/tos_retrieval_axis_pack.example.json` — compact example of the generated retrieval-axis pack
 - `../examples/counterpart_consumer_contract.example.json` — compact example of the first explicit downstream consumer contract for counterpart refs
+- `../examples/counterpart_federation_exposure_review.example.json` — compact example of the current machine-readable federation exposure review for counterpart posture
 - `../examples/cross_source_node_projection.example.json` — compact example of the bounded cross-source projection pack
 - `../examples/reasoning_handoff_guardrail.example.json` — compact example of the runtime-to-KAG guardrail surface
 - `../examples/federation_kag_export.example.json` — compact example of the future source-owned federation export capsule

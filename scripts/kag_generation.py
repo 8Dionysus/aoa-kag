@@ -51,12 +51,18 @@ FEDERATION_SPINE_MANIFEST_PATH = REPO_ROOT / "manifests" / "federation_spine.jso
 CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "cross_source_node_projection.json"
 )
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH = (
+    REPO_ROOT / "manifests" / "counterpart_federation_exposure_review.json"
+)
 TINY_CONSUMER_BUNDLE_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "tiny_consumer_bundle.json"
 )
 REASONING_HANDOFF_GUARDRAIL_PATH = REPO_ROOT / "docs" / "REASONING_HANDOFF.md"
 REASONING_HANDOFF_GUARDRAIL_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_PATH = (
+    REPO_ROOT / "docs" / "COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
 )
 COUNTERPART_CONSUMER_CONTRACT_DOC_PATH = (
     REPO_ROOT / "docs" / "COUNTERPART_CONSUMER_CONTRACT.md"
@@ -92,6 +98,12 @@ CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH = (
 CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "cross_source_node_projection.min.json"
 )
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "counterpart_federation_exposure_review.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "counterpart_federation_exposure_review.min.json"
+)
 TINY_CONSUMER_BUNDLE_OUTPUT_PATH = REPO_ROOT / "generated" / "tiny_consumer_bundle.json"
 TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "tiny_consumer_bundle.min.json"
@@ -123,6 +135,15 @@ REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF = (
 COUNTERPART_EDGE_CONTRACT_DOC_REF = "docs/COUNTERPART_EDGE_CONTRACTS.md"
 COUNTERPART_EDGE_SCHEMA_REF = "schemas/counterpart-edge-surface.schema.json"
 COUNTERPART_EDGE_EXAMPLE_REF = "examples/counterpart_edge_view.example.json"
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF = (
+    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_REF = (
+    "manifests/counterpart_federation_exposure_review.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF = (
+    "generated/counterpart_federation_exposure_review.min.json"
+)
 COUNTERPART_CONSUMER_CONTRACT_DOC_REF = "docs/COUNTERPART_CONSUMER_CONTRACT.md"
 COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF = (
     "schemas/counterpart-consumer-contract.schema.json"
@@ -219,10 +240,17 @@ def ensure_tos_relative_surface_path(raw_path: object, *, label: str) -> str:
     return relative_path
 
 
-def ensure_local_ref_exists(raw_ref: object, *, label: str) -> str:
+def ensure_local_ref_exists(
+    raw_ref: object,
+    *,
+    label: str,
+    allow_missing_refs: set[str] | None = None,
+) -> str:
     relative_ref = ensure_repo_relative_path(raw_ref, label=label)
     target = REPO_ROOT / relative_ref
-    if not target.exists():
+    if not target.exists() and (
+        allow_missing_refs is None or relative_ref not in allow_missing_refs
+    ):
         fail(f"{label} target is missing: {relative_ref}")
     return relative_ref
 
@@ -1530,6 +1558,17 @@ def load_counterpart_consumer_contract_payload(
             "'counterpart_refs'"
         )
 
+    federation_exposure_review_ref = ensure_local_ref_exists(
+        payload.get("federation_exposure_review_ref"),
+        label="counterpart consumer contract example federation_exposure_review_ref",
+        allow_missing_refs={COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF},
+    )
+    if federation_exposure_review_ref != COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF:
+        fail(
+            "counterpart consumer contract example federation_exposure_review_ref must "
+            f"equal '{COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF}'"
+        )
+
     required_contract_refs = payload.get("required_contract_refs")
     if not isinstance(required_contract_refs, dict):
         fail("counterpart consumer contract example required_contract_refs must be an object")
@@ -1612,6 +1651,8 @@ def load_counterpart_consumer_contract_payload(
             "counterpart consumer contract example forbidden_interpretations must match "
             "the bounded counterpart contract"
         )
+
+    payload["federation_exposure_review_ref"] = federation_exposure_review_ref
 
     return payload
 
@@ -2017,6 +2058,7 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
         COUNTERPART_CONSUMER_CONTRACT_DOC_REF,
         COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF,
         COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF,
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF,
     ]:
         fail("reasoning handoff manifest must keep the current ordered KAG guardrail refs")
 
@@ -2836,6 +2878,266 @@ def build_cross_source_node_projection_payload(
     }
 
 
+def build_counterpart_federation_exposure_review_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("counterpart federation exposure review manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    review_bindings = manifest.get("review_bindings")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("counterpart federation exposure review manifest must declare source_inputs")
+    if not isinstance(review_bindings, list) or not review_bindings:
+        fail("counterpart federation exposure review manifest must declare review_bindings")
+
+    counterpart_consumer_contract = load_counterpart_consumer_contract_payload(
+        registry_payload
+    )
+    reasoning_handoff_payload = build_reasoning_handoff_pack_payload()
+    federation_spine_payload = build_federation_spine_payload(registry_payload)
+    cross_source_payload = build_cross_source_node_projection_payload(registry_payload)
+    tiny_bundle_payload = build_tiny_consumer_bundle_payload(registry_payload)
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+    allow_same_run_generated_inputs = {
+        "generated/reasoning_handoff_pack.min.json",
+        "generated/tiny_consumer_bundle.min.json",
+        "generated/federation_spine.min.json",
+        "generated/cross_source_node_projection.min.json",
+    }
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail(
+                "counterpart federation exposure review manifest source_inputs entries "
+                "must be objects"
+            )
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(
+                "counterpart federation exposure review manifest source_inputs must keep "
+                "name, repo, path, and role"
+            )
+        if name in inputs_by_name:
+            fail(f"duplicate counterpart federation exposure review source input '{name}'")
+
+        normalized_input = {
+            "name": name,
+            "repo": repo,
+            "path": path,
+            "role": role,
+        }
+        input_path = manifest_input_path(normalized_input)
+        allow_same_run_generated_input = repo == "aoa-kag" and path in allow_same_run_generated_inputs
+        if not input_path.exists() and not allow_same_run_generated_input:
+            fail(
+                "counterpart federation exposure review donor input does not exist: "
+                + repo_ref(repo, path)
+            )
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "repo": repo,
+                "role": role,
+                "ref": manifest_input_ref(normalized_input),
+            }
+        )
+
+    expected_input_order = [
+        "reasoning_handoff_pack",
+        "tiny_consumer_bundle",
+        "federation_spine",
+        "cross_source_node_projection",
+        "counterpart_consumer_contract_doc",
+        "counterpart_consumer_contract_example",
+        "counterpart_edge_contract_doc",
+        "counterpart_edge_contract_example",
+    ]
+    if list(inputs_by_name) != expected_input_order:
+        fail(
+            "counterpart federation exposure review manifest source_inputs must keep "
+            "the current reviewed surface order"
+        )
+
+    current_allowed_refs = counterpart_consumer_contract["allowed_refs"]
+    expected_reviewed_surface_ref = counterpart_consumer_contract[
+        "federation_exposure_review_ref"
+    ]
+    if counterpart_consumer_contract["surface_status"] != "planned":
+        fail(
+            "counterpart federation exposure review requires AOA-K-0008 to remain "
+            "planned in the current wave"
+        )
+    if expected_reviewed_surface_ref != COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF:
+        fail(
+            "counterpart federation exposure review requires the current counterpart "
+            "consumer contract to stay aligned with the review artifact"
+        )
+    if (
+        tiny_bundle_payload["deferred_counterpart"]["federation_exposure_review_ref"]
+        != expected_reviewed_surface_ref
+    ):
+        fail(
+            "counterpart federation exposure review requires the tiny consumer bundle "
+            "to stay aligned with the review artifact"
+        )
+
+    reasoning_guardrail_refs = {
+        ref
+        for scenario in reasoning_handoff_payload["scenarios"]
+        for ref in scenario["authoritative_refs"]["kag_guardrail_refs"]
+    }
+    if COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF not in reasoning_guardrail_refs:
+        fail(
+            "counterpart federation exposure review requires reasoning handoff "
+            "guardrail refs to include the review doc"
+        )
+
+    federation_spine_refs = {
+        source_input["ref"] for source_input in federation_spine_payload["source_inputs"]
+    }
+    if any(ref in current_allowed_refs for ref in federation_spine_refs):
+        fail(
+            "counterpart federation exposure review requires federation spine to avoid "
+            "counterpart refs"
+        )
+    if any(
+        repo.get("object_id") == "AOA-K-0008"
+        for repo in federation_spine_payload["repos"]
+        if isinstance(repo, dict)
+    ):
+        fail(
+            "counterpart federation exposure review requires federation spine to avoid "
+            "AOA-K-0008 activation hints"
+        )
+
+    cross_source_refs = {
+        source_input["ref"] for source_input in cross_source_payload["source_inputs"]
+    }
+    if any(ref in current_allowed_refs for ref in cross_source_refs):
+        fail(
+            "counterpart federation exposure review requires cross-source projection to "
+            "avoid counterpart refs"
+        )
+    if cross_source_payload["bounded_output_contract"].get("counterpart_activation") != "forbidden":
+        fail(
+            "counterpart federation exposure review requires cross-source projection to "
+            "keep counterpart activation forbidden"
+        )
+
+    reviewed_surfaces: list[dict[str, object]] = []
+    seen_surface_names: set[str] = set()
+    for index, binding in enumerate(review_bindings):
+        location = f"counterpart federation exposure review manifest review_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+
+        surface_name = require_string(
+            binding.get("surface_name"),
+            label=f"{location}.surface_name",
+        )
+        surface_input = require_string(
+            binding.get("surface_input"),
+            label=f"{location}.surface_input",
+        )
+        exposure_posture = require_string(
+            binding.get("exposure_posture"),
+            label=f"{location}.exposure_posture",
+        )
+        review_note = require_string(
+            binding.get("review_note"),
+            label=f"{location}.review_note",
+        )
+        if surface_name in seen_surface_names:
+            fail(f"{location}.surface_name must be unique")
+        if surface_input not in inputs_by_name:
+            fail(f"{location}.surface_input references unknown source input")
+        if surface_name != surface_input:
+            fail(f"{location}.surface_name must match surface_input in the current wave")
+        seen_surface_names.add(surface_name)
+
+        reviewed_surface: dict[str, object] = {
+            "surface_name": surface_name,
+            "surface_ref": manifest_input_ref(inputs_by_name[surface_input]),
+            "exposure_posture": exposure_posture,
+            "review_note": review_note,
+        }
+
+        allowed_counterpart_refs = binding.get("allowed_counterpart_refs")
+        if allowed_counterpart_refs is not None:
+            if not isinstance(allowed_counterpart_refs, list) or not allowed_counterpart_refs:
+                fail(f"{location}.allowed_counterpart_refs must be a non-empty list")
+            normalized_allowed_counterpart_refs = ordered_unique(
+                [
+                    ensure_local_ref_exists(
+                        raw_ref,
+                        label=f"{location}.allowed_counterpart_refs[{allowed_index}]",
+                    )
+                    for allowed_index, raw_ref in enumerate(allowed_counterpart_refs)
+                ]
+            )
+            if len(normalized_allowed_counterpart_refs) != len(allowed_counterpart_refs):
+                fail(f"{location}.allowed_counterpart_refs must not contain duplicates")
+            if normalized_allowed_counterpart_refs != current_allowed_refs:
+                fail(
+                    f"{location}.allowed_counterpart_refs must stay aligned with the "
+                    "current counterpart consumer contract"
+                )
+            reviewed_surface["allowed_counterpart_refs"] = normalized_allowed_counterpart_refs
+
+        forbidden_refs = binding.get("forbidden_refs")
+        if forbidden_refs is not None:
+            if not isinstance(forbidden_refs, list) or not forbidden_refs:
+                fail(f"{location}.forbidden_refs must be a non-empty list")
+            normalized_forbidden_refs = ordered_unique(
+                [
+                    ensure_local_ref_exists(
+                        raw_ref,
+                        label=f"{location}.forbidden_refs[{forbidden_index}]",
+                    )
+                    for forbidden_index, raw_ref in enumerate(forbidden_refs)
+                ]
+            )
+            if len(normalized_forbidden_refs) != len(forbidden_refs):
+                fail(f"{location}.forbidden_refs must not contain duplicates")
+            if normalized_forbidden_refs != current_allowed_refs:
+                fail(
+                    f"{location}.forbidden_refs must stay aligned with the current "
+                    "forbidden counterpart ref set"
+                )
+            reviewed_surface["forbidden_refs"] = normalized_forbidden_refs
+
+        reviewed_surfaces.append(reviewed_surface)
+
+    if [record["surface_name"] for record in reviewed_surfaces] != expected_input_order:
+        fail(
+            "counterpart federation exposure review manifest review_bindings must keep "
+            "the current reviewed surface order"
+        )
+
+    return {
+        "review_version": manifest["manifest_version"],
+        "review_type": manifest["review_type"],
+        "source_manifest_ref": COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_REF,
+        "source_inputs": emitted_source_inputs,
+        "surface_id": counterpart_consumer_contract["surface_id"],
+        "surface_status": counterpart_consumer_contract["surface_status"],
+        "review_status": "passed_for_planned_posture",
+        "reviewed_surface_count": len(reviewed_surfaces),
+        "reviewed_surfaces": reviewed_surfaces,
+        "bounded_output_contract": manifest["bounded_output_contract"],
+    }
+
+
 def build_tiny_consumer_bundle_payload(
     registry_payload: dict[str, object] | None = None,
 ) -> dict[str, object]:
@@ -2948,6 +3250,14 @@ def build_tiny_consumer_bundle_payload(
         deferred_counterpart.get("posture"),
         label="tiny consumer bundle manifest deferred_counterpart.posture",
     )
+    federation_exposure_review_ref = ensure_local_ref_exists(
+        deferred_counterpart.get("federation_exposure_review_ref"),
+        label=(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "federation_exposure_review_ref"
+        ),
+        allow_missing_refs={COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF},
+    )
     if surface_id != counterpart_consumer_contract["surface_id"]:
         fail(
             "tiny consumer bundle manifest deferred_counterpart.surface_id must stay "
@@ -2962,6 +3272,15 @@ def build_tiny_consumer_bundle_payload(
         fail(
             "tiny consumer bundle manifest deferred_counterpart.posture must equal "
             "'planned_contract_only'"
+        )
+    if (
+        federation_exposure_review_ref
+        != counterpart_consumer_contract["federation_exposure_review_ref"]
+    ):
+        fail(
+            "tiny consumer bundle manifest deferred_counterpart."
+            "federation_exposure_review_ref must stay aligned with the counterpart "
+            "consumer contract"
         )
 
     allowed_refs = deferred_counterpart.get("allowed_refs")
@@ -3087,6 +3406,7 @@ def build_tiny_consumer_bundle_payload(
             "surface_id": surface_id,
             "surface_status": surface_status,
             "posture": posture,
+            "federation_exposure_review_ref": federation_exposure_review_ref,
             "allowed_refs": normalized_allowed_refs,
             "forbidden_active_payload_refs": (
                 normalized_forbidden_active_payload_refs
@@ -3107,6 +3427,9 @@ def write_generated_outputs() -> list[Path]:
     federation_spine_payload = build_federation_spine_payload(registry_payload)
     cross_source_node_projection_payload = build_cross_source_node_projection_payload(
         registry_payload
+    )
+    counterpart_federation_exposure_review_payload = (
+        build_counterpart_federation_exposure_review_payload(registry_payload)
     )
     tiny_consumer_bundle_payload = build_tiny_consumer_bundle_payload(registry_payload)
 
@@ -3152,6 +3475,16 @@ def write_generated_outputs() -> list[Path]:
         cross_source_node_projection_payload,
         pretty=False,
     )
+    write_json(
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
+        counterpart_federation_exposure_review_payload,
+        pretty=True,
+    )
+    write_json(
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
+        counterpart_federation_exposure_review_payload,
+        pretty=False,
+    )
     write_json(TINY_CONSUMER_BUNDLE_OUTPUT_PATH, tiny_consumer_bundle_payload, pretty=True)
     write_json(
         TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
@@ -3174,6 +3507,8 @@ def write_generated_outputs() -> list[Path]:
         FEDERATION_SPINE_MIN_OUTPUT_PATH,
         CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
         CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
         TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
         TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
     ]

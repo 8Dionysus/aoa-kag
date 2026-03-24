@@ -75,6 +75,11 @@ a wider federation claim.
 That downstream handoff remains additive: it does not turn `aoa-kag` into
 routing authority, and it does not turn the spine into ToS or AoA canon.
 
+The current spine is also explicitly covered by
+`COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`.
+That review confirms that the current two-repo federation spine does not expose
+counterpart payloads or imply `AOA-K-0008` activation.
+
 ## Regeneration posture
 
 Use:

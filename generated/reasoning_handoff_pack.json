@@ -34,6 +34,12 @@
       "ref": "examples/counterpart_consumer_contract.example.json"
     },
     {
+      "name": "counterpart_federation_exposure_review_doc",
+      "repo": "aoa-kag",
+      "role": "kag_guardrail_doc",
+      "ref": "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
+    },
+    {
       "name": "artifact_to_verdict_hook_schema",
       "repo": "aoa-evals",
       "role": "eval_hook_schema",
@@ -199,7 +205,8 @@
           "schemas/reasoning-handoff-guardrail.schema.json",
           "docs/COUNTERPART_CONSUMER_CONTRACT.md",
           "schemas/counterpart-consumer-contract.schema.json",
-          "examples/counterpart_consumer_contract.example.json"
+          "examples/counterpart_consumer_contract.example.json",
+          "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
         ],
         "artifact_schema_refs": [
           "aoa-agents/schemas/artifact.route_decision.schema.json",
@@ -351,7 +358,8 @@
           "schemas/reasoning-handoff-guardrail.schema.json",
           "docs/COUNTERPART_CONSUMER_CONTRACT.md",
           "schemas/counterpart-consumer-contract.schema.json",
-          "examples/counterpart_consumer_contract.example.json"
+          "examples/counterpart_consumer_contract.example.json",
+          "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
         ],
         "artifact_schema_refs": [
           "aoa-memo/schemas/inquiry_checkpoint.schema.json",
