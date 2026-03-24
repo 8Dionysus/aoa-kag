@@ -65,6 +65,15 @@ That planned posture is deliberate:
 - federation exposure is still deferred
 - the current example is meant to preserve bounded bridge grammar before promotion, not to imply an active public graph layer
 
+## Activation gates
+
+`AOA-K-0008` remains blocked until all of these conditions are true:
+
+- the current `AOA-K-0006` projection pairing law is manifest-driven and validator-backed
+- the current external source-owned exports are covered by an explicit dependency contract
+- a dedicated downstream consumer contract for counterpart edges exists as a later wave artifact
+- federation exposure for counterpart edges is explicitly reviewed rather than inferred from retrieval or projection surfaces
+
 ## Anti-goals
 
 Avoid using counterpart-edge views as:

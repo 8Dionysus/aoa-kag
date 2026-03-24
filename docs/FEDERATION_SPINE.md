@@ -28,6 +28,9 @@ For `Tree-of-Sophia`, it now derives from:
 - `generated/kag_export.min.json`
 
 Those donor surfaces are declared in `manifests/federation_spine.json`.
+The current external export expectations are made explicit in
+`manifests/source_owned_export_dependencies.json` and documented in
+`SOURCE_OWNED_EXPORT_DEPENDENCIES.md`.
 
 The generated outputs live at:
 
@@ -77,9 +80,12 @@ routing authority, and it does not turn the spine into ToS or AoA canon.
 Use:
 
 ```bash
+python scripts/release_check.py
+```
+
+If you only need regeneration and drift validation, use:
+
+```bash
 python scripts/generate_kag.py
 python scripts/validate_kag.py
 ```
-
-If `aoa-techniques` is not checked out beside this repository, point the
-scripts at it with `AOA_TECHNIQUES_ROOT`.

@@ -36,6 +36,19 @@
       "source_input": "aoa_techniques_kag_export"
     }
   ],
+  "projection_pairings": [
+    {
+      "pairing_id": "aoa-k-0006.AOA-T-0043__tos.source.thus-spoke-zarathustra.prologue",
+      "primary_export_input": "aoa_techniques_kag_export",
+      "supporting_export_inputs": [
+        "tos_kag_export"
+      ],
+      "retrieval_axis_input": "tos_retrieval_axis_pack",
+      "federation_spine_input": "federation_spine",
+      "projection_summary": "Pairs the multi-source primary-input provenance technique with the current Zarathustra prologue source node as a one-hop, non-identity projection for provenance-visible bridge work.",
+      "non_identity_boundary": "The projection aligns an operational technique with a supporting ToS source node for downstream inspection without claiming identity, ontology merger, counterpart activation, or routing ownership."
+    }
+  ],
   "output_paths": {
     "full": "generated/cross_source_node_projection.json",
     "min": "generated/cross_source_node_projection.min.json"

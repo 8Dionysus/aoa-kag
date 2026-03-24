@@ -16,9 +16,13 @@ Tracking starts with the community-docs baseline for this repository.
 - validation coverage for generated outputs and technique lift pack drift
 - federation KAG readiness doctrine and `federation-kag-export` schema/example
 - experimental `federation_spine` manifest, generated outputs, and validator coverage for `AOA-K-0009`
+- source-owned export dependency contract via `manifests/source_owned_export_dependencies.json`
+- `docs/CONSUMER_GUIDE.md` and `scripts/release_check.py`
+- stdlib `unittest` coverage for helper functions, builder parity, dependency failures, and projection pairing failures
 
 ### Changed
 
 - `AOA-K-0009` now covers a two-repo experimental spine pilot for `aoa-techniques` and `Tree-of-Sophia`
 - `generated/federation_spine.json` and `generated/federation_spine.min.json` now publish the current source-owned ToS tiny-entry seam beside the existing `aoa-techniques` donor surfaces
 - federation spine doctrine and public entry docs now describe the two-donor pilot as already consumable downstream while it remains experimental and non-authoritative
+- `manifests/cross_source_node_projection.json` now declares explicit `projection_pairings` instead of leaving the current pilot pairing implicit in generator code

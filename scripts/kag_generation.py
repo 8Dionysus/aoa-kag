@@ -44,6 +44,9 @@ TOS_RETRIEVAL_AXIS_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "tos_retrieval_axis_pack.json"
 )
 REASONING_HANDOFF_MANIFEST_PATH = REPO_ROOT / "manifests" / "reasoning_handoff_pack.json"
+SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH = (
+    REPO_ROOT / "manifests" / "source_owned_export_dependencies.json"
+)
 FEDERATION_SPINE_MANIFEST_PATH = REPO_ROOT / "manifests" / "federation_spine.json"
 CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "cross_source_node_projection.json"
@@ -94,25 +97,6 @@ TOS_TINY_ENTRY_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
 TOS_TINY_ENTRY_AUTHORITY_PATH = "examples/source_node.example.json"
 TOS_TINY_ENTRY_HOP_PATH = "examples/concept_node.example.json"
 TOS_TINY_ENTRY_FALLBACK_PATH = "docs/KNOWLEDGE_MODEL.md"
-AOA_TECHNIQUES_FEDERATION_EXPORT_PATH = "generated/kag_export.min.json"
-AOA_TECHNIQUES_FEDERATION_OBJECT_ID = "AOA-T-0043"
-AOA_TECHNIQUES_FEDERATION_KIND = "technique"
-TOS_FEDERATION_EXPORT_PATH = "generated/kag_export.min.json"
-TOS_FEDERATION_KIND = "source_node"
-FEDERATION_EXPORT_REQUIRED_FIELDS = (
-    "owner_repo",
-    "kind",
-    "object_id",
-    "primary_question",
-    "summary_50",
-    "summary_200",
-    "source_inputs",
-    "entry_surface",
-    "section_handles",
-    "direct_relations",
-    "provenance_note",
-    "non_identity_boundary",
-)
 
 
 def read_json(path: Path) -> object:
@@ -312,20 +296,236 @@ def load_tos_source_node_payload() -> dict[str, object]:
     return payload
 
 
+def load_source_owned_export_dependencies(
+) -> tuple[dict[str, dict[str, object]], dict[tuple[str, str], dict[str, object]]]:
+    payload = read_json(SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("source-owned export dependency manifest must be a JSON object")
+
+    manifest_version = payload.get("manifest_version")
+    contract_type = payload.get("contract_type")
+    dependencies = payload.get("dependencies")
+    if manifest_version != 1:
+        fail("source-owned export dependency manifest manifest_version must equal 1")
+    if contract_type != "source_owned_export_dependencies":
+        fail(
+            "source-owned export dependency manifest contract_type must equal "
+            "'source_owned_export_dependencies'"
+        )
+    if not isinstance(dependencies, list) or not dependencies:
+        fail("source-owned export dependency manifest must declare dependencies")
+
+    dependencies_by_id: dict[str, dict[str, object]] = {}
+    dependencies_by_source: dict[tuple[str, str], dict[str, object]] = {}
+    for index, dependency in enumerate(dependencies):
+        location = f"source-owned export dependency manifest dependencies[{index}]"
+        if not isinstance(dependency, dict):
+            fail(f"{location} must be an object")
+
+        dependency_id = require_string(
+            dependency.get("dependency_id"),
+            label=f"{location}.dependency_id",
+        )
+        repo = require_string(dependency.get("repo"), label=f"{location}.repo")
+        path = ensure_repo_relative_path(dependency.get("path"), label=f"{location}.path")
+        expected_owner_repo = require_string(
+            dependency.get("expected_owner_repo"),
+            label=f"{location}.expected_owner_repo",
+        )
+        expected_kind = require_string(
+            dependency.get("expected_kind"),
+            label=f"{location}.expected_kind",
+        )
+        expected_object_id = require_string(
+            dependency.get("expected_object_id"),
+            label=f"{location}.expected_object_id",
+        )
+        required_fields = dependency.get("required_fields")
+        if not isinstance(required_fields, list) or not required_fields:
+            fail(f"{location}.required_fields must be a non-empty list")
+        normalized_required_fields: list[str] = []
+        for field_index, field_name in enumerate(required_fields):
+            normalized_required_fields.append(
+                require_string(
+                    field_name,
+                    label=f"{location}.required_fields[{field_index}]",
+                )
+            )
+        if len(set(normalized_required_fields)) != len(normalized_required_fields):
+            fail(f"{location}.required_fields must not contain duplicates")
+
+        entry_surface = dependency.get("entry_surface")
+        if not isinstance(entry_surface, dict):
+            fail(f"{location}.entry_surface must be an object")
+        entry_surface_repo = require_string(
+            entry_surface.get("repo"),
+            label=f"{location}.entry_surface.repo",
+        )
+        entry_surface_path = ensure_repo_relative_path(
+            entry_surface.get("path"),
+            label=f"{location}.entry_surface.path",
+        )
+        entry_match_key = require_string(
+            entry_surface.get("match_key"),
+            label=f"{location}.entry_surface.match_key",
+        )
+        entry_match_value = require_string(
+            entry_surface.get("match_value"),
+            label=f"{location}.entry_surface.match_value",
+        )
+        if entry_match_value != expected_object_id:
+            fail(
+                f"{location}.entry_surface.match_value must equal "
+                f"{location}.expected_object_id"
+            )
+
+        consumed_by = dependency.get("consumed_by")
+        if not isinstance(consumed_by, list) or not consumed_by:
+            fail(f"{location}.consumed_by must be a non-empty list")
+        normalized_consumed_by: list[str] = []
+        for consumer_index, consumer_surface_id in enumerate(consumed_by):
+            normalized_consumed_by.append(
+                require_string(
+                    consumer_surface_id,
+                    label=f"{location}.consumed_by[{consumer_index}]",
+                )
+            )
+        if len(set(normalized_consumed_by)) != len(normalized_consumed_by):
+            fail(f"{location}.consumed_by must not contain duplicates")
+
+        if expected_owner_repo != repo:
+            fail(
+                f"{location}.expected_owner_repo must equal {location}.repo in the "
+                "current source-owned export contract"
+            )
+        if entry_surface_repo != expected_owner_repo:
+            fail(
+                f"{location}.entry_surface.repo must equal {location}.expected_owner_repo"
+            )
+
+        if dependency_id in dependencies_by_id:
+            fail(f"{location}.dependency_id '{dependency_id}' is duplicated")
+        source_key = (repo, path)
+        if source_key in dependencies_by_source:
+            fail(
+                f"{location} duplicates repo/path dependency target "
+                f"'{repo_ref(repo, path)}'"
+            )
+
+        if not resolve_repo_path(repo, path).exists():
+            fail(f"{location}.path target is missing: {repo_ref(repo, path)}")
+        if not resolve_repo_path(entry_surface_repo, entry_surface_path).exists():
+            fail(
+                f"{location}.entry_surface.path target is missing: "
+                f"{repo_ref(entry_surface_repo, entry_surface_path)}"
+            )
+
+        normalized_dependency = {
+            "dependency_id": dependency_id,
+            "repo": repo,
+            "path": path,
+            "expected_owner_repo": expected_owner_repo,
+            "expected_kind": expected_kind,
+            "expected_object_id": expected_object_id,
+            "required_fields": normalized_required_fields,
+            "entry_surface": {
+                "repo": entry_surface_repo,
+                "path": entry_surface_path,
+                "match_key": entry_match_key,
+                "match_value": entry_match_value,
+            },
+            "consumed_by": normalized_consumed_by,
+        }
+        dependencies_by_id[dependency_id] = normalized_dependency
+        dependencies_by_source[source_key] = normalized_dependency
+
+    return dependencies_by_id, dependencies_by_source
+
+
+def dependency_for_source_input(
+    source_input: dict[str, str],
+    *,
+    consumer_surface_id: str,
+) -> dict[str, object]:
+    _, dependencies_by_source = load_source_owned_export_dependencies()
+    source_key = (source_input["repo"], source_input["path"])
+    dependency = dependencies_by_source.get(source_key)
+    if dependency is None:
+        fail(
+            f"{consumer_surface_id} source input '{manifest_input_ref(source_input)}' "
+            "must map to a declared source-owned export dependency"
+        )
+
+    dependency_id = require_string(
+        dependency.get("dependency_id"),
+        label=f"{consumer_surface_id} dependency_id",
+    )
+    consumed_by = dependency.get("consumed_by")
+    if not isinstance(consumed_by, list) or consumer_surface_id not in consumed_by:
+        fail(
+            f"source-owned export dependency '{dependency_id}' must declare "
+            f"'{consumer_surface_id}' in consumed_by"
+        )
+    return dependency
+
+
 def load_federation_export_payload(
     source_input: dict[str, str],
     *,
-    expected_repo: str,
-    expected_kind: str,
-    expected_object_id: str,
+    dependency: dict[str, object],
+    consumer_surface_id: str,
 ) -> dict[str, object]:
+    dependency_id = require_string(
+        dependency.get("dependency_id"),
+        label=f"{consumer_surface_id} dependency_id",
+    )
+    expected_repo = require_string(
+        dependency.get("expected_owner_repo"),
+        label=f"{dependency_id}.expected_owner_repo",
+    )
+    expected_kind = require_string(
+        dependency.get("expected_kind"),
+        label=f"{dependency_id}.expected_kind",
+    )
+    expected_object_id = require_string(
+        dependency.get("expected_object_id"),
+        label=f"{dependency_id}.expected_object_id",
+    )
+    dependency_repo = require_string(dependency.get("repo"), label=f"{dependency_id}.repo")
+    dependency_path = ensure_repo_relative_path(
+        dependency.get("path"),
+        label=f"{dependency_id}.path",
+    )
+    required_fields = dependency.get("required_fields")
+    dependency_entry_surface = dependency.get("entry_surface")
+    if not isinstance(required_fields, list) or not required_fields:
+        fail(f"source-owned export dependency '{dependency_id}' must keep required_fields")
+    if not isinstance(dependency_entry_surface, dict):
+        fail(f"source-owned export dependency '{dependency_id}' must keep entry_surface")
+
+    if (
+        source_input["repo"] != dependency_repo
+        or source_input["path"] != dependency_path
+    ):
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"must stay aligned with '{manifest_input_ref(source_input)}'"
+        )
+
     payload = read_json(manifest_input_path(source_input))
     if not isinstance(payload, dict):
         fail(f"{manifest_input_ref(source_input)} must be a JSON object")
 
-    for key in FEDERATION_EXPORT_REQUIRED_FIELDS:
-        if key not in payload:
-            fail(f"{manifest_input_ref(source_input)} is missing required key '{key}'")
+    for index, key in enumerate(required_fields):
+        field_name = require_string(
+            key,
+            label=f"{dependency_id}.required_fields[{index}]",
+        )
+        if field_name not in payload:
+            fail(
+                f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+                f"is missing required key '{field_name}' in {manifest_input_ref(source_input)}"
+            )
 
     owner_repo = require_string(
         payload.get("owner_repo"),
@@ -340,11 +540,22 @@ def load_federation_export_payload(
         label=f"{manifest_input_ref(source_input)}.object_id",
     )
     if owner_repo != expected_repo:
-        fail(f"{manifest_input_ref(source_input)}.owner_repo must equal '{expected_repo}'")
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"requires {manifest_input_ref(source_input)}.owner_repo to equal "
+            f"'{expected_repo}'"
+        )
     if kind != expected_kind:
-        fail(f"{manifest_input_ref(source_input)}.kind must equal '{expected_kind}'")
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"requires {manifest_input_ref(source_input)}.kind to equal '{expected_kind}'"
+        )
     if object_id != expected_object_id:
-        fail(f"{manifest_input_ref(source_input)}.object_id must equal '{expected_object_id}'")
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"requires {manifest_input_ref(source_input)}.object_id to equal "
+            f"'{expected_object_id}'"
+        )
 
     source_inputs = payload.get("source_inputs")
     if not isinstance(source_inputs, list) or not source_inputs:
@@ -369,29 +580,65 @@ def load_federation_export_payload(
     if primary_count != 1:
         fail(f"{manifest_input_ref(source_input)}.source_inputs must contain exactly one primary input")
 
-    entry_surface = payload.get("entry_surface")
-    if not isinstance(entry_surface, dict):
+    payload_entry_surface = payload.get("entry_surface")
+    if not isinstance(payload_entry_surface, dict):
         fail(f"{manifest_input_ref(source_input)}.entry_surface must be an object")
     entry_repo = require_string(
-        entry_surface.get("repo"),
+        payload_entry_surface.get("repo"),
         label=f"{manifest_input_ref(source_input)}.entry_surface.repo",
     )
     entry_path = require_string(
-        entry_surface.get("path"),
+        payload_entry_surface.get("path"),
         label=f"{manifest_input_ref(source_input)}.entry_surface.path",
     )
-    require_string(
-        entry_surface.get("match_key"),
+    match_key = require_string(
+        payload_entry_surface.get("match_key"),
         label=f"{manifest_input_ref(source_input)}.entry_surface.match_key",
     )
     match_value = require_string(
-        entry_surface.get("match_value"),
+        payload_entry_surface.get("match_value"),
         label=f"{manifest_input_ref(source_input)}.entry_surface.match_value",
     )
-    if entry_repo != expected_repo:
-        fail(f"{manifest_input_ref(source_input)}.entry_surface.repo must equal '{expected_repo}'")
-    if match_value != expected_object_id:
-        fail(f"{manifest_input_ref(source_input)}.entry_surface.match_value must equal '{expected_object_id}'")
+    dependency_entry_repo = require_string(
+        dependency_entry_surface.get("repo"),
+        label=f"{dependency_id}.entry_surface.repo",
+    )
+    dependency_entry_path = ensure_repo_relative_path(
+        dependency_entry_surface.get("path"),
+        label=f"{dependency_id}.entry_surface.path",
+    )
+    dependency_match_key = require_string(
+        dependency_entry_surface.get("match_key"),
+        label=f"{dependency_id}.entry_surface.match_key",
+    )
+    dependency_match_value = require_string(
+        dependency_entry_surface.get("match_value"),
+        label=f"{dependency_id}.entry_surface.match_value",
+    )
+    if entry_repo != dependency_entry_repo:
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"requires {manifest_input_ref(source_input)}.entry_surface.repo to equal "
+            f"'{dependency_entry_repo}'"
+        )
+    if entry_path != dependency_entry_path:
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"requires {manifest_input_ref(source_input)}.entry_surface.path to equal "
+            f"'{dependency_entry_path}'"
+        )
+    if match_key != dependency_match_key:
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"requires {manifest_input_ref(source_input)}.entry_surface.match_key to "
+            f"equal '{dependency_match_key}'"
+        )
+    if match_value != dependency_match_value:
+        fail(
+            f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
+            f"requires {manifest_input_ref(source_input)}.entry_surface.match_value to "
+            f"equal '{dependency_match_value}'"
+        )
     resolve_repo_path(entry_repo, entry_path)
 
     section_handles = payload.get("section_handles")
@@ -1869,26 +2116,32 @@ def build_federation_spine_payload(
     technique_export_input = inputs_by_name.get("aoa_techniques_kag_export")
     if technique_export_input is None:
         fail("federation spine manifest must include aoa_techniques_kag_export")
+    technique_dependency = dependency_for_source_input(
+        technique_export_input,
+        consumer_surface_id="AOA-K-0009",
+    )
     technique_export_payload = load_federation_export_payload(
         technique_export_input,
-        expected_repo="aoa-techniques",
-        expected_kind=AOA_TECHNIQUES_FEDERATION_KIND,
-        expected_object_id=AOA_TECHNIQUES_FEDERATION_OBJECT_ID,
+        dependency=technique_dependency,
+        consumer_surface_id="AOA-K-0009",
     )
 
     tos_export_input = inputs_by_name.get("tos_kag_export")
     if tos_export_input is None:
         fail("federation spine manifest must include tos_kag_export")
-    tos_source_payload = load_tos_source_node_payload()
+    tos_dependency = dependency_for_source_input(
+        tos_export_input,
+        consumer_surface_id="AOA-K-0009",
+    )
     tos_export_payload = load_federation_export_payload(
         tos_export_input,
-        expected_repo=TOS_REPO,
-        expected_kind=TOS_FEDERATION_KIND,
-        expected_object_id=require_string(
-            tos_source_payload.get("node_id"),
-            label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_AUTHORITY_PATH)}.node_id",
-        ),
+        dependency=tos_dependency,
+        consumer_surface_id="AOA-K-0009",
     )
+    export_payloads_by_repo = {
+        "aoa-techniques": technique_export_payload,
+        TOS_REPO: tos_export_payload,
+    }
 
     registry_surfaces = registry_payload.get("surfaces")
     if not isinstance(registry_surfaces, list):
@@ -1947,12 +2200,12 @@ def build_federation_spine_payload(
                 f"federation spine export input '{export_input_name}' must point to repo '{repo_name}'"
             )
 
-        if repo_name == "aoa-techniques":
-            export_payload = technique_export_payload
-        elif repo_name == TOS_REPO:
-            export_payload = tos_export_payload
-        else:
-            fail("federation spine currently supports only aoa-techniques and Tree-of-Sophia pilot repos")
+        export_payload = export_payloads_by_repo.get(repo_name)
+        if export_payload is None:
+            fail(
+                "federation spine currently supports only aoa-techniques and "
+                "Tree-of-Sophia pilot repos"
+            )
 
         entry_surface = export_payload.get("entry_surface")
         if not isinstance(entry_surface, dict):
@@ -2003,10 +2256,13 @@ def build_cross_source_node_projection_payload(
 
     source_inputs = manifest.get("source_inputs")
     surface_bindings = manifest.get("surface_bindings")
+    projection_pairings = manifest.get("projection_pairings")
     if not isinstance(source_inputs, list) or not source_inputs:
         fail("cross-source node projection manifest must declare source_inputs")
     if not isinstance(surface_bindings, list) or not surface_bindings:
         fail("cross-source node projection manifest must declare surface_bindings")
+    if not isinstance(projection_pairings, list) or not projection_pairings:
+        fail("cross-source node projection manifest must declare projection_pairings")
 
     registry_surfaces = registry_payload.get("surfaces")
     if not isinstance(registry_surfaces, list):
@@ -2146,23 +2402,32 @@ def build_cross_source_node_projection_payload(
     if binding_surface is None:
         fail("cross-source node projection manifest must declare one experimental surface binding")
 
-    tos_source_payload = load_tos_source_node_payload()
-    expected_tos_object_id = require_string(
-        tos_source_payload.get("node_id"),
-        label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_AUTHORITY_PATH)}.node_id",
+    consumer_surface_id = require_string(
+        binding_surface.get("id"),
+        label="cross-source node projection consumer_surface_id",
+    )
+    technique_dependency = dependency_for_source_input(
+        inputs_by_name["aoa_techniques_kag_export"],
+        consumer_surface_id=consumer_surface_id,
+    )
+    tos_dependency = dependency_for_source_input(
+        inputs_by_name["tos_kag_export"],
+        consumer_surface_id=consumer_surface_id,
     )
     technique_export_payload = load_federation_export_payload(
         inputs_by_name["aoa_techniques_kag_export"],
-        expected_repo="aoa-techniques",
-        expected_kind=AOA_TECHNIQUES_FEDERATION_KIND,
-        expected_object_id=AOA_TECHNIQUES_FEDERATION_OBJECT_ID,
+        dependency=technique_dependency,
+        consumer_surface_id=consumer_surface_id,
     )
     tos_export_payload = load_federation_export_payload(
         inputs_by_name["tos_kag_export"],
-        expected_repo=TOS_REPO,
-        expected_kind=TOS_FEDERATION_KIND,
-        expected_object_id=expected_tos_object_id,
+        dependency=tos_dependency,
+        consumer_surface_id=consumer_surface_id,
     )
+    export_payloads_by_input = {
+        "aoa_techniques_kag_export": technique_export_payload,
+        "tos_kag_export": tos_export_payload,
+    }
     retrieval_axis_payload = build_tos_retrieval_axis_pack_payload(registry_payload)
     axes = retrieval_axis_payload.get("axes")
     if not isinstance(axes, list) or len(axes) != 1 or not isinstance(axes[0], dict):
@@ -2196,40 +2461,142 @@ def build_cross_source_node_projection_payload(
     if tos_spine_entry.get("export_ref") != manifest_input_ref(inputs_by_name["tos_kag_export"]):
         fail("cross-source node projection supporting export must stay aligned with the federation spine")
 
-    projection_summary = (
-        "Pairs the multi-source primary-input provenance technique with the current "
-        "Zarathustra prologue source node as a one-hop, non-identity projection for "
-        "provenance-visible bridge work."
-    )
-    non_identity_boundary = (
-        "The projection aligns an operational technique with a supporting ToS source "
-        "node for downstream inspection without claiming identity, ontology merger, "
-        "counterpart activation, or routing ownership."
-    )
-    projection = {
-        "projection_id": (
-            f"AOA-K-0006::{technique_export_payload['object_id']}::{tos_export_payload['object_id']}"
-        ),
-        "primary_input": {
-            "repo": "aoa-techniques",
-            "export_ref": manifest_input_ref(inputs_by_name["aoa_techniques_kag_export"]),
-            "kind": technique_export_payload["kind"],
-            "object_id": technique_export_payload["object_id"],
-        },
-        "supporting_inputs": [
+    if len(projection_pairings) != 1:
+        fail(
+            "cross-source node projection manifest must declare exactly one "
+            "projection_pairings entry in the current pilot"
+        )
+    seen_pairing_ids: set[str] = set()
+    projections: list[dict[str, object]] = []
+    for index, pairing in enumerate(projection_pairings):
+        location = (
+            "cross-source node projection manifest "
+            f"projection_pairings[{index}]"
+        )
+        if not isinstance(pairing, dict):
+            fail(f"{location} must be an object")
+        pairing_id = require_string(
+            pairing.get("pairing_id"),
+            label=f"{location}.pairing_id",
+        )
+        primary_export_input = require_string(
+            pairing.get("primary_export_input"),
+            label=f"{location}.primary_export_input",
+        )
+        supporting_export_inputs = pairing.get("supporting_export_inputs")
+        if not isinstance(supporting_export_inputs, list) or not supporting_export_inputs:
+            fail(f"{location}.supporting_export_inputs must be a non-empty list")
+        normalized_supporting_inputs: list[str] = []
+        for supporting_index, supporting_input in enumerate(supporting_export_inputs):
+            normalized_supporting_inputs.append(
+                require_string(
+                    supporting_input,
+                    label=f"{location}.supporting_export_inputs[{supporting_index}]",
+                )
+            )
+        retrieval_axis_input = require_string(
+            pairing.get("retrieval_axis_input"),
+            label=f"{location}.retrieval_axis_input",
+        )
+        federation_spine_input = require_string(
+            pairing.get("federation_spine_input"),
+            label=f"{location}.federation_spine_input",
+        )
+        projection_summary = require_string(
+            pairing.get("projection_summary"),
+            label=f"{location}.projection_summary",
+        )
+        non_identity_boundary = require_string(
+            pairing.get("non_identity_boundary"),
+            label=f"{location}.non_identity_boundary",
+        )
+        if pairing_id in seen_pairing_ids:
+            fail(f"{location}.pairing_id '{pairing_id}' is duplicated")
+        seen_pairing_ids.add(pairing_id)
+        if primary_export_input not in inputs_by_name:
+            fail(f"{location}.primary_export_input references unknown source input")
+        if len(normalized_supporting_inputs) != 1:
+            fail(
+                f"{location}.supporting_export_inputs must contain exactly one "
+                "supporting export in the current pilot"
+            )
+        if retrieval_axis_input not in inputs_by_name:
+            fail(f"{location}.retrieval_axis_input references unknown source input")
+        if federation_spine_input not in inputs_by_name:
+            fail(f"{location}.federation_spine_input references unknown source input")
+        if inputs_by_name[primary_export_input]["role"] != "primary_export":
+            fail(f"{location}.primary_export_input must point to a primary_export source input")
+        supporting_input_name = normalized_supporting_inputs[0]
+        if inputs_by_name[supporting_input_name]["role"] != "supporting_export":
+            fail(
+                f"{location}.supporting_export_inputs must point only to "
+                "supporting_export source inputs"
+            )
+        if inputs_by_name[retrieval_axis_input]["role"] != "retrieval_axis":
+            fail(f"{location}.retrieval_axis_input must point to a retrieval_axis source input")
+        if inputs_by_name[federation_spine_input]["role"] != "federation_spine":
+            fail(f"{location}.federation_spine_input must point to a federation_spine source input")
+
+        primary_export_payload = export_payloads_by_input.get(primary_export_input)
+        supporting_export_payload = export_payloads_by_input.get(supporting_input_name)
+        if primary_export_payload is None or supporting_export_payload is None:
+            fail(f"{location} must reference known source-owned export inputs")
+        if axis.get("source_node_id") != supporting_export_payload["object_id"]:
+            fail(
+                f"{location}.supporting_export_inputs[0] must stay aligned with the "
+                "current retrieval axis source_node_id"
+            )
+        if (
+            technique_spine_entry.get("export_ref")
+            != manifest_input_ref(inputs_by_name[primary_export_input])
+        ):
+            fail(
+                f"{location}.primary_export_input must stay aligned with the "
+                "aoa-techniques federation spine entry"
+            )
+        if (
+            tos_spine_entry.get("export_ref")
+            != manifest_input_ref(inputs_by_name[supporting_input_name])
+        ):
+            fail(
+                f"{location}.supporting_export_inputs[0] must stay aligned with the "
+                "Tree-of-Sophia federation spine entry"
+            )
+
+        projections.append(
             {
-                "repo": TOS_REPO,
-                "export_ref": manifest_input_ref(inputs_by_name["tos_kag_export"]),
-                "kind": tos_export_payload["kind"],
-                "object_id": tos_export_payload["object_id"],
+                "projection_id": (
+                    "AOA-K-0006::"
+                    f"{primary_export_payload['object_id']}::"
+                    f"{supporting_export_payload['object_id']}"
+                ),
+                "primary_input": {
+                    "repo": inputs_by_name[primary_export_input]["repo"],
+                    "export_ref": manifest_input_ref(inputs_by_name[primary_export_input]),
+                    "kind": primary_export_payload["kind"],
+                    "object_id": primary_export_payload["object_id"],
+                },
+                "supporting_inputs": [
+                    {
+                        "repo": inputs_by_name[supporting_input_name]["repo"],
+                        "export_ref": manifest_input_ref(
+                            inputs_by_name[supporting_input_name]
+                        ),
+                        "kind": supporting_export_payload["kind"],
+                        "object_id": supporting_export_payload["object_id"],
+                    }
+                ],
+                "retrieval_axis_ref": manifest_input_ref(
+                    inputs_by_name[retrieval_axis_input]
+                ),
+                "axis_id": axis_id,
+                "federation_spine_ref": manifest_input_ref(
+                    inputs_by_name[federation_spine_input]
+                ),
+                "projection_summary": projection_summary,
+                "non_identity_boundary": non_identity_boundary,
             }
-        ],
-        "retrieval_axis_ref": manifest_input_ref(inputs_by_name["tos_retrieval_axis_pack"]),
-        "axis_id": axis_id,
-        "federation_spine_ref": manifest_input_ref(inputs_by_name["federation_spine"]),
-        "projection_summary": projection_summary,
-        "non_identity_boundary": non_identity_boundary,
-    }
+        )
 
     return {
         "pack_version": manifest["manifest_version"],
@@ -2239,8 +2606,8 @@ def build_cross_source_node_projection_payload(
         "surface_bindings": surface_bindings,
         "surface_id": binding_surface["id"],
         "surface_name": binding_surface["name"],
-        "projection_count": 1,
-        "projections": [projection],
+        "projection_count": len(projections),
+        "projections": projections,
         "bounded_output_contract": manifest["bounded_output_contract"],
     }
 
