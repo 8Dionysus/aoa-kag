@@ -1,8 +1,8 @@
 # Federation Spine
 
-This document records the first generated federation spine pack in `aoa-kag`.
+This document records the current generated federation spine pack in `aoa-kag`.
 
-It is the first bounded pilot for federation KAG readiness.
+It is the current bounded pilot for federation KAG readiness.
 
 ## Purpose
 
@@ -17,12 +17,18 @@ This wave is intentionally narrow:
 
 ## Current pilot posture
 
-The current spine is an `aoa-techniques`-only pilot.
+The current spine is a two-repo experimental pilot.
 
-It derives from existing generated source-owned surfaces:
+For `aoa-techniques`, it derives from existing generated source-owned surfaces:
 
 - `generated/repo_doc_surface_manifest.min.json`
 - `generated/technique_catalog.min.json`
+
+For `Tree-of-Sophia`, it derives from the current source-owned tiny-entry seam:
+
+- `README.md`
+- `docs/TINY_ENTRY_ROUTE.md`
+- `examples/tos_tiny_entry_route.example.json`
 
 Those donor surfaces are declared in `manifests/federation_spine.json`.
 
@@ -33,7 +39,7 @@ The generated outputs live at:
 
 ## What the spine keeps
 
-For the current pilot repo, the generated pack keeps:
+For each current pilot repo, the generated pack keeps:
 
 - the current bounded entry surface refs
 - the current bounded object-spine ref
@@ -46,6 +52,7 @@ For the current pilot repo, the generated pack keeps:
 This wave does not:
 
 - claim that `aoa-techniques` already publishes `generated/kag_export.min.json`
+- claim that `Tree-of-Sophia` already publishes `generated/kag_export.min.json`
 - claim that all AoA or ToS repositories now expose the same export contract
 - move routing ownership into `aoa-kag`
 - move canon authorship into `aoa-kag`
@@ -61,6 +68,19 @@ enough for a reviewable pilot:
 
 That makes it a good first donor without forcing cross-repo edits in the same
 wave.
+
+`Tree-of-Sophia` now also exposes one narrow source-owned tiny-entry route with
+an explicit capsule, authority, and bounded hop.
+
+That makes it a good second donor without turning the spine into a wider ToS
+catalog or a federation export loop.
+
+## Downstream note
+
+`aoa-routing` is not updated in this wave.
+
+The current KAG-view handoff there still assumes an `aoa-techniques`-only spine,
+so a separate downstream sync remains the next follow-up after this landing.
 
 ## Regeneration posture
 

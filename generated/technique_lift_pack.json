@@ -2289,13 +2289,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep shell-side agent work mostly stateless and bounded to one confirmed step per invocation so runs stay composable, reviewable, and low-memory by default.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2308,9 +2308,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-03-23",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/stateless-single-shot-agent/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",

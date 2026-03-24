@@ -112,8 +112,9 @@ The first landing in `aoa-kag` is:
 - contract-first
 - schema-backed
 - generator-backed
-- single-pilot in practice
+- two-repo pilot in practice
 
 The pilot pack is documented in `docs/FEDERATION_SPINE.md`.
-It uses existing generated surfaces from `aoa-techniques` rather than a live
-`generated/kag_export.min.json`.
+It now uses existing generated surfaces from `aoa-techniques` plus the current
+source-owned Tree-of-Sophia tiny-entry seam rather than a live
+`generated/kag_export.min.json` export loop.

@@ -26,6 +26,15 @@ from kag_generation import (
     TECHNIQUE_LIFT_MANIFEST_PATH,
     TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
     TECHNIQUE_LIFT_OUTPUT_PATH,
+    TOS_REPO,
+    TOS_ROOT_README_PATH,
+    TOS_TINY_ENTRY_AUTHORITY_PATH,
+    TOS_TINY_ENTRY_CAPSULE_PATH,
+    TOS_TINY_ENTRY_DOCTRINE_PATH,
+    TOS_TINY_ENTRY_FALLBACK_PATH,
+    TOS_TINY_ENTRY_HOP_PATH,
+    TOS_TINY_ENTRY_ROUTE_ID,
+    TOS_TINY_ENTRY_ROUTE_PATH,
     build_federation_spine_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
@@ -232,7 +241,18 @@ EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
     ("repo_doc_surface_manifest", "aoa-techniques", "generated/repo_doc_surface_manifest.min.json", "entry_surfaces"),
     ("technique_catalog", "aoa-techniques", "generated/technique_catalog.min.json", "object_spine"),
+    ("tos_root_readme", TOS_REPO, TOS_ROOT_README_PATH, "entry_surface"),
+    ("tos_tiny_entry_doctrine", TOS_REPO, TOS_TINY_ENTRY_DOCTRINE_PATH, "entry_surface"),
+    ("tos_tiny_entry_route", TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH, "object_surface"),
 }
+EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER = [
+    "kag_registry_manifest",
+    "repo_doc_surface_manifest",
+    "technique_catalog",
+    "tos_root_readme",
+    "tos_tiny_entry_doctrine",
+    "tos_tiny_entry_route",
+]
 EXPECTED_FEDERATION_SPINE_BINDINGS = {
     (
         "AOA-K-0009",
@@ -242,8 +262,18 @@ EXPECTED_FEDERATION_SPINE_BINDINGS = {
         "technique_catalog",
         3,
         "aoa-techniques/generated/kag_export.min.json",
+    ),
+    (
+        "AOA-K-0009",
+        TOS_REPO,
+        "source_owned_tiny_entry_route",
+        ("tos_root_readme", "tos_tiny_entry_doctrine"),
+        "tos_tiny_entry_route",
+        1,
+        f"{TOS_REPO}/generated/kag_export.min.json",
     )
 }
+EXPECTED_FEDERATION_SPINE_REPO_ORDER = ["aoa-techniques", TOS_REPO]
 EXPECTED_FEDERATION_SPINE_OUTPUT_PATHS = {
     "full": "generated/federation_spine.json",
     "min": "generated/federation_spine.min.json",
@@ -255,7 +285,24 @@ EXPECTED_FEDERATION_SPINE_CONTRACT = {
     "canon_authorship": "forbidden",
     "full_federation_claim": "forbidden",
 }
-EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques"}
+EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques", TOS_REPO}
+EXPECTED_TOS_SPINE_ENTRY_REFS = [
+    repo_ref(TOS_REPO, TOS_ROOT_README_PATH),
+    repo_ref(TOS_REPO, TOS_TINY_ENTRY_DOCTRINE_PATH),
+]
+EXPECTED_TOS_SPINE_OBJECT_REF = repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)
+EXPECTED_AOA_K_0009_SOURCE_INPUTS = [
+    {
+        "repo": "aoa-techniques",
+        "source_class": "review_surface",
+        "role": "primary",
+    },
+    {
+        "repo": TOS_REPO,
+        "source_class": "tos_text",
+        "role": "supporting",
+    },
+]
 PLANNED_EXPORT_REF_RE = re.compile(r"^[A-Za-z0-9-]+/generated/kag_export\.min\.json$")
 MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -513,6 +560,81 @@ def validate_exact_set(
         fail(f"{label} must match the exact expected set")
 
 
+def validate_tos_relative_surface(raw_ref: object, *, label: str) -> str:
+    if not isinstance(raw_ref, str) or not raw_ref.strip():
+        fail(f"{label} must be a non-empty Tree-of-Sophia-relative path")
+    normalized = raw_ref.replace("\\", "/")
+    if re.match(r"^[A-Za-z]:[/\\\\]", normalized) or normalized.startswith(("/", "\\")):
+        fail(f"{label} must be Tree-of-Sophia-relative, not absolute")
+    if ".." in Path(normalized).parts:
+        fail(f"{label} must not traverse outside Tree-of-Sophia")
+    if ":" in normalized:
+        fail(f"{label} must stay Tree-of-Sophia-relative and must not use repo-qualified refs")
+    if normalized.startswith(("aoa-kag/", "aoa-routing/")):
+        fail(f"{label} must stay inside Tree-of-Sophia and must not point at downstream repos")
+    resolve_relative_ref(TREE_OF_SOPHIA_ROOT, normalized, label=label)
+    return normalized
+
+
+def validate_tos_tiny_entry_route() -> dict[str, object]:
+    route_label = repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)
+    payload = read_json(TREE_OF_SOPHIA_ROOT / TOS_TINY_ENTRY_ROUTE_PATH)
+    if not isinstance(payload, dict):
+        fail("Tree-of-Sophia tiny-entry route must be a JSON object")
+
+    route_id = payload.get("route_id")
+    if route_id != TOS_TINY_ENTRY_ROUTE_ID:
+        fail(f"{route_label}.route_id must stay '{TOS_TINY_ENTRY_ROUTE_ID}'")
+
+    root_surface = validate_tos_relative_surface(
+        payload.get("root_surface"),
+        label=f"{route_label}.root_surface",
+    )
+    if root_surface != TOS_ROOT_README_PATH:
+        fail(f"{route_label}.root_surface must stay '{TOS_ROOT_README_PATH}'")
+
+    if not isinstance(payload.get("node_kind"), str) or not payload["node_kind"]:
+        fail(f"{route_label}.node_kind must be a non-empty string")
+    if not isinstance(payload.get("node_id"), str) or not payload["node_id"]:
+        fail(f"{route_label}.node_id must be a non-empty string")
+
+    capsule_surface = validate_tos_relative_surface(
+        payload.get("capsule_surface"),
+        label=f"{route_label}.capsule_surface",
+    )
+    if capsule_surface != TOS_TINY_ENTRY_CAPSULE_PATH:
+        fail(f"{route_label}.capsule_surface must stay '{TOS_TINY_ENTRY_CAPSULE_PATH}'")
+
+    authority_surface = validate_tos_relative_surface(
+        payload.get("authority_surface"),
+        label=f"{route_label}.authority_surface",
+    )
+    if authority_surface != TOS_TINY_ENTRY_AUTHORITY_PATH:
+        fail(f"{route_label}.authority_surface must stay '{TOS_TINY_ENTRY_AUTHORITY_PATH}'")
+
+    lineage_or_context_hop = validate_tos_relative_surface(
+        payload.get("lineage_or_context_hop"),
+        label=f"{route_label}.lineage_or_context_hop",
+    )
+    if lineage_or_context_hop != TOS_TINY_ENTRY_HOP_PATH:
+        fail(f"{route_label}.lineage_or_context_hop must stay '{TOS_TINY_ENTRY_HOP_PATH}'")
+
+    fallback = validate_tos_relative_surface(
+        payload.get("fallback"),
+        label=f"{route_label}.fallback",
+    )
+    if fallback != TOS_TINY_ENTRY_FALLBACK_PATH:
+        fail(f"{route_label}.fallback must stay '{TOS_TINY_ENTRY_FALLBACK_PATH}'")
+
+    boundary = payload.get("non_identity_boundary")
+    if not isinstance(boundary, str) or not boundary.strip():
+        fail(f"{route_label}.non_identity_boundary must be a non-empty string")
+    if "aoa-kag" not in boundary or "aoa-routing" not in boundary:
+        fail(f"{route_label}.non_identity_boundary must explicitly keep aoa-kag and aoa-routing downstream")
+
+    return payload
+
+
 def validate_registry_payload(
     payload: object,
     *,
@@ -722,8 +844,10 @@ def validate_special_registry_surfaces(
         fail(f"{label} AOA-K-0009 must keep 'repo_entry_surfaces' as its normalization_scope")
     if surface_0009.get("framework_readiness") != "neutral":
         fail(f"{label} AOA-K-0009 must keep 'neutral' as its framework_readiness")
-    if surface_0009.get("source_repos") != ["aoa-techniques"]:
-        fail(f"{label} AOA-K-0009 must keep source_repos ['aoa-techniques']")
+    if surface_0009.get("source_repos") != ["aoa-techniques", TOS_REPO]:
+        fail(f"{label} AOA-K-0009 must keep source_repos ['aoa-techniques', '{TOS_REPO}']")
+    if surface_0009.get("source_inputs") != EXPECTED_AOA_K_0009_SOURCE_INPUTS:
+        fail(f"{label} AOA-K-0009 must keep the current two-repo source_inputs mapping")
 
 
 def validate_technique_lift_manifest(
@@ -950,6 +1074,7 @@ def validate_federation_spine_manifest(
         fail("federation spine manifest source_inputs must be a non-empty list")
     actual_source_inputs: set[tuple[str, str, str, str]] = set()
     seen_input_names: set[str] = set()
+    source_input_order: list[str] = []
     for index, source_input in enumerate(source_inputs):
         location = f"federation spine manifest source_inputs[{index}]"
         if not isinstance(source_input, dict):
@@ -963,15 +1088,19 @@ def validate_federation_spine_manifest(
         if name in seen_input_names:
             fail(f"{location} duplicates source input '{name}'")
         seen_input_names.add(name)
+        source_input_order.append(name)
         actual_source_inputs.add((name, repo, path, role))
         resolve_known_ref(repo_ref(repo, path), label=location)
     if actual_source_inputs != EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS:
         fail("federation spine manifest source_inputs must match the current bounded donor set")
+    if source_input_order != EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER:
+        fail("federation spine manifest source_inputs must keep the current additive donor order")
 
     repo_bindings = payload["repo_bindings"]
     if not isinstance(repo_bindings, list) or not repo_bindings:
         fail("federation spine manifest repo_bindings must be a non-empty list")
     actual_bindings: set[tuple[str, str, str, tuple[str, ...], str, int, str]] = set()
+    repo_binding_order: list[str] = []
     for index, binding in enumerate(repo_bindings):
         location = f"federation spine manifest repo_bindings[{index}]"
         if not isinstance(binding, dict):
@@ -1016,6 +1145,7 @@ def validate_federation_spine_manifest(
             fail(f"{location} references unknown registry surface '{surface_id}'")
         if surface.get("status") != "experimental":
             fail(f"{location} must point to an experimental registry surface")
+        repo_binding_order.append(repo_name)
 
         entry_input_names: list[str] = []
         for input_name in entry_surface_inputs:
@@ -1036,6 +1166,8 @@ def validate_federation_spine_manifest(
         )
     if actual_bindings != EXPECTED_FEDERATION_SPINE_BINDINGS:
         fail("federation spine manifest repo_bindings must match the current bounded spine contract")
+    if repo_binding_order != EXPECTED_FEDERATION_SPINE_REPO_ORDER:
+        fail("federation spine manifest repo_bindings must keep the current stable repo order")
 
     if payload["output_paths"] != EXPECTED_FEDERATION_SPINE_OUTPUT_PATHS:
         fail("federation spine manifest output_paths must match the committed generated output paths")
@@ -1428,6 +1560,7 @@ def validate_federation_spine_pack(
     if not isinstance(source_inputs, list) or not source_inputs:
         fail("federation spine pack source_inputs must be a non-empty list")
     actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    source_input_order: list[str] = []
     for index, source_input in enumerate(source_inputs):
         location = f"federation spine pack source_inputs[{index}]"
         if not isinstance(source_input, dict):
@@ -1440,9 +1573,12 @@ def validate_federation_spine_pack(
             fail(f"{location} must keep name, repo, role, and ref")
         resolve_known_ref(ref, label=location)
         relative_ref = ref if repo == "aoa-kag" else ref.split("/", 1)[1]
+        source_input_order.append(name)
         actual_source_inputs.add((name, repo, relative_ref, role))
     if actual_source_inputs != EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS:
         fail("federation spine pack source_inputs must match the manifest-driven donor set")
+    if source_input_order != EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER:
+        fail("federation spine pack source_inputs must keep the current additive donor order")
 
     repos = payload["repos"]
     if not isinstance(repos, list) or not repos:
@@ -1466,8 +1602,30 @@ def validate_federation_spine_pack(
     ][:3]
     if len(expected_example_object_ids) != 3:
         fail("federation spine validation requires at least three export-ready techniques")
+    tos_tiny_entry_route = validate_tos_tiny_entry_route()
+    expected_repo_contracts = {
+        "aoa-techniques": {
+            "pilot_posture": "existing_generated_surfaces",
+            "current_entry_surface_refs": [
+                repo_ref("aoa-techniques", "generated/repo_doc_surface_manifest.min.json")
+            ],
+            "current_object_surface_ref": repo_ref(
+                "aoa-techniques", "generated/technique_catalog.min.json"
+            ),
+            "example_object_ids": expected_example_object_ids,
+            "planned_export_ref": "aoa-techniques/generated/kag_export.min.json",
+        },
+        TOS_REPO: {
+            "pilot_posture": "source_owned_tiny_entry_route",
+            "current_entry_surface_refs": EXPECTED_TOS_SPINE_ENTRY_REFS,
+            "current_object_surface_ref": EXPECTED_TOS_SPINE_OBJECT_REF,
+            "example_object_ids": [tos_tiny_entry_route["route_id"]],
+            "planned_export_ref": f"{TOS_REPO}/generated/kag_export.min.json",
+        },
+    }
 
     seen_repos: set[str] = set()
+    repo_order: list[str] = []
     for index, repo_entry in enumerate(repos):
         location = f"federation spine pack repos[{index}]"
         if not isinstance(repo_entry, dict):
@@ -1499,6 +1657,7 @@ def validate_federation_spine_pack(
         if repo_name in seen_repos:
             fail(f"{location}.repo '{repo_name}' is duplicated")
         seen_repos.add(repo_name)
+        repo_order.append(repo_name)
         if not isinstance(pilot_posture, str) or not pilot_posture:
             fail(f"{location}.pilot_posture must be a non-empty string")
         if not isinstance(current_object_surface_ref, str) or not current_object_surface_ref:
@@ -1529,18 +1688,26 @@ def validate_federation_spine_pack(
             example_object_ids,
             label=f"{location}.example_object_ids",
         )
-        if object_ids != expected_example_object_ids:
-            fail(f"{location}.example_object_ids must match the first three export-ready techniques in catalog order")
-
-        if repo_name not in EXPECTED_FEDERATION_SPINE_REPOS:
+        expected_repo = expected_repo_contracts.get(repo_name)
+        if expected_repo is None:
             fail(f"{location}.repo '{repo_name}' is not part of the current bounded pilot set")
-        if pilot_posture != "existing_generated_surfaces":
-            fail(f"{location}.pilot_posture must equal 'existing_generated_surfaces'")
+        if pilot_posture != expected_repo["pilot_posture"]:
+            fail(f"{location}.pilot_posture must match the current repo-specific pilot posture")
+        if refs != expected_repo["current_entry_surface_refs"]:
+            fail(f"{location}.current_entry_surface_refs must match the current repo-specific entry surfaces")
+        if current_object_surface_ref != expected_repo["current_object_surface_ref"]:
+            fail(f"{location}.current_object_surface_ref must match the current repo-specific object surface")
+        if object_ids != expected_repo["example_object_ids"]:
+            fail(f"{location}.example_object_ids must match the current repo-specific object sample")
+        if planned_export_ref != expected_repo["planned_export_ref"]:
+            fail(f"{location}.planned_export_ref must match the current repo-specific planned export path")
 
         surface_0009 = surfaces_by_id.get("AOA-K-0009")
         if surface_0009 is None or surface_0009.get("status") != "experimental":
             fail("federation spine pack requires AOA-K-0009 to remain experimental in the generated registry")
 
+    if repo_order != EXPECTED_FEDERATION_SPINE_REPO_ORDER:
+        fail("federation spine pack repos must keep the current stable repo order")
     validate_exact_set(
         seen_repos,
         EXPECTED_FEDERATION_SPINE_REPOS,

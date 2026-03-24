@@ -9,7 +9,7 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 - Read [CHARTER](../CHARTER.md) for the role and boundaries of the KAG layer.
 - Read [KAG_MODEL](KAG_MODEL.md) for the conceptual model.
 - Read [FEDERATION_KAG_READINESS](FEDERATION_KAG_READINESS.md) for the first public federation export contract.
-- Read [FEDERATION_SPINE](FEDERATION_SPINE.md) for the first experimental federation spine pilot.
+- Read [FEDERATION_SPINE](FEDERATION_SPINE.md) for the current experimental federation spine pilot.
 - Read [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the first-wave AoA-ToS bridge posture.
 - Read [REASONING_HANDOFF](REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
 - Read [TECHNIQUE_LIFT_PACK](TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift seam from `aoa-techniques`.
@@ -22,7 +22,7 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 
 - [KAG_MODEL](KAG_MODEL.md) — what the KAG layer is for
 - [FEDERATION_KAG_READINESS](FEDERATION_KAG_READINESS.md) — the public contract for future source-owned federation exports
-- [FEDERATION_SPINE](FEDERATION_SPINE.md) — the first experimental federation spine pack built from existing generated donor surfaces
+- [FEDERATION_SPINE](FEDERATION_SPINE.md) — the current experimental federation spine pack built from existing `aoa-techniques` donor surfaces plus the current Tree-of-Sophia tiny-entry seam
 - [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) — how the derived layer returns retrieval context without replacing authored sources
 - [REASONING_HANDOFF](REASONING_HANDOFF.md) — how runtime handoff may ask KAG for derived retrieval context without promoting it into source truth
 - [TECHNIQUE_LIFT_PACK](TECHNIQUE_LIFT_PACK.md) — how the first manifest-driven technique lift pack materializes active KAG surfaces from `aoa-techniques`

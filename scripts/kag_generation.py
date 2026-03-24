@@ -33,6 +33,9 @@ AOA_PLAYBOOKS_ROOT = repo_root_from_env(
 AOA_EVALS_ROOT = repo_root_from_env("AOA_EVALS_ROOT", REPO_ROOT.parent / "aoa-evals")
 AOA_MEMO_ROOT = repo_root_from_env("AOA_MEMO_ROOT", REPO_ROOT.parent / "aoa-memo")
 AOA_AGENTS_ROOT = repo_root_from_env("AOA_AGENTS_ROOT", REPO_ROOT.parent / "aoa-agents")
+TREE_OF_SOPHIA_ROOT = repo_root_from_env(
+    "TREE_OF_SOPHIA_ROOT", REPO_ROOT.parent / "Tree-of-Sophia"
+)
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
 TECHNIQUE_LIFT_MANIFEST_PATH = REPO_ROOT / "manifests" / "technique_lift_pack.json"
@@ -52,6 +55,7 @@ FEDERATION_SPINE_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.json"
 FEDERATION_SPINE_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.min.json"
 
 QUERY_MODE_HEADING = re.compile(r"^###\s+`([^`]+)`\s*$")
+TOS_REPO = "Tree-of-Sophia"
 KNOWN_REPO_ROOTS = {
     "aoa-kag": REPO_ROOT,
     "aoa-techniques": AOA_TECHNIQUES_ROOT,
@@ -59,7 +63,16 @@ KNOWN_REPO_ROOTS = {
     "aoa-evals": AOA_EVALS_ROOT,
     "aoa-memo": AOA_MEMO_ROOT,
     "aoa-agents": AOA_AGENTS_ROOT,
+    TOS_REPO: TREE_OF_SOPHIA_ROOT,
 }
+TOS_ROOT_README_PATH = "README.md"
+TOS_TINY_ENTRY_DOCTRINE_PATH = "docs/TINY_ENTRY_ROUTE.md"
+TOS_TINY_ENTRY_ROUTE_PATH = "examples/tos_tiny_entry_route.example.json"
+TOS_TINY_ENTRY_ROUTE_ID = "tos-tiny-entry.zarathustra-prologue"
+TOS_TINY_ENTRY_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
+TOS_TINY_ENTRY_AUTHORITY_PATH = "examples/source_node.example.json"
+TOS_TINY_ENTRY_HOP_PATH = "examples/concept_node.example.json"
+TOS_TINY_ENTRY_FALLBACK_PATH = "docs/KNOWLEDGE_MODEL.md"
 
 
 def read_json(path: Path) -> object:
@@ -120,6 +133,93 @@ def manifest_input_path(source_input: dict[str, str]) -> Path:
 
 def manifest_input_ref(source_input: dict[str, str]) -> str:
     return repo_ref(source_input["repo"], source_input["path"])
+
+
+def require_string(value: object, *, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        fail(f"{label} must be a non-empty string")
+    return value
+
+
+def ensure_repo_relative_path(raw_path: object, *, label: str) -> str:
+    value = require_string(raw_path, label=label).replace("\\", "/")
+    if re.match(r"^[A-Za-z]:[/\\\\]", value) or value.startswith(("/", "\\")):
+        fail(f"{label} must be repo-relative")
+    if ".." in Path(value).parts:
+        fail(f"{label} must not traverse outside the repository root")
+    return value
+
+
+def ensure_tos_relative_surface_path(raw_path: object, *, label: str) -> str:
+    relative_path = ensure_repo_relative_path(raw_path, label=label)
+    if ":" in relative_path:
+        fail(f"{label} must stay Tree-of-Sophia-relative and must not use repo-qualified refs")
+    if relative_path.startswith(("aoa-kag/", "aoa-routing/")):
+        fail(f"{label} must stay inside Tree-of-Sophia and must not point at downstream repos")
+    if not (TREE_OF_SOPHIA_ROOT / relative_path).exists():
+        fail(f"{label} target is missing inside Tree-of-Sophia: {relative_path}")
+    return relative_path
+
+
+def load_tos_tiny_entry_route_payload() -> dict[str, object]:
+    route_path = TREE_OF_SOPHIA_ROOT / TOS_TINY_ENTRY_ROUTE_PATH
+    payload = read_json(route_path)
+    if not isinstance(payload, dict):
+        fail("Tree-of-Sophia tiny-entry route must be a JSON object")
+
+    route_label = repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)
+    route_id = require_string(payload.get("route_id"), label=f"{route_label}.route_id")
+    if route_id != TOS_TINY_ENTRY_ROUTE_ID:
+        fail(f"{route_label}.route_id must stay '{TOS_TINY_ENTRY_ROUTE_ID}' in the current KAG wave")
+
+    root_surface = ensure_tos_relative_surface_path(
+        payload.get("root_surface"),
+        label=f"{route_label}.root_surface",
+    )
+    if root_surface != TOS_ROOT_README_PATH:
+        fail(f"{route_label}.root_surface must stay '{TOS_ROOT_README_PATH}'")
+
+    require_string(payload.get("node_kind"), label=f"{route_label}.node_kind")
+    require_string(payload.get("node_id"), label=f"{route_label}.node_id")
+
+    capsule_surface = ensure_tos_relative_surface_path(
+        payload.get("capsule_surface"),
+        label=f"{route_label}.capsule_surface",
+    )
+    if capsule_surface != TOS_TINY_ENTRY_CAPSULE_PATH:
+        fail(f"{route_label}.capsule_surface must stay '{TOS_TINY_ENTRY_CAPSULE_PATH}'")
+
+    authority_surface = ensure_tos_relative_surface_path(
+        payload.get("authority_surface"),
+        label=f"{route_label}.authority_surface",
+    )
+    if authority_surface != TOS_TINY_ENTRY_AUTHORITY_PATH:
+        fail(f"{route_label}.authority_surface must stay '{TOS_TINY_ENTRY_AUTHORITY_PATH}'")
+
+    lineage_or_context_hop = ensure_tos_relative_surface_path(
+        payload.get("lineage_or_context_hop"),
+        label=f"{route_label}.lineage_or_context_hop",
+    )
+    if lineage_or_context_hop != TOS_TINY_ENTRY_HOP_PATH:
+        fail(f"{route_label}.lineage_or_context_hop must stay '{TOS_TINY_ENTRY_HOP_PATH}'")
+
+    fallback = ensure_tos_relative_surface_path(
+        payload.get("fallback"),
+        label=f"{route_label}.fallback",
+    )
+    if fallback != TOS_TINY_ENTRY_FALLBACK_PATH:
+        fail(f"{route_label}.fallback must stay '{TOS_TINY_ENTRY_FALLBACK_PATH}'")
+
+    boundary = require_string(
+        payload.get("non_identity_boundary"),
+        label=f"{route_label}.non_identity_boundary",
+    )
+    if "aoa-kag" not in boundary or "aoa-routing" not in boundary:
+        fail(
+            f"{route_label}.non_identity_boundary must explicitly keep aoa-kag and aoa-routing downstream"
+        )
+
+    return payload
 
 
 def build_registry_payload() -> dict[str, object]:
@@ -1070,6 +1170,7 @@ def build_federation_spine_payload(
 
     repos: list[dict[str, object]] = []
     seen_repos: set[str] = set()
+    tos_tiny_entry_route_payload: dict[str, object] | None = None
 
     for binding in repo_bindings:
         if not isinstance(binding, dict):
@@ -1109,8 +1210,6 @@ def build_federation_spine_payload(
         surface = registry_by_id.get(surface_id)
         if surface is None:
             fail(f"federation spine binding '{surface_id}' does not exist in the registry manifest")
-        if repo_name != "aoa-techniques":
-            fail("federation spine v1 currently supports only the aoa-techniques pilot repo")
 
         current_entry_surface_refs: list[str] = []
         for input_name in entry_surface_inputs:
@@ -1133,8 +1232,25 @@ def build_federation_spine_payload(
                 f"federation spine object surface input '{object_surface_input_name}' must point to repo '{repo_name}'"
             )
 
-        if len(export_ready_ids) < example_object_count:
-            fail("federation spine donor surfaces do not expose enough export-ready objects for the requested sample")
+        if repo_name == "aoa-techniques":
+            if len(export_ready_ids) < example_object_count:
+                fail(
+                    "federation spine donor surfaces do not expose enough export-ready objects for the requested sample"
+                )
+            example_object_ids = export_ready_ids[:example_object_count]
+        elif repo_name == TOS_REPO:
+            if example_object_count != 1:
+                fail("Tree-of-Sophia federation spine binding must keep example_object_count equal to 1")
+            if tos_tiny_entry_route_payload is None:
+                tos_tiny_entry_route_payload = load_tos_tiny_entry_route_payload()
+            example_object_ids = [
+                require_string(
+                    tos_tiny_entry_route_payload.get("route_id"),
+                    label=f"{repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)}.route_id",
+                )
+            ]
+        else:
+            fail("federation spine currently supports only aoa-techniques and Tree-of-Sophia pilot repos")
 
         repos.append(
             {
@@ -1142,7 +1258,7 @@ def build_federation_spine_payload(
                 "pilot_posture": pilot_posture,
                 "current_entry_surface_refs": current_entry_surface_refs,
                 "current_object_surface_ref": manifest_input_ref(object_surface_input),
-                "example_object_ids": export_ready_ids[:example_object_count],
+                "example_object_ids": example_object_ids,
                 "planned_export_ref": planned_export_ref,
                 "provenance_note": provenance_note,
                 "non_identity_boundary": non_identity_boundary,

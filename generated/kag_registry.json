@@ -169,14 +169,27 @@
       "id": "AOA-K-0009",
       "name": "federation-readiness-spine",
       "status": "experimental",
-      "summary": "Materializes a bounded federation entry spine from existing repo-owned generated surfaces without claiming completed source-owned KAG exports.",
+      "summary": "Materializes a bounded federation entry spine from existing aoa-techniques generated surfaces and the current source-owned Tree-of-Sophia tiny-entry route without claiming completed source-owned KAG exports.",
       "source_class": "review_surface",
+      "source_inputs": [
+        {
+          "repo": "aoa-techniques",
+          "source_class": "review_surface",
+          "role": "primary"
+        },
+        {
+          "repo": "Tree-of-Sophia",
+          "source_class": "tos_text",
+          "role": "supporting"
+        }
+      ],
       "derived_kind": "metadata_spine",
       "provenance_mode": "derived_with_handles",
       "normalization_scope": "repo_entry_surfaces",
       "framework_readiness": "neutral",
       "source_repos": [
-        "aoa-techniques"
+        "aoa-techniques",
+        "Tree-of-Sophia"
       ]
     }
   ]
