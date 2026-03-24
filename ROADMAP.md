@@ -49,7 +49,7 @@ Goals:
 - preserve clear boundaries relative to `aoa-routing`
 - keep source-of-truth discipline explicit as the KAG layer grows
 - make room for source-owned federation exports and bounded derived spine pilots before any full cross-repo export claim
-- keep the current ToS tiny-entry donor narrow until a separate downstream `aoa-routing` sync catches up to the widened spine
+- keep the current ToS tiny-entry donor narrow while downstream routing handoff and source-owned export growth remain explicitly bounded
 
 ## Standing discipline
 

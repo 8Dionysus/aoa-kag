@@ -124,7 +124,7 @@ set:
 The current baseline now includes the first manifest-driven generated lift seam from `aoa-techniques`.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
 It now also includes the first public federation-facing KAG export contract and one experimental federation spine pilot built from existing `aoa-techniques` generated surfaces plus the current source-owned Tree-of-Sophia tiny-entry seam.
-`aoa-routing` follow-up remains separate because its current KAG-view ingest still assumes an `aoa-techniques`-only spine.
+`aoa-routing` now consumes that widened spine through separate `kag_view` entries for `aoa-techniques` and `Tree-of-Sophia`, while the spine itself remains experimental and non-authoritative.
 The goal remains to define the role, boundaries, and bounded machine-readable KAG-layer surfaces without overbuilding a graph engine too early.
 
 ## Principles

@@ -77,10 +77,11 @@ catalog or a federation export loop.
 
 ## Downstream note
 
-`aoa-routing` is not updated in this wave.
+`aoa-routing` now consumes this spine through separate `kag_view` entries for
+`aoa-techniques` and `Tree-of-Sophia`.
 
-The current KAG-view handoff there still assumes an `aoa-techniques`-only spine,
-so a separate downstream sync remains the next follow-up after this landing.
+That downstream handoff remains additive: it does not turn `aoa-kag` into
+routing authority, and it does not turn the spine into ToS or AoA canon.
 
 ## Regeneration posture
 
