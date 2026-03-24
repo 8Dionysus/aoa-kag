@@ -9,6 +9,7 @@
     "pack_type",
     "source_inputs",
     "surface_bindings",
+    "projection_pairings",
     "output_paths",
     "bounded_output_contract"
   ],
@@ -91,6 +92,57 @@
           "source_input": {
             "type": "string",
             "minLength": 1
+          }
+        }
+      }
+    },
+    "projection_pairings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pairing_id",
+          "primary_export_input",
+          "supporting_export_inputs",
+          "retrieval_axis_input",
+          "federation_spine_input",
+          "projection_summary",
+          "non_identity_boundary"
+        ],
+        "properties": {
+          "pairing_id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "primary_export_input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "supporting_export_inputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "retrieval_axis_input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "federation_spine_input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "projection_summary": {
+            "type": "string",
+            "minLength": 20
+          },
+          "non_identity_boundary": {
+            "type": "string",
+            "minLength": 20
           }
         }
       }

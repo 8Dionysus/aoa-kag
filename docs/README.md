@@ -8,8 +8,10 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 
 - Read [CHARTER](../CHARTER.md) for the role and boundaries of the KAG layer.
 - Read [KAG_MODEL](KAG_MODEL.md) for the conceptual model.
+- Read [CONSUMER_GUIDE](CONSUMER_GUIDE.md) for the current narrow consumer path through experimental surfaces.
 - Read [FEDERATION_KAG_READINESS](FEDERATION_KAG_READINESS.md) for the first public federation export contract.
 - Read [FEDERATION_SPINE](FEDERATION_SPINE.md) for the current experimental federation spine pilot.
+- Read [SOURCE_OWNED_EXPORT_DEPENDENCIES](SOURCE_OWNED_EXPORT_DEPENDENCIES.md) for the explicit source-owned export dependency contract.
 - Read [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the first-wave AoA-ToS bridge posture.
 - Read [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) for the current generated retrieval-axis pack.
 - Read [REASONING_HANDOFF](REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
@@ -24,8 +26,10 @@ Use it when you want to understand the AoA KAG layer rather than the broader fed
 ## Docs in this repository
 
 - [KAG_MODEL](KAG_MODEL.md) — what the KAG layer is for
+- [CONSUMER_GUIDE](CONSUMER_GUIDE.md) — the current narrow consumer path through chunk maps, retrieval axes, the federation spine, and bounded cross-source projection
 - [FEDERATION_KAG_READINESS](FEDERATION_KAG_READINESS.md) — the public contract for future source-owned federation exports
 - [FEDERATION_SPINE](FEDERATION_SPINE.md) — the current experimental federation spine pack built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`
+- [SOURCE_OWNED_EXPORT_DEPENDENCIES](SOURCE_OWNED_EXPORT_DEPENDENCIES.md) — the explicit contract for the current external source-owned exports consumed by `aoa-kag`
 - [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) — how the derived layer returns retrieval context without replacing authored sources
 - [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) — how the current generated retrieval-axis pack materializes `AOA-K-0007` without adding ranking or routing policy
 - [TOS_TEXT_CHUNK_MAP](TOS_TEXT_CHUNK_MAP.md) — how the current ToS chunk-map pack materializes stable source-linked chunk units

@@ -13,19 +13,21 @@ If you are new to this repository, use this path:
 
 1. Read [CHARTER](CHARTER.md) for the role and boundaries of the KAG layer.
 2. Read [docs/KAG_MODEL](docs/KAG_MODEL.md) for the conceptual model.
-3. Read [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md) for the first public federation-facing export contract.
-4. Read [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md) for the current experimental federation spine pilot.
-5. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
-6. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
-7. Read [docs/TOS_RETRIEVAL_AXIS_PACK](docs/TOS_RETRIEVAL_AXIS_PACK.md) for the current third-wave generated retrieval-axis pack.
-8. Read [docs/CROSS_SOURCE_NODE_PROJECTION](docs/CROSS_SOURCE_NODE_PROJECTION.md) for the current fifth-wave bounded cross-source projection pilot.
-9. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current deferred counterpart-edge posture.
-10. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
-11. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
-12. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
-13. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-14. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-15. Read [ROADMAP](ROADMAP.md) for the current direction.
+3. Read [docs/CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md) for the current narrow consumer path through experimental surfaces.
+4. Read [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md) for the first public federation-facing export contract.
+5. Read [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md) for the current experimental federation spine pilot.
+6. Read [docs/SOURCE_OWNED_EXPORT_DEPENDENCIES](docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md) for the explicit source-owned export dependency contract.
+7. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
+8. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
+9. Read [docs/TOS_RETRIEVAL_AXIS_PACK](docs/TOS_RETRIEVAL_AXIS_PACK.md) for the current third-wave generated retrieval-axis pack.
+10. Read [docs/CROSS_SOURCE_NODE_PROJECTION](docs/CROSS_SOURCE_NODE_PROJECTION.md) for the current fifth-wave bounded cross-source projection pilot.
+11. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current deferred counterpart-edge posture and activation gates.
+12. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
+13. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
+14. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
+15. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+16. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+17. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -88,6 +90,11 @@ It now also includes the first experimental ToS retrieval-axis pack at:
 - `manifests/tos_retrieval_axis_pack.json`
 - `docs/TOS_RETRIEVAL_AXIS_PACK.md`
 
+It now also includes the explicit source-owned export dependency contract at:
+- `manifests/source_owned_export_dependencies.json`
+- `schemas/source-owned-export-dependencies.schema.json`
+- `docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md`
+
 It also includes a ToS text chunk map schema and example at:
 - `schemas/tos-text-chunk-map.schema.json`
 - `examples/tos_text_chunk_map.example.json`
@@ -134,11 +141,20 @@ It now also includes the first bounded cross-source node projection pack at:
 - `manifests/cross_source_node_projection.json`
 - `docs/CROSS_SOURCE_NODE_PROJECTION.md`
 
+It also includes a human-first experimental consumer path guide at:
+- `docs/CONSUMER_GUIDE.md`
+
 It now also includes the first federation KAG export contract surface at:
 - `schemas/federation-kag-export.schema.json`
 - `examples/federation_kag_export.example.json`
 
-To validate the current KAG-layer surface locally, run:
+To run the canonical release-ready check locally, run:
+
+```bash
+python scripts/release_check.py
+```
+
+To regenerate and validate the current KAG-layer surfaces directly, run:
 
 ```bash
 python scripts/generate_kag.py
@@ -163,6 +179,7 @@ It now also includes the first experimental ToS text chunk-map pilot built from 
 It now also includes the first experimental ToS retrieval-axis pack built from that chunk map plus the current bounded bridge and memo-side bridge faces.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
 It now also includes the first public federation-facing KAG export contract, one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`, and the first bounded cross-source node projection built on top of that loop.
+It now also includes one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, a narrow consumer guide, and one canonical release-check path so the experimental stack is easier to verify without widening it.
 `aoa-routing` now consumes that widened spine through separate `kag_view` entries for `aoa-techniques` and `Tree-of-Sophia`, while the spine and projection surfaces remain experimental and non-authoritative.
 The goal remains to define the role, boundaries, and bounded machine-readable KAG-layer surfaces without overbuilding a graph engine too early.
 

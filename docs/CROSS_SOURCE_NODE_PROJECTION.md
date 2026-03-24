@@ -39,6 +39,11 @@ The current projection rule is:
 - keep one bounded `projection_summary`
 - keep one explicit `non_identity_boundary`
 
+The current pilot pairing law is declared in
+`manifests/cross_source_node_projection.json` under `projection_pairings`.
+That keeps the bounded one-hop pairing reviewable instead of leaving it hidden
+inside generator code.
+
 ## Current pilot surfaces
 
 The current pilot surfaces are:
@@ -64,6 +69,8 @@ This wave does not:
 Use:
 
 ```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
+python scripts/release_check.py
 ```
+
+For the current deferred counterpart-edge posture, see
+`COUNTERPART_EDGE_CONTRACTS.md#activation-gates`.

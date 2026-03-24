@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Regenerate KAG outputs
+      - name: Run release check
         env:
           AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
           AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
@@ -62,14 +62,4 @@ jobs:
           TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
           AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
           AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
-        run: python scripts/generate_kag.py
-
-      - name: Run KAG validator
-        env:
-          AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
-          AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
-          AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
-          TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
-          AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
-          AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
-        run: python scripts/validate_kag.py
+        run: python scripts/release_check.py

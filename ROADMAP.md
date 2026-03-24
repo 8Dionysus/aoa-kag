@@ -12,6 +12,7 @@ It now also carries the first experimental ToS text chunk map pilot built from t
 It now also carries the first experimental ToS retrieval-axis pack built from that chunk map plus bounded bridge and memo-side bridge surfaces.
 It now also carries the first public federation export contract and one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`.
 It now also carries the first bounded cross-source node projection built from that real export loop plus the current retrieval-axis pack.
+It now also carries one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, one narrow consumer guide, and one canonical release-check path for hardening the current experimental stack without activating `AOA-K-0008`.
 
 ## Phase 1: KAG layer definition
 
