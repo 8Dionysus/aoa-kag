@@ -32,3 +32,4 @@ Tracking starts with the community-docs baseline for this repository.
 - reasoning handoff doctrine, example, and generated pack now name the counterpart consumer contract explicitly instead of leaving the first `counterpart_refs` consumer implicit
 - counterpart consumer contract and tiny consumer bundle now carry an explicit federation exposure review ref while `AOA-K-0008` remains planned
 - counterpart activation gates now treat federation exposure as review-closed for the planned posture rather than leaving it implicit
+- ToS tiny-entry route consumption now accepts `bounded_hop` as the primary hop field and keeps `lineage_or_context_hop` as a compatibility alias during the current transition window
