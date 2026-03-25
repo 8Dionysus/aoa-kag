@@ -167,6 +167,12 @@ It now also includes the first federation KAG export contract surface at:
 - `schemas/federation-kag-export.schema.json`
 - `examples/federation_kag_export.example.json`
 
+It now also requires nested local guidance surfaces at:
+- `manifests/AGENTS.md`
+- `generated/AGENTS.md`
+- `schemas/AGENTS.md`
+- `examples/AGENTS.md`
+
 To run the canonical release-ready check locally, run:
 
 ```bash
