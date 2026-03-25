@@ -13,6 +13,10 @@ COMMANDS = [
         "unit tests",
         [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"],
     ),
+    (
+        "validate nested AGENTS docs",
+        [sys.executable, "scripts/validate_nested_agents.py"],
+    ),
     ("generate KAG outputs", [sys.executable, "scripts/generate_kag.py"]),
     ("validate KAG surfaces", [sys.executable, "scripts/validate_kag.py"]),
 ]

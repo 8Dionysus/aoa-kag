@@ -52,6 +52,9 @@ Before making changes, read in this order:
 4. any generated KAG registry, projection, or capsule surfaces affected by the task
 5. the relevant source repo docs if the task touches lift rules or provenance assumptions
 
+When working inside `manifests/`, `generated/`, `schemas/`, or `examples/`, also read the nested `AGENTS.md` in that directory.
+Local guidance sharpens the handling of that surface, but it does not override this file's source-first doctrine.
+
 ## Primary objects
 
 The most important objects in this repository are:
@@ -177,6 +180,7 @@ Summarize:
 Run the validation commands documented in `README.md`.
 
 If registries, projections, capsules, or other generated KAG surfaces changed, regenerate and validate them before finishing.
+The canonical validator also checks the local guidance surfaces in `manifests/`, `generated/`, `schemas/`, and `examples/`.
 
 Do not claim checks you did not run.
 

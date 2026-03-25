@@ -8,6 +8,8 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+import validate_nested_agents
+
 from kag_generation import (
     AOA_AGENTS_ROOT,
     AOA_EVALS_ROOT,
@@ -588,6 +590,13 @@ class ValidationError(RuntimeError):
 
 def fail(message: str) -> None:
     raise ValidationError(message)
+
+
+def validate_nested_agents_docs() -> None:
+    issues = validate_nested_agents.validate(REPO_ROOT)
+    if issues:
+        joined = "; ".join(issues)
+        fail(f"nested AGENTS docs validation failed: {joined}")
 
 
 def display_path(path: Path) -> str:
@@ -4218,6 +4227,7 @@ def validate_federation_kag_export_example() -> None:
 
 def main() -> int:
     try:
+        validate_nested_agents_docs()
         validate_schema_surface()
         validate_bridge_schema_surface()
         validate_bridge_envelope_schema_surface()
@@ -4438,6 +4448,7 @@ def main() -> int:
         print(f"[error] {exc}", file=sys.stderr)
         return 1
 
+    print("[ok] validated nested AGENTS docs")
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")
     print("[ok] validated bridge envelope schema")
