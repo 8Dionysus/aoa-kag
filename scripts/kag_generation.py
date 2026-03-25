@@ -126,6 +126,8 @@ TOS_TINY_ENTRY_ROUTE_PATH = "examples/tos_tiny_entry_route.example.json"
 TOS_TINY_ENTRY_ROUTE_ID = "tos-tiny-entry.zarathustra-prologue"
 TOS_TINY_ENTRY_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
 TOS_TINY_ENTRY_AUTHORITY_PATH = "examples/source_node.example.json"
+TOS_TINY_ENTRY_PRIMARY_HOP_FIELD = "bounded_hop"
+TOS_TINY_ENTRY_LEGACY_HOP_FIELD = "lineage_or_context_hop"
 TOS_TINY_ENTRY_HOP_PATH = "examples/concept_node.example.json"
 TOS_TINY_ENTRY_FALLBACK_PATH = "docs/KNOWLEDGE_MODEL.md"
 REASONING_HANDOFF_GUARDRAIL_REF = "docs/REASONING_HANDOFF.md"
@@ -255,6 +257,42 @@ def ensure_local_ref_exists(
     return relative_ref
 
 
+def load_tos_tiny_entry_hop_surface(payload: dict[str, object], *, route_label: str) -> str:
+    bounded_hop: str | None = None
+    if payload.get(TOS_TINY_ENTRY_PRIMARY_HOP_FIELD) is not None:
+        bounded_hop = ensure_tos_relative_surface_path(
+            payload.get(TOS_TINY_ENTRY_PRIMARY_HOP_FIELD),
+            label=f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD}",
+        )
+
+    legacy_hop: str | None = None
+    if payload.get(TOS_TINY_ENTRY_LEGACY_HOP_FIELD) is not None:
+        legacy_hop = ensure_tos_relative_surface_path(
+            payload.get(TOS_TINY_ENTRY_LEGACY_HOP_FIELD),
+            label=f"{route_label}.{TOS_TINY_ENTRY_LEGACY_HOP_FIELD}",
+        )
+
+    if bounded_hop is None and legacy_hop is None:
+        fail(
+            f"{route_label} must define '{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD}' or "
+            f"'{TOS_TINY_ENTRY_LEGACY_HOP_FIELD}'"
+        )
+    if bounded_hop is not None and legacy_hop is not None and bounded_hop != legacy_hop:
+        fail(
+            f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD} and "
+            f"{route_label}.{TOS_TINY_ENTRY_LEGACY_HOP_FIELD} must resolve to the "
+            "same Tree-of-Sophia surface during transition"
+        )
+
+    hop_surface = bounded_hop or legacy_hop
+    if hop_surface != TOS_TINY_ENTRY_HOP_PATH:
+        fail(
+            f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD} must stay "
+            f"'{TOS_TINY_ENTRY_HOP_PATH}' in the current KAG wave"
+        )
+    return hop_surface
+
+
 def load_tos_tiny_entry_route_payload() -> dict[str, object]:
     route_path = TREE_OF_SOPHIA_ROOT / TOS_TINY_ENTRY_ROUTE_PATH
     payload = read_json(route_path)
@@ -290,12 +328,7 @@ def load_tos_tiny_entry_route_payload() -> dict[str, object]:
     if authority_surface != TOS_TINY_ENTRY_AUTHORITY_PATH:
         fail(f"{route_label}.authority_surface must stay '{TOS_TINY_ENTRY_AUTHORITY_PATH}'")
 
-    lineage_or_context_hop = ensure_tos_relative_surface_path(
-        payload.get("lineage_or_context_hop"),
-        label=f"{route_label}.lineage_or_context_hop",
-    )
-    if lineage_or_context_hop != TOS_TINY_ENTRY_HOP_PATH:
-        fail(f"{route_label}.lineage_or_context_hop must stay '{TOS_TINY_ENTRY_HOP_PATH}'")
+    load_tos_tiny_entry_hop_surface(payload, route_label=route_label)
 
     fallback = ensure_tos_relative_surface_path(
         payload.get("fallback"),

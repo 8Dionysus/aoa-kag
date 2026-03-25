@@ -27,6 +27,10 @@ It derives only from:
 
 This keeps the wave aligned with the current bounded Zarathustra tiny-entry seam
 rather than widening ToS corpus coverage early.
+When `aoa-kag` reads the current tiny-entry route, `bounded_hop` should be
+treated as the primary hop field. `lineage_or_context_hop` may remain as a
+temporary compatibility alias during transition, but if both are present they
+must resolve to the same ToS surface.
 
 ## Chunk rule
 
