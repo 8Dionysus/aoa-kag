@@ -54,7 +54,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run release check
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Validate nested AGENTS docs
+        run: python scripts/validate_nested_agents.py
+
+      - name: Validate KAG surfaces
         env:
           AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
           AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
@@ -62,4 +68,17 @@ jobs:
           TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
           AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
           AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
-        run: python scripts/release_check.py
+        run: python scripts/validate_kag.py
+
+      - name: Rebuild generated KAG outputs
+        env:
+          AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
+          AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
+          AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
+          TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+          AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
+          AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+        run: python scripts/generate_kag.py
+
+      - name: Check generated outputs are committed
+        run: git diff --exit-code -- generated
