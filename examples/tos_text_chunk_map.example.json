@@ -33,7 +33,7 @@
   "surface_name": "tos-text-chunk-map",
   "node_id": "tos.source.thus-spoke-zarathustra.prologue",
   "node_type": "source",
-  "source_anchor": "Friedrich Nietzsche, Also sprach Zarathustra, Zarathustra's Vorrede 1, bounded two-block trilingual entry through the prologue opening",
+  "source_anchor": "Friedrich Nietzsche, Also sprach Zarathustra, Zarathustra's Vorrede 1, paragraph-aligned twelve-segment trilingual entry through the first prologue movement",
   "authority_surface_ref": "Tree-of-Sophia/examples/source_node.example.json",
   "route_ref": "Tree-of-Sophia/docs/TINY_ENTRY_ROUTE.md",
   "capsule_ref": "Tree-of-Sophia/docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md",
@@ -45,10 +45,10 @@
   "chunk_count": 1,
   "chunks": [
     {
-      "chunk_id": "tos.source.thus-spoke-zarathustra.prologue::prologue-overflow",
+      "chunk_id": "tos.source.thus-spoke-zarathustra.prologue::zv1-10-overflowing-cup",
       "node_id": "tos.source.thus-spoke-zarathustra.prologue",
-      "segment_id": "prologue-overflow",
-      "source_anchor": "Friedrich Nietzsche, Also sprach Zarathustra, Zarathustra's Vorrede 1, bounded two-block trilingual entry through the prologue opening",
+      "segment_id": "zv1-10-overflowing-cup",
+      "source_anchor": "Friedrich Nietzsche, Also sprach Zarathustra, Zarathustra's Vorrede 1, paragraph-aligned twelve-segment trilingual entry through the first prologue movement",
       "source_ref": "Tree-of-Sophia/examples/source_node.example.json",
       "route_ref": "Tree-of-Sophia/docs/TINY_ENTRY_ROUTE.md",
       "capsule_ref": "Tree-of-Sophia/docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md",
@@ -62,22 +62,22 @@
         {
           "language": "de",
           "role": "canonical_source",
-          "text": "Siehe! Ich bin meiner Weisheit ueberdruessig, wie die Biene, die des Honigs zu viel gesammelt hat, ich bedarf der Haende, die sich ausstrecken. Ich moechte verschenken und austheilen, bis die Weisen unter den Menschen wieder einmal ihrer Thorheit und die Armen einmal ihres Reichthums froh geworden sind. Dazu muss ich in die Tiefe steigen: wie du des Abends thust, wenn du hinter das Meer gehst und noch der Unterwelt Licht bringst, du ueberreiches Gestirn! Ich muss, gleich dir, untergehen, wie die Menschen es nennen, zu denen ich hinab will."
+          "text": "Segne den Becher, welcher \u00fcberfliessen will, dass das Wasser golden aus ihm fliesse und \u00fcberallhin den Abglanz deiner Wonne trage!"
         },
         {
           "language": "ru",
           "role": "working_translation",
-          "text": "Смотри! Я пресытился своей мудростью, как пчела, собравшая слишком много меда; мне нужны руки, которые протянутся к ней. Я хочу дарить и раздавать, пока мудрые среди людей снова не обрадуются своей глупости, а бедные - своему богатству. Для этого мне надо сойти в глубину: как ты вечером уходишь за море и несешь свет даже подземному миру, о преизобильная звезда. Я должен, подобно тебе, пойти на заход, как говорят люди, к которым я хочу спуститься."
+          "text": "\u0411\u043b\u0430\u0433\u043e\u0441\u043b\u043e\u0432\u0438 \u0447\u0430\u0448\u0443,\n\u043a\u043e\u0442\u043e\u0440\u0430\u044f \u0445\u043e\u0447\u0435\u0442 \u043f\u0435\u0440\u0435\u043b\u0438\u0442\u044c\u0441\u044f,\n\u0447\u0442\u043e\u0431\u044b \u0437\u043e\u043b\u043e\u0442\u043e \u0438\u0437 \u043d\u0435\u0451 \u0442\u0435\u043a\u043b\u043e\n\u0438 \u043f\u043e\u0432\u0441\u044e\u0434\u0443 \u043d\u0435\u0441\u043b\u043e \u043e\u0442\u0431\u043b\u0435\u0441\u043a \u0442\u0432\u043e\u0435\u0433\u043e \u043b\u0438\u043a\u043e\u0432\u0430\u043d\u0438\u044f!"
         },
         {
           "language": "en",
           "role": "bridge_translation",
-          "text": "Look! I have grown weary of my wisdom, like a bee that has gathered too much honey; I need hands that reach out for it. I want to give and distribute until the wise among humans become glad again in their folly and the poor in their riches. For that I must descend into the deep: as you do in the evening when you go behind the sea and still bring light to the underworld, you over-rich star. Like you, I must go under, as people call it, to those below to whom I wish to descend."
+          "text": "Bless the cup that wants to overflow, so that the water may flow golden from it and carry everywhere the reflection of your bliss!"
         }
       ],
       "translation_tension": {
-        "segment_id": "prologue-overflow",
-        "note": "The cluster around 'ueberreiches Gestirn', 'in die Tiefe steigen', and 'untergehen' is kept as overflow plus descent; the Russian and English witnesses avoid flattening it into simple ruin, sacrifice, or sunset imagery alone."
+        "segment_id": "zv1-10-overflowing-cup",
+        "note": "'Abglanz' remains afterglow, reflection, or reflected radiance; witness layers should keep the difference between source light and carried shine. 'Wonne' and '\u043b\u0438\u043a\u043e\u0432\u0430\u043d\u0438\u0435' keep the image affectively high without collapsing into mere pleasure."
       }
     }
   ],

@@ -132,6 +132,7 @@ TOS_RETRIEVAL_AXIS_SCHEMA_PATH = (
 TOS_RETRIEVAL_AXIS_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "tos_retrieval_axis_pack.example.json"
 )
+TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID = "zv1-10-overflowing-cup"
 REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-pack-manifest.schema.json"
 )
@@ -2645,14 +2646,21 @@ def validate_tos_text_chunk_map_example(
         (
             chunk
             for chunk in expected_chunks
-            if isinstance(chunk, dict) and chunk.get("segment_id") == "prologue-overflow"
+            if isinstance(chunk, dict)
+            and chunk.get("segment_id") == TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID
         ),
         None,
     )
     if expected_chunk is None:
-        fail("expected ToS text chunk map payload must keep the prologue-overflow segment")
+        fail(
+            "expected ToS text chunk map payload must keep the current bounded example "
+            f"segment '{TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID}'"
+        )
     if chunks[0] != expected_chunk:
-        fail("ToS text chunk map example must mirror the bounded prologue-overflow chunk with translation tension")
+        fail(
+            "ToS text chunk map example must mirror the bounded "
+            f"'{TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID}' chunk with translation tension"
+        )
 
 
 def validate_tos_retrieval_axis_pack(
