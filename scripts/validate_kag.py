@@ -826,6 +826,8 @@ def iter_string_values(value: object):
 def resolve_relative_ref(root: Path, raw_ref: str, *, label: str) -> Path:
     path_text, _, anchor = raw_ref.partition("#")
     target = root / path_text
+    if root != REPO_ROOT and not root.exists():
+        return target
     if not target.exists():
         fail(f"{label} references a missing path: {raw_ref}")
     if anchor:
@@ -3804,10 +3806,14 @@ def validate_bridge_envelope_example() -> None:
     for index, ref in enumerate(
         validate_unique_string_list(payload.get("tos_refs"), label="bridge envelope example tos_refs")
     ):
+        if not ref.startswith("Tree-of-Sophia/"):
+            fail(f"bridge envelope example tos_refs[{index}] must point to Tree-of-Sophia")
         resolve_known_ref(ref, label=f"bridge envelope example tos_refs[{index}]")
     for index, ref in enumerate(
         validate_unique_string_list(payload.get("memory_refs"), label="bridge envelope example memory_refs")
     ):
+        if not ref.startswith("aoa-memo/"):
+            fail(f"bridge envelope example memory_refs[{index}] must point to aoa-memo")
         resolve_known_ref(ref, label=f"bridge envelope example memory_refs[{index}]")
 
     faces = payload.get("faces")

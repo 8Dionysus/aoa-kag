@@ -237,6 +237,48 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("counterpart refs", str(context.exception))
 
+    def test_bridge_envelope_example_rejects_non_tos_tos_refs(self) -> None:
+        example_payload = load_json(validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH)
+        assert isinstance(example_payload, dict)
+        broken_payload = copy.deepcopy(example_payload)
+        broken_payload["tos_refs"][0] = "aoa-memo/examples/bridge.kag-lift.example.json"
+
+        with self.patched_read_json(
+            {
+                validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_bridge_envelope_example()
+
+        self.assertIn("tos_refs[0]", str(context.exception))
+
+    def test_bridge_envelope_example_rejects_non_memo_memory_refs(self) -> None:
+        example_payload = load_json(validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH)
+        assert isinstance(example_payload, dict)
+        broken_payload = copy.deepcopy(example_payload)
+        broken_payload["memory_refs"][0] = "Tree-of-Sophia/docs/NODE_CONTRACT.md"
+
+        with self.patched_read_json(
+            {
+                validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_bridge_envelope_example()
+
+        self.assertIn("memory_refs[0]", str(context.exception))
+
+    def test_reasoning_handoff_example_allows_missing_external_dependency_roots(self) -> None:
+        missing_tos_root = REPO_ROOT / ".tmp" / "missing-Tree-of-Sophia"
+        missing_memo_root = REPO_ROOT / ".tmp" / "missing-aoa-memo"
+
+        with (
+            patch.object(validate_kag, "TREE_OF_SOPHIA_ROOT", missing_tos_root),
+            patch.object(validate_kag, "AOA_MEMO_ROOT", missing_memo_root),
+        ):
+            validate_kag.validate_reasoning_handoff_example()
+
 
 if __name__ == "__main__":
     unittest.main()
