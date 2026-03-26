@@ -27,9 +27,10 @@ If you are new to this repository, use this path:
 14. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
 15. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
 16. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
-17. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-18. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-19. Read [ROADMAP](ROADMAP.md) for the current direction.
+17. Read [docs/TOS_RAW_TABLE_INTAKE_STUB](docs/TOS_RAW_TABLE_INTAKE_STUB.md) for the current non-activated placeholder seam for future raw candidate tables from `Tree-of-Sophia`.
+18. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+19. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+20. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -85,6 +86,10 @@ It now also includes the first experimental ToS text chunk map pilot at:
 - `generated/tos_text_chunk_map.min.json`
 - `manifests/tos_text_chunk_map.json`
 - `docs/TOS_TEXT_CHUNK_MAP.md`
+
+It now also includes one explicit documentation stub for future raw candidate
+table intake from `Tree-of-Sophia` at:
+- `docs/TOS_RAW_TABLE_INTAKE_STUB.md`
 
 It now also includes the first experimental ToS retrieval-axis pack at:
 - `generated/tos_retrieval_axis_pack.json`
@@ -201,6 +206,7 @@ set:
 `aoa-kag` is in bootstrap.
 The current baseline now includes the first manifest-driven generated lift seam from `aoa-techniques`.
 It now also includes the first experimental ToS text chunk-map pilot built from the current source-owned Zarathustra authority surface plus the current tiny-entry route and capsule surfaces in `Tree-of-Sophia`.
+It now also names, but does not activate, a future raw-table intake seam for candidate material that may later appear under `Tree-of-Sophia/intake/...`.
 It now also includes the first experimental ToS retrieval-axis pack built from that chunk map plus the current bounded bridge and memo-side bridge faces.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
 It now also includes the first public federation-facing KAG export contract, one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`, and the first bounded cross-source node projection built on top of that loop.
