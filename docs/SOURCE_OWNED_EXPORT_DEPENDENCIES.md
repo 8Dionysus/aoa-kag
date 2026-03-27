@@ -26,6 +26,9 @@ The current bounded contract depends on:
 Those dependencies are declared in
 `manifests/source_owned_export_dependencies.json`.
 
+They also anchor the first `source_export_reentry` mode in
+`generated/return_regrounding_pack.min.json`.
+
 ## What the contract keeps
 
 Each dependency keeps:

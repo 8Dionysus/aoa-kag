@@ -25,6 +25,9 @@ federation as a whole.
   for the explicit source-owned export dependency contract.
 - Read [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the first-wave AoA-ToS bridge
   posture.
+- Read [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) for the bounded
+  recurrence-law landing that regrounds callers back to stronger source or
+  owner refs when derived posture weakens.
 - Read [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) for the current
   generated retrieval-axis pack.
 - Read [REASONING_HANDOFF](REASONING_HANDOFF.md) for the runtime-to-KAG handoff
@@ -66,6 +69,9 @@ federation as a whole.
   `aoa-kag`
 - [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) - how the derived layer returns
   retrieval context without replacing authored sources
+- [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) - how the KAG layer
+  regrounds callers back to stronger source-owned and owner-owned refs when a
+  derived surface begins to overreach
 - [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) - how the current
   generated retrieval-axis pack materializes `AOA-K-0007` without adding
   ranking or routing policy

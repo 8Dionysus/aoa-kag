@@ -21,16 +21,17 @@ If you are new to this repository, use this path:
 8. Read [docs/SOURCE_OWNED_EXPORT_DEPENDENCIES](docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md) for the explicit source-owned export dependency contract.
 9. Read [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md) for first-wave AoA-ToS bridge posture at the derived layer.
 10. Read [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md) for the runtime-to-KAG handoff boundary.
-11. Read [docs/TOS_RETRIEVAL_AXIS_PACK](docs/TOS_RETRIEVAL_AXIS_PACK.md) for the current third-wave generated retrieval-axis pack.
-12. Read [docs/CROSS_SOURCE_NODE_PROJECTION](docs/CROSS_SOURCE_NODE_PROJECTION.md) for the current fifth-wave bounded cross-source projection pilot.
-13. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current deferred counterpart-edge posture and activation gates.
-14. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
-15. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
-16. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
-17. Read [docs/TOS_RAW_TABLE_INTAKE_STUB](docs/TOS_RAW_TABLE_INTAKE_STUB.md) for the current non-activated placeholder seam for future raw candidate tables from `Tree-of-Sophia`.
-18. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-19. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-20. Read [ROADMAP](ROADMAP.md) for the current direction.
+11. Read [docs/RECURRENCE_REGROUNDING](docs/RECURRENCE_REGROUNDING.md) for the bounded recurrence-law landing that regrounds callers back to stronger source or owner refs.
+12. Read [docs/TOS_RETRIEVAL_AXIS_PACK](docs/TOS_RETRIEVAL_AXIS_PACK.md) for the current third-wave generated retrieval-axis pack.
+13. Read [docs/CROSS_SOURCE_NODE_PROJECTION](docs/CROSS_SOURCE_NODE_PROJECTION.md) for the current fifth-wave bounded cross-source projection pilot.
+14. Read [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md) for the current deferred counterpart-edge posture and activation gates.
+15. Read [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md) for the first manifest-driven generated lift pack.
+16. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
+17. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
+18. Read [docs/TOS_RAW_TABLE_INTAKE_STUB](docs/TOS_RAW_TABLE_INTAKE_STUB.md) for the current non-activated placeholder seam for future raw candidate tables from `Tree-of-Sophia`.
+19. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+20. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+21. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -148,6 +149,12 @@ It now also includes a multi-source reasoning handoff pack at:
 - `manifests/reasoning_handoff_pack.json`
 - `docs/REASONING_HANDOFF_PACK.md`
 
+It now also includes one bounded recurrence regrounding pack at:
+- `generated/return_regrounding_pack.json`
+- `generated/return_regrounding_pack.min.json`
+- `manifests/return_regrounding_pack.json`
+- `docs/RECURRENCE_REGROUNDING.md`
+
 It now also includes the current experimental federation spine pilot at:
 - `generated/federation_spine.json`
 - `generated/federation_spine.min.json`
@@ -209,6 +216,7 @@ It now also includes the first experimental ToS text chunk-map pilot built from 
 It now also names, but does not activate, a future raw-table intake seam for candidate material that may later appear under `Tree-of-Sophia/intake/...`.
 It now also includes the first experimental ToS retrieval-axis pack built from that chunk map plus the current bounded bridge and memo-side bridge faces.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
+It now also includes one bounded recurrence regrounding pack so retrieval axis use, federation entry, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs when derived posture weakens.
 It now also includes the first public federation-facing KAG export contract, one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`, and the first bounded cross-source node projection built on top of that loop.
 It now also includes one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, a narrow consumer guide, and one canonical release-check path so the experimental stack is easier to verify without widening it.
 It now also includes one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so downstream readers can consume the current path without activating `AOA-K-0008`.

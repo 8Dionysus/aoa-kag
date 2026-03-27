@@ -31,6 +31,9 @@ from kag_generation import (
     REASONING_HANDOFF_MANIFEST_PATH,
     REASONING_HANDOFF_MIN_OUTPUT_PATH,
     REASONING_HANDOFF_OUTPUT_PATH,
+    RETURN_REGROUNDING_MANIFEST_PATH,
+    RETURN_REGROUNDING_MIN_OUTPUT_PATH,
+    RETURN_REGROUNDING_OUTPUT_PATH,
     SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH,
     TECHNIQUE_LIFT_MANIFEST_PATH,
     TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
@@ -58,6 +61,7 @@ from kag_generation import (
     build_federation_spine_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
+    build_return_regrounding_pack_payload,
     build_technique_lift_pack_payload,
     build_tiny_consumer_bundle_payload,
     build_tos_text_chunk_map_payload,
@@ -139,6 +143,12 @@ REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH = (
 REASONING_HANDOFF_PACK_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-pack.schema.json"
 )
+RETURN_REGROUNDING_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "return-regrounding-pack-manifest.schema.json"
+)
+RETURN_REGROUNDING_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "return-regrounding-pack.schema.json"
+)
 SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "source-owned-export-dependencies.schema.json"
 )
@@ -169,6 +179,9 @@ TINY_CONSUMER_BUNDLE_SCHEMA_PATH = (
 )
 TINY_CONSUMER_BUNDLE_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "tiny_consumer_bundle.example.json"
+)
+RETURN_REGROUNDING_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "return_regrounding_pack.example.json"
 )
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
@@ -251,6 +264,143 @@ EXPECTED_BOUNDARY_GUARDRAILS = {
     "canon_owner": "Tree-of-Sophia",
     "direct_canon_authorship": "forbidden",
 }
+EXPECTED_RETURN_REGROUNDING_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "memory_truth_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+    "counterpart_activation": "review_gated",
+    "proof_ownership": "forbidden",
+}
+EXPECTED_RETURN_REGROUNDING_INPUTS = {
+    ("boundaries_doc", "aoa-kag", "docs/BOUNDARIES.md", "boundary_doc"),
+    ("bridge_contract_doc", "aoa-kag", "docs/BRIDGE_CONTRACTS.md", "bridge_doc"),
+    ("reasoning_handoff_doc", "aoa-kag", "docs/REASONING_HANDOFF.md", "handoff_doc"),
+    (
+        "source_owned_export_dependencies_manifest",
+        "aoa-kag",
+        "manifests/source_owned_export_dependencies.json",
+        "dependency_manifest",
+    ),
+    (
+        "federation_spine_pack",
+        "aoa-kag",
+        "generated/federation_spine.min.json",
+        "derived_pack",
+    ),
+    (
+        "retrieval_axis_pack",
+        "aoa-kag",
+        "generated/tos_retrieval_axis_pack.min.json",
+        "derived_pack",
+    ),
+    (
+        "cross_source_projection_pack",
+        "aoa-kag",
+        "generated/cross_source_node_projection.min.json",
+        "derived_pack",
+    ),
+    (
+        "reasoning_handoff_pack",
+        "aoa-kag",
+        "generated/reasoning_handoff_pack.min.json",
+        "derived_pack",
+    ),
+    (
+        "aoa_techniques_kag_export",
+        "aoa-techniques",
+        "generated/kag_export.min.json",
+        "source_owned_export",
+    ),
+    (
+        "tos_kag_export",
+        "Tree-of-Sophia",
+        "generated/kag_export.min.json",
+        "source_owned_export",
+    ),
+    (
+        "tos_node_contract",
+        "Tree-of-Sophia",
+        "docs/NODE_CONTRACT.md",
+        "source_contract",
+    ),
+    (
+        "tos_source_node",
+        "Tree-of-Sophia",
+        "examples/source_node.example.json",
+        "authority_surface",
+    ),
+    (
+        "memo_checkpoint_contract",
+        "aoa-memo",
+        "examples/checkpoint_to_memory_contract.example.json",
+        "owner_contract",
+    ),
+}
+EXPECTED_RETURN_REGROUNDING_INPUT_ORDER = [
+    "boundaries_doc",
+    "bridge_contract_doc",
+    "reasoning_handoff_doc",
+    "source_owned_export_dependencies_manifest",
+    "federation_spine_pack",
+    "retrieval_axis_pack",
+    "cross_source_projection_pack",
+    "reasoning_handoff_pack",
+    "aoa_techniques_kag_export",
+    "tos_kag_export",
+    "tos_node_contract",
+    "tos_source_node",
+    "memo_checkpoint_contract",
+]
+EXPECTED_RETURN_REGROUNDING_BINDINGS = {
+    (
+        "source_export_reentry",
+        "federation_spine_pack",
+        (
+            "source_owned_export_dependencies_manifest",
+            "aoa_techniques_kag_export",
+            "tos_kag_export",
+        ),
+        ("aoa-techniques-kag-export", "tree-of-sophia-kag-export"),
+    ),
+    (
+        "bridge_axis_reentry",
+        "retrieval_axis_pack",
+        ("bridge_contract_doc", "tos_node_contract", "tos_source_node"),
+        (),
+    ),
+    (
+        "projection_boundary_reentry",
+        "cross_source_projection_pack",
+        ("federation_spine_pack", "retrieval_axis_pack", "bridge_contract_doc"),
+        ("aoa-techniques-kag-export", "tree-of-sophia-kag-export"),
+    ),
+    (
+        "handoff_guardrail_reentry",
+        "reasoning_handoff_pack",
+        ("reasoning_handoff_doc", "boundaries_doc", "memo_checkpoint_contract"),
+        (),
+    ),
+    (
+        "owner_boundary_reentry",
+        "reasoning_handoff_doc",
+        (
+            "bridge_contract_doc",
+            "boundaries_doc",
+            "memo_checkpoint_contract",
+            "tos_node_contract",
+        ),
+        (),
+    ),
+}
+EXPECTED_RETURN_REGROUNDING_MODE_ORDER = [
+    "source_export_reentry",
+    "bridge_axis_reentry",
+    "projection_boundary_reentry",
+    "handoff_guardrail_reentry",
+    "owner_boundary_reentry",
+]
 EXPECTED_RETURN_MUST_INCLUDE = {"source_refs", "axis_summary", "provenance_note"}
 EXPECTED_RETURN_MAY_INCLUDE = {
     "lineage_refs",
@@ -735,6 +885,20 @@ def validate_reasoning_handoff_pack_schema_surface() -> None:
     validate_top_level_schema(
         REASONING_HANDOFF_PACK_SCHEMA_PATH,
         "reasoning handoff pack",
+    )
+
+
+def validate_return_regrounding_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        RETURN_REGROUNDING_MANIFEST_SCHEMA_PATH,
+        "return regrounding pack manifest",
+    )
+
+
+def validate_return_regrounding_schema_surface() -> None:
+    validate_top_level_schema(
+        RETURN_REGROUNDING_SCHEMA_PATH,
+        "return regrounding pack",
     )
 
 
@@ -1656,6 +1820,102 @@ def validate_reasoning_handoff_manifest() -> None:
         fail("reasoning handoff manifest output_paths must match the committed generated output paths")
     if payload["bounded_output_contract"] != EXPECTED_REASONING_HANDOFF_CONTRACT:
         fail("reasoning handoff manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_return_regrounding_manifest() -> None:
+    payload = read_json(RETURN_REGROUNDING_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("return regrounding manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "mode_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"return regrounding manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("return regrounding manifest manifest_version must equal 1")
+    if payload["pack_type"] != "return_regrounding_pack":
+        fail("return regrounding manifest pack_type must equal 'return_regrounding_pack'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("return regrounding manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    input_order: list[str] = []
+    for index, source_input in enumerate(source_inputs):
+        location = f"return regrounding manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        input_order.append(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_RETURN_REGROUNDING_INPUTS:
+        fail("return regrounding manifest source_inputs must match the current bounded donor set")
+    if input_order != EXPECTED_RETURN_REGROUNDING_INPUT_ORDER:
+        fail("return regrounding manifest source_inputs must keep the current additive donor order")
+
+    mode_bindings = payload["mode_bindings"]
+    if not isinstance(mode_bindings, list) or not mode_bindings:
+        fail("return regrounding manifest mode_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, tuple[str, ...], tuple[str, ...]]] = set()
+    binding_order: list[str] = []
+    for index, binding in enumerate(mode_bindings):
+        location = f"return regrounding manifest mode_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        mode_ref = binding.get("mode_ref")
+        primary_input = binding.get("primary_input")
+        supporting_inputs = binding.get("supporting_inputs")
+        dependency_refs = binding.get("dependency_refs", [])
+        if not isinstance(mode_ref, str) or not mode_ref:
+            fail(f"{location}.mode_ref must be a non-empty string")
+        if not isinstance(primary_input, str) or not primary_input:
+            fail(f"{location}.primary_input must be a non-empty string")
+        if not isinstance(supporting_inputs, list) or not supporting_inputs:
+            fail(f"{location}.supporting_inputs must be a non-empty list")
+        if not all(isinstance(value, str) and value for value in supporting_inputs):
+            fail(f"{location}.supporting_inputs contains an invalid entry")
+        if not isinstance(dependency_refs, list):
+            fail(f"{location}.dependency_refs must be a list when present")
+        if not all(isinstance(value, str) and value for value in dependency_refs):
+            fail(f"{location}.dependency_refs contains an invalid entry")
+        actual_bindings.add(
+            (
+                mode_ref,
+                primary_input,
+                tuple(supporting_inputs),
+                tuple(dependency_refs),
+            )
+        )
+        binding_order.append(mode_ref)
+    if actual_bindings != EXPECTED_RETURN_REGROUNDING_BINDINGS:
+        fail("return regrounding manifest mode_bindings must match the current bounded mode contract")
+    if binding_order != EXPECTED_RETURN_REGROUNDING_MODE_ORDER:
+        fail("return regrounding manifest mode_bindings must keep the current stable mode order")
+
+    if payload["output_paths"] != {
+        "full": "generated/return_regrounding_pack.json",
+        "min": "generated/return_regrounding_pack.min.json",
+    }:
+        fail("return regrounding manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_RETURN_REGROUNDING_CONTRACT:
+        fail("return regrounding manifest bounded_output_contract must match the current source-first guardrail")
 
 
 def validate_source_owned_export_dependency_manifest(
@@ -3088,6 +3348,222 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
     )
 
 
+def validate_return_regrounding_pack(
+    payload: object,
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("return regrounding pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "mode_count",
+        "modes",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"return regrounding pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("return regrounding pack pack_version must equal 1")
+    if payload["pack_type"] != "return_regrounding_pack":
+        fail("return regrounding pack pack_type must equal 'return_regrounding_pack'")
+    if payload["source_manifest_ref"] != "manifests/return_regrounding_pack.json":
+        fail("return regrounding pack source_manifest_ref must point to manifests/return_regrounding_pack.json")
+    if payload["bounded_output_contract"] != EXPECTED_RETURN_REGROUNDING_CONTRACT:
+        fail("return regrounding pack bounded_output_contract must match the current source-first guardrail")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("return regrounding pack source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    source_input_order: list[str] = []
+    for index, source_input in enumerate(source_inputs):
+        location = f"return regrounding pack source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        role = source_input.get("role")
+        ref = source_input.get("ref")
+        if not all(isinstance(value, str) and value for value in (name, repo, role, ref)):
+            fail(f"{location} must keep name, repo, role, and ref")
+        resolve_known_ref(ref, label=location)
+        relative_ref = ref if repo == "aoa-kag" else ref.split("/", 1)[1]
+        actual_source_inputs.add((name, repo, relative_ref, role))
+        source_input_order.append(name)
+    if actual_source_inputs != EXPECTED_RETURN_REGROUNDING_INPUTS:
+        fail("return regrounding pack source_inputs must match the manifest-driven donor set")
+    if source_input_order != EXPECTED_RETURN_REGROUNDING_INPUT_ORDER:
+        fail("return regrounding pack source_inputs must keep the current additive donor order")
+
+    modes = payload["modes"]
+    if not isinstance(modes, list) or not modes:
+        fail("return regrounding pack modes must be a non-empty list")
+    mode_count = payload["mode_count"]
+    if not isinstance(mode_count, int) or mode_count != len(modes):
+        fail("return regrounding pack mode_count must equal the number of modes")
+
+    seen_modes: set[str] = set()
+    mode_order: list[str] = []
+    counterpart_forbidden_refs = set(EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS) | {
+        EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
+        "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
+    }
+
+    for index, mode in enumerate(modes):
+        location = f"return regrounding pack modes[{index}]"
+        if not isinstance(mode, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "mode_id",
+            "used_when",
+            "query_mode_hint",
+            "trigger_surface_refs",
+            "stronger_refs",
+            "supporting_surface_refs",
+            "preserved_fields",
+            "reentry_note",
+            "non_identity_boundary",
+            "prohibited_promotions",
+        ):
+            if key not in mode:
+                fail(f"{location} is missing required key '{key}'")
+
+        mode_id = mode["mode_id"]
+        used_when = mode["used_when"]
+        query_mode_hint = mode["query_mode_hint"]
+        reentry_note = mode["reentry_note"]
+        non_identity_boundary = mode["non_identity_boundary"]
+        if not isinstance(mode_id, str) or not mode_id:
+            fail(f"{location}.mode_id must be a non-empty string")
+        if mode_id in seen_modes:
+            fail(f"{location}.mode_id '{mode_id}' is duplicated")
+        seen_modes.add(mode_id)
+        mode_order.append(mode_id)
+        if not isinstance(used_when, str) or len(used_when) < 20:
+            fail(f"{location}.used_when must be a string of length >= 20")
+        if query_mode_hint not in {"local_search", "global_search", "drift_search", "consumer_read_path"}:
+            fail(f"{location}.query_mode_hint '{query_mode_hint}' is not allowed")
+        if not isinstance(reentry_note, str) or len(reentry_note) < 20:
+            fail(f"{location}.reentry_note must be a string of length >= 20")
+        if not isinstance(non_identity_boundary, str) or len(non_identity_boundary) < 20:
+            fail(f"{location}.non_identity_boundary must be a string of length >= 20")
+
+        trigger_surface_refs = validate_unique_string_list(
+            mode["trigger_surface_refs"],
+            label=f"{location}.trigger_surface_refs",
+        )
+        stronger_refs = validate_unique_string_list(
+            mode["stronger_refs"],
+            label=f"{location}.stronger_refs",
+        )
+        supporting_surface_refs = validate_unique_string_list(
+            mode["supporting_surface_refs"],
+            label=f"{location}.supporting_surface_refs",
+        )
+        preserved_fields = validate_unique_string_list(
+            mode["preserved_fields"],
+            label=f"{location}.preserved_fields",
+        )
+        prohibited_promotions = validate_unique_string_list(
+            mode["prohibited_promotions"],
+            label=f"{location}.prohibited_promotions",
+        )
+
+        for ref in trigger_surface_refs:
+            resolve_known_ref(ref, label=f"{location}.trigger_surface_refs")
+        for ref in stronger_refs:
+            resolve_known_ref(ref, label=f"{location}.stronger_refs")
+        for ref in supporting_surface_refs:
+            resolve_known_ref(ref, label=f"{location}.supporting_surface_refs")
+
+        if any(ref in counterpart_forbidden_refs for ref in stronger_refs):
+            fail(f"{location}.stronger_refs must not promote counterpart review or contract refs into stronger authority")
+        if any(ref.startswith(("generated/", "docs/", "examples/", "manifests/", "schemas/")) for ref in stronger_refs):
+            fail(f"{location}.stronger_refs must not point to aoa-kag-local surfaces")
+
+        if mode_id == "source_export_reentry":
+            validate_exact_set(
+                stronger_refs,
+                {
+                    "aoa-techniques/generated/kag_export.min.json",
+                    "Tree-of-Sophia/generated/kag_export.min.json",
+                },
+                label=f"{location}.stronger_refs",
+            )
+            validate_exact_set(
+                set(preserved_fields),
+                {"provenance_note", "non_identity_boundary", "entry_surface_ref"},
+                label=f"{location}.preserved_fields",
+            )
+        elif mode_id == "bridge_axis_reentry":
+            if not all(ref.startswith("Tree-of-Sophia/") for ref in stronger_refs):
+                fail(f"{location}.stronger_refs must stay ToS-owned for bridge axis regrounding")
+            validate_exact_set(
+                set(preserved_fields),
+                {
+                    "source_refs",
+                    "lineage_refs",
+                    "conflict_refs",
+                    "practice_refs",
+                    "axis_summary",
+                },
+                label=f"{location}.preserved_fields",
+            )
+        elif mode_id == "projection_boundary_reentry":
+            validate_exact_set(
+                stronger_refs,
+                {
+                    "aoa-techniques/generated/kag_export.min.json",
+                    "Tree-of-Sophia/generated/kag_export.min.json",
+                },
+                label=f"{location}.stronger_refs",
+            )
+            if "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md" not in supporting_surface_refs:
+                fail(f"{location}.supporting_surface_refs must keep the counterpart exposure review as a supporting boundary ref")
+        elif mode_id == "handoff_guardrail_reentry":
+            if not all(
+                ref.startswith(("aoa-playbooks/", "aoa-evals/", "aoa-memo/"))
+                for ref in stronger_refs
+            ):
+                fail(f"{location}.stronger_refs must stay playbook/eval/memo-owned for handoff regrounding")
+            validate_exact_set(
+                set(preserved_fields),
+                {
+                    "source_refs",
+                    "axis_summary",
+                    "provenance_note",
+                    "boundary_guardrails",
+                },
+                label=f"{location}.preserved_fields",
+            )
+        elif mode_id == "owner_boundary_reentry":
+            if not all(ref.startswith(("aoa-memo/", "Tree-of-Sophia/")) for ref in stronger_refs):
+                fail(f"{location}.stronger_refs must stay memo- or ToS-owned at the owner boundary")
+            validate_exact_set(
+                set(preserved_fields),
+                {"source_refs", "provenance_note", "boundary_guardrails"},
+                label=f"{location}.preserved_fields",
+            )
+        else:
+            fail(f"{location}.mode_id '{mode_id}' is not supported")
+
+    if mode_order != EXPECTED_RETURN_REGROUNDING_MODE_ORDER:
+        fail("return regrounding pack modes must keep the current stable mode order")
+
+    if payload != expected_payload:
+        fail("return regrounding pack must match the committed manifest-driven regrounding payload")
+
+
+def validate_return_regrounding_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(RETURN_REGROUNDING_EXAMPLE_PATH)
+    validate_return_regrounding_pack(payload, expected_payload)
+
+
 def validate_federation_spine_pack(
     payload: object,
     surfaces_by_id: dict[str, dict[str, object]],
@@ -4258,6 +4734,8 @@ def main() -> int:
         validate_tos_retrieval_axis_schema_surface()
         validate_reasoning_handoff_pack_manifest_schema_surface()
         validate_reasoning_handoff_pack_schema_surface()
+        validate_return_regrounding_manifest_schema_surface()
+        validate_return_regrounding_schema_surface()
         validate_source_owned_export_dependencies_schema_surface()
         validate_federation_kag_export_schema_surface()
         validate_federation_spine_manifest_schema_surface()
@@ -4276,6 +4754,7 @@ def main() -> int:
         validate_tos_text_chunk_map_manifest(registry_manifest_surfaces)
         validate_tos_retrieval_axis_manifest(registry_manifest_surfaces)
         validate_reasoning_handoff_manifest()
+        validate_return_regrounding_manifest()
         source_owned_export_dependencies = (
             validate_source_owned_export_dependency_manifest(
                 registry_manifest_surfaces
@@ -4303,6 +4782,9 @@ def main() -> int:
             expected_registry_payload
         )
         expected_reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
+        expected_return_regrounding_pack_payload = build_return_regrounding_pack_payload(
+            expected_registry_payload
+        )
         expected_federation_spine_payload = build_federation_spine_payload(
             expected_registry_payload
         )
@@ -4367,6 +4849,16 @@ def main() -> int:
             label="generated compact reasoning handoff pack",
         )
         validate_generated_text(
+            RETURN_REGROUNDING_OUTPUT_PATH,
+            encode_json(expected_return_regrounding_pack_payload, pretty=True),
+            label="generated return regrounding pack",
+        )
+        validate_generated_text(
+            RETURN_REGROUNDING_MIN_OUTPUT_PATH,
+            encode_json(expected_return_regrounding_pack_payload, pretty=False),
+            label="generated compact return regrounding pack",
+        )
+        validate_generated_text(
             FEDERATION_SPINE_OUTPUT_PATH,
             encode_json(expected_federation_spine_payload, pretty=True),
             label="generated federation spine",
@@ -4429,6 +4921,10 @@ def main() -> int:
         validate_reasoning_handoff_pack(
             read_json(REASONING_HANDOFF_MIN_OUTPUT_PATH),
         )
+        validate_return_regrounding_pack(
+            read_json(RETURN_REGROUNDING_MIN_OUTPUT_PATH),
+            expected_return_regrounding_pack_payload,
+        )
         validate_federation_spine_pack(
             read_json(FEDERATION_SPINE_MIN_OUTPUT_PATH),
             generated_surfaces_by_id,
@@ -4450,6 +4946,7 @@ def main() -> int:
         validate_tos_text_chunk_map_example(expected_tos_text_chunk_map_payload)
         validate_tos_retrieval_axis_example(expected_tos_retrieval_axis_payload)
         validate_reasoning_handoff_example()
+        validate_return_regrounding_example(expected_return_regrounding_pack_payload)
         validate_federation_kag_export_example()
         validate_cross_source_node_projection_example(
             expected_cross_source_node_projection_payload
@@ -4479,6 +4976,8 @@ def main() -> int:
     print("[ok] validated ToS retrieval axis pack schema")
     print("[ok] validated reasoning handoff pack manifest schema")
     print("[ok] validated reasoning handoff pack schema")
+    print("[ok] validated return regrounding pack manifest schema")
+    print("[ok] validated return regrounding pack schema")
     print("[ok] validated source-owned export dependency manifest schema")
     print("[ok] validated federation KAG export schema")
     print("[ok] validated federation spine manifest schema")
@@ -4492,6 +4991,7 @@ def main() -> int:
     print("[ok] validated manifests/tos_text_chunk_map.json")
     print("[ok] validated manifests/tos_retrieval_axis_pack.json")
     print("[ok] validated manifests/reasoning_handoff_pack.json")
+    print("[ok] validated manifests/return_regrounding_pack.json")
     print("[ok] validated manifests/source_owned_export_dependencies.json")
     print("[ok] validated manifests/federation_spine.json")
     print("[ok] validated manifests/cross_source_node_projection.json")
@@ -4502,6 +5002,7 @@ def main() -> int:
     print("[ok] validated generated ToS text chunk map outputs are up to date")
     print("[ok] validated generated ToS retrieval axis pack outputs are up to date")
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
+    print("[ok] validated generated return regrounding pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
     print("[ok] validated generated cross-source node projection outputs are up to date")
     print("[ok] validated generated counterpart federation exposure review outputs are up to date")
@@ -4510,6 +5011,7 @@ def main() -> int:
     print("[ok] validated generated ToS text chunk map structure")
     print("[ok] validated generated ToS retrieval axis pack structure")
     print("[ok] validated generated reasoning handoff pack structure")
+    print("[ok] validated generated return regrounding pack structure")
     print("[ok] validated generated federation spine structure")
     print("[ok] validated generated cross-source node projection structure")
     print("[ok] validated generated counterpart federation exposure review structure")
@@ -4521,6 +5023,7 @@ def main() -> int:
     print("[ok] validated ToS text chunk map example")
     print("[ok] validated ToS retrieval axis example")
     print("[ok] validated reasoning handoff guardrail example")
+    print("[ok] validated return regrounding example")
     print("[ok] validated federation KAG export example")
     print("[ok] validated cross-source node projection example")
     print("[ok] validated counterpart federation exposure review example")

@@ -76,6 +76,11 @@ These returns stay derived.
 They should guide the caller toward stronger authored sources and existing
 KAG-layer derived surfaces, not silently replace either.
 
+When runtime use loses source trace, blurs non-identity posture, or reaches a
+clear owner boundary, prefer a bounded regrounding return through
+`generated/return_regrounding_pack.min.json` rather than a wider KAG-authored
+continuation.
+
 When `counterpart_refs` are returned in the current wave, they must stay
 contract-or-example refs through:
 
@@ -93,6 +98,8 @@ remains planned.
 - `Tree-of-Sophia` owns canon and source-authored meaning
 - `aoa-kag` owns provenance-aware derived surface returns
 - direct canon authorship from a KAG handoff is forbidden
+- recurrence at this layer means regrounding back to stronger refs, not taking
+  ownership of the next layer's decision
 
 This preserves the current law of the layer:
 

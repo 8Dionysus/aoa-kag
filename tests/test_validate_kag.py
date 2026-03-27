@@ -279,6 +279,83 @@ class ValidateKagTestCase(unittest.TestCase):
         ):
             validate_kag.validate_reasoning_handoff_example()
 
+    def test_return_regrounding_pack_rejects_drifted_bounded_output_contract(self) -> None:
+        expected_payload = validate_kag.build_return_regrounding_pack_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["bounded_output_contract"]["proof_ownership"] = "allowed"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_return_regrounding_pack(
+                broken_payload,
+                expected_payload,
+            )
+
+        self.assertIn("bounded_output_contract", str(context.exception))
+
+    def test_return_regrounding_pack_rejects_local_kag_stronger_ref(self) -> None:
+        expected_payload = validate_kag.build_return_regrounding_pack_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["modes"][2]["stronger_refs"][0] = "generated/federation_spine.min.json"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_return_regrounding_pack(
+                broken_payload,
+                expected_payload,
+            )
+
+        self.assertIn("stronger_refs", str(context.exception))
+
+    def test_return_regrounding_pack_rejects_counterpart_review_as_stronger_ref(self) -> None:
+        expected_payload = validate_kag.build_return_regrounding_pack_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["modes"][2]["stronger_refs"][0] = (
+            "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
+        )
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_return_regrounding_pack(
+                broken_payload,
+                expected_payload,
+            )
+
+        self.assertIn("counterpart", str(context.exception))
+
+    def test_return_regrounding_pack_rejects_wrong_owner_repo_in_handoff_mode(self) -> None:
+        expected_payload = validate_kag.build_return_regrounding_pack_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["modes"][3]["stronger_refs"][0] = "aoa-routing/README.md"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_return_regrounding_pack(
+                broken_payload,
+                expected_payload,
+            )
+
+        self.assertIn("stronger_refs", str(context.exception))
+
+    def test_return_regrounding_pack_rejects_duplicate_mode(self) -> None:
+        expected_payload = validate_kag.build_return_regrounding_pack_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["modes"][4]["mode_id"] = "handoff_guardrail_reentry"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_return_regrounding_pack(
+                broken_payload,
+                expected_payload,
+            )
+
+        self.assertIn("duplicated", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

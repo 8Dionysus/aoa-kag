@@ -23,6 +23,10 @@ If you want the current machine-readable package for this path, start with
 4. Read `generated/cross_source_node_projection.min.json`.
    This gives the current one-hop projection that pairs one primary AoA export
    with one supporting ToS export while keeping non-identity explicit.
+5. When provenance weakens or a derived surface starts sounding stronger than
+   the source that feeds it, read `generated/return_regrounding_pack.min.json`.
+   This gives the current bounded re-entry map back to stronger source-owned or
+   owner-owned refs.
 
 ## Counterpart posture
 
@@ -46,6 +50,8 @@ generated retrieval or projection payload.
   source-owned exports
 - use cross-source projection only as a reviewable one-hop pairing, never as an
   ontology merger
+- use the return regrounding pack when provenance weakens, owner boundaries
+  appear, or a derived surface needs to hand the caller back to a stronger ref
 - use the tiny consumer bundle when you want this same path as one stable
   machine-readable package
 
