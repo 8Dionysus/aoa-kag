@@ -122,6 +122,15 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_return_regrounding_builder_matches_generated_outputs(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        self.assert_builder_matches_generated(
+            kag_generation.build_return_regrounding_pack_payload,
+            kag_generation.RETURN_REGROUNDING_OUTPUT_PATH,
+            kag_generation.RETURN_REGROUNDING_MIN_OUTPUT_PATH,
+            registry_payload=registry_payload,
+        )
+
     def test_counterpart_federation_exposure_review_builder_keeps_stable_review_order(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         payload = kag_generation.build_counterpart_federation_exposure_review_payload(
@@ -313,6 +322,42 @@ class KagGenerationTestCase(unittest.TestCase):
                 )
 
         self.assertIn("bundle_order", str(context.exception))
+
+    def test_return_regrounding_builder_rejects_mode_order_drift(self) -> None:
+        manifest = load_json(kag_generation.RETURN_REGROUNDING_MANIFEST_PATH)
+        assert isinstance(manifest, dict)
+        broken_manifest = copy.deepcopy(manifest)
+        broken_manifest["mode_bindings"] = list(reversed(broken_manifest["mode_bindings"]))
+
+        with self.patched_read_json(
+            {
+                kag_generation.RETURN_REGROUNDING_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_return_regrounding_pack_payload(
+                    kag_generation.build_registry_payload()
+                )
+
+        self.assertIn("stable mode order", str(context.exception))
+
+    def test_return_regrounding_builder_rejects_unknown_dependency_ref(self) -> None:
+        manifest = load_json(kag_generation.RETURN_REGROUNDING_MANIFEST_PATH)
+        assert isinstance(manifest, dict)
+        broken_manifest = copy.deepcopy(manifest)
+        broken_manifest["mode_bindings"][0]["dependency_refs"] = ["wrong-dependency"]
+
+        with self.patched_read_json(
+            {
+                kag_generation.RETURN_REGROUNDING_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_return_regrounding_pack_payload(
+                    kag_generation.build_registry_payload()
+                )
+
+        self.assertIn("unknown dependency", str(context.exception))
 
 
 if __name__ == "__main__":

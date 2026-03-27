@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/return-regrounding-pack.schema.json",
+  "title": "AoA KAG return regrounding pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_manifest_ref",
+    "source_inputs",
+    "mode_count",
+    "modes",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "return_regrounding_pack"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/return_regrounding_pack.json"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 13,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "role",
+          "ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "enum": [
+              "aoa-kag",
+              "aoa-techniques",
+              "Tree-of-Sophia",
+              "aoa-memo"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "mode_count": {
+      "type": "integer",
+      "const": 5
+    },
+    "modes": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode_id",
+          "used_when",
+          "query_mode_hint",
+          "trigger_surface_refs",
+          "stronger_refs",
+          "supporting_surface_refs",
+          "preserved_fields",
+          "reentry_note",
+          "non_identity_boundary",
+          "prohibited_promotions"
+        ],
+        "properties": {
+          "mode_id": {
+            "type": "string",
+            "enum": [
+              "source_export_reentry",
+              "bridge_axis_reentry",
+              "projection_boundary_reentry",
+              "handoff_guardrail_reentry",
+              "owner_boundary_reentry"
+            ]
+          },
+          "used_when": {
+            "type": "string",
+            "minLength": 1
+          },
+          "query_mode_hint": {
+            "type": "string",
+            "enum": [
+              "local_search",
+              "global_search",
+              "drift_search",
+              "consumer_read_path"
+            ]
+          },
+          "trigger_surface_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "stronger_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "supporting_surface_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "preserved_fields": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "reentry_note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "non_identity_boundary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "prohibited_promotions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "routing_ownership",
+        "memory_truth_ownership",
+        "canon_authorship",
+        "counterpart_activation",
+        "proof_ownership"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "routing_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "memory_truth_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "canon_authorship": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "counterpart_activation": {
+          "type": "string",
+          "const": "review_gated"
+        },
+        "proof_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        }
+      }
+    }
+  }
+}

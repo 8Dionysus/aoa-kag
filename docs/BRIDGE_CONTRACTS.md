@@ -42,6 +42,10 @@ The KAG layer may return bounded retrieval surfaces to AoA such as:
 These returns should guide AoA toward sources.
 They should not pretend to be final authored truth.
 
+If bridge use loses source trace or starts treating a derived bridge surface as
+final authored meaning, `aoa-kag` should answer with bounded regrounding return
+instead of a wider bridge synthesis.
+
 ## Retrieval axis contract
 
 When KAG returns a bridge-ready retrieval surface, it should be able to expose:
