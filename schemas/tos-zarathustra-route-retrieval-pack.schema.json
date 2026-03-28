@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tos-zarathustra-route-retrieval-pack.schema.json",
+  "title": "AoA KAG ToS Zarathustra route retrieval pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_manifest_ref",
+    "source_inputs",
+    "surface_bindings",
+    "surface_id",
+    "surface_name",
+    "route_count",
+    "routes",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "tos_zarathustra_route_retrieval_pack"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/tos_zarathustra_route_retrieval_pack.json"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "role",
+          "ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "tos_zarathustra_route_pack"
+          },
+          "repo": {
+            "type": "string",
+            "const": "aoa-kag"
+          },
+          "role": {
+            "type": "string",
+            "const": "route_pack"
+          },
+          "ref": {
+            "type": "string",
+            "const": "generated/tos_zarathustra_route_pack.min.json"
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "const": "AOA-K-0011"
+          },
+          "surface_name": {
+            "type": "string",
+            "const": "tos-zarathustra-route-retrieval-surface"
+          },
+          "derived_kind": {
+            "type": "string",
+            "const": "retrieval_surface"
+          },
+          "derived_slot": {
+            "type": "string",
+            "const": "routes"
+          },
+          "source_input": {
+            "type": "string",
+            "const": "tos_zarathustra_route_pack"
+          }
+        }
+      }
+    },
+    "surface_id": {
+      "type": "string",
+      "const": "AOA-K-0011"
+    },
+    "surface_name": {
+      "type": "string",
+      "const": "tos-zarathustra-route-retrieval-surface"
+    },
+    "route_count": {
+      "type": "integer",
+      "const": 1
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "retrieval_id",
+          "route_id",
+          "route_pack_ref",
+          "route_capsule_ref",
+          "relation_pack_ref",
+          "node_type_counts",
+          "edge_kind_counts",
+          "source_handles",
+          "concept_handles",
+          "principle_handles",
+          "lineage_handles",
+          "event_handles",
+          "state_handles",
+          "support_handles",
+          "analogy_handles",
+          "synthesis_handles",
+          "retrieval_summary"
+        ],
+        "properties": {
+          "retrieval_id": {
+            "type": "string",
+            "const": "AOA-K-0011::thus-spoke-zarathustra/prologue-1"
+          },
+          "route_id": {
+            "type": "string",
+            "const": "thus-spoke-zarathustra/prologue-1"
+          },
+          "route_pack_ref": {
+            "type": "string",
+            "const": "generated/tos_zarathustra_route_pack.min.json"
+          },
+          "route_capsule_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "relation_pack_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "node_type_counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source",
+              "concept",
+              "principle",
+              "lineage",
+              "event",
+              "state",
+              "support",
+              "analogy",
+              "synthesis"
+            ],
+            "properties": {
+              "source": { "type": "integer", "minimum": 0 },
+              "concept": { "type": "integer", "minimum": 0 },
+              "principle": { "type": "integer", "minimum": 0 },
+              "lineage": { "type": "integer", "minimum": 0 },
+              "event": { "type": "integer", "minimum": 0 },
+              "state": { "type": "integer", "minimum": 0 },
+              "support": { "type": "integer", "minimum": 0 },
+              "analogy": { "type": "integer", "minimum": 0 },
+              "synthesis": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "edge_kind_counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_edge",
+              "bridge_edge",
+              "principle_edge"
+            ],
+            "properties": {
+              "source_edge": { "type": "integer", "minimum": 0 },
+              "bridge_edge": { "type": "integer", "minimum": 0 },
+              "principle_edge": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "source_handles": { "$ref": "#/$defs/handle_array" },
+          "concept_handles": { "$ref": "#/$defs/handle_array" },
+          "principle_handles": { "$ref": "#/$defs/handle_array" },
+          "lineage_handles": { "$ref": "#/$defs/handle_array" },
+          "event_handles": { "$ref": "#/$defs/handle_array" },
+          "state_handles": { "$ref": "#/$defs/handle_array" },
+          "support_handles": { "$ref": "#/$defs/handle_array" },
+          "analogy_handles": { "$ref": "#/$defs/handle_array" },
+          "synthesis_handles": { "$ref": "#/$defs/handle_array" },
+          "retrieval_summary": {
+            "type": "string",
+            "minLength": 20
+          }
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "scoring_or_ranking",
+        "routing_ownership",
+        "graph_normalization",
+        "consumer_projection"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean"
+        },
+        "source_replacement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scoring_or_ranking": {
+          "type": "string",
+          "minLength": 1
+        },
+        "routing_ownership": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graph_normalization": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consumer_projection": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "handle_array": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node_id",
+          "authority_ref"
+        ],
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "authority_ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

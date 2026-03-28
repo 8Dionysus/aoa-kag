@@ -29,10 +29,11 @@ If you are new to this repository, use this path:
 16. Read [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md) for the current second-wave ToS text chunk-map pilot.
 17. Read [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md) for the first multi-source generated handoff pack.
 18. Read [docs/TOS_ZARATHUSTRA_ROUTE_PACK](docs/TOS_ZARATHUSTRA_ROUTE_PACK.md) for the first direct canonical-tree-derived Zarathustra route bundle.
-19. Read [docs/TOS_RAW_TABLE_INTAKE_STUB](docs/TOS_RAW_TABLE_INTAKE_STUB.md) for the current non-activated placeholder seam for future raw candidate tables from `Tree-of-Sophia`.
-20. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
-21. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
-22. Read [ROADMAP](ROADMAP.md) for the current direction.
+19. Read [docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK](docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md) for the first standalone consumer-facing handles-only retrieval adjunct over that route bundle.
+20. Read [docs/TOS_RAW_TABLE_INTAKE_STUB](docs/TOS_RAW_TABLE_INTAKE_STUB.md) for the current non-activated placeholder seam for future raw candidate tables from `Tree-of-Sophia`.
+21. Read [docs/BOUNDARIES](docs/BOUNDARIES.md) for ownership rules.
+22. Read [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md) for source-first discipline.
+23. Read [ROADMAP](ROADMAP.md) for the current direction.
 
 ## What this repository is for
 
@@ -107,6 +108,15 @@ pack at:
 - `schemas/tos-zarathustra-route-pack.schema.json`
 - `examples/tos_zarathustra_route_pack.example.json`
 - `docs/TOS_ZARATHUSTRA_ROUTE_PACK.md`
+
+It now also includes one standalone consumer-facing Zarathustra route retrieval
+pack at:
+- `generated/tos_zarathustra_route_retrieval_pack.json`
+- `generated/tos_zarathustra_route_retrieval_pack.min.json`
+- `manifests/tos_zarathustra_route_retrieval_pack.json`
+- `schemas/tos-zarathustra-route-retrieval-pack.schema.json`
+- `examples/tos_zarathustra_route_retrieval_pack.example.json`
+- `docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md`
 
 It now also includes the explicit source-owned export dependency contract at:
 - `manifests/source_owned_export_dependencies.json`
@@ -227,6 +237,7 @@ It now also names, but does not activate, a future raw-table intake seam for can
 It now also includes the first experimental ToS retrieval-axis pack built from that chunk map plus the current bounded bridge and memo-side bridge faces.
 `AOA-K-0005` and `AOA-K-0007` remain those narrow tiny-entry pilots in the current wave.
 It now also includes `AOA-K-0010`, the first direct canonical-tree-derived Zarathustra route bundle built from canonical `Tree-of-Sophia/tree/**` surfaces plus the canonical relation pack rather than from tiny-entry examples or raw intake.
+It now also includes `AOA-K-0011`, the first standalone consumer-facing route-family retrieval adjunct over `AOA-K-0010`; it stays handles-only and does not widen the numbered tiny-entry consumer path.
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
 It now also includes one bounded recurrence regrounding pack so retrieval axis use, federation entry, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs when derived posture weakens.
 It now also includes the first public federation-facing KAG export contract, one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`, and the first bounded cross-source node projection built on top of that loop.

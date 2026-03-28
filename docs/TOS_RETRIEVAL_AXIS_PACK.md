@@ -39,6 +39,10 @@ This pilot also remains deliberately narrow after `AOA-K-0010`: the new
 canonical-tree-derived route bundle does not widen `AOA-K-0007` into a broader
 consumer-facing retrieval surface in this first downstream pass.
 
+After `AOA-K-0011`, that narrowness still stands: the new standalone
+route-family retrieval surface is an additive adjunct over `AOA-K-0010`, not a
+replacement or widening of the tiny-entry retrieval-axis pilot.
+
 ## Axis rule
 
 The current retrieval-axis rule is:

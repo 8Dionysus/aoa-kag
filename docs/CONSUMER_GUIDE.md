@@ -28,6 +28,16 @@ If you want the current machine-readable package for this path, start with
    This gives the current bounded re-entry map back to stronger source-owned or
    owner-owned refs.
 
+## Standalone adjunct
+
+`AOA-K-0011` is available as a separate standalone adjunct at:
+
+- `generated/tos_zarathustra_route_retrieval_pack.min.json`
+
+Use it when you want one handles-only route-family read surface over the full
+canonical Zarathustra `prologue-1` bundle. Do not treat it as a replacement for
+the numbered path above, and do not treat it as routing or ranking policy.
+
 ## Counterpart posture
 
 `counterpart_refs` remain contract-only in the current wave.
@@ -46,6 +56,9 @@ generated retrieval or projection payload.
 - use chunk maps when you need stable source-linked retrieval units
 - use retrieval-axis packs when you need bounded handles back to source and
   bridge surfaces
+- use the standalone Zarathustra route retrieval pack when you need family-level
+  handles over the full canonical `prologue-1` route bundle without widening
+  the numbered tiny-entry path
 - use the federation spine when you need repo-level entrypoints into current
   source-owned exports
 - use cross-source projection only as a reviewable one-hop pairing, never as an

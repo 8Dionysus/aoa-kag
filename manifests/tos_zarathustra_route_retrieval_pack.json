@@ -1,0 +1,33 @@
+{
+  "manifest_version": 1,
+  "pack_type": "tos_zarathustra_route_retrieval_pack",
+  "source_inputs": [
+    {
+      "name": "tos_zarathustra_route_pack",
+      "repo": "aoa-kag",
+      "path": "generated/tos_zarathustra_route_pack.min.json",
+      "role": "route_pack"
+    }
+  ],
+  "surface_bindings": [
+    {
+      "surface_id": "AOA-K-0011",
+      "surface_name": "tos-zarathustra-route-retrieval-surface",
+      "derived_kind": "retrieval_surface",
+      "derived_slot": "routes",
+      "source_input": "tos_zarathustra_route_pack"
+    }
+  ],
+  "output_paths": {
+    "full": "generated/tos_zarathustra_route_retrieval_pack.json",
+    "min": "generated/tos_zarathustra_route_retrieval_pack.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "scoring_or_ranking": "forbidden",
+    "routing_ownership": "forbidden",
+    "graph_normalization": "forbidden",
+    "consumer_projection": "bounded_handles_only"
+  }
+}
