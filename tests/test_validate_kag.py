@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -41,6 +42,22 @@ class ValidateKagTestCase(unittest.TestCase):
             registry_manifest_payload,
             label="registry manifest",
         )
+
+    def memo_kag_export_payload(self) -> dict[str, object]:
+        return {
+            "owner_repo": "aoa-memo",
+            "kind": "bridge",
+            "object_id": validate_kag.EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE["match_value"],
+            "primary_question": "How should aoa-memo publish a bridge-bearing memory object for KAG use without turning memo into graph truth?",
+            "summary_50": "Source-owned tiny export for a provenance-visible memo bridge.",
+            "summary_200": "Source-owned tiny export capsule for the current reviewed memo bridge candidate so aoa-kag can consume one explicit bridge-bearing memory object by source-owned entry surface rather than by inferred graph meaning.",
+            "source_inputs": copy.deepcopy(validate_kag.EXPECTED_MEMO_KAG_EXPORT_SOURCE_INPUTS),
+            "entry_surface": copy.deepcopy(validate_kag.EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE),
+            "section_handles": copy.deepcopy(validate_kag.EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES),
+            "direct_relations": copy.deepcopy(validate_kag.EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS),
+            "provenance_note": "Guide to source, not source replacement, built from the memo-owned bridge object plus explicit Tree-of-Sophia support refs.",
+            "non_identity_boundary": "Source-owned memo export for KAG readiness; derived consumers must not treat this bridge capsule as normalized graph truth, routing authority, or replacement for Tree-of-Sophia-authored meaning.",
+        }
 
     def test_projection_pairings_validator_failures_are_pairing_specific(self) -> None:
         registry_surfaces = self.registry_manifest_surfaces()
@@ -355,6 +372,50 @@ class ValidateKagTestCase(unittest.TestCase):
             )
 
         self.assertIn("duplicated", str(context.exception))
+
+    def test_optional_memo_export_readiness_allows_missing_root(self) -> None:
+        missing_root = REPO_ROOT / ".tmp" / "missing-aoa-memo-export"
+
+        with patch.object(validate_kag, "AOA_MEMO_ROOT", missing_root):
+            validate_kag.validate_optional_memo_source_owned_export_readiness()
+
+    def test_optional_memo_export_readiness_rejects_wrong_entry_surface(self) -> None:
+        payload = self.memo_kag_export_payload()
+        payload["entry_surface"]["path"] = "generated/memory_object_sections.full.json"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            memo_root = Path(tmpdir)
+            generated = memo_root / "generated"
+            generated.mkdir()
+            (generated / "kag_export.min.json").write_text(
+                json.dumps(payload, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            with patch.object(validate_kag, "AOA_MEMO_ROOT", memo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_optional_memo_source_owned_export_readiness()
+
+        self.assertIn("entry_surface", str(context.exception))
+
+    def test_optional_memo_export_readiness_rejects_missing_tos_supporting_input(self) -> None:
+        payload = self.memo_kag_export_payload()
+        payload["source_inputs"] = [payload["source_inputs"][0]]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            memo_root = Path(tmpdir)
+            generated = memo_root / "generated"
+            generated.mkdir()
+            (generated / "kag_export.min.json").write_text(
+                json.dumps(payload, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            with patch.object(validate_kag, "AOA_MEMO_ROOT", memo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_optional_memo_source_owned_export_readiness()
+
+        self.assertIn("source_inputs", str(context.exception))
 
 
 if __name__ == "__main__":

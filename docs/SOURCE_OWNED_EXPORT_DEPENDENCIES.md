@@ -23,6 +23,10 @@ The current bounded contract depends on:
 - `aoa-techniques/generated/kag_export.min.json`
 - `Tree-of-Sophia/generated/kag_export.min.json`
 
+`aoa-memo/generated/kag_export.min.json` is now published as a readiness-only
+donor export, but it is not listed in the current dependency manifest because
+the live generated KAG surfaces do not consume it yet.
+
 Those dependencies are declared in
 `manifests/source_owned_export_dependencies.json`.
 

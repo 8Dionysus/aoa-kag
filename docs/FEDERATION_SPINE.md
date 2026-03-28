@@ -31,6 +31,8 @@ Those donor surfaces are declared in `manifests/federation_spine.json`.
 The current external export expectations are made explicit in
 `manifests/source_owned_export_dependencies.json` and documented in
 `SOURCE_OWNED_EXPORT_DEPENDENCIES.md`.
+`aoa-memo` now also publishes one source-owned bridge-bearing export for
+readiness, but it is intentionally not activated inside this live spine yet.
 
 The generated outputs live at:
 
@@ -63,6 +65,10 @@ current pilot object.
 
 `Tree-of-Sophia` now also publishes one bounded source-owned tiny export for
 the current Zarathustra authority slice.
+
+`aoa-memo` now publishes one bounded source-owned tiny export for the current
+memo bridge donor, but that donor remains publish-only in this tranche so the
+live spine and downstream `aoa-routing` ABI stay two-repo and stable.
 
 That keeps the pilot source-owned and reviewable without turning the spine into
 a wider federation claim.
