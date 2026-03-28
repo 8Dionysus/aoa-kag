@@ -95,6 +95,17 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_tos_zarathustra_route_retrieval_pack_builder_matches_generated_outputs(
+        self,
+    ) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        self.assert_builder_matches_generated(
+            kag_generation.build_tos_zarathustra_route_retrieval_pack_payload,
+            kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH,
+            kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH,
+            registry_payload=registry_payload,
+        )
+
     def test_federation_spine_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         self.assert_builder_matches_generated(

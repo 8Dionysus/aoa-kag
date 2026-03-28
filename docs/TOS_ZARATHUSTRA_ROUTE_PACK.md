@@ -48,6 +48,12 @@ The current pack keeps:
 This keeps the pack route-local, canonical-tree-derived, and provenance-visible
 without pretending that `aoa-kag` now owns Zarathustra meaning.
 
+The route pack itself still keeps `consumer_projection = deferred` in its own
+bounded contract. The first bounded consumer-facing activation now lives
+separately in `AOA-K-0011`, which reads the route pack as one standalone
+handles-only retrieval adjunct rather than widening the pack itself into a
+ranked or routing-bearing surface.
+
 ## Current pilot surfaces
 
 The current pilot surfaces are:
@@ -66,7 +72,7 @@ This wave does not:
 - widen `AOA-K-0005` or `AOA-K-0007`
 - activate raw-table candidate intake from `Tree-of-Sophia/intake/**`
 - replace the current tiny-entry pilot surfaces
-- add consumer-facing retrieval ranking or routing policy
+- add consumer-facing retrieval ranking or routing policy inside `AOA-K-0010`
 - grant graph sovereignty to the KAG layer
 
 ## Regeneration posture

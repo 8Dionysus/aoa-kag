@@ -47,6 +47,9 @@ TOS_RETRIEVAL_AXIS_MANIFEST_PATH = (
 TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "tos_zarathustra_route_pack.json"
 )
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_PATH = (
+    REPO_ROOT / "manifests" / "tos_zarathustra_route_retrieval_pack.json"
+)
 REASONING_HANDOFF_MANIFEST_PATH = REPO_ROOT / "manifests" / "reasoning_handoff_pack.json"
 SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "source_owned_export_dependencies.json"
@@ -98,6 +101,12 @@ TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH = (
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "tos_zarathustra_route_pack.min.json"
+)
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "tos_zarathustra_route_retrieval_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "tos_zarathustra_route_retrieval_pack.min.json"
 )
 REASONING_HANDOFF_OUTPUT_PATH = REPO_ROOT / "generated" / "reasoning_handoff_pack.json"
 REASONING_HANDOFF_MIN_OUTPUT_PATH = (
@@ -179,6 +188,10 @@ TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT = (
 TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH = (
     "tree/relations/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/edges.csv"
 )
+TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF = "generated/tos_zarathustra_route_pack.min.json"
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID = (
+    f"AOA-K-0011::{TOS_ZARATHUSTRA_ROUTE_ID}"
+)
 TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER = [
     "source",
     "concept",
@@ -206,6 +219,12 @@ TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS = {
     "bridge_edge": 11,
     "principle_edge": 22,
 }
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_SUMMARY = (
+    "This surface returns family-level handles for the canonical Zarathustra "
+    "prologue-1 route pack so consumers can traverse source, concept, "
+    "principle, lineage, event, state, support, analogy, synthesis, and "
+    "relation surfaces without ranking or replacing ToS authority."
+)
 REASONING_HANDOFF_GUARDRAIL_REF = "docs/REASONING_HANDOFF.md"
 REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF = (
     "schemas/reasoning-handoff-guardrail.schema.json"
@@ -3267,6 +3286,298 @@ def build_tos_zarathustra_route_pack_payload(
     }
 
 
+def build_tos_zarathustra_route_handle(
+    node: object,
+    *,
+    label: str,
+) -> dict[str, str]:
+    if not isinstance(node, dict):
+        fail(f"{label} must be an object")
+    node_id = require_string(node.get("node_id"), label=f"{label}.node_id")
+    authority_ref = require_string(
+        node.get("authority_ref"),
+        label=f"{label}.authority_ref",
+    )
+    if not node_id.startswith("tos."):
+        fail(f"{label}.node_id must stay canonical and start with 'tos.'")
+    if node_id.startswith("literal."):
+        fail(f"{label}.node_id must not carry literal residue")
+    if not authority_ref.startswith(f"{TOS_REPO}/tree/"):
+        fail(f"{label}.authority_ref must point into Tree-of-Sophia/tree/**")
+    if not authority_ref.endswith("/node.json"):
+        fail(f"{label}.authority_ref must resolve to a canonical node.json file")
+    if authority_ref.startswith(f"{TOS_REPO}/intake/") or "/intake/" in authority_ref:
+        fail(f"{label}.authority_ref must not point at Tree-of-Sophia/intake")
+    return {
+        "node_id": node_id,
+        "authority_ref": authority_ref,
+    }
+
+
+def build_tos_zarathustra_route_retrieval_pack_payload(
+    registry_payload: dict[str, object] | None = None,
+    *,
+    route_pack_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("ToS Zarathustra route retrieval pack manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    surface_bindings = manifest.get("surface_bindings")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS Zarathustra route retrieval pack manifest must declare source_inputs")
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS Zarathustra route retrieval pack manifest must declare surface_bindings")
+
+    registry_surfaces = registry_payload.get("surfaces")
+    if not isinstance(registry_surfaces, list):
+        fail("registry manifest must declare surfaces")
+    registry_by_id = {
+        surface["id"]: surface
+        for surface in registry_surfaces
+        if isinstance(surface, dict) and isinstance(surface.get("id"), str)
+    }
+
+    surface_0011 = registry_by_id.get("AOA-K-0011")
+    if surface_0011 is None:
+        fail(
+            "registry manifest must declare AOA-K-0011 before building the route retrieval pack"
+        )
+    if surface_0011.get("status") != "experimental":
+        fail("AOA-K-0011 must remain experimental in the current route retrieval wave")
+
+    expected_inputs = {
+        "tos_zarathustra_route_pack": (
+            "aoa-kag",
+            TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF,
+            "route_pack",
+        )
+    }
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail(
+                "ToS Zarathustra route retrieval pack manifest source_inputs entries "
+                "must be objects"
+            )
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(
+            isinstance(value, str) and value for value in (name, repo, path, role)
+        ):
+            fail(
+                "ToS Zarathustra route retrieval pack manifest source_inputs must keep "
+                "name, repo, path, and role"
+            )
+        if name in inputs_by_name:
+            fail(
+                f"duplicate ToS Zarathustra route retrieval pack source input '{name}'"
+            )
+        expected = expected_inputs.get(name)
+        if expected is None:
+            fail(
+                f"unexpected ToS Zarathustra route retrieval pack source input '{name}'"
+            )
+        expected_repo, expected_path, expected_role = expected
+        if repo != expected_repo or path != expected_path or role != expected_role:
+            fail(
+                "ToS Zarathustra route retrieval pack manifest source_inputs must stay "
+                f"aligned for '{name}'"
+            )
+
+        normalized_input = {
+            "name": name,
+            "repo": repo,
+            "path": path,
+            "role": role,
+        }
+        input_path = manifest_input_path(normalized_input)
+        if not input_path.exists() and route_pack_payload is None:
+            fail(
+                "ToS Zarathustra route retrieval pack donor input does not exist: "
+                f"{manifest_input_ref(normalized_input)}"
+            )
+
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "repo": repo,
+                "role": role,
+                "ref": manifest_input_ref(normalized_input),
+            }
+        )
+
+    if set(inputs_by_name) != set(expected_inputs):
+        fail(
+            "ToS Zarathustra route retrieval pack manifest source_inputs must match "
+            "the current single-donor route-pack contract"
+        )
+
+    binding_surface: dict[str, object] | None = None
+    for binding in surface_bindings:
+        if not isinstance(binding, dict):
+            fail(
+                "ToS Zarathustra route retrieval pack manifest surface_bindings "
+                "entries must be objects"
+            )
+        if (
+            binding.get("surface_id") == "AOA-K-0011"
+            and binding.get("surface_name")
+            == "tos-zarathustra-route-retrieval-surface"
+        ):
+            binding_surface = surface_0011
+            break
+    if binding_surface is None:
+        fail("ToS Zarathustra route retrieval pack manifest must bind AOA-K-0011")
+
+    route_pack_input = inputs_by_name["tos_zarathustra_route_pack"]
+    if route_pack_payload is None:
+        loaded_route_pack = read_json(manifest_input_path(route_pack_input))
+        if not isinstance(loaded_route_pack, dict):
+            fail("ToS Zarathustra route retrieval pack donor route pack must be a JSON object")
+        route_pack_payload = loaded_route_pack
+
+    if route_pack_payload.get("pack_type") != "tos_zarathustra_route_pack":
+        fail(
+            "ToS Zarathustra route retrieval pack donor must remain the canonical "
+            "AOA-K-0010 route pack"
+        )
+    if route_pack_payload.get("route_id") != TOS_ZARATHUSTRA_ROUTE_ID:
+        fail(
+            "ToS Zarathustra route retrieval pack donor route_id must stay aligned "
+            "with the current canonical route"
+        )
+
+    route_capsule_ref = require_string(
+        route_pack_payload.get("route_capsule_ref"),
+        label="ToS Zarathustra route retrieval pack donor route_capsule_ref",
+    )
+    relation_pack_ref = require_string(
+        route_pack_payload.get("relation_pack_ref"),
+        label="ToS Zarathustra route retrieval pack donor relation_pack_ref",
+    )
+    if route_capsule_ref != repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH):
+        fail(
+            "ToS Zarathustra route retrieval pack donor route_capsule_ref must stay "
+            "aligned with the canonical Zarathustra capsule"
+        )
+    if relation_pack_ref != repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH):
+        fail(
+            "ToS Zarathustra route retrieval pack donor relation_pack_ref must stay "
+            "aligned with the canonical relation pack"
+        )
+    if route_capsule_ref.startswith("aoa-memo/") or route_capsule_ref.startswith("aoa-routing/"):
+        fail(
+            "ToS Zarathustra route retrieval pack donor route_capsule_ref must not "
+            "point at aoa-memo or aoa-routing"
+        )
+    if relation_pack_ref.startswith("aoa-memo/") or relation_pack_ref.startswith("aoa-routing/"):
+        fail(
+            "ToS Zarathustra route retrieval pack donor relation_pack_ref must not "
+            "point at aoa-memo or aoa-routing"
+        )
+
+    node_type_counts = route_pack_payload.get("node_type_counts")
+    edge_kind_counts = route_pack_payload.get("edge_kind_counts")
+    if node_type_counts != TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS:
+        fail(
+            "ToS Zarathustra route retrieval pack donor node_type_counts must match "
+            "the canonical AOA-K-0010 route counts"
+        )
+    if edge_kind_counts != TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS:
+        fail(
+            "ToS Zarathustra route retrieval pack donor edge_kind_counts must match "
+            "the canonical AOA-K-0010 route counts"
+        )
+
+    route_nodes = route_pack_payload.get("nodes")
+    if not isinstance(route_nodes, list) or len(route_nodes) != sum(
+        TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS.values()
+    ):
+        fail(
+            "ToS Zarathustra route retrieval pack donor must contain the full "
+            "canonical Zarathustra route node set"
+        )
+
+    family_handles: dict[str, list[dict[str, str]]] = {
+        f"{node_type}_handles": []
+        for node_type in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER
+    }
+    for index, node in enumerate(route_nodes):
+        if not isinstance(node, dict):
+            fail(
+                "ToS Zarathustra route retrieval pack donor nodes entries must be objects"
+            )
+        node_type = require_string(
+            node.get("node_type"),
+            label=f"ToS Zarathustra route retrieval pack donor nodes[{index}].node_type",
+        )
+        if node_type not in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER:
+            fail(
+                "ToS Zarathustra route retrieval pack donor node_type "
+                f"'{node_type}' is not allowed"
+            )
+        family_handles[f"{node_type}_handles"].append(
+            build_tos_zarathustra_route_handle(
+                node,
+                label=(
+                    "ToS Zarathustra route retrieval pack donor "
+                    f"nodes[{index}]"
+                ),
+            )
+        )
+
+    for node_type, expected_count in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS.items():
+        handle_key = f"{node_type}_handles"
+        if len(family_handles[handle_key]) != expected_count:
+            fail(
+                "ToS Zarathustra route retrieval pack must preserve the current "
+                f"family handle count for '{node_type}'"
+            )
+
+    retrieval_route = {
+        "retrieval_id": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
+        "route_id": TOS_ZARATHUSTRA_ROUTE_ID,
+        "route_pack_ref": manifest_input_ref(route_pack_input),
+        "route_capsule_ref": route_capsule_ref,
+        "relation_pack_ref": relation_pack_ref,
+        "node_type_counts": node_type_counts,
+        "edge_kind_counts": edge_kind_counts,
+        "source_handles": family_handles["source_handles"],
+        "concept_handles": family_handles["concept_handles"],
+        "principle_handles": family_handles["principle_handles"],
+        "lineage_handles": family_handles["lineage_handles"],
+        "event_handles": family_handles["event_handles"],
+        "state_handles": family_handles["state_handles"],
+        "support_handles": family_handles["support_handles"],
+        "analogy_handles": family_handles["analogy_handles"],
+        "synthesis_handles": family_handles["synthesis_handles"],
+        "retrieval_summary": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_SUMMARY,
+    }
+
+    return {
+        "pack_version": manifest["manifest_version"],
+        "pack_type": manifest["pack_type"],
+        "source_manifest_ref": "manifests/tos_zarathustra_route_retrieval_pack.json",
+        "source_inputs": emitted_source_inputs,
+        "surface_bindings": surface_bindings,
+        "surface_id": binding_surface["id"],
+        "surface_name": binding_surface["name"],
+        "route_count": 1,
+        "routes": [retrieval_route],
+        "bounded_output_contract": manifest["bounded_output_contract"],
+    }
+
+
 def build_federation_spine_payload(
     registry_payload: dict[str, object] | None = None,
 ) -> dict[str, object]:
@@ -4561,6 +4872,12 @@ def write_generated_outputs() -> list[Path]:
     tos_zarathustra_route_pack_payload = build_tos_zarathustra_route_pack_payload(
         registry_payload
     )
+    tos_zarathustra_route_retrieval_pack_payload = (
+        build_tos_zarathustra_route_retrieval_pack_payload(
+            registry_payload,
+            route_pack_payload=tos_zarathustra_route_pack_payload,
+        )
+    )
     reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
     federation_spine_payload = build_federation_spine_payload(registry_payload)
     cross_source_node_projection_payload = build_cross_source_node_projection_payload(
@@ -4602,6 +4919,16 @@ def write_generated_outputs() -> list[Path]:
     write_json(
         TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
         tos_zarathustra_route_pack_payload,
+        pretty=False,
+    )
+    write_json(
+        TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH,
+        tos_zarathustra_route_retrieval_pack_payload,
+        pretty=True,
+    )
+    write_json(
+        TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH,
+        tos_zarathustra_route_retrieval_pack_payload,
         pretty=False,
     )
     write_json(REASONING_HANDOFF_OUTPUT_PATH, reasoning_handoff_pack_payload, pretty=True)
@@ -4664,6 +4991,8 @@ def write_generated_outputs() -> list[Path]:
         TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
         TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH,
         TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
+        TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH,
+        TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH,
         REASONING_HANDOFF_OUTPUT_PATH,
         REASONING_HANDOFF_MIN_OUTPUT_PATH,
         FEDERATION_SPINE_OUTPUT_PATH,

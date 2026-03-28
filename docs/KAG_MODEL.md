@@ -49,6 +49,16 @@ route-local Zarathustra bundle that projects reviewed ToS route nodes and the
 canonical ToS relation pack without widening source ownership or activating raw
 intake.
 
+### Retrieval surface
+
+A bounded retrieval-facing surface that returns handles back to stronger source
+or owner refs without taking ranking, routing, or graph-normalization
+ownership.
+
+The current bounded examples are `AOA-K-0007`, the tiny-entry retrieval-axis
+pilot, and `AOA-K-0011`, the standalone route-family handles surface derived
+from `AOA-K-0010`.
+
 ### Counterpart edge view
 
 A bounded edge-oriented projection that links a ToS concept ref to an AoA operational ref through a named mode such as `analogy`, `support`, `tension`, or `calibration`.

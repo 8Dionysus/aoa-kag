@@ -62,7 +62,7 @@
     "Validation",
     "Adaptation notes"
   ],
-  "technique_count": 69,
+  "technique_count": 71,
   "techniques": [
     {
       "technique_id": "AOA-T-0001",
@@ -6674,6 +6674,188 @@
             "kind": "second_context",
             "title": "Second Context Adaptation",
             "note_ref": "aoa-techniques/techniques/agent-workflows/approval-bound-durable-jobs/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0070",
+      "technique_name": "two-stage-document-ocr-pipeline",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Stage OCR as detect or layout -> recognize -> structured handoff so downstream extraction stays reviewable, interchangeable, and confidence-aware instead of collapsing OCR and field logic into one opaque step.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0071",
+      "technique_name": "template-backed-field-extraction-after-ocr",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Extract bounded fields after OCR through explicit templates, heuristics, and missing-or-conflict signaling so structured receipt-like data stays reviewable instead of being guessed by one opaque parser.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/second-context-adaptation.md"
           }
         ]
       }
