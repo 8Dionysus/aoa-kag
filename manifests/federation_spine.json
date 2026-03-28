@@ -27,6 +27,7 @@
       "repo": "aoa-techniques",
       "pilot_posture": "source_owned_export_tiny",
       "export_input": "aoa_techniques_kag_export",
+      "adjunct_surfaces": [],
       "provenance_note": "Consumes the current source-owned tiny aoa-techniques export directly during the bounded two-repo pilot.",
       "non_identity_boundary": "This derived spine guides federation entry through a source-owned tiny export and does not replace authored technique meaning or move routing ownership into aoa-kag."
     },
@@ -35,6 +36,16 @@
       "repo": "Tree-of-Sophia",
       "pilot_posture": "source_owned_export_tiny",
       "export_input": "tos_kag_export",
+      "adjunct_surfaces": [
+        {
+          "surface_id": "AOA-K-0011",
+          "surface_name": "tos-zarathustra-route-retrieval-surface",
+          "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+          "match_key": "retrieval_id",
+          "target_value": "AOA-K-0011::thus-spoke-zarathustra/prologue-1",
+          "route_id": "thus-spoke-zarathustra/prologue-1"
+        }
+      ],
       "provenance_note": "Consumes the current source-owned tiny Tree-of-Sophia export directly from the bounded authority, capsule, and tiny-entry slice.",
       "non_identity_boundary": "This derived spine guides federation entry through a source-owned tiny ToS export and does not replace ToS-authored authority or move canon ownership into aoa-kag."
     }

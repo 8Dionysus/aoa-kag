@@ -181,6 +181,10 @@ It now also includes the current experimental federation spine pilot at:
 - `manifests/federation_spine.json`
 - `docs/FEDERATION_SPINE.md`
 
+For the current `Tree-of-Sophia` pilot, that spine now also advertises one
+bounded adjunct retrieval surface for downstream routing:
+- `generated/tos_zarathustra_route_retrieval_pack.min.json`
+
 It now also includes the first bounded cross-source node projection pack at:
 - `generated/cross_source_node_projection.json`
 - `generated/cross_source_node_projection.min.json`
@@ -241,6 +245,7 @@ It now also includes `AOA-K-0011`, the first standalone consumer-facing route-fa
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
 It now also includes one bounded recurrence regrounding pack so retrieval axis use, federation entry, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs when derived posture weakens.
 It now also includes the first public federation-facing KAG export contract, one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`, and the first bounded cross-source node projection built on top of that loop.
+For `Tree-of-Sophia`, that spine still starts from source-owned tiny-export posture while now advertising one bounded `AOA-K-0011` retrieval adjunct for downstream routing.
 It now also includes one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, a narrow consumer guide, and one canonical release-check path so the experimental stack is easier to verify without widening it.
 It now also includes one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so downstream readers can consume the current path without activating `AOA-K-0008`.
 It now also includes one explicit counterpart federation exposure review artifact so the last current activation gate for `AOA-K-0008` is review-closed while the surface remains planned.

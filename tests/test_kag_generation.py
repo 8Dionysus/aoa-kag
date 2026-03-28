@@ -115,6 +115,76 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_tos_zarathustra_route_pack_builder_keeps_family_order(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        payload = kag_generation.build_tos_zarathustra_route_pack_payload(registry_payload)
+
+        self.assertEqual(
+            [node["node_type"] for node in payload["nodes"]],
+            [
+                node_type
+                for node_type in kag_generation.TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER
+                for _ in range(kag_generation.TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS[node_type])
+            ],
+        )
+        authority_refs = [node["authority_ref"] for node in payload["nodes"]]
+        self.assertEqual(len(authority_refs), len(set(authority_refs)))
+
+        node_ids = {node["node_id"] for node in payload["nodes"]}
+        for edge in payload["edges"]:
+            self.assertIn(edge["from_id"], node_ids)
+            self.assertIn(edge["to_id"], node_ids)
+
+    def test_tos_zarathustra_route_retrieval_handles_match_route_pack(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        route_pack_payload = kag_generation.build_tos_zarathustra_route_pack_payload(
+            registry_payload
+        )
+        retrieval_payload = (
+            kag_generation.build_tos_zarathustra_route_retrieval_pack_payload(
+                registry_payload
+            )
+        )
+        route = retrieval_payload["routes"][0]
+
+        seen_node_ids: set[str] = set()
+        for node_type in kag_generation.TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER:
+            expected_handles = [
+                {
+                    "node_id": node["node_id"],
+                    "authority_ref": node["authority_ref"],
+                }
+                for node in route_pack_payload["nodes"]
+                if node["node_type"] == node_type
+            ]
+            self.assertEqual(route[f"{node_type}_handles"], expected_handles)
+            seen_node_ids.update(handle["node_id"] for handle in expected_handles)
+
+        self.assertEqual(
+            seen_node_ids,
+            {node["node_id"] for node in route_pack_payload["nodes"]},
+        )
+
+    def test_federation_spine_builder_emits_tos_adjunct_only(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        payload = kag_generation.build_federation_spine_payload(registry_payload)
+        repos_by_name = {repo["repo"]: repo for repo in payload["repos"]}
+
+        self.assertEqual(repos_by_name["aoa-techniques"]["adjunct_surfaces"], [])
+        self.assertEqual(
+            repos_by_name["Tree-of-Sophia"]["adjunct_surfaces"],
+            [
+                {
+                    "surface_id": "AOA-K-0011",
+                    "surface_name": "tos-zarathustra-route-retrieval-surface",
+                    "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+                    "match_key": "retrieval_id",
+                    "target_value": kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
+                    "route_id": kag_generation.TOS_ZARATHUSTRA_ROUTE_ID,
+                }
+            ],
+        )
+
     def test_cross_source_projection_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         self.assert_builder_matches_generated(
