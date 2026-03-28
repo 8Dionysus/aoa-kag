@@ -24,8 +24,10 @@ The intended long-term posture is:
 - downstream consumers read the derived layer as a guide to source, not as a
   new author of meaning
 
-This contract is public now even though no neighboring repository publishes the
-export yet.
+This contract is public now.
+`aoa-techniques`, `Tree-of-Sophia`, and now `aoa-memo` can publish bounded
+source-owned exports, even though the live federation spine still activates only
+the current two-repo pilot.
 
 ## `federation_kag_export`
 
@@ -113,6 +115,11 @@ The first landing in `aoa-kag` is:
 - schema-backed
 - generator-backed
 - two-repo pilot in practice
+
+`aoa-memo` now also publishes one source-owned bridge-bearing export as a
+readiness-only donor.
+That publication proves the contract can cross the memo boundary without yet
+widening the live `federation_spine` or downstream routing ABI.
 
 The pilot pack is documented in `docs/FEDERATION_SPINE.md`.
 It now consumes real source-owned tiny `generated/kag_export.min.json` exports

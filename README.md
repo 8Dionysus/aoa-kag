@@ -123,6 +123,10 @@ It now also includes the explicit source-owned export dependency contract at:
 - `schemas/source-owned-export-dependencies.schema.json`
 - `docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md`
 
+`aoa-memo` now also publishes one source-owned `generated/kag_export.min.json`
+donor export for bridge-oriented readiness, but that memo export is not yet part
+of the live federation spine in this tranche.
+
 It also includes a ToS text chunk map schema and example at:
 - `schemas/tos-text-chunk-map.schema.json`
 - `examples/tos_text_chunk_map.example.json`
@@ -245,6 +249,9 @@ It now also includes `AOA-K-0011`, the first standalone consumer-facing route-fa
 It now also includes the first bounded multi-source reasoning handoff pack for `AOA-P-0008` and `AOA-P-0009`.
 It now also includes one bounded recurrence regrounding pack so retrieval axis use, federation entry, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs when derived posture weakens.
 It now also includes the first public federation-facing KAG export contract, one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`, and the first bounded cross-source node projection built on top of that loop.
+`aoa-memo` now also publishes a source-owned bridge-bearing export for readiness,
+while the live spine intentionally remains a two-repo pilot until a later ABI
+package widens routing and federation activation together.
 For `Tree-of-Sophia`, that spine still starts from source-owned tiny-export posture while now advertising one bounded `AOA-K-0011` retrieval adjunct for downstream routing.
 It now also includes one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, a narrow consumer guide, and one canonical release-check path so the experimental stack is easier to verify without widening it.
 It now also includes one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so downstream readers can consume the current path without activating `AOA-K-0008`.

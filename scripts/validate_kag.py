@@ -707,6 +707,51 @@ EXPECTED_FEDERATION_SPINE_CONTRACT = {
     "full_federation_claim": "forbidden",
 }
 EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques", TOS_REPO}
+EXPECTED_MEMO_KAG_EXPORT_PATH = "generated/kag_export.min.json"
+EXPECTED_MEMO_KAG_EXPORT_REQUIRED_FIELDS = {
+    "owner_repo",
+    "kind",
+    "object_id",
+    "primary_question",
+    "summary_50",
+    "summary_200",
+    "source_inputs",
+    "entry_surface",
+    "section_handles",
+    "direct_relations",
+    "provenance_note",
+    "non_identity_boundary",
+}
+EXPECTED_MEMO_KAG_EXPORT_SOURCE_INPUTS = [
+    {"repo": "aoa-memo", "source_class": "memo_object", "role": "primary"},
+    {"repo": TOS_REPO, "source_class": "tos_text", "role": "supporting"},
+]
+EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE = {
+    "repo": "aoa-memo",
+    "path": "generated/memory_object_capsules.json",
+    "match_key": "id",
+    "match_value": "memo.bridge.2026-03-23.tos-lineage-kag-candidate",
+}
+EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES = [
+    "identity-and-recall",
+    "provenance-and-evidence",
+    "trust-and-lifecycle",
+    "bridges-and-access",
+]
+EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
+    {
+        "relation_type": "supported_by_claim",
+        "target_ref": "examples/claim.tos-bridge-ready.example.json",
+    },
+    {
+        "relation_type": "seeded_by_episode",
+        "target_ref": "examples/episode.tos-interpretation.example.json",
+    },
+    {
+        "relation_type": "points_to_tos_fragment",
+        "target_ref": "repo:Tree-of-Sophia/docs/CONTEXT_COMPOST.md#memory-bridge-fragment",
+    },
+]
 EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
     "aoa-techniques": [],
     TOS_REPO: [
@@ -5827,6 +5872,75 @@ def validate_federation_kag_export_example() -> None:
         resolve_known_ref(target_ref, label=location)
 
 
+def validate_optional_memo_source_owned_export_readiness() -> None:
+    if not AOA_MEMO_ROOT.exists():
+        return
+
+    export_ref = repo_ref("aoa-memo", EXPECTED_MEMO_KAG_EXPORT_PATH)
+    export_path = resolve_known_ref(
+        export_ref,
+        label="optional aoa-memo source-owned export readiness export_ref",
+    )
+    payload = read_json(export_path)
+    if not isinstance(payload, dict):
+        fail("optional aoa-memo source-owned export readiness target export must be a JSON object")
+
+    missing_fields = sorted(EXPECTED_MEMO_KAG_EXPORT_REQUIRED_FIELDS - set(payload))
+    if missing_fields:
+        fail(
+            "optional aoa-memo source-owned export readiness target export is missing "
+            + ", ".join(missing_fields)
+        )
+
+    if payload.get("owner_repo") != "aoa-memo":
+        fail("optional aoa-memo source-owned export readiness owner_repo must equal 'aoa-memo'")
+    if payload.get("kind") != "bridge":
+        fail("optional aoa-memo source-owned export readiness kind must equal 'bridge'")
+    if (
+        payload.get("object_id")
+        != EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE["match_value"]
+    ):
+        fail(
+            "optional aoa-memo source-owned export readiness object_id must equal "
+            f"'{EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE['match_value']}'"
+        )
+
+    source_inputs = payload.get("source_inputs")
+    if source_inputs != EXPECTED_MEMO_KAG_EXPORT_SOURCE_INPUTS:
+        fail(
+            "optional aoa-memo source-owned export readiness source_inputs must keep "
+            "the memo-primary / Tree-of-Sophia-supporting split"
+        )
+
+    entry_surface = payload.get("entry_surface")
+    if entry_surface != EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE:
+        fail(
+            "optional aoa-memo source-owned export readiness entry_surface must stay "
+            "aligned with the memo bridge capsule surface"
+        )
+    resolve_known_ref(
+        repo_ref("aoa-memo", EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE["path"]),
+        label="optional aoa-memo source-owned export readiness entry_surface",
+    )
+
+    section_handles = validate_unique_string_list(
+        payload.get("section_handles"),
+        label="optional aoa-memo source-owned export readiness section_handles",
+    )
+    if section_handles != EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES:
+        fail(
+            "optional aoa-memo source-owned export readiness section_handles must "
+            "match the canonical memo bridge handles"
+        )
+
+    direct_relations = payload.get("direct_relations")
+    if direct_relations != EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS:
+        fail(
+            "optional aoa-memo source-owned export readiness direct_relations must "
+            "keep the claim/episode/ToS trio"
+        )
+
+
 def main() -> int:
     try:
         validate_nested_agents_docs()
@@ -6117,6 +6231,7 @@ def main() -> int:
         validate_reasoning_handoff_example()
         validate_return_regrounding_example(expected_return_regrounding_pack_payload)
         validate_federation_kag_export_example()
+        validate_optional_memo_source_owned_export_readiness()
         validate_cross_source_node_projection_example(
             expected_cross_source_node_projection_payload
         )
@@ -6206,6 +6321,8 @@ def main() -> int:
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated return regrounding example")
     print("[ok] validated federation KAG export example")
+    if AOA_MEMO_ROOT.exists():
+        print("[ok] validated optional aoa-memo source-owned export readiness")
     print("[ok] validated cross-source node projection example")
     print("[ok] validated counterpart federation exposure review example")
     print("[ok] validated tiny consumer bundle example")
