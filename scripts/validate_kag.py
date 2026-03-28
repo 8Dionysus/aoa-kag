@@ -8,12 +8,20 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+import validate_nested_agents
+
 from kag_generation import (
     AOA_AGENTS_ROOT,
     AOA_EVALS_ROOT,
     AOA_MEMO_ROOT,
     AOA_PLAYBOOKS_ROOT,
     AOA_TECHNIQUES_ROOT,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
     FEDERATION_SPINE_MANIFEST_PATH,
     FEDERATION_SPINE_MIN_OUTPUT_PATH,
     FEDERATION_SPINE_OUTPUT_PATH,
@@ -23,9 +31,47 @@ from kag_generation import (
     REASONING_HANDOFF_MANIFEST_PATH,
     REASONING_HANDOFF_MIN_OUTPUT_PATH,
     REASONING_HANDOFF_OUTPUT_PATH,
+    RETURN_REGROUNDING_MANIFEST_PATH,
+    RETURN_REGROUNDING_MIN_OUTPUT_PATH,
+    RETURN_REGROUNDING_OUTPUT_PATH,
+    SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH,
     TECHNIQUE_LIFT_MANIFEST_PATH,
     TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
     TECHNIQUE_LIFT_OUTPUT_PATH,
+    TOS_TEXT_CHUNK_MAP_MANIFEST_PATH,
+    TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+    TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_ANALOGY_ROOT,
+    TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH,
+    TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS,
+    TOS_ZARATHUSTRA_ROUTE_EVENT_ROOT,
+    TOS_ZARATHUSTRA_ROUTE_ID,
+    TOS_ZARATHUSTRA_ROUTE_LINEAGE_NODE_PATH,
+    TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER,
+    TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS,
+    TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH,
+    TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF,
+    TOS_ZARATHUSTRA_ROUTE_PRINCIPLE_ROOT,
+    TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_PATH,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_SUMMARY,
+    TOS_ZARATHUSTRA_ROUTE_SOURCE_NODE_PATH,
+    TOS_ZARATHUSTRA_ROUTE_STATE_ROOT,
+    TOS_ZARATHUSTRA_ROUTE_SUPPORT_ROOT,
+    TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT,
+    TOS_RETRIEVAL_AXIS_MANIFEST_PATH,
+    TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+    TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+    TINY_CONSUMER_BUNDLE_MANIFEST_PATH,
+    TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+    TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
     TOS_REPO,
     TOS_ROOT_README_PATH,
     TOS_TINY_ENTRY_AUTHORITY_PATH,
@@ -35,15 +81,24 @@ from kag_generation import (
     TOS_TINY_ENTRY_HOP_PATH,
     TOS_TINY_ENTRY_ROUTE_ID,
     TOS_TINY_ENTRY_ROUTE_PATH,
+    build_cross_source_node_projection_payload,
+    build_counterpart_federation_exposure_review_payload,
     build_federation_spine_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
+    build_return_regrounding_pack_payload,
     build_technique_lift_pack_payload,
+    build_tiny_consumer_bundle_payload,
+    build_tos_text_chunk_map_payload,
+    build_tos_retrieval_axis_pack_payload,
+    build_tos_zarathustra_route_pack_payload,
+    build_tos_zarathustra_route_retrieval_pack_payload,
     encode_json,
     repo_ref,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+KAG_REPO = "aoa-kag"
 
 
 def repo_root_from_env(env_name: str, default: Path) -> Path:
@@ -60,8 +115,27 @@ TREE_OF_SOPHIA_ROOT = repo_root_from_env(
 SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-registry.schema.json"
 BRIDGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"
 BRIDGE_EXAMPLE_PATH = REPO_ROOT / "examples" / "tos_retrieval_axis_surface.example.json"
+BRIDGE_ENVELOPE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-envelope.schema.json"
+BRIDGE_ENVELOPE_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "aoa_tos_bridge_envelope.example.json"
+)
 COUNTERPART_SCHEMA_PATH = REPO_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
 COUNTERPART_EXAMPLE_PATH = REPO_ROOT / "examples" / "counterpart_edge_view.example.json"
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "counterpart-federation-exposure-review-manifest.schema.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "counterpart-federation-exposure-review.schema.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "counterpart_federation_exposure_review.example.json"
+)
+COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
+)
+COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "counterpart_consumer_contract.example.json"
+)
 REASONING_HANDOFF_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
 )
@@ -72,11 +146,57 @@ TECHNIQUE_LIFT_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "technique-lift-pack-manifest.schema.json"
 )
 TECHNIQUE_LIFT_PACK_SCHEMA_PATH = REPO_ROOT / "schemas" / "technique-lift-pack.schema.json"
+TOS_TEXT_CHUNK_MAP_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-text-chunk-map-manifest.schema.json"
+)
+TOS_TEXT_CHUNK_MAP_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-text-chunk-map.schema.json"
+)
+TOS_TEXT_CHUNK_MAP_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tos_text_chunk_map.example.json"
+)
+TOS_RETRIEVAL_AXIS_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-retrieval-axis-pack-manifest.schema.json"
+)
+TOS_RETRIEVAL_AXIS_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-retrieval-axis-pack.schema.json"
+)
+TOS_RETRIEVAL_AXIS_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tos_retrieval_axis_pack.example.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-zarathustra-route-pack-manifest.schema.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-zarathustra-route-pack.schema.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tos_zarathustra_route_pack.example.json"
+)
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-zarathustra-route-retrieval-pack-manifest.schema.json"
+)
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tos-zarathustra-route-retrieval-pack.schema.json"
+)
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tos_zarathustra_route_retrieval_pack.example.json"
+)
+TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID = "seg.1.1.1.10"
 REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-pack-manifest.schema.json"
 )
 REASONING_HANDOFF_PACK_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "reasoning-handoff-pack.schema.json"
+)
+RETURN_REGROUNDING_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "return-regrounding-pack-manifest.schema.json"
+)
+RETURN_REGROUNDING_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "return-regrounding-pack.schema.json"
+)
+SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "source-owned-export-dependencies.schema.json"
 )
 FEDERATION_KAG_EXPORT_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "federation-kag-export.schema.json"
@@ -88,6 +208,27 @@ FEDERATION_SPINE_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "federation-spine-manifest.schema.json"
 )
 FEDERATION_SPINE_SCHEMA_PATH = REPO_ROOT / "schemas" / "federation-spine.schema.json"
+CROSS_SOURCE_NODE_PROJECTION_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "cross-source-node-projection-manifest.schema.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "cross-source-node-projection.schema.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "cross_source_node_projection.example.json"
+)
+TINY_CONSUMER_BUNDLE_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tiny-consumer-bundle-manifest.schema.json"
+)
+TINY_CONSUMER_BUNDLE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "tiny-consumer-bundle.schema.json"
+)
+TINY_CONSUMER_BUNDLE_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "tiny_consumer_bundle.example.json"
+)
+RETURN_REGROUNDING_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "return_regrounding_pack.example.json"
+)
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
 ALLOWED_SOURCE_CLASS = {
@@ -132,8 +273,31 @@ EXPECTED_DERIVED_SURFACE_REFS = {
     "docs/BRIDGE_CONTRACTS.md#retrieval-axis-contract",
     "examples/tos_retrieval_axis_surface.example.json",
     "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
     "examples/counterpart_edge_view.example.json",
+    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+    "examples/counterpart_consumer_contract.example.json",
 }
+EXPECTED_COUNTERPART_CONSUMER_CONTRACT_REFS = {
+    "counterpart_contract_doc": "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "counterpart_contract_schema": "schemas/counterpart-edge-surface.schema.json",
+    "counterpart_contract_example": "examples/counterpart_edge_view.example.json",
+}
+EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS = [
+    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+    "examples/counterpart_consumer_contract.example.json",
+    "docs/COUNTERPART_EDGE_CONTRACTS.md",
+    "examples/counterpart_edge_view.example.json",
+]
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF = (
+    "generated/counterpart_federation_exposure_review.min.json"
+)
+EXPECTED_COUNTERPART_CONSUMER_FORBIDDEN_INTERPRETATIONS = [
+    "identity_proof",
+    "routing_authority",
+    "graph_sovereign_activation",
+    "silent_federation_exposure",
+]
 EXPECTED_PROVENANCE_POSTURE = {
     "primary_source_required": True,
     "supporting_sources_allowed": True,
@@ -146,6 +310,143 @@ EXPECTED_BOUNDARY_GUARDRAILS = {
     "canon_owner": "Tree-of-Sophia",
     "direct_canon_authorship": "forbidden",
 }
+EXPECTED_RETURN_REGROUNDING_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "memory_truth_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+    "counterpart_activation": "review_gated",
+    "proof_ownership": "forbidden",
+}
+EXPECTED_RETURN_REGROUNDING_INPUTS = {
+    ("boundaries_doc", "aoa-kag", "docs/BOUNDARIES.md", "boundary_doc"),
+    ("bridge_contract_doc", "aoa-kag", "docs/BRIDGE_CONTRACTS.md", "bridge_doc"),
+    ("reasoning_handoff_doc", "aoa-kag", "docs/REASONING_HANDOFF.md", "handoff_doc"),
+    (
+        "source_owned_export_dependencies_manifest",
+        "aoa-kag",
+        "manifests/source_owned_export_dependencies.json",
+        "dependency_manifest",
+    ),
+    (
+        "federation_spine_pack",
+        "aoa-kag",
+        "generated/federation_spine.min.json",
+        "derived_pack",
+    ),
+    (
+        "retrieval_axis_pack",
+        "aoa-kag",
+        "generated/tos_retrieval_axis_pack.min.json",
+        "derived_pack",
+    ),
+    (
+        "cross_source_projection_pack",
+        "aoa-kag",
+        "generated/cross_source_node_projection.min.json",
+        "derived_pack",
+    ),
+    (
+        "reasoning_handoff_pack",
+        "aoa-kag",
+        "generated/reasoning_handoff_pack.min.json",
+        "derived_pack",
+    ),
+    (
+        "aoa_techniques_kag_export",
+        "aoa-techniques",
+        "generated/kag_export.min.json",
+        "source_owned_export",
+    ),
+    (
+        "tos_kag_export",
+        "Tree-of-Sophia",
+        "generated/kag_export.min.json",
+        "source_owned_export",
+    ),
+    (
+        "tos_node_contract",
+        "Tree-of-Sophia",
+        "docs/NODE_CONTRACT.md",
+        "source_contract",
+    ),
+    (
+        "tos_source_node",
+        "Tree-of-Sophia",
+        "examples/source_node.example.json",
+        "authority_surface",
+    ),
+    (
+        "memo_checkpoint_contract",
+        "aoa-memo",
+        "examples/checkpoint_to_memory_contract.example.json",
+        "owner_contract",
+    ),
+}
+EXPECTED_RETURN_REGROUNDING_INPUT_ORDER = [
+    "boundaries_doc",
+    "bridge_contract_doc",
+    "reasoning_handoff_doc",
+    "source_owned_export_dependencies_manifest",
+    "federation_spine_pack",
+    "retrieval_axis_pack",
+    "cross_source_projection_pack",
+    "reasoning_handoff_pack",
+    "aoa_techniques_kag_export",
+    "tos_kag_export",
+    "tos_node_contract",
+    "tos_source_node",
+    "memo_checkpoint_contract",
+]
+EXPECTED_RETURN_REGROUNDING_BINDINGS = {
+    (
+        "source_export_reentry",
+        "federation_spine_pack",
+        (
+            "source_owned_export_dependencies_manifest",
+            "aoa_techniques_kag_export",
+            "tos_kag_export",
+        ),
+        ("aoa-techniques-kag-export", "tree-of-sophia-kag-export"),
+    ),
+    (
+        "bridge_axis_reentry",
+        "retrieval_axis_pack",
+        ("bridge_contract_doc", "tos_node_contract", "tos_source_node"),
+        (),
+    ),
+    (
+        "projection_boundary_reentry",
+        "cross_source_projection_pack",
+        ("federation_spine_pack", "retrieval_axis_pack", "bridge_contract_doc"),
+        ("aoa-techniques-kag-export", "tree-of-sophia-kag-export"),
+    ),
+    (
+        "handoff_guardrail_reentry",
+        "reasoning_handoff_pack",
+        ("reasoning_handoff_doc", "boundaries_doc", "memo_checkpoint_contract"),
+        (),
+    ),
+    (
+        "owner_boundary_reentry",
+        "reasoning_handoff_doc",
+        (
+            "bridge_contract_doc",
+            "boundaries_doc",
+            "memo_checkpoint_contract",
+            "tos_node_contract",
+        ),
+        (),
+    ),
+}
+EXPECTED_RETURN_REGROUNDING_MODE_ORDER = [
+    "source_export_reentry",
+    "bridge_axis_reentry",
+    "projection_boundary_reentry",
+    "handoff_guardrail_reentry",
+    "owner_boundary_reentry",
+]
 EXPECTED_RETURN_MUST_INCLUDE = {"source_refs", "axis_summary", "provenance_note"}
 EXPECTED_RETURN_MAY_INCLUDE = {
     "lineage_refs",
@@ -197,6 +498,125 @@ EXPECTED_TECHNIQUE_LIFT_CONTRACT = {
     "source_replacement": "forbidden",
     "graph_sovereignty": "forbidden",
 }
+EXPECTED_TOS_TEXT_CHUNK_MAP_INPUTS = {
+    ("tos_source_node", TOS_TINY_ENTRY_AUTHORITY_PATH, "authority_surface"),
+    ("tos_tiny_entry_route_doc", TOS_TINY_ENTRY_DOCTRINE_PATH, "route_surface"),
+    ("tos_zarathustra_capsule", TOS_TINY_ENTRY_CAPSULE_PATH, "capsule_surface"),
+}
+EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS = {
+    (
+        "AOA-K-0005",
+        "tos-text-chunk-map",
+        "chunk_map",
+        "chunks",
+        "tos_source_node",
+    ),
+}
+EXPECTED_TOS_TEXT_CHUNK_MAP_OUTPUT_PATHS = {
+    "full": "generated/tos_text_chunk_map.json",
+    "min": "generated/tos_text_chunk_map.min.json",
+}
+EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "counterpart_projection": "forbidden",
+    "federation_export_activation": "forbidden",
+}
+EXPECTED_TOS_RETRIEVAL_AXIS_INPUTS = {
+    ("tos_text_chunk_map", "aoa-kag", "generated/tos_text_chunk_map.min.json", "chunk_map"),
+    ("bridge_contract_doc", "aoa-kag", "docs/BRIDGE_CONTRACTS.md", "bridge_doctrine"),
+    ("bridge_surface_example", "aoa-kag", "examples/tos_retrieval_axis_surface.example.json", "bridge_surface"),
+    ("bridge_envelope_example", "aoa-kag", "examples/aoa_tos_bridge_envelope.example.json", "bridge_envelope"),
+    ("memo_chunk_face", "aoa-memo", "examples/memory_chunk_face.bridge.example.json", "memo_chunk_face"),
+    ("memo_graph_face", "aoa-memo", "examples/memory_graph_face.bridge.example.json", "memo_graph_face"),
+    ("tos_node_contract", TOS_REPO, "docs/NODE_CONTRACT.md", "tos_contract"),
+    ("tos_practice_branch", TOS_REPO, "docs/PRACTICE_BRANCH.md", "tos_contract"),
+    ("tos_authority_surface", TOS_REPO, "examples/source_node.example.json", "authority_surface"),
+    ("tos_lineage_hop", TOS_REPO, "examples/concept_node.example.json", "lineage_surface"),
+}
+EXPECTED_TOS_RETRIEVAL_AXIS_BINDINGS = {
+    (
+        "AOA-K-0007",
+        "tos-retrieval-axis-surface",
+        "retrieval_surface",
+        "axes",
+        "tos_text_chunk_map",
+    ),
+}
+EXPECTED_TOS_RETRIEVAL_AXIS_OUTPUT_PATHS = {
+    "full": "generated/tos_retrieval_axis_pack.json",
+    "min": "generated/tos_retrieval_axis_pack.min.json",
+}
+EXPECTED_TOS_RETRIEVAL_AXIS_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "scoring_or_ranking": "forbidden",
+    "routing_ownership": "forbidden",
+    "graph_normalization": "forbidden",
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_INPUTS = {
+    ("tos_route_source_node", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_SOURCE_NODE_PATH, "authority_surface"),
+    ("tos_becoming_concept", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH, "concept_surface"),
+    ("tos_overcoming_concept", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH, "concept_surface"),
+    ("tos_route_lineage_node", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_LINEAGE_NODE_PATH, "lineage_surface"),
+    ("tos_route_principle_family_root", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_PRINCIPLE_ROOT, "family_root"),
+    ("tos_route_event_family_root", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_EVENT_ROOT, "family_root"),
+    ("tos_route_state_family_root", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_STATE_ROOT, "family_root"),
+    ("tos_route_support_family_root", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_SUPPORT_ROOT, "family_root"),
+    ("tos_route_analogy_family_root", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_ANALOGY_ROOT, "family_root"),
+    ("tos_route_synthesis_family_root", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT, "family_root"),
+    ("tos_route_relation_pack", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH, "relation_pack"),
+    ("tos_zarathustra_capsule", TOS_REPO, TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH, "capsule_surface"),
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_BINDINGS = {
+    (
+        "AOA-K-0010",
+        "tos-zarathustra-route-pack",
+        "node_projection",
+        "nodes",
+        "tos_route_source_node",
+    ),
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATHS = {
+    "full": "generated/tos_zarathustra_route_pack.json",
+    "min": "generated/tos_zarathustra_route_pack.min.json",
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "intake_consumption": "forbidden",
+    "routing_ownership": "forbidden",
+    "consumer_projection": "deferred",
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_INPUTS = {
+    (
+        "tos_zarathustra_route_pack",
+        "aoa-kag",
+        TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF,
+        "route_pack",
+    ),
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_BINDINGS = {
+    (
+        "AOA-K-0011",
+        "tos-zarathustra-route-retrieval-surface",
+        "retrieval_surface",
+        "routes",
+        "tos_zarathustra_route_pack",
+    ),
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATHS = {
+    "full": "generated/tos_zarathustra_route_retrieval_pack.json",
+    "min": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+}
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "scoring_or_ranking": "forbidden",
+    "routing_ownership": "forbidden",
+    "graph_normalization": "forbidden",
+    "consumer_projection": "bounded_handles_only",
+}
 ALLOWED_CONTRACT_STRENGTH = {
     "schema_backed",
     "doc_backed",
@@ -210,6 +630,11 @@ EXPECTED_REASONING_HANDOFF_SOURCE_ROOT_ENVS = {
 }
 EXPECTED_REASONING_HANDOFF_INPUTS = {
     ("reasoning_handoff_doc", "aoa-kag", "docs/REASONING_HANDOFF.md", "kag_guardrail_doc"),
+    ("reasoning_handoff_schema", "aoa-kag", "schemas/reasoning-handoff-guardrail.schema.json", "kag_guardrail_schema"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "kag_guardrail_doc"),
+    ("counterpart_consumer_contract_schema", "aoa-kag", "schemas/counterpart-consumer-contract.schema.json", "kag_guardrail_schema"),
+    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "kag_guardrail_example"),
+    ("counterpart_federation_exposure_review_doc", "aoa-kag", "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md", "kag_guardrail_doc"),
     ("artifact_to_verdict_hook_schema", "aoa-evals", "schemas/artifact-to-verdict-hook.schema.json", "eval_hook_schema"),
     ("aoa_p_0008_playbook", "aoa-playbooks", "playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md", "playbook_doc"),
     ("aoa_p_0008_hook", "aoa-evals", "examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json", "eval_hook_fixture"),
@@ -237,40 +662,36 @@ EXPECTED_REASONING_HANDOFF_CONTRACT = {
     "verdict_ownership": "forbidden",
 }
 EXPECTED_REASONING_HANDOFF_SCENARIOS = {"AOA-P-0008", "AOA-P-0009"}
+EXPECTED_REASONING_HANDOFF_KAG_GUARDRAIL_REFS = [
+    "docs/REASONING_HANDOFF.md",
+    "schemas/reasoning-handoff-guardrail.schema.json",
+    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+    "schemas/counterpart-consumer-contract.schema.json",
+    "examples/counterpart_consumer_contract.example.json",
+    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
+]
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
-    ("repo_doc_surface_manifest", "aoa-techniques", "generated/repo_doc_surface_manifest.min.json", "entry_surfaces"),
-    ("technique_catalog", "aoa-techniques", "generated/technique_catalog.min.json", "object_spine"),
-    ("tos_root_readme", TOS_REPO, TOS_ROOT_README_PATH, "entry_surface"),
-    ("tos_tiny_entry_doctrine", TOS_REPO, TOS_TINY_ENTRY_DOCTRINE_PATH, "entry_surface"),
-    ("tos_tiny_entry_route", TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH, "object_surface"),
+    ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "source_owned_export"),
+    ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "source_owned_export"),
 }
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER = [
     "kag_registry_manifest",
-    "repo_doc_surface_manifest",
-    "technique_catalog",
-    "tos_root_readme",
-    "tos_tiny_entry_doctrine",
-    "tos_tiny_entry_route",
+    "aoa_techniques_kag_export",
+    "tos_kag_export",
 ]
 EXPECTED_FEDERATION_SPINE_BINDINGS = {
     (
         "AOA-K-0009",
         "aoa-techniques",
-        "existing_generated_surfaces",
-        ("repo_doc_surface_manifest",),
-        "technique_catalog",
-        3,
-        "aoa-techniques/generated/kag_export.min.json",
+        "source_owned_export_tiny",
+        "aoa_techniques_kag_export",
     ),
     (
         "AOA-K-0009",
         TOS_REPO,
-        "source_owned_tiny_entry_route",
-        ("tos_root_readme", "tos_tiny_entry_doctrine"),
-        "tos_tiny_entry_route",
-        1,
-        f"{TOS_REPO}/generated/kag_export.min.json",
+        "source_owned_export_tiny",
+        "tos_kag_export",
     )
 }
 EXPECTED_FEDERATION_SPINE_REPO_ORDER = ["aoa-techniques", TOS_REPO]
@@ -286,11 +707,176 @@ EXPECTED_FEDERATION_SPINE_CONTRACT = {
     "full_federation_claim": "forbidden",
 }
 EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques", TOS_REPO}
-EXPECTED_TOS_SPINE_ENTRY_REFS = [
-    repo_ref(TOS_REPO, TOS_ROOT_README_PATH),
-    repo_ref(TOS_REPO, TOS_TINY_ENTRY_DOCTRINE_PATH),
+EXPECTED_MEMO_KAG_EXPORT_PATH = "generated/kag_export.min.json"
+EXPECTED_MEMO_KAG_EXPORT_REQUIRED_FIELDS = {
+    "owner_repo",
+    "kind",
+    "object_id",
+    "primary_question",
+    "summary_50",
+    "summary_200",
+    "source_inputs",
+    "entry_surface",
+    "section_handles",
+    "direct_relations",
+    "provenance_note",
+    "non_identity_boundary",
+}
+EXPECTED_MEMO_KAG_EXPORT_SOURCE_INPUTS = [
+    {"repo": "aoa-memo", "source_class": "memo_object", "role": "primary"},
+    {"repo": TOS_REPO, "source_class": "tos_text", "role": "supporting"},
 ]
-EXPECTED_TOS_SPINE_OBJECT_REF = repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)
+EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE = {
+    "repo": "aoa-memo",
+    "path": "generated/memory_object_capsules.json",
+    "match_key": "id",
+    "match_value": "memo.bridge.2026-03-23.tos-lineage-kag-candidate",
+}
+EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES = [
+    "identity-and-recall",
+    "provenance-and-evidence",
+    "trust-and-lifecycle",
+    "bridges-and-access",
+]
+EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
+    {
+        "relation_type": "supported_by_claim",
+        "target_ref": "examples/claim.tos-bridge-ready.example.json",
+    },
+    {
+        "relation_type": "seeded_by_episode",
+        "target_ref": "examples/episode.tos-interpretation.example.json",
+    },
+    {
+        "relation_type": "points_to_tos_fragment",
+        "target_ref": "repo:Tree-of-Sophia/docs/CONTEXT_COMPOST.md#memory-bridge-fragment",
+    },
+]
+EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
+    "aoa-techniques": [],
+    TOS_REPO: [
+        {
+            "surface_id": "AOA-K-0011",
+            "surface_name": "tos-zarathustra-route-retrieval-surface",
+            "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+            "match_key": "retrieval_id",
+            "target_value": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
+            "route_id": TOS_ZARATHUSTRA_ROUTE_ID,
+        }
+    ],
+}
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_INPUTS = {
+    ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "primary_export"),
+    ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "supporting_export"),
+    ("tos_retrieval_axis_pack", "aoa-kag", "generated/tos_retrieval_axis_pack.min.json", "retrieval_axis"),
+    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "federation_spine"),
+}
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_BINDINGS = {
+    (
+        "AOA-K-0006",
+        "cross-source-node-projection",
+        "node_projection",
+        "projections",
+        "aoa_techniques_kag_export",
+    ),
+}
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATHS = {
+    "full": "generated/cross_source_node_projection.json",
+    "min": "generated/cross_source_node_projection.min.json",
+}
+EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "counterpart_activation": "forbidden",
+    "graph_expansion": "forbidden",
+    "routing_ownership": "forbidden",
+}
+EXPECTED_TINY_CONSUMER_BUNDLE_INPUTS = {
+    ("tos_text_chunk_map", "aoa-kag", "generated/tos_text_chunk_map.min.json", "generated_surface"),
+    ("tos_retrieval_axis_pack", "aoa-kag", "generated/tos_retrieval_axis_pack.min.json", "generated_surface"),
+    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "generated_surface"),
+    ("cross_source_node_projection", "aoa-kag", "generated/cross_source_node_projection.min.json", "generated_surface"),
+    ("consumer_guide", "aoa-kag", "docs/CONSUMER_GUIDE.md", "consumer_doc"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "counterpart_contract"),
+    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "counterpart_contract"),
+}
+EXPECTED_TINY_CONSUMER_BUNDLE_ORDER = [
+    "tos_text_chunk_map",
+    "tos_retrieval_axis_pack",
+    "federation_spine",
+    "cross_source_node_projection",
+    "consumer_guide",
+    "counterpart_consumer_contract_doc",
+    "counterpart_consumer_contract_example",
+]
+EXPECTED_TINY_CONSUMER_BUNDLE_OUTPUT_PATHS = {
+    "full": "generated/tiny_consumer_bundle.json",
+    "min": "generated/tiny_consumer_bundle.min.json",
+}
+EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART = {
+    "surface_id": "AOA-K-0008",
+    "surface_status": "planned",
+    "posture": "planned_contract_only",
+    "federation_exposure_review_ref": EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
+    "allowed_refs": EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS,
+    "forbidden_active_payload_refs": ["examples/counterpart_edge_view.example.json"],
+    "forbidden_interpretations": [
+        "active_retrieval_payload",
+        "active_projection_payload",
+    ],
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_INPUTS = {
+    ("reasoning_handoff_pack", "aoa-kag", "generated/reasoning_handoff_pack.min.json", "reviewed_surface"),
+    ("tiny_consumer_bundle", "aoa-kag", "generated/tiny_consumer_bundle.min.json", "reviewed_surface"),
+    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "reviewed_surface"),
+    ("cross_source_node_projection", "aoa-kag", "generated/cross_source_node_projection.min.json", "reviewed_surface"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "counterpart_contract"),
+    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "counterpart_contract"),
+    ("counterpart_edge_contract_doc", "aoa-kag", "docs/COUNTERPART_EDGE_CONTRACTS.md", "counterpart_contract"),
+    ("counterpart_edge_contract_example", "aoa-kag", "examples/counterpart_edge_view.example.json", "counterpart_contract"),
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER = [
+    "reasoning_handoff_pack",
+    "tiny_consumer_bundle",
+    "federation_spine",
+    "cross_source_node_projection",
+    "counterpart_consumer_contract_doc",
+    "counterpart_consumer_contract_example",
+    "counterpart_edge_contract_doc",
+    "counterpart_edge_contract_example",
+]
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATHS = {
+    "full": "generated/counterpart_federation_exposure_review.json",
+    "min": "generated/counterpart_federation_exposure_review.min.json",
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_CONTRACT = {
+    "silent_federation_exposure": "forbidden",
+    "generated_counterpart_payload_inference": "forbidden",
+    "routing_ownership": "forbidden",
+    "source_replacement": "forbidden",
+}
+EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_POSTURES = {
+    "reasoning_handoff_pack": "contract_only_counterpart_refs",
+    "tiny_consumer_bundle": "planned_contract_only",
+    "federation_spine": "no_counterpart_exposure",
+    "cross_source_node_projection": "counterpart_activation_forbidden",
+    "counterpart_consumer_contract_doc": "contract_reference_surface",
+    "counterpart_consumer_contract_example": "contract_reference_surface",
+    "counterpart_edge_contract_doc": "planned_contract_surface",
+    "counterpart_edge_contract_example": "planned_example_surface",
+}
+EXPECTED_AOA_K_0006_SOURCE_INPUTS = [
+    {
+        "repo": "aoa-techniques",
+        "source_class": "technique_bundle",
+        "role": "primary",
+    },
+    {
+        "repo": TOS_REPO,
+        "source_class": "tos_text",
+        "role": "supporting",
+    },
+]
 EXPECTED_AOA_K_0009_SOURCE_INPUTS = [
     {
         "repo": "aoa-techniques",
@@ -303,7 +889,6 @@ EXPECTED_AOA_K_0009_SOURCE_INPUTS = [
         "role": "supporting",
     },
 ]
-PLANNED_EXPORT_REF_RE = re.compile(r"^[A-Za-z0-9-]+/generated/kag_export\.min\.json$")
 MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 VISIBLE_ROOTS = (
@@ -323,6 +908,13 @@ class ValidationError(RuntimeError):
 
 def fail(message: str) -> None:
     raise ValidationError(message)
+
+
+def validate_nested_agents_docs() -> None:
+    issues = validate_nested_agents.validate(REPO_ROOT)
+    if issues:
+        joined = "; ".join(issues)
+        fail(f"nested AGENTS docs validation failed: {joined}")
 
 
 def display_path(path: Path) -> str:
@@ -386,8 +978,33 @@ def validate_bridge_schema_surface() -> None:
     validate_top_level_schema(BRIDGE_SCHEMA_PATH, "bridge")
 
 
+def validate_bridge_envelope_schema_surface() -> None:
+    validate_top_level_schema(BRIDGE_ENVELOPE_SCHEMA_PATH, "bridge envelope")
+
+
 def validate_counterpart_schema_surface() -> None:
     validate_top_level_schema(COUNTERPART_SCHEMA_PATH, "counterpart")
+
+
+def validate_counterpart_federation_exposure_review_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_SCHEMA_PATH,
+        "counterpart federation exposure review manifest",
+    )
+
+
+def validate_counterpart_federation_exposure_review_schema_surface() -> None:
+    validate_top_level_schema(
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_SCHEMA_PATH,
+        "counterpart federation exposure review",
+    )
+
+
+def validate_counterpart_consumer_contract_schema_surface() -> None:
+    validate_top_level_schema(
+        COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH,
+        "counterpart consumer contract",
+    )
 
 
 def validate_reasoning_handoff_schema_surface() -> None:
@@ -402,6 +1019,56 @@ def validate_technique_lift_pack_schema_surface() -> None:
     validate_top_level_schema(TECHNIQUE_LIFT_PACK_SCHEMA_PATH, "technique lift pack")
 
 
+def validate_tos_text_chunk_map_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_TEXT_CHUNK_MAP_MANIFEST_SCHEMA_PATH,
+        "ToS text chunk map manifest",
+    )
+
+
+def validate_tos_text_chunk_map_schema_surface() -> None:
+    validate_top_level_schema(TOS_TEXT_CHUNK_MAP_SCHEMA_PATH, "ToS text chunk map")
+
+
+def validate_tos_retrieval_axis_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_RETRIEVAL_AXIS_MANIFEST_SCHEMA_PATH,
+        "ToS retrieval axis manifest",
+    )
+
+
+def validate_tos_retrieval_axis_schema_surface() -> None:
+    validate_top_level_schema(TOS_RETRIEVAL_AXIS_SCHEMA_PATH, "ToS retrieval axis pack")
+
+
+def validate_tos_zarathustra_route_pack_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_SCHEMA_PATH,
+        "ToS Zarathustra route pack manifest",
+    )
+
+
+def validate_tos_zarathustra_route_pack_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_ZARATHUSTRA_ROUTE_PACK_SCHEMA_PATH,
+        "ToS Zarathustra route pack",
+    )
+
+
+def validate_tos_zarathustra_route_retrieval_pack_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_SCHEMA_PATH,
+        "ToS Zarathustra route retrieval pack manifest",
+    )
+
+
+def validate_tos_zarathustra_route_retrieval_pack_schema_surface() -> None:
+    validate_top_level_schema(
+        TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_SCHEMA_PATH,
+        "ToS Zarathustra route retrieval pack",
+    )
+
+
 def validate_reasoning_handoff_pack_manifest_schema_surface() -> None:
     validate_top_level_schema(
         REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH,
@@ -413,6 +1080,27 @@ def validate_reasoning_handoff_pack_schema_surface() -> None:
     validate_top_level_schema(
         REASONING_HANDOFF_PACK_SCHEMA_PATH,
         "reasoning handoff pack",
+    )
+
+
+def validate_return_regrounding_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        RETURN_REGROUNDING_MANIFEST_SCHEMA_PATH,
+        "return regrounding pack manifest",
+    )
+
+
+def validate_return_regrounding_schema_surface() -> None:
+    validate_top_level_schema(
+        RETURN_REGROUNDING_SCHEMA_PATH,
+        "return regrounding pack",
+    )
+
+
+def validate_source_owned_export_dependencies_schema_surface() -> None:
+    validate_top_level_schema(
+        SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH,
+        "source-owned export dependency manifest",
     )
 
 
@@ -437,6 +1125,31 @@ def validate_federation_spine_schema_surface() -> None:
     )
 
 
+def validate_cross_source_node_projection_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        CROSS_SOURCE_NODE_PROJECTION_MANIFEST_SCHEMA_PATH,
+        "cross-source node projection manifest",
+    )
+
+
+def validate_cross_source_node_projection_schema_surface() -> None:
+    validate_top_level_schema(
+        CROSS_SOURCE_NODE_PROJECTION_SCHEMA_PATH,
+        "cross-source node projection",
+    )
+
+
+def validate_tiny_consumer_bundle_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        TINY_CONSUMER_BUNDLE_MANIFEST_SCHEMA_PATH,
+        "tiny consumer bundle manifest",
+    )
+
+
+def validate_tiny_consumer_bundle_schema_surface() -> None:
+    validate_top_level_schema(TINY_CONSUMER_BUNDLE_SCHEMA_PATH, "tiny consumer bundle")
+
+
 def validate_unique_string_list(
     value: object,
     *,
@@ -457,9 +1170,24 @@ def validate_unique_string_list(
     return result
 
 
+def iter_string_values(value: object):
+    if isinstance(value, str):
+        yield value
+        return
+    if isinstance(value, dict):
+        for nested_value in value.values():
+            yield from iter_string_values(nested_value)
+        return
+    if isinstance(value, list):
+        for nested_value in value:
+            yield from iter_string_values(nested_value)
+
+
 def resolve_relative_ref(root: Path, raw_ref: str, *, label: str) -> Path:
     path_text, _, anchor = raw_ref.partition("#")
     target = root / path_text
+    if root != REPO_ROOT and not root.exists():
+        return target
     if not target.exists():
         fail(f"{label} references a missing path: {raw_ref}")
     if anchor:
@@ -790,13 +1518,67 @@ def validate_special_registry_surfaces(
     *,
     label: str,
 ) -> None:
+    surface_0005 = surfaces_by_id.get("AOA-K-0005")
+    if surface_0005 is None:
+        fail(f"{label} is missing required surface 'AOA-K-0005'")
+    if surface_0005.get("name") != "tos-text-chunk-map":
+        fail(f"{label} AOA-K-0005 must keep name 'tos-text-chunk-map'")
+    if surface_0005.get("status") != "experimental":
+        fail(f"{label} AOA-K-0005 must be experimental in the current Wave 2 pilot")
+    if surface_0005.get("source_class") != "tos_text":
+        fail(f"{label} AOA-K-0005 must keep 'tos_text' as its primary source_class")
+    if surface_0005.get("derived_kind") != "chunk_map":
+        fail(f"{label} AOA-K-0005 must keep 'chunk_map' as its derived_kind")
+    if surface_0005.get("provenance_mode") != "strict_source_linked":
+        fail(f"{label} AOA-K-0005 must keep 'strict_source_linked' as its provenance_mode")
+    if surface_0005.get("normalization_scope") != "text_chunks":
+        fail(f"{label} AOA-K-0005 must keep 'text_chunks' as its normalization_scope")
+    if surface_0005.get("framework_readiness") != "llamaindex_ready":
+        fail(f"{label} AOA-K-0005 must keep 'llamaindex_ready' as its framework_readiness")
+    if surface_0005.get("source_repos") != [TOS_REPO]:
+        fail(f"{label} AOA-K-0005 must keep source_repos ['{TOS_REPO}']")
+
+    surface_0006 = surfaces_by_id.get("AOA-K-0006")
+    if surface_0006 is None:
+        fail(f"{label} is missing required surface 'AOA-K-0006'")
+    if surface_0006.get("name") != "cross-source-node-projection":
+        fail(f"{label} AOA-K-0006 must keep name 'cross-source-node-projection'")
+    if surface_0006.get("status") != "experimental":
+        fail(f"{label} AOA-K-0006 must be experimental in the current Wave 5 pilot")
+    if surface_0006.get("source_class") != "technique_bundle":
+        fail(f"{label} AOA-K-0006 must keep 'technique_bundle' as its primary source_class")
+    if surface_0006.get("derived_kind") != "node_projection":
+        fail(f"{label} AOA-K-0006 must keep 'node_projection' as its derived_kind")
+    if surface_0006.get("provenance_mode") != "derived_with_handles":
+        fail(f"{label} AOA-K-0006 must keep 'derived_with_handles' as its provenance_mode")
+    if surface_0006.get("normalization_scope") != "cross_source_nodes":
+        fail(f"{label} AOA-K-0006 must keep 'cross_source_nodes' as its normalization_scope")
+    if surface_0006.get("framework_readiness") != "multi_consumer_ready":
+        fail(f"{label} AOA-K-0006 must keep 'multi_consumer_ready' as its framework_readiness")
+    if surface_0006.get("source_repos") != ["aoa-techniques", TOS_REPO]:
+        fail(f"{label} AOA-K-0006 must keep source_repos ['aoa-techniques', '{TOS_REPO}']")
+    if surface_0006.get("source_inputs") != EXPECTED_AOA_K_0006_SOURCE_INPUTS:
+        fail(f"{label} AOA-K-0006 must keep the current primary/supporting source_inputs mapping")
+
     surface_0007 = surfaces_by_id.get("AOA-K-0007")
     if surface_0007 is None:
         fail(f"{label} is missing required surface 'AOA-K-0007'")
     if surface_0007.get("name") != "tos-retrieval-axis-surface":
         fail(f"{label} AOA-K-0007 must keep name 'tos-retrieval-axis-surface'")
-    if surface_0007.get("status") != "planned":
-        fail(f"{label} AOA-K-0007 must remain planned")
+    if surface_0007.get("status") != "experimental":
+        fail(f"{label} AOA-K-0007 must be experimental in the current Wave 3 pilot")
+    if surface_0007.get("source_class") != "tos_text":
+        fail(f"{label} AOA-K-0007 must keep 'tos_text' as its primary source_class")
+    if surface_0007.get("derived_kind") != "retrieval_surface":
+        fail(f"{label} AOA-K-0007 must keep 'retrieval_surface' as its derived_kind")
+    if surface_0007.get("provenance_mode") != "derived_with_handles":
+        fail(f"{label} AOA-K-0007 must keep 'derived_with_handles' as its provenance_mode")
+    if surface_0007.get("normalization_scope") != "axis_bundles":
+        fail(f"{label} AOA-K-0007 must keep 'axis_bundles' as its normalization_scope")
+    if surface_0007.get("framework_readiness") != "hipporag_ready":
+        fail(f"{label} AOA-K-0007 must keep 'hipporag_ready' as its framework_readiness")
+    if surface_0007.get("source_repos") != [TOS_REPO, "aoa-memo"]:
+        fail(f"{label} AOA-K-0007 must keep source_repos ['{TOS_REPO}', 'aoa-memo']")
 
     surface_0008 = surfaces_by_id.get("AOA-K-0008")
     if surface_0008 is None:
@@ -954,6 +1736,453 @@ def validate_technique_lift_manifest(
         fail("technique lift manifest bounded_output_contract must match the current source-first guardrail")
 
 
+def validate_tos_text_chunk_map_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(TOS_TEXT_CHUNK_MAP_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS text chunk map manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_repo",
+        "source_root_env",
+        "source_inputs",
+        "surface_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS text chunk map manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("ToS text chunk map manifest manifest_version must equal 1")
+    if payload["pack_type"] != "tos_text_chunk_map":
+        fail("ToS text chunk map manifest pack_type must equal 'tos_text_chunk_map'")
+    if payload["source_repo"] != TOS_REPO:
+        fail("ToS text chunk map manifest source_repo must equal 'Tree-of-Sophia'")
+    if payload["source_root_env"] != "TREE_OF_SOPHIA_ROOT":
+        fail("ToS text chunk map manifest source_root_env must equal 'TREE_OF_SOPHIA_ROOT'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS text chunk map manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"ToS text chunk map manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, path, role)):
+            fail(f"{location} must keep name, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, path, role))
+        resolve_known_ref(repo_ref(TOS_REPO, path), label=location)
+    if actual_source_inputs != EXPECTED_TOS_TEXT_CHUNK_MAP_INPUTS:
+        fail("ToS text chunk map manifest source_inputs must match the current bounded donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS text chunk map manifest surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"ToS text chunk map manifest surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("name") != surface_name:
+            fail(f"{location} does not match registry surface name")
+        if surface.get("derived_kind") != derived_kind:
+            fail(f"{location} does not match registry derived_kind")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+        if surface.get("source_repos") != [TOS_REPO]:
+            fail(
+                f"{location} must point to Tree-of-Sophia-only experimental surfaces in this Wave 2 pilot"
+            )
+
+    if actual_bindings != EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS:
+        fail("ToS text chunk map manifest surface_bindings must match the current bounded chunk-map contract")
+
+    if payload["output_paths"] != EXPECTED_TOS_TEXT_CHUNK_MAP_OUTPUT_PATHS:
+        fail("ToS text chunk map manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT:
+        fail("ToS text chunk map manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_tos_retrieval_axis_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(TOS_RETRIEVAL_AXIS_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS retrieval axis manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "surface_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS retrieval axis manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("ToS retrieval axis manifest manifest_version must equal 1")
+    if payload["pack_type"] != "tos_retrieval_axis_pack":
+        fail("ToS retrieval axis manifest pack_type must equal 'tos_retrieval_axis_pack'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS retrieval axis manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"ToS retrieval axis manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_TOS_RETRIEVAL_AXIS_INPUTS:
+        fail("ToS retrieval axis manifest source_inputs must match the current bounded donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS retrieval axis manifest surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"ToS retrieval axis manifest surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+    if actual_bindings != EXPECTED_TOS_RETRIEVAL_AXIS_BINDINGS:
+        fail("ToS retrieval axis manifest surface_bindings must match the current bounded retrieval contract")
+
+    if payload["output_paths"] != EXPECTED_TOS_RETRIEVAL_AXIS_OUTPUT_PATHS:
+        fail("ToS retrieval axis manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_TOS_RETRIEVAL_AXIS_CONTRACT:
+        fail("ToS retrieval axis manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_tos_zarathustra_route_pack_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS Zarathustra route pack manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_repo",
+        "source_root_env",
+        "source_inputs",
+        "surface_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS Zarathustra route pack manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("ToS Zarathustra route pack manifest manifest_version must equal 1")
+    if payload["pack_type"] != "tos_zarathustra_route_pack":
+        fail(
+            "ToS Zarathustra route pack manifest pack_type must equal "
+            "'tos_zarathustra_route_pack'"
+        )
+    if payload["source_repo"] != TOS_REPO:
+        fail("ToS Zarathustra route pack manifest source_repo must equal 'Tree-of-Sophia'")
+    if payload["source_root_env"] != "TREE_OF_SOPHIA_ROOT":
+        fail(
+            "ToS Zarathustra route pack manifest source_root_env must equal "
+            "'TREE_OF_SOPHIA_ROOT'"
+        )
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS Zarathustra route pack manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"ToS Zarathustra route pack manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, path, role)):
+            fail(f"{location} must keep name, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, TOS_REPO, path, role))
+        resolve_known_ref(repo_ref(TOS_REPO, path), label=location)
+        if path.startswith("intake/"):
+            fail(f"{location} must not point at Tree-of-Sophia/intake")
+        if path.startswith("examples/"):
+            fail(f"{location} must not point at Tree-of-Sophia/examples")
+        if path.startswith("generated/kag_export"):
+            fail(f"{location} must not point at Tree-of-Sophia/generated/kag_export")
+    if actual_source_inputs != EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_INPUTS:
+        fail(
+            "ToS Zarathustra route pack manifest source_inputs must match the current "
+            "canonical donor set"
+        )
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS Zarathustra route pack manifest surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"ToS Zarathustra route pack manifest surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("name") != surface_name:
+            fail(f"{location} does not match registry surface name")
+        if surface.get("derived_kind") != derived_kind:
+            fail(f"{location} does not match registry derived_kind")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+        if surface.get("source_repos") != [TOS_REPO]:
+            fail(f"{location} must stay Tree-of-Sophia-only in this additive route wave")
+    if actual_bindings != EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_BINDINGS:
+        fail(
+            "ToS Zarathustra route pack manifest surface_bindings must match the "
+            "current bounded route-pack contract"
+        )
+
+    if payload["output_paths"] != EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATHS:
+        fail(
+            "ToS Zarathustra route pack manifest output_paths must match the "
+            "committed generated output paths"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_CONTRACT:
+        fail(
+            "ToS Zarathustra route pack manifest bounded_output_contract must match "
+            "the current source-first guardrail"
+        )
+
+
+def validate_tos_zarathustra_route_retrieval_pack_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS Zarathustra route retrieval pack manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "surface_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(
+                "ToS Zarathustra route retrieval pack manifest is missing required "
+                f"key '{key}'"
+            )
+
+    if payload["manifest_version"] != 1:
+        fail("ToS Zarathustra route retrieval pack manifest manifest_version must equal 1")
+    if payload["pack_type"] != "tos_zarathustra_route_retrieval_pack":
+        fail(
+            "ToS Zarathustra route retrieval pack manifest pack_type must equal "
+            "'tos_zarathustra_route_retrieval_pack'"
+        )
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest source_inputs must be a "
+            "non-empty list"
+        )
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = (
+            "ToS Zarathustra route retrieval pack manifest "
+            f"source_inputs[{index}]"
+        )
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(
+            isinstance(value, str) and value for value in (name, repo, path, role)
+        ):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+        if repo == TOS_REPO and path.startswith("intake/"):
+            fail(f"{location} must not point at Tree-of-Sophia/intake")
+        if repo == "aoa-memo":
+            fail(f"{location} must not point at aoa-memo")
+        if repo == "aoa-routing":
+            fail(f"{location} must not point at aoa-routing")
+    if actual_source_inputs != EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_INPUTS:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest source_inputs must match "
+            "the current single-donor route-pack contract"
+        )
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest surface_bindings must be a "
+            "non-empty list"
+        )
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = (
+            "ToS Zarathustra route retrieval pack manifest "
+            f"surface_bindings[{index}]"
+        )
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("name") != surface_name:
+            fail(f"{location} does not match registry surface name")
+        if surface.get("derived_kind") != derived_kind:
+            fail(f"{location} does not match registry derived_kind")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+        if surface.get("source_repos") != [TOS_REPO]:
+            fail(
+                f"{location} must stay Tree-of-Sophia-only in this standalone retrieval wave"
+            )
+    if actual_bindings != EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_BINDINGS:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest surface_bindings must "
+            "match the current bounded retrieval contract"
+        )
+
+    if payload["output_paths"] != EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATHS:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest output_paths must match "
+            "the committed generated output paths"
+        )
+    if (
+        payload["bounded_output_contract"]
+        != EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_CONTRACT
+    ):
+        fail(
+            "ToS Zarathustra route retrieval pack manifest bounded_output_contract "
+            "must match the current source-first guardrail"
+        )
+
+
 def validate_reasoning_handoff_manifest() -> None:
     payload = read_json(REASONING_HANDOFF_MANIFEST_PATH)
     if not isinstance(payload, dict):
@@ -1046,8 +2275,287 @@ def validate_reasoning_handoff_manifest() -> None:
         fail("reasoning handoff manifest bounded_output_contract must match the current source-first guardrail")
 
 
+def validate_return_regrounding_manifest() -> None:
+    payload = read_json(RETURN_REGROUNDING_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("return regrounding manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "mode_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"return regrounding manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("return regrounding manifest manifest_version must equal 1")
+    if payload["pack_type"] != "return_regrounding_pack":
+        fail("return regrounding manifest pack_type must equal 'return_regrounding_pack'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("return regrounding manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    input_order: list[str] = []
+    for index, source_input in enumerate(source_inputs):
+        location = f"return regrounding manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        input_order.append(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_RETURN_REGROUNDING_INPUTS:
+        fail("return regrounding manifest source_inputs must match the current bounded donor set")
+    if input_order != EXPECTED_RETURN_REGROUNDING_INPUT_ORDER:
+        fail("return regrounding manifest source_inputs must keep the current additive donor order")
+
+    mode_bindings = payload["mode_bindings"]
+    if not isinstance(mode_bindings, list) or not mode_bindings:
+        fail("return regrounding manifest mode_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, tuple[str, ...], tuple[str, ...]]] = set()
+    binding_order: list[str] = []
+    for index, binding in enumerate(mode_bindings):
+        location = f"return regrounding manifest mode_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        mode_ref = binding.get("mode_ref")
+        primary_input = binding.get("primary_input")
+        supporting_inputs = binding.get("supporting_inputs")
+        dependency_refs = binding.get("dependency_refs", [])
+        if not isinstance(mode_ref, str) or not mode_ref:
+            fail(f"{location}.mode_ref must be a non-empty string")
+        if not isinstance(primary_input, str) or not primary_input:
+            fail(f"{location}.primary_input must be a non-empty string")
+        if not isinstance(supporting_inputs, list) or not supporting_inputs:
+            fail(f"{location}.supporting_inputs must be a non-empty list")
+        if not all(isinstance(value, str) and value for value in supporting_inputs):
+            fail(f"{location}.supporting_inputs contains an invalid entry")
+        if not isinstance(dependency_refs, list):
+            fail(f"{location}.dependency_refs must be a list when present")
+        if not all(isinstance(value, str) and value for value in dependency_refs):
+            fail(f"{location}.dependency_refs contains an invalid entry")
+        actual_bindings.add(
+            (
+                mode_ref,
+                primary_input,
+                tuple(supporting_inputs),
+                tuple(dependency_refs),
+            )
+        )
+        binding_order.append(mode_ref)
+    if actual_bindings != EXPECTED_RETURN_REGROUNDING_BINDINGS:
+        fail("return regrounding manifest mode_bindings must match the current bounded mode contract")
+    if binding_order != EXPECTED_RETURN_REGROUNDING_MODE_ORDER:
+        fail("return regrounding manifest mode_bindings must keep the current stable mode order")
+
+    if payload["output_paths"] != {
+        "full": "generated/return_regrounding_pack.json",
+        "min": "generated/return_regrounding_pack.min.json",
+    }:
+        fail("return regrounding manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_RETURN_REGROUNDING_CONTRACT:
+        fail("return regrounding manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_source_owned_export_dependency_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> dict[tuple[str, str], dict[str, object]]:
+    payload = read_json(SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("source-owned export dependency manifest must be a JSON object")
+
+    for key in ("manifest_version", "contract_type", "dependencies"):
+        if key not in payload:
+            fail(f"source-owned export dependency manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("source-owned export dependency manifest manifest_version must equal 1")
+    if payload["contract_type"] != "source_owned_export_dependencies":
+        fail(
+            "source-owned export dependency manifest contract_type must equal "
+            "'source_owned_export_dependencies'"
+        )
+
+    dependencies = payload["dependencies"]
+    if not isinstance(dependencies, list) or not dependencies:
+        fail("source-owned export dependency manifest dependencies must be a non-empty list")
+
+    dependencies_by_source: dict[tuple[str, str], dict[str, object]] = {}
+    seen_dependency_ids: set[str] = set()
+    for index, dependency in enumerate(dependencies):
+        location = f"source-owned export dependency manifest dependencies[{index}]"
+        if not isinstance(dependency, dict):
+            fail(f"{location} must be an object")
+
+        dependency_id = dependency.get("dependency_id")
+        repo = dependency.get("repo")
+        path = dependency.get("path")
+        expected_owner_repo = dependency.get("expected_owner_repo")
+        expected_kind = dependency.get("expected_kind")
+        expected_object_id = dependency.get("expected_object_id")
+        required_fields = dependency.get("required_fields")
+        entry_surface = dependency.get("entry_surface")
+        consumed_by = dependency.get("consumed_by")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                dependency_id,
+                repo,
+                path,
+                expected_owner_repo,
+                expected_kind,
+                expected_object_id,
+            )
+        ):
+            fail(
+                f"{location} must keep dependency_id, repo, path, expected_owner_repo, "
+                "expected_kind, and expected_object_id"
+            )
+        if dependency_id in seen_dependency_ids:
+            fail(f"{location}.dependency_id '{dependency_id}' is duplicated")
+        seen_dependency_ids.add(dependency_id)
+        if repo != expected_owner_repo:
+            fail(f"{location}.expected_owner_repo must equal {location}.repo")
+        if not isinstance(required_fields, list) or not required_fields:
+            fail(f"{location}.required_fields must be a non-empty list")
+        normalized_required_fields: list[str] = []
+        for field_index, field_name in enumerate(required_fields):
+            if not isinstance(field_name, str) or not field_name:
+                fail(f"{location}.required_fields[{field_index}] must be a non-empty string")
+            normalized_required_fields.append(field_name)
+        if len(set(normalized_required_fields)) != len(normalized_required_fields):
+            fail(f"{location}.required_fields must not contain duplicates")
+        if not isinstance(entry_surface, dict):
+            fail(f"{location}.entry_surface must be an object")
+        entry_surface_repo = entry_surface.get("repo")
+        entry_surface_path = entry_surface.get("path")
+        entry_match_key = entry_surface.get("match_key")
+        entry_match_value = entry_surface.get("match_value")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                entry_surface_repo,
+                entry_surface_path,
+                entry_match_key,
+                entry_match_value,
+            )
+        ):
+            fail(
+                f"{location}.entry_surface must keep repo, path, match_key, and match_value"
+            )
+        if entry_surface_repo != expected_owner_repo:
+            fail(f"{location}.entry_surface.repo must equal {location}.expected_owner_repo")
+        if entry_match_value != expected_object_id:
+            fail(
+                f"{location}.entry_surface.match_value must equal "
+                f"{location}.expected_object_id"
+            )
+        if not isinstance(consumed_by, list) or not consumed_by:
+            fail(f"{location}.consumed_by must be a non-empty list")
+        normalized_consumed_by: list[str] = []
+        for consumer_index, consumer_surface_id in enumerate(consumed_by):
+            if not isinstance(consumer_surface_id, str) or not consumer_surface_id:
+                fail(f"{location}.consumed_by[{consumer_index}] must be a non-empty string")
+            if consumer_surface_id not in surfaces_by_id:
+                fail(
+                    f"{location}.consumed_by[{consumer_index}] references unknown "
+                    f"registry surface '{consumer_surface_id}'"
+                )
+            normalized_consumed_by.append(consumer_surface_id)
+        if len(set(normalized_consumed_by)) != len(normalized_consumed_by):
+            fail(f"{location}.consumed_by must not contain duplicates")
+
+        source_key = (repo, path)
+        if source_key in dependencies_by_source:
+            fail(f"{location} duplicates repo/path target '{repo_ref(repo, path)}'")
+
+        export_path = resolve_known_ref(repo_ref(repo, path), label=location)
+        entry_surface_ref = repo_ref(entry_surface_repo, entry_surface_path)
+        resolve_known_ref(entry_surface_ref, label=f"{location}.entry_surface")
+        export_payload = read_json(export_path)
+        if not isinstance(export_payload, dict):
+            fail(f"{location} target export must be a JSON object")
+        for field_name in normalized_required_fields:
+            if field_name not in export_payload:
+                fail(
+                    f"{location} requires target export '{repo_ref(repo, path)}' to keep "
+                    f"'{field_name}'"
+                )
+        if export_payload.get("owner_repo") != expected_owner_repo:
+            fail(f"{location} target export owner_repo must equal '{expected_owner_repo}'")
+        if export_payload.get("kind") != expected_kind:
+            fail(f"{location} target export kind must equal '{expected_kind}'")
+        if export_payload.get("object_id") != expected_object_id:
+            fail(f"{location} target export object_id must equal '{expected_object_id}'")
+
+        export_source_inputs = export_payload.get("source_inputs")
+        if not isinstance(export_source_inputs, list) or not export_source_inputs:
+            fail(f"{location} target export source_inputs must be a non-empty list")
+        primary_count = 0
+        for source_input_index, source_input in enumerate(export_source_inputs):
+            source_location = f"{location} target export source_inputs[{source_input_index}]"
+            if not isinstance(source_input, dict):
+                fail(f"{source_location} must be an object")
+            source_repo = source_input.get("repo")
+            source_role = source_input.get("role")
+            source_class = source_input.get("source_class")
+            if not all(
+                isinstance(value, str) and value
+                for value in (source_repo, source_role, source_class)
+            ):
+                fail(f"{source_location} must keep repo, role, and source_class")
+            if source_repo != expected_owner_repo:
+                fail(f"{source_location}.repo must equal '{expected_owner_repo}'")
+            if source_role == "primary":
+                primary_count += 1
+            elif source_role != "supporting":
+                fail(f"{source_location}.role must be 'primary' or 'supporting'")
+        if primary_count != 1:
+            fail(f"{location} target export must contain exactly one primary source input")
+
+        export_entry_surface = export_payload.get("entry_surface")
+        if not isinstance(export_entry_surface, dict):
+            fail(f"{location} target export entry_surface must be an object")
+        if export_entry_surface.get("repo") != entry_surface_repo:
+            fail(f"{location} target export entry_surface.repo must equal '{entry_surface_repo}'")
+        if export_entry_surface.get("path") != entry_surface_path:
+            fail(f"{location} target export entry_surface.path must equal '{entry_surface_path}'")
+        if export_entry_surface.get("match_key") != entry_match_key:
+            fail(
+                f"{location} target export entry_surface.match_key must equal "
+                f"'{entry_match_key}'"
+            )
+        if export_entry_surface.get("match_value") != entry_match_value:
+            fail(
+                f"{location} target export entry_surface.match_value must equal "
+                f"'{entry_match_value}'"
+            )
+
+        dependencies_by_source[source_key] = {
+            "dependency_id": dependency_id,
+            "consumed_by": normalized_consumed_by,
+        }
+
+    return dependencies_by_source
+
+
 def validate_federation_spine_manifest(
     surfaces_by_id: dict[str, dict[str, object]],
+    source_owned_export_dependencies: dict[tuple[str, str], dict[str, object]],
 ) -> None:
     payload = read_json(FEDERATION_SPINE_MANIFEST_PATH)
     if not isinstance(payload, dict):
@@ -1075,6 +2583,7 @@ def validate_federation_spine_manifest(
     actual_source_inputs: set[tuple[str, str, str, str]] = set()
     seen_input_names: set[str] = set()
     source_input_order: list[str] = []
+    source_inputs_by_name: dict[str, tuple[str, str, str]] = {}
     for index, source_input in enumerate(source_inputs):
         location = f"federation spine manifest source_inputs[{index}]"
         if not isinstance(source_input, dict):
@@ -1090,6 +2599,7 @@ def validate_federation_spine_manifest(
         seen_input_names.add(name)
         source_input_order.append(name)
         actual_source_inputs.add((name, repo, path, role))
+        source_inputs_by_name[name] = (repo, path, role)
         resolve_known_ref(repo_ref(repo, path), label=location)
     if actual_source_inputs != EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS:
         fail("federation spine manifest source_inputs must match the current bounded donor set")
@@ -1099,7 +2609,7 @@ def validate_federation_spine_manifest(
     repo_bindings = payload["repo_bindings"]
     if not isinstance(repo_bindings, list) or not repo_bindings:
         fail("federation spine manifest repo_bindings must be a non-empty list")
-    actual_bindings: set[tuple[str, str, str, tuple[str, ...], str, int, str]] = set()
+    actual_bindings: set[tuple[str, str, str, str]] = set()
     repo_binding_order: list[str] = []
     for index, binding in enumerate(repo_bindings):
         location = f"federation spine manifest repo_bindings[{index}]"
@@ -1108,10 +2618,8 @@ def validate_federation_spine_manifest(
         surface_id = binding.get("surface_id")
         repo_name = binding.get("repo")
         pilot_posture = binding.get("pilot_posture")
-        entry_surface_inputs = binding.get("entry_surface_inputs")
-        object_surface_input = binding.get("object_surface_input")
-        example_object_count = binding.get("example_object_count")
-        planned_export_ref = binding.get("planned_export_ref")
+        export_input = binding.get("export_input")
+        adjunct_surfaces = binding.get("adjunct_surfaces")
         provenance_note = binding.get("provenance_note")
         non_identity_boundary = binding.get("non_identity_boundary")
         if not all(
@@ -1120,25 +2628,20 @@ def validate_federation_spine_manifest(
                 surface_id,
                 repo_name,
                 pilot_posture,
-                object_surface_input,
-                planned_export_ref,
+                export_input,
                 provenance_note,
                 non_identity_boundary,
             )
         ):
             fail(
-                f"{location} must keep surface_id, repo, pilot_posture, object_surface_input, planned_export_ref, provenance_note, and non_identity_boundary"
+                f"{location} must keep surface_id, repo, pilot_posture, export_input, provenance_note, and non_identity_boundary"
             )
-        if not isinstance(entry_surface_inputs, list) or not entry_surface_inputs:
-            fail(f"{location}.entry_surface_inputs must be a non-empty list")
-        if not isinstance(example_object_count, int) or example_object_count < 1:
-            fail(f"{location}.example_object_count must be a positive integer")
-        if not PLANNED_EXPORT_REF_RE.match(planned_export_ref):
-            fail(f"{location}.planned_export_ref must match '<repo>/generated/kag_export.min.json'")
         if len(provenance_note) < 20:
             fail(f"{location}.provenance_note must be a string of length >= 20")
         if len(non_identity_boundary) < 20:
             fail(f"{location}.non_identity_boundary must be a string of length >= 20")
+        if not isinstance(adjunct_surfaces, list):
+            fail(f"{location}.adjunct_surfaces must be a list")
 
         surface = surfaces_by_id.get(surface_id)
         if surface is None:
@@ -1146,24 +2649,111 @@ def validate_federation_spine_manifest(
         if surface.get("status") != "experimental":
             fail(f"{location} must point to an experimental registry surface")
         repo_binding_order.append(repo_name)
-
-        entry_input_names: list[str] = []
-        for input_name in entry_surface_inputs:
-            if not isinstance(input_name, str) or not input_name:
-                fail(f"{location}.entry_surface_inputs contains an invalid entry")
-            entry_input_names.append(input_name)
-
-        actual_bindings.add(
-            (
-                surface_id,
-                repo_name,
-                pilot_posture,
-                tuple(entry_input_names),
-                object_surface_input,
-                example_object_count,
-                planned_export_ref,
+        source_input_entry = source_inputs_by_name.get(export_input)
+        if source_input_entry is None:
+            fail(f"{location}.export_input references unknown source input '{export_input}'")
+        input_repo, input_path, _ = source_input_entry
+        dependency = source_owned_export_dependencies.get((input_repo, input_path))
+        if dependency is None:
+            fail(
+                f"{location}.export_input must map to a declared source-owned export "
+                "dependency"
             )
-        )
+        dependency_id = dependency["dependency_id"]
+        if surface_id not in dependency["consumed_by"]:
+            fail(
+                f"{location}.export_input dependency '{dependency_id}' must declare "
+                f"'{surface_id}' in consumed_by"
+            )
+
+        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        for adjunct_index, adjunct in enumerate(adjunct_surfaces):
+            adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
+            if not isinstance(adjunct, dict):
+                fail(f"{adjunct_location} must be an object")
+            if set(adjunct) != {
+                "surface_id",
+                "surface_name",
+                "surface_ref",
+                "match_key",
+                "target_value",
+                "route_id",
+            }:
+                fail(
+                    f"{adjunct_location} must keep exactly surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            adjunct_surface_id = adjunct.get("surface_id")
+            adjunct_surface_name = adjunct.get("surface_name")
+            adjunct_surface_ref = adjunct.get("surface_ref")
+            adjunct_match_key = adjunct.get("match_key")
+            adjunct_target_value = adjunct.get("target_value")
+            adjunct_route_id = adjunct.get("route_id")
+            if not all(
+                isinstance(value, str) and value
+                for value in (
+                    adjunct_surface_id,
+                    adjunct_surface_name,
+                    adjunct_surface_ref,
+                    adjunct_match_key,
+                    adjunct_target_value,
+                    adjunct_route_id,
+                )
+            ):
+                fail(
+                    f"{adjunct_location} must keep surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            adjunct_surface = surfaces_by_id.get(adjunct_surface_id)
+            if adjunct_surface is None:
+                fail(
+                    f"{adjunct_location} references unknown registry surface "
+                    f"'{adjunct_surface_id}'"
+                )
+            if adjunct_surface.get("status") != "experimental":
+                fail(f"{adjunct_location} must point to an experimental registry surface")
+            if adjunct_surface.get("name") != adjunct_surface_name:
+                fail(
+                    f"{adjunct_location}.surface_name must match registry surface "
+                    f"'{adjunct_surface.get('name')}'"
+                )
+            if adjunct_match_key != "retrieval_id":
+                fail(f"{adjunct_location}.match_key must equal 'retrieval_id'")
+            if adjunct_target_value != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID:
+                fail(
+                    f"{adjunct_location}.target_value must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID}'"
+                )
+            if adjunct_route_id != TOS_ZARATHUSTRA_ROUTE_ID:
+                fail(
+                    f"{adjunct_location}.route_id must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_ID}'"
+                )
+            resolve_known_ref(
+                repo_ref(KAG_REPO, adjunct_surface_ref),
+                label=f"{adjunct_location}.surface_ref",
+            )
+            normalized_adjunct_surfaces.append(
+                {
+                    "surface_id": adjunct_surface_id,
+                    "surface_name": adjunct_surface_name,
+                    "surface_ref": adjunct_surface_ref,
+                    "match_key": adjunct_match_key,
+                    "target_value": adjunct_target_value,
+                    "route_id": adjunct_route_id,
+                }
+            )
+
+        expected_adjunct_surfaces = EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO.get(repo_name)
+        if expected_adjunct_surfaces is None:
+            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine wave")
+        if normalized_adjunct_surfaces != expected_adjunct_surfaces:
+            fail(
+                f"{location}.adjunct_surfaces must match the current bounded adjunct "
+                f"contract for '{repo_name}'"
+            )
+
+        actual_bindings.add((surface_id, repo_name, pilot_posture, export_input))
     if actual_bindings != EXPECTED_FEDERATION_SPINE_BINDINGS:
         fail("federation spine manifest repo_bindings must match the current bounded spine contract")
     if repo_binding_order != EXPECTED_FEDERATION_SPINE_REPO_ORDER:
@@ -1173,6 +2763,1311 @@ def validate_federation_spine_manifest(
         fail("federation spine manifest output_paths must match the committed generated output paths")
     if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
         fail("federation spine manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_cross_source_node_projection_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+    source_owned_export_dependencies: dict[tuple[str, str], dict[str, object]],
+) -> None:
+    payload = read_json(CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("cross-source node projection manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "surface_bindings",
+        "projection_pairings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"cross-source node projection manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("cross-source node projection manifest manifest_version must equal 1")
+    if payload["pack_type"] != "cross_source_node_projection":
+        fail("cross-source node projection manifest pack_type must equal 'cross_source_node_projection'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("cross-source node projection manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    source_inputs_by_name: dict[str, tuple[str, str, str]] = {}
+    for index, source_input in enumerate(source_inputs):
+        location = f"cross-source node projection manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        source_inputs_by_name[name] = (repo, path, role)
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_INPUTS:
+        fail("cross-source node projection manifest source_inputs must match the current bounded donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("cross-source node projection manifest surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"cross-source node projection manifest surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+        surface = surfaces_by_id.get(surface_id)
+        if surface is None:
+            fail(f"{location} references unknown registry surface '{surface_id}'")
+        if surface.get("status") != "experimental":
+            fail(f"{location} must only bind experimental registry surfaces")
+    if actual_bindings != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_BINDINGS:
+        fail("cross-source node projection manifest surface_bindings must match the current bounded projection contract")
+
+    projection_pairings = payload["projection_pairings"]
+    if not isinstance(projection_pairings, list) or not projection_pairings:
+        fail("cross-source node projection manifest projection_pairings must be a non-empty list")
+    if len(projection_pairings) != 1:
+        fail(
+            "cross-source node projection manifest projection_pairings must keep "
+            "exactly one pairing in the current pilot"
+        )
+    seen_pairing_ids: set[str] = set()
+    for index, pairing in enumerate(projection_pairings):
+        location = f"cross-source node projection manifest projection_pairings[{index}]"
+        if not isinstance(pairing, dict):
+            fail(f"{location} must be an object")
+        pairing_id = pairing.get("pairing_id")
+        primary_export_input = pairing.get("primary_export_input")
+        supporting_export_inputs = pairing.get("supporting_export_inputs")
+        retrieval_axis_input = pairing.get("retrieval_axis_input")
+        federation_spine_input = pairing.get("federation_spine_input")
+        projection_summary = pairing.get("projection_summary")
+        non_identity_boundary = pairing.get("non_identity_boundary")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                pairing_id,
+                primary_export_input,
+                retrieval_axis_input,
+                federation_spine_input,
+                projection_summary,
+                non_identity_boundary,
+            )
+        ):
+            fail(
+                f"{location} must keep pairing_id, primary_export_input, "
+                "retrieval_axis_input, federation_spine_input, projection_summary, "
+                "and non_identity_boundary"
+            )
+        if pairing_id in seen_pairing_ids:
+            fail(f"{location}.pairing_id '{pairing_id}' is duplicated")
+        seen_pairing_ids.add(pairing_id)
+        if not isinstance(supporting_export_inputs, list) or not supporting_export_inputs:
+            fail(f"{location}.supporting_export_inputs must be a non-empty list")
+        if len(supporting_export_inputs) != 1:
+            fail(
+                f"{location}.supporting_export_inputs must keep exactly one "
+                "supporting export in the current pilot"
+            )
+        supporting_input_name = supporting_export_inputs[0]
+        if not isinstance(supporting_input_name, str) or not supporting_input_name:
+            fail(f"{location}.supporting_export_inputs[0] must be a non-empty string")
+        for label, input_name, expected_role in (
+            ("primary_export_input", primary_export_input, "primary_export"),
+            ("supporting_export_inputs[0]", supporting_input_name, "supporting_export"),
+            ("retrieval_axis_input", retrieval_axis_input, "retrieval_axis"),
+            ("federation_spine_input", federation_spine_input, "federation_spine"),
+        ):
+            source_input_entry = source_inputs_by_name.get(input_name)
+            if source_input_entry is None:
+                fail(f"{location}.{label} references unknown source input '{input_name}'")
+            input_repo, input_path, input_role = source_input_entry
+            if input_role != expected_role:
+                fail(f"{location}.{label} must point to a {expected_role} source input")
+            if expected_role in {"primary_export", "supporting_export"}:
+                dependency = source_owned_export_dependencies.get((input_repo, input_path))
+                if dependency is None:
+                    fail(f"{location}.{label} must map to a declared source-owned export dependency")
+                dependency_id = dependency["dependency_id"]
+                if "AOA-K-0006" not in dependency["consumed_by"]:
+                    fail(
+                        f"{location}.{label} dependency '{dependency_id}' must declare "
+                        "'AOA-K-0006' in consumed_by"
+                    )
+        if len(projection_summary) < 20:
+            fail(f"{location}.projection_summary must be a string of length >= 20")
+        if len(non_identity_boundary) < 20:
+            fail(f"{location}.non_identity_boundary must be a string of length >= 20")
+
+    if payload["output_paths"] != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATHS:
+        fail("cross-source node projection manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT:
+        fail("cross-source node projection manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_tiny_consumer_bundle_manifest(
+    surfaces_by_id: dict[str, dict[str, object]]
+) -> None:
+    payload = read_json(TINY_CONSUMER_BUNDLE_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("tiny consumer bundle manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "bundle_type",
+        "source_inputs",
+        "bundle_order",
+        "deferred_counterpart",
+        "output_paths",
+    ):
+        if key not in payload:
+            fail(f"tiny consumer bundle manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("tiny consumer bundle manifest manifest_version must equal 1")
+    if payload["bundle_type"] != "tiny_consumer_bundle":
+        fail("tiny consumer bundle manifest bundle_type must equal 'tiny_consumer_bundle'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("tiny consumer bundle manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"tiny consumer bundle manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_TINY_CONSUMER_BUNDLE_INPUTS:
+        fail("tiny consumer bundle manifest source_inputs must match the current bounded donor set")
+
+    bundle_order = validate_unique_string_list(
+        payload["bundle_order"],
+        label="tiny consumer bundle manifest bundle_order",
+    )
+    if bundle_order != EXPECTED_TINY_CONSUMER_BUNDLE_ORDER:
+        fail("tiny consumer bundle manifest bundle_order must keep the current stable bundle order")
+    if set(bundle_order) != {name for name, _, _, _ in EXPECTED_TINY_CONSUMER_BUNDLE_INPUTS}:
+        fail("tiny consumer bundle manifest bundle_order must reference each declared source input exactly once")
+
+    deferred_counterpart = payload["deferred_counterpart"]
+    if not isinstance(deferred_counterpart, dict):
+        fail("tiny consumer bundle manifest deferred_counterpart must be an object")
+    if deferred_counterpart != EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART:
+        fail("tiny consumer bundle manifest deferred_counterpart must match the contract-only posture")
+
+    surface_id = deferred_counterpart["surface_id"]
+    if surface_id not in surfaces_by_id:
+        fail("tiny consumer bundle manifest deferred_counterpart.surface_id must exist in the registry")
+    if surfaces_by_id[surface_id].get("status") != "planned":
+        fail("tiny consumer bundle manifest deferred_counterpart.surface_id must remain planned in the registry")
+    resolve_known_ref(
+        deferred_counterpart["federation_exposure_review_ref"],
+        label="tiny consumer bundle manifest deferred_counterpart.federation_exposure_review_ref",
+    )
+    for index, ref in enumerate(deferred_counterpart["allowed_refs"]):
+        resolve_known_ref(
+            ref,
+            label=f"tiny consumer bundle manifest deferred_counterpart.allowed_refs[{index}]",
+        )
+    for index, ref in enumerate(deferred_counterpart["forbidden_active_payload_refs"]):
+        resolve_known_ref(
+            ref,
+            label=(
+                "tiny consumer bundle manifest "
+                f"deferred_counterpart.forbidden_active_payload_refs[{index}]"
+            ),
+        )
+
+    if payload["output_paths"] != EXPECTED_TINY_CONSUMER_BUNDLE_OUTPUT_PATHS:
+        fail("tiny consumer bundle manifest output_paths must match the committed generated output paths")
+
+
+def validate_counterpart_federation_exposure_review_manifest() -> None:
+    payload = read_json(COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart federation exposure review manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "review_type",
+        "source_inputs",
+        "review_bindings",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(
+                "counterpart federation exposure review manifest is missing required "
+                f"key '{key}'"
+            )
+
+    if payload["manifest_version"] != 1:
+        fail("counterpart federation exposure review manifest manifest_version must equal 1")
+    if payload["review_type"] != "counterpart_federation_exposure_review":
+        fail(
+            "counterpart federation exposure review manifest review_type must equal "
+            "'counterpart_federation_exposure_review'"
+        )
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("counterpart federation exposure review manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    source_input_order: list[str] = []
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"counterpart federation exposure review manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        source_input_order.append(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_INPUTS:
+        fail(
+            "counterpart federation exposure review manifest source_inputs must match "
+            "the current reviewed donor set"
+        )
+    if source_input_order != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER:
+        fail(
+            "counterpart federation exposure review manifest source_inputs must keep "
+            "the current reviewed surface order"
+        )
+
+    review_bindings = payload["review_bindings"]
+    if not isinstance(review_bindings, list) or not review_bindings:
+        fail("counterpart federation exposure review manifest review_bindings must be a non-empty list")
+    actual_review_order: list[str] = []
+    seen_review_names: set[str] = set()
+    for index, binding in enumerate(review_bindings):
+        location = f"counterpart federation exposure review manifest review_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_name = binding.get("surface_name")
+        surface_input = binding.get("surface_input")
+        exposure_posture = binding.get("exposure_posture")
+        review_note = binding.get("review_note")
+        if not all(
+            isinstance(value, str) and value
+            for value in (surface_name, surface_input, exposure_posture, review_note)
+        ):
+            fail(
+                f"{location} must keep surface_name, surface_input, exposure_posture, "
+                "and review_note"
+            )
+        if surface_name in seen_review_names:
+            fail(f"{location} duplicates review binding '{surface_name}'")
+        seen_review_names.add(surface_name)
+        actual_review_order.append(surface_name)
+        if surface_name != surface_input:
+            fail(f"{location}.surface_name must match surface_input in the current wave")
+        if exposure_posture != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_POSTURES.get(surface_name):
+            fail(
+                f"{location}.exposure_posture must match the current reviewed posture "
+                f"for '{surface_name}'"
+            )
+
+        allowed_counterpart_refs = binding.get("allowed_counterpart_refs")
+        forbidden_refs = binding.get("forbidden_refs")
+        if surface_name in {"reasoning_handoff_pack", "tiny_consumer_bundle"}:
+            if allowed_counterpart_refs != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.allowed_counterpart_refs must match the current "
+                    "contract-only counterpart refs"
+                )
+            for ref_index, ref in enumerate(allowed_counterpart_refs):
+                resolve_known_ref(
+                    ref,
+                    label=f"{location}.allowed_counterpart_refs[{ref_index}]",
+                )
+            if forbidden_refs is not None:
+                fail(f"{location}.forbidden_refs must stay absent when counterpart refs are allowed")
+        elif surface_name in {"federation_spine", "cross_source_node_projection"}:
+            if forbidden_refs != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.forbidden_refs must match the current forbidden "
+                    "counterpart exposure set"
+                )
+            for ref_index, ref in enumerate(forbidden_refs):
+                resolve_known_ref(
+                    ref,
+                    label=f"{location}.forbidden_refs[{ref_index}]",
+                )
+            if allowed_counterpart_refs is not None:
+                fail(
+                    f"{location}.allowed_counterpart_refs must stay absent for "
+                    "non-exposing surfaces"
+                )
+        else:
+            if allowed_counterpart_refs is not None or forbidden_refs is not None:
+                fail(
+                    f"{location} must not declare allowed_counterpart_refs or "
+                    "forbidden_refs for contract/example review surfaces"
+                )
+
+    if actual_review_order != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER:
+        fail(
+            "counterpart federation exposure review manifest review_bindings must keep "
+            "the current reviewed surface order"
+        )
+    if payload["output_paths"] != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATHS:
+        fail(
+            "counterpart federation exposure review manifest output_paths must match "
+            "the committed generated output paths"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_CONTRACT:
+        fail(
+            "counterpart federation exposure review manifest bounded_output_contract "
+            "must match the current review guardrail"
+        )
+
+
+def validate_tos_text_chunk_map_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("ToS text chunk map pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_repo",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "node_id",
+        "node_type",
+        "source_anchor",
+        "authority_surface_ref",
+        "route_ref",
+        "capsule_ref",
+        "interpretation_layers",
+        "chunk_count",
+        "chunks",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS text chunk map pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("ToS text chunk map pack pack_version must equal 1")
+    if payload["pack_type"] != "tos_text_chunk_map":
+        fail("ToS text chunk map pack pack_type must equal 'tos_text_chunk_map'")
+    if payload["source_repo"] != TOS_REPO:
+        fail("ToS text chunk map pack source_repo must equal 'Tree-of-Sophia'")
+    if payload["source_manifest_ref"] != "manifests/tos_text_chunk_map.json":
+        fail(
+            "ToS text chunk map pack source_manifest_ref must point to manifests/tos_text_chunk_map.json"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT:
+        fail("ToS text chunk map pack bounded_output_contract must match the current source-first guardrail")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS text chunk map pack source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str]] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"ToS text chunk map pack source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        role = source_input.get("role")
+        ref = source_input.get("ref")
+        if not all(isinstance(value, str) and value for value in (name, role, ref)):
+            fail(f"{location} must keep name, role, and ref")
+        resolve_known_ref(ref, label=location)
+        actual_source_inputs.add((name, role, ref))
+    expected_source_inputs = {
+        (
+            source_input["name"],
+            source_input["role"],
+            source_input["ref"],
+        )
+        for source_input in expected_payload["source_inputs"]
+        if isinstance(source_input, dict)
+    }
+    if actual_source_inputs != expected_source_inputs:
+        fail("ToS text chunk map pack source_inputs must match the manifest-driven donor set")
+
+    surface_bindings = payload["surface_bindings"]
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS text chunk map pack surface_bindings must be a non-empty list")
+    actual_bindings: set[tuple[str, str, str, str, str]] = set()
+    for index, binding in enumerate(surface_bindings):
+        location = f"ToS text chunk map pack surface_bindings[{index}]"
+        if not isinstance(binding, dict):
+            fail(f"{location} must be an object")
+        surface_id = binding.get("surface_id")
+        surface_name = binding.get("surface_name")
+        derived_kind = binding.get("derived_kind")
+        derived_slot = binding.get("derived_slot")
+        source_input = binding.get("source_input")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                surface_id,
+                surface_name,
+                derived_kind,
+                derived_slot,
+                source_input,
+            )
+        ):
+            fail(f"{location} must keep id, name, kind, slot, and source input")
+        actual_bindings.add(
+            (surface_id, surface_name, derived_kind, derived_slot, source_input)
+        )
+    if actual_bindings != EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS:
+        fail("ToS text chunk map pack surface_bindings must match the current bounded chunk-map contract")
+
+    surface_id = payload["surface_id"]
+    if surface_id != "AOA-K-0005":
+        fail("ToS text chunk map pack surface_id must equal 'AOA-K-0005'")
+    registry_surface = surfaces_by_id.get(surface_id)
+    if registry_surface is None:
+        fail("ToS text chunk map pack surface_id must exist in the generated registry")
+    if registry_surface.get("status") != "experimental":
+        fail("AOA-K-0005 must remain experimental in the generated registry")
+    if payload["surface_name"] != "tos-text-chunk-map":
+        fail("ToS text chunk map pack surface_name must equal 'tos-text-chunk-map'")
+    if payload["node_id"] != expected_payload["node_id"]:
+        fail("ToS text chunk map pack node_id must stay aligned with the current ToS authority surface")
+    if payload["node_type"] != "source":
+        fail("ToS text chunk map pack node_type must stay 'source'")
+    if payload["source_anchor"] != expected_payload["source_anchor"]:
+        fail("ToS text chunk map pack source_anchor must match the current ToS authority surface")
+
+    for key in ("authority_surface_ref", "route_ref", "capsule_ref"):
+        value = payload[key]
+        if not isinstance(value, str) or not value:
+            fail(f"ToS text chunk map pack {key} must be a non-empty string")
+        resolve_known_ref(value, label=f"ToS text chunk map pack {key}")
+        if value != expected_payload[key]:
+            fail(f"ToS text chunk map pack {key} must stay aligned with the current bounded ToS route")
+
+    interpretation_layers = validate_unique_string_list(
+        payload["interpretation_layers"],
+        label="ToS text chunk map pack interpretation_layers",
+    )
+    if interpretation_layers != expected_payload["interpretation_layers"]:
+        fail("ToS text chunk map pack interpretation_layers must match the authority surface")
+
+    chunks = payload["chunks"]
+    if not isinstance(chunks, list) or not chunks:
+        fail("ToS text chunk map pack chunks must be a non-empty list")
+    chunk_count = payload["chunk_count"]
+    if not isinstance(chunk_count, int) or chunk_count != len(chunks):
+        fail("ToS text chunk map pack chunk_count must equal the number of chunks")
+
+    expected_chunks = expected_payload["chunks"]
+    if not isinstance(expected_chunks, list):
+        fail("expected ToS text chunk map payload must declare chunks")
+    expected_chunks_by_segment = {
+        chunk["segment_id"]: chunk
+        for chunk in expected_chunks
+        if isinstance(chunk, dict) and isinstance(chunk.get("segment_id"), str)
+    }
+    if chunk_count != len(expected_chunks_by_segment):
+        fail("ToS text chunk map pack chunk_count must equal the number of unique donor segment_ids")
+
+    seen_segment_ids: set[str] = set()
+    for index, chunk in enumerate(chunks):
+        location = f"ToS text chunk map pack chunks[{index}]"
+        if not isinstance(chunk, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "chunk_id",
+            "node_id",
+            "segment_id",
+            "source_anchor",
+            "source_ref",
+            "route_ref",
+            "capsule_ref",
+            "interpretation_layers",
+            "witness_count",
+            "witnesses",
+        ):
+            if key not in chunk:
+                fail(f"{location} is missing required key '{key}'")
+        segment_id = chunk["segment_id"]
+        if not isinstance(segment_id, str) or not segment_id:
+            fail(f"{location}.segment_id must be a non-empty string")
+        if segment_id in seen_segment_ids:
+            fail(f"{location}.segment_id '{segment_id}' is duplicated")
+        seen_segment_ids.add(segment_id)
+        expected_chunk = expected_chunks_by_segment.get(segment_id)
+        if expected_chunk is None:
+            fail(f"{location}.segment_id '{segment_id}' is not present in the bounded ToS authority surface")
+
+        witnesses = chunk["witnesses"]
+        if not isinstance(witnesses, list) or not witnesses:
+            fail(f"{location}.witnesses must be a non-empty list")
+        witness_count = chunk["witness_count"]
+        if not isinstance(witness_count, int) or witness_count != len(witnesses):
+            fail(f"{location}.witness_count must equal the number of witnesses")
+        for witness_index, witness in enumerate(witnesses):
+            witness_location = f"{location}.witnesses[{witness_index}]"
+            if not isinstance(witness, dict):
+                fail(f"{witness_location} must be an object")
+            for key in ("language", "role", "text"):
+                if key not in witness:
+                    fail(f"{witness_location} is missing required key '{key}'")
+                if not isinstance(witness[key], str) or not witness[key]:
+                    fail(f"{witness_location}.{key} must be a non-empty string")
+
+        translation_tension = chunk.get("translation_tension")
+        if translation_tension is not None:
+            if not isinstance(translation_tension, dict):
+                fail(f"{location}.translation_tension must be an object when present")
+            if translation_tension.get("segment_id") != segment_id:
+                fail(f"{location}.translation_tension.segment_id must match the chunk segment_id")
+            if not isinstance(translation_tension.get("note"), str) or not translation_tension["note"]:
+                fail(f"{location}.translation_tension.note must be a non-empty string")
+
+        if chunk != expected_chunk:
+            fail(f"{location} must match the committed source-linked chunk payload for segment '{segment_id}'")
+
+    if seen_segment_ids != set(expected_chunks_by_segment):
+        fail("ToS text chunk map pack must cover every unique donor segment_id exactly once")
+
+
+def validate_tos_text_chunk_map_example(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(TOS_TEXT_CHUNK_MAP_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("ToS text chunk map example must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_repo",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "node_id",
+        "node_type",
+        "source_anchor",
+        "authority_surface_ref",
+        "route_ref",
+        "capsule_ref",
+        "interpretation_layers",
+        "chunk_count",
+        "chunks",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS text chunk map example is missing required key '{key}'")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_repo",
+        "source_manifest_ref",
+        "surface_id",
+        "surface_name",
+        "node_id",
+        "node_type",
+        "source_anchor",
+        "authority_surface_ref",
+        "route_ref",
+        "capsule_ref",
+        "interpretation_layers",
+        "bounded_output_contract",
+    ):
+        if payload[key] != expected_payload[key]:
+            fail(f"ToS text chunk map example {key} must match the current bounded pilot payload")
+
+    source_inputs = payload["source_inputs"]
+    if source_inputs != expected_payload["source_inputs"]:
+        fail("ToS text chunk map example source_inputs must match the current bounded donor set")
+    surface_bindings = payload["surface_bindings"]
+    if surface_bindings != expected_payload["surface_bindings"]:
+        fail("ToS text chunk map example surface_bindings must match the current bounded chunk-map binding")
+
+    chunks = payload["chunks"]
+    if not isinstance(chunks, list) or len(chunks) != 1:
+        fail("ToS text chunk map example must contain exactly one chunk")
+    if payload["chunk_count"] != 1:
+        fail("ToS text chunk map example chunk_count must equal 1")
+
+    expected_chunks = expected_payload["chunks"]
+    if not isinstance(expected_chunks, list):
+        fail("expected ToS text chunk map payload must declare chunks")
+    expected_chunk = next(
+        (
+            chunk
+            for chunk in expected_chunks
+            if isinstance(chunk, dict)
+            and chunk.get("segment_id") == TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID
+        ),
+        None,
+    )
+    if expected_chunk is None:
+        fail(
+            "expected ToS text chunk map payload must keep the current bounded example "
+            f"segment '{TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID}'"
+        )
+    if chunks[0] != expected_chunk:
+        fail(
+            "ToS text chunk map example must mirror the bounded "
+            f"'{TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID}' chunk with translation tension"
+        )
+
+
+def validate_tos_retrieval_axis_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("ToS retrieval axis pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "axis_count",
+        "axes",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS retrieval axis pack is missing required key '{key}'")
+
+    if payload["pack_type"] != "tos_retrieval_axis_pack":
+        fail("ToS retrieval axis pack pack_type must equal 'tos_retrieval_axis_pack'")
+    if payload["bounded_output_contract"] != EXPECTED_TOS_RETRIEVAL_AXIS_CONTRACT:
+        fail("ToS retrieval axis pack bounded_output_contract must match the current source-first guardrail")
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("ToS retrieval axis pack source_inputs must match the manifest-driven donor set")
+    if payload["surface_bindings"] != expected_payload["surface_bindings"]:
+        fail("ToS retrieval axis pack surface_bindings must match the current bounded retrieval binding")
+
+    surface_0007 = surfaces_by_id.get("AOA-K-0007")
+    if surface_0007 is None or surface_0007.get("status") != "experimental":
+        fail("ToS retrieval axis pack requires AOA-K-0007 to remain experimental in the generated registry")
+
+    axes = payload["axes"]
+    if not isinstance(axes, list) or len(axes) != 1:
+        fail("ToS retrieval axis pack must contain exactly one axis in the current pilot")
+    if payload["axis_count"] != 1:
+        fail("ToS retrieval axis pack axis_count must equal 1 in the current pilot")
+    axis = axes[0]
+    if not isinstance(axis, dict):
+        fail("ToS retrieval axis pack axis must be an object")
+    for key in (
+        "chunk_map_ref",
+        "source_refs",
+        "lineage_refs",
+        "conflict_refs",
+        "practice_refs",
+        "bridge_surface_ref",
+        "bridge_envelope_ref",
+        "memo_face_refs",
+    ):
+        value = axis.get(key)
+        if value is None:
+            fail(f"ToS retrieval axis pack axis is missing required key '{key}'")
+    resolve_known_ref(axis["chunk_map_ref"], label="ToS retrieval axis pack chunk_map_ref")
+    resolve_known_ref(axis["bridge_surface_ref"], label="ToS retrieval axis pack bridge_surface_ref")
+    resolve_known_ref(axis["bridge_envelope_ref"], label="ToS retrieval axis pack bridge_envelope_ref")
+    for ref_list_key in ("source_refs", "lineage_refs", "conflict_refs", "practice_refs", "memo_face_refs"):
+        refs = validate_unique_string_list(axis[ref_list_key], label=f"ToS retrieval axis pack {ref_list_key}")
+        for ref in refs:
+            resolve_known_ref(ref, label=f"ToS retrieval axis pack {ref_list_key}")
+
+    if payload != expected_payload:
+        fail("ToS retrieval axis pack must match the committed manifest-driven retrieval-axis payload")
+
+
+def validate_tos_retrieval_axis_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(TOS_RETRIEVAL_AXIS_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail("ToS retrieval axis example must match the current bounded retrieval-axis payload")
+
+
+def validate_tos_zarathustra_route_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("ToS Zarathustra route pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_repo",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "route_id",
+        "route_capsule_ref",
+        "relation_pack_ref",
+        "node_count",
+        "edge_count",
+        "node_type_counts",
+        "edge_kind_counts",
+        "nodes",
+        "edges",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"ToS Zarathustra route pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("ToS Zarathustra route pack pack_version must equal 1")
+    if payload["pack_type"] != "tos_zarathustra_route_pack":
+        fail("ToS Zarathustra route pack pack_type must equal 'tos_zarathustra_route_pack'")
+    if payload["source_repo"] != TOS_REPO:
+        fail("ToS Zarathustra route pack source_repo must equal 'Tree-of-Sophia'")
+    if payload["source_manifest_ref"] != "manifests/tos_zarathustra_route_pack.json":
+        fail(
+            "ToS Zarathustra route pack source_manifest_ref must point to "
+            "manifests/tos_zarathustra_route_pack.json"
+        )
+    if payload["route_id"] != TOS_ZARATHUSTRA_ROUTE_ID:
+        fail(
+            "ToS Zarathustra route pack route_id must equal "
+            f"'{TOS_ZARATHUSTRA_ROUTE_ID}'"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_CONTRACT:
+        fail(
+            "ToS Zarathustra route pack bounded_output_contract must match the current "
+            "source-first guardrail"
+        )
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail(
+            "ToS Zarathustra route pack source_inputs must match the manifest-driven "
+            "canonical donor set"
+        )
+    if payload["surface_bindings"] != expected_payload["surface_bindings"]:
+        fail(
+            "ToS Zarathustra route pack surface_bindings must match the current "
+            "bounded route-pack binding"
+        )
+
+    surface_0010 = surfaces_by_id.get("AOA-K-0010")
+    if surface_0010 is None or surface_0010.get("status") != "experimental":
+        fail(
+            "ToS Zarathustra route pack requires AOA-K-0010 to remain experimental in "
+            "the generated registry"
+        )
+
+    route_capsule_ref = payload["route_capsule_ref"]
+    relation_pack_ref = payload["relation_pack_ref"]
+    if not isinstance(route_capsule_ref, str) or not route_capsule_ref:
+        fail("ToS Zarathustra route pack route_capsule_ref must be a non-empty string")
+    if not isinstance(relation_pack_ref, str) or not relation_pack_ref:
+        fail("ToS Zarathustra route pack relation_pack_ref must be a non-empty string")
+    resolve_known_ref(route_capsule_ref, label="ToS Zarathustra route pack route_capsule_ref")
+    resolve_known_ref(relation_pack_ref, label="ToS Zarathustra route pack relation_pack_ref")
+    if route_capsule_ref != repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH):
+        fail(
+            "ToS Zarathustra route pack route_capsule_ref must stay aligned with the "
+            "canonical Zarathustra route capsule"
+        )
+    if relation_pack_ref != repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH):
+        fail(
+            "ToS Zarathustra route pack relation_pack_ref must stay aligned with the "
+            "canonical ToS relation pack"
+        )
+
+    nodes = payload["nodes"]
+    if not isinstance(nodes, list) or len(nodes) != sum(TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS.values()):
+        fail("ToS Zarathustra route pack must contain exactly 92 nodes")
+    if payload["node_count"] != len(nodes):
+        fail("ToS Zarathustra route pack node_count must equal the number of nodes")
+    if payload["node_type_counts"] != TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS:
+        fail("ToS Zarathustra route pack node_type_counts must match the current canonical route")
+
+    actual_node_type_counts = {key: 0 for key in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS}
+    seen_node_ids: set[str] = set()
+    seen_authority_refs: set[str] = set()
+    actual_node_type_order: list[str] = []
+    for index, node in enumerate(nodes):
+        location = f"ToS Zarathustra route pack nodes[{index}]"
+        if not isinstance(node, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "node_id",
+            "node_type",
+            "authority_ref",
+            "source_anchor",
+            "key_terms",
+            "distilled_thesis",
+            "interpretation_layers",
+        ):
+            if key not in node:
+                fail(f"{location} is missing required key '{key}'")
+        node_id = node["node_id"]
+        node_type = node["node_type"]
+        authority_ref = node["authority_ref"]
+        if not isinstance(node_id, str) or not node_id.startswith("tos."):
+            fail(f"{location}.node_id must be a canonical tos.* id")
+        if node_id.startswith("literal."):
+            fail(f"{location}.node_id must not carry literal residue")
+        if node_id in seen_node_ids:
+            fail(f"{location}.node_id '{node_id}' is duplicated")
+        seen_node_ids.add(node_id)
+        if node_type not in actual_node_type_counts:
+            fail(f"{location}.node_type '{node_type}' is not allowed in the route pack")
+        actual_node_type_counts[node_type] += 1
+        actual_node_type_order.append(node_type)
+        if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/tree/"):
+            fail(f"{location}.authority_ref must point into Tree-of-Sophia/tree/**/node.json")
+        if not authority_ref.endswith("/node.json"):
+            fail(f"{location}.authority_ref must resolve to a canonical node.json file")
+        if "/intake/" in authority_ref or authority_ref.startswith("Tree-of-Sophia/intake/"):
+            fail(f"{location}.authority_ref must not point at Tree-of-Sophia/intake")
+        if authority_ref in seen_authority_refs:
+            fail(
+                f"{location}.authority_ref '{authority_ref}' is duplicated and would "
+                "collapse distinct canonical nodes into one projection handle"
+            )
+        seen_authority_refs.add(authority_ref)
+        resolve_known_ref(authority_ref, label=f"{location}.authority_ref")
+        validate_unique_string_list(node["key_terms"], label=f"{location}.key_terms")
+        validate_unique_string_list(
+            node["interpretation_layers"],
+            label=f"{location}.interpretation_layers",
+        )
+        if not isinstance(node["source_anchor"], str) or not node["source_anchor"]:
+            fail(f"{location}.source_anchor must be a non-empty string")
+        if not isinstance(node["distilled_thesis"], str) or not node["distilled_thesis"]:
+            fail(f"{location}.distilled_thesis must be a non-empty string")
+
+    if actual_node_type_counts != TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS:
+        fail(
+            "ToS Zarathustra route pack nodes must preserve the current family counts "
+            "across the canonical route"
+        )
+    expected_node_type_order = [
+        node_type
+        for node_type in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER
+        for _ in range(TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS[node_type])
+    ]
+    if actual_node_type_order != expected_node_type_order:
+        fail(
+            "ToS Zarathustra route pack nodes must preserve the current family order "
+            "source -> concept -> principle -> lineage -> event -> state -> support "
+            "-> analogy -> synthesis"
+        )
+
+    edges = payload["edges"]
+    if not isinstance(edges, list) or len(edges) != sum(TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS.values()):
+        fail("ToS Zarathustra route pack must contain exactly 125 edges")
+    if payload["edge_count"] != len(edges):
+        fail("ToS Zarathustra route pack edge_count must equal the number of edges")
+    if payload["edge_kind_counts"] != TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS:
+        fail("ToS Zarathustra route pack edge_kind_counts must match the canonical relation pack")
+
+    actual_edge_kind_counts = {key: 0 for key in TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS}
+    actual_edge_ids: list[str] = []
+    expected_edge_ids = [
+        edge["edge_id"]
+        for edge in expected_payload["edges"]
+        if isinstance(edge, dict) and isinstance(edge.get("edge_id"), str)
+    ]
+    for index, edge in enumerate(edges):
+        location = f"ToS Zarathustra route pack edges[{index}]"
+        if not isinstance(edge, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "edge_id",
+            "edge_kind",
+            "from_id",
+            "predicate_id",
+            "to_id",
+            "layer",
+            "anchor_mode",
+            "anchor_start_secondary",
+            "anchor_end_secondary",
+            "anchor_segment_ids",
+            "witness_scope",
+            "connectivity_role",
+            "confidence",
+            "note",
+        ):
+            if key not in edge:
+                fail(f"{location} is missing required key '{key}'")
+        edge_id = edge["edge_id"]
+        if not isinstance(edge_id, str) or not edge_id:
+            fail(f"{location}.edge_id must be a non-empty string")
+        actual_edge_ids.append(edge_id)
+        edge_kind = edge["edge_kind"]
+        if edge_kind not in actual_edge_kind_counts:
+            fail(f"{location}.edge_kind '{edge_kind}' is not allowed in the route pack")
+        actual_edge_kind_counts[edge_kind] += 1
+        for endpoint_key in ("from_id", "to_id"):
+            endpoint = edge[endpoint_key]
+            if not isinstance(endpoint, str) or not endpoint.startswith("tos."):
+                fail(f"{location}.{endpoint_key} must keep canonical tos.* ids")
+            if endpoint.startswith("literal."):
+                fail(f"{location}.{endpoint_key} must not carry literal residue")
+            if endpoint not in seen_node_ids:
+                fail(
+                    f"{location}.{endpoint_key} '{endpoint}' must resolve to a node_id "
+                    "projected into the same route pack"
+                )
+        if not isinstance(edge["predicate_id"], str) or not edge["predicate_id"]:
+            fail(f"{location}.predicate_id must be a non-empty string")
+        if not isinstance(edge["confidence"], int):
+            fail(f"{location}.confidence must remain integer-valued")
+    if actual_edge_kind_counts != TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS:
+        fail(
+            "ToS Zarathustra route pack edges must preserve the current canonical "
+            "edge-kind counts"
+        )
+    if actual_edge_ids != expected_edge_ids:
+        fail(
+            "ToS Zarathustra route pack edges must preserve the canonical relation "
+            "pack row order"
+        )
+
+    if payload != expected_payload:
+        fail(
+            "ToS Zarathustra route pack must match the committed manifest-driven "
+            "canonical route payload"
+        )
+
+
+def validate_tos_zarathustra_route_pack_example(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(TOS_ZARATHUSTRA_ROUTE_PACK_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail(
+            "ToS Zarathustra route pack example must match the current bounded "
+            "canonical route payload"
+        )
+
+
+def validate_tos_zarathustra_route_retrieval_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+    route_pack_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("ToS Zarathustra route retrieval pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "route_count",
+        "routes",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(
+                "ToS Zarathustra route retrieval pack is missing required key "
+                f"'{key}'"
+            )
+
+    if payload["pack_version"] != 1:
+        fail("ToS Zarathustra route retrieval pack pack_version must equal 1")
+    if payload["pack_type"] != "tos_zarathustra_route_retrieval_pack":
+        fail(
+            "ToS Zarathustra route retrieval pack pack_type must equal "
+            "'tos_zarathustra_route_retrieval_pack'"
+        )
+    if (
+        payload["source_manifest_ref"]
+        != "manifests/tos_zarathustra_route_retrieval_pack.json"
+    ):
+        fail(
+            "ToS Zarathustra route retrieval pack source_manifest_ref must point to "
+            "manifests/tos_zarathustra_route_retrieval_pack.json"
+        )
+    if (
+        payload["bounded_output_contract"]
+        != EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_CONTRACT
+    ):
+        fail(
+            "ToS Zarathustra route retrieval pack bounded_output_contract must "
+            "match the current source-first guardrail"
+        )
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail(
+            "ToS Zarathustra route retrieval pack source_inputs must match the "
+            "single-donor route-pack contract"
+        )
+    if payload["surface_bindings"] != expected_payload["surface_bindings"]:
+        fail(
+            "ToS Zarathustra route retrieval pack surface_bindings must match the "
+            "current bounded retrieval binding"
+        )
+
+    surface_0011 = surfaces_by_id.get("AOA-K-0011")
+    if surface_0011 is None or surface_0011.get("status") != "experimental":
+        fail(
+            "ToS Zarathustra route retrieval pack requires AOA-K-0011 to remain "
+            "experimental in the generated registry"
+        )
+
+    if payload["route_count"] != 1:
+        fail("ToS Zarathustra route retrieval pack route_count must equal 1")
+    routes = payload["routes"]
+    if not isinstance(routes, list) or len(routes) != 1:
+        fail(
+            "ToS Zarathustra route retrieval pack must contain exactly one route in "
+            "the current pilot"
+        )
+    route = routes[0]
+    if not isinstance(route, dict):
+        fail("ToS Zarathustra route retrieval pack route must be an object")
+
+    for key in (
+        "retrieval_id",
+        "route_id",
+        "route_pack_ref",
+        "route_capsule_ref",
+        "relation_pack_ref",
+        "node_type_counts",
+        "edge_kind_counts",
+        "source_handles",
+        "concept_handles",
+        "principle_handles",
+        "lineage_handles",
+        "event_handles",
+        "state_handles",
+        "support_handles",
+        "analogy_handles",
+        "synthesis_handles",
+        "retrieval_summary",
+    ):
+        if key not in route:
+            fail(
+                "ToS Zarathustra route retrieval pack route is missing required key "
+                f"'{key}'"
+            )
+
+    if route["retrieval_id"] != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID:
+        fail(
+            "ToS Zarathustra route retrieval pack retrieval_id must stay aligned "
+            "with AOA-K-0011"
+        )
+    if route["route_id"] != TOS_ZARATHUSTRA_ROUTE_ID:
+        fail(
+            "ToS Zarathustra route retrieval pack route_id must equal "
+            f"'{TOS_ZARATHUSTRA_ROUTE_ID}'"
+        )
+    if route["route_pack_ref"] != TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF:
+        fail(
+            "ToS Zarathustra route retrieval pack route_pack_ref must point to "
+            "generated/tos_zarathustra_route_pack.min.json"
+        )
+    if "/intake/" in route["route_pack_ref"] or route["route_pack_ref"].startswith("Tree-of-Sophia/intake/"):
+        fail("ToS Zarathustra route retrieval pack route_pack_ref must not point at intake")
+    resolve_known_ref(
+        route["route_pack_ref"],
+        label="ToS Zarathustra route retrieval pack route_pack_ref",
+    )
+    resolve_known_ref(
+        route["route_capsule_ref"],
+        label="ToS Zarathustra route retrieval pack route_capsule_ref",
+    )
+    resolve_known_ref(
+        route["relation_pack_ref"],
+        label="ToS Zarathustra route retrieval pack relation_pack_ref",
+    )
+    if route["route_capsule_ref"] != repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH):
+        fail(
+            "ToS Zarathustra route retrieval pack route_capsule_ref must stay "
+            "aligned with the canonical Zarathustra capsule"
+        )
+    if (
+        route["relation_pack_ref"]
+        != repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH)
+    ):
+        fail(
+            "ToS Zarathustra route retrieval pack relation_pack_ref must stay "
+            "aligned with the canonical ToS relation pack"
+        )
+    route_pack_nodes = route_pack_payload.get("nodes")
+    if not isinstance(route_pack_nodes, list):
+        fail("ToS Zarathustra route retrieval pack validation requires AOA-K-0010 nodes[]")
+    if route["route_capsule_ref"] != route_pack_payload.get("route_capsule_ref"):
+        fail(
+            "ToS Zarathustra route retrieval pack route_capsule_ref must match the "
+            "live AOA-K-0010 route_capsule_ref"
+        )
+    if route["relation_pack_ref"] != route_pack_payload.get("relation_pack_ref"):
+        fail(
+            "ToS Zarathustra route retrieval pack relation_pack_ref must match the "
+            "live AOA-K-0010 relation_pack_ref"
+        )
+    if route["node_type_counts"] != route_pack_payload.get("node_type_counts"):
+        fail(
+            "ToS Zarathustra route retrieval pack node_type_counts must match the "
+            "live AOA-K-0010 counts"
+        )
+    if route["edge_kind_counts"] != route_pack_payload.get("edge_kind_counts"):
+        fail(
+            "ToS Zarathustra route retrieval pack edge_kind_counts must match the "
+            "live AOA-K-0010 counts"
+        )
+    if route["retrieval_summary"] != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_SUMMARY:
+        fail(
+            "ToS Zarathustra route retrieval pack retrieval_summary must match the "
+            "current bounded adjunct wording"
+        )
+
+    route_pack_nodes_by_type = {
+        node_type: [
+            {
+                "node_id": node["node_id"],
+                "authority_ref": node["authority_ref"],
+            }
+            for node in route_pack_nodes
+            if isinstance(node, dict) and node.get("node_type") == node_type
+        ]
+        for node_type in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER
+    }
+    seen_handle_node_ids: set[str] = set()
+    for node_type, expected_count in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS.items():
+        handle_key = f"{node_type}_handles"
+        handles = route[handle_key]
+        if not isinstance(handles, list) or len(handles) != expected_count:
+            fail(
+                "ToS Zarathustra route retrieval pack must preserve the current "
+                f"handle count for '{node_type}'"
+            )
+        seen_node_ids: set[str] = set()
+        normalized_handles: list[dict[str, str]] = []
+        for index, handle in enumerate(handles):
+            location = (
+                "ToS Zarathustra route retrieval pack "
+                f"{handle_key}[{index}]"
+            )
+            if not isinstance(handle, dict):
+                fail(f"{location} must be an object")
+            if set(handle) != {"node_id", "authority_ref"}:
+                fail(
+                    f"{location} must keep exactly node_id and authority_ref in the "
+                    "handles-only wave"
+                )
+            node_id = handle["node_id"]
+            authority_ref = handle["authority_ref"]
+            if not isinstance(node_id, str) or not node_id.startswith("tos."):
+                fail(f"{location}.node_id must keep canonical tos.* ids")
+            if node_id.startswith("literal."):
+                fail(f"{location}.node_id must not carry literal residue")
+            if node_id in seen_node_ids:
+                fail(f"{location}.node_id '{node_id}' is duplicated")
+            seen_node_ids.add(node_id)
+            seen_handle_node_ids.add(node_id)
+            if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/tree/"):
+                fail(f"{location}.authority_ref must point into Tree-of-Sophia/tree/**/node.json")
+            if not authority_ref.endswith("/node.json"):
+                fail(f"{location}.authority_ref must resolve to a canonical node.json file")
+            if authority_ref.startswith("Tree-of-Sophia/intake/") or "/intake/" in authority_ref:
+                fail(f"{location}.authority_ref must not point at Tree-of-Sophia/intake")
+            if authority_ref.startswith("aoa-memo/") or authority_ref.startswith("aoa-routing/"):
+                fail(f"{location}.authority_ref must not point at aoa-memo or aoa-routing")
+            resolve_known_ref(authority_ref, label=f"{location}.authority_ref")
+            normalized_handles.append(
+                {
+                    "node_id": node_id,
+                    "authority_ref": authority_ref,
+                }
+            )
+        if normalized_handles != route_pack_nodes_by_type[node_type]:
+            fail(
+                "ToS Zarathustra route retrieval pack must preserve family handle "
+                f"order and authority parity with AOA-K-0010 for '{node_type}'"
+            )
+
+    route_pack_node_ids = {
+        node["node_id"]
+        for node in route_pack_nodes
+        if isinstance(node, dict) and isinstance(node.get("node_id"), str)
+    }
+    if seen_handle_node_ids != route_pack_node_ids:
+        fail(
+            "ToS Zarathustra route retrieval pack handles must cover exactly the "
+            "node set published by AOA-K-0010"
+        )
+
+    if payload != expected_payload:
+        fail(
+            "ToS Zarathustra route retrieval pack must match the committed "
+            "manifest-driven retrieval payload"
+        )
+
+
+def validate_tos_zarathustra_route_retrieval_pack_example(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail(
+            "ToS Zarathustra route retrieval pack example must match the current "
+            "bounded retrieval payload"
+        )
 
 
 def validate_reasoning_artifact_descriptor(
@@ -1347,10 +4242,7 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
             authoritative_refs.get("kag_guardrail_refs"),
             label=f"{location}.authoritative_refs.kag_guardrail_refs",
         )
-        if set(guardrail_refs) != {
-            "docs/REASONING_HANDOFF.md",
-            "schemas/reasoning-handoff-guardrail.schema.json",
-        }:
+        if guardrail_refs != EXPECTED_REASONING_HANDOFF_KAG_GUARDRAIL_REFS:
             fail(f"{location}.authoritative_refs.kag_guardrail_refs must match the local KAG guardrail refs")
         for ref in guardrail_refs:
             resolve_known_ref(ref, label=f"{location}.authoritative_refs.kag_guardrail_refs")
@@ -1528,9 +4420,226 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
     )
 
 
+def validate_return_regrounding_pack(
+    payload: object,
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("return regrounding pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "mode_count",
+        "modes",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"return regrounding pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("return regrounding pack pack_version must equal 1")
+    if payload["pack_type"] != "return_regrounding_pack":
+        fail("return regrounding pack pack_type must equal 'return_regrounding_pack'")
+    if payload["source_manifest_ref"] != "manifests/return_regrounding_pack.json":
+        fail("return regrounding pack source_manifest_ref must point to manifests/return_regrounding_pack.json")
+    if payload["bounded_output_contract"] != EXPECTED_RETURN_REGROUNDING_CONTRACT:
+        fail("return regrounding pack bounded_output_contract must match the current source-first guardrail")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("return regrounding pack source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    source_input_order: list[str] = []
+    for index, source_input in enumerate(source_inputs):
+        location = f"return regrounding pack source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        role = source_input.get("role")
+        ref = source_input.get("ref")
+        if not all(isinstance(value, str) and value for value in (name, repo, role, ref)):
+            fail(f"{location} must keep name, repo, role, and ref")
+        resolve_known_ref(ref, label=location)
+        relative_ref = ref if repo == "aoa-kag" else ref.split("/", 1)[1]
+        actual_source_inputs.add((name, repo, relative_ref, role))
+        source_input_order.append(name)
+    if actual_source_inputs != EXPECTED_RETURN_REGROUNDING_INPUTS:
+        fail("return regrounding pack source_inputs must match the manifest-driven donor set")
+    if source_input_order != EXPECTED_RETURN_REGROUNDING_INPUT_ORDER:
+        fail("return regrounding pack source_inputs must keep the current additive donor order")
+
+    modes = payload["modes"]
+    if not isinstance(modes, list) or not modes:
+        fail("return regrounding pack modes must be a non-empty list")
+    mode_count = payload["mode_count"]
+    if not isinstance(mode_count, int) or mode_count != len(modes):
+        fail("return regrounding pack mode_count must equal the number of modes")
+
+    seen_modes: set[str] = set()
+    mode_order: list[str] = []
+    counterpart_forbidden_refs = set(EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS) | {
+        EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
+        "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
+    }
+
+    for index, mode in enumerate(modes):
+        location = f"return regrounding pack modes[{index}]"
+        if not isinstance(mode, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "mode_id",
+            "used_when",
+            "query_mode_hint",
+            "trigger_surface_refs",
+            "stronger_refs",
+            "supporting_surface_refs",
+            "preserved_fields",
+            "reentry_note",
+            "non_identity_boundary",
+            "prohibited_promotions",
+        ):
+            if key not in mode:
+                fail(f"{location} is missing required key '{key}'")
+
+        mode_id = mode["mode_id"]
+        used_when = mode["used_when"]
+        query_mode_hint = mode["query_mode_hint"]
+        reentry_note = mode["reentry_note"]
+        non_identity_boundary = mode["non_identity_boundary"]
+        if not isinstance(mode_id, str) or not mode_id:
+            fail(f"{location}.mode_id must be a non-empty string")
+        if mode_id in seen_modes:
+            fail(f"{location}.mode_id '{mode_id}' is duplicated")
+        seen_modes.add(mode_id)
+        mode_order.append(mode_id)
+        if not isinstance(used_when, str) or len(used_when) < 20:
+            fail(f"{location}.used_when must be a string of length >= 20")
+        if query_mode_hint not in {"local_search", "global_search", "drift_search", "consumer_read_path"}:
+            fail(f"{location}.query_mode_hint '{query_mode_hint}' is not allowed")
+        if not isinstance(reentry_note, str) or len(reentry_note) < 20:
+            fail(f"{location}.reentry_note must be a string of length >= 20")
+        if not isinstance(non_identity_boundary, str) or len(non_identity_boundary) < 20:
+            fail(f"{location}.non_identity_boundary must be a string of length >= 20")
+
+        trigger_surface_refs = validate_unique_string_list(
+            mode["trigger_surface_refs"],
+            label=f"{location}.trigger_surface_refs",
+        )
+        stronger_refs = validate_unique_string_list(
+            mode["stronger_refs"],
+            label=f"{location}.stronger_refs",
+        )
+        supporting_surface_refs = validate_unique_string_list(
+            mode["supporting_surface_refs"],
+            label=f"{location}.supporting_surface_refs",
+        )
+        preserved_fields = validate_unique_string_list(
+            mode["preserved_fields"],
+            label=f"{location}.preserved_fields",
+        )
+        prohibited_promotions = validate_unique_string_list(
+            mode["prohibited_promotions"],
+            label=f"{location}.prohibited_promotions",
+        )
+
+        for ref in trigger_surface_refs:
+            resolve_known_ref(ref, label=f"{location}.trigger_surface_refs")
+        for ref in stronger_refs:
+            resolve_known_ref(ref, label=f"{location}.stronger_refs")
+        for ref in supporting_surface_refs:
+            resolve_known_ref(ref, label=f"{location}.supporting_surface_refs")
+
+        if any(ref in counterpart_forbidden_refs for ref in stronger_refs):
+            fail(f"{location}.stronger_refs must not promote counterpart review or contract refs into stronger authority")
+        if any(ref.startswith(("generated/", "docs/", "examples/", "manifests/", "schemas/")) for ref in stronger_refs):
+            fail(f"{location}.stronger_refs must not point to aoa-kag-local surfaces")
+
+        if mode_id == "source_export_reentry":
+            validate_exact_set(
+                stronger_refs,
+                {
+                    "aoa-techniques/generated/kag_export.min.json",
+                    "Tree-of-Sophia/generated/kag_export.min.json",
+                },
+                label=f"{location}.stronger_refs",
+            )
+            validate_exact_set(
+                set(preserved_fields),
+                {"provenance_note", "non_identity_boundary", "entry_surface_ref"},
+                label=f"{location}.preserved_fields",
+            )
+        elif mode_id == "bridge_axis_reentry":
+            if not all(ref.startswith("Tree-of-Sophia/") for ref in stronger_refs):
+                fail(f"{location}.stronger_refs must stay ToS-owned for bridge axis regrounding")
+            validate_exact_set(
+                set(preserved_fields),
+                {
+                    "source_refs",
+                    "lineage_refs",
+                    "conflict_refs",
+                    "practice_refs",
+                    "axis_summary",
+                },
+                label=f"{location}.preserved_fields",
+            )
+        elif mode_id == "projection_boundary_reentry":
+            validate_exact_set(
+                stronger_refs,
+                {
+                    "aoa-techniques/generated/kag_export.min.json",
+                    "Tree-of-Sophia/generated/kag_export.min.json",
+                },
+                label=f"{location}.stronger_refs",
+            )
+            if "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md" not in supporting_surface_refs:
+                fail(f"{location}.supporting_surface_refs must keep the counterpart exposure review as a supporting boundary ref")
+        elif mode_id == "handoff_guardrail_reentry":
+            if not all(
+                ref.startswith(("aoa-playbooks/", "aoa-evals/", "aoa-memo/"))
+                for ref in stronger_refs
+            ):
+                fail(f"{location}.stronger_refs must stay playbook/eval/memo-owned for handoff regrounding")
+            validate_exact_set(
+                set(preserved_fields),
+                {
+                    "source_refs",
+                    "axis_summary",
+                    "provenance_note",
+                    "boundary_guardrails",
+                },
+                label=f"{location}.preserved_fields",
+            )
+        elif mode_id == "owner_boundary_reentry":
+            if not all(ref.startswith(("aoa-memo/", "Tree-of-Sophia/")) for ref in stronger_refs):
+                fail(f"{location}.stronger_refs must stay memo- or ToS-owned at the owner boundary")
+            validate_exact_set(
+                set(preserved_fields),
+                {"source_refs", "provenance_note", "boundary_guardrails"},
+                label=f"{location}.preserved_fields",
+            )
+        else:
+            fail(f"{location}.mode_id '{mode_id}' is not supported")
+
+    if mode_order != EXPECTED_RETURN_REGROUNDING_MODE_ORDER:
+        fail("return regrounding pack modes must keep the current stable mode order")
+
+    if payload != expected_payload:
+        fail("return regrounding pack must match the committed manifest-driven regrounding payload")
+
+
+def validate_return_regrounding_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(RETURN_REGROUNDING_EXAMPLE_PATH)
+    validate_return_regrounding_pack(payload, expected_payload)
+
+
 def validate_federation_spine_pack(
     payload: object,
     surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
 ) -> None:
     if not isinstance(payload, dict):
         fail("federation spine pack must be a JSON object")
@@ -1555,30 +4664,26 @@ def validate_federation_spine_pack(
         fail("federation spine pack source_manifest_ref must point to manifests/federation_spine.json")
     if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
         fail("federation spine pack bounded_output_contract must match the current source-first guardrail")
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("federation spine pack source_inputs must match the manifest-driven donor set")
+    forbidden_counterpart_refs = set(EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS) | {
+        EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
+        "AOA-K-0008",
+    }
+    if any(value in forbidden_counterpart_refs for value in iter_string_values(payload)):
+        fail(
+            "federation spine pack must not expose counterpart refs or AOA-K-0008 "
+            "activation hints in the current review-closed posture"
+        )
 
-    source_inputs = payload["source_inputs"]
-    if not isinstance(source_inputs, list) or not source_inputs:
-        fail("federation spine pack source_inputs must be a non-empty list")
-    actual_source_inputs: set[tuple[str, str, str, str]] = set()
-    source_input_order: list[str] = []
-    for index, source_input in enumerate(source_inputs):
+    for index, source_input in enumerate(payload["source_inputs"]):
         location = f"federation spine pack source_inputs[{index}]"
         if not isinstance(source_input, dict):
             fail(f"{location} must be an object")
-        name = source_input.get("name")
-        repo = source_input.get("repo")
-        role = source_input.get("role")
         ref = source_input.get("ref")
-        if not all(isinstance(value, str) and value for value in (name, repo, role, ref)):
-            fail(f"{location} must keep name, repo, role, and ref")
+        if not isinstance(ref, str) or not ref:
+            fail(f"{location}.ref must be a non-empty string")
         resolve_known_ref(ref, label=location)
-        relative_ref = ref if repo == "aoa-kag" else ref.split("/", 1)[1]
-        source_input_order.append(name)
-        actual_source_inputs.add((name, repo, relative_ref, role))
-    if actual_source_inputs != EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS:
-        fail("federation spine pack source_inputs must match the manifest-driven donor set")
-    if source_input_order != EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER:
-        fail("federation spine pack source_inputs must keep the current additive donor order")
 
     repos = payload["repos"]
     if not isinstance(repos, list) or not repos:
@@ -1586,43 +4691,6 @@ def validate_federation_spine_pack(
     repo_count = payload["repo_count"]
     if not isinstance(repo_count, int) or repo_count != len(repos):
         fail("federation spine pack repo_count must equal the number of repos")
-
-    technique_catalog_payload = read_json(AOA_TECHNIQUES_ROOT / "generated" / "technique_catalog.min.json")
-    if not isinstance(technique_catalog_payload, dict):
-        fail("federation spine validation requires technique_catalog.min.json to be a JSON object")
-    catalog_techniques = technique_catalog_payload.get("techniques")
-    if not isinstance(catalog_techniques, list) or not catalog_techniques:
-        fail("federation spine validation requires techniques in technique_catalog.min.json")
-    expected_example_object_ids = [
-        technique["id"]
-        for technique in catalog_techniques
-        if isinstance(technique, dict)
-        and isinstance(technique.get("id"), str)
-        and technique.get("export_ready") is True
-    ][:3]
-    if len(expected_example_object_ids) != 3:
-        fail("federation spine validation requires at least three export-ready techniques")
-    tos_tiny_entry_route = validate_tos_tiny_entry_route()
-    expected_repo_contracts = {
-        "aoa-techniques": {
-            "pilot_posture": "existing_generated_surfaces",
-            "current_entry_surface_refs": [
-                repo_ref("aoa-techniques", "generated/repo_doc_surface_manifest.min.json")
-            ],
-            "current_object_surface_ref": repo_ref(
-                "aoa-techniques", "generated/technique_catalog.min.json"
-            ),
-            "example_object_ids": expected_example_object_ids,
-            "planned_export_ref": "aoa-techniques/generated/kag_export.min.json",
-        },
-        TOS_REPO: {
-            "pilot_posture": "source_owned_tiny_entry_route",
-            "current_entry_surface_refs": EXPECTED_TOS_SPINE_ENTRY_REFS,
-            "current_object_surface_ref": EXPECTED_TOS_SPINE_OBJECT_REF,
-            "example_object_ids": [tos_tiny_entry_route["route_id"]],
-            "planned_export_ref": f"{TOS_REPO}/generated/kag_export.min.json",
-        },
-    }
 
     seen_repos: set[str] = set()
     repo_order: list[str] = []
@@ -1633,10 +4701,12 @@ def validate_federation_spine_pack(
         for key in (
             "repo",
             "pilot_posture",
-            "current_entry_surface_refs",
-            "current_object_surface_ref",
-            "example_object_ids",
-            "planned_export_ref",
+            "export_ref",
+            "kind",
+            "object_id",
+            "entry_surface_ref",
+            "adjunct_surfaces",
+            "summary_50",
             "provenance_note",
             "non_identity_boundary",
         ):
@@ -1645,10 +4715,12 @@ def validate_federation_spine_pack(
 
         repo_name = repo_entry["repo"]
         pilot_posture = repo_entry["pilot_posture"]
-        current_entry_surface_refs = repo_entry["current_entry_surface_refs"]
-        current_object_surface_ref = repo_entry["current_object_surface_ref"]
-        example_object_ids = repo_entry["example_object_ids"]
-        planned_export_ref = repo_entry["planned_export_ref"]
+        export_ref = repo_entry["export_ref"]
+        kind = repo_entry["kind"]
+        object_id = repo_entry["object_id"]
+        entry_surface_ref = repo_entry["entry_surface_ref"]
+        adjunct_surfaces = repo_entry["adjunct_surfaces"]
+        summary_50 = repo_entry["summary_50"]
         provenance_note = repo_entry["provenance_note"]
         non_identity_boundary = repo_entry["non_identity_boundary"]
 
@@ -1660,51 +4732,113 @@ def validate_federation_spine_pack(
         repo_order.append(repo_name)
         if not isinstance(pilot_posture, str) or not pilot_posture:
             fail(f"{location}.pilot_posture must be a non-empty string")
-        if not isinstance(current_object_surface_ref, str) or not current_object_surface_ref:
-            fail(f"{location}.current_object_surface_ref must be a non-empty string")
+        if not isinstance(export_ref, str) or not export_ref:
+            fail(f"{location}.export_ref must be a non-empty string")
+        if not isinstance(kind, str) or not kind:
+            fail(f"{location}.kind must be a non-empty string")
+        if not isinstance(object_id, str) or not object_id:
+            fail(f"{location}.object_id must be a non-empty string")
+        if not isinstance(entry_surface_ref, str) or not entry_surface_ref:
+            fail(f"{location}.entry_surface_ref must be a non-empty string")
+        if not isinstance(adjunct_surfaces, list):
+            fail(f"{location}.adjunct_surfaces must be a list")
+        if not isinstance(summary_50, str) or len(summary_50) < 10:
+            fail(f"{location}.summary_50 must be a string of length >= 10")
         if not isinstance(provenance_note, str) or len(provenance_note) < 20:
             fail(f"{location}.provenance_note must be a string of length >= 20")
         if not isinstance(non_identity_boundary, str) or len(non_identity_boundary) < 20:
             fail(f"{location}.non_identity_boundary must be a string of length >= 20")
-        if not isinstance(planned_export_ref, str) or not PLANNED_EXPORT_REF_RE.match(planned_export_ref):
-            fail(f"{location}.planned_export_ref must match '<repo>/generated/kag_export.min.json'")
-        if not planned_export_ref.startswith(f"{repo_name}/"):
-            fail(f"{location}.planned_export_ref must point to the same repo as the repo entry")
-
-        refs = validate_unique_string_list(
-            current_entry_surface_refs,
-            label=f"{location}.current_entry_surface_refs",
-        )
-        for ref in refs:
-            resolve_known_ref(ref, label=f"{location}.current_entry_surface_refs")
-            if not ref.startswith(f"{repo_name}/"):
-                fail(f"{location}.current_entry_surface_refs must point to repo '{repo_name}'")
-
-        resolve_known_ref(current_object_surface_ref, label=f"{location}.current_object_surface_ref")
-        if not current_object_surface_ref.startswith(f"{repo_name}/"):
-            fail(f"{location}.current_object_surface_ref must point to repo '{repo_name}'")
-
-        object_ids = validate_unique_string_list(
-            example_object_ids,
-            label=f"{location}.example_object_ids",
-        )
-        expected_repo = expected_repo_contracts.get(repo_name)
-        if expected_repo is None:
-            fail(f"{location}.repo '{repo_name}' is not part of the current bounded pilot set")
-        if pilot_posture != expected_repo["pilot_posture"]:
-            fail(f"{location}.pilot_posture must match the current repo-specific pilot posture")
-        if refs != expected_repo["current_entry_surface_refs"]:
-            fail(f"{location}.current_entry_surface_refs must match the current repo-specific entry surfaces")
-        if current_object_surface_ref != expected_repo["current_object_surface_ref"]:
-            fail(f"{location}.current_object_surface_ref must match the current repo-specific object surface")
-        if object_ids != expected_repo["example_object_ids"]:
-            fail(f"{location}.example_object_ids must match the current repo-specific object sample")
-        if planned_export_ref != expected_repo["planned_export_ref"]:
-            fail(f"{location}.planned_export_ref must match the current repo-specific planned export path")
+        resolve_known_ref(export_ref, label=f"{location}.export_ref")
+        resolve_known_ref(entry_surface_ref, label=f"{location}.entry_surface_ref")
+        if not export_ref.startswith(f"{repo_name}/"):
+            fail(f"{location}.export_ref must point to the same repo as the repo entry")
+        if not entry_surface_ref.startswith(f"{repo_name}/"):
+            fail(f"{location}.entry_surface_ref must point to the same repo as the repo entry")
 
         surface_0009 = surfaces_by_id.get("AOA-K-0009")
         if surface_0009 is None or surface_0009.get("status") != "experimental":
             fail("federation spine pack requires AOA-K-0009 to remain experimental in the generated registry")
+
+        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        for adjunct_index, adjunct in enumerate(adjunct_surfaces):
+            adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
+            if not isinstance(adjunct, dict):
+                fail(f"{adjunct_location} must be an object")
+            if set(adjunct) != {
+                "surface_id",
+                "surface_name",
+                "surface_ref",
+                "match_key",
+                "target_value",
+                "route_id",
+            }:
+                fail(
+                    f"{adjunct_location} must keep exactly surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            adjunct_surface_id = adjunct.get("surface_id")
+            adjunct_surface_name = adjunct.get("surface_name")
+            adjunct_surface_ref = adjunct.get("surface_ref")
+            adjunct_match_key = adjunct.get("match_key")
+            adjunct_target_value = adjunct.get("target_value")
+            adjunct_route_id = adjunct.get("route_id")
+            if not all(
+                isinstance(value, str) and value
+                for value in (
+                    adjunct_surface_id,
+                    adjunct_surface_name,
+                    adjunct_surface_ref,
+                    adjunct_match_key,
+                    adjunct_target_value,
+                    adjunct_route_id,
+                )
+            ):
+                fail(
+                    f"{adjunct_location} must keep surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            if adjunct_match_key != "retrieval_id":
+                fail(f"{adjunct_location}.match_key must equal 'retrieval_id'")
+            if adjunct_target_value != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID:
+                fail(
+                    f"{adjunct_location}.target_value must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID}'"
+                )
+            if adjunct_route_id != TOS_ZARATHUSTRA_ROUTE_ID:
+                fail(
+                    f"{adjunct_location}.route_id must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_ID}'"
+                )
+            resolve_known_ref(
+                repo_ref(KAG_REPO, adjunct_surface_ref),
+                label=f"{adjunct_location}.surface_ref",
+            )
+            surface = surfaces_by_id.get(adjunct_surface_id)
+            if surface is None or surface.get("status") != "experimental":
+                fail(f"{adjunct_location} must point to an experimental registry surface")
+            if surface.get("name") != adjunct_surface_name:
+                fail(
+                    f"{adjunct_location}.surface_name must match registry surface "
+                    f"'{surface.get('name')}'"
+                )
+            normalized_adjunct_surfaces.append(
+                {
+                    "surface_id": adjunct_surface_id,
+                    "surface_name": adjunct_surface_name,
+                    "surface_ref": adjunct_surface_ref,
+                    "match_key": adjunct_match_key,
+                    "target_value": adjunct_target_value,
+                    "route_id": adjunct_route_id,
+                }
+            )
+        expected_adjunct_surfaces = EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO.get(repo_name)
+        if expected_adjunct_surfaces is None:
+            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine wave")
+        if normalized_adjunct_surfaces != expected_adjunct_surfaces:
+            fail(
+                f"{location}.adjunct_surfaces must match the current bounded adjunct "
+                f"contract for '{repo_name}'"
+            )
 
     if repo_order != EXPECTED_FEDERATION_SPINE_REPO_ORDER:
         fail("federation spine pack repos must keep the current stable repo order")
@@ -1713,6 +4847,284 @@ def validate_federation_spine_pack(
         EXPECTED_FEDERATION_SPINE_REPOS,
         label="federation spine pack repos",
     )
+    if payload != expected_payload:
+        fail("federation spine pack must match the committed manifest-driven federation payload")
+
+
+def validate_cross_source_node_projection_pack(
+    payload: object,
+    surfaces_by_id: dict[str, dict[str, object]],
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("cross-source node projection pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_bindings",
+        "surface_id",
+        "surface_name",
+        "projection_count",
+        "projections",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"cross-source node projection pack is missing required key '{key}'")
+
+    if payload["pack_type"] != "cross_source_node_projection":
+        fail("cross-source node projection pack pack_type must equal 'cross_source_node_projection'")
+    if payload["bounded_output_contract"] != EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT:
+        fail("cross-source node projection pack bounded_output_contract must match the current source-first guardrail")
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("cross-source node projection pack source_inputs must match the manifest-driven donor set")
+    if payload["surface_bindings"] != expected_payload["surface_bindings"]:
+        fail("cross-source node projection pack surface_bindings must match the current bounded projection binding")
+    forbidden_counterpart_refs = set(EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS) | {
+        EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
+        "AOA-K-0008",
+    }
+    if any(value in forbidden_counterpart_refs for value in iter_string_values(payload)):
+        fail(
+            "cross-source node projection pack must not expose counterpart refs or "
+            "AOA-K-0008 activation hints in the current review-closed posture"
+        )
+
+    surface_0006 = surfaces_by_id.get("AOA-K-0006")
+    if surface_0006 is None or surface_0006.get("status") != "experimental":
+        fail("cross-source node projection pack requires AOA-K-0006 to remain experimental in the generated registry")
+
+    projections = payload["projections"]
+    if not isinstance(projections, list) or len(projections) != 1:
+        fail("cross-source node projection pack must contain exactly one projection in the current pilot")
+    if payload["projection_count"] != 1:
+        fail("cross-source node projection pack projection_count must equal 1 in the current pilot")
+    projection = projections[0]
+    if not isinstance(projection, dict):
+        fail("cross-source node projection pack projection must be an object")
+    for input_key in ("primary_input",):
+        input_payload = projection.get(input_key)
+        if not isinstance(input_payload, dict):
+            fail(f"cross-source node projection pack {input_key} must be an object")
+        resolve_known_ref(input_payload["export_ref"], label=f"cross-source node projection pack {input_key}.export_ref")
+    supporting_inputs = projection.get("supporting_inputs")
+    if not isinstance(supporting_inputs, list) or len(supporting_inputs) != 1:
+        fail("cross-source node projection pack supporting_inputs must contain exactly one supporting export in the current pilot")
+    resolve_known_ref(
+        supporting_inputs[0]["export_ref"],
+        label="cross-source node projection pack supporting_inputs[0].export_ref",
+    )
+    resolve_known_ref(
+        projection["retrieval_axis_ref"],
+        label="cross-source node projection pack retrieval_axis_ref",
+    )
+    resolve_known_ref(
+        projection["federation_spine_ref"],
+        label="cross-source node projection pack federation_spine_ref",
+    )
+    if payload != expected_payload:
+        fail("cross-source node projection pack must match the committed manifest-driven projection payload")
+
+
+def validate_cross_source_node_projection_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(CROSS_SOURCE_NODE_PROJECTION_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail("cross-source node projection example must match the current bounded projection payload")
+
+
+def validate_tiny_consumer_bundle_pack(expected_payload: dict[str, object]) -> None:
+    payload = read_json(TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH)
+    if not isinstance(payload, dict):
+        fail("tiny consumer bundle pack must be a JSON object")
+
+    for key in (
+        "bundle_version",
+        "bundle_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "bundle_item_count",
+        "bundle_items",
+        "deferred_counterpart",
+    ):
+        if key not in payload:
+            fail(f"tiny consumer bundle pack is missing required key '{key}'")
+
+    if payload["bundle_version"] != 1:
+        fail("tiny consumer bundle pack bundle_version must equal 1")
+    if payload["bundle_type"] != "tiny_consumer_bundle":
+        fail("tiny consumer bundle pack bundle_type must equal 'tiny_consumer_bundle'")
+    if payload["source_manifest_ref"] != "manifests/tiny_consumer_bundle.json":
+        fail(
+            "tiny consumer bundle pack source_manifest_ref must point to "
+            "manifests/tiny_consumer_bundle.json"
+        )
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail("tiny consumer bundle pack source_inputs must match the manifest-driven donor set")
+
+    bundle_items = payload["bundle_items"]
+    if not isinstance(bundle_items, list) or not bundle_items:
+        fail("tiny consumer bundle pack bundle_items must be a non-empty list")
+    if payload["bundle_item_count"] != len(bundle_items):
+        fail("tiny consumer bundle pack bundle_item_count must equal the number of bundle_items")
+
+    observed_order: list[str] = []
+    for index, bundle_item in enumerate(bundle_items):
+        location = f"tiny consumer bundle pack bundle_items[{index}]"
+        if not isinstance(bundle_item, dict):
+            fail(f"{location} must be an object")
+        for key in ("order", "name", "role", "ref"):
+            if key not in bundle_item:
+                fail(f"{location} is missing required key '{key}'")
+        if bundle_item["order"] != index + 1:
+            fail(f"{location}.order must keep the stable 1-based bundle order")
+        if not isinstance(bundle_item["name"], str) or not bundle_item["name"]:
+            fail(f"{location}.name must be a non-empty string")
+        if not isinstance(bundle_item["role"], str) or not bundle_item["role"]:
+            fail(f"{location}.role must be a non-empty string")
+        if not isinstance(bundle_item["ref"], str) or not bundle_item["ref"]:
+            fail(f"{location}.ref must be a non-empty string")
+        resolve_known_ref(bundle_item["ref"], label=f"{location}.ref")
+        observed_order.append(bundle_item["name"])
+
+    if observed_order != EXPECTED_TINY_CONSUMER_BUNDLE_ORDER:
+        fail("tiny consumer bundle pack bundle_items must keep the current stable bundle order")
+    if payload["deferred_counterpart"] != EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART:
+        fail("tiny consumer bundle pack deferred_counterpart must match the contract-only posture")
+    resolve_known_ref(
+        payload["deferred_counterpart"]["federation_exposure_review_ref"],
+        label="tiny consumer bundle pack deferred_counterpart.federation_exposure_review_ref",
+    )
+    if payload != expected_payload:
+        fail("tiny consumer bundle pack must match the committed manifest-driven bundle payload")
+
+
+def validate_tiny_consumer_bundle_example(expected_payload: dict[str, object]) -> None:
+    payload = read_json(TINY_CONSUMER_BUNDLE_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail("tiny consumer bundle example must match the current bundle payload")
+
+
+def validate_counterpart_federation_exposure_review_pack(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart federation exposure review pack must be a JSON object")
+
+    for key in (
+        "review_version",
+        "review_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "surface_id",
+        "surface_status",
+        "review_status",
+        "reviewed_surface_count",
+        "reviewed_surfaces",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(
+                "counterpart federation exposure review pack is missing required key "
+                f"'{key}'"
+            )
+
+    if payload["review_version"] != 1:
+        fail("counterpart federation exposure review pack review_version must equal 1")
+    if payload["review_type"] != "counterpart_federation_exposure_review":
+        fail(
+            "counterpart federation exposure review pack review_type must equal "
+            "'counterpart_federation_exposure_review'"
+        )
+    if payload["source_manifest_ref"] != "manifests/counterpart_federation_exposure_review.json":
+        fail(
+            "counterpart federation exposure review pack source_manifest_ref must point "
+            "to manifests/counterpart_federation_exposure_review.json"
+        )
+    if payload["source_inputs"] != expected_payload["source_inputs"]:
+        fail(
+            "counterpart federation exposure review pack source_inputs must match the "
+            "manifest-driven donor set"
+        )
+    if payload["surface_id"] != "AOA-K-0008":
+        fail("counterpart federation exposure review pack surface_id must equal 'AOA-K-0008'")
+    if payload["surface_status"] != "planned":
+        fail("counterpart federation exposure review pack surface_status must equal 'planned'")
+    if payload["review_status"] != "passed_for_planned_posture":
+        fail(
+            "counterpart federation exposure review pack review_status must equal "
+            "'passed_for_planned_posture'"
+        )
+    if payload["bounded_output_contract"] != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_CONTRACT:
+        fail(
+            "counterpart federation exposure review pack bounded_output_contract must "
+            "match the current review guardrail"
+        )
+
+    reviewed_surfaces = payload["reviewed_surfaces"]
+    if not isinstance(reviewed_surfaces, list) or not reviewed_surfaces:
+        fail("counterpart federation exposure review pack reviewed_surfaces must be a non-empty list")
+    if payload["reviewed_surface_count"] != len(reviewed_surfaces):
+        fail(
+            "counterpart federation exposure review pack reviewed_surface_count must "
+            "equal the number of reviewed_surfaces"
+        )
+
+    observed_order: list[str] = []
+    for index, reviewed_surface in enumerate(reviewed_surfaces):
+        location = f"counterpart federation exposure review pack reviewed_surfaces[{index}]"
+        if not isinstance(reviewed_surface, dict):
+            fail(f"{location} must be an object")
+        for key in ("surface_name", "surface_ref", "exposure_posture", "review_note"):
+            if key not in reviewed_surface:
+                fail(f"{location} is missing required key '{key}'")
+        surface_name = reviewed_surface["surface_name"]
+        surface_ref = reviewed_surface["surface_ref"]
+        exposure_posture = reviewed_surface["exposure_posture"]
+        observed_order.append(surface_name)
+        resolve_known_ref(surface_ref, label=f"{location}.surface_ref")
+        expected_posture = EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_POSTURES.get(surface_name)
+        if exposure_posture != expected_posture:
+            fail(
+                f"{location}.exposure_posture must match the current reviewed posture "
+                f"for '{surface_name}'"
+            )
+        if surface_name in {"reasoning_handoff_pack", "tiny_consumer_bundle"}:
+            if reviewed_surface.get("allowed_counterpart_refs") != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.allowed_counterpart_refs must match the current "
+                    "contract-only counterpart refs"
+                )
+        elif surface_name in {"federation_spine", "cross_source_node_projection"}:
+            if reviewed_surface.get("forbidden_refs") != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+                fail(
+                    f"{location}.forbidden_refs must match the current forbidden "
+                    "counterpart exposure set"
+                )
+
+    if observed_order != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER:
+        fail(
+            "counterpart federation exposure review pack reviewed_surfaces must keep "
+            "the current reviewed surface order"
+        )
+    if payload != expected_payload:
+        fail(
+            "counterpart federation exposure review pack must match the committed "
+            "manifest-driven review payload"
+        )
+
+
+def validate_counterpart_federation_exposure_review_example(
+    expected_payload: dict[str, object],
+) -> None:
+    payload = read_json(COUNTERPART_FEDERATION_EXPOSURE_REVIEW_EXAMPLE_PATH)
+    if payload != expected_payload:
+        fail(
+            "counterpart federation exposure review example must match the current "
+            "review payload"
+        )
 
 
 def validate_generated_text(path: Path, expected_text: str, *, label: str) -> None:
@@ -1990,6 +5402,78 @@ def validate_bridge_example(surfaces_by_id: dict[str, dict[str, object]]) -> Non
         fail("bridge example 'axis_summary' must be a string of length >= 20")
 
 
+def validate_bridge_envelope_example() -> None:
+    payload = read_json(BRIDGE_ENVELOPE_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("bridge envelope example must be a JSON object")
+
+    if payload.get("bridge_id") != "aoa-tos-bridge-envelope-v1":
+        fail("bridge envelope example bridge_id must equal 'aoa-tos-bridge-envelope-v1'")
+    if payload.get("source_class") != "tos_text":
+        fail("bridge envelope example source_class must remain 'tos_text'")
+    if payload.get("kag_lift_status") != "candidate":
+        fail("bridge envelope example kag_lift_status must remain 'candidate'")
+
+    source_inputs = payload.get("source_inputs")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("bridge envelope example source_inputs must be a non-empty list")
+    expected_inputs = {
+        ("Tree-of-Sophia", "tos_text", "primary"),
+        ("aoa-memo", "memo_object", "supporting"),
+    }
+    actual_inputs: set[tuple[str, str, str]] = set()
+    primary_count = 0
+    for index, item in enumerate(source_inputs):
+        location = f"bridge envelope example source_inputs[{index}]"
+        if not isinstance(item, dict):
+            fail(f"{location} must be an object")
+        repo = item.get("repo")
+        source_class = item.get("source_class")
+        role = item.get("role")
+        if not isinstance(repo, str) or not repo:
+            fail(f"{location}.repo must be a non-empty string")
+        if not isinstance(source_class, str) or not source_class:
+            fail(f"{location}.source_class must be a non-empty string")
+        if not isinstance(role, str) or not role:
+            fail(f"{location}.role must be a non-empty string")
+        if role == "primary":
+            primary_count += 1
+        actual_inputs.add((repo, source_class, role))
+    if actual_inputs != expected_inputs:
+        fail("bridge envelope example source_inputs must match the current strict bridge contract")
+    if primary_count != 1:
+        fail("bridge envelope example must keep exactly one primary source input")
+
+    for index, ref in enumerate(
+        validate_unique_string_list(payload.get("tos_refs"), label="bridge envelope example tos_refs")
+    ):
+        if not ref.startswith("Tree-of-Sophia/"):
+            fail(f"bridge envelope example tos_refs[{index}] must point to Tree-of-Sophia")
+        resolve_known_ref(ref, label=f"bridge envelope example tos_refs[{index}]")
+    for index, ref in enumerate(
+        validate_unique_string_list(payload.get("memory_refs"), label="bridge envelope example memory_refs")
+    ):
+        if not ref.startswith("aoa-memo/"):
+            fail(f"bridge envelope example memory_refs[{index}] must point to aoa-memo")
+        resolve_known_ref(ref, label=f"bridge envelope example memory_refs[{index}]")
+
+    faces = payload.get("faces")
+    if not isinstance(faces, dict):
+        fail("bridge envelope example faces must be an object")
+    expected_faces = {
+        "retrieval_surface": "examples/tos_retrieval_axis_surface.example.json",
+        "chunk_face": "aoa-memo/examples/memory_chunk_face.bridge.example.json",
+        "graph_face": "aoa-memo/examples/memory_graph_face.bridge.example.json",
+    }
+    if set(faces) != set(expected_faces):
+        fail("bridge envelope example faces must expose retrieval_surface, chunk_face, and graph_face")
+    for key, expected_ref in expected_faces.items():
+        value = faces.get(key)
+        if value != expected_ref:
+            fail(f"bridge envelope example faces.{key} must equal '{expected_ref}'")
+        resolve_known_ref(value, label=f"bridge envelope example faces.{key}")
+
+
 def validate_counterpart_example(surfaces_by_id: dict[str, dict[str, object]]) -> None:
     payload = read_json(COUNTERPART_EXAMPLE_PATH)
     if not isinstance(payload, dict):
@@ -2082,6 +5566,105 @@ def validate_counterpart_example(surfaces_by_id: dict[str, dict[str, object]]) -
 
     if seen_modes != ALLOWED_COUNTERPART_MODE:
         fail("counterpart example must cover all supported counterpart modes at least once")
+
+
+def validate_counterpart_consumer_contract_example(
+    surfaces_by_id: dict[str, dict[str, object]]
+) -> None:
+    payload = read_json(COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH)
+    if not isinstance(payload, dict):
+        fail("counterpart consumer contract example must be a JSON object")
+
+    for key in (
+        "contract_type",
+        "surface_id",
+        "surface_status",
+        "consumer_surface_type",
+        "allowed_return_field",
+        "federation_exposure_review_ref",
+        "required_contract_refs",
+        "allowed_refs",
+        "forbidden_interpretations",
+    ):
+        if key not in payload:
+            fail(f"counterpart consumer contract example is missing required key '{key}'")
+
+    if payload["contract_type"] != "counterpart_consumer_contract":
+        fail(
+            "counterpart consumer contract example contract_type must equal "
+            "'counterpart_consumer_contract'"
+        )
+    if payload["surface_id"] != "AOA-K-0008":
+        fail("counterpart consumer contract example surface_id must equal 'AOA-K-0008'")
+    if payload["surface_status"] != "planned":
+        fail("counterpart consumer contract example surface_status must equal 'planned'")
+    if payload["consumer_surface_type"] != "reasoning_handoff_guardrail":
+        fail(
+            "counterpart consumer contract example consumer_surface_type must equal "
+            "'reasoning_handoff_guardrail'"
+        )
+    if payload["allowed_return_field"] != "counterpart_refs":
+        fail(
+            "counterpart consumer contract example allowed_return_field must equal "
+            "'counterpart_refs'"
+        )
+    if (
+        payload["federation_exposure_review_ref"]
+        != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF
+    ):
+        fail(
+            "counterpart consumer contract example federation_exposure_review_ref must "
+            "point to the current review artifact"
+        )
+    resolve_known_ref(
+        payload["federation_exposure_review_ref"],
+        label="counterpart consumer contract example federation_exposure_review_ref",
+    )
+
+    registry_surface = surfaces_by_id.get("AOA-K-0008")
+    if registry_surface is None:
+        fail("counterpart consumer contract example requires AOA-K-0008 in the generated registry")
+    if registry_surface.get("status") != "planned":
+        fail("counterpart consumer contract example requires AOA-K-0008 to remain planned")
+
+    required_contract_refs = payload["required_contract_refs"]
+    if not isinstance(required_contract_refs, dict):
+        fail("counterpart consumer contract example required_contract_refs must be an object")
+    if required_contract_refs != EXPECTED_COUNTERPART_CONSUMER_CONTRACT_REFS:
+        fail(
+            "counterpart consumer contract example required_contract_refs must match the "
+            "current counterpart contract surfaces"
+        )
+    for key, ref in required_contract_refs.items():
+        resolve_known_ref(
+            ref,
+            label=f"counterpart consumer contract example required_contract_refs.{key}",
+        )
+
+    allowed_refs = validate_unique_string_list(
+        payload["allowed_refs"],
+        label="counterpart consumer contract example allowed_refs",
+    )
+    if allowed_refs != EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS:
+        fail(
+            "counterpart consumer contract example allowed_refs must keep the current "
+            "contract/example-only posture"
+        )
+    for index, ref in enumerate(allowed_refs):
+        resolve_known_ref(
+            ref,
+            label=f"counterpart consumer contract example allowed_refs[{index}]",
+        )
+
+    forbidden_interpretations = validate_unique_string_list(
+        payload["forbidden_interpretations"],
+        label="counterpart consumer contract example forbidden_interpretations",
+    )
+    if forbidden_interpretations != EXPECTED_COUNTERPART_CONSUMER_FORBIDDEN_INTERPRETATIONS:
+        fail(
+            "counterpart consumer contract example forbidden_interpretations must match "
+            "the bounded contract"
+        )
 
 
 def validate_reasoning_handoff_example() -> None:
@@ -2289,19 +5872,108 @@ def validate_federation_kag_export_example() -> None:
         resolve_known_ref(target_ref, label=location)
 
 
+def validate_optional_memo_source_owned_export_readiness() -> None:
+    if not AOA_MEMO_ROOT.exists():
+        return
+
+    export_ref = repo_ref("aoa-memo", EXPECTED_MEMO_KAG_EXPORT_PATH)
+    export_path = resolve_known_ref(
+        export_ref,
+        label="optional aoa-memo source-owned export readiness export_ref",
+    )
+    payload = read_json(export_path)
+    if not isinstance(payload, dict):
+        fail("optional aoa-memo source-owned export readiness target export must be a JSON object")
+
+    missing_fields = sorted(EXPECTED_MEMO_KAG_EXPORT_REQUIRED_FIELDS - set(payload))
+    if missing_fields:
+        fail(
+            "optional aoa-memo source-owned export readiness target export is missing "
+            + ", ".join(missing_fields)
+        )
+
+    if payload.get("owner_repo") != "aoa-memo":
+        fail("optional aoa-memo source-owned export readiness owner_repo must equal 'aoa-memo'")
+    if payload.get("kind") != "bridge":
+        fail("optional aoa-memo source-owned export readiness kind must equal 'bridge'")
+    if (
+        payload.get("object_id")
+        != EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE["match_value"]
+    ):
+        fail(
+            "optional aoa-memo source-owned export readiness object_id must equal "
+            f"'{EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE['match_value']}'"
+        )
+
+    source_inputs = payload.get("source_inputs")
+    if source_inputs != EXPECTED_MEMO_KAG_EXPORT_SOURCE_INPUTS:
+        fail(
+            "optional aoa-memo source-owned export readiness source_inputs must keep "
+            "the memo-primary / Tree-of-Sophia-supporting split"
+        )
+
+    entry_surface = payload.get("entry_surface")
+    if entry_surface != EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE:
+        fail(
+            "optional aoa-memo source-owned export readiness entry_surface must stay "
+            "aligned with the memo bridge capsule surface"
+        )
+    resolve_known_ref(
+        repo_ref("aoa-memo", EXPECTED_MEMO_KAG_EXPORT_ENTRY_SURFACE["path"]),
+        label="optional aoa-memo source-owned export readiness entry_surface",
+    )
+
+    section_handles = validate_unique_string_list(
+        payload.get("section_handles"),
+        label="optional aoa-memo source-owned export readiness section_handles",
+    )
+    if section_handles != EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES:
+        fail(
+            "optional aoa-memo source-owned export readiness section_handles must "
+            "match the canonical memo bridge handles"
+        )
+
+    direct_relations = payload.get("direct_relations")
+    if direct_relations != EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS:
+        fail(
+            "optional aoa-memo source-owned export readiness direct_relations must "
+            "keep the claim/episode/ToS trio"
+        )
+
+
 def main() -> int:
     try:
+        validate_nested_agents_docs()
         validate_schema_surface()
         validate_bridge_schema_surface()
+        validate_bridge_envelope_schema_surface()
         validate_counterpart_schema_surface()
+        validate_counterpart_federation_exposure_review_manifest_schema_surface()
+        validate_counterpart_federation_exposure_review_schema_surface()
+        validate_counterpart_consumer_contract_schema_surface()
         validate_reasoning_handoff_schema_surface()
         validate_technique_lift_manifest_schema_surface()
         validate_technique_lift_pack_schema_surface()
+        validate_tos_text_chunk_map_manifest_schema_surface()
+        validate_tos_text_chunk_map_schema_surface()
+        validate_tos_retrieval_axis_manifest_schema_surface()
+        validate_tos_retrieval_axis_schema_surface()
+        validate_tos_zarathustra_route_pack_manifest_schema_surface()
+        validate_tos_zarathustra_route_pack_schema_surface()
+        validate_tos_zarathustra_route_retrieval_pack_manifest_schema_surface()
+        validate_tos_zarathustra_route_retrieval_pack_schema_surface()
         validate_reasoning_handoff_pack_manifest_schema_surface()
         validate_reasoning_handoff_pack_schema_surface()
+        validate_return_regrounding_manifest_schema_surface()
+        validate_return_regrounding_schema_surface()
+        validate_source_owned_export_dependencies_schema_surface()
         validate_federation_kag_export_schema_surface()
         validate_federation_spine_manifest_schema_surface()
         validate_federation_spine_schema_surface()
+        validate_cross_source_node_projection_manifest_schema_surface()
+        validate_cross_source_node_projection_schema_surface()
+        validate_tiny_consumer_bundle_manifest_schema_surface()
+        validate_tiny_consumer_bundle_schema_surface()
 
         registry_manifest_payload = read_json(REGISTRY_MANIFEST_PATH)
         registry_manifest_surfaces = validate_registry_payload(
@@ -2309,15 +5981,63 @@ def main() -> int:
             label="registry manifest",
         )
         validate_technique_lift_manifest(registry_manifest_surfaces)
+        validate_tos_text_chunk_map_manifest(registry_manifest_surfaces)
+        validate_tos_retrieval_axis_manifest(registry_manifest_surfaces)
+        validate_tos_zarathustra_route_pack_manifest(registry_manifest_surfaces)
+        validate_tos_zarathustra_route_retrieval_pack_manifest(
+            registry_manifest_surfaces
+        )
         validate_reasoning_handoff_manifest()
-        validate_federation_spine_manifest(registry_manifest_surfaces)
+        validate_return_regrounding_manifest()
+        source_owned_export_dependencies = (
+            validate_source_owned_export_dependency_manifest(
+                registry_manifest_surfaces
+            )
+        )
+        validate_federation_spine_manifest(
+            registry_manifest_surfaces,
+            source_owned_export_dependencies,
+        )
+        validate_cross_source_node_projection_manifest(
+            registry_manifest_surfaces,
+            source_owned_export_dependencies,
+        )
+        validate_tiny_consumer_bundle_manifest(registry_manifest_surfaces)
+        validate_counterpart_federation_exposure_review_manifest()
 
         expected_registry_payload = build_registry_payload()
         expected_technique_lift_pack_payload = build_technique_lift_pack_payload(
             expected_registry_payload
         )
+        expected_tos_text_chunk_map_payload = build_tos_text_chunk_map_payload(
+            expected_registry_payload
+        )
+        expected_tos_retrieval_axis_payload = build_tos_retrieval_axis_pack_payload(
+            expected_registry_payload
+        )
+        expected_tos_zarathustra_route_pack_payload = (
+            build_tos_zarathustra_route_pack_payload(expected_registry_payload)
+        )
+        expected_tos_zarathustra_route_retrieval_pack_payload = (
+            build_tos_zarathustra_route_retrieval_pack_payload(
+                expected_registry_payload,
+                route_pack_payload=expected_tos_zarathustra_route_pack_payload,
+            )
+        )
         expected_reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
+        expected_return_regrounding_pack_payload = build_return_regrounding_pack_payload(
+            expected_registry_payload
+        )
         expected_federation_spine_payload = build_federation_spine_payload(
+            expected_registry_payload
+        )
+        expected_cross_source_node_projection_payload = (
+            build_cross_source_node_projection_payload(expected_registry_payload)
+        )
+        expected_counterpart_federation_exposure_review_payload = (
+            build_counterpart_federation_exposure_review_payload(expected_registry_payload)
+        )
+        expected_tiny_consumer_bundle_payload = build_tiny_consumer_bundle_payload(
             expected_registry_payload
         )
 
@@ -2342,6 +6062,46 @@ def main() -> int:
             label="generated compact technique lift pack",
         )
         validate_generated_text(
+            TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
+            encode_json(expected_tos_text_chunk_map_payload, pretty=True),
+            label="generated ToS text chunk map",
+        )
+        validate_generated_text(
+            TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+            encode_json(expected_tos_text_chunk_map_payload, pretty=False),
+            label="generated compact ToS text chunk map",
+        )
+        validate_generated_text(
+            TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+            encode_json(expected_tos_retrieval_axis_payload, pretty=True),
+            label="generated ToS retrieval axis pack",
+        )
+        validate_generated_text(
+            TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+            encode_json(expected_tos_retrieval_axis_payload, pretty=False),
+            label="generated compact ToS retrieval axis pack",
+        )
+        validate_generated_text(
+            TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH,
+            encode_json(expected_tos_zarathustra_route_pack_payload, pretty=True),
+            label="generated ToS Zarathustra route pack",
+        )
+        validate_generated_text(
+            TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
+            encode_json(expected_tos_zarathustra_route_pack_payload, pretty=False),
+            label="generated compact ToS Zarathustra route pack",
+        )
+        validate_generated_text(
+            TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH,
+            encode_json(expected_tos_zarathustra_route_retrieval_pack_payload, pretty=True),
+            label="generated ToS Zarathustra route retrieval pack",
+        )
+        validate_generated_text(
+            TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH,
+            encode_json(expected_tos_zarathustra_route_retrieval_pack_payload, pretty=False),
+            label="generated compact ToS Zarathustra route retrieval pack",
+        )
+        validate_generated_text(
             REASONING_HANDOFF_OUTPUT_PATH,
             encode_json(expected_reasoning_handoff_pack_payload, pretty=True),
             label="generated reasoning handoff pack",
@@ -2350,6 +6110,16 @@ def main() -> int:
             REASONING_HANDOFF_MIN_OUTPUT_PATH,
             encode_json(expected_reasoning_handoff_pack_payload, pretty=False),
             label="generated compact reasoning handoff pack",
+        )
+        validate_generated_text(
+            RETURN_REGROUNDING_OUTPUT_PATH,
+            encode_json(expected_return_regrounding_pack_payload, pretty=True),
+            label="generated return regrounding pack",
+        )
+        validate_generated_text(
+            RETURN_REGROUNDING_MIN_OUTPUT_PATH,
+            encode_json(expected_return_regrounding_pack_payload, pretty=False),
+            label="generated compact return regrounding pack",
         )
         validate_generated_text(
             FEDERATION_SPINE_OUTPUT_PATH,
@@ -2361,6 +6131,36 @@ def main() -> int:
             encode_json(expected_federation_spine_payload, pretty=False),
             label="generated compact federation spine",
         )
+        validate_generated_text(
+            CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
+            encode_json(expected_cross_source_node_projection_payload, pretty=True),
+            label="generated cross-source node projection pack",
+        )
+        validate_generated_text(
+            CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+            encode_json(expected_cross_source_node_projection_payload, pretty=False),
+            label="generated compact cross-source node projection pack",
+        )
+        validate_generated_text(
+            COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
+            encode_json(expected_counterpart_federation_exposure_review_payload, pretty=True),
+            label="generated counterpart federation exposure review",
+        )
+        validate_generated_text(
+            COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
+            encode_json(expected_counterpart_federation_exposure_review_payload, pretty=False),
+            label="generated compact counterpart federation exposure review",
+        )
+        validate_generated_text(
+            TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
+            encode_json(expected_tiny_consumer_bundle_payload, pretty=True),
+            label="generated tiny consumer bundle",
+        )
+        validate_generated_text(
+            TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+            encode_json(expected_tiny_consumer_bundle_payload, pretty=False),
+            label="generated compact tiny consumer bundle",
+        )
 
         generated_registry_payload = read_json(REGISTRY_MIN_OUTPUT_PATH)
         generated_surfaces_by_id = validate_registry_payload(
@@ -2371,47 +6171,161 @@ def main() -> int:
             read_json(TECHNIQUE_LIFT_MIN_OUTPUT_PATH),
             generated_surfaces_by_id,
         )
+        validate_tos_text_chunk_map_pack(
+            read_json(TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+            expected_tos_text_chunk_map_payload,
+        )
+        validate_tos_retrieval_axis_pack(
+            read_json(TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+            expected_tos_retrieval_axis_payload,
+        )
+        live_tos_zarathustra_route_pack_payload = read_json(
+            TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH
+        )
+        validate_tos_zarathustra_route_pack(
+            live_tos_zarathustra_route_pack_payload,
+            generated_surfaces_by_id,
+            expected_tos_zarathustra_route_pack_payload,
+        )
+        validate_tos_zarathustra_route_retrieval_pack(
+            read_json(TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+            expected_tos_zarathustra_route_retrieval_pack_payload,
+            live_tos_zarathustra_route_pack_payload,
+        )
         validate_reasoning_handoff_pack(
             read_json(REASONING_HANDOFF_MIN_OUTPUT_PATH),
+        )
+        validate_return_regrounding_pack(
+            read_json(RETURN_REGROUNDING_MIN_OUTPUT_PATH),
+            expected_return_regrounding_pack_payload,
         )
         validate_federation_spine_pack(
             read_json(FEDERATION_SPINE_MIN_OUTPUT_PATH),
             generated_surfaces_by_id,
+            expected_federation_spine_payload,
         )
+        validate_cross_source_node_projection_pack(
+            read_json(CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH),
+            generated_surfaces_by_id,
+            expected_cross_source_node_projection_payload,
+        )
+        validate_counterpart_federation_exposure_review_pack(
+            expected_counterpart_federation_exposure_review_payload
+        )
+        validate_tiny_consumer_bundle_pack(expected_tiny_consumer_bundle_payload)
         validate_bridge_example(generated_surfaces_by_id)
+        validate_bridge_envelope_example()
         validate_counterpart_example(generated_surfaces_by_id)
+        validate_counterpart_consumer_contract_example(generated_surfaces_by_id)
+        validate_tos_text_chunk_map_example(expected_tos_text_chunk_map_payload)
+        validate_tos_retrieval_axis_example(expected_tos_retrieval_axis_payload)
+        validate_tos_zarathustra_route_pack_example(
+            expected_tos_zarathustra_route_pack_payload
+        )
+        validate_tos_zarathustra_route_retrieval_pack_example(
+            expected_tos_zarathustra_route_retrieval_pack_payload
+        )
         validate_reasoning_handoff_example()
+        validate_return_regrounding_example(expected_return_regrounding_pack_payload)
         validate_federation_kag_export_example()
+        validate_optional_memo_source_owned_export_readiness()
+        validate_cross_source_node_projection_example(
+            expected_cross_source_node_projection_payload
+        )
+        validate_counterpart_federation_exposure_review_example(
+            expected_counterpart_federation_exposure_review_payload
+        )
+        validate_tiny_consumer_bundle_example(expected_tiny_consumer_bundle_payload)
     except ValidationError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 1
 
+    print("[ok] validated nested AGENTS docs")
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")
+    print("[ok] validated bridge envelope schema")
     print("[ok] validated counterpart edge surface schema")
+    print("[ok] validated counterpart federation exposure review manifest schema")
+    print("[ok] validated counterpart federation exposure review schema")
+    print("[ok] validated counterpart consumer contract schema")
     print("[ok] validated reasoning handoff guardrail schema")
     print("[ok] validated technique lift manifest schema")
     print("[ok] validated technique lift pack schema")
+    print("[ok] validated ToS text chunk map manifest schema")
+    print("[ok] validated ToS text chunk map schema")
+    print("[ok] validated ToS retrieval axis manifest schema")
+    print("[ok] validated ToS retrieval axis pack schema")
+    print("[ok] validated ToS Zarathustra route pack manifest schema")
+    print("[ok] validated ToS Zarathustra route pack schema")
+    print("[ok] validated ToS Zarathustra route retrieval pack manifest schema")
+    print("[ok] validated ToS Zarathustra route retrieval pack schema")
     print("[ok] validated reasoning handoff pack manifest schema")
     print("[ok] validated reasoning handoff pack schema")
+    print("[ok] validated return regrounding pack manifest schema")
+    print("[ok] validated return regrounding pack schema")
+    print("[ok] validated source-owned export dependency manifest schema")
     print("[ok] validated federation KAG export schema")
     print("[ok] validated federation spine manifest schema")
     print("[ok] validated federation spine schema")
+    print("[ok] validated cross-source node projection manifest schema")
+    print("[ok] validated cross-source node projection schema")
+    print("[ok] validated tiny consumer bundle manifest schema")
+    print("[ok] validated tiny consumer bundle schema")
     print("[ok] validated manifests/kag_registry.json")
     print("[ok] validated manifests/technique_lift_pack.json")
+    print("[ok] validated manifests/tos_text_chunk_map.json")
+    print("[ok] validated manifests/tos_retrieval_axis_pack.json")
+    print("[ok] validated manifests/tos_zarathustra_route_pack.json")
+    print("[ok] validated manifests/tos_zarathustra_route_retrieval_pack.json")
     print("[ok] validated manifests/reasoning_handoff_pack.json")
+    print("[ok] validated manifests/return_regrounding_pack.json")
+    print("[ok] validated manifests/source_owned_export_dependencies.json")
     print("[ok] validated manifests/federation_spine.json")
+    print("[ok] validated manifests/cross_source_node_projection.json")
+    print("[ok] validated manifests/counterpart_federation_exposure_review.json")
+    print("[ok] validated manifests/tiny_consumer_bundle.json")
     print("[ok] validated generated registry outputs are up to date")
     print("[ok] validated generated technique lift pack outputs are up to date")
+    print("[ok] validated generated ToS text chunk map outputs are up to date")
+    print("[ok] validated generated ToS retrieval axis pack outputs are up to date")
+    print("[ok] validated generated ToS Zarathustra route pack outputs are up to date")
+    print("[ok] validated generated ToS Zarathustra route retrieval pack outputs are up to date")
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
+    print("[ok] validated generated return regrounding pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
+    print("[ok] validated generated cross-source node projection outputs are up to date")
+    print("[ok] validated generated counterpart federation exposure review outputs are up to date")
+    print("[ok] validated generated tiny consumer bundle outputs are up to date")
     print("[ok] validated generated technique lift pack structure")
+    print("[ok] validated generated ToS text chunk map structure")
+    print("[ok] validated generated ToS retrieval axis pack structure")
+    print("[ok] validated generated ToS Zarathustra route pack structure")
+    print("[ok] validated generated ToS Zarathustra route retrieval pack structure")
     print("[ok] validated generated reasoning handoff pack structure")
+    print("[ok] validated generated return regrounding pack structure")
     print("[ok] validated generated federation spine structure")
+    print("[ok] validated generated cross-source node projection structure")
+    print("[ok] validated generated counterpart federation exposure review structure")
+    print("[ok] validated generated tiny consumer bundle structure")
     print("[ok] validated bridge retrieval example")
+    print("[ok] validated bridge envelope example")
     print("[ok] validated counterpart edge example")
+    print("[ok] validated counterpart consumer contract example")
+    print("[ok] validated ToS text chunk map example")
+    print("[ok] validated ToS retrieval axis example")
+    print("[ok] validated ToS Zarathustra route pack example")
+    print("[ok] validated ToS Zarathustra route retrieval pack example")
     print("[ok] validated reasoning handoff guardrail example")
+    print("[ok] validated return regrounding example")
     print("[ok] validated federation KAG export example")
+    if AOA_MEMO_ROOT.exists():
+        print("[ok] validated optional aoa-memo source-owned export readiness")
+    print("[ok] validated cross-source node projection example")
+    print("[ok] validated counterpart federation exposure review example")
+    print("[ok] validated tiny consumer bundle example")
     return 0
 
 

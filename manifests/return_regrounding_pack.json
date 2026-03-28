@@ -1,0 +1,153 @@
+{
+  "manifest_version": 1,
+  "pack_type": "return_regrounding_pack",
+  "source_inputs": [
+    {
+      "name": "boundaries_doc",
+      "repo": "aoa-kag",
+      "path": "docs/BOUNDARIES.md",
+      "role": "boundary_doc"
+    },
+    {
+      "name": "bridge_contract_doc",
+      "repo": "aoa-kag",
+      "path": "docs/BRIDGE_CONTRACTS.md",
+      "role": "bridge_doc"
+    },
+    {
+      "name": "reasoning_handoff_doc",
+      "repo": "aoa-kag",
+      "path": "docs/REASONING_HANDOFF.md",
+      "role": "handoff_doc"
+    },
+    {
+      "name": "source_owned_export_dependencies_manifest",
+      "repo": "aoa-kag",
+      "path": "manifests/source_owned_export_dependencies.json",
+      "role": "dependency_manifest"
+    },
+    {
+      "name": "federation_spine_pack",
+      "repo": "aoa-kag",
+      "path": "generated/federation_spine.min.json",
+      "role": "derived_pack"
+    },
+    {
+      "name": "retrieval_axis_pack",
+      "repo": "aoa-kag",
+      "path": "generated/tos_retrieval_axis_pack.min.json",
+      "role": "derived_pack"
+    },
+    {
+      "name": "cross_source_projection_pack",
+      "repo": "aoa-kag",
+      "path": "generated/cross_source_node_projection.min.json",
+      "role": "derived_pack"
+    },
+    {
+      "name": "reasoning_handoff_pack",
+      "repo": "aoa-kag",
+      "path": "generated/reasoning_handoff_pack.min.json",
+      "role": "derived_pack"
+    },
+    {
+      "name": "aoa_techniques_kag_export",
+      "repo": "aoa-techniques",
+      "path": "generated/kag_export.min.json",
+      "role": "source_owned_export"
+    },
+    {
+      "name": "tos_kag_export",
+      "repo": "Tree-of-Sophia",
+      "path": "generated/kag_export.min.json",
+      "role": "source_owned_export"
+    },
+    {
+      "name": "tos_node_contract",
+      "repo": "Tree-of-Sophia",
+      "path": "docs/NODE_CONTRACT.md",
+      "role": "source_contract"
+    },
+    {
+      "name": "tos_source_node",
+      "repo": "Tree-of-Sophia",
+      "path": "examples/source_node.example.json",
+      "role": "authority_surface"
+    },
+    {
+      "name": "memo_checkpoint_contract",
+      "repo": "aoa-memo",
+      "path": "examples/checkpoint_to_memory_contract.example.json",
+      "role": "owner_contract"
+    }
+  ],
+  "mode_bindings": [
+    {
+      "mode_ref": "source_export_reentry",
+      "primary_input": "federation_spine_pack",
+      "supporting_inputs": [
+        "source_owned_export_dependencies_manifest",
+        "aoa_techniques_kag_export",
+        "tos_kag_export"
+      ],
+      "dependency_refs": [
+        "aoa-techniques-kag-export",
+        "tree-of-sophia-kag-export"
+      ]
+    },
+    {
+      "mode_ref": "bridge_axis_reentry",
+      "primary_input": "retrieval_axis_pack",
+      "supporting_inputs": [
+        "bridge_contract_doc",
+        "tos_node_contract",
+        "tos_source_node"
+      ]
+    },
+    {
+      "mode_ref": "projection_boundary_reentry",
+      "primary_input": "cross_source_projection_pack",
+      "supporting_inputs": [
+        "federation_spine_pack",
+        "retrieval_axis_pack",
+        "bridge_contract_doc"
+      ],
+      "dependency_refs": [
+        "aoa-techniques-kag-export",
+        "tree-of-sophia-kag-export"
+      ]
+    },
+    {
+      "mode_ref": "handoff_guardrail_reentry",
+      "primary_input": "reasoning_handoff_pack",
+      "supporting_inputs": [
+        "reasoning_handoff_doc",
+        "boundaries_doc",
+        "memo_checkpoint_contract"
+      ]
+    },
+    {
+      "mode_ref": "owner_boundary_reentry",
+      "primary_input": "reasoning_handoff_doc",
+      "supporting_inputs": [
+        "bridge_contract_doc",
+        "boundaries_doc",
+        "memo_checkpoint_contract",
+        "tos_node_contract"
+      ]
+    }
+  ],
+  "output_paths": {
+    "full": "generated/return_regrounding_pack.json",
+    "min": "generated/return_regrounding_pack.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "memory_truth_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+    "counterpart_activation": "review_gated",
+    "proof_ownership": "forbidden"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "bridge_id": "aoa-tos-bridge-envelope-v1",
+  "source_class": "tos_text",
+  "source_inputs": [
+    {
+      "repo": "Tree-of-Sophia",
+      "source_class": "tos_text",
+      "role": "primary"
+    },
+    {
+      "repo": "aoa-memo",
+      "source_class": "memo_object",
+      "role": "supporting"
+    }
+  ],
+  "tos_refs": [
+    "Tree-of-Sophia/docs/PRACTICE_BRANCH.md",
+    "Tree-of-Sophia/docs/COUNTERPART_POLICY.md"
+  ],
+  "memory_refs": [
+    "aoa-memo/examples/bridge.kag-lift.example.json",
+    "aoa-memo/examples/memory_graph_face.bridge.example.json"
+  ],
+  "kag_lift_status": "candidate",
+  "faces": {
+    "retrieval_surface": "examples/tos_retrieval_axis_surface.example.json",
+    "chunk_face": "aoa-memo/examples/memory_chunk_face.bridge.example.json",
+    "graph_face": "aoa-memo/examples/memory_graph_face.bridge.example.json"
+  }
+}

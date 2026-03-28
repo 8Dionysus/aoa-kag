@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/return-regrounding-pack-manifest.schema.json",
+  "title": "AoA KAG return regrounding pack manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "pack_type",
+    "source_inputs",
+    "mode_bindings",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "return_regrounding_pack"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 13,
+      "items": {
+        "$ref": "#/$defs/inputDescriptor"
+      }
+    },
+    "mode_bindings": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode_ref",
+          "primary_input",
+          "supporting_inputs"
+        ],
+        "properties": {
+          "mode_ref": {
+            "type": "string",
+            "enum": [
+              "source_export_reentry",
+              "bridge_axis_reentry",
+              "projection_boundary_reentry",
+              "handoff_guardrail_reentry",
+              "owner_boundary_reentry"
+            ]
+          },
+          "primary_input": {
+            "type": "string",
+            "minLength": 1
+          },
+          "supporting_inputs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "dependency_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "const": "generated/return_regrounding_pack.json"
+        },
+        "min": {
+          "type": "string",
+          "const": "generated/return_regrounding_pack.min.json"
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "routing_ownership",
+        "memory_truth_ownership",
+        "canon_authorship",
+        "counterpart_activation",
+        "proof_ownership"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "routing_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "memory_truth_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "canon_authorship": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "counterpart_activation": {
+          "type": "string",
+          "const": "review_gated"
+        },
+        "proof_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "inputDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "repo",
+        "path",
+        "role"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo": {
+          "type": "string",
+          "enum": [
+            "aoa-kag",
+            "aoa-techniques",
+            "Tree-of-Sophia",
+            "aoa-memo"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "boundary_doc",
+            "bridge_doc",
+            "handoff_doc",
+            "dependency_manifest",
+            "derived_pack",
+            "source_owned_export",
+            "source_contract",
+            "authority_surface",
+            "owner_contract"
+          ]
+        }
+      }
+    }
+  }
+}

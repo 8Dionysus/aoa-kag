@@ -76,6 +76,21 @@ These returns stay derived.
 They should guide the caller toward stronger authored sources and existing
 KAG-layer derived surfaces, not silently replace either.
 
+When runtime use loses source trace, blurs non-identity posture, or reaches a
+clear owner boundary, prefer a bounded regrounding return through
+`generated/return_regrounding_pack.min.json` rather than a wider KAG-authored
+continuation.
+
+When `counterpart_refs` are returned in the current wave, they must stay
+contract-or-example refs through:
+
+- `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- `examples/counterpart_consumer_contract.example.json`
+- `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`
+
+They may not point to a generated `AOA-K-0008` payload, because `AOA-K-0008`
+remains planned.
+
 ## Boundary guardrails
 
 - `aoa-routing` owns navigation and dispatch
@@ -83,6 +98,8 @@ KAG-layer derived surfaces, not silently replace either.
 - `Tree-of-Sophia` owns canon and source-authored meaning
 - `aoa-kag` owns provenance-aware derived surface returns
 - direct canon authorship from a KAG handoff is forbidden
+- recurrence at this layer means regrounding back to stronger refs, not taking
+  ownership of the next layer's decision
 
 This preserves the current law of the layer:
 
@@ -95,7 +112,10 @@ The current handoff seam should reuse and respect the existing bridge surfaces:
 - `docs/BRIDGE_CONTRACTS.md`
 - `examples/tos_retrieval_axis_surface.example.json`
 - `docs/COUNTERPART_EDGE_CONTRACTS.md`
+- `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`
 - `examples/counterpart_edge_view.example.json`
+- `examples/counterpart_consumer_contract.example.json`
 
 The reasoning handoff guardrail exists to keep those surfaces usable at runtime
 without promoting them into a second canon.

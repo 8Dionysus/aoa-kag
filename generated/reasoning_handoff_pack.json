@@ -10,6 +10,36 @@
       "ref": "docs/REASONING_HANDOFF.md"
     },
     {
+      "name": "reasoning_handoff_schema",
+      "repo": "aoa-kag",
+      "role": "kag_guardrail_schema",
+      "ref": "schemas/reasoning-handoff-guardrail.schema.json"
+    },
+    {
+      "name": "counterpart_consumer_contract_doc",
+      "repo": "aoa-kag",
+      "role": "kag_guardrail_doc",
+      "ref": "docs/COUNTERPART_CONSUMER_CONTRACT.md"
+    },
+    {
+      "name": "counterpart_consumer_contract_schema",
+      "repo": "aoa-kag",
+      "role": "kag_guardrail_schema",
+      "ref": "schemas/counterpart-consumer-contract.schema.json"
+    },
+    {
+      "name": "counterpart_consumer_contract_example",
+      "repo": "aoa-kag",
+      "role": "kag_guardrail_example",
+      "ref": "examples/counterpart_consumer_contract.example.json"
+    },
+    {
+      "name": "counterpart_federation_exposure_review_doc",
+      "repo": "aoa-kag",
+      "role": "kag_guardrail_doc",
+      "ref": "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
+    },
+    {
       "name": "artifact_to_verdict_hook_schema",
       "repo": "aoa-evals",
       "role": "eval_hook_schema",
@@ -142,6 +172,7 @@
       },
       "memo_bridge": {
         "memo_contract_refs": [
+          "aoa-memo/examples/recall_contract.router.semantic.json",
           "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
         ],
         "memo_writeback_targets": [
@@ -164,15 +195,21 @@
           "aoa-evals/bundles/aoa-long-horizon-depth/EVAL.md",
           "aoa-evals/bundles/aoa-tool-trajectory-discipline/EVAL.md",
           "aoa-evals/bundles/aoa-tool-trajectory-discipline/checks/eval-integrity-check.md",
-          "aoa-evals/bundles/aoa-tool-trajectory-discipline/notes/bounded-promotion-review.md"
+          "aoa-evals/bundles/aoa-tool-trajectory-discipline/notes/bounded-promotion-review.md",
+          "aoa-evals/bundles/aoa-tool-trajectory-discipline/notes/proof-surface-contract.md"
         ],
         "memo_refs": [
+          "aoa-memo/examples/recall_contract.router.semantic.json",
           "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
           "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md"
         ],
         "kag_guardrail_refs": [
           "docs/REASONING_HANDOFF.md",
-          "schemas/reasoning-handoff-guardrail.schema.json"
+          "schemas/reasoning-handoff-guardrail.schema.json",
+          "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+          "schemas/counterpart-consumer-contract.schema.json",
+          "examples/counterpart_consumer_contract.example.json",
+          "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
         ],
         "artifact_schema_refs": [
           "aoa-agents/schemas/artifact.route_decision.schema.json",
@@ -283,6 +320,7 @@
       },
       "memo_bridge": {
         "memo_contract_refs": [
+          "aoa-memo/examples/recall_contract.object.working.return.json",
           "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
         ],
         "memo_writeback_targets": [
@@ -314,14 +352,20 @@
         "eval_refs": [
           "aoa-evals/bundles/aoa-long-horizon-depth/EVAL.md",
           "aoa-evals/bundles/aoa-long-horizon-depth/checks/eval-integrity-check.md",
-          "aoa-evals/bundles/aoa-long-horizon-depth/notes/restart-contract.md"
+          "aoa-evals/bundles/aoa-long-horizon-depth/notes/restart-contract.md",
+          "aoa-evals/bundles/aoa-long-horizon-depth/notes/proof-surface-contract.md"
         ],
         "memo_refs": [
+          "aoa-memo/examples/recall_contract.object.working.return.json",
           "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
         ],
         "kag_guardrail_refs": [
           "docs/REASONING_HANDOFF.md",
-          "schemas/reasoning-handoff-guardrail.schema.json"
+          "schemas/reasoning-handoff-guardrail.schema.json",
+          "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+          "schemas/counterpart-consumer-contract.schema.json",
+          "examples/counterpart_consumer_contract.example.json",
+          "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
         ],
         "artifact_schema_refs": [
           "aoa-memo/schemas/inquiry_checkpoint.schema.json",

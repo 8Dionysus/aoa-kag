@@ -66,6 +66,15 @@ They should not:
 - imply every concept needs an operational twin
 - rewrite authored operational meaning into KAG-owned doctrine
 
+## Rule 10: when ownership weakens, reground
+
+If runtime or consumer use loses source trace, blurs non-identity boundaries,
+or reaches an owner boundary that belongs elsewhere, `aoa-kag` should not keep
+expanding the derived answer by invention.
+
+It should reground the caller back toward stronger source-owned exports,
+authored surfaces, or owner-layer contracts.
+
 ## Compact rule
 
 `aoa-kag` should help AoA and ToS lift knowledge without letting the derived layer quietly replace the sources that feed it.

@@ -61,7 +61,7 @@
     {
       "id": "AOA-K-0005",
       "name": "tos-text-chunk-map",
-      "status": "planned",
+      "status": "experimental",
       "summary": "Maps authored ToS texts into bounded chunk-level retrieval units with explicit source linkage.",
       "source_class": "tos_text",
       "derived_kind": "chunk_map",
@@ -75,8 +75,8 @@
     {
       "id": "AOA-K-0006",
       "name": "cross-source-node-projection",
-      "status": "planned",
-      "summary": "Creates a bounded cross-source node projection for later graph consumers while preserving source-first provenance.",
+      "status": "experimental",
+      "summary": "Creates a bounded one-hop cross-source node projection from source-owned exports while preserving explicit primary versus supporting provenance.",
       "source_class": "technique_bundle",
       "source_inputs": [
         {
@@ -102,8 +102,8 @@
     {
       "id": "AOA-K-0007",
       "name": "tos-retrieval-axis-surface",
-      "status": "planned",
-      "summary": "Returns bounded lineage, conflict, practice, and source handles as a bridge-ready retrieval surface for AoA consumers.",
+      "status": "experimental",
+      "summary": "Returns bounded lineage, conflict, practice, and source handles for one ToS chunk set as a bridge-ready retrieval surface for AoA consumers.",
       "source_class": "tos_text",
       "source_inputs": [
         {
@@ -169,7 +169,7 @@
       "id": "AOA-K-0009",
       "name": "federation-readiness-spine",
       "status": "experimental",
-      "summary": "Materializes a bounded federation entry spine from existing aoa-techniques generated surfaces and the current source-owned Tree-of-Sophia tiny-entry route without claiming completed source-owned KAG exports.",
+      "summary": "Materializes a bounded federation entry spine from current source-owned tiny KAG exports in aoa-techniques and Tree-of-Sophia without claiming a wider completed federation.",
       "source_class": "review_surface",
       "source_inputs": [
         {
@@ -189,6 +189,34 @@
       "framework_readiness": "neutral",
       "source_repos": [
         "aoa-techniques",
+        "Tree-of-Sophia"
+      ]
+    },
+    {
+      "id": "AOA-K-0010",
+      "name": "tos-zarathustra-route-pack",
+      "status": "experimental",
+      "summary": "Projects the full canonical Zarathustra prologue-1 route into one bounded KAG-ready bundle of route-local nodes and canonical relations without replacing Tree-of-Sophia authored tree surfaces.",
+      "source_class": "tos_text",
+      "derived_kind": "node_projection",
+      "provenance_mode": "bounded_source_linked",
+      "normalization_scope": "route_local_canon",
+      "framework_readiness": "neutral",
+      "source_repos": [
+        "Tree-of-Sophia"
+      ]
+    },
+    {
+      "id": "AOA-K-0011",
+      "name": "tos-zarathustra-route-retrieval-surface",
+      "status": "experimental",
+      "summary": "Returns bounded family-level handles for the canonical Zarathustra prologue-1 route bundle so consumers can traverse canonical ToS route surfaces without ranking, source replacement, or routing ownership.",
+      "source_class": "tos_text",
+      "derived_kind": "retrieval_surface",
+      "provenance_mode": "derived_with_handles",
+      "normalization_scope": "route_family_handles",
+      "framework_readiness": "neutral",
+      "source_repos": [
         "Tree-of-Sophia"
       ]
     }

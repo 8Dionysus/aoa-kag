@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tiny-consumer-bundle-manifest.schema.json",
+  "title": "AoA KAG tiny consumer bundle manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "bundle_type",
+    "source_inputs",
+    "bundle_order",
+    "deferred_counterpart",
+    "output_paths"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "bundle_type": {
+      "type": "string",
+      "const": "tiny_consumer_bundle"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "const": "aoa-kag"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "generated_surface",
+              "consumer_doc",
+              "counterpart_contract"
+            ]
+          }
+        }
+      }
+    },
+    "bundle_order": {
+      "type": "array",
+      "minItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "deferred_counterpart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface_id",
+        "surface_status",
+        "posture",
+        "federation_exposure_review_ref",
+        "allowed_refs",
+        "forbidden_active_payload_refs",
+        "forbidden_interpretations"
+      ],
+      "properties": {
+        "surface_id": {
+          "type": "string",
+          "const": "AOA-K-0008"
+        },
+        "surface_status": {
+          "type": "string",
+          "const": "planned"
+        },
+        "posture": {
+          "type": "string",
+          "const": "planned_contract_only"
+        },
+        "federation_exposure_review_ref": {
+          "type": "string",
+          "const": "generated/counterpart_federation_exposure_review.min.json"
+        },
+        "allowed_refs": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden_active_payload_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden_interpretations": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "active_retrieval_payload",
+              "active_projection_payload"
+            ]
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "minLength": 1
+        },
+        "min": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

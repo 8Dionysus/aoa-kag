@@ -1,0 +1,90 @@
+{
+  "pack_version": 1,
+  "pack_type": "tos_text_chunk_map",
+  "source_repo": "Tree-of-Sophia",
+  "source_manifest_ref": "manifests/tos_text_chunk_map.json",
+  "source_inputs": [
+    {
+      "name": "tos_source_node",
+      "role": "authority_surface",
+      "ref": "Tree-of-Sophia/examples/source_node.example.json"
+    },
+    {
+      "name": "tos_tiny_entry_route_doc",
+      "role": "route_surface",
+      "ref": "Tree-of-Sophia/docs/TINY_ENTRY_ROUTE.md"
+    },
+    {
+      "name": "tos_zarathustra_capsule",
+      "role": "capsule_surface",
+      "ref": "Tree-of-Sophia/docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
+    }
+  ],
+  "surface_bindings": [
+    {
+      "surface_id": "AOA-K-0005",
+      "surface_name": "tos-text-chunk-map",
+      "derived_kind": "chunk_map",
+      "derived_slot": "chunks",
+      "source_input": "tos_source_node"
+    }
+  ],
+  "surface_id": "AOA-K-0005",
+  "surface_name": "tos-text-chunk-map",
+  "node_id": "tos.source.thus-spoke-zarathustra.prologue",
+  "node_type": "source",
+  "source_anchor": "Friedrich Nietzsche, Also sprach Zarathustra, Zarathustra's Vorrede 1, paragraph-aligned twelve-segment trilingual entry through the first prologue movement",
+  "authority_surface_ref": "Tree-of-Sophia/examples/source_node.example.json",
+  "route_ref": "Tree-of-Sophia/docs/TINY_ENTRY_ROUTE.md",
+  "capsule_ref": "Tree-of-Sophia/docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md",
+  "interpretation_layers": [
+    "source_linked",
+    "distilled_thesis",
+    "commentary"
+  ],
+  "chunk_count": 1,
+  "chunks": [
+    {
+      "chunk_id": "tos.source.thus-spoke-zarathustra.prologue::seg.1.1.1.10",
+      "node_id": "tos.source.thus-spoke-zarathustra.prologue",
+      "segment_id": "seg.1.1.1.10",
+      "source_anchor": "Friedrich Nietzsche, Also sprach Zarathustra, Zarathustra's Vorrede 1, paragraph-aligned twelve-segment trilingual entry through the first prologue movement",
+      "source_ref": "Tree-of-Sophia/examples/source_node.example.json",
+      "route_ref": "Tree-of-Sophia/docs/TINY_ENTRY_ROUTE.md",
+      "capsule_ref": "Tree-of-Sophia/docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md",
+      "interpretation_layers": [
+        "source_linked",
+        "distilled_thesis",
+        "commentary"
+      ],
+      "witness_count": 3,
+      "witnesses": [
+        {
+          "language": "de",
+          "role": "canonical_source",
+          "text": "Segne den Becher, welcher überfliessen will, dass das Wasser golden aus ihm fliesse und überallhin den Abglanz deiner Wonne trage!"
+        },
+        {
+          "language": "ru",
+          "role": "working_translation",
+          "text": "Благослови чашу,\nкоторая хочет перелиться,\nчтобы золото из неё текло\nи повсюду несло отблеск твоего ликования!"
+        },
+        {
+          "language": "en",
+          "role": "bridge_translation",
+          "text": "Bless the cup that wants to overflow, so that the water may flow golden from it and carry everywhere the reflection of your bliss!"
+        }
+      ],
+      "translation_tension": {
+        "segment_id": "seg.1.1.1.10",
+        "note": "'Abglanz' remains afterglow, reflection, or reflected radiance; witness layers should keep the difference between source light and carried shine. 'Wonne' and 'ликование' keep the image affectively high without collapsing into mere pleasure."
+      }
+    }
+  ],
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "counterpart_projection": "forbidden",
+    "federation_export_activation": "forbidden"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "manifest_version": 1,
+  "pack_type": "cross_source_node_projection",
+  "source_inputs": [
+    {
+      "name": "aoa_techniques_kag_export",
+      "repo": "aoa-techniques",
+      "path": "generated/kag_export.min.json",
+      "role": "primary_export"
+    },
+    {
+      "name": "tos_kag_export",
+      "repo": "Tree-of-Sophia",
+      "path": "generated/kag_export.min.json",
+      "role": "supporting_export"
+    },
+    {
+      "name": "tos_retrieval_axis_pack",
+      "repo": "aoa-kag",
+      "path": "generated/tos_retrieval_axis_pack.min.json",
+      "role": "retrieval_axis"
+    },
+    {
+      "name": "federation_spine",
+      "repo": "aoa-kag",
+      "path": "generated/federation_spine.min.json",
+      "role": "federation_spine"
+    }
+  ],
+  "surface_bindings": [
+    {
+      "surface_id": "AOA-K-0006",
+      "surface_name": "cross-source-node-projection",
+      "derived_kind": "node_projection",
+      "derived_slot": "projections",
+      "source_input": "aoa_techniques_kag_export"
+    }
+  ],
+  "projection_pairings": [
+    {
+      "pairing_id": "aoa-k-0006.AOA-T-0043__tos.source.thus-spoke-zarathustra.prologue",
+      "primary_export_input": "aoa_techniques_kag_export",
+      "supporting_export_inputs": [
+        "tos_kag_export"
+      ],
+      "retrieval_axis_input": "tos_retrieval_axis_pack",
+      "federation_spine_input": "federation_spine",
+      "projection_summary": "Pairs the multi-source primary-input provenance technique with the current Zarathustra prologue source node as a one-hop, non-identity projection for provenance-visible bridge work.",
+      "non_identity_boundary": "The projection aligns an operational technique with a supporting ToS source node for downstream inspection without claiming identity, ontology merger, counterpart activation, or routing ownership."
+    }
+  ],
+  "output_paths": {
+    "full": "generated/cross_source_node_projection.json",
+    "min": "generated/cross_source_node_projection.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "counterpart_activation": "forbidden",
+    "graph_expansion": "forbidden",
+    "routing_ownership": "forbidden"
+  }
+}

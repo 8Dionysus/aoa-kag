@@ -1,0 +1,319 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tos-zarathustra-route-pack.schema.json",
+  "title": "AoA KAG ToS Zarathustra route pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_repo",
+    "source_manifest_ref",
+    "source_inputs",
+    "surface_bindings",
+    "surface_id",
+    "surface_name",
+    "route_id",
+    "route_capsule_ref",
+    "relation_pack_ref",
+    "node_count",
+    "edge_count",
+    "node_type_counts",
+    "edge_kind_counts",
+    "nodes",
+    "edges",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "tos_zarathustra_route_pack"
+    },
+    "source_repo": {
+      "type": "string",
+      "const": "Tree-of-Sophia"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/tos_zarathustra_route_pack.json"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "role",
+          "ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "const": "Tree-of-Sophia"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "const": "AOA-K-0010"
+          },
+          "surface_name": {
+            "type": "string",
+            "const": "tos-zarathustra-route-pack"
+          },
+          "derived_kind": {
+            "type": "string",
+            "const": "node_projection"
+          },
+          "derived_slot": {
+            "type": "string",
+            "const": "nodes"
+          },
+          "source_input": {
+            "type": "string",
+            "const": "tos_route_source_node"
+          }
+        }
+      }
+    },
+    "surface_id": {
+      "type": "string",
+      "const": "AOA-K-0010"
+    },
+    "surface_name": {
+      "type": "string",
+      "const": "tos-zarathustra-route-pack"
+    },
+    "route_id": {
+      "type": "string",
+      "const": "thus-spoke-zarathustra/prologue-1"
+    },
+    "route_capsule_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relation_pack_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "node_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "edge_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "node_type_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "concept",
+        "principle",
+        "lineage",
+        "event",
+        "state",
+        "support",
+        "analogy",
+        "synthesis"
+      ],
+      "properties": {
+        "source": { "type": "integer", "minimum": 0 },
+        "concept": { "type": "integer", "minimum": 0 },
+        "principle": { "type": "integer", "minimum": 0 },
+        "lineage": { "type": "integer", "minimum": 0 },
+        "event": { "type": "integer", "minimum": 0 },
+        "state": { "type": "integer", "minimum": 0 },
+        "support": { "type": "integer", "minimum": 0 },
+        "analogy": { "type": "integer", "minimum": 0 },
+        "synthesis": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "edge_kind_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_edge",
+        "bridge_edge",
+        "principle_edge"
+      ],
+      "properties": {
+        "source_edge": { "type": "integer", "minimum": 0 },
+        "bridge_edge": { "type": "integer", "minimum": 0 },
+        "principle_edge": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node_id",
+          "node_type",
+          "authority_ref",
+          "source_anchor",
+          "key_terms",
+          "distilled_thesis",
+          "interpretation_layers"
+        ],
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "node_type": {
+            "type": "string",
+            "enum": [
+              "source",
+              "concept",
+              "principle",
+              "lineage",
+              "event",
+              "state",
+              "support",
+              "analogy",
+              "synthesis"
+            ]
+          },
+          "authority_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_anchor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "key_terms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "distilled_thesis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "interpretation_layers": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "edge_id",
+          "edge_kind",
+          "from_id",
+          "predicate_id",
+          "to_id",
+          "layer",
+          "anchor_mode",
+          "anchor_start_secondary",
+          "anchor_end_secondary",
+          "anchor_segment_ids",
+          "witness_scope",
+          "connectivity_role",
+          "confidence",
+          "note"
+        ],
+        "properties": {
+          "edge_id": { "type": "string", "minLength": 1 },
+          "edge_kind": { "type": "string", "minLength": 1 },
+          "from_id": { "type": "string", "minLength": 1 },
+          "predicate_id": { "type": "string", "minLength": 1 },
+          "to_id": { "type": "string", "minLength": 1 },
+          "layer": { "type": "string", "minLength": 1 },
+          "anchor_mode": { "type": "string", "minLength": 1 },
+          "anchor_start_secondary": { "type": "string" },
+          "anchor_end_secondary": { "type": "string" },
+          "anchor_segment_ids": { "type": "string", "minLength": 1 },
+          "witness_scope": { "type": "string", "minLength": 1 },
+          "connectivity_role": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "integer", "minimum": 0 },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "intake_consumption",
+        "routing_ownership",
+        "consumer_projection"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean"
+        },
+        "source_replacement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "intake_consumption": {
+          "type": "string",
+          "minLength": 1
+        },
+        "routing_ownership": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consumer_projection": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

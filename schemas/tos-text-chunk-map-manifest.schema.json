@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tos-text-chunk-map-manifest.schema.json",
+  "title": "AoA KAG ToS text chunk map manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "pack_type",
+    "source_repo",
+    "source_root_env",
+    "source_inputs",
+    "surface_bindings",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "tos_text_chunk_map"
+    },
+    "source_repo": {
+      "type": "string",
+      "const": "Tree-of-Sophia"
+    },
+    "source_root_env": {
+      "type": "string",
+      "const": "TREE_OF_SOPHIA_ROOT"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "authority_surface",
+              "route_surface",
+              "capsule_surface"
+            ]
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          },
+          "surface_name": {
+            "type": "string",
+            "const": "tos-text-chunk-map"
+          },
+          "derived_kind": {
+            "type": "string",
+            "const": "chunk_map"
+          },
+          "derived_slot": {
+            "type": "string",
+            "const": "chunks"
+          },
+          "source_input": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "minLength": 1
+        },
+        "min": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "counterpart_projection",
+        "federation_export_activation"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "counterpart_projection": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "federation_export_activation": {
+          "type": "string",
+          "const": "forbidden"
+        }
+      }
+    }
+  }
+}

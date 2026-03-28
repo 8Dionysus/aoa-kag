@@ -1,0 +1,138 @@
+{
+  "manifest_version": 1,
+  "review_type": "counterpart_federation_exposure_review",
+  "source_inputs": [
+    {
+      "name": "reasoning_handoff_pack",
+      "repo": "aoa-kag",
+      "path": "generated/reasoning_handoff_pack.min.json",
+      "role": "reviewed_surface"
+    },
+    {
+      "name": "tiny_consumer_bundle",
+      "repo": "aoa-kag",
+      "path": "generated/tiny_consumer_bundle.min.json",
+      "role": "reviewed_surface"
+    },
+    {
+      "name": "federation_spine",
+      "repo": "aoa-kag",
+      "path": "generated/federation_spine.min.json",
+      "role": "reviewed_surface"
+    },
+    {
+      "name": "cross_source_node_projection",
+      "repo": "aoa-kag",
+      "path": "generated/cross_source_node_projection.min.json",
+      "role": "reviewed_surface"
+    },
+    {
+      "name": "counterpart_consumer_contract_doc",
+      "repo": "aoa-kag",
+      "path": "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+      "role": "counterpart_contract"
+    },
+    {
+      "name": "counterpart_consumer_contract_example",
+      "repo": "aoa-kag",
+      "path": "examples/counterpart_consumer_contract.example.json",
+      "role": "counterpart_contract"
+    },
+    {
+      "name": "counterpart_edge_contract_doc",
+      "repo": "aoa-kag",
+      "path": "docs/COUNTERPART_EDGE_CONTRACTS.md",
+      "role": "counterpart_contract"
+    },
+    {
+      "name": "counterpart_edge_contract_example",
+      "repo": "aoa-kag",
+      "path": "examples/counterpart_edge_view.example.json",
+      "role": "counterpart_contract"
+    }
+  ],
+  "review_bindings": [
+    {
+      "surface_name": "reasoning_handoff_pack",
+      "surface_input": "reasoning_handoff_pack",
+      "exposure_posture": "contract_only_counterpart_refs",
+      "review_note": "Reasoning handoff may return counterpart refs only as bounded contract or example refs under the current reviewed posture.",
+      "allowed_counterpart_refs": [
+        "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+        "examples/counterpart_consumer_contract.example.json",
+        "docs/COUNTERPART_EDGE_CONTRACTS.md",
+        "examples/counterpart_edge_view.example.json"
+      ]
+    },
+    {
+      "surface_name": "tiny_consumer_bundle",
+      "surface_input": "tiny_consumer_bundle",
+      "exposure_posture": "planned_contract_only",
+      "review_note": "The tiny bundle packages the current consumer chain while keeping counterpart posture at contract-only planned exposure.",
+      "allowed_counterpart_refs": [
+        "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+        "examples/counterpart_consumer_contract.example.json",
+        "docs/COUNTERPART_EDGE_CONTRACTS.md",
+        "examples/counterpart_edge_view.example.json"
+      ]
+    },
+    {
+      "surface_name": "federation_spine",
+      "surface_input": "federation_spine",
+      "exposure_posture": "no_counterpart_exposure",
+      "review_note": "The federation spine stays limited to source-owned export entrypoints and does not expose counterpart refs in the current pilot.",
+      "forbidden_refs": [
+        "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+        "examples/counterpart_consumer_contract.example.json",
+        "docs/COUNTERPART_EDGE_CONTRACTS.md",
+        "examples/counterpart_edge_view.example.json"
+      ]
+    },
+    {
+      "surface_name": "cross_source_node_projection",
+      "surface_input": "cross_source_node_projection",
+      "exposure_posture": "counterpart_activation_forbidden",
+      "review_note": "The current one-hop projection keeps counterpart activation forbidden and does not imply a generated counterpart payload.",
+      "forbidden_refs": [
+        "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+        "examples/counterpart_consumer_contract.example.json",
+        "docs/COUNTERPART_EDGE_CONTRACTS.md",
+        "examples/counterpart_edge_view.example.json"
+      ]
+    },
+    {
+      "surface_name": "counterpart_consumer_contract_doc",
+      "surface_input": "counterpart_consumer_contract_doc",
+      "exposure_posture": "contract_reference_surface",
+      "review_note": "The consumer contract doc defines the allowed bounded counterpart posture without activating a generated counterpart surface."
+    },
+    {
+      "surface_name": "counterpart_consumer_contract_example",
+      "surface_input": "counterpart_consumer_contract_example",
+      "exposure_posture": "contract_reference_surface",
+      "review_note": "The consumer contract example makes the current allowed counterpart refs machine-readable without turning them into active payloads."
+    },
+    {
+      "surface_name": "counterpart_edge_contract_doc",
+      "surface_input": "counterpart_edge_contract_doc",
+      "exposure_posture": "planned_contract_surface",
+      "review_note": "The counterpart edge contract doc records planned posture and non-identity grammar while activation remains deferred."
+    },
+    {
+      "surface_name": "counterpart_edge_contract_example",
+      "surface_input": "counterpart_edge_contract_example",
+      "exposure_posture": "planned_example_surface",
+      "review_note": "The counterpart edge example remains a planned review surface that preserves grammar without claiming active federation exposure."
+    }
+  ],
+  "output_paths": {
+    "full": "generated/counterpart_federation_exposure_review.json",
+    "min": "generated/counterpart_federation_exposure_review.min.json"
+  },
+  "bounded_output_contract": {
+    "silent_federation_exposure": "forbidden",
+    "generated_counterpart_payload_inference": "forbidden",
+    "routing_ownership": "forbidden",
+    "source_replacement": "forbidden"
+  }
+}

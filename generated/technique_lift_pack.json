@@ -62,7 +62,7 @@
     "Validation",
     "Adaptation notes"
   ],
-  "technique_count": 48,
+  "technique_count": 74,
   "techniques": [
     {
       "technique_id": "AOA-T-0001",
@@ -2774,13 +2774,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Require one explicit confirmation seam before a read or plan flow crosses into a mutating action so the action stays reviewable without widening into a multi-step autonomous loop.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2793,9 +2793,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/confirmation-gated-mutating-action/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3062,13 +3067,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Make agent runs composable as shell-side one-shot tools through explicit stdin, stdout, files, and pipes without widening into generic shell advice or autonomous loops.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3081,9 +3086,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/shell-composable-agent-invocation/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -4268,13 +4278,13 @@
       },
       "metadata_spine": {
         "domain": "history",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Package already-saved AI session transcripts as readable, versionable Markdown artifacts so review, handoff, and selective sharing stay possible without reopening capture semantics or turning transcript history into memory or instruction authority.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4287,9 +4297,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/history/versionable-session-transcripts/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -4651,6 +4666,2489 @@
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/docs/semantic-review-surface-lift/notes/origin-evidence.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0049",
+      "technique_name": "dependency-aware-task-graph",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/dependency-aware-task-graph/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Model multi-step coding work as explicit dependency nodes and edges so blocked state and ready work stay reviewable instead of hiding in chat memory.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0001"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-27",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/dependency-aware-task-graph/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/dependency-aware-task-graph/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/dependency-aware-task-graph/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/dependency-aware-task-graph/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0050",
+      "technique_name": "ready-work-from-blocker-graph",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/ready-work-from-blocker-graph/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Derive the next bounded work queue from blocker-free graph state so operators choose from what is truly ready instead of narrating readiness from memory.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0049"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0001"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-27",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/ready-work-from-blocker-graph/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/ready-work-from-blocker-graph/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/ready-work-from-blocker-graph/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/ready-work-from-blocker-graph/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0051",
+      "technique_name": "commit-triggered-background-review",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/commit-triggered-background-review/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Trigger a bounded background review after a commit so findings survive as inspectable artifacts without widening into autonomous merge, rewrite, or CI governance.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0001"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-27",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/commit-triggered-background-review/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/commit-triggered-background-review/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/commit-triggered-background-review/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/commit-triggered-background-review/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0052",
+      "technique_name": "review-findings-compaction",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/review-findings-compaction/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Compact and revalidate review findings against current code so repeated or stale findings do not overwhelm the current review surface.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0051"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-27",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/review-findings-compaction/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/review-findings-compaction/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/review-findings-compaction/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/review-findings-compaction/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0053",
+      "technique_name": "local-first-session-index",
+      "source_ref": "aoa-techniques/techniques/history/local-first-session-index/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "history",
+        "status": "canonical",
+        "summary": "Build a local searchable index over already-saved session artifacts so teams can browse or query saved history without reopening capture semantics or turning the index into memory or dashboard doctrine.",
+        "maturity_score": 5,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "cross_context",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0026"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0044"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 5,
+        "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/history/local-first-session-index/notes/adverse-effects-review.md"
+          },
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/history/local-first-session-index/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/history/local-first-session-index/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/history/local-first-session-index/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/history/local-first-session-index/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0054",
+      "technique_name": "compaction-resilient-skill-loading",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/compaction-resilient-skill-loading/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Re-seed skill availability after context compaction so agents can reload needed skills from canonical sources without widening into full context reconstruction or prompt stuffing.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0040"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/compaction-resilient-skill-loading/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/compaction-resilient-skill-loading/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/compaction-resilient-skill-loading/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/compaction-resilient-skill-loading/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0055",
+      "technique_name": "requirements-design-tasks-ladder",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/requirements-design-tasks-ladder/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Separate requirements, design, and task slices so implementation planning stays reviewable without importing a full spec-driven methodology stack.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0001"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/requirements-design-tasks-ladder/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/requirements-design-tasks-ladder/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/requirements-design-tasks-ladder/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/requirements-design-tasks-ladder/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0056",
+      "technique_name": "channelized-agent-mailbox",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/channelized-agent-mailbox/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Keep agent communication inside durable named channels with ordered replay and explicit acknowledgment so coordination survives session gaps without widening into a full messaging platform or handoff-governance stack.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/channelized-agent-mailbox/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/channelized-agent-mailbox/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/channelized-agent-mailbox/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/channelized-agent-mailbox/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0057",
+      "technique_name": "structured-handoff-before-compaction",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/structured-handoff-before-compaction/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Write one structured handoff artifact before compaction or session rollover so the next session can resume from explicit state instead of hidden memory or transcript replay.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0054"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/structured-handoff-before-compaction/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/structured-handoff-before-compaction/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/structured-handoff-before-compaction/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/structured-handoff-before-compaction/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0058",
+      "technique_name": "receipt-confirmed-handoff-packet",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/receipt-confirmed-handoff-packet/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Require an explicit receipt state for a handoff packet before the receiving side continues so ownership transfer stays reviewable instead of being inferred from delivery or silence.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0057"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/receipt-confirmed-handoff-packet/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/receipt-confirmed-handoff-packet/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/receipt-confirmed-handoff-packet/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/receipt-confirmed-handoff-packet/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0059",
+      "technique_name": "git-verified-handoff-claims",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/git-verified-handoff-claims/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Verify concrete handoff claims against visible git state before continuation so the next session trusts repo evidence rather than memory or summary prose alone.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0057"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/git-verified-handoff-claims/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/git-verified-handoff-claims/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/git-verified-handoff-claims/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/git-verified-handoff-claims/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0060",
+      "technique_name": "session-opening-ritual-before-work",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/session-opening-ritual-before-work/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Start a resumed or handed-off session with one visible read-and-verify ritual before the first mutation so work begins from current state rather than stale assumptions.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0057"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-opening-ritual-before-work/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-opening-ritual-before-work/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-opening-ritual-before-work/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-opening-ritual-before-work/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0061",
+      "technique_name": "cross-repo-resource-map-bootstrap",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/cross-repo-resource-map-bootstrap/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Bootstrap cross-repo work from one explicit resource map so the next session can see which repos and surfaces matter before deeper continuation begins.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0016"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/cross-repo-resource-map-bootstrap/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/cross-repo-resource-map-bootstrap/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/cross-repo-resource-map-bootstrap/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/cross-repo-resource-map-bootstrap/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0062",
+      "technique_name": "episode-bounded-agent-loop",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/episode-bounded-agent-loop/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Break longer work into explicit episodes with checkpoints and continue, stop, or escalate decisions so continuation stays reviewable instead of slipping into open-ended autonomy.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0057"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/episode-bounded-agent-loop/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/episode-bounded-agent-loop/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/episode-bounded-agent-loop/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/episode-bounded-agent-loop/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0063",
+      "technique_name": "versioned-agent-registry-contract",
+      "source_ref": "aoa-techniques/techniques/docs/versioned-agent-registry-contract/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "docs",
+        "status": "promoted",
+        "summary": "Keep registry-facing capability entries reviewable as named versioned records with explicit references and metadata so publication stays bounded without widening into discovery policy or registry product doctrine.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0025"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/docs/versioned-agent-registry-contract/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/docs/versioned-agent-registry-contract/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/docs/versioned-agent-registry-contract/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/docs/versioned-agent-registry-contract/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0064",
+      "technique_name": "capability-discovery",
+      "source_ref": "aoa-techniques/techniques/docs/capability-discovery/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "docs",
+        "status": "promoted",
+        "summary": "Keep capability lookup reviewable as explicit bounded queries over published registry entries so discovery stays separate from ranking, marketplace curation, trust policy, and registry product doctrine.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0063"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/docs/capability-discovery/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/docs/capability-discovery/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/docs/capability-discovery/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/docs/capability-discovery/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0065",
+      "technique_name": "mcp-gateway-proxy",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/mcp-gateway-proxy/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Front multiple configured MCP servers through one bounded gateway proxy so callers use one reviewable tool surface with explicit metadata and sanitization instead of binding directly to each upstream server.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0038"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/mcp-gateway-proxy/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/mcp-gateway-proxy/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/mcp-gateway-proxy/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/mcp-gateway-proxy/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0066",
+      "technique_name": "transcript-replay-artifact",
+      "source_ref": "aoa-techniques/techniques/history/transcript-replay-artifact/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "history",
+        "status": "promoted",
+        "summary": "Turn already-saved session history into a replayable artifact so reviewers can inspect message flow and timeline without reopening capture semantics or widening into hosted replay-platform doctrine.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0044"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0053"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/history/transcript-replay-artifact/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/history/transcript-replay-artifact/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/history/transcript-replay-artifact/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/history/transcript-replay-artifact/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0067",
+      "technique_name": "transcript-linked-code-lineage",
+      "source_ref": "aoa-techniques/techniques/history/transcript-linked-code-lineage/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "history",
+        "status": "promoted",
+        "summary": "Link code history back to saved session evidence so reviewers can reopen the originating transcript or rationale without widening the bundle into generic repo analytics or memory doctrine.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0045"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/history/transcript-linked-code-lineage/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/history/transcript-linked-code-lineage/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/history/transcript-linked-code-lineage/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/history/transcript-linked-code-lineage/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0068",
+      "technique_name": "fail-closed-evidence-gate",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/fail-closed-evidence-gate/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Stop mutating execution at the boundary unless an explicit allow verdict exists, and emit reviewable evidence for blocked or allowed paths instead of relying on best-effort warnings.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0028"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/fail-closed-evidence-gate/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/fail-closed-evidence-gate/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/fail-closed-evidence-gate/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/fail-closed-evidence-gate/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0069",
+      "technique_name": "approval-bound-durable-jobs",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/approval-bound-durable-jobs/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Keep longer-running work durable across one explicit approval seam so checkpoint, pause, and resume remain reviewable without widening into a scheduler or orchestration platform.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 1,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0062"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/approval-bound-durable-jobs/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/approval-bound-durable-jobs/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/approval-bound-durable-jobs/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/approval-bound-durable-jobs/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0070",
+      "technique_name": "two-stage-document-ocr-pipeline",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Stage OCR as detect or layout -> recognize -> structured handoff so downstream extraction stays reviewable, interchangeable, and confidence-aware instead of collapsing OCR and field logic into one opaque step.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/two-stage-document-ocr-pipeline/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0071",
+      "technique_name": "template-backed-field-extraction-after-ocr",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Extract bounded fields after OCR through explicit templates, heuristics, and missing-or-conflict signaling so structured receipt-like data stays reviewable instead of being guessed by one opaque parser.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0072",
+      "technique_name": "perceptual-media-dedupe-with-threshold-review",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Group near-duplicate media through perceptual similarity and thresholded review buckets so cleanup stays reviewable instead of collapsing into silent deletion or one-threshold dogma.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0073",
+      "technique_name": "semantic-media-bucketing-with-vision-plus-ocr",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Bucket mixed media through bounded visual semantics plus OCR side text so screenshots, memes, receipts, and other media classes remain reviewable under explicit confidence gates instead of widening into open-ended multimodal automation.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0074",
+      "technique_name": "telegram-export-normalization-to-local-store",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Normalize Telegram messages and media into a resumable local store with visible provenance so later workflows can inspect, route, or distill the data without collapsing auth, session, or memory doctrine into the storage contract.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/second-context-adaptation.md"
           }
         ]
       }

@@ -1,0 +1,42 @@
+{
+  "manifest_version": 1,
+  "pack_type": "tos_text_chunk_map",
+  "source_repo": "Tree-of-Sophia",
+  "source_root_env": "TREE_OF_SOPHIA_ROOT",
+  "source_inputs": [
+    {
+      "name": "tos_source_node",
+      "path": "examples/source_node.example.json",
+      "role": "authority_surface"
+    },
+    {
+      "name": "tos_tiny_entry_route_doc",
+      "path": "docs/TINY_ENTRY_ROUTE.md",
+      "role": "route_surface"
+    },
+    {
+      "name": "tos_zarathustra_capsule",
+      "path": "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md",
+      "role": "capsule_surface"
+    }
+  ],
+  "surface_bindings": [
+    {
+      "surface_id": "AOA-K-0005",
+      "surface_name": "tos-text-chunk-map",
+      "derived_kind": "chunk_map",
+      "derived_slot": "chunks",
+      "source_input": "tos_source_node"
+    }
+  ],
+  "output_paths": {
+    "full": "generated/tos_text_chunk_map.json",
+    "min": "generated/tos_text_chunk_map.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "counterpart_projection": "forbidden",
+    "federation_export_activation": "forbidden"
+  }
+}
