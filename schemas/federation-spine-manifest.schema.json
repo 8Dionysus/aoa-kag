@@ -64,6 +64,7 @@
           "repo",
           "pilot_posture",
           "export_input",
+          "adjunct_surfaces",
           "provenance_note",
           "non_identity_boundary"
         ],
@@ -83,6 +84,47 @@
           "export_input": {
             "type": "string",
             "minLength": 1
+          },
+          "adjunct_surfaces": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "surface_id",
+                "surface_name",
+                "surface_ref",
+                "match_key",
+                "target_value",
+                "route_id"
+              ],
+              "properties": {
+                "surface_id": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "surface_name": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "surface_ref": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "match_key": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "target_value": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "route_id": {
+                  "type": "string",
+                  "minLength": 3
+                }
+              }
+            }
           },
           "provenance_note": {
             "type": "string",

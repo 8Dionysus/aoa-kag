@@ -3687,6 +3687,7 @@ def build_federation_spine_payload(
         repo_name = binding.get("repo")
         pilot_posture = binding.get("pilot_posture")
         export_input_name = binding.get("export_input")
+        adjunct_surfaces = binding.get("adjunct_surfaces")
         provenance_note = binding.get("provenance_note")
         non_identity_boundary = binding.get("non_identity_boundary")
 
@@ -3702,6 +3703,8 @@ def build_federation_spine_payload(
             )
         ):
             fail("federation spine repo binding must keep required string fields")
+        if not isinstance(adjunct_surfaces, list):
+            fail("federation spine repo binding adjunct_surfaces must be a list")
         if repo_name in seen_repos:
             fail(f"duplicate federation spine repo binding '{repo_name}'")
         seen_repos.add(repo_name)
@@ -3743,6 +3746,70 @@ def build_federation_spine_payload(
             label=f"{manifest_input_ref(export_input)}.entry_surface.path",
         )
 
+        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        for adjunct_index, adjunct in enumerate(adjunct_surfaces):
+            adjunct_location = (
+                f"federation spine repo binding '{repo_name}' "
+                f"adjunct_surfaces[{adjunct_index}]"
+            )
+            if not isinstance(adjunct, dict):
+                fail(f"{adjunct_location} must be an object")
+            adjunct_surface_id = adjunct.get("surface_id")
+            adjunct_surface_name = adjunct.get("surface_name")
+            adjunct_surface_ref = adjunct.get("surface_ref")
+            adjunct_match_key = adjunct.get("match_key")
+            adjunct_target_value = adjunct.get("target_value")
+            adjunct_route_id = adjunct.get("route_id")
+            if not all(
+                isinstance(value, str) and value
+                for value in (
+                    adjunct_surface_id,
+                    adjunct_surface_name,
+                    adjunct_surface_ref,
+                    adjunct_match_key,
+                    adjunct_target_value,
+                    adjunct_route_id,
+                )
+            ):
+                fail(
+                    f"{adjunct_location} must keep surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            adjunct_surface = registry_by_id.get(adjunct_surface_id)
+            if adjunct_surface is None:
+                fail(
+                    f"{adjunct_location} references unknown registry surface "
+                    f"'{adjunct_surface_id}'"
+                )
+            if adjunct_surface.get("status") != "experimental":
+                fail(f"{adjunct_location} must point to an experimental registry surface")
+            if adjunct_surface.get("name") != adjunct_surface_name:
+                fail(
+                    f"{adjunct_location}.surface_name must match registry surface "
+                    f"'{adjunct_surface.get('name')}'"
+                )
+            if repo_name != TOS_REPO:
+                fail(
+                    f"{adjunct_location} is not allowed because adjunct surfaces "
+                    "are only enabled for Tree-of-Sophia in the current wave"
+                )
+            resolve_path = REPO_ROOT / adjunct_surface_ref
+            if not resolve_path.exists():
+                fail(
+                    f"{adjunct_location}.surface_ref does not exist: "
+                    f"{repo_ref(KAG_REPO, adjunct_surface_ref)}"
+                )
+            normalized_adjunct_surfaces.append(
+                {
+                    "surface_id": adjunct_surface_id,
+                    "surface_name": adjunct_surface_name,
+                    "surface_ref": adjunct_surface_ref,
+                    "match_key": adjunct_match_key,
+                    "target_value": adjunct_target_value,
+                    "route_id": adjunct_route_id,
+                }
+            )
+
         repos.append(
             {
                 "repo": repo_name,
@@ -3751,6 +3818,7 @@ def build_federation_spine_payload(
                 "kind": export_payload["kind"],
                 "object_id": export_payload["object_id"],
                 "entry_surface_ref": repo_ref(entry_surface_repo, entry_surface_path),
+                "adjunct_surfaces": normalized_adjunct_surfaces,
                 "summary_50": export_payload["summary_50"],
                 "provenance_note": provenance_note,
                 "non_identity_boundary": non_identity_boundary,

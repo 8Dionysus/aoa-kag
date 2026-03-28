@@ -31,6 +31,7 @@
       "kind": "technique",
       "object_id": "AOA-T-0043",
       "entry_surface_ref": "aoa-techniques/generated/technique_capsules.json",
+      "adjunct_surfaces": [],
       "summary_50": "Source-owned tiny export for explicit primary and supporting provenance.",
       "provenance_note": "Consumes the current source-owned tiny aoa-techniques export directly during the bounded two-repo pilot.",
       "non_identity_boundary": "This derived spine guides federation entry through a source-owned tiny export and does not replace authored technique meaning or move routing ownership into aoa-kag."
@@ -42,6 +43,16 @@
       "kind": "source_node",
       "object_id": "tos.source.thus-spoke-zarathustra.prologue",
       "entry_surface_ref": "Tree-of-Sophia/examples/source_node.example.json",
+      "adjunct_surfaces": [
+        {
+          "surface_id": "AOA-K-0011",
+          "surface_name": "tos-zarathustra-route-retrieval-surface",
+          "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+          "match_key": "retrieval_id",
+          "target_value": "AOA-K-0011::thus-spoke-zarathustra/prologue-1",
+          "route_id": "thus-spoke-zarathustra/prologue-1"
+        }
+      ],
       "summary_50": "Source-owned tiny export for the current Zarathustra prologue authority route.",
       "provenance_note": "Consumes the current source-owned tiny Tree-of-Sophia export directly from the bounded authority, capsule, and tiny-entry slice.",
       "non_identity_boundary": "This derived spine guides federation entry through a source-owned tiny ToS export and does not replace ToS-authored authority or move canon ownership into aoa-kag."

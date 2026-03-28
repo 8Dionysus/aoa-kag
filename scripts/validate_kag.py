@@ -48,6 +48,7 @@ from kag_generation import (
     TOS_ZARATHUSTRA_ROUTE_EVENT_ROOT,
     TOS_ZARATHUSTRA_ROUTE_ID,
     TOS_ZARATHUSTRA_ROUTE_LINEAGE_NODE_PATH,
+    TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER,
     TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS,
     TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH,
     TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH,
@@ -97,6 +98,7 @@ from kag_generation import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+KAG_REPO = "aoa-kag"
 
 
 def repo_root_from_env(env_name: str, default: Path) -> Path:
@@ -705,6 +707,19 @@ EXPECTED_FEDERATION_SPINE_CONTRACT = {
     "full_federation_claim": "forbidden",
 }
 EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques", TOS_REPO}
+EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
+    "aoa-techniques": [],
+    TOS_REPO: [
+        {
+            "surface_id": "AOA-K-0011",
+            "surface_name": "tos-zarathustra-route-retrieval-surface",
+            "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+            "match_key": "retrieval_id",
+            "target_value": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
+            "route_id": TOS_ZARATHUSTRA_ROUTE_ID,
+        }
+    ],
+}
 EXPECTED_CROSS_SOURCE_NODE_PROJECTION_INPUTS = {
     ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "primary_export"),
     ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "supporting_export"),
@@ -2559,6 +2574,7 @@ def validate_federation_spine_manifest(
         repo_name = binding.get("repo")
         pilot_posture = binding.get("pilot_posture")
         export_input = binding.get("export_input")
+        adjunct_surfaces = binding.get("adjunct_surfaces")
         provenance_note = binding.get("provenance_note")
         non_identity_boundary = binding.get("non_identity_boundary")
         if not all(
@@ -2579,6 +2595,8 @@ def validate_federation_spine_manifest(
             fail(f"{location}.provenance_note must be a string of length >= 20")
         if len(non_identity_boundary) < 20:
             fail(f"{location}.non_identity_boundary must be a string of length >= 20")
+        if not isinstance(adjunct_surfaces, list):
+            fail(f"{location}.adjunct_surfaces must be a list")
 
         surface = surfaces_by_id.get(surface_id)
         if surface is None:
@@ -2601,6 +2619,93 @@ def validate_federation_spine_manifest(
             fail(
                 f"{location}.export_input dependency '{dependency_id}' must declare "
                 f"'{surface_id}' in consumed_by"
+            )
+
+        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        for adjunct_index, adjunct in enumerate(adjunct_surfaces):
+            adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
+            if not isinstance(adjunct, dict):
+                fail(f"{adjunct_location} must be an object")
+            if set(adjunct) != {
+                "surface_id",
+                "surface_name",
+                "surface_ref",
+                "match_key",
+                "target_value",
+                "route_id",
+            }:
+                fail(
+                    f"{adjunct_location} must keep exactly surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            adjunct_surface_id = adjunct.get("surface_id")
+            adjunct_surface_name = adjunct.get("surface_name")
+            adjunct_surface_ref = adjunct.get("surface_ref")
+            adjunct_match_key = adjunct.get("match_key")
+            adjunct_target_value = adjunct.get("target_value")
+            adjunct_route_id = adjunct.get("route_id")
+            if not all(
+                isinstance(value, str) and value
+                for value in (
+                    adjunct_surface_id,
+                    adjunct_surface_name,
+                    adjunct_surface_ref,
+                    adjunct_match_key,
+                    adjunct_target_value,
+                    adjunct_route_id,
+                )
+            ):
+                fail(
+                    f"{adjunct_location} must keep surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            adjunct_surface = surfaces_by_id.get(adjunct_surface_id)
+            if adjunct_surface is None:
+                fail(
+                    f"{adjunct_location} references unknown registry surface "
+                    f"'{adjunct_surface_id}'"
+                )
+            if adjunct_surface.get("status") != "experimental":
+                fail(f"{adjunct_location} must point to an experimental registry surface")
+            if adjunct_surface.get("name") != adjunct_surface_name:
+                fail(
+                    f"{adjunct_location}.surface_name must match registry surface "
+                    f"'{adjunct_surface.get('name')}'"
+                )
+            if adjunct_match_key != "retrieval_id":
+                fail(f"{adjunct_location}.match_key must equal 'retrieval_id'")
+            if adjunct_target_value != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID:
+                fail(
+                    f"{adjunct_location}.target_value must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID}'"
+                )
+            if adjunct_route_id != TOS_ZARATHUSTRA_ROUTE_ID:
+                fail(
+                    f"{adjunct_location}.route_id must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_ID}'"
+                )
+            resolve_known_ref(
+                repo_ref(KAG_REPO, adjunct_surface_ref),
+                label=f"{adjunct_location}.surface_ref",
+            )
+            normalized_adjunct_surfaces.append(
+                {
+                    "surface_id": adjunct_surface_id,
+                    "surface_name": adjunct_surface_name,
+                    "surface_ref": adjunct_surface_ref,
+                    "match_key": adjunct_match_key,
+                    "target_value": adjunct_target_value,
+                    "route_id": adjunct_route_id,
+                }
+            )
+
+        expected_adjunct_surfaces = EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO.get(repo_name)
+        if expected_adjunct_surfaces is None:
+            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine wave")
+        if normalized_adjunct_surfaces != expected_adjunct_surfaces:
+            fail(
+                f"{location}.adjunct_surfaces must match the current bounded adjunct "
+                f"contract for '{repo_name}'"
             )
 
         actual_bindings.add((surface_id, repo_name, pilot_posture, export_input))
@@ -3490,6 +3595,8 @@ def validate_tos_zarathustra_route_pack(
 
     actual_node_type_counts = {key: 0 for key in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS}
     seen_node_ids: set[str] = set()
+    seen_authority_refs: set[str] = set()
+    actual_node_type_order: list[str] = []
     for index, node in enumerate(nodes):
         location = f"ToS Zarathustra route pack nodes[{index}]"
         if not isinstance(node, dict):
@@ -3518,12 +3625,19 @@ def validate_tos_zarathustra_route_pack(
         if node_type not in actual_node_type_counts:
             fail(f"{location}.node_type '{node_type}' is not allowed in the route pack")
         actual_node_type_counts[node_type] += 1
+        actual_node_type_order.append(node_type)
         if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/tree/"):
             fail(f"{location}.authority_ref must point into Tree-of-Sophia/tree/**/node.json")
         if not authority_ref.endswith("/node.json"):
             fail(f"{location}.authority_ref must resolve to a canonical node.json file")
         if "/intake/" in authority_ref or authority_ref.startswith("Tree-of-Sophia/intake/"):
             fail(f"{location}.authority_ref must not point at Tree-of-Sophia/intake")
+        if authority_ref in seen_authority_refs:
+            fail(
+                f"{location}.authority_ref '{authority_ref}' is duplicated and would "
+                "collapse distinct canonical nodes into one projection handle"
+            )
+        seen_authority_refs.add(authority_ref)
         resolve_known_ref(authority_ref, label=f"{location}.authority_ref")
         validate_unique_string_list(node["key_terms"], label=f"{location}.key_terms")
         validate_unique_string_list(
@@ -3540,6 +3654,17 @@ def validate_tos_zarathustra_route_pack(
             "ToS Zarathustra route pack nodes must preserve the current family counts "
             "across the canonical route"
         )
+    expected_node_type_order = [
+        node_type
+        for node_type in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER
+        for _ in range(TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS[node_type])
+    ]
+    if actual_node_type_order != expected_node_type_order:
+        fail(
+            "ToS Zarathustra route pack nodes must preserve the current family order "
+            "source -> concept -> principle -> lineage -> event -> state -> support "
+            "-> analogy -> synthesis"
+        )
 
     edges = payload["edges"]
     if not isinstance(edges, list) or len(edges) != sum(TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS.values()):
@@ -3550,6 +3675,12 @@ def validate_tos_zarathustra_route_pack(
         fail("ToS Zarathustra route pack edge_kind_counts must match the canonical relation pack")
 
     actual_edge_kind_counts = {key: 0 for key in TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS}
+    actual_edge_ids: list[str] = []
+    expected_edge_ids = [
+        edge["edge_id"]
+        for edge in expected_payload["edges"]
+        if isinstance(edge, dict) and isinstance(edge.get("edge_id"), str)
+    ]
     for index, edge in enumerate(edges):
         location = f"ToS Zarathustra route pack edges[{index}]"
         if not isinstance(edge, dict):
@@ -3572,6 +3703,10 @@ def validate_tos_zarathustra_route_pack(
         ):
             if key not in edge:
                 fail(f"{location} is missing required key '{key}'")
+        edge_id = edge["edge_id"]
+        if not isinstance(edge_id, str) or not edge_id:
+            fail(f"{location}.edge_id must be a non-empty string")
+        actual_edge_ids.append(edge_id)
         edge_kind = edge["edge_kind"]
         if edge_kind not in actual_edge_kind_counts:
             fail(f"{location}.edge_kind '{edge_kind}' is not allowed in the route pack")
@@ -3582,6 +3717,11 @@ def validate_tos_zarathustra_route_pack(
                 fail(f"{location}.{endpoint_key} must keep canonical tos.* ids")
             if endpoint.startswith("literal."):
                 fail(f"{location}.{endpoint_key} must not carry literal residue")
+            if endpoint not in seen_node_ids:
+                fail(
+                    f"{location}.{endpoint_key} '{endpoint}' must resolve to a node_id "
+                    "projected into the same route pack"
+                )
         if not isinstance(edge["predicate_id"], str) or not edge["predicate_id"]:
             fail(f"{location}.predicate_id must be a non-empty string")
         if not isinstance(edge["confidence"], int):
@@ -3590,6 +3730,11 @@ def validate_tos_zarathustra_route_pack(
         fail(
             "ToS Zarathustra route pack edges must preserve the current canonical "
             "edge-kind counts"
+        )
+    if actual_edge_ids != expected_edge_ids:
+        fail(
+            "ToS Zarathustra route pack edges must preserve the canonical relation "
+            "pack row order"
         )
 
     if payload != expected_payload:
@@ -3614,6 +3759,7 @@ def validate_tos_zarathustra_route_retrieval_pack(
     payload: object,
     surfaces_by_id: dict[str, dict[str, object]],
     expected_payload: dict[str, object],
+    route_pack_payload: dict[str, object],
 ) -> None:
     if not isinstance(payload, dict):
         fail("ToS Zarathustra route retrieval pack must be a JSON object")
@@ -3729,6 +3875,8 @@ def validate_tos_zarathustra_route_retrieval_pack(
             "ToS Zarathustra route retrieval pack route_pack_ref must point to "
             "generated/tos_zarathustra_route_pack.min.json"
         )
+    if "/intake/" in route["route_pack_ref"] or route["route_pack_ref"].startswith("Tree-of-Sophia/intake/"):
+        fail("ToS Zarathustra route retrieval pack route_pack_ref must not point at intake")
     resolve_known_ref(
         route["route_pack_ref"],
         label="ToS Zarathustra route retrieval pack route_pack_ref",
@@ -3754,15 +3902,28 @@ def validate_tos_zarathustra_route_retrieval_pack(
             "ToS Zarathustra route retrieval pack relation_pack_ref must stay "
             "aligned with the canonical ToS relation pack"
         )
-    if route["node_type_counts"] != TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS:
+    route_pack_nodes = route_pack_payload.get("nodes")
+    if not isinstance(route_pack_nodes, list):
+        fail("ToS Zarathustra route retrieval pack validation requires AOA-K-0010 nodes[]")
+    if route["route_capsule_ref"] != route_pack_payload.get("route_capsule_ref"):
+        fail(
+            "ToS Zarathustra route retrieval pack route_capsule_ref must match the "
+            "live AOA-K-0010 route_capsule_ref"
+        )
+    if route["relation_pack_ref"] != route_pack_payload.get("relation_pack_ref"):
+        fail(
+            "ToS Zarathustra route retrieval pack relation_pack_ref must match the "
+            "live AOA-K-0010 relation_pack_ref"
+        )
+    if route["node_type_counts"] != route_pack_payload.get("node_type_counts"):
         fail(
             "ToS Zarathustra route retrieval pack node_type_counts must match the "
-            "canonical AOA-K-0010 counts"
+            "live AOA-K-0010 counts"
         )
-    if route["edge_kind_counts"] != TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS:
+    if route["edge_kind_counts"] != route_pack_payload.get("edge_kind_counts"):
         fail(
             "ToS Zarathustra route retrieval pack edge_kind_counts must match the "
-            "canonical AOA-K-0010 counts"
+            "live AOA-K-0010 counts"
         )
     if route["retrieval_summary"] != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_SUMMARY:
         fail(
@@ -3770,6 +3931,18 @@ def validate_tos_zarathustra_route_retrieval_pack(
             "current bounded adjunct wording"
         )
 
+    route_pack_nodes_by_type = {
+        node_type: [
+            {
+                "node_id": node["node_id"],
+                "authority_ref": node["authority_ref"],
+            }
+            for node in route_pack_nodes
+            if isinstance(node, dict) and node.get("node_type") == node_type
+        ]
+        for node_type in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER
+    }
+    seen_handle_node_ids: set[str] = set()
     for node_type, expected_count in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS.items():
         handle_key = f"{node_type}_handles"
         handles = route[handle_key]
@@ -3779,6 +3952,7 @@ def validate_tos_zarathustra_route_retrieval_pack(
                 f"handle count for '{node_type}'"
             )
         seen_node_ids: set[str] = set()
+        normalized_handles: list[dict[str, str]] = []
         for index, handle in enumerate(handles):
             location = (
                 "ToS Zarathustra route retrieval pack "
@@ -3800,6 +3974,7 @@ def validate_tos_zarathustra_route_retrieval_pack(
             if node_id in seen_node_ids:
                 fail(f"{location}.node_id '{node_id}' is duplicated")
             seen_node_ids.add(node_id)
+            seen_handle_node_ids.add(node_id)
             if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/tree/"):
                 fail(f"{location}.authority_ref must point into Tree-of-Sophia/tree/**/node.json")
             if not authority_ref.endswith("/node.json"):
@@ -3809,6 +3984,28 @@ def validate_tos_zarathustra_route_retrieval_pack(
             if authority_ref.startswith("aoa-memo/") or authority_ref.startswith("aoa-routing/"):
                 fail(f"{location}.authority_ref must not point at aoa-memo or aoa-routing")
             resolve_known_ref(authority_ref, label=f"{location}.authority_ref")
+            normalized_handles.append(
+                {
+                    "node_id": node_id,
+                    "authority_ref": authority_ref,
+                }
+            )
+        if normalized_handles != route_pack_nodes_by_type[node_type]:
+            fail(
+                "ToS Zarathustra route retrieval pack must preserve family handle "
+                f"order and authority parity with AOA-K-0010 for '{node_type}'"
+            )
+
+    route_pack_node_ids = {
+        node["node_id"]
+        for node in route_pack_nodes
+        if isinstance(node, dict) and isinstance(node.get("node_id"), str)
+    }
+    if seen_handle_node_ids != route_pack_node_ids:
+        fail(
+            "ToS Zarathustra route retrieval pack handles must cover exactly the "
+            "node set published by AOA-K-0010"
+        )
 
     if payload != expected_payload:
         fail(
@@ -4463,6 +4660,7 @@ def validate_federation_spine_pack(
             "kind",
             "object_id",
             "entry_surface_ref",
+            "adjunct_surfaces",
             "summary_50",
             "provenance_note",
             "non_identity_boundary",
@@ -4476,6 +4674,7 @@ def validate_federation_spine_pack(
         kind = repo_entry["kind"]
         object_id = repo_entry["object_id"]
         entry_surface_ref = repo_entry["entry_surface_ref"]
+        adjunct_surfaces = repo_entry["adjunct_surfaces"]
         summary_50 = repo_entry["summary_50"]
         provenance_note = repo_entry["provenance_note"]
         non_identity_boundary = repo_entry["non_identity_boundary"]
@@ -4496,6 +4695,8 @@ def validate_federation_spine_pack(
             fail(f"{location}.object_id must be a non-empty string")
         if not isinstance(entry_surface_ref, str) or not entry_surface_ref:
             fail(f"{location}.entry_surface_ref must be a non-empty string")
+        if not isinstance(adjunct_surfaces, list):
+            fail(f"{location}.adjunct_surfaces must be a list")
         if not isinstance(summary_50, str) or len(summary_50) < 10:
             fail(f"{location}.summary_50 must be a string of length >= 10")
         if not isinstance(provenance_note, str) or len(provenance_note) < 20:
@@ -4512,6 +4713,87 @@ def validate_federation_spine_pack(
         surface_0009 = surfaces_by_id.get("AOA-K-0009")
         if surface_0009 is None or surface_0009.get("status") != "experimental":
             fail("federation spine pack requires AOA-K-0009 to remain experimental in the generated registry")
+
+        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        for adjunct_index, adjunct in enumerate(adjunct_surfaces):
+            adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
+            if not isinstance(adjunct, dict):
+                fail(f"{adjunct_location} must be an object")
+            if set(adjunct) != {
+                "surface_id",
+                "surface_name",
+                "surface_ref",
+                "match_key",
+                "target_value",
+                "route_id",
+            }:
+                fail(
+                    f"{adjunct_location} must keep exactly surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            adjunct_surface_id = adjunct.get("surface_id")
+            adjunct_surface_name = adjunct.get("surface_name")
+            adjunct_surface_ref = adjunct.get("surface_ref")
+            adjunct_match_key = adjunct.get("match_key")
+            adjunct_target_value = adjunct.get("target_value")
+            adjunct_route_id = adjunct.get("route_id")
+            if not all(
+                isinstance(value, str) and value
+                for value in (
+                    adjunct_surface_id,
+                    adjunct_surface_name,
+                    adjunct_surface_ref,
+                    adjunct_match_key,
+                    adjunct_target_value,
+                    adjunct_route_id,
+                )
+            ):
+                fail(
+                    f"{adjunct_location} must keep surface_id, surface_name, "
+                    "surface_ref, match_key, target_value, and route_id"
+                )
+            if adjunct_match_key != "retrieval_id":
+                fail(f"{adjunct_location}.match_key must equal 'retrieval_id'")
+            if adjunct_target_value != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID:
+                fail(
+                    f"{adjunct_location}.target_value must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID}'"
+                )
+            if adjunct_route_id != TOS_ZARATHUSTRA_ROUTE_ID:
+                fail(
+                    f"{adjunct_location}.route_id must equal "
+                    f"'{TOS_ZARATHUSTRA_ROUTE_ID}'"
+                )
+            resolve_known_ref(
+                repo_ref(KAG_REPO, adjunct_surface_ref),
+                label=f"{adjunct_location}.surface_ref",
+            )
+            surface = surfaces_by_id.get(adjunct_surface_id)
+            if surface is None or surface.get("status") != "experimental":
+                fail(f"{adjunct_location} must point to an experimental registry surface")
+            if surface.get("name") != adjunct_surface_name:
+                fail(
+                    f"{adjunct_location}.surface_name must match registry surface "
+                    f"'{surface.get('name')}'"
+                )
+            normalized_adjunct_surfaces.append(
+                {
+                    "surface_id": adjunct_surface_id,
+                    "surface_name": adjunct_surface_name,
+                    "surface_ref": adjunct_surface_ref,
+                    "match_key": adjunct_match_key,
+                    "target_value": adjunct_target_value,
+                    "route_id": adjunct_route_id,
+                }
+            )
+        expected_adjunct_surfaces = EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO.get(repo_name)
+        if expected_adjunct_surfaces is None:
+            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine wave")
+        if normalized_adjunct_surfaces != expected_adjunct_surfaces:
+            fail(
+                f"{location}.adjunct_surfaces must match the current bounded adjunct "
+                f"contract for '{repo_name}'"
+            )
 
     if repo_order != EXPECTED_FEDERATION_SPINE_REPO_ORDER:
         fail("federation spine pack repos must keep the current stable repo order")
@@ -5785,8 +6067,11 @@ def main() -> int:
             generated_surfaces_by_id,
             expected_tos_retrieval_axis_payload,
         )
+        live_tos_zarathustra_route_pack_payload = read_json(
+            TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH
+        )
         validate_tos_zarathustra_route_pack(
-            read_json(TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH),
+            live_tos_zarathustra_route_pack_payload,
             generated_surfaces_by_id,
             expected_tos_zarathustra_route_pack_payload,
         )
@@ -5794,6 +6079,7 @@ def main() -> int:
             read_json(TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH),
             generated_surfaces_by_id,
             expected_tos_zarathustra_route_retrieval_pack_payload,
+            live_tos_zarathustra_route_pack_payload,
         )
         validate_reasoning_handoff_pack(
             read_json(REASONING_HANDOFF_MIN_OUTPUT_PATH),

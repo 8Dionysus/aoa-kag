@@ -62,7 +62,7 @@
     "Validation",
     "Adaptation notes"
   ],
-  "technique_count": 71,
+  "technique_count": 74,
   "techniques": [
     {
       "technique_id": "AOA-T-0001",
@@ -6856,6 +6856,279 @@
             "kind": "second_context",
             "title": "Second Context Adaptation",
             "note_ref": "aoa-techniques/techniques/agent-workflows/template-backed-field-extraction-after-ocr/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0072",
+      "technique_name": "perceptual-media-dedupe-with-threshold-review",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Group near-duplicate media through perceptual similarity and thresholded review buckets so cleanup stays reviewable instead of collapsing into silent deletion or one-threshold dogma.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/perceptual-media-dedupe-with-threshold-review/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0073",
+      "technique_name": "semantic-media-bucketing-with-vision-plus-ocr",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Bucket mixed media through bounded visual semantics plus OCR side text so screenshots, memes, receipts, and other media classes remain reviewable under explicit confidence gates instead of widening into open-ended multimodal automation.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/semantic-media-bucketing-with-vision-plus-ocr/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0074",
+      "technique_name": "telegram-export-normalization-to-local-store",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Normalize Telegram messages and media into a resumable local store with visible provenance so later workflows can inspect, route, or distill the data without collapsing auth, session, or memory doctrine into the storage contract.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 0,
+        "relations": []
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-03-28",
+        "note_count": 4,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "external_review",
+            "title": "External Import Review",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/external-import-review.md"
+          },
+          {
+            "kind": "external_origin",
+            "title": "External Origin Note",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/external-origin.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/second-context-adaptation.md"
           }
         ]
       }

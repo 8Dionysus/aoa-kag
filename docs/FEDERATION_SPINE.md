@@ -75,6 +75,16 @@ a wider federation claim.
 That downstream handoff remains additive: it does not turn `aoa-kag` into
 routing authority, and it does not turn the spine into ToS or AoA canon.
 
+For `Tree-of-Sophia`, the spine now also advertises one bounded adjunct
+retrieval surface:
+
+- `generated/tos_zarathustra_route_retrieval_pack.min.json`
+
+That adjunct remains handles-only and subordinate to the source-owned
+tiny-entry posture. It does not replace the tiny-entry route, does not
+activate a new federation kind, and does not grant routing or canon ownership
+to `aoa-kag`.
+
 The current spine is also explicitly covered by
 `COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`.
 That review confirms that the current two-repo federation spine does not expose

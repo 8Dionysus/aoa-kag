@@ -14,6 +14,7 @@ It now also carries the first experimental ToS retrieval-axis pack built from th
 It now also carries `AOA-K-0010`, the first direct canonical-tree-derived Zarathustra route bundle built from canonical `Tree-of-Sophia/tree/**` surfaces plus the canonical route-local relation pack.
 It now also carries `AOA-K-0011`, the first standalone route-local consumer-facing derivative over `AOA-K-0010`; it remains handles-only and does not replace the existing tiny-entry consumer path.
 It now also carries the first public federation export contract and one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`.
+For `Tree-of-Sophia`, that spine now also advertises one bounded `AOA-K-0011` adjunct for downstream routing while keeping the upstream pilot source-owned and tiny-entry-first.
 It now also carries the first bounded cross-source node projection built from that real export loop plus the current retrieval-axis pack.
 It now also carries one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, one narrow consumer guide, and one canonical release-check path for hardening the current experimental stack without activating `AOA-K-0008`.
 It now also carries one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so the current experimental path can be consumed without activating counterpart generation.
