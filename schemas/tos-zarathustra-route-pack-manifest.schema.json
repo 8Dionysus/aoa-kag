@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tos-zarathustra-route-pack-manifest.schema.json",
+  "title": "AoA KAG ToS Zarathustra route pack manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "pack_type",
+    "source_repo",
+    "source_root_env",
+    "source_inputs",
+    "surface_bindings",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "tos_zarathustra_route_pack"
+    },
+    "source_repo": {
+      "type": "string",
+      "const": "Tree-of-Sophia"
+    },
+    "source_root_env": {
+      "type": "string",
+      "const": "TREE_OF_SOPHIA_ROOT"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "authority_surface",
+              "concept_surface",
+              "lineage_surface",
+              "family_root",
+              "relation_pack",
+              "capsule_surface"
+            ]
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          },
+          "surface_name": {
+            "type": "string",
+            "const": "tos-zarathustra-route-pack"
+          },
+          "derived_kind": {
+            "type": "string",
+            "const": "node_projection"
+          },
+          "derived_slot": {
+            "type": "string",
+            "const": "nodes"
+          },
+          "source_input": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "minLength": 1
+        },
+        "min": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "intake_consumption",
+        "routing_ownership",
+        "consumer_projection"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "intake_consumption": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "routing_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "consumer_projection": {
+          "type": "string",
+          "const": "deferred"
+        }
+      }
+    }
+  }
+}

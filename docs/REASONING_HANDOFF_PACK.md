@@ -18,6 +18,12 @@ This wave is intentionally narrow:
   KAG guardrails
 - preserve guidance-to-source posture instead of inventing a new owner layer
 
+That planned posture is intentional, not a missing implementation step:
+
+- no downstream consumer contract depends on `AOA-K-0007` or `AOA-K-0008` yet
+- federation exposure remains deferred
+- the current job is to make the bridge readable before promotion is considered
+
 ## Source inputs
 
 The current pack reads bounded donor surfaces from:

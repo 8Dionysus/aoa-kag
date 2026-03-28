@@ -8,7 +8,18 @@ This roadmap tracks the bootstrap and early shaping of the AoA KAG layer.
 The current goal is not to build a giant graph engine immediately.
 The goal is to define what the KAG layer is for, what it owns, and what it must not silently absorb.
 The current repository now also carries the first manifest-driven generated technique lift pack so bootstrap doctrine begins to harden into reproducible substrate output.
-It now also carries the first public federation export contract and one experimental federation spine pilot built from existing `aoa-techniques` generated surfaces plus the current source-owned Tree-of-Sophia tiny-entry seam rather than from a live source-owned export loop.
+It now also carries the first experimental ToS text chunk map pilot built from the current source-owned Zarathustra authority surface plus supporting tiny-entry route and capsule surfaces.
+It now also carries the first experimental ToS retrieval-axis pack built from that chunk map plus bounded bridge and memo-side bridge surfaces.
+`AOA-K-0005` and `AOA-K-0007` remain those narrow tiny-entry pilots in the current wave.
+It now also carries `AOA-K-0010`, the first direct canonical-tree-derived Zarathustra route bundle built from canonical `Tree-of-Sophia/tree/**` surfaces plus the canonical route-local relation pack.
+It now also carries `AOA-K-0011`, the first standalone route-local consumer-facing derivative over `AOA-K-0010`; it remains handles-only and does not replace the existing tiny-entry consumer path.
+It now also carries the first public federation export contract and one experimental federation spine pilot built from real source-owned tiny exports in `aoa-techniques` and `Tree-of-Sophia`.
+For `Tree-of-Sophia`, that spine now also advertises one bounded `AOA-K-0011` adjunct for downstream routing while keeping the upstream pilot source-owned and tiny-entry-first.
+It now also carries the first bounded cross-source node projection built from that real export loop plus the current retrieval-axis pack.
+It now also carries one explicit source-owned export dependency contract, one manifest-driven projection pairing law for `AOA-K-0006`, one narrow consumer guide, and one canonical release-check path for hardening the current experimental stack without activating `AOA-K-0008`.
+It now also carries one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so the current experimental path can be consumed without activating counterpart generation.
+It now also carries one explicit counterpart federation exposure review artifact so the last current activation gate for `AOA-K-0008` is review-closed while the surface remains planned.
+It now also carries one bounded recurrence regrounding surface so federation entry, retrieval-axis use, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs without widening KAG sovereignty.
 
 ## Phase 1: KAG layer definition
 
@@ -50,6 +61,7 @@ Goals:
 - keep source-of-truth discipline explicit as the KAG layer grows
 - make room for source-owned federation exports and bounded derived spine pilots before any full cross-repo export claim
 - keep the current ToS tiny-entry donor narrow while downstream routing handoff and source-owned export growth remain explicitly bounded
+- harden one bounded `return_regrounding_pack` so current KAG pilots can fall back to stronger source or owner refs without implying graph sovereignty
 
 ## Standing discipline
 
@@ -58,3 +70,4 @@ Across all phases:
 - keep KAG surfaces derived and reviewable
 - keep provenance visible where possible
 - do not confuse graph readiness with proof or routing
+- when ownership clarity weakens, reground before widening a derived answer

@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tos-text-chunk-map.schema.json",
+  "title": "AoA KAG ToS text chunk map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_repo",
+    "source_manifest_ref",
+    "source_inputs",
+    "surface_bindings",
+    "surface_id",
+    "surface_name",
+    "node_id",
+    "node_type",
+    "source_anchor",
+    "authority_surface_ref",
+    "route_ref",
+    "capsule_ref",
+    "interpretation_layers",
+    "chunk_count",
+    "chunks",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "tos_text_chunk_map"
+    },
+    "source_repo": {
+      "type": "string",
+      "const": "Tree-of-Sophia"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/tos_text_chunk_map.json"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "role",
+          "ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          },
+          "surface_name": {
+            "type": "string",
+            "const": "tos-text-chunk-map"
+          },
+          "derived_kind": {
+            "type": "string",
+            "const": "chunk_map"
+          },
+          "derived_slot": {
+            "type": "string",
+            "const": "chunks"
+          },
+          "source_input": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "surface_id": {
+      "type": "string",
+      "const": "AOA-K-0005"
+    },
+    "surface_name": {
+      "type": "string",
+      "const": "tos-text-chunk-map"
+    },
+    "node_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "node_type": {
+      "type": "string",
+      "const": "source"
+    },
+    "source_anchor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "authority_surface_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "route_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "capsule_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "interpretation_layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "chunk_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "chunks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "chunk_id",
+          "node_id",
+          "segment_id",
+          "source_anchor",
+          "source_ref",
+          "route_ref",
+          "capsule_ref",
+          "interpretation_layers",
+          "witness_count",
+          "witnesses"
+        ],
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "node_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "segment_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_anchor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "route_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "capsule_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "interpretation_layers": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "witness_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "witnesses": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "language",
+                "role",
+                "text"
+              ],
+              "properties": {
+                "language": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "role": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "translation_tension": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "segment_id",
+              "note"
+            ],
+            "properties": {
+              "segment_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "counterpart_projection",
+        "federation_export_activation"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean"
+        },
+        "source_replacement": {
+          "type": "string",
+          "minLength": 3
+        },
+        "counterpart_projection": {
+          "type": "string",
+          "minLength": 3
+        },
+        "federation_export_activation": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    }
+  }
+}

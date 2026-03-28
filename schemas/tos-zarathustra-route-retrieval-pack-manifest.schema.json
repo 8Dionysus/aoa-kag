@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/tos-zarathustra-route-retrieval-pack-manifest.schema.json",
+  "title": "AoA KAG ToS Zarathustra route retrieval pack manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "pack_type",
+    "source_inputs",
+    "surface_bindings",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "tos_zarathustra_route_retrieval_pack"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "tos_zarathustra_route_pack"
+          },
+          "repo": {
+            "type": "string",
+            "const": "aoa-kag"
+          },
+          "path": {
+            "type": "string",
+            "const": "generated/tos_zarathustra_route_pack.min.json"
+          },
+          "role": {
+            "type": "string",
+            "const": "route_pack"
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          },
+          "surface_name": {
+            "type": "string",
+            "const": "tos-zarathustra-route-retrieval-surface"
+          },
+          "derived_kind": {
+            "type": "string",
+            "const": "retrieval_surface"
+          },
+          "derived_slot": {
+            "type": "string",
+            "const": "routes"
+          },
+          "source_input": {
+            "type": "string",
+            "const": "tos_zarathustra_route_pack"
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "const": "generated/tos_zarathustra_route_retrieval_pack.json"
+        },
+        "min": {
+          "type": "string",
+          "const": "generated/tos_zarathustra_route_retrieval_pack.min.json"
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "scoring_or_ranking",
+        "routing_ownership",
+        "graph_normalization",
+        "consumer_projection"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_replacement": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "scoring_or_ranking": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "routing_ownership": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "graph_normalization": {
+          "type": "string",
+          "const": "forbidden"
+        },
+        "consumer_projection": {
+          "type": "string",
+          "const": "bounded_handles_only"
+        }
+      }
+    }
+  }
+}

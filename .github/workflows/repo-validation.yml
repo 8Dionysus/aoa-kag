@@ -9,6 +9,13 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
+      AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
+      AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
+      TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+      AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
+      AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -54,22 +61,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Regenerate KAG outputs
-        env:
-          AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
-          AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
-          AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
-          TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
-          AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
-          AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Validate nested AGENTS docs
+        run: python scripts/validate_nested_agents.py
+
+      - name: Validate KAG surfaces
+        run: python scripts/validate_kag.py
+
+      - name: Rebuild generated KAG outputs
         run: python scripts/generate_kag.py
 
-      - name: Run KAG validator
-        env:
-          AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
-          AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
-          AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
-          TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
-          AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
-          AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
-        run: python scripts/validate_kag.py
+      - name: Check generated outputs are committed
+        run: git diff --exit-code -- generated

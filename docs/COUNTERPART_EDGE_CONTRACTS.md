@@ -59,6 +59,27 @@ The current public example surface for this contract is:
 - `examples/counterpart_edge_view.example.json`
 
 It is intentionally compact and remains `planned` in the KAG registry.
+That planned posture is deliberate:
+
+- the first downstream consumer contract now exists at `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- federation exposure is still deferred
+- the current example is meant to preserve bounded bridge grammar before promotion, not to imply an active public graph layer
+
+## Activation gates
+
+`AOA-K-0008` remains `planned`.
+
+All current prerequisite gates are now review-closed for the `planned`
+posture:
+
+- the current `AOA-K-0006` projection pairing law is manifest-driven and validator-backed
+- the current external source-owned exports are covered by an explicit dependency contract
+- a dedicated downstream consumer contract now exists at `docs/COUNTERPART_CONSUMER_CONTRACT.md`
+- federation exposure is now explicitly reviewed through `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md` and `generated/counterpart_federation_exposure_review.min.json`
+
+Promotion is still deferred:
+
+- moving `AOA-K-0008` to `experimental` requires a separate activation wave with its own generated surface and promotion review
 
 ## Anti-goals
 

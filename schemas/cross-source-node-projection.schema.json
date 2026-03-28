@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/cross-source-node-projection.schema.json",
+  "title": "AoA KAG cross-source node projection pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_manifest_ref",
+    "source_inputs",
+    "surface_bindings",
+    "surface_id",
+    "surface_name",
+    "projection_count",
+    "projections",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "cross_source_node_projection"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/cross_source_node_projection.json"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "role",
+          "ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo": {
+            "type": "string",
+            "minLength": 2
+          },
+          "role": {
+            "type": "string",
+            "minLength": 2
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    },
+    "surface_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "surface_name",
+          "derived_kind",
+          "derived_slot",
+          "source_input"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          },
+          "surface_name": {
+            "type": "string",
+            "const": "cross-source-node-projection"
+          },
+          "derived_kind": {
+            "type": "string",
+            "const": "node_projection"
+          },
+          "derived_slot": {
+            "type": "string",
+            "const": "projections"
+          },
+          "source_input": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "surface_id": {
+      "type": "string",
+      "const": "AOA-K-0006"
+    },
+    "surface_name": {
+      "type": "string",
+      "const": "cross-source-node-projection"
+    },
+    "projection_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "projections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "projection_id",
+          "primary_input",
+          "supporting_inputs",
+          "retrieval_axis_ref",
+          "axis_id",
+          "federation_spine_ref",
+          "projection_summary",
+          "non_identity_boundary"
+        ],
+        "properties": {
+          "projection_id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "primary_input": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "repo",
+              "export_ref",
+              "kind",
+              "object_id"
+            ],
+            "properties": {
+              "repo": {
+                "type": "string",
+                "minLength": 2
+              },
+              "export_ref": {
+                "type": "string",
+                "minLength": 3
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 2
+              },
+              "object_id": {
+                "type": "string",
+                "minLength": 2
+              }
+            }
+          },
+          "supporting_inputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "repo",
+                "export_ref",
+                "kind",
+                "object_id"
+              ],
+              "properties": {
+                "repo": {
+                  "type": "string",
+                  "minLength": 2
+                },
+                "export_ref": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "kind": {
+                  "type": "string",
+                  "minLength": 2
+                },
+                "object_id": {
+                  "type": "string",
+                  "minLength": 2
+                }
+              }
+            }
+          },
+          "retrieval_axis_ref": {
+            "type": "string",
+            "minLength": 3
+          },
+          "axis_id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "federation_spine_ref": {
+            "type": "string",
+            "minLength": 3
+          },
+          "projection_summary": {
+            "type": "string",
+            "minLength": 20
+          },
+          "non_identity_boundary": {
+            "type": "string",
+            "minLength": 20
+          }
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "counterpart_activation",
+        "graph_expansion",
+        "routing_ownership"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean"
+        },
+        "source_replacement": {
+          "type": "string",
+          "minLength": 3
+        },
+        "counterpart_activation": {
+          "type": "string",
+          "minLength": 3
+        },
+        "graph_expansion": {
+          "type": "string",
+          "minLength": 3
+        },
+        "routing_ownership": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    }
+  }
+}

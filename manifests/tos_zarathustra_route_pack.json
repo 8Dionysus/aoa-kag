@@ -1,0 +1,88 @@
+{
+  "manifest_version": 1,
+  "pack_type": "tos_zarathustra_route_pack",
+  "source_repo": "Tree-of-Sophia",
+  "source_root_env": "TREE_OF_SOPHIA_ROOT",
+  "source_inputs": [
+    {
+      "name": "tos_route_source_node",
+      "path": "tree/source/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/node.json",
+      "role": "authority_surface"
+    },
+    {
+      "name": "tos_becoming_concept",
+      "path": "tree/concept/becoming/node.json",
+      "role": "concept_surface"
+    },
+    {
+      "name": "tos_overcoming_concept",
+      "path": "tree/concept/overcoming/node.json",
+      "role": "concept_surface"
+    },
+    {
+      "name": "tos_route_lineage_node",
+      "path": "tree/lineage/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/becoming-to-overcoming/node.json",
+      "role": "lineage_surface"
+    },
+    {
+      "name": "tos_route_principle_family_root",
+      "path": "tree/principle/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1",
+      "role": "family_root"
+    },
+    {
+      "name": "tos_route_event_family_root",
+      "path": "tree/event/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1",
+      "role": "family_root"
+    },
+    {
+      "name": "tos_route_state_family_root",
+      "path": "tree/state/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1",
+      "role": "family_root"
+    },
+    {
+      "name": "tos_route_support_family_root",
+      "path": "tree/support/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1",
+      "role": "family_root"
+    },
+    {
+      "name": "tos_route_analogy_family_root",
+      "path": "tree/analogy/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1",
+      "role": "family_root"
+    },
+    {
+      "name": "tos_route_synthesis_family_root",
+      "path": "tree/synthesis/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1",
+      "role": "family_root"
+    },
+    {
+      "name": "tos_route_relation_pack",
+      "path": "tree/relations/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/edges.csv",
+      "role": "relation_pack"
+    },
+    {
+      "name": "tos_zarathustra_capsule",
+      "path": "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md",
+      "role": "capsule_surface"
+    }
+  ],
+  "surface_bindings": [
+    {
+      "surface_id": "AOA-K-0010",
+      "surface_name": "tos-zarathustra-route-pack",
+      "derived_kind": "node_projection",
+      "derived_slot": "nodes",
+      "source_input": "tos_route_source_node"
+    }
+  ],
+  "output_paths": {
+    "full": "generated/tos_zarathustra_route_pack.json",
+    "min": "generated/tos_zarathustra_route_pack.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "intake_consumption": "forbidden",
+    "routing_ownership": "forbidden",
+    "consumer_projection": "deferred"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/8Dionysus/aoa-kag/main/schemas/bridge-envelope.schema.json",
+  "title": "AoA-ToS bridge envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bridge_id",
+    "source_class",
+    "source_inputs",
+    "tos_refs",
+    "memory_refs",
+    "kag_lift_status",
+    "faces"
+  ],
+  "properties": {
+    "bridge_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_class": {
+      "type": "string",
+      "enum": [
+        "memo_object",
+        "tos_text"
+      ]
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repo",
+          "source_class",
+          "role"
+        ],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_class": {
+            "type": "string",
+            "enum": [
+              "memo_object",
+              "tos_text"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "supporting"
+            ]
+          }
+        }
+      }
+    },
+    "tos_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "memory_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "kag_lift_status": {
+      "type": "string",
+      "enum": [
+        "absent",
+        "candidate",
+        "lifted",
+        "blocked"
+      ]
+    },
+    "faces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retrieval_surface",
+        "chunk_face",
+        "graph_face"
+      ],
+      "properties": {
+        "retrieval_surface": {
+          "type": "string",
+          "minLength": 1
+        },
+        "chunk_face": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graph_face": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

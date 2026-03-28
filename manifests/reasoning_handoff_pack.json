@@ -15,6 +15,36 @@
       "role": "kag_guardrail_doc"
     },
     {
+      "name": "reasoning_handoff_schema",
+      "repo": "aoa-kag",
+      "path": "schemas/reasoning-handoff-guardrail.schema.json",
+      "role": "kag_guardrail_schema"
+    },
+    {
+      "name": "counterpart_consumer_contract_doc",
+      "repo": "aoa-kag",
+      "path": "docs/COUNTERPART_CONSUMER_CONTRACT.md",
+      "role": "kag_guardrail_doc"
+    },
+    {
+      "name": "counterpart_consumer_contract_schema",
+      "repo": "aoa-kag",
+      "path": "schemas/counterpart-consumer-contract.schema.json",
+      "role": "kag_guardrail_schema"
+    },
+    {
+      "name": "counterpart_consumer_contract_example",
+      "repo": "aoa-kag",
+      "path": "examples/counterpart_consumer_contract.example.json",
+      "role": "kag_guardrail_example"
+    },
+    {
+      "name": "counterpart_federation_exposure_review_doc",
+      "repo": "aoa-kag",
+      "path": "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
+      "role": "kag_guardrail_doc"
+    },
+    {
       "name": "artifact_to_verdict_hook_schema",
       "repo": "aoa-evals",
       "path": "schemas/artifact-to-verdict-hook.schema.json",

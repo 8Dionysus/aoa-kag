@@ -53,6 +53,10 @@ The KAG layer may return bounded retrieval surfaces to AoA such as:
 These returns should guide AoA toward sources.
 They should not pretend to be final authored truth.
 
+If bridge use loses source trace or starts treating a derived bridge surface as
+final authored meaning, `aoa-kag` should answer with bounded regrounding return
+instead of a wider bridge synthesis.
+
 ## Retrieval axis contract
 
 When KAG returns a bridge-ready retrieval surface, it should be able to expose:
@@ -67,6 +71,39 @@ This keeps retrieval richer than a similarity dump while still remaining derived
 
 See `examples/tos_retrieval_axis_surface.example.json` for a compact bridge-ready example tied to `AOA-K-0007`.
 The schema-backed contract for that surface is `schemas/bridge-retrieval-surface.schema.json`.
+The current generated pack that materializes that same bounded axis posture now
+lives at:
+
+- `generated/tos_retrieval_axis_pack.json`
+- `generated/tos_retrieval_axis_pack.min.json`
+- `docs/TOS_RETRIEVAL_AXIS_PACK.md`
+
+## Shared bridge envelope contract
+
+Strict first-wave closure for the AoA-ToS bridge now uses one shared linkage object:
+
+- `schemas/bridge-envelope.schema.json`
+- `examples/aoa_tos_bridge_envelope.example.json`
+
+This envelope is intentionally narrow.
+It keeps only:
+
+- `bridge_id`
+- `source_class`
+- `source_inputs`
+- `tos_refs`
+- `memory_refs`
+- `kag_lift_status`
+- `faces`
+
+The envelope does not duplicate retrieval, chunk-face, or graph-face payload bodies.
+It links the stronger authored and derived surfaces together so a reviewer can inspect one bounded cross-repo bridge contract without confusing linkage with ownership.
+
+The current example ties together:
+
+- the KAG retrieval face in `examples/tos_retrieval_axis_surface.example.json`
+- the memo chunk face in `aoa-memo/examples/memory_chunk_face.bridge.example.json`
+- the memo graph face in `aoa-memo/examples/memory_graph_face.bridge.example.json`
 
 ## Writeback caution
 
