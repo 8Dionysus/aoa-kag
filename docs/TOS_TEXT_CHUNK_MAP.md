@@ -32,6 +32,10 @@ treated as the primary hop field. `lineage_or_context_hop` may remain as a
 temporary compatibility alias during transition, but if both are present they
 must resolve to the same ToS surface.
 
+This pilot remains deliberately narrow even after `AOA-K-0010`: the new
+route-pack wave does not widen `AOA-K-0005` beyond its current source-node
+chunk-map posture.
+
 ## Chunk rule
 
 The current chunk rule is:

@@ -34,6 +34,10 @@ At the current wave, `aoa-kag` does not define:
 Current ToS-facing KAG packs still derive from the public tiny-entry and export
 seam rather than directly from raw intake tables.
 
+`AOA-K-0010` does not change that non-activation posture: it derives from
+canonical `Tree-of-Sophia/tree/**` surfaces plus the canonical relation pack,
+not from `Tree-of-Sophia/intake/**`.
+
 ## Current upstream expectation
 
 When the first real raw tables arrive, the expected upstream path shape is:

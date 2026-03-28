@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import csv
 import json
 import os
 import re
@@ -42,6 +43,9 @@ TECHNIQUE_LIFT_MANIFEST_PATH = REPO_ROOT / "manifests" / "technique_lift_pack.js
 TOS_TEXT_CHUNK_MAP_MANIFEST_PATH = REPO_ROOT / "manifests" / "tos_text_chunk_map.json"
 TOS_RETRIEVAL_AXIS_MANIFEST_PATH = (
     REPO_ROOT / "manifests" / "tos_retrieval_axis_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH = (
+    REPO_ROOT / "manifests" / "tos_zarathustra_route_pack.json"
 )
 REASONING_HANDOFF_MANIFEST_PATH = REPO_ROOT / "manifests" / "reasoning_handoff_pack.json"
 SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH = (
@@ -88,6 +92,12 @@ TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH = (
 TOS_RETRIEVAL_AXIS_OUTPUT_PATH = REPO_ROOT / "generated" / "tos_retrieval_axis_pack.json"
 TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "tos_retrieval_axis_pack.min.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "tos_zarathustra_route_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "tos_zarathustra_route_pack.min.json"
 )
 REASONING_HANDOFF_OUTPUT_PATH = REPO_ROOT / "generated" / "reasoning_handoff_pack.json"
 REASONING_HANDOFF_MIN_OUTPUT_PATH = (
@@ -137,6 +147,65 @@ TOS_TINY_ENTRY_PRIMARY_HOP_FIELD = "bounded_hop"
 TOS_TINY_ENTRY_LEGACY_HOP_FIELD = "lineage_or_context_hop"
 TOS_TINY_ENTRY_HOP_PATH = "examples/concept_node.example.json"
 TOS_TINY_ENTRY_FALLBACK_PATH = "docs/KNOWLEDGE_MODEL.md"
+TOS_ZARATHUSTRA_ROUTE_ID = "thus-spoke-zarathustra/prologue-1"
+TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
+TOS_ZARATHUSTRA_ROUTE_SOURCE_NODE_PATH = (
+    "tree/source/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/node.json"
+)
+TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH = "tree/concept/becoming/node.json"
+TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH = "tree/concept/overcoming/node.json"
+TOS_ZARATHUSTRA_ROUTE_LINEAGE_NODE_PATH = (
+    "tree/lineage/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/"
+    "becoming-to-overcoming/node.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PRINCIPLE_ROOT = (
+    "tree/principle/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+)
+TOS_ZARATHUSTRA_ROUTE_EVENT_ROOT = (
+    "tree/event/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+)
+TOS_ZARATHUSTRA_ROUTE_STATE_ROOT = (
+    "tree/state/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+)
+TOS_ZARATHUSTRA_ROUTE_SUPPORT_ROOT = (
+    "tree/support/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+)
+TOS_ZARATHUSTRA_ROUTE_ANALOGY_ROOT = (
+    "tree/analogy/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+)
+TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT = (
+    "tree/synthesis/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+)
+TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH = (
+    "tree/relations/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/edges.csv"
+)
+TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER = [
+    "source",
+    "concept",
+    "principle",
+    "lineage",
+    "event",
+    "state",
+    "support",
+    "analogy",
+    "synthesis",
+]
+TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS = {
+    "source": 1,
+    "concept": 2,
+    "principle": 13,
+    "lineage": 1,
+    "event": 18,
+    "state": 9,
+    "support": 46,
+    "analogy": 1,
+    "synthesis": 1,
+}
+TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS = {
+    "source_edge": 92,
+    "bridge_edge": 11,
+    "principle_edge": 22,
+}
 REASONING_HANDOFF_GUARDRAIL_REF = "docs/REASONING_HANDOFF.md"
 REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF = (
     "schemas/reasoning-handoff-guardrail.schema.json"
@@ -510,9 +579,34 @@ def manifest_input_ref(source_input: dict[str, str]) -> str:
     return repo_ref(source_input["repo"], source_input["path"])
 
 
+def read_csv_rows(path: Path) -> list[dict[str, str]]:
+    try:
+        with path.open(encoding="utf-8-sig", newline="") as handle:
+            return list(csv.DictReader(handle))
+    except FileNotFoundError:
+        fail(f"missing required file: {path.as_posix()}")
+
+
+def require_string_list(value: object, *, label: str) -> list[str]:
+    if not isinstance(value, list) or not value:
+        fail(f"{label} must be a non-empty list")
+    normalized: list[str] = []
+    for index, item in enumerate(value):
+        normalized.append(require_string(item, label=f"{label}[{index}]"))
+    return normalized
+
+
 def require_string(value: object, *, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         fail(f"{label} must be a non-empty string")
+    return value
+
+
+def require_optional_string(value: object, *, label: str) -> str:
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        fail(f"{label} must be a string when present")
     return value
 
 
@@ -549,6 +643,143 @@ def ensure_local_ref_exists(
     ):
         fail(f"{label} target is missing: {relative_ref}")
     return relative_ref
+
+
+def list_family_node_paths(root: Path) -> list[Path]:
+    if not root.exists():
+        fail(f"missing required family root: {root.as_posix()}")
+    if not root.is_dir():
+        fail(f"family root must be a directory: {root.as_posix()}")
+    node_paths = sorted(root.rglob("node.json"))
+    if not node_paths:
+        fail(f"family root does not contain any canonical node.json files: {root.as_posix()}")
+    return node_paths
+
+
+def tos_authority_ref_for_path(path: Path) -> str:
+    try:
+        relative_path = path.resolve().relative_to(TREE_OF_SOPHIA_ROOT.resolve())
+    except ValueError:
+        fail(f"path must stay inside Tree-of-Sophia: {path.as_posix()}")
+    return repo_ref(TOS_REPO, relative_path.as_posix())
+
+
+def load_tos_route_node_entry(path: Path, *, expected_node_type: str | None = None) -> dict[str, object]:
+    payload = read_json(path)
+    if not isinstance(payload, dict):
+        fail(f"canonical ToS node must be a JSON object: {path.as_posix()}")
+
+    node_id = require_string(payload.get("node_id"), label=f"{path.as_posix()}.node_id")
+    node_type = require_string(
+        payload.get("node_type"), label=f"{path.as_posix()}.node_type"
+    )
+    if expected_node_type is not None and node_type != expected_node_type:
+        fail(
+            f"canonical ToS node {path.as_posix()} must keep node_type "
+            f"'{expected_node_type}', got '{node_type}'"
+        )
+
+    key_terms = require_string_list(
+        payload.get("key_terms"), label=f"{path.as_posix()}.key_terms"
+    )
+    interpretation_layers = require_string_list(
+        payload.get("interpretation_layers"),
+        label=f"{path.as_posix()}.interpretation_layers",
+    )
+
+    return {
+        "node_id": node_id,
+        "node_type": node_type,
+        "authority_ref": tos_authority_ref_for_path(path),
+        "source_anchor": require_string(
+            payload.get("source_anchor"), label=f"{path.as_posix()}.source_anchor"
+        ),
+        "key_terms": key_terms,
+        "distilled_thesis": require_string(
+            payload.get("distilled_thesis"),
+            label=f"{path.as_posix()}.distilled_thesis",
+        ),
+        "interpretation_layers": interpretation_layers,
+    }
+
+
+def load_tos_route_family_entries(
+    root_relative_path: str, *, expected_node_type: str
+) -> list[dict[str, object]]:
+    root = TREE_OF_SOPHIA_ROOT / root_relative_path
+    entries = [
+        load_tos_route_node_entry(path, expected_node_type=expected_node_type)
+        for path in list_family_node_paths(root)
+    ]
+    entries.sort(key=lambda entry: require_string(entry.get("node_id"), label="route family node_id"))
+    return entries
+
+
+def load_tos_route_relation_entries(path: Path) -> list[dict[str, object]]:
+    rows = read_csv_rows(path)
+    if not rows:
+        fail(f"canonical ToS route relation pack must not be empty: {path.as_posix()}")
+
+    normalized_rows: list[dict[str, object]] = []
+    for index, row in enumerate(rows):
+        location = f"{path.as_posix()} row {index + 1}"
+        edge_id = require_string(row.get("edge_id"), label=f"{location}.edge_id")
+        from_id = require_string(row.get("from_id"), label=f"{location}.from_id")
+        to_id = require_string(row.get("to_id"), label=f"{location}.to_id")
+        if not from_id.startswith("tos.") or not to_id.startswith("tos."):
+            fail(f"{location} must keep canonical tos.* endpoint ids")
+        if from_id.startswith("literal.") or to_id.startswith("literal."):
+            fail(f"{location} must not include literal residue")
+
+        confidence_text = require_string(
+            row.get("confidence"), label=f"{location}.confidence"
+        )
+        try:
+            confidence = int(confidence_text)
+        except ValueError as exc:
+            fail(f"{location}.confidence must be an integer: {exc}")
+
+        normalized_rows.append(
+            {
+                "edge_id": edge_id,
+                "edge_kind": require_string(
+                    row.get("edge_kind"), label=f"{location}.edge_kind"
+                ),
+                "from_id": from_id,
+                "predicate_id": require_string(
+                    row.get("predicate_id"), label=f"{location}.predicate_id"
+                ),
+                "to_id": to_id,
+                "layer": require_string(row.get("layer"), label=f"{location}.layer"),
+                "anchor_mode": require_string(
+                    row.get("anchor_mode"), label=f"{location}.anchor_mode"
+                ),
+                "anchor_start_secondary": require_optional_string(
+                    row.get("anchor_start_secondary"),
+                    label=f"{location}.anchor_start_secondary",
+                ),
+                "anchor_end_secondary": require_optional_string(
+                    row.get("anchor_end_secondary"),
+                    label=f"{location}.anchor_end_secondary",
+                ),
+                "anchor_segment_ids": require_string(
+                    row.get("anchor_segment_ids"),
+                    label=f"{location}.anchor_segment_ids",
+                ),
+                "witness_scope": require_string(
+                    row.get("witness_scope"), label=f"{location}.witness_scope"
+                ),
+                "connectivity_role": require_string(
+                    row.get("connectivity_role"),
+                    label=f"{location}.connectivity_role",
+                ),
+                "confidence": confidence,
+                "note": require_optional_string(
+                    row.get("note"), label=f"{location}.note"
+                ),
+            }
+        )
+    return normalized_rows
 
 
 def load_tos_tiny_entry_hop_surface(payload: dict[str, object], *, route_label: str) -> str:
@@ -2647,6 +2878,395 @@ def build_tos_retrieval_axis_pack_payload(
     }
 
 
+def build_tos_zarathustra_route_node_entry(relative_path: str) -> dict[str, object]:
+    payload = read_json(TREE_OF_SOPHIA_ROOT / relative_path)
+    if not isinstance(payload, dict):
+        fail(f"ToS Zarathustra route node surface must be a JSON object: {relative_path}")
+
+    node_id = require_string(payload.get("node_id"), label=f"{relative_path}.node_id")
+    node_type = require_string(
+        payload.get("node_type"),
+        label=f"{relative_path}.node_type",
+    )
+    if node_type not in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER:
+        fail(f"{relative_path}.node_type '{node_type}' is not allowed in the route pack")
+    if node_id.startswith("literal."):
+        fail(f"{relative_path}.node_id must not carry literal helper residue")
+
+    return {
+        "node_id": node_id,
+        "node_type": node_type,
+        "authority_ref": repo_ref(TOS_REPO, relative_path),
+        "source_anchor": require_string(
+            payload.get("source_anchor"),
+            label=f"{relative_path}.source_anchor",
+        ),
+        "key_terms": require_string_list(
+            payload.get("key_terms"),
+            label=f"{relative_path}.key_terms",
+        ),
+        "distilled_thesis": require_string(
+            payload.get("distilled_thesis"),
+            label=f"{relative_path}.distilled_thesis",
+        ),
+        "interpretation_layers": require_string_list(
+            payload.get("interpretation_layers"),
+            label=f"{relative_path}.interpretation_layers",
+        ),
+    }
+
+
+def load_tos_zarathustra_route_family(
+    root_path: str,
+    *,
+    expected_type: str,
+) -> list[dict[str, object]]:
+    root = TREE_OF_SOPHIA_ROOT / root_path
+    if not root.is_dir():
+        fail(f"ToS Zarathustra route family root is missing: {root_path}")
+
+    entries: list[dict[str, object]] = []
+    for node_path in sorted(root.glob("**/node.json")):
+        relative_path = node_path.relative_to(TREE_OF_SOPHIA_ROOT).as_posix()
+        entry = build_tos_zarathustra_route_node_entry(relative_path)
+        if entry["node_type"] != expected_type:
+            fail(
+                f"{relative_path}.node_type must stay '{expected_type}' under "
+                f"{root_path}"
+            )
+        entries.append(entry)
+
+    entries.sort(key=lambda record: str(record["node_id"]))
+    return entries
+
+
+def load_tos_zarathustra_route_edges(relative_path: str) -> list[dict[str, object]]:
+    rows = read_csv_rows(TREE_OF_SOPHIA_ROOT / relative_path)
+    if not rows:
+        fail("ToS Zarathustra route relation pack must keep at least one edge row")
+
+    required_columns = {
+        "edge_id",
+        "edge_kind",
+        "from_id",
+        "predicate_id",
+        "to_id",
+        "layer",
+        "anchor_mode",
+        "anchor_start_secondary",
+        "anchor_end_secondary",
+        "anchor_segment_ids",
+        "witness_scope",
+        "connectivity_role",
+        "confidence",
+        "note",
+    }
+
+    edges: list[dict[str, object]] = []
+    for index, row in enumerate(rows):
+        missing = required_columns.difference(row)
+        if missing:
+            fail(
+                "ToS Zarathustra route relation pack row is missing required columns: "
+                + ", ".join(sorted(missing))
+            )
+        edge_id = require_string(row.get("edge_id"), label=f"{relative_path} row {index}.edge_id")
+        from_id = require_string(row.get("from_id"), label=f"{relative_path} row {index}.from_id")
+        to_id = require_string(row.get("to_id"), label=f"{relative_path} row {index}.to_id")
+        if not from_id.startswith("tos.") or not to_id.startswith("tos."):
+            fail(f"{relative_path} row {index} must keep canonical tos.* endpoints")
+        if from_id.startswith("literal.") or to_id.startswith("literal."):
+            fail(f"{relative_path} row {index} must not carry literal helper residue")
+
+        confidence = require_string(
+            row.get("confidence"),
+            label=f"{relative_path} row {index}.confidence",
+        )
+        if not confidence.isdigit():
+            fail(f"{relative_path} row {index}.confidence must stay integer-like")
+
+        edges.append(
+            {
+                "edge_id": edge_id,
+                "edge_kind": require_string(
+                    row.get("edge_kind"),
+                    label=f"{relative_path} row {index}.edge_kind",
+                ),
+                "from_id": from_id,
+                "predicate_id": require_string(
+                    row.get("predicate_id"),
+                    label=f"{relative_path} row {index}.predicate_id",
+                ),
+                "to_id": to_id,
+                "layer": require_string(
+                    row.get("layer"),
+                    label=f"{relative_path} row {index}.layer",
+                ),
+                "anchor_mode": require_string(
+                    row.get("anchor_mode"),
+                    label=f"{relative_path} row {index}.anchor_mode",
+                ),
+                "anchor_start_secondary": row.get("anchor_start_secondary", ""),
+                "anchor_end_secondary": row.get("anchor_end_secondary", ""),
+                "anchor_segment_ids": require_string(
+                    row.get("anchor_segment_ids"),
+                    label=f"{relative_path} row {index}.anchor_segment_ids",
+                ),
+                "witness_scope": require_string(
+                    row.get("witness_scope"),
+                    label=f"{relative_path} row {index}.witness_scope",
+                ),
+                "connectivity_role": require_string(
+                    row.get("connectivity_role"),
+                    label=f"{relative_path} row {index}.connectivity_role",
+                ),
+                "confidence": int(confidence),
+                "note": row.get("note", ""),
+            }
+        )
+
+    return edges
+
+
+def build_tos_zarathustra_route_pack_payload(
+    registry_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if registry_payload is None:
+        registry_payload = build_registry_payload()
+
+    manifest = read_json(TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH)
+    if not isinstance(manifest, dict):
+        fail("ToS Zarathustra route pack manifest must be a JSON object")
+
+    source_inputs = manifest.get("source_inputs")
+    surface_bindings = manifest.get("surface_bindings")
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("ToS Zarathustra route pack manifest must declare source_inputs")
+    if not isinstance(surface_bindings, list) or not surface_bindings:
+        fail("ToS Zarathustra route pack manifest must declare surface_bindings")
+
+    registry_surfaces = registry_payload.get("surfaces")
+    if not isinstance(registry_surfaces, list):
+        fail("registry manifest must declare surfaces")
+    registry_by_id = {
+        surface["id"]: surface
+        for surface in registry_surfaces
+        if isinstance(surface, dict) and isinstance(surface.get("id"), str)
+    }
+
+    surface_0010 = registry_by_id.get("AOA-K-0010")
+    if surface_0010 is None:
+        fail("registry manifest must declare AOA-K-0010 before building the route pack")
+    if surface_0010.get("status") != "experimental":
+        fail("AOA-K-0010 must remain experimental in the current route-pack wave")
+
+    expected_inputs = {
+        "tos_route_source_node": (
+            TOS_ZARATHUSTRA_ROUTE_SOURCE_NODE_PATH,
+            "authority_surface",
+        ),
+        "tos_becoming_concept": (
+            TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH,
+            "concept_surface",
+        ),
+        "tos_overcoming_concept": (
+            TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH,
+            "concept_surface",
+        ),
+        "tos_route_lineage_node": (
+            TOS_ZARATHUSTRA_ROUTE_LINEAGE_NODE_PATH,
+            "lineage_surface",
+        ),
+        "tos_route_principle_family_root": (
+            TOS_ZARATHUSTRA_ROUTE_PRINCIPLE_ROOT,
+            "family_root",
+        ),
+        "tos_route_event_family_root": (
+            TOS_ZARATHUSTRA_ROUTE_EVENT_ROOT,
+            "family_root",
+        ),
+        "tos_route_state_family_root": (
+            TOS_ZARATHUSTRA_ROUTE_STATE_ROOT,
+            "family_root",
+        ),
+        "tos_route_support_family_root": (
+            TOS_ZARATHUSTRA_ROUTE_SUPPORT_ROOT,
+            "family_root",
+        ),
+        "tos_route_analogy_family_root": (
+            TOS_ZARATHUSTRA_ROUTE_ANALOGY_ROOT,
+            "family_root",
+        ),
+        "tos_route_synthesis_family_root": (
+            TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT,
+            "family_root",
+        ),
+        "tos_route_relation_pack": (
+            TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH,
+            "relation_pack",
+        ),
+        "tos_zarathustra_capsule": (
+            TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH,
+            "capsule_surface",
+        ),
+    }
+
+    inputs_by_name: dict[str, dict[str, str]] = {}
+    emitted_source_inputs: list[dict[str, str]] = []
+    for source_input in source_inputs:
+        if not isinstance(source_input, dict):
+            fail("ToS Zarathustra route pack manifest source_inputs entries must be objects")
+        name = source_input.get("name")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, path, role)):
+            fail(
+                "ToS Zarathustra route pack manifest source_inputs must keep name, path, "
+                "and role"
+            )
+        if name in inputs_by_name:
+            fail(f"duplicate ToS Zarathustra route pack source input '{name}'")
+        expected = expected_inputs.get(name)
+        if expected is None:
+            fail(f"unexpected ToS Zarathustra route pack source input '{name}'")
+        expected_path, expected_role = expected
+        if path != expected_path or role != expected_role:
+            fail(
+                "ToS Zarathustra route pack manifest source_inputs must stay aligned "
+                f"for '{name}'"
+            )
+
+        normalized_input = {
+            "name": name,
+            "repo": TOS_REPO,
+            "path": path,
+            "role": role,
+        }
+        input_path = manifest_input_path(normalized_input)
+        if role == "family_root":
+            if not input_path.is_dir():
+                fail(f"ToS Zarathustra route family root is missing: {repo_ref(TOS_REPO, path)}")
+        elif not input_path.exists():
+            fail(f"ToS Zarathustra route donor input does not exist: {repo_ref(TOS_REPO, path)}")
+
+        inputs_by_name[name] = normalized_input
+        emitted_source_inputs.append(
+            {
+                "name": name,
+                "repo": TOS_REPO,
+                "role": role,
+                "ref": manifest_input_ref(normalized_input),
+            }
+        )
+
+    if set(inputs_by_name) != set(expected_inputs):
+        fail("ToS Zarathustra route pack manifest source_inputs must match the current canonical donor set")
+
+    binding_surface: dict[str, object] | None = None
+    for binding in surface_bindings:
+        if not isinstance(binding, dict):
+            fail("ToS Zarathustra route pack manifest surface_bindings entries must be objects")
+        if (
+            binding.get("surface_id") == "AOA-K-0010"
+            and binding.get("surface_name") == "tos-zarathustra-route-pack"
+        ):
+            binding_surface = surface_0010
+            break
+    if binding_surface is None:
+        fail("ToS Zarathustra route pack manifest must bind AOA-K-0010")
+
+    nodes_by_type: dict[str, list[dict[str, object]]] = {
+        "source": [
+            build_tos_zarathustra_route_node_entry(TOS_ZARATHUSTRA_ROUTE_SOURCE_NODE_PATH)
+        ],
+        "concept": sorted(
+            [
+                build_tos_zarathustra_route_node_entry(
+                    TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH
+                ),
+                build_tos_zarathustra_route_node_entry(
+                    TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH
+                ),
+            ],
+            key=lambda record: str(record["node_id"]),
+        ),
+        "principle": load_tos_zarathustra_route_family(
+            TOS_ZARATHUSTRA_ROUTE_PRINCIPLE_ROOT,
+            expected_type="principle",
+        ),
+        "lineage": load_tos_zarathustra_route_family(
+            TOS_ZARATHUSTRA_ROUTE_LINEAGE_NODE_PATH.rsplit("/", 1)[0],
+            expected_type="lineage",
+        ),
+        "event": load_tos_zarathustra_route_family(
+            TOS_ZARATHUSTRA_ROUTE_EVENT_ROOT,
+            expected_type="event",
+        ),
+        "state": load_tos_zarathustra_route_family(
+            TOS_ZARATHUSTRA_ROUTE_STATE_ROOT,
+            expected_type="state",
+        ),
+        "support": load_tos_zarathustra_route_family(
+            TOS_ZARATHUSTRA_ROUTE_SUPPORT_ROOT,
+            expected_type="support",
+        ),
+        "analogy": load_tos_zarathustra_route_family(
+            TOS_ZARATHUSTRA_ROUTE_ANALOGY_ROOT,
+            expected_type="analogy",
+        ),
+        "synthesis": load_tos_zarathustra_route_family(
+            TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT,
+            expected_type="synthesis",
+        ),
+    }
+
+    node_type_counts = {
+        node_type: len(nodes_by_type[node_type])
+        for node_type in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER
+    }
+    if node_type_counts != TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS:
+        fail("ToS Zarathustra route pack node_type_counts must match the current canonical route")
+
+    nodes: list[dict[str, object]] = []
+    for node_type in TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_ORDER:
+        nodes.extend(nodes_by_type[node_type])
+
+    edges = load_tos_zarathustra_route_edges(TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH)
+    edge_kind_counts: dict[str, int] = {}
+    for edge_kind in ("source_edge", "bridge_edge", "principle_edge"):
+        edge_kind_counts[edge_kind] = len(
+            [edge for edge in edges if edge["edge_kind"] == edge_kind]
+        )
+    if edge_kind_counts != TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS:
+        fail("ToS Zarathustra route pack edge_kind_counts must match the canonical relation pack")
+
+    if len(nodes) != sum(TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS.values()):
+        fail("ToS Zarathustra route pack node_count drifted from the current canonical route")
+    if len(edges) != sum(TOS_ZARATHUSTRA_ROUTE_EDGE_KIND_COUNTS.values()):
+        fail("ToS Zarathustra route pack edge_count drifted from the canonical relation pack")
+
+    return {
+        "pack_version": manifest["manifest_version"],
+        "pack_type": manifest["pack_type"],
+        "source_repo": manifest["source_repo"],
+        "source_manifest_ref": "manifests/tos_zarathustra_route_pack.json",
+        "source_inputs": emitted_source_inputs,
+        "surface_bindings": surface_bindings,
+        "surface_id": binding_surface["id"],
+        "surface_name": binding_surface["name"],
+        "route_id": TOS_ZARATHUSTRA_ROUTE_ID,
+        "route_capsule_ref": repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH),
+        "relation_pack_ref": repo_ref(TOS_REPO, TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH),
+        "node_count": len(nodes),
+        "edge_count": len(edges),
+        "node_type_counts": node_type_counts,
+        "edge_kind_counts": edge_kind_counts,
+        "nodes": nodes,
+        "edges": edges,
+        "bounded_output_contract": manifest["bounded_output_contract"],
+    }
+
+
 def build_federation_spine_payload(
     registry_payload: dict[str, object] | None = None,
 ) -> dict[str, object]:
@@ -3938,6 +4558,9 @@ def write_generated_outputs() -> list[Path]:
     tos_retrieval_axis_pack_payload = build_tos_retrieval_axis_pack_payload(
         registry_payload
     )
+    tos_zarathustra_route_pack_payload = build_tos_zarathustra_route_pack_payload(
+        registry_payload
+    )
     reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
     federation_spine_payload = build_federation_spine_payload(registry_payload)
     cross_source_node_projection_payload = build_cross_source_node_projection_payload(
@@ -3969,6 +4592,16 @@ def write_generated_outputs() -> list[Path]:
     write_json(
         TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
         tos_retrieval_axis_pack_payload,
+        pretty=False,
+    )
+    write_json(
+        TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH,
+        tos_zarathustra_route_pack_payload,
+        pretty=True,
+    )
+    write_json(
+        TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
+        tos_zarathustra_route_pack_payload,
         pretty=False,
     )
     write_json(REASONING_HANDOFF_OUTPUT_PATH, reasoning_handoff_pack_payload, pretty=True)
@@ -4029,6 +4662,8 @@ def write_generated_outputs() -> list[Path]:
         TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
         TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
         TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+        TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH,
+        TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
         REASONING_HANDOFF_OUTPUT_PATH,
         REASONING_HANDOFF_MIN_OUTPUT_PATH,
         FEDERATION_SPINE_OUTPUT_PATH,

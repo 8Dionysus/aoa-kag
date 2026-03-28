@@ -35,6 +35,10 @@ It derives only from already-legible bridge and chunk-map surfaces:
 This keeps the wave reference-driven and reviewable rather than introducing a
 second hidden bridge program.
 
+This pilot also remains deliberately narrow after `AOA-K-0010`: the new
+canonical-tree-derived route bundle does not widen `AOA-K-0007` into a broader
+consumer-facing retrieval surface in this first downstream pass.
+
 ## Axis rule
 
 The current retrieval-axis rule is:
