@@ -44,6 +44,11 @@ A derived surface that makes source linkage and origin handles visible for retri
 
 A graph-friendly normalization of source-derived units into node-like or edge-like forms without claiming that the projected form is the new source of truth.
 
+The current bounded example is `AOA-K-0010`, a direct canonical-tree-derived
+route-local Zarathustra bundle that projects reviewed ToS route nodes and the
+canonical ToS relation pack without widening source ownership or activating raw
+intake.
+
 ### Counterpart edge view
 
 A bounded edge-oriented projection that links a ToS concept ref to an AoA operational ref through a named mode such as `analogy`, `support`, `tension`, or `calibration`.
