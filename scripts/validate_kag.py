@@ -1278,6 +1278,24 @@ def resolve_known_ref(raw_ref: str, *, label: str) -> Path:
     return resolve_relative_ref(REPO_ROOT, raw_ref, label=label)
 
 
+def resolve_source_owned_export_ref(raw_ref: str, *, owner_repo: str, label: str) -> Path:
+    if raw_ref.startswith("repo:"):
+        return resolve_known_ref(raw_ref.split("repo:", 1)[1], label=label)
+    if owner_repo == "aoa-memo":
+        return resolve_relative_ref(AOA_MEMO_ROOT, raw_ref, label=label)
+    if owner_repo == "aoa-techniques":
+        return resolve_relative_ref(AOA_TECHNIQUES_ROOT, raw_ref, label=label)
+    if owner_repo == "aoa-playbooks":
+        return resolve_relative_ref(AOA_PLAYBOOKS_ROOT, raw_ref, label=label)
+    if owner_repo == "aoa-evals":
+        return resolve_relative_ref(AOA_EVALS_ROOT, raw_ref, label=label)
+    if owner_repo == "aoa-agents":
+        return resolve_relative_ref(AOA_AGENTS_ROOT, raw_ref, label=label)
+    if owner_repo == TOS_REPO:
+        return resolve_relative_ref(TREE_OF_SOPHIA_ROOT, raw_ref, label=label)
+    return resolve_known_ref(raw_ref, label=label)
+
+
 def validate_exact_set(
     values: list[str] | set[str],
     expected: set[str],
@@ -5938,6 +5956,12 @@ def validate_optional_memo_source_owned_export_readiness() -> None:
         fail(
             "optional aoa-memo source-owned export readiness direct_relations must "
             "keep the claim/episode/ToS trio"
+        )
+    for index, relation in enumerate(direct_relations):
+        resolve_source_owned_export_ref(
+            relation["target_ref"],
+            owner_repo="aoa-memo",
+            label=f"optional aoa-memo source-owned export readiness direct_relations[{index}]",
         )
 
 
