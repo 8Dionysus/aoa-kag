@@ -915,15 +915,12 @@ QUEST_IDS = (
     "AOA-KAG-Q-0004",
 )
 QUESTBOOK_REQUIRED_INDEX_TOKENS = (
-    "AOA-KAG-Q-0001",
-    "AOA-KAG-Q-0002",
-    "AOA-KAG-Q-0003",
-    "AOA-KAG-Q-0004",
     "source-owned export dependency gaps",
     "primary truth",
     "examples/quest_catalog.min.example.json",
     "examples/quest_dispatch.min.example.json",
 )
+CLOSED_QUEST_STATES = {"done", "dropped"}
 QUESTBOOK_REQUIRED_INTEGRATION_TOKENS = (
     "source repos remain the owners of meaning",
     "`aoa-kag` remains the owner of derived, provenance-aware structures and bounded export contracts",
@@ -1172,16 +1169,6 @@ def validate_questbook_surface() -> None:
         required_fields=QUEST_DISPATCH_REQUIRED_FIELDS,
     )
 
-    questbook_text = read_text(repo_root / QUESTBOOK_PATH)
-    for token in QUESTBOOK_REQUIRED_INDEX_TOKENS:
-        if token not in questbook_text:
-            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must mention '{token}' explicitly")
-    for token in QUESTBOOK_FORBIDDEN_TOKENS:
-        if token in questbook_text:
-            fail(
-                f"{display_path(repo_root / QUESTBOOK_PATH)} must not mention out-of-scope surface '{token}'"
-            )
-
     integration_text = read_text(repo_root / QUESTBOOK_INTEGRATION_PATH)
     for token in QUESTBOOK_REQUIRED_INTEGRATION_TOKENS:
         if token not in integration_text:
@@ -1196,6 +1183,8 @@ def validate_questbook_surface() -> None:
 
     quest_payloads: dict[str, dict[str, Any]] = {}
     quests_root = repo_root / "quests"
+    active_quest_ids: list[str] = []
+    closed_quest_ids: list[str] = []
     for quest_id in QUEST_IDS:
         quest_path = quests_root / f"{quest_id}.yaml"
         payload = read_yaml(quest_path)
@@ -1210,6 +1199,26 @@ def validate_questbook_surface() -> None:
         if payload.get("public_safe") is not True:
             fail(f"{display_path(quest_path)} public_safe must be true")
         quest_payloads[quest_id] = payload
+        if payload.get("state") in CLOSED_QUEST_STATES:
+            closed_quest_ids.append(quest_id)
+        else:
+            active_quest_ids.append(quest_id)
+
+    questbook_text = read_text(repo_root / QUESTBOOK_PATH)
+    for token in QUESTBOOK_REQUIRED_INDEX_TOKENS:
+        if token not in questbook_text:
+            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must mention '{token}' explicitly")
+    for quest_id in active_quest_ids:
+        if quest_id not in questbook_text:
+            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must reference active quest id '{quest_id}'")
+    for quest_id in closed_quest_ids:
+        if quest_id in questbook_text:
+            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must not list closed quest id '{quest_id}'")
+    for token in QUESTBOOK_FORBIDDEN_TOKENS:
+        if token in questbook_text:
+            fail(
+                f"{display_path(repo_root / QUESTBOOK_PATH)} must not mention out-of-scope surface '{token}'"
+            )
 
     catalog_payload = read_json(repo_root / QUEST_CATALOG_EXAMPLE_PATH)
     if not isinstance(catalog_payload, list):
