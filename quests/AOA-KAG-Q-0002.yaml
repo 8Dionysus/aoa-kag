@@ -8,7 +8,7 @@ owner_surface: exports/federation-readiness
 theme_ref: ''
 milestone_ref: ''
 kind: guardrail
-state: triaged
+state: reanchor
 band: frontier
 difficulty: d3_seam
 risk: r2_contract
@@ -44,5 +44,11 @@ tags:
   - export
   - dependency
   - federation
-notes: ''
+notes: >-
+  Stage 5 export-dependency review found a bounded readiness/live gap: aoa-memo
+  now publishes a readiness-only source-owned donor export, but the live
+  dependency manifest and federation spine still name a bounded two-repo pilot
+  with only aoa-techniques and Tree-of-Sophia. Reanchor this quest until a
+  source-owner-approved contract names whether aoa-memo remains readiness-only
+  or is promoted into the live source-owned dependency set.
 public_safe: true

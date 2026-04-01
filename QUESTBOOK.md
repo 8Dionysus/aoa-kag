@@ -15,6 +15,9 @@ Do not use it for:
 - cross-repo ambition without a named derived contract
 
 ## Frontier
+- none right now
+
+## Blocked / reanchor
 - `AOA-KAG-Q-0002` — track source-owned export dependency gaps before widening federation exposure
 
 ## Near
