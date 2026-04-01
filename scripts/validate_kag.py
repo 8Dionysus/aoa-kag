@@ -7,8 +7,10 @@ import re
 import sys
 from functools import lru_cache
 from pathlib import Path
+from typing import Any, Sequence
 
 import validate_nested_agents
+import yaml
 
 from kag_generation import (
     AOA_AGENTS_ROOT,
@@ -900,6 +902,79 @@ VISIBLE_ROOTS = (
     AOA_AGENTS_ROOT,
     TREE_OF_SOPHIA_ROOT,
 )
+QUESTBOOK_PATH = Path("QUESTBOOK.md")
+QUESTBOOK_INTEGRATION_PATH = Path("docs") / "QUESTBOOK_KAG_INTEGRATION.md"
+QUEST_SCHEMA_PATH = Path("schemas") / "quest.schema.json"
+QUEST_DISPATCH_SCHEMA_PATH = Path("schemas") / "quest_dispatch.schema.json"
+QUEST_CATALOG_EXAMPLE_PATH = Path("examples") / "quest_catalog.min.example.json"
+QUEST_DISPATCH_EXAMPLE_PATH = Path("examples") / "quest_dispatch.min.example.json"
+QUEST_IDS = (
+    "AOA-KAG-Q-0001",
+    "AOA-KAG-Q-0002",
+    "AOA-KAG-Q-0003",
+    "AOA-KAG-Q-0004",
+)
+QUESTBOOK_REQUIRED_INDEX_TOKENS = (
+    "AOA-KAG-Q-0001",
+    "AOA-KAG-Q-0002",
+    "AOA-KAG-Q-0003",
+    "AOA-KAG-Q-0004",
+    "source-owned export dependency gaps",
+    "primary truth",
+    "examples/quest_catalog.min.example.json",
+    "examples/quest_dispatch.min.example.json",
+)
+QUESTBOOK_REQUIRED_INTEGRATION_TOKENS = (
+    "source repos remain the owners of meaning",
+    "`aoa-kag` remains the owner of derived, provenance-aware structures and bounded export contracts",
+    "CHARTER.md",
+    "docs/KAG_MODEL.md",
+    "docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md",
+    "docs/FEDERATION_KAG_READINESS.md",
+    "docs/BRIDGE_CONTRACTS.md",
+    "docs/RECURRENCE_REGROUNDING.md",
+    "docs/CROSS_SOURCE_NODE_PROJECTION.md",
+)
+QUESTBOOK_FORBIDDEN_TOKENS = (
+    "ATM10-Agent",
+    "aoa-sdk",
+)
+QUEST_SCHEMA_REQUIRED_FIELDS = (
+    "schema_version",
+    "id",
+    "title",
+    "repo",
+    "owner_surface",
+    "kind",
+    "state",
+    "band",
+    "difficulty",
+    "risk",
+    "control_mode",
+    "delegate_tier",
+    "write_scope",
+    "activation",
+    "anchor_ref",
+    "evidence",
+    "opened_at",
+    "touched_at",
+    "public_safe",
+)
+QUEST_DISPATCH_REQUIRED_FIELDS = (
+    "schema_version",
+    "id",
+    "repo",
+    "state",
+    "band",
+    "difficulty",
+    "risk",
+    "control_mode",
+    "delegate_tier",
+    "split_required",
+    "write_scope",
+    "activation_mode",
+    "public_safe",
+)
 
 
 class ValidationError(RuntimeError):
@@ -935,6 +1010,22 @@ def read_json(path: Path) -> object:
         fail(f"invalid JSON in {display_path(path)}: {exc}")
 
 
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        fail(f"missing required file: {display_path(path)}")
+
+
+def read_yaml(path: Path) -> object:
+    try:
+        return yaml.safe_load(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        fail(f"missing required file: {display_path(path)}")
+    except yaml.YAMLError as exc:
+        fail(f"invalid YAML in {display_path(path)}: {exc}")
+
+
 def markdown_anchor(text: str) -> str:
     anchor = text.strip().lower()
     anchor = re.sub(r"[^\w\s-]", "", anchor)
@@ -968,6 +1059,199 @@ def validate_top_level_schema(path: Path, label: str) -> None:
     missing = sorted(required_top_level - set(schema))
     if missing:
         fail(f"{label} schema is missing required top-level keys: {', '.join(missing)}")
+
+
+def validate_quest_schema_envelope(
+    path: Path,
+    *,
+    title: str,
+    schema_version: str,
+    required_fields: Sequence[str],
+) -> None:
+    schema = read_json(path)
+    if not isinstance(schema, dict):
+        fail(f"{display_path(path)} must contain a JSON object")
+    required_top_level = {"$schema", "$id", "title", "type", "properties", "required"}
+    missing_top_level = sorted(required_top_level - set(schema))
+    if missing_top_level:
+        fail(
+            f"{display_path(path)} is missing required top-level keys: {', '.join(missing_top_level)}"
+        )
+    if schema.get("title") != title:
+        fail(f"{display_path(path)} title must equal '{title}'")
+    required = schema.get("required")
+    if not isinstance(required, list):
+        fail(f"{display_path(path)} required must be a list")
+    missing_required = [field for field in required_fields if field not in required]
+    if missing_required:
+        fail(
+            f"{display_path(path)} required must include: {', '.join(missing_required)}"
+        )
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        fail(f"{display_path(path)} properties must be an object")
+    schema_version_entry = properties.get("schema_version")
+    if (
+        not isinstance(schema_version_entry, dict)
+        or schema_version_entry.get("const") != schema_version
+    ):
+        fail(
+            f"{display_path(path)} schema_version must stay pinned to '{schema_version}'"
+        )
+
+
+def build_expected_quest_catalog_entry(quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": quest_id,
+        "title": payload["title"],
+        "repo": payload["repo"],
+        "theme_ref": payload.get("theme_ref", ""),
+        "milestone_ref": payload.get("milestone_ref", ""),
+        "state": payload["state"],
+        "band": payload["band"],
+        "kind": payload["kind"],
+        "difficulty": payload["difficulty"],
+        "risk": payload["risk"],
+        "owner_surface": payload["owner_surface"],
+        "source_path": f"quests/{quest_id}.yaml",
+        "public_safe": payload["public_safe"],
+    }
+
+
+def build_expected_quest_dispatch_entry(
+    quest_id: str,
+    payload: dict[str, Any],
+    actual: dict[str, Any],
+) -> dict[str, Any]:
+    expected = {
+        "schema_version": "quest_dispatch_v1",
+        "id": quest_id,
+        "repo": payload["repo"],
+        "state": payload["state"],
+        "band": payload["band"],
+        "difficulty": payload["difficulty"],
+        "risk": payload["risk"],
+        "control_mode": payload["control_mode"],
+        "delegate_tier": payload["delegate_tier"],
+        "split_required": payload.get("split_required", False),
+        "write_scope": payload["write_scope"],
+        "activation_mode": payload["activation"]["mode"],
+        "source_path": f"quests/{quest_id}.yaml",
+        "public_safe": payload["public_safe"],
+    }
+    if "fallback_tier" in actual:
+        expected["fallback_tier"] = payload.get("fallback_tier")
+    if "wrapper_class" in actual:
+        expected["wrapper_class"] = payload.get("wrapper_class")
+    return expected
+
+
+def validate_questbook_surface() -> None:
+    repo_root = REPO_ROOT
+    for path in (
+        repo_root / QUESTBOOK_PATH,
+        repo_root / QUESTBOOK_INTEGRATION_PATH,
+        repo_root / QUEST_SCHEMA_PATH,
+        repo_root / QUEST_DISPATCH_SCHEMA_PATH,
+        repo_root / QUEST_CATALOG_EXAMPLE_PATH,
+        repo_root / QUEST_DISPATCH_EXAMPLE_PATH,
+    ):
+        if not path.is_file():
+            fail(f"missing required file: {display_path(path)}")
+
+    validate_quest_schema_envelope(
+        repo_root / QUEST_SCHEMA_PATH,
+        title="aoa-kag work_quest_v1",
+        schema_version="work_quest_v1",
+        required_fields=QUEST_SCHEMA_REQUIRED_FIELDS,
+    )
+    validate_quest_schema_envelope(
+        repo_root / QUEST_DISPATCH_SCHEMA_PATH,
+        title="aoa-kag quest_dispatch_v1",
+        schema_version="quest_dispatch_v1",
+        required_fields=QUEST_DISPATCH_REQUIRED_FIELDS,
+    )
+
+    questbook_text = read_text(repo_root / QUESTBOOK_PATH)
+    for token in QUESTBOOK_REQUIRED_INDEX_TOKENS:
+        if token not in questbook_text:
+            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must mention '{token}' explicitly")
+    for token in QUESTBOOK_FORBIDDEN_TOKENS:
+        if token in questbook_text:
+            fail(
+                f"{display_path(repo_root / QUESTBOOK_PATH)} must not mention out-of-scope surface '{token}'"
+            )
+
+    integration_text = read_text(repo_root / QUESTBOOK_INTEGRATION_PATH)
+    for token in QUESTBOOK_REQUIRED_INTEGRATION_TOKENS:
+        if token not in integration_text:
+            fail(
+                f"{display_path(repo_root / QUESTBOOK_INTEGRATION_PATH)} must mention '{token}' explicitly"
+            )
+    for token in QUESTBOOK_FORBIDDEN_TOKENS:
+        if token in integration_text:
+            fail(
+                f"{display_path(repo_root / QUESTBOOK_INTEGRATION_PATH)} must not mention out-of-scope surface '{token}'"
+            )
+
+    quest_payloads: dict[str, dict[str, Any]] = {}
+    quests_root = repo_root / "quests"
+    for quest_id in QUEST_IDS:
+        quest_path = quests_root / f"{quest_id}.yaml"
+        payload = read_yaml(quest_path)
+        if not isinstance(payload, dict):
+            fail(f"{display_path(quest_path)} must contain a YAML mapping")
+        if payload.get("schema_version") != "work_quest_v1":
+            fail(f"{display_path(quest_path)} schema_version must equal 'work_quest_v1'")
+        if payload.get("id") != quest_id:
+            fail(f"{display_path(quest_path)} id must equal '{quest_id}'")
+        if payload.get("repo") != "aoa-kag":
+            fail(f"{display_path(quest_path)} repo must equal 'aoa-kag'")
+        if payload.get("public_safe") is not True:
+            fail(f"{display_path(quest_path)} public_safe must be true")
+        quest_payloads[quest_id] = payload
+
+    catalog_payload = read_json(repo_root / QUEST_CATALOG_EXAMPLE_PATH)
+    if not isinstance(catalog_payload, list):
+        fail(f"{display_path(repo_root / QUEST_CATALOG_EXAMPLE_PATH)} must contain a JSON array")
+    expected_catalog = [
+        build_expected_quest_catalog_entry(quest_id, quest_payloads[quest_id])
+        for quest_id in QUEST_IDS
+    ]
+    if catalog_payload != expected_catalog:
+        fail(
+            f"{display_path(repo_root / QUEST_CATALOG_EXAMPLE_PATH)} must stay aligned with quests/*.yaml"
+        )
+
+    dispatch_payload = read_json(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)
+    if not isinstance(dispatch_payload, list):
+        fail(f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} must contain a JSON array")
+    if len(dispatch_payload) != len(QUEST_IDS):
+        fail(
+            f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} must contain {len(QUEST_IDS)} entries"
+        )
+    for entry, quest_id in zip(dispatch_payload, QUEST_IDS, strict=True):
+        if not isinstance(entry, dict):
+            fail(
+                f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} entries must be JSON objects"
+            )
+        requires_artifacts = entry.get("requires_artifacts")
+        if not isinstance(requires_artifacts, list) or not requires_artifacts or not all(
+            isinstance(item, str) and item for item in requires_artifacts
+        ):
+            fail(
+                f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} entry '{quest_id}' must keep a non-empty requires_artifacts list"
+            )
+        expected_entry = build_expected_quest_dispatch_entry(
+            quest_id,
+            quest_payloads[quest_id],
+            entry,
+        )
+        comparable_entry = {key: entry.get(key) for key in expected_entry}
+        if comparable_entry != expected_entry:
+            fail(
+                f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} entry '{quest_id}' must stay aligned with quests/*.yaml"
+            )
 
 
 def validate_schema_surface() -> None:
@@ -5968,6 +6252,7 @@ def validate_optional_memo_source_owned_export_readiness() -> None:
 def main() -> int:
     try:
         validate_nested_agents_docs()
+        validate_questbook_surface()
         validate_schema_surface()
         validate_bridge_schema_surface()
         validate_bridge_envelope_schema_surface()
@@ -6268,6 +6553,7 @@ def main() -> int:
         return 1
 
     print("[ok] validated nested AGENTS docs")
+    print("[ok] validated questbook boundary-runtime surfaces")
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")
     print("[ok] validated bridge envelope schema")

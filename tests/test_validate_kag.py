@@ -20,6 +20,11 @@ def load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def write_text(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
 class ValidateKagTestCase(unittest.TestCase):
     def patched_read_json(self, overrides: dict[Path, object]):
         original = validate_kag.read_json
@@ -438,6 +443,121 @@ class ValidateKagTestCase(unittest.TestCase):
                     validate_kag.validate_optional_memo_source_owned_export_readiness()
 
         self.assertIn("direct_relations[0]", str(context.exception))
+
+
+class ValidateQuestbookSurfaceTests(unittest.TestCase):
+    def write_valid_surface(self, repo_root: Path) -> None:
+        write_text(
+            repo_root / "QUESTBOOK.md",
+            (REPO_ROOT / "QUESTBOOK.md").read_text(encoding="utf-8"),
+        )
+        write_text(
+            repo_root / "docs" / "QUESTBOOK_KAG_INTEGRATION.md",
+            (REPO_ROOT / "docs" / "QUESTBOOK_KAG_INTEGRATION.md").read_text(
+                encoding="utf-8"
+            ),
+        )
+        write_text(
+            repo_root / "schemas" / "quest.schema.json",
+            (REPO_ROOT / "schemas" / "quest.schema.json").read_text(encoding="utf-8"),
+        )
+        write_text(
+            repo_root / "schemas" / "quest_dispatch.schema.json",
+            (REPO_ROOT / "schemas" / "quest_dispatch.schema.json").read_text(
+                encoding="utf-8"
+            ),
+        )
+        for quest_id in validate_kag.QUEST_IDS:
+            write_text(
+                repo_root / "quests" / f"{quest_id}.yaml",
+                (REPO_ROOT / "quests" / f"{quest_id}.yaml").read_text(encoding="utf-8"),
+            )
+        write_text(
+            repo_root / "examples" / "quest_catalog.min.example.json",
+            (REPO_ROOT / "examples" / "quest_catalog.min.example.json").read_text(
+                encoding="utf-8"
+            ),
+        )
+        write_text(
+            repo_root / "examples" / "quest_dispatch.min.example.json",
+            (REPO_ROOT / "examples" / "quest_dispatch.min.example.json").read_text(
+                encoding="utf-8"
+            ),
+        )
+
+    def test_valid_questbook_surface_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "aoa-kag"
+            self.write_valid_surface(repo_root)
+
+            with patch.object(validate_kag, "REPO_ROOT", repo_root):
+                validate_kag.validate_questbook_surface()
+
+    def test_missing_quest_file_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "aoa-kag"
+            self.write_valid_surface(repo_root)
+            (repo_root / "quests" / "AOA-KAG-Q-0003.yaml").unlink()
+
+            with patch.object(validate_kag, "REPO_ROOT", repo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_questbook_surface()
+
+        self.assertIn("AOA-KAG-Q-0003.yaml", str(context.exception))
+
+    def test_wrong_repo_value_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "aoa-kag"
+            self.write_valid_surface(repo_root)
+            write_text(
+                repo_root / "quests" / "AOA-KAG-Q-0002.yaml",
+                (repo_root / "quests" / "AOA-KAG-Q-0002.yaml")
+                .read_text(encoding="utf-8")
+                .replace("repo: aoa-kag", "repo: aoa-evals"),
+            )
+
+            with patch.object(validate_kag, "REPO_ROOT", repo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_questbook_surface()
+
+        self.assertIn("repo must equal 'aoa-kag'", str(context.exception))
+
+    def test_source_boundary_phrase_missing_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "aoa-kag"
+            self.write_valid_surface(repo_root)
+            write_text(
+                repo_root / "docs" / "QUESTBOOK_KAG_INTEGRATION.md",
+                (repo_root / "docs" / "QUESTBOOK_KAG_INTEGRATION.md")
+                .read_text(encoding="utf-8")
+                .replace("source repos remain the owners of meaning", "source repos stay nearby"),
+            )
+
+            with patch.object(validate_kag, "REPO_ROOT", repo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_questbook_surface()
+
+        self.assertIn("source repos remain the owners of meaning", str(context.exception))
+
+    def test_dispatch_example_drift_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "aoa-kag"
+            self.write_valid_surface(repo_root)
+            write_text(
+                repo_root / "examples" / "quest_dispatch.min.example.json",
+                (repo_root / "examples" / "quest_dispatch.min.example.json")
+                .read_text(encoding="utf-8")
+                .replace(
+                    '"source_path": "quests/AOA-KAG-Q-0004.yaml"',
+                    '"source_path": "quests/AOA-KAG-Q-9999.yaml"',
+                ),
+            )
+
+            with patch.object(validate_kag, "REPO_ROOT", repo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_questbook_surface()
+
+        self.assertIn("AOA-KAG-Q-0004", str(context.exception))
 
 
 if __name__ == "__main__":
