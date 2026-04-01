@@ -61,6 +61,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install PyYAML
+        run: python -m pip install PyYAML
+
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test_*.py"
 

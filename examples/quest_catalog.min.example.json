@@ -1,0 +1,62 @@
+[
+  {
+    "id": "AOA-KAG-Q-0001",
+    "title": "Land repo-local questbook surface for derived-layer guardrails and export obligations",
+    "repo": "aoa-kag",
+    "theme_ref": "",
+    "milestone_ref": "",
+    "state": "ready",
+    "band": "frontier",
+    "kind": "rollout",
+    "difficulty": "d2_slice",
+    "risk": "r1_repo_local",
+    "owner_surface": "questbook/public-surface",
+    "source_path": "quests/AOA-KAG-Q-0001.yaml",
+    "public_safe": true
+  },
+  {
+    "id": "AOA-KAG-Q-0002",
+    "title": "Track source-owned export dependency gaps before widening federation exposure",
+    "repo": "aoa-kag",
+    "theme_ref": "",
+    "milestone_ref": "",
+    "state": "triaged",
+    "band": "frontier",
+    "kind": "guardrail",
+    "difficulty": "d3_seam",
+    "risk": "r2_contract",
+    "owner_surface": "exports/federation-readiness",
+    "source_path": "quests/AOA-KAG-Q-0002.yaml",
+    "public_safe": true
+  },
+  {
+    "id": "AOA-KAG-Q-0003",
+    "title": "Track bridge-contract and recurrence-regrounding obligations for derived projections",
+    "repo": "aoa-kag",
+    "theme_ref": "",
+    "milestone_ref": "",
+    "state": "captured",
+    "band": "near",
+    "kind": "seam",
+    "difficulty": "d3_seam",
+    "risk": "r2_contract",
+    "owner_surface": "bridge/recurrence",
+    "source_path": "quests/AOA-KAG-Q-0003.yaml",
+    "public_safe": true
+  },
+  {
+    "id": "AOA-KAG-Q-0004",
+    "title": "Stage bounded cross-source projection pilots without promoting them to primary truth",
+    "repo": "aoa-kag",
+    "theme_ref": "",
+    "milestone_ref": "",
+    "state": "captured",
+    "band": "latent",
+    "kind": "investigation",
+    "difficulty": "d4_architecture",
+    "risk": "r2_contract",
+    "owner_surface": "projections/cross-source-pilots",
+    "source_path": "quests/AOA-KAG-Q-0004.yaml",
+    "public_safe": true
+  }
+]

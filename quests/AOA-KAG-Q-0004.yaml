@@ -1,0 +1,48 @@
+schema_version: work_quest_v1
+id: AOA-KAG-Q-0004
+title: Stage bounded cross-source projection pilots without promoting them to primary truth
+summary: Use quests to keep ambitious cross-source projection work bounded, reviewable,
+  and obviously derived.
+repo: aoa-kag
+owner_surface: projections/cross-source-pilots
+theme_ref: ''
+milestone_ref: ''
+kind: investigation
+state: captured
+band: latent
+difficulty: d4_architecture
+risk: r2_contract
+control_mode: human_codex_copilot
+delegate_tier: conductor
+fallback_tier: deep
+wrapper_class: codex_primary
+write_scope: cross_repo_request
+split_required: true
+complexity_basis:
+  scope: 3
+  ambiguity: 2
+  boundary: 2
+  verification: 2
+parent: null
+depends_on: []
+activation:
+  mode: manual
+  note: open only after a bounded pilot is explicitly approved
+anchor_ref:
+  artifact: cross-source-node-projection
+  ref: docs/CROSS_SOURCE_NODE_PROJECTION.md
+handoff_role: kag-maintainer
+evidence:
+  - the pilot remains bounded
+  - owning sources stay explicit
+  - exposure review is named before widening
+harvest:
+  target: none
+opened_at: '2026-03-31'
+touched_at: '2026-03-31'
+tags:
+  - projection
+  - pilot
+  - cross-source
+notes: ''
+public_safe: true
