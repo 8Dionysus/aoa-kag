@@ -190,6 +190,45 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         self.assertEqual(retrieval_pack["route_count"], len(retrieval_pack["routes"]))
         self.assertEqual(retrieval_pack["surface_id"], "AOA-K-0011")
 
+    def test_aoa_k_0011_stays_inspectable_but_separate_from_tiny_entry_bundle(self) -> None:
+        registry = load_json(GENERATED_ROOT / "kag_registry.min.json")
+        tiny_bundle = load_json(GENERATED_ROOT / "tiny_consumer_bundle.min.json")
+        retrieval_pack = load_json(GENERATED_ROOT / "tos_zarathustra_route_retrieval_pack.min.json")
+        federation_spine = load_json(GENERATED_ROOT / "federation_spine.min.json")
+
+        registry_entry = next(item for item in registry["surfaces"] if item["id"] == "AOA-K-0011")
+        self.assertEqual(registry_entry["status"], "experimental")
+        self.assertEqual(registry_entry["derived_kind"], "retrieval_surface")
+
+        tiny_bundle_refs = {item["ref"] for item in tiny_bundle["bundle_items"]}
+        self.assertNotIn("generated/tos_zarathustra_route_retrieval_pack.min.json", tiny_bundle_refs)
+        self.assertNotIn(
+            "tos_zarathustra_route_retrieval_pack",
+            {item["name"] for item in tiny_bundle["bundle_items"]},
+        )
+
+        self.assertEqual(retrieval_pack["surface_id"], "AOA-K-0011")
+        self.assertEqual(
+            [binding["surface_id"] for binding in retrieval_pack["surface_bindings"]],
+            ["AOA-K-0011"],
+        )
+        self.assertTrue(
+            all(route["retrieval_id"].startswith("AOA-K-0011::") for route in retrieval_pack["routes"])
+        )
+        self.assertEqual(
+            retrieval_pack["bounded_output_contract"]["consumer_projection"],
+            "bounded_handles_only",
+        )
+
+        tos_repo = next(repo for repo in federation_spine["repos"] if repo["repo"] == "Tree-of-Sophia")
+        adjunct_surfaces = tos_repo["adjunct_surfaces"]
+        self.assertEqual(len(adjunct_surfaces), 1)
+        self.assertEqual(adjunct_surfaces[0]["surface_id"], "AOA-K-0011")
+        self.assertEqual(
+            adjunct_surfaces[0]["surface_ref"],
+            "generated/tos_zarathustra_route_retrieval_pack.min.json",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
