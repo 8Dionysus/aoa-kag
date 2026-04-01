@@ -29,3 +29,7 @@ Good KAG quests normally answer:
 - which source-owned dependency needs to be made explicit
 - which bridge or recurrence return rule is under-specified
 - which projection pilot is still experimental and should not become primary truth
+
+If a readiness-only donor export appears before the live federation spine widens,
+reanchor the dependency quest instead of silently promoting that donor into
+production coverage.
