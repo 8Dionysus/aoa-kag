@@ -15,7 +15,6 @@ Do not use it for:
 - cross-repo ambition without a named derived contract
 
 ## Frontier
-- `AOA-KAG-Q-0001` — land repo-local questbook surface for derived-layer guardrails and export obligations
 - `AOA-KAG-Q-0002` — track source-owned export dependency gaps before widening federation exposure
 
 ## Near
