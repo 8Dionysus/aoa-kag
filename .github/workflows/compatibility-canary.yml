@@ -1,10 +1,9 @@
-name: Repo Validation
+name: Compatibility Canary
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
 
 jobs:
   validate:
@@ -24,42 +23,36 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/Tree-of-Sophia
-          ref: a71578d9bb5a10e15a7cc24968bf94c7980544ad
           path: .deps/Tree-of-Sophia
 
       - name: Checkout aoa-memo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/aoa-memo
-          ref: cd678fa2aea33132200d415cb88822c4dc577088
           path: .deps/aoa-memo
 
       - name: Checkout aoa-playbooks
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/aoa-playbooks
-          ref: 7d2b2dfbcf3d5b42d95c8aa8ef17bc668fed0ba1
           path: .deps/aoa-playbooks
 
       - name: Checkout aoa-evals
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/aoa-evals
-          ref: 036e9c66b0cbe9255708a4d4442c2c8aa28a0ccf
           path: .deps/aoa-evals
 
       - name: Checkout aoa-agents
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/aoa-agents
-          ref: d3cace5a4ca5d7bc1ffc3c031660939d124dab53
           path: .deps/aoa-agents
 
       - name: Checkout aoa-techniques
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/aoa-techniques
-          ref: 0f386836a9f67a165da0eb271601eab557009bad
           path: .deps/aoa-techniques
 
       - name: Setup Python
