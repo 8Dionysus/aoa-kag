@@ -8,11 +8,20 @@ It exists to make knowledge-ready structures explicit, reviewable, and bounded. 
 
 Use the shortest route by need:
 
+- docs map: [docs/README](docs/README.md)
 - role, model, and consumer path: [CHARTER](CHARTER.md), [docs/KAG_MODEL](docs/KAG_MODEL.md), and [docs/CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md)
 - source-owned dependencies, bridge posture, and regrounding: [docs/SOURCE_OWNED_EXPORT_DEPENDENCIES](docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md), [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md), [docs/RECURRENCE_REGROUNDING](docs/RECURRENCE_REGROUNDING.md), [docs/BOUNDARIES](docs/BOUNDARIES.md), and [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md)
 - federation and counterpart surfaces: [docs/COUNTERPART_CONSUMER_CONTRACT](docs/COUNTERPART_CONSUMER_CONTRACT.md), [docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW](docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md), [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md), [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md), and [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md)
 - current derived pilots: [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md), [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md), [docs/TOS_RETRIEVAL_AXIS_PACK](docs/TOS_RETRIEVAL_AXIS_PACK.md), [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md), [docs/TOS_ZARATHUSTRA_ROUTE_PACK](docs/TOS_ZARATHUSTRA_ROUTE_PACK.md), [docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK](docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md), [docs/CROSS_SOURCE_NODE_PROJECTION](docs/CROSS_SOURCE_NODE_PROJECTION.md), and [docs/TOS_RAW_TABLE_INTAKE_STUB](docs/TOS_RAW_TABLE_INTAKE_STUB.md)
 - current direction: [ROADMAP](ROADMAP.md)
+
+## Route by need
+
+- registry and substrate projections: `generated/kag_registry.json`, `generated/kag_registry.min.json`, and `manifests/kag_registry.json`
+- manifest-driven donor and ToS lift packs: `generated/technique_lift_pack*.json`, `generated/tos_text_chunk_map*.json`, `generated/tos_retrieval_axis_pack*.json`, `generated/tos_zarathustra_route_pack*.json`, `generated/tos_zarathustra_route_retrieval_pack*.json`, and the matching `manifests/*.json`
+- reasoning, return, and federation bridge surfaces: `generated/reasoning_handoff_pack*.json`, `generated/return_regrounding_pack*.json`, `generated/federation_spine*.json`, `generated/counterpart_federation_exposure_review*.json`, and [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md)
+- tiny consumer and bounded cross-source adjuncts: `generated/tiny_consumer_bundle*.json`, `generated/cross_source_node_projection*.json`, and `examples/*.example.json`
+- local validation and rebuild path: `python scripts/release_check.py`, `python scripts/generate_kag.py`, and `python scripts/validate_kag.py`
 
 ## What `aoa-kag` owns
 
