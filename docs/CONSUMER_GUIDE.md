@@ -80,8 +80,17 @@ Do not treat these surfaces as:
 
 ## Verification posture
 
-Use:
+For a read-only current-state pass, use:
+
+```bash
+python scripts/validate_kag.py
+python scripts/validate_nested_agents.py
+python -m unittest discover -s tests -p 'test_*.py'
+```
+
+For release-prep parity, use:
 
 ```bash
 python scripts/release_check.py
+git status -sb
 ```

@@ -229,6 +229,52 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             "generated/tos_zarathustra_route_retrieval_pack.min.json",
         )
 
+    def test_readme_surfaces_source_first_route_and_honest_validation_paths(self) -> None:
+        readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("- role, model, and source-first posture:", readme)
+        self.assertIn("- docs map:", readme)
+        self.assertLess(
+            readme.index("- role, model, and source-first posture:"),
+            readme.index("- docs map:"),
+        )
+
+        for command in (
+            "python scripts/validate_kag.py",
+            "python scripts/validate_nested_agents.py",
+            "python -m unittest discover -s tests -p 'test_*.py'",
+            "python scripts/release_check.py",
+            "python scripts/generate_kag.py",
+            "git status -sb",
+        ):
+            self.assertIn(command, readme)
+
+    def test_agents_and_contributing_distinguish_current_validation_from_release_prep(self) -> None:
+        agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        contributing = (REPO_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+
+        for text in (agents, contributing):
+            for command in (
+                "python scripts/validate_kag.py",
+                "python scripts/validate_nested_agents.py",
+                "python -m unittest discover -s tests -p 'test_*.py'",
+                "python scripts/release_check.py",
+                "git status -sb",
+            ):
+                self.assertIn(command, text)
+
+    def test_consumer_guide_verification_posture_mentions_read_only_and_release_prep(self) -> None:
+        guide = (REPO_ROOT / "docs" / "CONSUMER_GUIDE.md").read_text(encoding="utf-8")
+
+        for command in (
+            "python scripts/validate_kag.py",
+            "python scripts/validate_nested_agents.py",
+            "python -m unittest discover -s tests -p 'test_*.py'",
+            "python scripts/release_check.py",
+            "git status -sb",
+        ):
+            self.assertIn(command, guide)
+
 
 if __name__ == "__main__":
     unittest.main()
