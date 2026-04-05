@@ -109,14 +109,21 @@ Summarize:
 
 Run the validation commands documented in `README.md`.
 
-If registries, packs, or other generated KAG surfaces changed, regenerate and validate them before finishing.
+For a read-only current-state pass, use:
 
-The canonical commands are:
+```bash
+python scripts/validate_kag.py
+python scripts/validate_nested_agents.py
+python -m unittest discover -s tests -p 'test_*.py'
+```
+
+If registries, packs, or other generated KAG surfaces changed, regenerate them and rerun the read-only pass above.
+
+For release-prep parity, use:
 
 ```bash
 python scripts/release_check.py
-python scripts/generate_kag.py
-python scripts/validate_kag.py
+git status -sb
 ```
 
 The validators also check the local guidance surfaces in `manifests/`, `generated/`, `schemas/`, and `examples/`.

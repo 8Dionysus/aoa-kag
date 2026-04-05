@@ -66,6 +66,32 @@ A strong pull request in this repository should explain:
 - what authoritative sources feed the surface
 - what was intentionally not absorbed into this repository
 
+## Before opening a PR
+
+Run the current read-only validation battery:
+
+```bash
+python scripts/validate_kag.py
+python scripts/validate_nested_agents.py
+python -m unittest discover -s tests -p 'test_*.py'
+```
+
+If your change touched generated KAG outputs, regenerate and revalidate them before opening the PR:
+
+```bash
+python scripts/generate_kag.py
+python scripts/validate_kag.py
+python scripts/validate_nested_agents.py
+python -m unittest discover -s tests -p 'test_*.py'
+```
+
+For release-prep parity, use:
+
+```bash
+python scripts/release_check.py
+git status -sb
+```
+
 ## Style guidance
 
 Prefer:
