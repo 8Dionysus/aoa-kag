@@ -62,7 +62,7 @@
     "Validation",
     "Adaptation notes"
   ],
-  "technique_count": 74,
+  "technique_count": 94,
   "techniques": [
     {
       "technique_id": "AOA-T-0001",
@@ -7149,6 +7149,1910 @@
             "kind": "second_context",
             "title": "Second Context Adaptation",
             "note_ref": "aoa-techniques/techniques/agent-workflows/telegram-export-normalization-to-local-store/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0075",
+      "technique_name": "session-donor-harvest",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/session-donor-harvest/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Distill a reviewed session artifact into a bounded donor pack of reusable units so candidate practice, workflow, and scenario objects can be evaluated without turning session history into memory or forcing promotion.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0076"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0044"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-donor-harvest/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-donor-harvest/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-donor-harvest/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0076",
+      "technique_name": "owner-layer-triage",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/owner-layer-triage/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Route one bounded reusable unit to one primary owner layer and one rejected nearest-wrong target so practice, workflow, scenario, proof, recall, and role surfaces stay distinct instead of collapsing into generic reuse.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0075"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0016"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/owner-layer-triage/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/owner-layer-triage/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/owner-layer-triage/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0077",
+      "technique_name": "harvest-packet-contract",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/harvest-packet-contract/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Keep one bounded HARVEST_PACKET contract over a reviewed session so downstream routing, diagnosis, repair, progression, and quest seams can consume explicit packet fields without silently replacing one another.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0075"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0076"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/harvest-packet-contract/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/harvest-packet-contract/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/harvest-packet-contract/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0078",
+      "technique_name": "decision-fork-cards",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/decision-fork-cards/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Turn one reviewed session or harvest packet into explicit decision fork cards so materially different next routes stay visible with gains, costs, owner targets, and stop conditions instead of collapsing into one hidden recommendation.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0079"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0077"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/decision-fork-cards/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/decision-fork-cards/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/decision-fork-cards/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0079",
+      "technique_name": "risk-passport-lift",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/risk-passport-lift/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Attach one small risk passport to each explicit next route so difficulty, risk, control mode, delegate tier, and stop-condition posture stay visible without turning branch analysis into hidden routing policy.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0078"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0083"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/risk-passport-lift/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/risk-passport-lift/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/risk-passport-lift/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0080",
+      "technique_name": "session-drift-taxonomy",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/session-drift-taxonomy/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Classify repeated post-session friction into bounded drift types so diagnosis can say what kind of problem is present before it claims one probable cause, owner hint, or repair shape.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0081"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0076"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-drift-taxonomy/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-drift-taxonomy/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/session-drift-taxonomy/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0081",
+      "technique_name": "diagnosis-from-reviewed-evidence",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/diagnosis-from-reviewed-evidence/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Turn reviewed friction evidence into a bounded diagnosis packet that separates symptoms from probable causes, preserves unknowns, and names likely owner hints without mutating anything yet.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0080"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0082"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/diagnosis-from-reviewed-evidence/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/diagnosis-from-reviewed-evidence/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/diagnosis-from-reviewed-evidence/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0082",
+      "technique_name": "repair-shape-from-diagnosis",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/repair-shape-from-diagnosis/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Turn a reviewed diagnosis packet into the smallest honest repair shape so the next artifact stays bounded, owner-aware, and smaller than a scenario rollout.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0081"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0083"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/repair-shape-from-diagnosis/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/repair-shape-from-diagnosis/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/repair-shape-from-diagnosis/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0083",
+      "technique_name": "checkpoint-bound-self-repair",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/checkpoint-bound-self-repair/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Keep self-repair behind explicit checkpoint posture with approval, rollback, health checks, iteration limits, and improvement-log visibility so repair stays reviewable instead of feeling like silent self-modification.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0082"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0028"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/checkpoint-bound-self-repair/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/checkpoint-bound-self-repair/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/checkpoint-bound-self-repair/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0084",
+      "technique_name": "progression-evidence-lift",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/progression-evidence-lift/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Lift reviewed session evidence into a bounded multi-axis progression delta with explicit verdicts and small unlock hints so growth stays descriptive and evidence-backed instead of collapsing into one score.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0085"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0075"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/progression-evidence-lift/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/progression-evidence-lift/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/progression-evidence-lift/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0085",
+      "technique_name": "multi-axis-quest-overlay",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/multi-axis-quest-overlay/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Add quest-, RPG-, or chronicle-shaped reflection to a bounded multi-axis progression result so route legibility improves without letting flavor overwrite owner truth, proof, or routing authority.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0084"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0078"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/multi-axis-quest-overlay/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/multi-axis-quest-overlay/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/multi-axis-quest-overlay/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0086",
+      "technique_name": "automation-fit-matrix",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/automation-fit-matrix/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Classify one recurring manual route across repeat signal, determinism, proof posture, reversibility, and approval sensitivity so automation desire becomes a bounded verdict rather than vague enthusiasm.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0087"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0088"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/automation-fit-matrix/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/automation-fit-matrix/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/automation-fit-matrix/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0087",
+      "technique_name": "human-loop-to-seed-lift",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/human-loop-to-seed-lift/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Route one recurring human loop to the first honest automation-facing landing so seed-ready candidates become bounded skills or playbook seeds while unstable routes stay manual, repair-bound, or deferred.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0086"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0076"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/human-loop-to-seed-lift/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/human-loop-to-seed-lift/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/human-loop-to-seed-lift/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0088",
+      "technique_name": "approval-sensitivity-check",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/approval-sensitivity-check/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Classify whether an automation candidate crosses approval, rollback, or self-change boundaries so checkpoint-required posture appears before any seed-ready claim becomes credible.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0028"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0083"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-05",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/approval-sensitivity-check/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/approval-sensitivity-check/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/approval-sensitivity-check/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0089",
+      "technique_name": "quest-unit-promotion-review",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/quest-unit-promotion-review/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Review one repeated reviewed quest unit and emit one bounded promotion verdict so leaf workflow, route, role, proof, and recall surfaces do not collapse into generic reuse pressure.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0090"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0076"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-06",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/quest-unit-promotion-review/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/quest-unit-promotion-review/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/quest-unit-promotion-review/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0090",
+      "technique_name": "nearest-wrong-target-rejection",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/nearest-wrong-target-rejection/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Reject the nearest wrong promotion target explicitly so repeated reviewed work does not collapse into the most convenient adjacent owner layer.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0089"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0076"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-06",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/nearest-wrong-target-rejection/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/nearest-wrong-target-rejection/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/nearest-wrong-target-rejection/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0091",
+      "technique_name": "workspace-root-ingress-and-mutation-gate",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/workspace-root-ingress-and-mutation-gate/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Enter federated workspaces through one explicit ingress pass and gate risky mutation through one explicit guard pass so session posture stays reviewable instead of hiding in operator memory.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 3,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0060"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0028"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0061"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-06",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/workspace-root-ingress-and-mutation-gate/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/workspace-root-ingress-and-mutation-gate/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/workspace-root-ingress-and-mutation-gate/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0092",
+      "technique_name": "audit-to-closeout-proof-loop",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/audit-to-closeout-proof-loop/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Turn a reviewed audit finding set into a live-confirmed, proof-backed closeout loop so remediation claims rest on named evidence instead of audit wording alone.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "cross_context",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0001"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0052"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-06",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/audit-to-closeout-proof-loop/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/audit-to-closeout-proof-loop/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/audit-to-closeout-proof-loop/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0093",
+      "technique_name": "recommendation-truth-vs-host-actionability",
+      "source_ref": "aoa-techniques/techniques/agent-workflows/recommendation-truth-vs-host-actionability/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "agent-workflows",
+        "status": "promoted",
+        "summary": "Keep router recommendation truth separate from host actionability so non-executable recommendations stay visible, canonical install roots stay authoritative, and runnable actions do not masquerade as merely relevant advice.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0091"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0042"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-06",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/recommendation-truth-vs-host-actionability/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/recommendation-truth-vs-host-actionability/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/agent-workflows/recommendation-truth-vs-host-actionability/notes/second-context-adaptation.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0094",
+      "technique_name": "canonical-owner-with-validated-mirror",
+      "source_ref": "aoa-techniques/techniques/docs/canonical-owner-with-validated-mirror/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "docs",
+        "status": "promoted",
+        "summary": "Keep one canonical cross-repo contract owner and allow local mirrors only when explicit parity validation keeps owner metadata and vocabulary exactly aligned.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "moderate",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0013"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0024"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-07",
+        "note_count": 3,
+        "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/docs/canonical-owner-with-validated-mirror/notes/canonical-readiness.md"
+          },
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/docs/canonical-owner-with-validated-mirror/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/docs/canonical-owner-with-validated-mirror/notes/second-context-adaptation.md"
           }
         ]
       }

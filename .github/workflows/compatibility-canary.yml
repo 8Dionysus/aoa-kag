@@ -2,8 +2,11 @@ name: Compatibility Canary
 
 on:
   schedule:
-    - cron: "23 5 * * *"
+    - cron: "19 8 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   validate:
