@@ -611,6 +611,19 @@ EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATHS = {
     "full": "generated/tos_zarathustra_route_retrieval_pack.json",
     "min": "generated/tos_zarathustra_route_retrieval_pack.min.json",
 }
+EXPECTED_TOS_STANDALONE_ADJUNCT_BUDGET = {
+    "max_adjunct_surfaces": 1,
+    "max_route_families": 1,
+    "numbered_tiny_path_inclusion": "forbidden",
+    "default_activation": "opt_in_only",
+}
+EXPECTED_TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE = {
+    "adjunct_role": "standalone_handles_only",
+    "entry_order": "source_owned_tiny_entry_before_adjunct",
+    "source_first_reentry_ref": repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH),
+    "routing_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+}
 EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_CONTRACT = {
     "source_trace_required": True,
     "source_replacement": "forbidden",
@@ -764,6 +777,8 @@ EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
             "match_key": "retrieval_id",
             "target_value": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
             "route_id": TOS_ZARATHUSTRA_ROUTE_ID,
+            "adjunct_budget": EXPECTED_TOS_STANDALONE_ADJUNCT_BUDGET,
+            "subordinate_posture": EXPECTED_TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE,
         }
     ],
 }
@@ -2484,6 +2499,19 @@ def validate_tos_zarathustra_route_retrieval_pack_manifest(
             "ToS Zarathustra route retrieval pack manifest output_paths must match "
             "the committed generated output paths"
         )
+    if payload["adjunct_budget"] != EXPECTED_TOS_STANDALONE_ADJUNCT_BUDGET:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest adjunct_budget must "
+            "match the current standalone adjunct budget"
+        )
+    if (
+        payload["subordinate_posture"]
+        != EXPECTED_TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE
+    ):
+        fail(
+            "ToS Zarathustra route retrieval pack manifest subordinate_posture "
+            "must match the current source-first subordinate posture"
+        )
     if (
         payload["bounded_output_contract"]
         != EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_CONTRACT
@@ -2977,7 +3005,7 @@ def validate_federation_spine_manifest(
                 f"'{surface_id}' in consumed_by"
             )
 
-        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        normalized_adjunct_surfaces: list[dict[str, object]] = []
         for adjunct_index, adjunct in enumerate(adjunct_surfaces):
             adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
             if not isinstance(adjunct, dict):
@@ -2989,10 +3017,13 @@ def validate_federation_spine_manifest(
                 "match_key",
                 "target_value",
                 "route_id",
+                "adjunct_budget",
+                "subordinate_posture",
             }:
                 fail(
                     f"{adjunct_location} must keep exactly surface_id, surface_name, "
-                    "surface_ref, match_key, target_value, and route_id"
+                    "surface_ref, match_key, target_value, route_id, adjunct_budget, "
+                    "and subordinate_posture"
                 )
             adjunct_surface_id = adjunct.get("surface_id")
             adjunct_surface_name = adjunct.get("surface_name")
@@ -3000,6 +3031,8 @@ def validate_federation_spine_manifest(
             adjunct_match_key = adjunct.get("match_key")
             adjunct_target_value = adjunct.get("target_value")
             adjunct_route_id = adjunct.get("route_id")
+            adjunct_budget = adjunct.get("adjunct_budget")
+            subordinate_posture = adjunct.get("subordinate_posture")
             if not all(
                 isinstance(value, str) and value
                 for value in (
@@ -3014,6 +3047,19 @@ def validate_federation_spine_manifest(
                 fail(
                     f"{adjunct_location} must keep surface_id, surface_name, "
                     "surface_ref, match_key, target_value, and route_id"
+                )
+            if adjunct_budget != EXPECTED_TOS_STANDALONE_ADJUNCT_BUDGET:
+                fail(
+                    f"{adjunct_location}.adjunct_budget must match the current "
+                    "standalone adjunct budget"
+                )
+            if (
+                subordinate_posture
+                != EXPECTED_TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE
+            ):
+                fail(
+                    f"{adjunct_location}.subordinate_posture must match the "
+                    "current source-first subordinate posture"
                 )
             adjunct_surface = surfaces_by_id.get(adjunct_surface_id)
             if adjunct_surface is None:
@@ -3052,6 +3098,8 @@ def validate_federation_spine_manifest(
                     "match_key": adjunct_match_key,
                     "target_value": adjunct_target_value,
                     "route_id": adjunct_route_id,
+                    "adjunct_budget": adjunct_budget,
+                    "subordinate_posture": subordinate_posture,
                 }
             )
 
@@ -4128,6 +4176,8 @@ def validate_tos_zarathustra_route_retrieval_pack(
         "surface_bindings",
         "surface_id",
         "surface_name",
+        "adjunct_budget",
+        "subordinate_posture",
         "route_count",
         "routes",
         "bounded_output_contract",
@@ -4165,6 +4215,19 @@ def validate_tos_zarathustra_route_retrieval_pack(
         fail(
             "ToS Zarathustra route retrieval pack source_inputs must match the "
             "single-donor route-pack contract"
+        )
+    if payload["adjunct_budget"] != EXPECTED_TOS_STANDALONE_ADJUNCT_BUDGET:
+        fail(
+            "ToS Zarathustra route retrieval pack adjunct_budget must match the "
+            "current standalone adjunct budget"
+        )
+    if (
+        payload["subordinate_posture"]
+        != EXPECTED_TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE
+    ):
+        fail(
+            "ToS Zarathustra route retrieval pack subordinate_posture must match "
+            "the current source-first subordinate posture"
         )
     if payload["surface_bindings"] != expected_payload["surface_bindings"]:
         fail(
@@ -5070,7 +5133,7 @@ def validate_federation_spine_pack(
         if surface_0009 is None or surface_0009.get("status") != "experimental":
             fail("federation spine pack requires AOA-K-0009 to remain experimental in the generated registry")
 
-        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        normalized_adjunct_surfaces: list[dict[str, object]] = []
         for adjunct_index, adjunct in enumerate(adjunct_surfaces):
             adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
             if not isinstance(adjunct, dict):
@@ -5082,10 +5145,13 @@ def validate_federation_spine_pack(
                 "match_key",
                 "target_value",
                 "route_id",
+                "adjunct_budget",
+                "subordinate_posture",
             }:
                 fail(
                     f"{adjunct_location} must keep exactly surface_id, surface_name, "
-                    "surface_ref, match_key, target_value, and route_id"
+                    "surface_ref, match_key, target_value, route_id, adjunct_budget, "
+                    "and subordinate_posture"
                 )
             adjunct_surface_id = adjunct.get("surface_id")
             adjunct_surface_name = adjunct.get("surface_name")
@@ -5093,6 +5159,8 @@ def validate_federation_spine_pack(
             adjunct_match_key = adjunct.get("match_key")
             adjunct_target_value = adjunct.get("target_value")
             adjunct_route_id = adjunct.get("route_id")
+            adjunct_budget = adjunct.get("adjunct_budget")
+            subordinate_posture = adjunct.get("subordinate_posture")
             if not all(
                 isinstance(value, str) and value
                 for value in (
@@ -5107,6 +5175,19 @@ def validate_federation_spine_pack(
                 fail(
                     f"{adjunct_location} must keep surface_id, surface_name, "
                     "surface_ref, match_key, target_value, and route_id"
+                )
+            if adjunct_budget != EXPECTED_TOS_STANDALONE_ADJUNCT_BUDGET:
+                fail(
+                    f"{adjunct_location}.adjunct_budget must match the current "
+                    "standalone adjunct budget"
+                )
+            if (
+                subordinate_posture
+                != EXPECTED_TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE
+            ):
+                fail(
+                    f"{adjunct_location}.subordinate_posture must match the "
+                    "current source-first subordinate posture"
                 )
             if adjunct_match_key != "retrieval_id":
                 fail(f"{adjunct_location}.match_key must equal 'retrieval_id'")
@@ -5140,6 +5221,8 @@ def validate_federation_spine_pack(
                     "match_key": adjunct_match_key,
                     "target_value": adjunct_target_value,
                     "route_id": adjunct_route_id,
+                    "adjunct_budget": adjunct_budget,
+                    "subordinate_posture": subordinate_posture,
                 }
             )
         expected_adjunct_surfaces = EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO.get(repo_name)

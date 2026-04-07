@@ -116,7 +116,9 @@
                 "surface_ref",
                 "match_key",
                 "target_value",
-                "route_id"
+                "route_id",
+                "adjunct_budget",
+                "subordinate_posture"
               ],
               "properties": {
                 "surface_id": {
@@ -142,6 +144,67 @@
                 "route_id": {
                   "type": "string",
                   "minLength": 3
+                },
+                "adjunct_budget": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "max_adjunct_surfaces",
+                    "max_route_families",
+                    "numbered_tiny_path_inclusion",
+                    "default_activation"
+                  ],
+                  "properties": {
+                    "max_adjunct_surfaces": {
+                      "type": "integer",
+                      "const": 1
+                    },
+                    "max_route_families": {
+                      "type": "integer",
+                      "const": 1
+                    },
+                    "numbered_tiny_path_inclusion": {
+                      "type": "string",
+                      "const": "forbidden"
+                    },
+                    "default_activation": {
+                      "type": "string",
+                      "const": "opt_in_only"
+                    }
+                  }
+                },
+                "subordinate_posture": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "adjunct_role",
+                    "entry_order",
+                    "source_first_reentry_ref",
+                    "routing_ownership",
+                    "canon_authorship"
+                  ],
+                  "properties": {
+                    "adjunct_role": {
+                      "type": "string",
+                      "const": "standalone_handles_only"
+                    },
+                    "entry_order": {
+                      "type": "string",
+                      "const": "source_owned_tiny_entry_before_adjunct"
+                    },
+                    "source_first_reentry_ref": {
+                      "type": "string",
+                      "const": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json"
+                    },
+                    "routing_ownership": {
+                      "type": "string",
+                      "const": "forbidden"
+                    },
+                    "canon_authorship": {
+                      "type": "string",
+                      "const": "forbidden"
+                    }
+                  }
                 }
               }
             }

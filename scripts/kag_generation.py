@@ -149,6 +149,7 @@ KNOWN_REPO_ROOTS = {
 TOS_ROOT_README_PATH = "README.md"
 TOS_TINY_ENTRY_DOCTRINE_PATH = "docs/TINY_ENTRY_ROUTE.md"
 TOS_TINY_ENTRY_ROUTE_PATH = "examples/tos_tiny_entry_route.example.json"
+TOS_TINY_ENTRY_ROUTE_REF = f"{TOS_REPO}/{TOS_TINY_ENTRY_ROUTE_PATH}"
 TOS_TINY_ENTRY_ROUTE_ID = "tos-tiny-entry.zarathustra-prologue"
 TOS_TINY_ENTRY_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
 TOS_TINY_ENTRY_AUTHORITY_PATH = "examples/source_node.example.json"
@@ -225,6 +226,19 @@ TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_SUMMARY = (
     "principle, lineage, event, state, support, analogy, synthesis, and "
     "relation surfaces without ranking or replacing ToS authority."
 )
+TOS_STANDALONE_ADJUNCT_BUDGET = {
+    "max_adjunct_surfaces": 1,
+    "max_route_families": 1,
+    "numbered_tiny_path_inclusion": "forbidden",
+    "default_activation": "opt_in_only",
+}
+TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE = {
+    "adjunct_role": "standalone_handles_only",
+    "entry_order": "source_owned_tiny_entry_before_adjunct",
+    "source_first_reentry_ref": TOS_TINY_ENTRY_ROUTE_REF,
+    "routing_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+}
 REASONING_HANDOFF_GUARDRAIL_REF = "docs/REASONING_HANDOFF.md"
 REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF = (
     "schemas/reasoning-handoff-guardrail.schema.json"
@@ -3328,10 +3342,22 @@ def build_tos_zarathustra_route_retrieval_pack_payload(
 
     source_inputs = manifest.get("source_inputs")
     surface_bindings = manifest.get("surface_bindings")
+    adjunct_budget = manifest.get("adjunct_budget")
+    subordinate_posture = manifest.get("subordinate_posture")
     if not isinstance(source_inputs, list) or not source_inputs:
         fail("ToS Zarathustra route retrieval pack manifest must declare source_inputs")
     if not isinstance(surface_bindings, list) or not surface_bindings:
         fail("ToS Zarathustra route retrieval pack manifest must declare surface_bindings")
+    if adjunct_budget != TOS_STANDALONE_ADJUNCT_BUDGET:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest adjunct_budget must stay "
+            "aligned with the current standalone adjunct budget"
+        )
+    if subordinate_posture != TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE:
+        fail(
+            "ToS Zarathustra route retrieval pack manifest subordinate_posture must "
+            "stay aligned with the current source-first subordinate posture"
+        )
 
     registry_surfaces = registry_payload.get("surfaces")
     if not isinstance(registry_surfaces, list):
@@ -3572,6 +3598,8 @@ def build_tos_zarathustra_route_retrieval_pack_payload(
         "surface_bindings": surface_bindings,
         "surface_id": binding_surface["id"],
         "surface_name": binding_surface["name"],
+        "adjunct_budget": adjunct_budget,
+        "subordinate_posture": subordinate_posture,
         "route_count": 1,
         "routes": [retrieval_route],
         "bounded_output_contract": manifest["bounded_output_contract"],
@@ -3746,7 +3774,7 @@ def build_federation_spine_payload(
             label=f"{manifest_input_ref(export_input)}.entry_surface.path",
         )
 
-        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        normalized_adjunct_surfaces: list[dict[str, object]] = []
         for adjunct_index, adjunct in enumerate(adjunct_surfaces):
             adjunct_location = (
                 f"federation spine repo binding '{repo_name}' "
@@ -3760,6 +3788,8 @@ def build_federation_spine_payload(
             adjunct_match_key = adjunct.get("match_key")
             adjunct_target_value = adjunct.get("target_value")
             adjunct_route_id = adjunct.get("route_id")
+            adjunct_budget = adjunct.get("adjunct_budget")
+            subordinate_posture = adjunct.get("subordinate_posture")
             if not all(
                 isinstance(value, str) and value
                 for value in (
@@ -3774,6 +3804,16 @@ def build_federation_spine_payload(
                 fail(
                     f"{adjunct_location} must keep surface_id, surface_name, "
                     "surface_ref, match_key, target_value, and route_id"
+                )
+            if adjunct_budget != TOS_STANDALONE_ADJUNCT_BUDGET:
+                fail(
+                    f"{adjunct_location}.adjunct_budget must stay aligned with the "
+                    "current standalone adjunct budget"
+                )
+            if subordinate_posture != TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE:
+                fail(
+                    f"{adjunct_location}.subordinate_posture must stay aligned with "
+                    "the current source-first subordinate posture"
                 )
             adjunct_surface = registry_by_id.get(adjunct_surface_id)
             if adjunct_surface is None:
@@ -3807,6 +3847,8 @@ def build_federation_spine_payload(
                     "match_key": adjunct_match_key,
                     "target_value": adjunct_target_value,
                     "route_id": adjunct_route_id,
+                    "adjunct_budget": adjunct_budget,
+                    "subordinate_posture": subordinate_posture,
                 }
             )
 

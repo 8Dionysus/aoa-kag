@@ -165,6 +165,34 @@ class KagGenerationTestCase(unittest.TestCase):
             {node["node_id"] for node in route_pack_payload["nodes"]},
         )
 
+    def test_tos_zarathustra_route_retrieval_pack_keeps_adjunct_budget_and_subordinate_posture(
+        self,
+    ) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        payload = kag_generation.build_tos_zarathustra_route_retrieval_pack_payload(
+            registry_payload
+        )
+
+        self.assertEqual(
+            payload["adjunct_budget"],
+            {
+                "max_adjunct_surfaces": 1,
+                "max_route_families": 1,
+                "numbered_tiny_path_inclusion": "forbidden",
+                "default_activation": "opt_in_only",
+            },
+        )
+        self.assertEqual(
+            payload["subordinate_posture"],
+            {
+                "adjunct_role": "standalone_handles_only",
+                "entry_order": "source_owned_tiny_entry_before_adjunct",
+                "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+                "routing_ownership": "forbidden",
+                "canon_authorship": "forbidden",
+            },
+        )
+
     def test_federation_spine_builder_emits_tos_adjunct_only(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         payload = kag_generation.build_federation_spine_payload(registry_payload)
@@ -181,6 +209,19 @@ class KagGenerationTestCase(unittest.TestCase):
                     "match_key": "retrieval_id",
                     "target_value": kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
                     "route_id": kag_generation.TOS_ZARATHUSTRA_ROUTE_ID,
+                    "adjunct_budget": {
+                        "max_adjunct_surfaces": 1,
+                        "max_route_families": 1,
+                        "numbered_tiny_path_inclusion": "forbidden",
+                        "default_activation": "opt_in_only",
+                    },
+                    "subordinate_posture": {
+                        "adjunct_role": "standalone_handles_only",
+                        "entry_order": "source_owned_tiny_entry_before_adjunct",
+                        "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+                        "routing_ownership": "forbidden",
+                        "canon_authorship": "forbidden",
+                    },
                 }
             ],
         )

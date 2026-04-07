@@ -38,6 +38,14 @@ Use it when you want one handles-only route-family read surface over the full
 canonical Zarathustra `prologue-1` bundle. Do not treat it as a replacement for
 the numbered path above, and do not treat it as routing or ranking policy.
 
+Its payload is intentionally explicit about that limit:
+
+- `adjunct_budget` keeps it as one opt-in standalone adjunct outside the
+  numbered tiny path
+- `subordinate_posture` points back to
+  `Tree-of-Sophia/examples/tos_tiny_entry_route.example.json` before wider
+  derived use
+
 ## Counterpart posture
 
 `counterpart_refs` remain contract-only in the current wave.

@@ -91,6 +91,10 @@ tiny-entry posture. It does not replace the tiny-entry route, does not
 activate a new federation kind, and does not grant routing or canon ownership
 to `aoa-kag`.
 
+The ToS adjunct entry now mirrors that same limit in machine-readable form
+through `adjunct_budget` and `subordinate_posture`, so the spine does not rely
+on prose alone to stay subordinate.
+
 The current spine is also explicitly covered by
 `COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`.
 That review confirms that the current two-repo federation spine does not expose

@@ -50,7 +50,20 @@
           "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
           "match_key": "retrieval_id",
           "target_value": "AOA-K-0011::thus-spoke-zarathustra/prologue-1",
-          "route_id": "thus-spoke-zarathustra/prologue-1"
+          "route_id": "thus-spoke-zarathustra/prologue-1",
+          "adjunct_budget": {
+            "max_adjunct_surfaces": 1,
+            "max_route_families": 1,
+            "numbered_tiny_path_inclusion": "forbidden",
+            "default_activation": "opt_in_only"
+          },
+          "subordinate_posture": {
+            "adjunct_role": "standalone_handles_only",
+            "entry_order": "source_owned_tiny_entry_before_adjunct",
+            "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+            "routing_ownership": "forbidden",
+            "canon_authorship": "forbidden"
+          }
         }
       ],
       "summary_50": "Source-owned tiny export for the current Zarathustra prologue authority route.",
