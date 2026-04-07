@@ -219,6 +219,25 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             retrieval_pack["bounded_output_contract"]["consumer_projection"],
             "bounded_handles_only",
         )
+        self.assertEqual(
+            retrieval_pack["adjunct_budget"],
+            {
+                "max_adjunct_surfaces": 1,
+                "max_route_families": 1,
+                "numbered_tiny_path_inclusion": "forbidden",
+                "default_activation": "opt_in_only",
+            },
+        )
+        self.assertEqual(
+            retrieval_pack["subordinate_posture"],
+            {
+                "adjunct_role": "standalone_handles_only",
+                "entry_order": "source_owned_tiny_entry_before_adjunct",
+                "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+                "routing_ownership": "forbidden",
+                "canon_authorship": "forbidden",
+            },
+        )
 
         tos_repo = next(repo for repo in federation_spine["repos"] if repo["repo"] == "Tree-of-Sophia")
         adjunct_surfaces = tos_repo["adjunct_surfaces"]
@@ -227,6 +246,14 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         self.assertEqual(
             adjunct_surfaces[0]["surface_ref"],
             "generated/tos_zarathustra_route_retrieval_pack.min.json",
+        )
+        self.assertEqual(
+            adjunct_surfaces[0]["adjunct_budget"]["numbered_tiny_path_inclusion"],
+            "forbidden",
+        )
+        self.assertEqual(
+            adjunct_surfaces[0]["subordinate_posture"]["source_first_reentry_ref"],
+            "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
         )
 
     def test_readme_surfaces_source_first_route_and_honest_validation_paths(self) -> None:

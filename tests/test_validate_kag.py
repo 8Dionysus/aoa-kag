@@ -225,6 +225,52 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("deferred_counterpart", str(context.exception))
 
+    def test_tos_zarathustra_route_retrieval_pack_rejects_source_first_reentry_drift(
+        self,
+    ) -> None:
+        registry_payload = validate_kag.build_registry_payload()
+        registry_surfaces = self.registry_manifest_surfaces()
+        route_pack_payload = validate_kag.build_tos_zarathustra_route_pack_payload(
+            registry_payload
+        )
+        expected_payload = validate_kag.build_tos_zarathustra_route_retrieval_pack_payload(
+            registry_payload
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["subordinate_posture"]["source_first_reentry_ref"] = (
+            "generated/tos_zarathustra_route_retrieval_pack.min.json"
+        )
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_tos_zarathustra_route_retrieval_pack(
+                broken_payload,
+                registry_surfaces,
+                expected_payload,
+                route_pack_payload,
+            )
+
+        self.assertIn("subordinate_posture", str(context.exception))
+
+    def test_federation_spine_pack_rejects_adjunct_budget_drift(self) -> None:
+        registry_payload = validate_kag.build_registry_payload()
+        registry_surfaces = self.registry_manifest_surfaces()
+        expected_payload = validate_kag.build_federation_spine_payload(
+            registry_payload
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["repos"][1]["adjunct_surfaces"][0]["adjunct_budget"][
+            "numbered_tiny_path_inclusion"
+        ] = "included"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_federation_spine_pack(
+                broken_payload,
+                registry_surfaces,
+                expected_payload,
+            )
+
+        self.assertIn("adjunct_surfaces", str(context.exception))
+
     def test_federation_spine_pack_rejects_counterpart_ref_exposure(self) -> None:
         registry_surfaces = self.registry_manifest_surfaces()
         expected_payload = validate_kag.build_federation_spine_payload(

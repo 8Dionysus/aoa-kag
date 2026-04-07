@@ -8,6 +8,9 @@ It materializes one handles-only retrieval adjunct for
 `thus-spoke-zarathustra/prologue-1` without widening the numbered tiny consumer
 path and without taking routing ownership.
 
+The live payload now also keeps that limit machine-checkable through
+`adjunct_budget` and `subordinate_posture`.
+
 ## Core rule
 
 The retrieval pack returns handles back to ToS authority; it does not replace
@@ -43,6 +46,23 @@ The current retrieval rule is:
 - keep each handle item limited to `node_id` plus `authority_ref`
 - keep one bounded `retrieval_summary`
 - add no ranking, scoring, path bundles, query cards, or routing hints
+
+## Adjunct budget and subordinate posture
+
+The current payload keeps one explicit adjunct budget:
+
+- `max_adjunct_surfaces = 1`
+- `max_route_families = 1`
+- `numbered_tiny_path_inclusion = forbidden`
+- `default_activation = opt_in_only`
+
+The same payload also keeps one explicit subordinate posture:
+
+- `adjunct_role = standalone_handles_only`
+- `entry_order = source_owned_tiny_entry_before_adjunct`
+- `source_first_reentry_ref = Tree-of-Sophia/examples/tos_tiny_entry_route.example.json`
+- `routing_ownership = forbidden`
+- `canon_authorship = forbidden`
 
 ## Current pilot surfaces
 
