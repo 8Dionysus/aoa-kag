@@ -9,6 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Sequence
 
+from jsonschema import Draft202012Validator
 import validate_nested_agents
 import yaml
 
@@ -230,6 +231,18 @@ TINY_CONSUMER_BUNDLE_EXAMPLE_PATH = (
 )
 RETURN_REGROUNDING_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "return_regrounding_pack.example.json"
+)
+KAG_STRESS_REGROUNDING_DOC_PATH = REPO_ROOT / "docs" / "KAG_STRESS_REGROUNDING.md"
+KAG_PROJECTION_QUARANTINE_DOC_PATH = REPO_ROOT / "docs" / "KAG_PROJECTION_QUARANTINE.md"
+PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "projection_health_receipt_v1.json"
+)
+REGROUNDING_TICKET_SCHEMA_PATH = REPO_ROOT / "schemas" / "regrounding_ticket_v1.json"
+PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "projection_health_receipt.example.json"
+)
+REGROUNDING_TICKET_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "regrounding_ticket.example.json"
 )
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
@@ -951,6 +964,18 @@ QUESTBOOK_FORBIDDEN_TOKENS = (
     "ATM10-Agent",
     "aoa-sdk",
 )
+REQUIRED_KAG_STRESS_REGROUNDING_SNIPPETS = (
+    "Teach the derived substrate to become more honest under drift.",
+    "do not silently regenerate and republish drifted surfaces as if nothing happened",
+    "do not let KAG overrule source-owned truth",
+    "It is not a new claim about source meaning.",
+)
+REQUIRED_KAG_PROJECTION_QUARANTINE_SNIPPETS = (
+    "Make quarantine a bounded honesty mechanism for derived surfaces that are currently unsafe to expand.",
+    "preserve evidence refs",
+    "narrow consumer posture",
+    "silently disappear without review",
+)
 QUEST_SCHEMA_REQUIRED_FIELDS = (
     "schema_version",
     "id",
@@ -1319,6 +1344,20 @@ def validate_reasoning_handoff_schema_surface() -> None:
     validate_top_level_schema(REASONING_HANDOFF_SCHEMA_PATH, "reasoning handoff")
 
 
+def validate_projection_health_receipt_schema_surface() -> None:
+    validate_top_level_schema(
+        PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH,
+        "projection health receipt",
+    )
+
+
+def validate_regrounding_ticket_schema_surface() -> None:
+    validate_top_level_schema(
+        REGROUNDING_TICKET_SCHEMA_PATH,
+        "regrounding ticket",
+    )
+
+
 def validate_technique_lift_manifest_schema_surface() -> None:
     validate_top_level_schema(TECHNIQUE_LIFT_MANIFEST_SCHEMA_PATH, "technique lift manifest")
 
@@ -1456,6 +1495,125 @@ def validate_tiny_consumer_bundle_manifest_schema_surface() -> None:
 
 def validate_tiny_consumer_bundle_schema_surface() -> None:
     validate_top_level_schema(TINY_CONSUMER_BUNDLE_SCHEMA_PATH, "tiny consumer bundle")
+
+
+def validate_antifragility_stress_surfaces() -> None:
+    readme = read_text(REPO_ROOT / "README.md")
+    docs_readme = read_text(REPO_ROOT / "docs" / "README.md")
+    regrounding_doc = read_text(KAG_STRESS_REGROUNDING_DOC_PATH)
+    quarantine_doc = read_text(KAG_PROJECTION_QUARANTINE_DOC_PATH)
+
+    for token in ("docs/KAG_STRESS_REGROUNDING.md", "docs/KAG_PROJECTION_QUARANTINE.md"):
+        if token not in readme:
+            fail(f"README.md must link {token}")
+    for token in ("KAG_STRESS_REGROUNDING", "KAG_PROJECTION_QUARANTINE"):
+        if token not in docs_readme:
+            fail(f"docs/README.md must mention {token}")
+    for snippet in REQUIRED_KAG_STRESS_REGROUNDING_SNIPPETS:
+        if snippet not in regrounding_doc:
+            fail(f"docs/KAG_STRESS_REGROUNDING.md is missing required stress guidance: {snippet}")
+    for snippet in REQUIRED_KAG_PROJECTION_QUARANTINE_SNIPPETS:
+        if snippet not in quarantine_doc:
+            fail(f"docs/KAG_PROJECTION_QUARANTINE.md is missing required quarantine guidance: {snippet}")
+
+    for schema_path, example_path in (
+        (PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH, PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATH),
+        (REGROUNDING_TICKET_SCHEMA_PATH, REGROUNDING_TICKET_EXAMPLE_PATH),
+    ):
+        schema = read_json(schema_path)
+        if not isinstance(schema, dict):
+            fail(f"{display_path(schema_path)} must remain a JSON object")
+        Draft202012Validator.check_schema(schema)
+        payload = read_json(example_path)
+        errors = sorted(
+            Draft202012Validator(schema).iter_errors(payload),
+            key=lambda error: (list(error.absolute_path), error.message),
+        )
+        if errors:
+            first = errors[0]
+            error_path = format_schema_path(list(first.absolute_path))
+            if error_path:
+                fail(f"{display_path(example_path)} schema violation at '{error_path}': {first.message}")
+            fail(f"{display_path(example_path)} schema violation: {first.message}")
+
+    projection_example = read_json(PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATH)
+    if not isinstance(projection_example, dict):
+        fail("examples/projection_health_receipt.example.json must remain an object")
+    bounded_scope = projection_example.get("bounded_scope")
+    if not isinstance(bounded_scope, dict):
+        fail("examples/projection_health_receipt.example.json bounded_scope must be an object")
+    resolve_relative_ref(
+        REPO_ROOT,
+        str(bounded_scope.get("value")),
+        label="examples/projection_health_receipt.example.json bounded_scope.value",
+    )
+    for index, ref in enumerate(validate_unique_string_list(
+        projection_example.get("affected_generated_surfaces"),
+        label="examples/projection_health_receipt.example.json affected_generated_surfaces",
+    )):
+        resolve_relative_ref(
+            REPO_ROOT,
+            ref,
+            label=f"examples/projection_health_receipt.example.json affected_generated_surfaces[{index}]",
+        )
+    for index, ref in enumerate(validate_unique_string_list(
+        projection_example.get("evidence_refs"),
+        label="examples/projection_health_receipt.example.json evidence_refs",
+    )):
+        if ":" not in ref:
+            resolve_known_ref(
+                ref,
+                label=f"examples/projection_health_receipt.example.json evidence_refs[{index}]",
+            )
+    for index, ref in enumerate(validate_unique_string_list(
+        projection_example.get("source_fallback_refs"),
+        label="examples/projection_health_receipt.example.json source_fallback_refs",
+    )):
+        if ":" not in ref:
+            resolve_known_ref(
+                ref,
+                label=f"examples/projection_health_receipt.example.json source_fallback_refs[{index}]",
+            )
+
+    regrounding_ticket = read_json(REGROUNDING_TICKET_EXAMPLE_PATH)
+    if not isinstance(regrounding_ticket, dict):
+        fail("examples/regrounding_ticket.example.json must remain an object")
+    projection_ref = regrounding_ticket.get("projection_ref")
+    if not isinstance(projection_ref, str) or not projection_ref:
+        fail("examples/regrounding_ticket.example.json projection_ref must be a non-empty string")
+    if ":" not in projection_ref:
+        resolve_known_ref(
+            projection_ref,
+            label="examples/regrounding_ticket.example.json projection_ref",
+        )
+    for index, ref in enumerate(validate_unique_string_list(
+        regrounding_ticket.get("trigger_receipt_refs"),
+        label="examples/regrounding_ticket.example.json trigger_receipt_refs",
+    )):
+        if ":" not in ref:
+            resolve_known_ref(
+                ref,
+                label=f"examples/regrounding_ticket.example.json trigger_receipt_refs[{index}]",
+            )
+    for index, ref in enumerate(validate_unique_string_list(
+        regrounding_ticket.get("expected_outputs"),
+        label="examples/regrounding_ticket.example.json expected_outputs",
+    )):
+        resolve_relative_ref(
+            REPO_ROOT,
+            ref,
+            label=f"examples/regrounding_ticket.example.json expected_outputs[{index}]",
+        )
+    for index, ref in enumerate(validate_unique_string_list(
+        regrounding_ticket.get("evidence_refs"),
+        label="examples/regrounding_ticket.example.json evidence_refs",
+        allow_empty=True,
+    )):
+        if ":" not in ref:
+            resolve_known_ref(
+                ref,
+                label=f"examples/regrounding_ticket.example.json evidence_refs[{index}]",
+            )
 
 
 def validate_unique_string_list(
@@ -6353,6 +6511,8 @@ def main() -> int:
         validate_counterpart_federation_exposure_review_schema_surface()
         validate_counterpart_consumer_contract_schema_surface()
         validate_reasoning_handoff_schema_surface()
+        validate_projection_health_receipt_schema_surface()
+        validate_regrounding_ticket_schema_surface()
         validate_technique_lift_manifest_schema_surface()
         validate_technique_lift_pack_schema_surface()
         validate_tos_text_chunk_map_manifest_schema_surface()
@@ -6375,6 +6535,7 @@ def main() -> int:
         validate_cross_source_node_projection_schema_surface()
         validate_tiny_consumer_bundle_manifest_schema_surface()
         validate_tiny_consumer_bundle_schema_surface()
+        validate_antifragility_stress_surfaces()
 
         registry_manifest_payload = read_json(REGISTRY_MANIFEST_PATH)
         registry_manifest_surfaces = validate_registry_payload(
@@ -6654,6 +6815,8 @@ def main() -> int:
     print("[ok] validated counterpart federation exposure review schema")
     print("[ok] validated counterpart consumer contract schema")
     print("[ok] validated reasoning handoff guardrail schema")
+    print("[ok] validated projection health receipt schema")
+    print("[ok] validated regrounding ticket schema")
     print("[ok] validated technique lift manifest schema")
     print("[ok] validated technique lift pack schema")
     print("[ok] validated ToS text chunk map manifest schema")
@@ -6712,6 +6875,7 @@ def main() -> int:
     print("[ok] validated generated cross-source node projection structure")
     print("[ok] validated generated counterpart federation exposure review structure")
     print("[ok] validated generated tiny consumer bundle structure")
+    print("[ok] validated antifragility projection-health adjunct surfaces")
     print("[ok] validated bridge retrieval example")
     print("[ok] validated bridge envelope example")
     print("[ok] validated counterpart edge example")
