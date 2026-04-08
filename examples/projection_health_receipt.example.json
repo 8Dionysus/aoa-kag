@@ -1,0 +1,40 @@
+{
+  "schema_version": "projection_health_receipt_v1",
+  "receipt_id": "kag:health:reasoning-handoff-pack:2026-04-07T15:40:00Z",
+  "timestamp_utc": "2026-04-07T15:40:00Z",
+  "repo": "aoa-kag",
+  "projection_family": "reasoning_handoff_pack",
+  "projection_id": "reasoning-handoff-pack:agents-playbooks-bridge",
+  "bounded_scope": {
+    "kind": "projection",
+    "value": "generated/reasoning_handoff_pack.min.json",
+    "notes": "Derived bridge between agent handoff posture and recurring playbook routes."
+  },
+  "donor_roots": [
+    "AOA_AGENTS_ROOT",
+    "AOA_PLAYBOOKS_ROOT"
+  ],
+  "symptom_class": "stale_handoff_projection",
+  "severity": "high",
+  "health_state": "degraded_source_first",
+  "consumer_posture": "source_first",
+  "validator_refs": [
+    "python scripts/validate_kag.py#2026-04-07T15:38:30Z",
+    "python scripts/validate_nested_agents.py#2026-04-07T15:39:10Z"
+  ],
+  "affected_generated_surfaces": [
+    "generated/reasoning_handoff_pack.min.json",
+    "generated/federation_spine.min.json"
+  ],
+  "evidence_refs": [
+    "aoa-agents/examples/stress_handoff_envelope.example.json",
+    "aoa-playbooks/examples/playbook_stress_lane.example.json"
+  ],
+  "source_fallback_refs": [
+    "aoa-agents/generated/agent_registry.min.json",
+    "aoa-playbooks/generated/playbook_handoff_contracts.json",
+    "aoa-playbooks/playbooks/self-agent-checkpoint-rollout/PLAYBOOK.md"
+  ],
+  "notes": "Consumers should prefer source-owned playbook and agent surfaces until the projection is regrounded.",
+  "supersedes": []
+}

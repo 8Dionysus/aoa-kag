@@ -1,0 +1,39 @@
+{
+  "schema_version": "regrounding_ticket_v1",
+  "ticket_id": "kag:reground:reasoning-handoff-pack:2026-04-07",
+  "created_at_utc": "2026-04-07T15:45:00Z",
+  "projection_ref": "examples/projection_health_receipt.example.json",
+  "trigger_receipt_refs": [
+    "examples/projection_health_receipt.example.json",
+    "ATM10-Agent:stressor_receipt_v1#stress:2026-04-07:retrieval-only-fallback"
+  ],
+  "donor_rebuild_plan": {
+    "donor_roots": [
+      "AOA_AGENTS_ROOT",
+      "AOA_PLAYBOOKS_ROOT"
+    ],
+    "commands": [
+      "python scripts/generate_kag.py",
+      "python scripts/validate_kag.py",
+      "python scripts/validate_nested_agents.py"
+    ]
+  },
+  "validation_steps": [
+    "Confirm donor registries and handoff contracts are present in sibling roots.",
+    "Regenerate the affected reasoning handoff pack and federation spine surfaces.",
+    "Verify the resulting projection no longer requires source_first posture for the affected route.",
+    "Re-open playbook re-entry gate only if blocked action families stay blocked until explicit review."
+  ],
+  "return_posture": "source_first_until_pass",
+  "expected_outputs": [
+    "generated/reasoning_handoff_pack.min.json",
+    "generated/federation_spine.min.json"
+  ],
+  "reviewer_posture": "cross_repo_review",
+  "status": "proposed",
+  "evidence_refs": [
+    "aoa-agents/generated/runtime_seam_bindings.json",
+    "aoa-playbooks/generated/playbook_handoff_contracts.json"
+  ],
+  "notes": "The ticket keeps consumers on source-first paths until regenerated outputs validate and reviewer posture is satisfied."
+}

@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa.local/aoa-kag/schemas/projection_health_receipt_v1.json",
+  "title": "projection_health_receipt_v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "timestamp_utc",
+    "repo",
+    "projection_family",
+    "projection_id",
+    "donor_roots",
+    "symptom_class",
+    "severity",
+    "health_state",
+    "consumer_posture",
+    "evidence_refs",
+    "source_fallback_refs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "projection_health_receipt_v1"
+    },
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "projection_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "projection_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "bounded_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "donor_roots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "symptom_class": {
+      "type": "string",
+      "minLength": 1
+    },
+    "severity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "health_state": {
+      "enum": [
+        "healthy",
+        "degraded_source_first",
+        "quarantined",
+        "regrounding"
+      ]
+    },
+    "consumer_posture": {
+      "enum": [
+        "normal_use",
+        "source_first",
+        "route_pack_only",
+        "do_not_expand"
+      ]
+    },
+    "validator_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "affected_generated_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "source_fallback_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

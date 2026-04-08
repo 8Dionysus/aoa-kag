@@ -28,6 +28,10 @@ federation as a whole.
 - Read [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) for the bounded
   recurrence-law landing that regrounds callers back to stronger source or
   owner refs when derived posture weakens.
+- Read [KAG_STRESS_REGROUNDING](KAG_STRESS_REGROUNDING.md) for additive
+  projection-health and source-first fallback doctrine under drift.
+- Read [KAG_PROJECTION_QUARANTINE](KAG_PROJECTION_QUARANTINE.md) for bounded
+  quarantine posture when derived surfaces are unsafe to expand.
 - Read [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) for the current
   generated retrieval-axis pack.
 - Read [REASONING_HANDOFF](REASONING_HANDOFF.md) for the runtime-to-KAG handoff
@@ -72,6 +76,12 @@ federation as a whole.
 - [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) - how the KAG layer
   regrounds callers back to stronger source-owned and owner-owned refs when a
   derived surface begins to overreach
+- [KAG_STRESS_REGROUNDING](KAG_STRESS_REGROUNDING.md) - how projection-health
+  receipts and regrounding tickets keep consumers source-first when derived
+  surfaces drift
+- [KAG_PROJECTION_QUARANTINE](KAG_PROJECTION_QUARANTINE.md) - how quarantine
+  preserves provenance, fallback refs, and explicit re-entry instead of hiding
+  unstable projections
 - [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) - how the current
   generated retrieval-axis pack materializes `AOA-K-0007` without adding
   ranking or routing policy

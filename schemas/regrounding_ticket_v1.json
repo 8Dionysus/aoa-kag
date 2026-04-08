@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa.local/aoa-kag/schemas/regrounding_ticket_v1.json",
+  "title": "regrounding_ticket_v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ticket_id",
+    "created_at_utc",
+    "projection_ref",
+    "trigger_receipt_refs",
+    "donor_rebuild_plan",
+    "validation_steps",
+    "return_posture",
+    "expected_outputs",
+    "reviewer_posture",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "regrounding_ticket_v1"
+    },
+    "ticket_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "projection_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trigger_receipt_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "donor_rebuild_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "donor_roots",
+        "commands"
+      ],
+      "properties": {
+        "donor_roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "validation_steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "return_posture": {
+      "enum": [
+        "source_first_until_pass",
+        "route_pack_only_until_pass",
+        "hold_consumer_surface"
+      ]
+    },
+    "expected_outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "reviewer_posture": {
+      "enum": [
+        "owner_review",
+        "cross_repo_review"
+      ]
+    },
+    "status": {
+      "enum": [
+        "proposed",
+        "in_progress",
+        "validated",
+        "abandoned"
+      ]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
