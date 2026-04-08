@@ -23,6 +23,7 @@ Use the shortest route by need:
 - manifest-driven donor and ToS lift packs: `generated/technique_lift_pack*.json`, `generated/tos_text_chunk_map*.json`, `generated/tos_retrieval_axis_pack*.json`, `generated/tos_zarathustra_route_pack*.json`, `generated/tos_zarathustra_route_retrieval_pack*.json`, and the matching `manifests/*.json`
 - reasoning, return, and federation bridge surfaces: `generated/reasoning_handoff_pack*.json`, `generated/return_regrounding_pack*.json`, `generated/federation_spine*.json`, `generated/counterpart_federation_exposure_review*.json`, and [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md)
 - additive projection-health and regrounding adjuncts: `schemas/projection_health_receipt_v1.json`, `schemas/regrounding_ticket_v1.json`, `examples/projection_health_receipt.example.json`, `examples/regrounding_ticket.example.json`, [docs/KAG_STRESS_REGROUNDING](docs/KAG_STRESS_REGROUNDING.md), and [docs/KAG_PROJECTION_QUARANTINE](docs/KAG_PROJECTION_QUARANTINE.md)
+- via negativa pruning checklist: [docs/VIA_NEGATIVA_CHECKLIST](docs/VIA_NEGATIVA_CHECKLIST.md)
 - tiny consumer and bounded cross-source adjuncts: `generated/tiny_consumer_bundle*.json`, `generated/cross_source_node_projection*.json`, and `examples/*.example.json`
 - current-state validation: `python scripts/validate_kag.py`, `python scripts/validate_nested_agents.py`, and `python -m unittest discover -s tests -p 'test_*.py'`
 - release-prep parity and targeted regeneration: `python scripts/release_check.py`, `python scripts/generate_kag.py`, and `git status -sb`
