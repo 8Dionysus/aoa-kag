@@ -115,6 +115,13 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_federation_export_registry_builder_matches_generated_outputs(self) -> None:
+        self.assert_builder_matches_generated(
+            kag_generation.build_federation_export_registry_payload,
+            kag_generation.FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH,
+            kag_generation.FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH,
+        )
+
     def test_tos_zarathustra_route_pack_builder_keeps_family_order(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         payload = kag_generation.build_tos_zarathustra_route_pack_payload(registry_payload)
@@ -226,6 +233,36 @@ class KagGenerationTestCase(unittest.TestCase):
             ],
         )
 
+    def test_federation_export_registry_builder_keeps_memo_registry_only(self) -> None:
+        payload = kag_generation.build_federation_export_registry_payload()
+        exports_by_owner = {export["owner_repo"]: export for export in payload["exports"]}
+
+        self.assertEqual(payload["export_count"], 3)
+        self.assertEqual(
+            exports_by_owner["aoa-memo"]["activation"],
+            {
+                "registry_visible": True,
+                "spine_visible": False,
+                "routing_visible": False,
+            },
+        )
+        self.assertEqual(exports_by_owner["aoa-memo"]["consumed_by"], [])
+        self.assertEqual(
+            exports_by_owner["aoa-memo"]["source_inputs"],
+            [
+                {
+                    "repo": "aoa-memo",
+                    "source_class": "memo_object",
+                    "role": "primary",
+                },
+                {
+                    "repo": "Tree-of-Sophia",
+                    "source_class": "tos_text",
+                    "role": "supporting",
+                },
+            ],
+        )
+
     def test_cross_source_projection_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         self.assert_builder_matches_generated(
@@ -298,7 +335,7 @@ class KagGenerationTestCase(unittest.TestCase):
             ],
         )
 
-    def test_dependency_failure_names_dependency_id_and_consumer_surface(self) -> None:
+    def test_dependency_failure_names_dependency_id_and_registry_surface(self) -> None:
         broken_export = load_json(
             kag_generation.AOA_TECHNIQUES_ROOT / "generated" / "kag_export.min.json"
         )
@@ -316,7 +353,7 @@ class KagGenerationTestCase(unittest.TestCase):
                 )
 
         self.assertIn("aoa-techniques-kag-export", str(context.exception))
-        self.assertIn("AOA-K-0009", str(context.exception))
+        self.assertIn("federation_export_registry", str(context.exception))
 
     def test_projection_pairings_generator_failures_are_pairing_specific(self) -> None:
         base_manifest = load_json(kag_generation.CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH)

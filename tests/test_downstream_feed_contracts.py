@@ -80,6 +80,11 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             kag_generation.REASONING_HANDOFF_MIN_OUTPUT_PATH,
         )
         self.assert_builder_matches_generated(
+            kag_generation.build_federation_export_registry_payload,
+            kag_generation.FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH,
+            kag_generation.FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH,
+        )
+        self.assert_builder_matches_generated(
             kag_generation.build_federation_spine_payload,
             kag_generation.FEDERATION_SPINE_OUTPUT_PATH,
             kag_generation.FEDERATION_SPINE_MIN_OUTPUT_PATH,
@@ -177,10 +182,31 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
                 self.assertEqual(contract[key], value, msg=f"{name}:{key}")
 
     def test_consumer_bundle_and_spine_keep_expected_counts(self) -> None:
+        federation_export_registry = load_json(
+            GENERATED_ROOT / "federation_export_registry.min.json"
+        )
         federation_spine = load_json(GENERATED_ROOT / "federation_spine.min.json")
         tiny_bundle = load_json(GENERATED_ROOT / "tiny_consumer_bundle.min.json")
         retrieval_pack = load_json(GENERATED_ROOT / "tos_zarathustra_route_retrieval_pack.min.json")
 
+        self.assertEqual(federation_export_registry["export_count"], 3)
+        self.assertEqual(
+            [export["owner_repo"] for export in federation_export_registry["exports"]],
+            ["aoa-techniques", "Tree-of-Sophia", "aoa-memo"],
+        )
+        memo_export = next(
+            export
+            for export in federation_export_registry["exports"]
+            if export["owner_repo"] == "aoa-memo"
+        )
+        self.assertEqual(
+            memo_export["activation"],
+            {
+                "registry_visible": True,
+                "spine_visible": False,
+                "routing_visible": False,
+            },
+        )
         self.assertEqual(federation_spine["repo_count"], 2)
         self.assertEqual(
             [repo["repo"] for repo in federation_spine["repos"]],

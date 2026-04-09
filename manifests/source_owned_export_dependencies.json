@@ -65,6 +65,35 @@
         "AOA-K-0009",
         "AOA-K-0006"
       ]
+    },
+    {
+      "dependency_id": "aoa-memo-kag-export",
+      "repo": "aoa-memo",
+      "path": "generated/kag_export.min.json",
+      "expected_owner_repo": "aoa-memo",
+      "expected_kind": "bridge",
+      "expected_object_id": "memo.bridge.2026-03-23.tos-lineage-kag-candidate",
+      "required_fields": [
+        "owner_repo",
+        "kind",
+        "object_id",
+        "primary_question",
+        "summary_50",
+        "summary_200",
+        "source_inputs",
+        "entry_surface",
+        "section_handles",
+        "direct_relations",
+        "provenance_note",
+        "non_identity_boundary"
+      ],
+      "entry_surface": {
+        "repo": "aoa-memo",
+        "path": "generated/memory_object_capsules.json",
+        "match_key": "id",
+        "match_value": "memo.bridge.2026-03-23.tos-lineage-kag-candidate"
+      },
+      "consumed_by": []
     }
   ]
 }

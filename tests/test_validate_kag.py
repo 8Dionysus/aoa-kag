@@ -64,6 +64,115 @@ class ValidateKagTestCase(unittest.TestCase):
             "non_identity_boundary": "Source-owned memo export for KAG readiness; derived consumers must not treat this bridge capsule as normalized graph truth, routing authority, or replacement for Tree-of-Sophia-authored meaning.",
         }
 
+    def test_source_owned_export_dependency_manifest_accepts_memo_cross_repo_supporting(
+        self,
+    ) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        dependencies = validate_kag.validate_source_owned_export_dependency_manifest(
+            registry_surfaces
+        )
+
+        self.assertIn(
+            ("aoa-memo", validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH),
+            dependencies,
+        )
+        self.assertEqual(
+            dependencies[("aoa-memo", validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH)][
+                "consumed_by"
+            ],
+            [],
+        )
+
+    def test_source_owned_export_dependency_manifest_rejects_zero_primary_for_memo_export(
+        self,
+    ) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        broken_payload = self.memo_kag_export_payload()
+        broken_payload["source_inputs"] = [
+            {
+                "repo": "aoa-memo",
+                "source_class": "memo_object",
+                "role": "supporting",
+            },
+            {
+                "repo": "Tree-of-Sophia",
+                "source_class": "tos_text",
+                "role": "supporting",
+            },
+        ]
+
+        with self.patched_read_json(
+            {
+                validate_kag.AOA_MEMO_ROOT / validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_source_owned_export_dependency_manifest(
+                    registry_surfaces
+                )
+
+        self.assertIn("exactly one primary", str(context.exception))
+
+    def test_source_owned_export_dependency_manifest_rejects_multiple_primary_for_memo_export(
+        self,
+    ) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        broken_payload = self.memo_kag_export_payload()
+        broken_payload["source_inputs"] = [
+            {
+                "repo": "aoa-memo",
+                "source_class": "memo_object",
+                "role": "primary",
+            },
+            {
+                "repo": "aoa-memo",
+                "source_class": "memo_object",
+                "role": "primary",
+            },
+        ]
+
+        with self.patched_read_json(
+            {
+                validate_kag.AOA_MEMO_ROOT / validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_source_owned_export_dependency_manifest(
+                    registry_surfaces
+                )
+
+        self.assertIn("exactly one primary", str(context.exception))
+
+    def test_source_owned_export_dependency_manifest_rejects_wrong_primary_repo_for_memo_export(
+        self,
+    ) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        broken_payload = self.memo_kag_export_payload()
+        broken_payload["source_inputs"] = [
+            {
+                "repo": "aoa-memo",
+                "source_class": "memo_object",
+                "role": "supporting",
+            },
+            {
+                "repo": "Tree-of-Sophia",
+                "source_class": "tos_text",
+                "role": "primary",
+            },
+        ]
+
+        with self.patched_read_json(
+            {
+                validate_kag.AOA_MEMO_ROOT / validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH: broken_payload,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_source_owned_export_dependency_manifest(
+                    registry_surfaces
+                )
+
+        self.assertIn(".repo must equal 'aoa-memo'", str(context.exception))
+
     def test_projection_pairings_validator_failures_are_pairing_specific(self) -> None:
         registry_surfaces = self.registry_manifest_surfaces()
         dependencies = validate_kag.validate_source_owned_export_dependency_manifest(

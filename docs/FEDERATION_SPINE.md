@@ -12,12 +12,14 @@ This wave is intentionally narrow:
 - keep the landing entirely inside `aoa-kag` as a derived spine
 - prove the first real two-repo source-owned export loop before widening beyond
   `tiny`
+- make donor activation manifest-driven instead of hardcoded by repo name
 - keep the new surface experimental rather than claiming a finished federation
   export loop
 
 ## Current pilot posture
 
-The current spine is a two-repo experimental pilot.
+The current spine is a two-repo experimental pilot built from a wider declared
+donor registry.
 
 For `aoa-techniques`, it now derives from:
 
@@ -27,15 +29,20 @@ For `Tree-of-Sophia`, it now derives from:
 
 - `generated/kag_export.min.json`
 
-Those donor surfaces are declared in `manifests/federation_spine.json`.
+Declared donors and their activation gates now live in
+`manifests/federation_export_registry.json`.
+The live two-repo contour remains declared in `manifests/federation_spine.json`.
 The current external export expectations are made explicit in
 `manifests/source_owned_export_dependencies.json` and documented in
 `SOURCE_OWNED_EXPORT_DEPENDENCIES.md`.
-`aoa-memo` now also publishes one source-owned bridge-bearing export for
-readiness, but it is intentionally not activated inside this live spine yet.
+`aoa-memo` now also publishes one source-owned bridge-bearing export and appears
+in the generated donor registry, but it is intentionally not activated inside
+this live spine yet.
 
 The generated outputs live at:
 
+- `generated/federation_export_registry.json`
+- `generated/federation_export_registry.min.json`
 - `generated/federation_spine.json`
 - `generated/federation_spine.min.json`
 
@@ -67,8 +74,9 @@ current pilot object.
 the current Zarathustra authority slice.
 
 `aoa-memo` now publishes one bounded source-owned tiny export for the current
-memo bridge donor, but that donor remains publish-only in this tranche so the
-live spine and downstream `aoa-routing` ABI stay two-repo and stable.
+memo bridge donor, and that donor is registry-visible in this tranche, but it
+remains spine-dark and routing-dark so the live spine and downstream
+`aoa-routing` ABI stay two-repo and stable.
 
 That keeps the pilot source-owned and reviewable without turning the spine into
 a wider federation claim.
