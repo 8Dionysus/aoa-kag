@@ -62,7 +62,7 @@
     "Validation",
     "Adaptation notes"
   ],
-  "technique_count": 99,
+  "technique_count": 98,
   "techniques": [
     {
       "technique_id": "AOA-T-0001",
@@ -9423,87 +9423,6 @@
             "kind": "second_context",
             "title": "Second Context Adaptation",
             "note_ref": "aoa-techniques/techniques/validation-patterns/receipt-first-failure-analysis/notes/second-context-adaptation.md"
-          }
-        ]
-      }
-    },
-    {
-      "technique_id": "AOA-T-0099",
-      "technique_name": "isolated-service-stop-on-shared-substrate",
-      "source_ref": "aoa-techniques/techniques/system-recovery/isolated-service-stop-on-shared-substrate/TECHNIQUE.md",
-      "section_lift": {
-        "section_count": 10,
-        "sections": [
-          {
-            "heading": "Intent",
-            "order": 1
-          },
-          {
-            "heading": "When to use",
-            "order": 2
-          },
-          {
-            "heading": "When not to use",
-            "order": 3
-          },
-          {
-            "heading": "Inputs",
-            "order": 4
-          },
-          {
-            "heading": "Outputs",
-            "order": 5
-          },
-          {
-            "heading": "Core procedure",
-            "order": 6
-          },
-          {
-            "heading": "Contracts",
-            "order": 7
-          },
-          {
-            "heading": "Risks",
-            "order": 8
-          },
-          {
-            "heading": "Validation",
-            "order": 9
-          },
-          {
-            "heading": "Adaptation notes",
-            "order": 10
-          }
-        ]
-      },
-      "metadata_spine": {
-        "domain": "system-recovery",
-        "status": "promoted",
-        "summary": "Stop one bounded service while keeping shared substrate services alive, then verify both target absence and substrate continuity so closeout does not widen into unnecessary teardown.",
-        "maturity_score": 3,
-        "rigor_level": "bounded",
-        "reversibility": "easy",
-        "review_required": true,
-        "validation_strength": "source_backed",
-        "export_ready": true
-      },
-      "relation_view": {
-        "relation_count": 1,
-        "relations": [
-          {
-            "relation_type": "complements",
-            "target_ref": "aoa-techniques/AOA-T-0097"
-          }
-        ]
-      },
-      "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-08",
-        "note_count": 1,
-        "note_handles": [
-          {
-            "kind": "origin_evidence",
-            "title": "Origin Evidence",
-            "note_ref": "aoa-techniques/techniques/system-recovery/isolated-service-stop-on-shared-substrate/notes/origin-evidence.md"
           }
         ]
       }
