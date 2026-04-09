@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/federation-export-registry.schema.json",
+  "title": "AoA federation export registry pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_version",
+    "pack_type",
+    "source_manifest_ref",
+    "export_count",
+    "exports"
+  ],
+  "properties": {
+    "pack_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "federation_export_registry"
+    },
+    "source_manifest_ref": {
+      "type": "string",
+      "const": "manifests/federation_export_registry.json"
+    },
+    "export_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "exports": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dependency_id",
+          "owner_repo",
+          "export_ref",
+          "kind",
+          "object_id",
+          "package_tier",
+          "activation",
+          "entry_surface_ref",
+          "source_inputs",
+          "consumed_by",
+          "routing_binding",
+          "adjunct_surfaces",
+          "summary_50",
+          "provenance_note",
+          "non_identity_boundary"
+        ],
+        "properties": {
+          "dependency_id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "owner_repo": {
+            "type": "string",
+            "minLength": 2
+          },
+          "export_ref": {
+            "type": "string",
+            "minLength": 3
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 2
+          },
+          "object_id": {
+            "type": "string",
+            "minLength": 2
+          },
+          "package_tier": {
+            "type": "string",
+            "minLength": 3
+          },
+          "activation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "registry_visible",
+              "spine_visible",
+              "routing_visible"
+            ],
+            "properties": {
+              "registry_visible": {
+                "type": "boolean"
+              },
+              "spine_visible": {
+                "type": "boolean"
+              },
+              "routing_visible": {
+                "type": "boolean"
+              }
+            }
+          },
+          "entry_surface_ref": {
+            "type": "string",
+            "minLength": 3
+          },
+          "source_inputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "repo",
+                "source_class",
+                "role"
+              ],
+              "properties": {
+                "repo": {
+                  "type": "string",
+                  "minLength": 2
+                },
+                "source_class": {
+                  "type": "string",
+                  "minLength": 2
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "primary",
+                    "supporting"
+                  ]
+                }
+              }
+            }
+          },
+          "consumed_by": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^AOA-K-[0-9]{4}$"
+            }
+          },
+          "routing_binding": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "entry_id"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "minLength": 3
+              },
+              "entry_id": {
+                "type": "string",
+                "minLength": 2
+              }
+            }
+          },
+          "adjunct_surfaces": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "surface_id",
+                "surface_ref",
+                "match_key",
+                "target_value"
+              ],
+              "properties": {
+                "surface_id": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "surface_ref": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "match_key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "target_value": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "summary_50": {
+            "type": "string",
+            "minLength": 10
+          },
+          "provenance_note": {
+            "type": "string",
+            "minLength": 10
+          },
+          "non_identity_boundary": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    }
+  }
+}

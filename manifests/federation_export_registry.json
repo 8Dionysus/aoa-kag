@@ -1,0 +1,65 @@
+{
+  "manifest_version": 1,
+  "pack_type": "federation_export_registry",
+  "exports": [
+    {
+      "dependency_id": "aoa-techniques-kag-export",
+      "owner_repo": "aoa-techniques",
+      "export_repo": "aoa-techniques",
+      "export_path": "generated/kag_export.min.json",
+      "package_tier": "tiny",
+      "activation": {
+        "registry_visible": true,
+        "spine_visible": true,
+        "routing_visible": true
+      },
+      "routing_binding": {
+        "kind": "kag_view",
+        "entry_id": "aoa-techniques"
+      },
+      "adjunct_surfaces": []
+    },
+    {
+      "dependency_id": "tree-of-sophia-kag-export",
+      "owner_repo": "Tree-of-Sophia",
+      "export_repo": "Tree-of-Sophia",
+      "export_path": "generated/kag_export.min.json",
+      "package_tier": "tiny",
+      "activation": {
+        "registry_visible": true,
+        "spine_visible": true,
+        "routing_visible": true
+      },
+      "routing_binding": {
+        "kind": "kag_view",
+        "entry_id": "Tree-of-Sophia"
+      },
+      "adjunct_surfaces": [
+        {
+          "surface_id": "AOA-K-0011",
+          "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+          "match_key": "retrieval_id",
+          "target_value": "AOA-K-0011::thus-spoke-zarathustra/prologue-1"
+        }
+      ]
+    },
+    {
+      "dependency_id": "aoa-memo-kag-export",
+      "owner_repo": "aoa-memo",
+      "export_repo": "aoa-memo",
+      "export_path": "generated/kag_export.min.json",
+      "package_tier": "tiny",
+      "activation": {
+        "registry_visible": true,
+        "spine_visible": false,
+        "routing_visible": false
+      },
+      "routing_binding": null,
+      "adjunct_surfaces": []
+    }
+  ],
+  "output_paths": {
+    "full": "generated/federation_export_registry.json",
+    "min": "generated/federation_export_registry.min.json"
+  }
+}

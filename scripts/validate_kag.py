@@ -25,6 +25,9 @@ from kag_generation import (
     CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH,
     CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
     CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
+    FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH,
+    FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH,
+    FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH,
     FEDERATION_SPINE_MANIFEST_PATH,
     FEDERATION_SPINE_MIN_OUTPUT_PATH,
     FEDERATION_SPINE_OUTPUT_PATH,
@@ -86,6 +89,7 @@ from kag_generation import (
     TOS_TINY_ENTRY_ROUTE_PATH,
     build_cross_source_node_projection_payload,
     build_counterpart_federation_exposure_review_payload,
+    build_federation_export_registry_payload,
     build_federation_spine_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
@@ -200,6 +204,15 @@ RETURN_REGROUNDING_SCHEMA_PATH = (
 )
 SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "source-owned-export-dependencies.schema.json"
+)
+FEDERATION_EXPORT_REGISTRY_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "federation-export-registry-manifest.schema.json"
+)
+FEDERATION_EXPORT_REGISTRY_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "federation-export-registry.schema.json"
+)
+FEDERATION_EXPORT_REGISTRY_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "federation_export_registry.example.json"
 )
 FEDERATION_KAG_EXPORT_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "federation-kag-export.schema.json"
@@ -700,14 +713,25 @@ EXPECTED_REASONING_HANDOFF_KAG_GUARDRAIL_REFS = [
 ]
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
+    (
+        "federation_export_registry_manifest",
+        "aoa-kag",
+        "manifests/federation_export_registry.json",
+        "activation_manifest",
+    ),
     ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "source_owned_export"),
     ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "source_owned_export"),
 }
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER = [
     "kag_registry_manifest",
+    "federation_export_registry_manifest",
     "aoa_techniques_kag_export",
     "tos_kag_export",
 ]
+EXPECTED_FEDERATION_EXPORT_REGISTRY_OUTPUT_PATHS = {
+    "full": "generated/federation_export_registry.json",
+    "min": "generated/federation_export_registry.min.json",
+}
 EXPECTED_FEDERATION_SPINE_BINDINGS = {
     (
         "AOA-K-0009",
@@ -1448,6 +1472,20 @@ def validate_source_owned_export_dependencies_schema_surface() -> None:
     validate_top_level_schema(
         SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH,
         "source-owned export dependency manifest",
+    )
+
+
+def validate_federation_export_registry_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        FEDERATION_EXPORT_REGISTRY_MANIFEST_SCHEMA_PATH,
+        "federation export registry manifest",
+    )
+
+
+def validate_federation_export_registry_schema_surface() -> None:
+    validate_top_level_schema(
+        FEDERATION_EXPORT_REGISTRY_SCHEMA_PATH,
+        "federation export registry",
     )
 
 
@@ -2961,8 +2999,8 @@ def validate_source_owned_export_dependency_manifest(
                 f"{location}.entry_surface.match_value must equal "
                 f"{location}.expected_object_id"
             )
-        if not isinstance(consumed_by, list) or not consumed_by:
-            fail(f"{location}.consumed_by must be a non-empty list")
+        if not isinstance(consumed_by, list):
+            fail(f"{location}.consumed_by must be a list")
         normalized_consumed_by: list[str] = []
         for consumer_index, consumer_surface_id in enumerate(consumed_by):
             if not isinstance(consumer_surface_id, str) or not consumer_surface_id:
@@ -3015,10 +3053,10 @@ def validate_source_owned_export_dependency_manifest(
                 for value in (source_repo, source_role, source_class)
             ):
                 fail(f"{source_location} must keep repo, role, and source_class")
-            if source_repo != expected_owner_repo:
-                fail(f"{source_location}.repo must equal '{expected_owner_repo}'")
             if source_role == "primary":
                 primary_count += 1
+                if source_repo != expected_owner_repo:
+                    fail(f"{source_location}.repo must equal '{expected_owner_repo}'")
             elif source_role != "supporting":
                 fail(f"{source_location}.role must be 'primary' or 'supporting'")
         if primary_count != 1:
@@ -3044,15 +3082,233 @@ def validate_source_owned_export_dependency_manifest(
 
         dependencies_by_source[source_key] = {
             "dependency_id": dependency_id,
+            "repo": repo,
+            "path": path,
+            "expected_owner_repo": expected_owner_repo,
             "consumed_by": normalized_consumed_by,
         }
 
     return dependencies_by_source
 
 
+def validate_federation_export_registry_manifest(
+    source_owned_export_dependencies: dict[tuple[str, str], dict[str, object]],
+) -> dict[tuple[str, str], dict[str, object]]:
+    payload = read_json(FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("federation export registry manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "exports",
+        "output_paths",
+    ):
+        if key not in payload:
+            fail(f"federation export registry manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("federation export registry manifest manifest_version must equal 1")
+    if payload["pack_type"] != "federation_export_registry":
+        fail("federation export registry manifest pack_type must equal 'federation_export_registry'")
+
+    exports = payload["exports"]
+    if not isinstance(exports, list) or not exports:
+        fail("federation export registry manifest exports must be a non-empty list")
+
+    exports_by_source: dict[tuple[str, str], dict[str, object]] = {}
+    seen_dependency_ids: set[str] = set()
+    seen_routing_entry_ids: set[str] = set()
+    for index, export in enumerate(exports):
+        location = f"federation export registry manifest exports[{index}]"
+        if not isinstance(export, dict):
+            fail(f"{location} must be an object")
+        if set(export) != {
+            "dependency_id",
+            "owner_repo",
+            "export_repo",
+            "export_path",
+            "package_tier",
+            "activation",
+            "routing_binding",
+            "adjunct_surfaces",
+        }:
+            fail(
+                f"{location} must keep exactly dependency_id, owner_repo, export_repo, "
+                "export_path, package_tier, activation, routing_binding, and adjunct_surfaces"
+            )
+
+        dependency_id = export.get("dependency_id")
+        owner_repo = export.get("owner_repo")
+        export_repo = export.get("export_repo")
+        export_path = export.get("export_path")
+        package_tier = export.get("package_tier")
+        activation = export.get("activation")
+        routing_binding = export.get("routing_binding")
+        adjunct_surfaces = export.get("adjunct_surfaces")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                dependency_id,
+                owner_repo,
+                export_repo,
+                export_path,
+                package_tier,
+            )
+        ):
+            fail(
+                f"{location} must keep dependency_id, owner_repo, export_repo, "
+                "export_path, and package_tier"
+            )
+        if dependency_id in seen_dependency_ids:
+            fail(f"{location}.dependency_id '{dependency_id}' is duplicated")
+        seen_dependency_ids.add(dependency_id)
+        resolve_known_ref(repo_ref(export_repo, export_path), label=location)
+
+        dependency = source_owned_export_dependencies.get((export_repo, export_path))
+        if dependency is None:
+            fail(
+                f"{location} must map to a declared source-owned export dependency"
+            )
+        if dependency["dependency_id"] != dependency_id:
+            fail(
+                f"{location}.dependency_id must match dependency '{dependency['dependency_id']}'"
+            )
+        if dependency["expected_owner_repo"] != owner_repo:
+            fail(
+                f"{location}.owner_repo must match dependency expected_owner_repo "
+                f"'{dependency['expected_owner_repo']}'"
+            )
+
+        if not isinstance(activation, dict):
+            fail(f"{location}.activation must be an object")
+        if set(activation) != {
+            "registry_visible",
+            "spine_visible",
+            "routing_visible",
+        }:
+            fail(
+                f"{location}.activation must keep exactly registry_visible, "
+                "spine_visible, and routing_visible"
+            )
+        registry_visible = activation.get("registry_visible")
+        spine_visible = activation.get("spine_visible")
+        routing_visible = activation.get("routing_visible")
+        if not all(isinstance(value, bool) for value in (registry_visible, spine_visible, routing_visible)):
+            fail(
+                f"{location}.activation must keep boolean registry_visible, "
+                "spine_visible, and routing_visible"
+            )
+        if spine_visible and not registry_visible:
+            fail(f"{location}.activation.spine_visible requires registry_visible=true")
+        if routing_visible and not spine_visible:
+            fail(f"{location}.activation.routing_visible requires spine_visible=true")
+        live_spine_consumed = "AOA-K-0009" in dependency["consumed_by"]
+        if spine_visible != live_spine_consumed:
+            fail(
+                f"{location}.activation.spine_visible must stay aligned with "
+                "AOA-K-0009 presence in consumed_by"
+            )
+
+        normalized_routing_binding: dict[str, str] | None
+        if routing_visible:
+            if not isinstance(routing_binding, dict):
+                fail(f"{location}.routing_binding must be an object when routing_visible=true")
+            binding_kind = routing_binding.get("kind")
+            entry_id = routing_binding.get("entry_id")
+            if not all(
+                isinstance(value, str) and value for value in (binding_kind, entry_id)
+            ):
+                fail(
+                    f"{location}.routing_binding must keep kind and entry_id"
+                )
+            if binding_kind != "kag_view":
+                fail(f"{location}.routing_binding.kind must equal 'kag_view'")
+            if entry_id in seen_routing_entry_ids:
+                fail(f"{location}.routing_binding.entry_id '{entry_id}' is duplicated")
+            seen_routing_entry_ids.add(entry_id)
+            normalized_routing_binding = {
+                "kind": binding_kind,
+                "entry_id": entry_id,
+            }
+        else:
+            if routing_binding is not None:
+                fail(f"{location}.routing_binding must be null when routing_visible=false")
+            normalized_routing_binding = None
+
+        if not isinstance(adjunct_surfaces, list):
+            fail(f"{location}.adjunct_surfaces must be a list")
+        if adjunct_surfaces and not spine_visible:
+            fail(f"{location}.adjunct_surfaces require spine_visible=true")
+        normalized_adjunct_surfaces: list[dict[str, str]] = []
+        seen_adjunct_refs: set[str] = set()
+        for adjunct_index, adjunct in enumerate(adjunct_surfaces):
+            adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
+            if not isinstance(adjunct, dict):
+                fail(f"{adjunct_location} must be an object")
+            if set(adjunct) != {
+                "surface_id",
+                "surface_ref",
+                "match_key",
+                "target_value",
+            }:
+                fail(
+                    f"{adjunct_location} must keep exactly surface_id, surface_ref, "
+                    "match_key, and target_value"
+                )
+            surface_id = adjunct.get("surface_id")
+            surface_ref = adjunct.get("surface_ref")
+            match_key = adjunct.get("match_key")
+            target_value = adjunct.get("target_value")
+            if not all(
+                isinstance(value, str) and value
+                for value in (surface_id, surface_ref, match_key, target_value)
+            ):
+                fail(
+                    f"{adjunct_location} must keep surface_id, surface_ref, "
+                    "match_key, and target_value"
+                )
+            if surface_ref in seen_adjunct_refs:
+                fail(f"{adjunct_location}.surface_ref '{surface_ref}' is duplicated")
+            seen_adjunct_refs.add(surface_ref)
+            resolve_known_ref(repo_ref(KAG_REPO, surface_ref), label=adjunct_location)
+            normalized_adjunct_surfaces.append(
+                {
+                    "surface_id": surface_id,
+                    "surface_ref": surface_ref,
+                    "match_key": match_key,
+                    "target_value": target_value,
+                }
+            )
+
+        source_key = (export_repo, export_path)
+        if source_key in exports_by_source:
+            fail(f"{location} duplicates export target '{repo_ref(export_repo, export_path)}'")
+        exports_by_source[source_key] = {
+            "dependency_id": dependency_id,
+            "owner_repo": owner_repo,
+            "activation": {
+                "registry_visible": registry_visible,
+                "spine_visible": spine_visible,
+                "routing_visible": routing_visible,
+            },
+            "routing_binding": normalized_routing_binding,
+            "adjunct_surfaces": normalized_adjunct_surfaces,
+        }
+
+    if payload["output_paths"] != EXPECTED_FEDERATION_EXPORT_REGISTRY_OUTPUT_PATHS:
+        fail(
+            "federation export registry manifest output_paths must match the committed "
+            "generated output paths"
+        )
+
+    return exports_by_source
+
+
 def validate_federation_spine_manifest(
     surfaces_by_id: dict[str, dict[str, object]],
     source_owned_export_dependencies: dict[tuple[str, str], dict[str, object]],
+    federation_export_registry_entries: dict[tuple[str, str], dict[str, object]],
 ) -> None:
     payload = read_json(FEDERATION_SPINE_MANIFEST_PATH)
     if not isinstance(payload, dict):
@@ -3102,6 +3358,16 @@ def validate_federation_spine_manifest(
         fail("federation spine manifest source_inputs must match the current bounded donor set")
     if source_input_order != EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER:
         fail("federation spine manifest source_inputs must keep the current additive donor order")
+    registry_manifest_input = source_inputs_by_name.get("federation_export_registry_manifest")
+    if registry_manifest_input != (
+        "aoa-kag",
+        "manifests/federation_export_registry.json",
+        "activation_manifest",
+    ):
+        fail(
+            "federation spine manifest must keep federation_export_registry_manifest "
+            "pointing to manifests/federation_export_registry.json"
+        )
 
     repo_bindings = payload["repo_bindings"]
     if not isinstance(repo_bindings, list) or not repo_bindings:
@@ -3162,6 +3428,17 @@ def validate_federation_spine_manifest(
                 f"{location}.export_input dependency '{dependency_id}' must declare "
                 f"'{surface_id}' in consumed_by"
             )
+        registry_entry = federation_export_registry_entries.get((input_repo, input_path))
+        if registry_entry is None:
+            fail(
+                f"{location}.export_input must map to a declared federation export "
+                "registry entry"
+            )
+        activation = registry_entry["activation"]
+        if activation["spine_visible"] is not True:
+            fail(f"{location}.export_input must stay spine-visible in the donor registry")
+        if registry_entry["owner_repo"] != repo_name:
+            fail(f"{location}.export_input must stay aligned with owner_repo '{repo_name}'")
 
         normalized_adjunct_surfaces: list[dict[str, object]] = []
         for adjunct_index, adjunct in enumerate(adjunct_surfaces):
@@ -5168,6 +5445,255 @@ def validate_return_regrounding_example(expected_payload: dict[str, object]) -> 
     validate_return_regrounding_pack(payload, expected_payload)
 
 
+def validate_federation_export_registry_pack(
+    payload: object,
+    expected_payload: dict[str, object],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("federation export registry pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "export_count",
+        "exports",
+    ):
+        if key not in payload:
+            fail(f"federation export registry pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("federation export registry pack pack_version must equal 1")
+    if payload["pack_type"] != "federation_export_registry":
+        fail("federation export registry pack pack_type must equal 'federation_export_registry'")
+    if payload["source_manifest_ref"] != "manifests/federation_export_registry.json":
+        fail(
+            "federation export registry pack source_manifest_ref must point to "
+            "manifests/federation_export_registry.json"
+        )
+
+    exports = payload["exports"]
+    if not isinstance(exports, list) or not exports:
+        fail("federation export registry pack exports must be a non-empty list")
+    export_count = payload["export_count"]
+    if not isinstance(export_count, int) or export_count != len(exports):
+        fail("federation export registry pack export_count must equal the number of exports")
+
+    seen_dependency_ids: set[str] = set()
+    seen_export_refs: set[str] = set()
+    seen_routing_entry_ids: set[str] = set()
+    for index, export in enumerate(exports):
+        location = f"federation export registry pack exports[{index}]"
+        if not isinstance(export, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "dependency_id",
+            "owner_repo",
+            "export_ref",
+            "kind",
+            "object_id",
+            "package_tier",
+            "activation",
+            "entry_surface_ref",
+            "source_inputs",
+            "consumed_by",
+            "routing_binding",
+            "adjunct_surfaces",
+            "summary_50",
+            "provenance_note",
+            "non_identity_boundary",
+        ):
+            if key not in export:
+                fail(f"{location} is missing required key '{key}'")
+
+        dependency_id = export["dependency_id"]
+        owner_repo = export["owner_repo"]
+        export_ref = export["export_ref"]
+        kind = export["kind"]
+        object_id = export["object_id"]
+        package_tier = export["package_tier"]
+        activation = export["activation"]
+        entry_surface_ref = export["entry_surface_ref"]
+        source_inputs = export["source_inputs"]
+        consumed_by = export["consumed_by"]
+        routing_binding = export["routing_binding"]
+        adjunct_surfaces = export["adjunct_surfaces"]
+        summary_50 = export["summary_50"]
+        provenance_note = export["provenance_note"]
+        non_identity_boundary = export["non_identity_boundary"]
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                dependency_id,
+                owner_repo,
+                export_ref,
+                kind,
+                object_id,
+                package_tier,
+                entry_surface_ref,
+                summary_50,
+                provenance_note,
+                non_identity_boundary,
+            )
+        ):
+            fail(
+                f"{location} must keep string dependency_id, owner_repo, export_ref, "
+                "kind, object_id, package_tier, entry_surface_ref, summary_50, "
+                "provenance_note, and non_identity_boundary"
+            )
+        if dependency_id in seen_dependency_ids:
+            fail(f"{location}.dependency_id '{dependency_id}' is duplicated")
+        seen_dependency_ids.add(dependency_id)
+        if export_ref in seen_export_refs:
+            fail(f"{location}.export_ref '{export_ref}' is duplicated")
+        seen_export_refs.add(export_ref)
+        resolve_known_ref(export_ref, label=location)
+        resolve_known_ref(entry_surface_ref, label=f"{location}.entry_surface_ref")
+
+        if not isinstance(activation, dict):
+            fail(f"{location}.activation must be an object")
+        if set(activation) != {
+            "registry_visible",
+            "spine_visible",
+            "routing_visible",
+        }:
+            fail(
+                f"{location}.activation must keep exactly registry_visible, "
+                "spine_visible, and routing_visible"
+            )
+        registry_visible = activation.get("registry_visible")
+        spine_visible = activation.get("spine_visible")
+        routing_visible = activation.get("routing_visible")
+        if not all(isinstance(value, bool) for value in (registry_visible, spine_visible, routing_visible)):
+            fail(
+                f"{location}.activation must keep boolean registry_visible, "
+                "spine_visible, and routing_visible"
+            )
+        if spine_visible and not registry_visible:
+            fail(f"{location}.activation.spine_visible requires registry_visible=true")
+        if routing_visible and not spine_visible:
+            fail(f"{location}.activation.routing_visible requires spine_visible=true")
+
+        if not isinstance(source_inputs, list) or not source_inputs:
+            fail(f"{location}.source_inputs must be a non-empty list")
+        primary_count = 0
+        for source_input_index, source_input in enumerate(source_inputs):
+            source_location = f"{location}.source_inputs[{source_input_index}]"
+            if not isinstance(source_input, dict):
+                fail(f"{source_location} must be an object")
+            source_repo = source_input.get("repo")
+            source_class = source_input.get("source_class")
+            source_role = source_input.get("role")
+            if not all(
+                isinstance(value, str) and value
+                for value in (source_repo, source_class, source_role)
+            ):
+                fail(f"{source_location} must keep repo, source_class, and role")
+            if source_role == "primary":
+                primary_count += 1
+                if source_repo != owner_repo:
+                    fail(f"{source_location}.repo must equal owner_repo '{owner_repo}'")
+            elif source_role != "supporting":
+                fail(f"{source_location}.role must be 'primary' or 'supporting'")
+        if primary_count != 1:
+            fail(f"{location}.source_inputs must contain exactly one primary input")
+
+        if not isinstance(consumed_by, list):
+            fail(f"{location}.consumed_by must be a list")
+        for consumer_index, consumer_surface_id in enumerate(consumed_by):
+            if not isinstance(consumer_surface_id, str) or not consumer_surface_id:
+                fail(f"{location}.consumed_by[{consumer_index}] must be a non-empty string")
+
+        if routing_visible:
+            if not isinstance(routing_binding, dict):
+                fail(f"{location}.routing_binding must be an object when routing_visible=true")
+            binding_kind = routing_binding.get("kind")
+            entry_id = routing_binding.get("entry_id")
+            if not all(
+                isinstance(value, str) and value for value in (binding_kind, entry_id)
+            ):
+                fail(f"{location}.routing_binding must keep kind and entry_id")
+            if binding_kind != "kag_view":
+                fail(f"{location}.routing_binding.kind must equal 'kag_view'")
+            if entry_id in seen_routing_entry_ids:
+                fail(f"{location}.routing_binding.entry_id '{entry_id}' is duplicated")
+            seen_routing_entry_ids.add(entry_id)
+        else:
+            if routing_binding is not None:
+                fail(f"{location}.routing_binding must be null when routing_visible=false")
+
+        if not isinstance(adjunct_surfaces, list):
+            fail(f"{location}.adjunct_surfaces must be a list")
+        if adjunct_surfaces and not spine_visible:
+            fail(f"{location}.adjunct_surfaces require spine_visible=true")
+        for adjunct_index, adjunct in enumerate(adjunct_surfaces):
+            adjunct_location = f"{location}.adjunct_surfaces[{adjunct_index}]"
+            if not isinstance(adjunct, dict):
+                fail(f"{adjunct_location} must be an object")
+            if set(adjunct) != {
+                "surface_id",
+                "surface_ref",
+                "match_key",
+                "target_value",
+            }:
+                fail(
+                    f"{adjunct_location} must keep exactly surface_id, surface_ref, "
+                    "match_key, and target_value"
+                )
+            surface_id = adjunct.get("surface_id")
+            surface_ref = adjunct.get("surface_ref")
+            match_key = adjunct.get("match_key")
+            target_value = adjunct.get("target_value")
+            if not all(
+                isinstance(value, str) and value
+                for value in (surface_id, surface_ref, match_key, target_value)
+            ):
+                fail(
+                    f"{adjunct_location} must keep surface_id, surface_ref, "
+                    "match_key, and target_value"
+                )
+            resolve_known_ref(repo_ref(KAG_REPO, surface_ref), label=adjunct_location)
+
+    if payload != expected_payload:
+        fail(
+            "federation export registry pack must match the committed manifest-driven "
+            "donor registry payload"
+        )
+
+
+def validate_federation_export_registry_example() -> None:
+    payload = read_json(FEDERATION_EXPORT_REGISTRY_EXAMPLE_PATH)
+    validate_federation_export_registry_pack(payload, payload)
+    if not isinstance(payload, dict):
+        fail("federation export registry example must be a JSON object")
+
+    exports = payload["exports"]
+    if len(exports) != 3:
+        fail("federation export registry example must keep the current three-donor illustration")
+    memo_export = next(
+        (export for export in exports if export.get("owner_repo") == "aoa-memo"),
+        None,
+    )
+    if memo_export is None:
+        fail("federation export registry example must include aoa-memo as a registry-only donor")
+    if memo_export["activation"] != {
+        "registry_visible": True,
+        "spine_visible": False,
+        "routing_visible": False,
+    }:
+        fail(
+            "federation export registry example aoa-memo activation must keep the "
+            "registry-only donor posture"
+        )
+    if memo_export["source_inputs"] != EXPECTED_MEMO_KAG_EXPORT_SOURCE_INPUTS:
+        fail(
+            "federation export registry example aoa-memo source_inputs must keep the "
+            "memo-primary / Tree-of-Sophia-supporting split"
+        )
+    if memo_export["consumed_by"] != []:
+        fail("federation export registry example aoa-memo consumed_by must stay empty")
+
+
 def validate_federation_spine_pack(
     payload: object,
     surfaces_by_id: dict[str, dict[str, object]],
@@ -6528,6 +7054,8 @@ def main() -> int:
         validate_return_regrounding_manifest_schema_surface()
         validate_return_regrounding_schema_surface()
         validate_source_owned_export_dependencies_schema_surface()
+        validate_federation_export_registry_manifest_schema_surface()
+        validate_federation_export_registry_schema_surface()
         validate_federation_kag_export_schema_surface()
         validate_federation_spine_manifest_schema_surface()
         validate_federation_spine_schema_surface()
@@ -6556,9 +7084,13 @@ def main() -> int:
                 registry_manifest_surfaces
             )
         )
+        federation_export_registry_entries = validate_federation_export_registry_manifest(
+            source_owned_export_dependencies
+        )
         validate_federation_spine_manifest(
             registry_manifest_surfaces,
             source_owned_export_dependencies,
+            federation_export_registry_entries,
         )
         validate_cross_source_node_projection_manifest(
             registry_manifest_surfaces,
@@ -6590,8 +7122,12 @@ def main() -> int:
         expected_return_regrounding_pack_payload = build_return_regrounding_pack_payload(
             expected_registry_payload
         )
+        expected_federation_export_registry_payload = (
+            build_federation_export_registry_payload()
+        )
         expected_federation_spine_payload = build_federation_spine_payload(
-            expected_registry_payload
+            expected_registry_payload,
+            federation_export_registry_payload=expected_federation_export_registry_payload,
         )
         expected_cross_source_node_projection_payload = (
             build_cross_source_node_projection_payload(expected_registry_payload)
@@ -6672,6 +7208,16 @@ def main() -> int:
             REASONING_HANDOFF_MIN_OUTPUT_PATH,
             encode_json(expected_reasoning_handoff_pack_payload, pretty=False),
             label="generated compact reasoning handoff pack",
+        )
+        validate_generated_text(
+            FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH,
+            encode_json(expected_federation_export_registry_payload, pretty=True),
+            label="generated federation export registry",
+        )
+        validate_generated_text(
+            FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH,
+            encode_json(expected_federation_export_registry_payload, pretty=False),
+            label="generated compact federation export registry",
         )
         validate_generated_text(
             RETURN_REGROUNDING_OUTPUT_PATH,
@@ -6760,6 +7306,10 @@ def main() -> int:
         validate_reasoning_handoff_pack(
             read_json(REASONING_HANDOFF_MIN_OUTPUT_PATH),
         )
+        validate_federation_export_registry_pack(
+            read_json(FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH),
+            expected_federation_export_registry_payload,
+        )
         validate_return_regrounding_pack(
             read_json(RETURN_REGROUNDING_MIN_OUTPUT_PATH),
             expected_return_regrounding_pack_payload,
@@ -6792,6 +7342,7 @@ def main() -> int:
         )
         validate_reasoning_handoff_example()
         validate_return_regrounding_example(expected_return_regrounding_pack_payload)
+        validate_federation_export_registry_example()
         validate_federation_kag_export_example()
         validate_optional_memo_source_owned_export_readiness()
         validate_cross_source_node_projection_example(
@@ -6832,6 +7383,8 @@ def main() -> int:
     print("[ok] validated return regrounding pack manifest schema")
     print("[ok] validated return regrounding pack schema")
     print("[ok] validated source-owned export dependency manifest schema")
+    print("[ok] validated federation export registry manifest schema")
+    print("[ok] validated federation export registry schema")
     print("[ok] validated federation KAG export schema")
     print("[ok] validated federation spine manifest schema")
     print("[ok] validated federation spine schema")
@@ -6848,6 +7401,7 @@ def main() -> int:
     print("[ok] validated manifests/reasoning_handoff_pack.json")
     print("[ok] validated manifests/return_regrounding_pack.json")
     print("[ok] validated manifests/source_owned_export_dependencies.json")
+    print("[ok] validated manifests/federation_export_registry.json")
     print("[ok] validated manifests/federation_spine.json")
     print("[ok] validated manifests/cross_source_node_projection.json")
     print("[ok] validated manifests/counterpart_federation_exposure_review.json")
@@ -6859,6 +7413,7 @@ def main() -> int:
     print("[ok] validated generated ToS Zarathustra route pack outputs are up to date")
     print("[ok] validated generated ToS Zarathustra route retrieval pack outputs are up to date")
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
+    print("[ok] validated generated federation export registry outputs are up to date")
     print("[ok] validated generated return regrounding pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
     print("[ok] validated generated cross-source node projection outputs are up to date")
@@ -6870,6 +7425,7 @@ def main() -> int:
     print("[ok] validated generated ToS Zarathustra route pack structure")
     print("[ok] validated generated ToS Zarathustra route retrieval pack structure")
     print("[ok] validated generated reasoning handoff pack structure")
+    print("[ok] validated generated federation export registry structure")
     print("[ok] validated generated return regrounding pack structure")
     print("[ok] validated generated federation spine structure")
     print("[ok] validated generated cross-source node projection structure")
@@ -6886,6 +7442,7 @@ def main() -> int:
     print("[ok] validated ToS Zarathustra route retrieval pack example")
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated return regrounding example")
+    print("[ok] validated federation export registry example")
     print("[ok] validated federation KAG export example")
     if AOA_MEMO_ROOT.exists():
         print("[ok] validated optional aoa-memo source-owned export readiness")

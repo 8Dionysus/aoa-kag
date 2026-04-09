@@ -11,10 +11,10 @@ leaving them hidden inside generator or validator code.
 The current contract is intentionally narrow:
 
 - declare exactly which external source-owned exports the current experimental
-  KAG surfaces depend on
+  KAG surfaces recognize as invariant-backed donors
 - keep expected owner, kind, object id, and entry surface explicit
-- make consumer-facing dependency drift reviewable before federation or
-  projection outputs are widened
+- keep live consumption separate from donor activation so widening remains
+  reviewable
 
 ## Current pilot dependencies
 
@@ -22,13 +22,20 @@ The current bounded contract depends on:
 
 - `aoa-techniques/generated/kag_export.min.json`
 - `Tree-of-Sophia/generated/kag_export.min.json`
+- `aoa-memo/generated/kag_export.min.json`
 
-`aoa-memo/generated/kag_export.min.json` is now published as a readiness-only
-donor export, but it is not listed in the current dependency manifest because
-the live generated KAG surfaces do not consume it yet.
+`aoa-memo/generated/kag_export.min.json` is now listed as an invariant-backed
+donor export, but its `consumed_by` list is intentionally empty in this wave.
+That keeps the donor contract explicit without pretending the live generated KAG
+surfaces already consume it.
 
 Those dependencies are declared in
 `manifests/source_owned_export_dependencies.json`.
+
+Live donor visibility is now declared separately in
+`manifests/federation_export_registry.json`.
+That registry decides whether a donor is only registry-visible or also live in
+the spine and downstream routing.
 
 They also anchor the first `source_export_reentry` mode in
 `generated/return_regrounding_pack.min.json`.
@@ -42,14 +49,14 @@ Each dependency keeps:
 - the expected `owner_repo`, `kind`, and `object_id`
 - the required top-level export fields
 - the expected `entry_surface`
-- the current `consumed_by` surface ids inside `aoa-kag`
+- the current live `consumed_by` surface ids inside `aoa-kag`
 
 ## What this contract does not do
 
 This contract does not:
 
 - replace source-owned export doctrine in neighboring repositories
-- claim that all future federation exports must match the current tiny pilot
+- claim that every declared donor is already live in the spine
 - widen `aoa-kag` into source ownership
 
 ## Regeneration posture

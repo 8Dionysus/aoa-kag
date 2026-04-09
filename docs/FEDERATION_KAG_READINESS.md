@@ -13,6 +13,7 @@ This wave is intentionally narrow:
 - make the federation-facing export contract public
 - keep the first landing fully inside `aoa-kag`
 - name the bounded surface families that `aoa-kag` may compose
+- separate donor invariants, donor activation, and live spine exposure
 - keep source-owned exports distinct from the derived KAG layer
 
 ## Source-owned export rule
@@ -24,10 +25,28 @@ The intended long-term posture is:
 - downstream consumers read the derived layer as a guide to source, not as a
   new author of meaning
 
+The current generic ingress rule is now explicit:
+
+- each source-owned export must keep exactly one `primary` input
+- that `primary` input must belong to `owner_repo`
+- `supporting` inputs may belong to other repos
+
 This contract is public now.
 `aoa-techniques`, `Tree-of-Sophia`, and now `aoa-memo` can publish bounded
 source-owned exports, even though the live federation spine still activates only
 the current two-repo pilot.
+
+The donor activation split is also public now:
+
+- `registry_visible`
+- `spine_visible`
+- `routing_visible`
+
+Those gates are declared in `manifests/federation_export_registry.json` and
+materialized in:
+
+- `generated/federation_export_registry.json`
+- `generated/federation_export_registry.min.json`
 
 ## `federation_kag_export`
 
@@ -102,7 +121,7 @@ every consumer to read the full doctrinal stack first.
 
 This wave does not:
 
-- activate cross-repo source-owned exports
+- widen the live spine or routing contour by default
 - claim a finished federation export loop
 - move routing, canon ownership, memory truth, or proof into `aoa-kag`
 - treat a derived spine as a replacement for authored source meaning
@@ -114,10 +133,10 @@ The first landing in `aoa-kag` is:
 - contract-first
 - schema-backed
 - generator-backed
-- two-repo pilot in practice
+- manifest-driven donor activation with a two-repo live pilot in practice
 
 `aoa-memo` now also publishes one source-owned bridge-bearing export as a
-readiness-only donor.
+registry-visible donor.
 That publication proves the contract can cross the memo boundary without yet
 widening the live `federation_spine` or downstream routing ABI.
 
