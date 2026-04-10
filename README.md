@@ -4,6 +4,8 @@
 
 It exists to make knowledge-ready structures explicit, reviewable, and bounded. Source repositories keep authored meaning. `aoa-kag` keeps the derived substrate built from those truths.
 
+> Current release: `v0.2.0`. See [CHANGELOG](CHANGELOG.md) for release notes.
+
 ## Start here
 
 Use the shortest route by need:
