@@ -85,6 +85,8 @@ from kag_generation import (
     TOS_TINY_ENTRY_DOCTRINE_PATH,
     TOS_TINY_ENTRY_FALLBACK_PATH,
     TOS_TINY_ENTRY_HOP_PATH,
+    TOS_TINY_ENTRY_LEGACY_HOP_FIELD,
+    TOS_TINY_ENTRY_PRIMARY_HOP_FIELD,
     TOS_TINY_ENTRY_ROUTE_ID,
     TOS_TINY_ENTRY_ROUTE_PATH,
     build_cross_source_node_projection_payload,
@@ -1862,12 +1864,7 @@ def validate_tos_tiny_entry_route() -> dict[str, object]:
     if authority_surface != TOS_TINY_ENTRY_AUTHORITY_PATH:
         fail(f"{route_label}.authority_surface must stay '{TOS_TINY_ENTRY_AUTHORITY_PATH}'")
 
-    lineage_or_context_hop = validate_tos_relative_surface(
-        payload.get("lineage_or_context_hop"),
-        label=f"{route_label}.lineage_or_context_hop",
-    )
-    if lineage_or_context_hop != TOS_TINY_ENTRY_HOP_PATH:
-        fail(f"{route_label}.lineage_or_context_hop must stay '{TOS_TINY_ENTRY_HOP_PATH}'")
+    validate_tos_tiny_entry_hop_surface(payload, route_label=route_label)
 
     fallback = validate_tos_relative_surface(
         payload.get("fallback"),
@@ -1883,6 +1880,42 @@ def validate_tos_tiny_entry_route() -> dict[str, object]:
         fail(f"{route_label}.non_identity_boundary must explicitly keep aoa-kag and aoa-routing downstream")
 
     return payload
+
+
+def validate_tos_tiny_entry_hop_surface(payload: dict[str, object], *, route_label: str) -> str:
+    bounded_hop: str | None = None
+    if payload.get(TOS_TINY_ENTRY_PRIMARY_HOP_FIELD) is not None:
+        bounded_hop = validate_tos_relative_surface(
+            payload.get(TOS_TINY_ENTRY_PRIMARY_HOP_FIELD),
+            label=f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD}",
+        )
+
+    legacy_hop: str | None = None
+    if payload.get(TOS_TINY_ENTRY_LEGACY_HOP_FIELD) is not None:
+        legacy_hop = validate_tos_relative_surface(
+            payload.get(TOS_TINY_ENTRY_LEGACY_HOP_FIELD),
+            label=f"{route_label}.{TOS_TINY_ENTRY_LEGACY_HOP_FIELD}",
+        )
+
+    if bounded_hop is None and legacy_hop is None:
+        fail(
+            f"{route_label} must define '{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD}' or "
+            f"'{TOS_TINY_ENTRY_LEGACY_HOP_FIELD}'"
+        )
+
+    if bounded_hop is not None and legacy_hop is not None and bounded_hop != legacy_hop:
+        fail(
+            f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD} and "
+            f"{route_label}.{TOS_TINY_ENTRY_LEGACY_HOP_FIELD} must resolve to the same surface"
+        )
+
+    hop_surface = bounded_hop or legacy_hop
+    if hop_surface != TOS_TINY_ENTRY_HOP_PATH:
+        fail(
+            f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD} must stay "
+            f"'{TOS_TINY_ENTRY_HOP_PATH}' in the current KAG wave"
+        )
+    return hop_surface
 
 
 def validate_registry_payload(

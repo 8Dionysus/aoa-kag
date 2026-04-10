@@ -9,6 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import kag_generation
+import validate_kag
 
 
 def write_text(path: Path, content: str) -> None:
@@ -57,6 +58,16 @@ class TestTosTinyEntryHopCompatibility(unittest.TestCase):
 
         self.assertEqual(loaded["bounded_hop"], "examples/concept_node.example.json")
 
+    def test_validate_kag_accepts_bounded_hop_only(self) -> None:
+        payload = self.make_payload(bounded_hop="examples/concept_node.example.json")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tos_root = Path(tmpdir)
+            self.write_tos_root(tos_root, payload)
+            with mock.patch.object(validate_kag, "TREE_OF_SOPHIA_ROOT", tos_root):
+                loaded = validate_kag.validate_tos_tiny_entry_route()
+
+        self.assertEqual(loaded["bounded_hop"], "examples/concept_node.example.json")
+
     def test_accepts_matching_primary_and_legacy_hops(self) -> None:
         payload = self.make_payload(
             bounded_hop="examples/concept_node.example.json",
@@ -81,6 +92,22 @@ class TestTosTinyEntryHopCompatibility(unittest.TestCase):
             with mock.patch.object(kag_generation, "TREE_OF_SOPHIA_ROOT", tos_root):
                 with self.assertRaises(kag_generation.GenerationError) as exc:
                     kag_generation.load_tos_tiny_entry_route_payload()
+
+        message = str(exc.exception)
+        self.assertIn("bounded_hop", message)
+        self.assertIn("lineage_or_context_hop", message)
+
+    def test_validate_kag_rejects_mismatched_primary_and_legacy_hops(self) -> None:
+        payload = self.make_payload(
+            bounded_hop="examples/concept_node.example.json",
+            lineage_or_context_hop="docs/OTHER.md",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tos_root = Path(tmpdir)
+            self.write_tos_root(tos_root, payload)
+            with mock.patch.object(validate_kag, "TREE_OF_SOPHIA_ROOT", tos_root):
+                with self.assertRaises(validate_kag.ValidationError) as exc:
+                    validate_kag.validate_tos_tiny_entry_route()
 
         message = str(exc.exception)
         self.assertIn("bounded_hop", message)
