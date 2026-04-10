@@ -9,6 +9,20 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [0.2.0] - 2026-04-10
 
+### Summary
+
+- this release adds federation export owner slices, ToS-adjunct and regrounding surfaces, and a project-foundation/via-negativa refresh for the derived KAG layer
+- generation and validation contracts are aligned with the current pinned donor inputs and refreshed technique-lift contour
+- `aoa-kag` remains provenance-aware derived structure rather than a source-authoritative repository
+
+### Validation
+
+- `python scripts/release_check.py`
+
+### Notes
+
+- detailed manifest, generated-pack, documentation, and validation-surface coverage for this release remains enumerated below under `Added`, `Changed`, and `Included in this release`
+
 ### Added
 
 - federation export registry owner slice and stronger source-owned federation
