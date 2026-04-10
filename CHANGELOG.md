@@ -7,6 +7,34 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-10
+
+### Added
+
+- federation export registry owner slice and stronger source-owned federation
+  spine review surfaces
+- bounded ToS adjunct and third-wave stress/regrounding surfaces together with
+  refreshed technique-lift coverage
+- via negativa KAG checklist and repo-local project-foundation skill install
+
+### Changed
+
+- aligned KAG generation and validation contracts with the current pinned donor
+  inputs and public techniques contour
+- clarified validation routes and AGENTS guidance around next-wave
+  regrounding posture and source-first entry paths
+
+### Included in this release
+
+- KAG pack and doctrine refreshes across `manifests/`, `generated/`, `docs/`,
+  `examples/`, and `schemas/`, including ToS adjunct posture, federation
+  export owner slices, stress and regrounding surfaces, and refreshed
+  technique-lift coverage
+- contributor and validation surfaces under `.agents/`, `.github/`, `AGENTS.md`,
+  `README.md`, `CONTRIBUTING.md`, `scripts/`, and `tests/`, including
+  project-foundation rollout, source-first verify-route clarity, and pinned
+  donor alignment
+
 ## [0.1.0] - 2026-04-01
 
 First public baseline release of `aoa-kag` as the derived knowledge substrate layer in the AoA public surface.
