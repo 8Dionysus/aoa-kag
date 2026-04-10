@@ -263,6 +263,23 @@ class KagGenerationTestCase(unittest.TestCase):
             ],
         )
 
+    def test_federation_export_registry_builder_rejects_non_kag_view_routing_binding(self) -> None:
+        manifest = load_json(kag_generation.FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH)
+        assert isinstance(manifest, dict)
+        broken_manifest = copy.deepcopy(manifest)
+        broken_manifest["exports"][0]["routing_binding"]["kind"] = "other_view"
+
+        with self.patched_read_json(
+            {
+                kag_generation.FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_federation_export_registry_payload()
+
+        self.assertIn("routing_binding.kind", str(context.exception))
+        self.assertIn("kag_view", str(context.exception))
+
     def test_cross_source_projection_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         self.assert_builder_matches_generated(

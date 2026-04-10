@@ -83,4 +83,8 @@ jobs:
         run: python scripts/generate_kag.py
 
       - name: Check generated outputs are committed
-        run: git diff --exit-code -- generated
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=all -- generated)" ]; then
+            git status --porcelain --untracked-files=all -- generated
+            exit 1
+          fi

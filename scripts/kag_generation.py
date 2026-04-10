@@ -4008,6 +4008,8 @@ def build_federation_export_registry_payload() -> dict[str, object]:
                 routing_binding.get("kind"),
                 label=f"{location}.routing_binding.kind",
             )
+            if binding_kind != "kag_view":
+                fail(f"{location}.routing_binding.kind must equal 'kag_view'")
             entry_id = require_string(
                 routing_binding.get("entry_id"),
                 label=f"{location}.routing_binding.entry_id",
