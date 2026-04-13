@@ -1,13 +1,15 @@
 # AoA KAG Roadmap
 
-This roadmap tracks the bootstrap and early shaping of the AoA KAG layer.
+This roadmap tracks current release alignment and next hardening work for the
+AoA KAG layer.
 
 ## Current phase
 
-`aoa-kag` is in bootstrap.
-The current goal is not to build a giant graph engine immediately.
-The goal is to define what the KAG layer is for, what it owns, and what it must not silently absorb.
-The current repository now also carries the first manifest-driven generated technique lift pack so bootstrap doctrine begins to harden into reproducible substrate output.
+`aoa-kag` has moved beyond bootstrap into `v0.2.0` derived-substrate release
+hardening.
+The current goal is not to build a giant graph engine.
+The goal is to keep clear what the KAG layer is for, what it owns, and what it must not silently absorb.
+The current repository carries the first manifest-driven generated technique lift pack so early doctrine stays hardened into reproducible substrate output.
 It now also carries the first experimental ToS text chunk map pilot built from the current source-owned Zarathustra authority surface plus supporting tiny-entry route and capsule surfaces.
 It now also carries the first experimental ToS retrieval-axis pack built from that chunk map plus bounded bridge and memo-side bridge surfaces.
 `AOA-K-0005` and `AOA-K-0007` remain those narrow tiny-entry pilots in the current wave.
@@ -20,6 +22,43 @@ It now also carries one explicit source-owned export dependency contract, one ma
 It now also carries one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so the current experimental path can be consumed without activating counterpart generation.
 It now also carries one explicit counterpart federation exposure review artifact so the last current activation gate for `AOA-K-0008` is review-closed while the surface remains planned.
 It now also carries one bounded recurrence regrounding surface so federation entry, retrieval-axis use, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs without widening KAG sovereignty.
+
+### Current release contour
+
+For `v0.2.0`, the release contour is the current derived substrate portfolio,
+not a claim that KAG is a full graph engine or a source-authoritative layer:
+
+- registry and source-owned federation export posture:
+  `generated/kag_registry.min.json`,
+  `generated/federation_export_registry.min.json`,
+  and `docs/FEDERATION_KAG_READINESS.md`
+- manifest-driven and ToS-derived packs:
+  `generated/technique_lift_pack.min.json`,
+  `generated/tos_text_chunk_map.min.json`,
+  `generated/tos_retrieval_axis_pack.min.json`,
+  `generated/tos_zarathustra_route_pack.min.json`,
+  `generated/tos_zarathustra_route_retrieval_pack.min.json`,
+  and `docs/TOS_RAW_TABLE_INTAKE_STUB.md`
+- reasoning, recurrence, bridge, and regrounding posture:
+  `generated/reasoning_handoff_pack.min.json`,
+  `generated/return_regrounding_pack.min.json`,
+  `docs/BRIDGE_CONTRACTS.md`,
+  `docs/RECURRENCE_REGROUNDING.md`,
+  `docs/KAG_STRESS_REGROUNDING.md`,
+  and `docs/KAG_PROJECTION_QUARANTINE.md`
+- federation, counterpart, tiny-consumer, and cross-source adjuncts:
+  `generated/federation_spine.min.json`,
+  `generated/counterpart_federation_exposure_review.min.json`,
+  `generated/tiny_consumer_bundle.min.json`,
+  `generated/cross_source_node_projection.min.json`,
+  `docs/COUNTERPART_CONSUMER_CONTRACT.md`,
+  `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`,
+  and `docs/COUNTERPART_EDGE_CONTRACTS.md`
+
+Roadmap drift is a KAG-layer risk: if this file falls back to bootstrap-only
+language while the repository publishes release-ready derived surfaces, callers
+lose the maturity boundary. Keep the roadmap current while preserving the rule
+that source repositories remain authoritative.
 
 ## Phase 1: KAG layer definition
 
