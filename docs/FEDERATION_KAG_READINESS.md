@@ -139,11 +139,11 @@ The first landing in `aoa-kag` is:
 registry-visible donor.
 That publication proves the contract can cross the memo boundary without yet
 widening the live `federation_spine` or downstream routing ABI.
-The memo-owned `docs/PRE_AGON_MEMORY_READINESS.md` note now provides the
-stronger owner boundary for Agon-shaped scar, retention, recall, and live-ledger
-pressure. KAG readiness may reference it for regrounding, but not as proof that
-KAG owns scar normalization, retention guarantees, live memory-ledger behavior,
-or routing activation.
+The memo-owned `docs/MEMORY_READINESS_BOUNDARY.md` note now provides the
+stronger owner boundary for future durable-consequence, retention, recall, and
+live-ledger pressure. KAG readiness may reference it for regrounding, but not
+as proof that KAG owns scar normalization, retention guarantees, live
+memory-ledger behavior, or routing activation.
 
 The pilot pack is documented in `docs/FEDERATION_SPINE.md`.
 It now consumes real source-owned tiny `generated/kag_export.min.json` exports

@@ -414,9 +414,9 @@ EXPECTED_RETURN_REGROUNDING_INPUTS = {
         "owner_contract",
     ),
     (
-        "memo_pre_agon_readiness",
+        "memo_memory_readiness_boundary",
         "aoa-memo",
-        "docs/PRE_AGON_MEMORY_READINESS.md",
+        "docs/MEMORY_READINESS_BOUNDARY.md",
         "owner_contract",
     ),
 }
@@ -434,7 +434,7 @@ EXPECTED_RETURN_REGROUNDING_INPUT_ORDER = [
     "tos_node_contract",
     "tos_source_node",
     "memo_checkpoint_contract",
-    "memo_pre_agon_readiness",
+    "memo_memory_readiness_boundary",
 ]
 EXPECTED_RETURN_REGROUNDING_BINDINGS = {
     (
@@ -466,7 +466,7 @@ EXPECTED_RETURN_REGROUNDING_BINDINGS = {
             "reasoning_handoff_doc",
             "boundaries_doc",
             "memo_checkpoint_contract",
-            "memo_pre_agon_readiness",
+            "memo_memory_readiness_boundary",
         ),
         (),
     ),
@@ -477,7 +477,7 @@ EXPECTED_RETURN_REGROUNDING_BINDINGS = {
             "bridge_contract_doc",
             "boundaries_doc",
             "memo_checkpoint_contract",
-            "memo_pre_agon_readiness",
+            "memo_memory_readiness_boundary",
             "tos_node_contract",
         ),
         (),
