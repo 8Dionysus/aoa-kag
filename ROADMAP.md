@@ -22,6 +22,7 @@ It now also carries one explicit source-owned export dependency contract, one ma
 It now also carries one explicit counterpart consumer contract and one machine-readable tiny consumer bundle so the current experimental path can be consumed without activating counterpart generation.
 It now also carries one explicit counterpart federation exposure review artifact so the last current activation gate for `AOA-K-0008` is review-closed while the surface remains planned.
 It now also carries one bounded recurrence regrounding surface so federation entry, retrieval-axis use, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs without widening KAG sovereignty.
+For `aoa-memo`, that regrounding surface now points Agon-shaped scar, retention, and live-ledger pressure back to memo-owned pre-Agon readiness doctrine instead of letting KAG treat that pressure as graph or routing readiness.
 
 ### Current release contour
 
@@ -101,6 +102,7 @@ Goals:
 - make room for source-owned federation exports and bounded derived spine pilots before any full cross-repo export claim
 - keep the current ToS tiny-entry donor narrow while downstream routing handoff and source-owned export growth remain explicitly bounded
 - harden one bounded `return_regrounding_pack` so current KAG pilots can fall back to stronger source or owner refs without implying graph sovereignty
+- keep memo pre-Agon scar, retention, and live-ledger readiness as owner-layer refs, not KAG graph expansion or routing activation
 
 ## Standing discipline
 

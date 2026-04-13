@@ -79,6 +79,12 @@
       "repo": "aoa-memo",
       "path": "examples/checkpoint_to_memory_contract.example.json",
       "role": "owner_contract"
+    },
+    {
+      "name": "memo_pre_agon_readiness",
+      "repo": "aoa-memo",
+      "path": "docs/PRE_AGON_MEMORY_READINESS.md",
+      "role": "owner_contract"
     }
   ],
   "mode_bindings": [
@@ -123,7 +129,8 @@
       "supporting_inputs": [
         "reasoning_handoff_doc",
         "boundaries_doc",
-        "memo_checkpoint_contract"
+        "memo_checkpoint_contract",
+        "memo_pre_agon_readiness"
       ]
     },
     {
@@ -133,6 +140,7 @@
         "bridge_contract_doc",
         "boundaries_doc",
         "memo_checkpoint_contract",
+        "memo_pre_agon_readiness",
         "tos_node_contract"
       ]
     }

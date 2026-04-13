@@ -38,6 +38,9 @@ The current external export expectations are made explicit in
 `aoa-memo` now also publishes one source-owned bridge-bearing export and appears
 in the generated donor registry, but it is intentionally not activated inside
 this live spine yet.
+Its pre-Agon memory readiness note remains a memo-owned owner-boundary ref for
+scar, retention, and live-ledger pressure; the spine does not consume it as a
+derived graph surface.
 
 The generated outputs live at:
 
@@ -77,6 +80,11 @@ the current Zarathustra authority slice.
 memo bridge donor, and that donor is registry-visible in this tranche, but it
 remains spine-dark and routing-dark so the live spine and downstream
 `aoa-routing` ABI stay two-repo and stable.
+
+That also means Agon-shaped memo readiness stays outside this live spine. KAG
+may reground callers to `aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md`, but it
+does not promote memo scars, retention, or live memory-ledger behavior into
+spine exposure.
 
 That keeps the pilot source-owned and reviewable without turning the spine into
 a wider federation claim.
