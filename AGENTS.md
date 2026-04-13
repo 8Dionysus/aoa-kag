@@ -54,12 +54,13 @@ They do not authorize open-ended world-model sprawl.
 Before making changes, read in this order:
 
 1. `README.md`
-2. `CHARTER.md`
-3. `docs/KAG_MODEL.md`
-4. `docs/BOUNDARIES.md`
-5. `docs/SOURCE_POLICY.md`
-6. the target source file you plan to edit
-7. any affected generated registry, pack, or capsule surfaces
+2. `ROADMAP.md`
+3. `CHARTER.md`
+4. `docs/KAG_MODEL.md`
+5. `docs/BOUNDARIES.md`
+6. `docs/SOURCE_POLICY.md`
+7. the target source file you plan to edit
+8. any affected generated registry, pack, or capsule surfaces
 
 Then branch by task:
 
