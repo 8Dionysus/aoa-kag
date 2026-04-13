@@ -294,7 +294,7 @@ RETURN_REGROUNDING_EXPECTED_INPUT_REFS = {
     "tos_node_contract": "Tree-of-Sophia/docs/NODE_CONTRACT.md",
     "tos_source_node": "Tree-of-Sophia/examples/source_node.example.json",
     "memo_checkpoint_contract": "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-    "memo_pre_agon_readiness": "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+    "memo_memory_readiness_boundary": "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
 }
 RETURN_REGROUNDING_ALLOWED_SAME_RUN_INPUTS = {
     "generated/federation_spine.min.json",
@@ -466,12 +466,12 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "reasoning_handoff_doc",
             "boundaries_doc",
             "memo_checkpoint_contract",
-            "memo_pre_agon_readiness",
+            "memo_memory_readiness_boundary",
         ],
         "dependency_refs": [],
         "used_when": (
             "Use this mode when runtime-to-KAG handoff begins to overreach into "
-            "routing, memory truth, pre-Agon readiness, proof, or canon authorship instead of "
+            "routing, memory truth, memory readiness, proof, or canon authorship instead of "
             "staying a guide to stronger refs."
         ),
         "query_mode_hint": "global_search",
@@ -485,7 +485,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md",
             "aoa-evals/bundles/aoa-long-horizon-depth/EVAL.md",
             "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
         ],
         "supporting_surface_refs": [
             "schemas/reasoning-handoff-guardrail.schema.json",
@@ -504,13 +504,13 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ),
         "non_identity_boundary": (
             "Reasoning handoff stays a derived guide to source and owner "
-            "surfaces, not a new owner of routing, proof, memory truth, pre-Agon "
-            "scar or retention readiness, live ledger behavior, or canon."
+            "surfaces, not a new owner of routing, proof, memory truth, scar "
+            "or retention readiness, live ledger behavior, or canon."
         ),
         "prohibited_promotions": [
             "routing_ownership",
             "memory_truth_ownership",
-            "pre_agon_scar_retention_readiness",
+            "scar_retention_readiness",
             "live_memory_ledger_ownership",
             "canon_authorship",
             "proof_ownership",
@@ -522,13 +522,13 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "bridge_contract_doc",
             "boundaries_doc",
             "memo_checkpoint_contract",
-            "memo_pre_agon_readiness",
+            "memo_memory_readiness_boundary",
             "tos_node_contract",
         ],
         "dependency_refs": [],
         "used_when": (
             "Use this mode when a caller reaches writeback, memory commitment, "
-            "pre-Agon scar or retention pressure, live ledger pressure, or "
+            "future scar or retention pressure, live ledger pressure, or "
             "canon-facing mutation and KAG must stop at the owner boundary."
         ),
         "query_mode_hint": "consumer_read_path",
@@ -539,7 +539,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ],
         "stronger_refs": [
             "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
             "Tree-of-Sophia/docs/NODE_CONTRACT.md",
             "Tree-of-Sophia/examples/source_node.example.json",
         ],
@@ -554,7 +554,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ],
         "reentry_note": (
             "KAG may prepare bounded guidance, but when the next move becomes "
-            "memory writeback, Agon-shaped memory readiness, or canon mutation "
+            "memory writeback, memory readiness, or canon mutation "
             "the caller must return to the owner surface instead of extending "
             "derived synthesis."
         ),

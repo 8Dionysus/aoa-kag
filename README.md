@@ -116,7 +116,7 @@ If neighboring donor repositories are not checked out beside `aoa-kag`, set the 
 
 For `Tree-of-Sophia`, the live spine still starts from source-owned tiny-export posture. The downstream `aoa-kag` adjunct appears only after the source-owned tiny-entry handoff, so derived retrieval never silently replaces ToS authority.
 
-`aoa-memo` also publishes a source-owned bridge-bearing donor export for readiness, and `docs/PRE_AGON_MEMORY_READINESS.md` is the memo-owned boundary for future Agon-shaped scar, retention, and live-ledger pressure. The live spine intentionally stays narrower than that wider bridge horizon.
+`aoa-memo` also publishes a source-owned bridge-bearing donor export for readiness, and `docs/MEMORY_READINESS_BOUNDARY.md` is the memo-owned boundary for future durable-consequence, retention, and live-ledger pressure. The live spine intentionally stays narrower than that wider bridge horizon.
 
 ## License
 

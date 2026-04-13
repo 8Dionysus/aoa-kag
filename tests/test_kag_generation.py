@@ -316,7 +316,7 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
-    def test_return_regrounding_keeps_memo_pre_agon_boundary_owner_owned(self) -> None:
+    def test_return_regrounding_keeps_memo_memory_readiness_boundary_owner_owned(self) -> None:
         payload = kag_generation.build_return_regrounding_pack_payload(
             kag_generation.build_registry_payload()
         )
@@ -324,24 +324,24 @@ class KagGenerationTestCase(unittest.TestCase):
         modes_by_id = {mode["mode_id"]: mode for mode in payload["modes"]}
 
         self.assertEqual(
-            inputs_by_name["memo_pre_agon_readiness"],
+            inputs_by_name["memo_memory_readiness_boundary"],
             {
-                "name": "memo_pre_agon_readiness",
+                "name": "memo_memory_readiness_boundary",
                 "repo": "aoa-memo",
                 "role": "owner_contract",
-                "ref": "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+                "ref": "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
             },
         )
         self.assertIn(
-            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
             modes_by_id["handoff_guardrail_reentry"]["stronger_refs"],
         )
         self.assertIn(
-            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
             modes_by_id["owner_boundary_reentry"]["stronger_refs"],
         )
         self.assertNotIn(
-            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
             modes_by_id["source_export_reentry"]["stronger_refs"],
         )
         self.assertEqual(payload["bounded_output_contract"]["memory_truth_ownership"], "forbidden")
