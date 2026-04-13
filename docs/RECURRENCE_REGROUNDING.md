@@ -78,12 +78,14 @@ ontology merger, counterpart activation, or graph expansion.
 ### `handoff_guardrail_reentry`
 
 Use this mode when runtime-to-KAG handoff begins to overreach into routing,
-memory truth, proof, or canon authorship.
+memory truth, pre-Agon memory readiness, proof, or canon authorship.
 
 ### `owner_boundary_reentry`
 
 Use this mode when a caller reaches writeback, memory commitment, or
-canon-facing mutation.
+canon-facing mutation. It also applies when Agon-shaped scar, retention, or
+live memory-ledger pressure appears and the stronger answer belongs in
+`aoa-memo`.
 
 The KAG layer may prepare guidance, but it must stop at the owner boundary and
 point back to the stronger owner contract.
@@ -115,6 +117,8 @@ This wave does not:
 - activate `AOA-K-0008`
 - turn regrounding into routing policy
 - turn regrounding into memory writeback
+- turn pre-Agon memo readiness into KAG-owned scar, retention, or live-ledger
+  proof
 - turn regrounding into canon mutation
 
 ## Compact rule

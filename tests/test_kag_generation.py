@@ -316,6 +316,36 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_return_regrounding_keeps_memo_pre_agon_boundary_owner_owned(self) -> None:
+        payload = kag_generation.build_return_regrounding_pack_payload(
+            kag_generation.build_registry_payload()
+        )
+        inputs_by_name = {source["name"]: source for source in payload["source_inputs"]}
+        modes_by_id = {mode["mode_id"]: mode for mode in payload["modes"]}
+
+        self.assertEqual(
+            inputs_by_name["memo_pre_agon_readiness"],
+            {
+                "name": "memo_pre_agon_readiness",
+                "repo": "aoa-memo",
+                "role": "owner_contract",
+                "ref": "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            },
+        )
+        self.assertIn(
+            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            modes_by_id["handoff_guardrail_reentry"]["stronger_refs"],
+        )
+        self.assertIn(
+            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            modes_by_id["owner_boundary_reentry"]["stronger_refs"],
+        )
+        self.assertNotIn(
+            "aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md",
+            modes_by_id["source_export_reentry"]["stronger_refs"],
+        )
+        self.assertEqual(payload["bounded_output_contract"]["memory_truth_ownership"], "forbidden")
+
     def test_counterpart_federation_exposure_review_builder_keeps_stable_review_order(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         payload = kag_generation.build_counterpart_federation_exposure_review_payload(

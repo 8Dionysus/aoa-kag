@@ -81,6 +81,12 @@ clear owner boundary, prefer a bounded regrounding return through
 `generated/return_regrounding_pack.min.json` rather than a wider KAG-authored
 continuation.
 
+When the pressure is Agon-shaped memory readiness, including scar, retention, or
+live memory-ledger questions, the stronger owner ref is
+`aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md`. KAG may return that ref, but it
+must not turn the handoff into scar proof, retention policy, or live memory
+state.
+
 When `counterpart_refs` are returned in the current wave, they must stay
 contract-or-example refs through:
 
@@ -100,6 +106,8 @@ remains planned.
 - direct canon authorship from a KAG handoff is forbidden
 - recurrence at this layer means regrounding back to stronger refs, not taking
   ownership of the next layer's decision
+- pre-Agon memory readiness, scar, retention, and live-ledger pressure return to
+  `aoa-memo`; they do not become KAG graph or routing readiness
 
 This preserves the current law of the layer:
 

@@ -29,6 +29,12 @@ donor export, but its `consumed_by` list is intentionally empty in this wave.
 That keeps the donor contract explicit without pretending the live generated KAG
 surfaces already consume it.
 
+`aoa-memo/docs/PRE_AGON_MEMORY_READINESS.md` is a stronger memo-owned boundary
+for future Agon-shaped scar, retention, recall, and live-ledger pressure. KAG
+may point back to that owner ref from regrounding surfaces, but it must not treat
+the memo donor export as scar proof, retention proof, live memory-ledger
+readiness, graph truth, or routing activation.
+
 Those dependencies are declared in
 `manifests/source_owned_export_dependencies.json`.
 
@@ -39,6 +45,8 @@ the spine and downstream routing.
 
 They also anchor the first `source_export_reentry` mode in
 `generated/return_regrounding_pack.min.json`.
+Memo pre-Agon readiness is deliberately not part of that source-export reentry
+mode while the memo donor stays registry-visible only.
 
 ## What the contract keeps
 
