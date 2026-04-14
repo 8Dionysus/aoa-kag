@@ -807,6 +807,10 @@ EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES = [
 ]
 EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
     {
+        "relation_type": "source_memory_object",
+        "target_ref": "examples/bridge.kag-lift.example.json",
+    },
+    {
         "relation_type": "supported_by_claim",
         "target_ref": "examples/claim.tos-bridge-ready.example.json",
     },
@@ -817,6 +821,10 @@ EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
     {
         "relation_type": "points_to_tos_fragment",
         "target_ref": "repo:Tree-of-Sophia/docs/CONTEXT_COMPOST.md#memory-bridge-fragment",
+    },
+    {
+        "relation_type": "provenance_thread",
+        "target_ref": "examples/provenance_thread.kag-lift.example.json",
     },
 ]
 EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
@@ -7061,7 +7069,7 @@ def validate_optional_memo_source_owned_export_readiness() -> None:
     if direct_relations != EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS:
         fail(
             "optional aoa-memo source-owned export readiness direct_relations must "
-            "keep the claim/episode/ToS trio"
+            "keep the source/claim/episode/ToS/provenance set"
         )
     for index, relation in enumerate(direct_relations):
         resolve_source_owned_export_ref(
