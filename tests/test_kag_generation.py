@@ -316,6 +316,15 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_kag_maturity_governance_builder_matches_generated_outputs(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        self.assert_builder_matches_generated(
+            kag_generation.build_kag_maturity_governance_payload,
+            kag_generation.KAG_MATURITY_GOVERNANCE_OUTPUT_PATH,
+            kag_generation.KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH,
+            registry_payload=registry_payload,
+        )
+
     def test_return_regrounding_keeps_memo_memory_readiness_boundary_owner_owned(self) -> None:
         payload = kag_generation.build_return_regrounding_pack_payload(
             kag_generation.build_registry_payload()
@@ -345,6 +354,49 @@ class KagGenerationTestCase(unittest.TestCase):
             modes_by_id["source_export_reentry"]["stronger_refs"],
         )
         self.assertEqual(payload["bounded_output_contract"]["memory_truth_ownership"], "forbidden")
+
+    def test_kag_maturity_governance_builder_keeps_stop_rule_and_recovery_modes_stable(self) -> None:
+        payload = kag_generation.build_kag_maturity_governance_payload(
+            kag_generation.build_registry_payload()
+        )
+        surfaces_by_id = {
+            surface["surface_id"]: surface for surface in payload["surfaces"]
+        }
+
+        self.assertEqual(
+            [tier["tier"] for tier in payload["stability_tiers"]],
+            [
+                "planned_contract_only",
+                "experimental_derived",
+                "consumer_stable",
+            ],
+        )
+        self.assertEqual(
+            payload["projection_recovery"]["mode_refs"],
+            [
+                "source_export_reentry",
+                "bridge_axis_reentry",
+                "projection_boundary_reentry",
+                "handoff_guardrail_reentry",
+                "owner_boundary_reentry",
+            ],
+        )
+        self.assertEqual(
+            payload["stop_rule"]["blocked_surface_ids"],
+            ["AOA-K-0008"],
+        )
+        self.assertEqual(
+            surfaces_by_id["AOA-K-0008"]["stability_tier"],
+            "planned_contract_only",
+        )
+        self.assertEqual(
+            surfaces_by_id["AOA-K-0009"]["stability_tier"],
+            "experimental_derived",
+        )
+        self.assertEqual(
+            surfaces_by_id["AOA-K-0001"]["stability_tier"],
+            "consumer_stable",
+        )
 
     def test_counterpart_federation_exposure_review_builder_keeps_stable_review_order(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
@@ -451,6 +503,24 @@ class KagGenerationTestCase(unittest.TestCase):
 
         self.assertIn("AOA-K-0008", str(context.exception))
         self.assertIn("planned", str(context.exception))
+
+    def test_kag_maturity_governance_requires_tier_status_alignment(self) -> None:
+        manifest = load_json(kag_generation.KAG_MATURITY_GOVERNANCE_MANIFEST_PATH)
+        assert isinstance(manifest, dict)
+        broken_manifest = copy.deepcopy(manifest)
+        broken_manifest["surface_governance"][0]["stability_tier"] = "planned_contract_only"
+
+        with self.patched_read_json(
+            {
+                kag_generation.KAG_MATURITY_GOVERNANCE_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_kag_maturity_governance_payload(
+                    kag_generation.build_registry_payload()
+                )
+
+        self.assertIn("does not match tier", str(context.exception))
 
     def test_counterpart_consumer_contract_requires_review_ref(self) -> None:
         contract_example = load_json(

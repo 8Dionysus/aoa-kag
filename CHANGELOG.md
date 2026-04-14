@@ -7,6 +7,14 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+### Added
+
+- manifest-backed KAG maturity governance surface covering stability tiers, owner wait states, proof expectations, and the current stop-rule for new `AOA-K-*` growth
+
+### Changed
+
+- tightened README and roadmap posture so the current pause threshold is explicit: maintain and prove the existing surface set while neighboring owner layers mature
+
 ## [0.2.0] - 2026-04-10
 
 ### Summary

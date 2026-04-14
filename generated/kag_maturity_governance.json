@@ -1,0 +1,479 @@
+{
+  "pack_version": 1,
+  "pack_type": "kag_maturity_governance",
+  "source_manifest_ref": "manifests/kag_maturity_governance.json",
+  "source_inputs": [
+    {
+      "name": "maturity_governance_doc",
+      "repo": "aoa-kag",
+      "role": "governance_doc",
+      "ref": "docs/KAG_MATURITY_GOVERNANCE.md"
+    },
+    {
+      "name": "owner_wait_states_doc",
+      "repo": "aoa-kag",
+      "role": "wait_state_doc",
+      "ref": "docs/KAG_OWNER_WAIT_STATES.md"
+    },
+    {
+      "name": "proof_expectations_doc",
+      "repo": "aoa-kag",
+      "role": "proof_expectations_doc",
+      "ref": "docs/KAG_PROOF_EXPECTATIONS.md"
+    },
+    {
+      "name": "maturity_hardening_decision",
+      "repo": "aoa-kag",
+      "role": "decision_note",
+      "ref": "docs/decisions/2026-04-13-kag-maturity-hardening.md"
+    },
+    {
+      "name": "kag_registry_manifest",
+      "repo": "aoa-kag",
+      "role": "registry_manifest",
+      "ref": "manifests/kag_registry.json"
+    },
+    {
+      "name": "federation_export_registry_manifest",
+      "repo": "aoa-kag",
+      "role": "activation_manifest",
+      "ref": "manifests/federation_export_registry.json"
+    },
+    {
+      "name": "return_regrounding_manifest",
+      "repo": "aoa-kag",
+      "role": "reentry_manifest",
+      "ref": "manifests/return_regrounding_pack.json"
+    },
+    {
+      "name": "projection_health_receipt_schema",
+      "repo": "aoa-kag",
+      "role": "stress_schema",
+      "ref": "schemas/projection_health_receipt_v1.json"
+    },
+    {
+      "name": "regrounding_ticket_schema",
+      "repo": "aoa-kag",
+      "role": "recovery_schema",
+      "ref": "schemas/regrounding_ticket_v1.json"
+    }
+  ],
+  "stability_tier_count": 3,
+  "stability_tiers": [
+    {
+      "tier": "planned_contract_only",
+      "registry_statuses": [
+        "planned"
+      ],
+      "consumer_posture": "contracts_and_review_only",
+      "expansion_posture": "blocked_until_owner_and_proof_strengthen",
+      "live_payload_allowed": false
+    },
+    {
+      "tier": "experimental_derived",
+      "registry_statuses": [
+        "experimental"
+      ],
+      "consumer_posture": "review_gated_source_first",
+      "expansion_posture": "deepen_current_surfaces_before_new_families",
+      "live_payload_allowed": true
+    },
+    {
+      "tier": "consumer_stable",
+      "registry_statuses": [
+        "active"
+      ],
+      "consumer_posture": "stable_source_first",
+      "expansion_posture": "maintain_and_harden_only",
+      "live_payload_allowed": true
+    }
+  ],
+  "surface_count": 11,
+  "surfaces": [
+    {
+      "surface_id": "AOA-K-0001",
+      "surface_name": "technique-section-lift",
+      "registry_status": "active",
+      "source_repos": [
+        "aoa-techniques"
+      ],
+      "derived_kind": "section_manifest",
+      "stability_tier": "consumer_stable",
+      "consumer_posture": "stable_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "source_export_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_anchor_loss_or_owner_drift",
+      "stop_rule": "maintain_only",
+      "proof_gap_note": "Dedicated technique-section lift proof remains bundled through broader local-text contract fit."
+    },
+    {
+      "surface_id": "AOA-K-0002",
+      "surface_name": "metadata-spine-projection",
+      "registry_status": "active",
+      "source_repos": [
+        "aoa-techniques"
+      ],
+      "derived_kind": "metadata_spine",
+      "stability_tier": "consumer_stable",
+      "consumer_posture": "stable_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "source_export_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_anchor_loss_or_owner_drift",
+      "stop_rule": "maintain_only",
+      "proof_gap_note": "Dedicated metadata-spine owner-fit proof remains indirect rather than surface-specific."
+    },
+    {
+      "surface_id": "AOA-K-0003",
+      "surface_name": "bounded-relation-view",
+      "registry_status": "active",
+      "source_repos": [
+        "aoa-techniques"
+      ],
+      "derived_kind": "relation_view",
+      "stability_tier": "consumer_stable",
+      "consumer_posture": "stable_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md",
+        "aoa-evals/bundles/aoa-candidate-lineage-integrity/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "source_export_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_anchor_loss_or_owner_drift",
+      "stop_rule": "maintain_only",
+      "proof_gap_note": "Direct proof that lifted relation hints never widen into graph semantics remains indirect."
+    },
+    {
+      "surface_id": "AOA-K-0004",
+      "surface_name": "provenance-note-view",
+      "registry_status": "active",
+      "source_repos": [
+        "aoa-techniques"
+      ],
+      "derived_kind": "provenance_view",
+      "stability_tier": "consumer_stable",
+      "consumer_posture": "stable_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "source_export_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_anchor_loss_or_owner_drift",
+      "stop_rule": "maintain_only",
+      "proof_gap_note": "Dedicated provenance-note recall proof remains indirect."
+    },
+    {
+      "surface_id": "AOA-K-0005",
+      "surface_name": "tos-text-chunk-map",
+      "registry_status": "experimental",
+      "source_repos": [
+        "Tree-of-Sophia"
+      ],
+      "derived_kind": "chunk_map",
+      "stability_tier": "experimental_derived",
+      "consumer_posture": "review_gated_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "bridge_axis_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_drift_or_consumer_overreach",
+      "stop_rule": "deepen_proof_and_consumer_discipline_before_growth",
+      "proof_gap_note": "Chunk-segmentation-specific proof remains to be sharpened."
+    },
+    {
+      "surface_id": "AOA-K-0006",
+      "surface_name": "cross-source-node-projection",
+      "registry_status": "experimental",
+      "source_repos": [
+        "aoa-techniques",
+        "Tree-of-Sophia"
+      ],
+      "derived_kind": "node_projection",
+      "stability_tier": "experimental_derived",
+      "consumer_posture": "review_gated_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md",
+        "aoa-evals/bundles/aoa-candidate-lineage-integrity/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "projection_boundary_reentry",
+        "source_export_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_drift_or_consumer_overreach",
+      "stop_rule": "deepen_proof_and_consumer_discipline_before_growth",
+      "proof_gap_note": "Direct proof of non-identity projection discipline at the KAG layer remains thin."
+    },
+    {
+      "surface_id": "AOA-K-0007",
+      "surface_name": "tos-retrieval-axis-surface",
+      "registry_status": "experimental",
+      "source_repos": [
+        "Tree-of-Sophia",
+        "aoa-memo"
+      ],
+      "derived_kind": "retrieval_surface",
+      "stability_tier": "experimental_derived",
+      "consumer_posture": "review_gated_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md",
+        "aoa-evals/bundles/aoa-memo-recall-integrity/EVAL.md",
+        "aoa-evals/bundles/aoa-memo-contradiction-integrity/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "bridge_axis_reentry",
+        "handoff_guardrail_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_drift_or_consumer_overreach",
+      "stop_rule": "deepen_proof_and_consumer_discipline_before_growth",
+      "proof_gap_note": "Dedicated proof for bridge-axis fidelity across larger ToS families remains open."
+    },
+    {
+      "surface_id": "AOA-K-0008",
+      "surface_name": "counterpart-edge-view",
+      "registry_status": "planned",
+      "source_repos": [
+        "Tree-of-Sophia",
+        "aoa-techniques",
+        "aoa-playbooks",
+        "aoa-evals"
+      ],
+      "derived_kind": "edge_projection",
+      "stability_tier": "planned_contract_only",
+      "consumer_posture": "contract_only_review_gated",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md",
+        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md",
+        "aoa-evals/bundles/aoa-stress-recovery-window/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "projection_boundary_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "remain_contract_only_until_live_gate",
+      "stop_rule": "blocked_until_owner_exports_and_proof_lanes_strengthen",
+      "proof_gap_note": "A dedicated counterpart non-identity proof lane is still missing."
+    },
+    {
+      "surface_id": "AOA-K-0009",
+      "surface_name": "federation-readiness-spine",
+      "registry_status": "experimental",
+      "source_repos": [
+        "aoa-techniques",
+        "Tree-of-Sophia"
+      ],
+      "derived_kind": "metadata_spine",
+      "stability_tier": "experimental_derived",
+      "consumer_posture": "review_gated_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md",
+        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "source_export_reentry",
+        "handoff_guardrail_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_drift_or_consumer_overreach",
+      "stop_rule": "deepen_proof_and_consumer_discipline_before_growth",
+      "proof_gap_note": "Wider donor activation proof remains open."
+    },
+    {
+      "surface_id": "AOA-K-0010",
+      "surface_name": "tos-zarathustra-route-pack",
+      "registry_status": "experimental",
+      "source_repos": [
+        "Tree-of-Sophia"
+      ],
+      "derived_kind": "node_projection",
+      "stability_tier": "experimental_derived",
+      "consumer_posture": "review_gated_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "bridge_axis_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_drift_or_consumer_overreach",
+      "stop_rule": "deepen_proof_and_consumer_discipline_before_growth",
+      "proof_gap_note": "Route-pack-specific relation fidelity proof remains open."
+    },
+    {
+      "surface_id": "AOA-K-0011",
+      "surface_name": "tos-zarathustra-route-retrieval-surface",
+      "registry_status": "experimental",
+      "source_repos": [
+        "Tree-of-Sophia"
+      ],
+      "derived_kind": "retrieval_surface",
+      "stability_tier": "experimental_derived",
+      "consumer_posture": "review_gated_source_first",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md",
+        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "bridge_axis_reentry",
+        "source_export_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "quarantine_on_drift_or_consumer_overreach",
+      "stop_rule": "deepen_proof_and_consumer_discipline_before_growth",
+      "proof_gap_note": "Adjunct-subordination proof under downstream consumer use remains open."
+    }
+  ],
+  "owner_wait_state_count": 9,
+  "owner_wait_states": [
+    {
+      "owner_repo": "aoa-techniques",
+      "current_kag_posture": "Source-owned tiny export and active technique lift surfaces may stay live.",
+      "waits_for": [
+        "source-owned export tiers beyond the current tiny donor surface",
+        "owner-declared downstream need for a wider derived substrate slice"
+      ],
+      "forbidden_inference": "Do not infer that active technique lift surfaces authorize a wider cross-repo federation graph."
+    },
+    {
+      "owner_repo": "Tree-of-Sophia",
+      "current_kag_posture": "Source-owned tiny export plus AOA-K-0005, AOA-K-0007, AOA-K-0010, and AOA-K-0011 may stay live only as source-first derivatives.",
+      "waits_for": [
+        "additional source-owned export slices beyond the Zarathustra pilot",
+        "owner-declared canonical route families that need new derived handling"
+      ],
+      "forbidden_inference": "Do not infer that one live ToS pilot authorizes KAG to replace Tree-of-Sophia authority."
+    },
+    {
+      "owner_repo": "aoa-memo",
+      "current_kag_posture": "Registry-visible donor and supporting bridge inputs may stay present while memory truth and writeback remain owner-owned.",
+      "waits_for": [
+        "memo-owned durable-consequence or recall contracts that explicitly request a new derived surface",
+        "owner proof that future retention or live-ledger pressure is ready for KAG consumption"
+      ],
+      "forbidden_inference": "Do not infer registry visibility as memo routing, writeback, or live-ledger readiness."
+    },
+    {
+      "owner_repo": "aoa-evals",
+      "current_kag_posture": "Proof anchors may be named, but proof verdicts remain outside KAG.",
+      "waits_for": [
+        "dedicated proof bundles for current KAG proof gaps",
+        "portable verdict contracts that strengthen a waiting surface without moving proof ownership"
+      ],
+      "forbidden_inference": "Do not infer named proof anchors as proof completion."
+    },
+    {
+      "owner_repo": "aoa-playbooks",
+      "current_kag_posture": "Playbooks may appear only as supporting refs in planned or guarded surfaces.",
+      "waits_for": [
+        "source-owned playbook export with explicit provenance handles",
+        "owner-declared scenario contract that needs a bounded derived substrate view"
+      ],
+      "forbidden_inference": "Do not infer supporting playbook inputs as KAG ownership of scenario composition."
+    },
+    {
+      "owner_repo": "aoa-agents",
+      "current_kag_posture": "Role contracts may be referenced at the boundary, but no live agent-derived substrate surface is owed yet.",
+      "waits_for": [
+        "source-owned agent contract exports suitable for derived linking",
+        "reviewed consumer need that stays agent-contract-first"
+      ],
+      "forbidden_inference": "Do not infer agent mention or boundary docs as license for hidden actor modeling in KAG."
+    },
+    {
+      "owner_repo": "aoa-skills",
+      "current_kag_posture": "Skill surfaces may inform ingress or guard posture, not live KAG growth.",
+      "waits_for": [
+        "source-owned skill export or contract with explicit downstream substrate need",
+        "owner-declared reusable substrate slice that remains skill-owned"
+      ],
+      "forbidden_inference": "Do not infer skill invocation posture as KAG ownership of execution workflows."
+    },
+    {
+      "owner_repo": "aoa-routing",
+      "current_kag_posture": "Routing may consume bounded KAG outputs, but routing truth stays outside the substrate.",
+      "waits_for": [
+        "routing-owned entry ABI growth that explicitly names a new KAG consumer contract",
+        "owner-declared downstream route packs that cannot reuse the current spine or adjuncts"
+      ],
+      "forbidden_inference": "Do not infer routability from registry visibility alone."
+    },
+    {
+      "owner_repo": "aoa-stats",
+      "current_kag_posture": "Derived observability may report on KAG health but cannot authorize new substrate families.",
+      "waits_for": [
+        "stats-owned observability contract that clearly requires a new KAG feed",
+        "reviewed evidence that current KAG recovery surfaces are insufficient"
+      ],
+      "forbidden_inference": "Do not infer monitoring coverage as semantic ownership or proof."
+    }
+  ],
+  "stop_rule": {
+    "new_surface_growth": "paused_by_default",
+    "current_program": "stabilize_existing_aoa_k_surfaces",
+    "resume_when": [
+      "a neighboring owner repo publishes a stronger source-owned export or contract that clearly needs a new derived substrate surface",
+      "aoa-evals adds proof lanes that materially reduce current proof gaps for a waiting family",
+      "a live consumer contract cannot be satisfied by the current surface set without blurring boundaries"
+    ],
+    "blocked_surface_ids": [
+      "AOA-K-0008"
+    ],
+    "pause_threshold": "No new AOA-K surfaces until owner-layer growth creates a real contract need."
+  },
+  "projection_recovery": {
+    "stress_receipt_schema_ref": "schemas/projection_health_receipt_v1.json",
+    "regrounding_ticket_schema_ref": "schemas/regrounding_ticket_v1.json",
+    "stress_doc_ref": "docs/KAG_STRESS_REGROUNDING.md",
+    "quarantine_doc_ref": "docs/KAG_PROJECTION_QUARANTINE.md",
+    "regrounding_pack_ref": "generated/return_regrounding_pack.min.json",
+    "health_states": [
+      "healthy",
+      "degraded",
+      "quarantined"
+    ],
+    "mode_refs": [
+      "source_export_reentry",
+      "bridge_axis_reentry",
+      "projection_boundary_reentry",
+      "handoff_guardrail_reentry",
+      "owner_boundary_reentry"
+    ],
+    "quarantine_triggers": [
+      "source anchor loss",
+      "owner-fit uncertainty",
+      "projection overreach",
+      "repeated failed regrounding"
+    ],
+    "quarantine_exit_requirements": [
+      "fresh source-owned or owner-owned refs are reattached",
+      "one named regrounding mode is selected",
+      "projection health receipt or regrounding ticket is updated with reviewed evidence"
+    ]
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "memory_truth_ownership": "forbidden",
+    "proof_ownership": "forbidden",
+    "new_surface_growth": "paused_by_owner_need",
+    "quarantine_shortcuts": "forbidden"
+  }
+}

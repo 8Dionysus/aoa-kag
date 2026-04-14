@@ -13,6 +13,7 @@ Use the shortest route by need:
 - role, model, and source-first posture: [CHARTER](CHARTER.md), [docs/KAG_MODEL](docs/KAG_MODEL.md), [docs/BOUNDARIES](docs/BOUNDARIES.md), and [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md)
 - one current bounded consumer path: [docs/CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md), [docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK](docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md), and [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md)
 - source-owned dependencies, bridge posture, and regrounding: [docs/SOURCE_OWNED_EXPORT_DEPENDENCIES](docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md), [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md), [docs/RECURRENCE_REGROUNDING](docs/RECURRENCE_REGROUNDING.md), [docs/BOUNDARIES](docs/BOUNDARIES.md), and [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md)
+- maturity governance, owner wait states, and proof lanes: [docs/KAG_MATURITY_GOVERNANCE](docs/KAG_MATURITY_GOVERNANCE.md), [docs/KAG_OWNER_WAIT_STATES](docs/KAG_OWNER_WAIT_STATES.md), [docs/KAG_PROOF_EXPECTATIONS](docs/KAG_PROOF_EXPECTATIONS.md), and `generated/kag_maturity_governance.min.json`
 - additive stress and quarantine doctrine: [docs/KAG_STRESS_REGROUNDING](docs/KAG_STRESS_REGROUNDING.md) and [docs/KAG_PROJECTION_QUARANTINE](docs/KAG_PROJECTION_QUARANTINE.md)
 - federation and counterpart surfaces: [docs/COUNTERPART_CONSUMER_CONTRACT](docs/COUNTERPART_CONSUMER_CONTRACT.md), [docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW](docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md), [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md), [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md), and [docs/COUNTERPART_EDGE_CONTRACTS](docs/COUNTERPART_EDGE_CONTRACTS.md)
 - current derived pilots: [docs/TECHNIQUE_LIFT_PACK](docs/TECHNIQUE_LIFT_PACK.md), [docs/TOS_TEXT_CHUNK_MAP](docs/TOS_TEXT_CHUNK_MAP.md), [docs/TOS_RETRIEVAL_AXIS_PACK](docs/TOS_RETRIEVAL_AXIS_PACK.md), [docs/REASONING_HANDOFF_PACK](docs/REASONING_HANDOFF_PACK.md), [docs/TOS_ZARATHUSTRA_ROUTE_PACK](docs/TOS_ZARATHUSTRA_ROUTE_PACK.md), [docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK](docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md), [docs/CROSS_SOURCE_NODE_PROJECTION](docs/CROSS_SOURCE_NODE_PROJECTION.md), and [docs/TOS_RAW_TABLE_INTAKE_STUB](docs/TOS_RAW_TABLE_INTAKE_STUB.md)
@@ -23,6 +24,7 @@ Use the shortest route by need:
 
 - registry and substrate projections: `generated/kag_registry.json`, `generated/kag_registry.min.json`, and `manifests/kag_registry.json`
 - manifest-driven donor and ToS lift packs: `generated/technique_lift_pack*.json`, `generated/tos_text_chunk_map*.json`, `generated/tos_retrieval_axis_pack*.json`, `generated/tos_zarathustra_route_pack*.json`, `generated/tos_zarathustra_route_retrieval_pack*.json`, and the matching `manifests/*.json`
+- maturity stop-rule and wait-state surface: `generated/kag_maturity_governance*.json`, `manifests/kag_maturity_governance.json`, [docs/KAG_MATURITY_GOVERNANCE](docs/KAG_MATURITY_GOVERNANCE.md), [docs/KAG_OWNER_WAIT_STATES](docs/KAG_OWNER_WAIT_STATES.md), and [docs/KAG_PROOF_EXPECTATIONS](docs/KAG_PROOF_EXPECTATIONS.md)
 - reasoning, return, and federation bridge surfaces: `generated/reasoning_handoff_pack*.json`, `generated/return_regrounding_pack*.json`, `generated/federation_spine*.json`, `generated/counterpart_federation_exposure_review*.json`, and [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md)
 - additive projection-health and regrounding adjuncts: `schemas/projection_health_receipt_v1.json`, `schemas/regrounding_ticket_v1.json`, `examples/projection_health_receipt.example.json`, `examples/regrounding_ticket.example.json`, [docs/KAG_STRESS_REGROUNDING](docs/KAG_STRESS_REGROUNDING.md), and [docs/KAG_PROJECTION_QUARANTINE](docs/KAG_PROJECTION_QUARANTINE.md)
 - via negativa pruning checklist: [docs/VIA_NEGATIVA_CHECKLIST](docs/VIA_NEGATIVA_CHECKLIST.md)
@@ -61,6 +63,7 @@ The committed public surfaces group into these families:
 - registry and core substrate: `generated/kag_registry.json` and `generated/kag_registry.min.json`
 - manifest-driven lift packs: `generated/technique_lift_pack*.json`, `manifests/technique_lift_pack.json`, and [docs/TECHNIQUE_LIFT_PACK.md](docs/TECHNIQUE_LIFT_PACK.md)
 - ToS-derived packs: `generated/tos_text_chunk_map*.json`, `generated/tos_retrieval_axis_pack*.json`, `generated/tos_zarathustra_route_pack*.json`, and `generated/tos_zarathustra_route_retrieval_pack*.json`
+- maturity governance and stop-rule surface: `generated/kag_maturity_governance*.json`, `manifests/kag_maturity_governance.json`, [docs/KAG_MATURITY_GOVERNANCE.md](docs/KAG_MATURITY_GOVERNANCE.md), [docs/KAG_OWNER_WAIT_STATES.md](docs/KAG_OWNER_WAIT_STATES.md), and [docs/KAG_PROOF_EXPECTATIONS.md](docs/KAG_PROOF_EXPECTATIONS.md)
 - reasoning, return, and federation seams: `generated/reasoning_handoff_pack*.json`, `generated/return_regrounding_pack*.json`, `generated/federation_spine*.json`, and the federation export / counterpart review families
 - additive stress and quarantine adjuncts: `schemas/projection_health_receipt_v1.json`, `schemas/regrounding_ticket_v1.json`, `examples/projection_health_receipt.example.json`, `examples/regrounding_ticket.example.json`, [docs/KAG_STRESS_REGROUNDING.md](docs/KAG_STRESS_REGROUNDING.md), and [docs/KAG_PROJECTION_QUARANTINE.md](docs/KAG_PROJECTION_QUARANTINE.md)
 - tiny consumer and cross-source adjuncts: `generated/tiny_consumer_bundle*.json` and `generated/cross_source_node_projection*.json`
@@ -112,11 +115,13 @@ If neighboring donor repositories are not checked out beside `aoa-kag`, set the 
 
 ## Current contour
 
-`aoa-kag` remains intentionally bounded. The public baseline now includes manifest-driven lift packs, ToS-derived chunk and route packs, a multi-source reasoning handoff pack, a bounded recurrence regrounding pack, a federation spine pilot, and one bounded cross-source projection without pretending the repository is already a full graph engine.
+`aoa-kag` remains intentionally bounded. The public baseline now includes manifest-driven lift packs, ToS-derived chunk and route packs, a multi-source reasoning handoff pack, a bounded recurrence regrounding pack, a maturity-governance stop-rule pack, a federation spine pilot, and one bounded cross-source projection without pretending the repository is already a full graph engine.
 
 For `Tree-of-Sophia`, the live spine still starts from source-owned tiny-export posture. The downstream `aoa-kag` adjunct appears only after the source-owned tiny-entry handoff, so derived retrieval never silently replaces ToS authority.
 
 `aoa-memo` also publishes a source-owned bridge-bearing donor export for readiness, and `docs/MEMORY_READINESS_BOUNDARY.md` is the memo-owned boundary for future durable-consequence, retention, and live-ledger pressure. The live spine intentionally stays narrower than that wider bridge horizon.
+
+The current pause posture is explicit now: maintain and prove the existing `AOA-K-*` set, keep `AOA-K-0008` contract-only, and wait for neighboring owner layers to publish stronger source-owned exports, contracts, or proof lanes before widening the substrate.
 
 ## License
 

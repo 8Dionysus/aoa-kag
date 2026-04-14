@@ -533,6 +533,44 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("duplicated", str(context.exception))
 
+    def test_kag_maturity_governance_manifest_rejects_owner_wait_state_order_drift(self) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        manifest_payload = load_json(validate_kag.KAG_MATURITY_GOVERNANCE_MANIFEST_PATH)
+        assert isinstance(manifest_payload, dict)
+        broken_manifest = copy.deepcopy(manifest_payload)
+        broken_manifest["owner_wait_states"] = list(
+            reversed(broken_manifest["owner_wait_states"])
+        )
+
+        with self.patched_read_json(
+            {
+                validate_kag.KAG_MATURITY_GOVERNANCE_MANIFEST_PATH: broken_manifest,
+            }
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_kag_maturity_governance_manifest(
+                    registry_surfaces
+                )
+
+        self.assertIn("owner_wait_states", str(context.exception))
+
+    def test_kag_maturity_governance_pack_rejects_unblocked_growth(self) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        expected_payload = validate_kag.build_kag_maturity_governance_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["stop_rule"]["blocked_surface_ids"] = []
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_kag_maturity_governance_pack(
+                broken_payload,
+                expected_payload,
+                registry_surfaces,
+            )
+
+        self.assertIn("blocked_surface_ids", str(context.exception))
+
     def test_optional_memo_export_readiness_allows_missing_root(self) -> None:
         missing_root = REPO_ROOT / ".tmp" / "missing-aoa-memo-export"
 

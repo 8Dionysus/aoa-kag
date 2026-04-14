@@ -1,0 +1,106 @@
+{
+  "pack_version": 1,
+  "pack_type": "kag_maturity_governance",
+  "source_manifest_ref": "manifests/kag_maturity_governance.json",
+  "source_inputs": [
+    {
+      "name": "maturity_governance_doc",
+      "repo": "aoa-kag",
+      "role": "governance_doc",
+      "ref": "docs/KAG_MATURITY_GOVERNANCE.md"
+    }
+  ],
+  "stability_tier_count": 1,
+  "stability_tiers": [
+    {
+      "tier": "planned_contract_only",
+      "registry_statuses": [
+        "planned"
+      ],
+      "consumer_posture": "contracts_and_review_only",
+      "expansion_posture": "blocked_until_owner_and_proof_strengthen",
+      "live_payload_allowed": false
+    }
+  ],
+  "surface_count": 1,
+  "surfaces": [
+    {
+      "surface_id": "AOA-K-0008",
+      "surface_name": "counterpart-edge-view",
+      "registry_status": "planned",
+      "source_repos": [
+        "Tree-of-Sophia",
+        "aoa-techniques",
+        "aoa-playbooks",
+        "aoa-evals"
+      ],
+      "derived_kind": "edge_projection",
+      "stability_tier": "planned_contract_only",
+      "consumer_posture": "contract_only_review_gated",
+      "proof_expectation_refs": [
+        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md",
+        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md"
+      ],
+      "regrounding_mode_refs": [
+        "projection_boundary_reentry",
+        "owner_boundary_reentry"
+      ],
+      "quarantine_policy": "remain_contract_only_until_live_gate",
+      "stop_rule": "blocked_until_owner_exports_and_proof_lanes_strengthen",
+      "proof_gap_note": "A dedicated counterpart non-identity proof lane is still missing."
+    }
+  ],
+  "owner_wait_state_count": 1,
+  "owner_wait_states": [
+    {
+      "owner_repo": "aoa-playbooks",
+      "current_kag_posture": "Playbooks may appear only as supporting refs in planned or guarded surfaces.",
+      "waits_for": [
+        "source-owned playbook export with explicit provenance handles"
+      ],
+      "forbidden_inference": "Do not infer supporting playbook inputs as KAG ownership of scenario composition."
+    }
+  ],
+  "stop_rule": {
+    "new_surface_growth": "paused_by_default",
+    "current_program": "stabilize_existing_aoa_k_surfaces",
+    "resume_when": [
+      "a neighboring owner repo publishes a stronger source-owned export or contract that clearly needs a new derived substrate surface"
+    ],
+    "blocked_surface_ids": [
+      "AOA-K-0008"
+    ],
+    "pause_threshold": "No new AOA-K surfaces until owner-layer growth creates a real contract need."
+  },
+  "projection_recovery": {
+    "stress_receipt_schema_ref": "schemas/projection_health_receipt_v1.json",
+    "regrounding_ticket_schema_ref": "schemas/regrounding_ticket_v1.json",
+    "stress_doc_ref": "docs/KAG_STRESS_REGROUNDING.md",
+    "quarantine_doc_ref": "docs/KAG_PROJECTION_QUARANTINE.md",
+    "regrounding_pack_ref": "generated/return_regrounding_pack.min.json",
+    "health_states": [
+      "healthy",
+      "degraded",
+      "quarantined"
+    ],
+    "mode_refs": [
+      "projection_boundary_reentry",
+      "owner_boundary_reentry"
+    ],
+    "quarantine_triggers": [
+      "projection overreach"
+    ],
+    "quarantine_exit_requirements": [
+      "one named regrounding mode is selected"
+    ]
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "memory_truth_ownership": "forbidden",
+    "proof_ownership": "forbidden",
+    "new_surface_growth": "paused_by_owner_need",
+    "quarantine_shortcuts": "forbidden"
+  }
+}

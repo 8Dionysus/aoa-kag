@@ -31,6 +31,9 @@ from kag_generation import (
     FEDERATION_SPINE_MANIFEST_PATH,
     FEDERATION_SPINE_MIN_OUTPUT_PATH,
     FEDERATION_SPINE_OUTPUT_PATH,
+    KAG_MATURITY_GOVERNANCE_MANIFEST_PATH,
+    KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH,
+    KAG_MATURITY_GOVERNANCE_OUTPUT_PATH,
     REGISTRY_MANIFEST_PATH,
     REGISTRY_MIN_OUTPUT_PATH,
     REGISTRY_OUTPUT_PATH,
@@ -93,6 +96,7 @@ from kag_generation import (
     build_counterpart_federation_exposure_review_payload,
     build_federation_export_registry_payload,
     build_federation_spine_payload,
+    build_kag_maturity_governance_payload,
     build_registry_payload,
     build_reasoning_handoff_pack_payload,
     build_return_regrounding_pack_payload,
@@ -204,6 +208,12 @@ RETURN_REGROUNDING_MANIFEST_SCHEMA_PATH = (
 RETURN_REGROUNDING_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "return-regrounding-pack.schema.json"
 )
+KAG_MATURITY_GOVERNANCE_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-maturity-governance-manifest.schema.json"
+)
+KAG_MATURITY_GOVERNANCE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-maturity-governance.schema.json"
+)
 SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "source-owned-export-dependencies.schema.json"
 )
@@ -246,6 +256,9 @@ TINY_CONSUMER_BUNDLE_EXAMPLE_PATH = (
 )
 RETURN_REGROUNDING_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "return_regrounding_pack.example.json"
+)
+KAG_MATURITY_GOVERNANCE_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "kag_maturity_governance.example.json"
 )
 KAG_STRESS_REGROUNDING_DOC_PATH = REPO_ROOT / "docs" / "KAG_STRESS_REGROUNDING.md"
 KAG_PROJECTION_QUARANTINE_DOC_PATH = REPO_ROOT / "docs" / "KAG_PROJECTION_QUARANTINE.md"
@@ -348,6 +361,99 @@ EXPECTED_RETURN_REGROUNDING_CONTRACT = {
     "canon_authorship": "forbidden",
     "counterpart_activation": "review_gated",
     "proof_ownership": "forbidden",
+}
+EXPECTED_KAG_MATURITY_GOVERNANCE_INPUTS = {
+    ("maturity_governance_doc", "aoa-kag", "docs/KAG_MATURITY_GOVERNANCE.md", "governance_doc"),
+    ("owner_wait_states_doc", "aoa-kag", "docs/KAG_OWNER_WAIT_STATES.md", "wait_state_doc"),
+    ("proof_expectations_doc", "aoa-kag", "docs/KAG_PROOF_EXPECTATIONS.md", "proof_expectations_doc"),
+    (
+        "maturity_hardening_decision",
+        "aoa-kag",
+        "docs/decisions/2026-04-13-kag-maturity-hardening.md",
+        "decision_note",
+    ),
+    ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
+    (
+        "federation_export_registry_manifest",
+        "aoa-kag",
+        "manifests/federation_export_registry.json",
+        "activation_manifest",
+    ),
+    (
+        "return_regrounding_manifest",
+        "aoa-kag",
+        "manifests/return_regrounding_pack.json",
+        "reentry_manifest",
+    ),
+    (
+        "projection_health_receipt_schema",
+        "aoa-kag",
+        "schemas/projection_health_receipt_v1.json",
+        "stress_schema",
+    ),
+    (
+        "regrounding_ticket_schema",
+        "aoa-kag",
+        "schemas/regrounding_ticket_v1.json",
+        "recovery_schema",
+    ),
+}
+EXPECTED_KAG_MATURITY_GOVERNANCE_INPUT_ORDER = [
+    "maturity_governance_doc",
+    "owner_wait_states_doc",
+    "proof_expectations_doc",
+    "maturity_hardening_decision",
+    "kag_registry_manifest",
+    "federation_export_registry_manifest",
+    "return_regrounding_manifest",
+    "projection_health_receipt_schema",
+    "regrounding_ticket_schema",
+]
+EXPECTED_KAG_MATURITY_GOVERNANCE_TIER_ORDER = [
+    "planned_contract_only",
+    "experimental_derived",
+    "consumer_stable",
+]
+EXPECTED_KAG_MATURITY_GOVERNANCE_TIER_STATUS_MAP = {
+    "planned_contract_only": (["planned"], False),
+    "experimental_derived": (["experimental"], True),
+    "consumer_stable": (["active"], True),
+}
+EXPECTED_KAG_MATURITY_GOVERNANCE_OWNER_WAIT_REPO_ORDER = [
+    "aoa-techniques",
+    TOS_REPO,
+    "aoa-memo",
+    "aoa-evals",
+    "aoa-playbooks",
+    "aoa-agents",
+    "aoa-skills",
+    "aoa-routing",
+    "aoa-stats",
+]
+EXPECTED_KAG_MATURITY_GOVERNANCE_MODE_ORDER = [
+    "source_export_reentry",
+    "bridge_axis_reentry",
+    "projection_boundary_reentry",
+    "handoff_guardrail_reentry",
+    "owner_boundary_reentry",
+]
+EXPECTED_KAG_MATURITY_GOVERNANCE_OUTPUT_PATHS = {
+    "full": "generated/kag_maturity_governance.json",
+    "min": "generated/kag_maturity_governance.min.json",
+}
+EXPECTED_KAG_MATURITY_GOVERNANCE_HEALTH_STATES = [
+    "healthy",
+    "degraded",
+    "quarantined",
+]
+EXPECTED_KAG_MATURITY_GOVERNANCE_CONTRACT = {
+    "source_trace_required": True,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "memory_truth_ownership": "forbidden",
+    "proof_ownership": "forbidden",
+    "new_surface_growth": "paused_by_owner_need",
+    "quarantine_shortcuts": "forbidden",
 }
 EXPECTED_RETURN_REGROUNDING_INPUTS = {
     ("boundaries_doc", "aoa-kag", "docs/BOUNDARIES.md", "boundary_doc"),
@@ -1488,6 +1594,20 @@ def validate_return_regrounding_schema_surface() -> None:
     validate_top_level_schema(
         RETURN_REGROUNDING_SCHEMA_PATH,
         "return regrounding pack",
+    )
+
+
+def validate_kag_maturity_governance_manifest_schema_surface() -> None:
+    validate_top_level_schema(
+        KAG_MATURITY_GOVERNANCE_MANIFEST_SCHEMA_PATH,
+        "KAG maturity governance manifest",
+    )
+
+
+def validate_kag_maturity_governance_schema_surface() -> None:
+    validate_top_level_schema(
+        KAG_MATURITY_GOVERNANCE_SCHEMA_PATH,
+        "KAG maturity governance pack",
     )
 
 
@@ -2958,6 +3078,324 @@ def validate_return_regrounding_manifest() -> None:
         fail("return regrounding manifest output_paths must match the committed generated output paths")
     if payload["bounded_output_contract"] != EXPECTED_RETURN_REGROUNDING_CONTRACT:
         fail("return regrounding manifest bounded_output_contract must match the current source-first guardrail")
+
+
+def validate_kag_maturity_governance_manifest(
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    payload = read_json(KAG_MATURITY_GOVERNANCE_MANIFEST_PATH)
+    if not isinstance(payload, dict):
+        fail("KAG maturity governance manifest must be a JSON object")
+
+    for key in (
+        "manifest_version",
+        "pack_type",
+        "source_inputs",
+        "stability_tiers",
+        "surface_governance",
+        "owner_wait_states",
+        "stop_rule",
+        "projection_recovery",
+        "output_paths",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"KAG maturity governance manifest is missing required key '{key}'")
+
+    if payload["manifest_version"] != 1:
+        fail("KAG maturity governance manifest manifest_version must equal 1")
+    if payload["pack_type"] != "kag_maturity_governance":
+        fail("KAG maturity governance manifest pack_type must equal 'kag_maturity_governance'")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("KAG maturity governance manifest source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    source_input_order: list[str] = []
+    seen_input_names: set[str] = set()
+    for index, source_input in enumerate(source_inputs):
+        location = f"KAG maturity governance manifest source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        path = source_input.get("path")
+        role = source_input.get("role")
+        if not all(isinstance(value, str) and value for value in (name, repo, path, role)):
+            fail(f"{location} must keep name, repo, path, and role")
+        if name in seen_input_names:
+            fail(f"{location} duplicates source input '{name}'")
+        seen_input_names.add(name)
+        source_input_order.append(name)
+        actual_source_inputs.add((name, repo, path, role))
+        resolve_known_ref(repo_ref(repo, path), label=location)
+    if actual_source_inputs != EXPECTED_KAG_MATURITY_GOVERNANCE_INPUTS:
+        fail("KAG maturity governance manifest source_inputs must match the current maturity donor set")
+    if source_input_order != EXPECTED_KAG_MATURITY_GOVERNANCE_INPUT_ORDER:
+        fail("KAG maturity governance manifest source_inputs must keep the current donor order")
+
+    stability_tiers = payload["stability_tiers"]
+    if not isinstance(stability_tiers, list) or not stability_tiers:
+        fail("KAG maturity governance manifest stability_tiers must be a non-empty list")
+    tier_order: list[str] = []
+    tier_status_map: dict[str, list[str]] = {}
+    for index, tier in enumerate(stability_tiers):
+        location = f"KAG maturity governance manifest stability_tiers[{index}]"
+        if not isinstance(tier, dict):
+            fail(f"{location} must be an object")
+        if set(tier) != {
+            "tier",
+            "registry_statuses",
+            "consumer_posture",
+            "expansion_posture",
+            "live_payload_allowed",
+        }:
+            fail(
+                f"{location} must keep exactly tier, registry_statuses, consumer_posture, "
+                "expansion_posture, and live_payload_allowed"
+            )
+        tier_name = tier.get("tier")
+        registry_statuses = tier.get("registry_statuses")
+        consumer_posture = tier.get("consumer_posture")
+        expansion_posture = tier.get("expansion_posture")
+        live_payload_allowed = tier.get("live_payload_allowed")
+        if not isinstance(tier_name, str) or not tier_name:
+            fail(f"{location}.tier must be a non-empty string")
+        tier_order.append(tier_name)
+        normalized_registry_statuses = validate_unique_string_list(
+            registry_statuses,
+            label=f"{location}.registry_statuses",
+        )
+        if not isinstance(consumer_posture, str) or len(consumer_posture) < 3:
+            fail(f"{location}.consumer_posture must be a string of length >= 3")
+        if not isinstance(expansion_posture, str) or len(expansion_posture) < 3:
+            fail(f"{location}.expansion_posture must be a string of length >= 3")
+        if not isinstance(live_payload_allowed, bool):
+            fail(f"{location}.live_payload_allowed must be a boolean")
+        expected_statuses, expected_live_payload_allowed = (
+            EXPECTED_KAG_MATURITY_GOVERNANCE_TIER_STATUS_MAP.get(tier_name, (None, None))
+        )
+        if expected_statuses is None:
+            fail(f"{location}.tier '{tier_name}' is not supported")
+        if normalized_registry_statuses != expected_statuses:
+            fail(f"{location}.registry_statuses must match the current tier-to-status mapping")
+        if live_payload_allowed != expected_live_payload_allowed:
+            fail(f"{location}.live_payload_allowed must match the current tier contract")
+        tier_status_map[tier_name] = normalized_registry_statuses
+    if tier_order != EXPECTED_KAG_MATURITY_GOVERNANCE_TIER_ORDER:
+        fail("KAG maturity governance manifest stability_tiers must keep the current stable order")
+
+    surface_governance = payload["surface_governance"]
+    if not isinstance(surface_governance, list) or not surface_governance:
+        fail("KAG maturity governance manifest surface_governance must be a non-empty list")
+    seen_surface_ids: set[str] = set()
+    for index, surface in enumerate(surface_governance):
+        location = f"KAG maturity governance manifest surface_governance[{index}]"
+        if not isinstance(surface, dict):
+            fail(f"{location} must be an object")
+        allowed_keys = {
+            "surface_id",
+            "stability_tier",
+            "consumer_posture",
+            "proof_expectation_refs",
+            "regrounding_mode_refs",
+            "quarantine_policy",
+            "stop_rule",
+            "proof_gap_note",
+        }
+        if set(surface) - allowed_keys or {
+            "surface_id",
+            "stability_tier",
+            "consumer_posture",
+            "proof_expectation_refs",
+            "regrounding_mode_refs",
+            "quarantine_policy",
+            "stop_rule",
+        } - set(surface):
+            fail(
+                f"{location} must keep required maturity fields and may only add proof_gap_note"
+            )
+
+        surface_id = surface.get("surface_id")
+        stability_tier = surface.get("stability_tier")
+        consumer_posture = surface.get("consumer_posture")
+        quarantine_policy = surface.get("quarantine_policy")
+        stop_rule = surface.get("stop_rule")
+        proof_gap_note = surface.get("proof_gap_note")
+        if not isinstance(surface_id, str) or not surface_id:
+            fail(f"{location}.surface_id must be a non-empty string")
+        if surface_id in seen_surface_ids:
+            fail(f"{location}.surface_id '{surface_id}' is duplicated")
+        seen_surface_ids.add(surface_id)
+        if surface_id not in surfaces_by_id:
+            fail(f"{location}.surface_id references unknown registry surface '{surface_id}'")
+        if not isinstance(stability_tier, str) or not stability_tier:
+            fail(f"{location}.stability_tier must be a non-empty string")
+        if stability_tier not in tier_status_map:
+            fail(f"{location}.stability_tier '{stability_tier}' is not supported")
+        if surfaces_by_id[surface_id]["status"] not in tier_status_map[stability_tier]:
+            fail(
+                f"{location}.stability_tier '{stability_tier}' must match registry status "
+                f"for surface '{surface_id}'"
+            )
+        if not isinstance(consumer_posture, str) or len(consumer_posture) < 3:
+            fail(f"{location}.consumer_posture must be a string of length >= 3")
+        if not isinstance(quarantine_policy, str) or len(quarantine_policy) < 3:
+            fail(f"{location}.quarantine_policy must be a string of length >= 3")
+        if not isinstance(stop_rule, str) or len(stop_rule) < 3:
+            fail(f"{location}.stop_rule must be a string of length >= 3")
+        if proof_gap_note is not None and (not isinstance(proof_gap_note, str) or len(proof_gap_note) < 10):
+            fail(f"{location}.proof_gap_note must be a string of length >= 10 when present")
+
+        proof_expectation_refs = validate_unique_string_list(
+            surface.get("proof_expectation_refs"),
+            label=f"{location}.proof_expectation_refs",
+        )
+        regrounding_mode_refs = validate_unique_string_list(
+            surface.get("regrounding_mode_refs"),
+            label=f"{location}.regrounding_mode_refs",
+        )
+        for proof_ref in proof_expectation_refs:
+            resolve_aoa_evals_ref(
+                proof_ref,
+                label=f"{location}.proof_expectation_refs",
+            )
+        for mode_ref in regrounding_mode_refs:
+            if mode_ref not in EXPECTED_KAG_MATURITY_GOVERNANCE_MODE_ORDER:
+                fail(f"{location}.regrounding_mode_refs contains unsupported mode '{mode_ref}'")
+
+    validate_exact_set(
+        seen_surface_ids,
+        set(surfaces_by_id),
+        label="KAG maturity governance manifest surface coverage",
+    )
+
+    owner_wait_states = payload["owner_wait_states"]
+    if not isinstance(owner_wait_states, list) or not owner_wait_states:
+        fail("KAG maturity governance manifest owner_wait_states must be a non-empty list")
+    owner_repo_order: list[str] = []
+    for index, wait_state in enumerate(owner_wait_states):
+        location = f"KAG maturity governance manifest owner_wait_states[{index}]"
+        if not isinstance(wait_state, dict):
+            fail(f"{location} must be an object")
+        if set(wait_state) != {
+            "owner_repo",
+            "current_kag_posture",
+            "waits_for",
+            "forbidden_inference",
+        }:
+            fail(
+                f"{location} must keep exactly owner_repo, current_kag_posture, "
+                "waits_for, and forbidden_inference"
+            )
+        owner_repo = wait_state.get("owner_repo")
+        current_kag_posture = wait_state.get("current_kag_posture")
+        forbidden_inference = wait_state.get("forbidden_inference")
+        if not isinstance(owner_repo, str) or not owner_repo:
+            fail(f"{location}.owner_repo must be a non-empty string")
+        owner_repo_order.append(owner_repo)
+        if not isinstance(current_kag_posture, str) or len(current_kag_posture) < 10:
+            fail(f"{location}.current_kag_posture must be a string of length >= 10")
+        if not isinstance(forbidden_inference, str) or len(forbidden_inference) < 10:
+            fail(f"{location}.forbidden_inference must be a string of length >= 10")
+        validate_unique_string_list(
+            wait_state.get("waits_for"),
+            label=f"{location}.waits_for",
+        )
+    if owner_repo_order != EXPECTED_KAG_MATURITY_GOVERNANCE_OWNER_WAIT_REPO_ORDER:
+        fail("KAG maturity governance manifest owner_wait_states must keep the current owner wait-state order")
+
+    stop_rule = payload["stop_rule"]
+    if not isinstance(stop_rule, dict):
+        fail("KAG maturity governance manifest stop_rule must be an object")
+    if set(stop_rule) != {
+        "new_surface_growth",
+        "current_program",
+        "resume_when",
+        "blocked_surface_ids",
+        "pause_threshold",
+    }:
+        fail(
+            "KAG maturity governance manifest stop_rule must keep exactly "
+            "new_surface_growth, current_program, resume_when, blocked_surface_ids, and pause_threshold"
+        )
+    if not isinstance(stop_rule.get("new_surface_growth"), str) or len(stop_rule["new_surface_growth"]) < 3:
+        fail("KAG maturity governance manifest stop_rule.new_surface_growth must be a string of length >= 3")
+    if not isinstance(stop_rule.get("current_program"), str) or len(stop_rule["current_program"]) < 3:
+        fail("KAG maturity governance manifest stop_rule.current_program must be a string of length >= 3")
+    blocked_surface_ids = validate_unique_string_list(
+        stop_rule.get("blocked_surface_ids"),
+        label="KAG maturity governance manifest stop_rule.blocked_surface_ids",
+    )
+    validate_exact_set(
+        blocked_surface_ids,
+        {"AOA-K-0008"},
+        label="KAG maturity governance manifest stop_rule.blocked_surface_ids",
+    )
+    validate_unique_string_list(
+        stop_rule.get("resume_when"),
+        label="KAG maturity governance manifest stop_rule.resume_when",
+    )
+    if not isinstance(stop_rule.get("pause_threshold"), str) or len(stop_rule["pause_threshold"]) < 10:
+        fail("KAG maturity governance manifest stop_rule.pause_threshold must be a string of length >= 10")
+
+    projection_recovery = payload["projection_recovery"]
+    if not isinstance(projection_recovery, dict):
+        fail("KAG maturity governance manifest projection_recovery must be an object")
+    if set(projection_recovery) != {
+        "stress_receipt_schema_ref",
+        "regrounding_ticket_schema_ref",
+        "stress_doc_ref",
+        "quarantine_doc_ref",
+        "regrounding_pack_ref",
+        "health_states",
+        "mode_refs",
+        "quarantine_triggers",
+        "quarantine_exit_requirements",
+    }:
+        fail(
+            "KAG maturity governance manifest projection_recovery must keep exactly "
+            "the current schema, doc, pack, health, mode, trigger, and exit fields"
+        )
+    for field_name in (
+        "stress_receipt_schema_ref",
+        "regrounding_ticket_schema_ref",
+        "stress_doc_ref",
+        "quarantine_doc_ref",
+        "regrounding_pack_ref",
+    ):
+        ref = projection_recovery.get(field_name)
+        if not isinstance(ref, str) or not ref:
+            fail(f"KAG maturity governance manifest projection_recovery.{field_name} must be a non-empty string")
+        resolve_known_ref(
+            ref,
+            label=f"KAG maturity governance manifest projection_recovery.{field_name}",
+        )
+    health_states = validate_unique_string_list(
+        projection_recovery.get("health_states"),
+        label="KAG maturity governance manifest projection_recovery.health_states",
+    )
+    if health_states != EXPECTED_KAG_MATURITY_GOVERNANCE_HEALTH_STATES:
+        fail("KAG maturity governance manifest projection_recovery.health_states must keep the current health-state order")
+    mode_refs = validate_unique_string_list(
+        projection_recovery.get("mode_refs"),
+        label="KAG maturity governance manifest projection_recovery.mode_refs",
+    )
+    if mode_refs != EXPECTED_KAG_MATURITY_GOVERNANCE_MODE_ORDER:
+        fail("KAG maturity governance manifest projection_recovery.mode_refs must keep the current regrounding mode order")
+    validate_unique_string_list(
+        projection_recovery.get("quarantine_triggers"),
+        label="KAG maturity governance manifest projection_recovery.quarantine_triggers",
+    )
+    validate_unique_string_list(
+        projection_recovery.get("quarantine_exit_requirements"),
+        label="KAG maturity governance manifest projection_recovery.quarantine_exit_requirements",
+    )
+
+    if payload["output_paths"] != EXPECTED_KAG_MATURITY_GOVERNANCE_OUTPUT_PATHS:
+        fail("KAG maturity governance manifest output_paths must match the committed generated output paths")
+    if payload["bounded_output_contract"] != EXPECTED_KAG_MATURITY_GOVERNANCE_CONTRACT:
+        fail("KAG maturity governance manifest bounded_output_contract must match the current source-first stop-rule contract")
 
 
 def validate_source_owned_export_dependency_manifest(
@@ -5499,6 +5937,349 @@ def validate_return_regrounding_example(expected_payload: dict[str, object]) -> 
     validate_return_regrounding_pack(payload, expected_payload)
 
 
+def validate_kag_maturity_governance_pack(
+    payload: object,
+    expected_payload: dict[str, object],
+    surfaces_by_id: dict[str, dict[str, object]],
+) -> None:
+    if not isinstance(payload, dict):
+        fail("KAG maturity governance pack must be a JSON object")
+
+    for key in (
+        "pack_version",
+        "pack_type",
+        "source_manifest_ref",
+        "source_inputs",
+        "stability_tier_count",
+        "stability_tiers",
+        "surface_count",
+        "surfaces",
+        "owner_wait_state_count",
+        "owner_wait_states",
+        "stop_rule",
+        "projection_recovery",
+        "bounded_output_contract",
+    ):
+        if key not in payload:
+            fail(f"KAG maturity governance pack is missing required key '{key}'")
+
+    if payload["pack_version"] != 1:
+        fail("KAG maturity governance pack pack_version must equal 1")
+    if payload["pack_type"] != "kag_maturity_governance":
+        fail("KAG maturity governance pack pack_type must equal 'kag_maturity_governance'")
+    if payload["source_manifest_ref"] != "manifests/kag_maturity_governance.json":
+        fail("KAG maturity governance pack source_manifest_ref must point to manifests/kag_maturity_governance.json")
+    if payload["bounded_output_contract"] != EXPECTED_KAG_MATURITY_GOVERNANCE_CONTRACT:
+        fail("KAG maturity governance pack bounded_output_contract must match the current source-first stop-rule contract")
+
+    source_inputs = payload["source_inputs"]
+    if not isinstance(source_inputs, list) or not source_inputs:
+        fail("KAG maturity governance pack source_inputs must be a non-empty list")
+    actual_source_inputs: set[tuple[str, str, str, str]] = set()
+    source_input_order: list[str] = []
+    for index, source_input in enumerate(source_inputs):
+        location = f"KAG maturity governance pack source_inputs[{index}]"
+        if not isinstance(source_input, dict):
+            fail(f"{location} must be an object")
+        name = source_input.get("name")
+        repo = source_input.get("repo")
+        role = source_input.get("role")
+        ref = source_input.get("ref")
+        if not all(isinstance(value, str) and value for value in (name, repo, role, ref)):
+            fail(f"{location} must keep name, repo, role, and ref")
+        resolve_known_ref(ref, label=location)
+        relative_ref = ref if repo == "aoa-kag" else ref.split("/", 1)[1]
+        actual_source_inputs.add((name, repo, relative_ref, role))
+        source_input_order.append(name)
+    if actual_source_inputs != EXPECTED_KAG_MATURITY_GOVERNANCE_INPUTS:
+        fail("KAG maturity governance pack source_inputs must match the manifest-driven donor set")
+    if source_input_order != EXPECTED_KAG_MATURITY_GOVERNANCE_INPUT_ORDER:
+        fail("KAG maturity governance pack source_inputs must keep the current donor order")
+
+    stability_tiers = payload["stability_tiers"]
+    if not isinstance(stability_tiers, list) or not stability_tiers:
+        fail("KAG maturity governance pack stability_tiers must be a non-empty list")
+    if payload["stability_tier_count"] != len(stability_tiers):
+        fail("KAG maturity governance pack stability_tier_count must equal the number of tiers")
+    tier_order: list[str] = []
+    tier_status_map: dict[str, list[str]] = {}
+    for index, tier in enumerate(stability_tiers):
+        location = f"KAG maturity governance pack stability_tiers[{index}]"
+        if not isinstance(tier, dict):
+            fail(f"{location} must be an object")
+        for key in (
+            "tier",
+            "registry_statuses",
+            "consumer_posture",
+            "expansion_posture",
+            "live_payload_allowed",
+        ):
+            if key not in tier:
+                fail(f"{location} is missing required key '{key}'")
+        tier_name = tier["tier"]
+        registry_statuses = validate_unique_string_list(
+            tier["registry_statuses"],
+            label=f"{location}.registry_statuses",
+        )
+        tier_order.append(tier_name)
+        expected_statuses, expected_live_payload_allowed = (
+            EXPECTED_KAG_MATURITY_GOVERNANCE_TIER_STATUS_MAP.get(tier_name, (None, None))
+        )
+        if expected_statuses is None:
+            fail(f"{location}.tier '{tier_name}' is not supported")
+        if registry_statuses != expected_statuses:
+            fail(f"{location}.registry_statuses must match the current tier-to-status mapping")
+        if tier["live_payload_allowed"] != expected_live_payload_allowed:
+            fail(f"{location}.live_payload_allowed must match the current tier contract")
+        tier_status_map[tier_name] = registry_statuses
+    if tier_order != EXPECTED_KAG_MATURITY_GOVERNANCE_TIER_ORDER:
+        fail("KAG maturity governance pack stability_tiers must keep the current stable order")
+
+    surfaces = payload["surfaces"]
+    if not isinstance(surfaces, list) or not surfaces:
+        fail("KAG maturity governance pack surfaces must be a non-empty list")
+    if payload["surface_count"] != len(surfaces):
+        fail("KAG maturity governance pack surface_count must equal the number of surfaces")
+    seen_surface_ids: set[str] = set()
+    for index, surface in enumerate(surfaces):
+        location = f"KAG maturity governance pack surfaces[{index}]"
+        if not isinstance(surface, dict):
+            fail(f"{location} must be an object")
+        required_keys = {
+            "surface_id",
+            "surface_name",
+            "registry_status",
+            "source_repos",
+            "derived_kind",
+            "stability_tier",
+            "consumer_posture",
+            "proof_expectation_refs",
+            "regrounding_mode_refs",
+            "quarantine_policy",
+            "stop_rule",
+        }
+        if not required_keys.issubset(surface):
+            missing = sorted(required_keys - set(surface))
+            fail(f"{location} is missing required keys: {', '.join(missing)}")
+        surface_id = surface["surface_id"]
+        if not isinstance(surface_id, str) or not surface_id:
+            fail(f"{location}.surface_id must be a non-empty string")
+        if surface_id in seen_surface_ids:
+            fail(f"{location}.surface_id '{surface_id}' is duplicated")
+        seen_surface_ids.add(surface_id)
+        registry_surface = surfaces_by_id.get(surface_id)
+        if registry_surface is None:
+            fail(f"{location}.surface_id references unknown registry surface '{surface_id}'")
+        if surface["surface_name"] != registry_surface["name"]:
+            fail(f"{location}.surface_name must match the generated registry")
+        if surface["registry_status"] != registry_surface["status"]:
+            fail(f"{location}.registry_status must match the generated registry")
+        if surface["derived_kind"] != registry_surface["derived_kind"]:
+            fail(f"{location}.derived_kind must match the generated registry")
+        source_repos = validate_unique_string_list(
+            surface["source_repos"],
+            label=f"{location}.source_repos",
+        )
+        if source_repos != registry_surface["source_repos"]:
+            fail(f"{location}.source_repos must match the generated registry")
+        stability_tier = surface["stability_tier"]
+        if stability_tier not in tier_status_map:
+            fail(f"{location}.stability_tier '{stability_tier}' is not supported")
+        if registry_surface["status"] not in tier_status_map[stability_tier]:
+            fail(f"{location}.stability_tier must match the registry status")
+        if not isinstance(surface["consumer_posture"], str) or len(surface["consumer_posture"]) < 3:
+            fail(f"{location}.consumer_posture must be a string of length >= 3")
+        if not isinstance(surface["quarantine_policy"], str) or len(surface["quarantine_policy"]) < 3:
+            fail(f"{location}.quarantine_policy must be a string of length >= 3")
+        if not isinstance(surface["stop_rule"], str) or len(surface["stop_rule"]) < 3:
+            fail(f"{location}.stop_rule must be a string of length >= 3")
+        proof_gap_note = surface.get("proof_gap_note")
+        if proof_gap_note is not None and (not isinstance(proof_gap_note, str) or len(proof_gap_note) < 10):
+            fail(f"{location}.proof_gap_note must be a string of length >= 10 when present")
+
+        proof_expectation_refs = validate_unique_string_list(
+            surface["proof_expectation_refs"],
+            label=f"{location}.proof_expectation_refs",
+        )
+        regrounding_mode_refs = validate_unique_string_list(
+            surface["regrounding_mode_refs"],
+            label=f"{location}.regrounding_mode_refs",
+        )
+        for proof_ref in proof_expectation_refs:
+            resolve_aoa_evals_ref(
+                proof_ref,
+                label=f"{location}.proof_expectation_refs",
+            )
+        for mode_ref in regrounding_mode_refs:
+            if mode_ref not in EXPECTED_KAG_MATURITY_GOVERNANCE_MODE_ORDER:
+                fail(f"{location}.regrounding_mode_refs contains unsupported mode '{mode_ref}'")
+    validate_exact_set(
+        seen_surface_ids,
+        set(surfaces_by_id),
+        label="KAG maturity governance pack surface coverage",
+    )
+
+    owner_wait_states = payload["owner_wait_states"]
+    if not isinstance(owner_wait_states, list) or not owner_wait_states:
+        fail("KAG maturity governance pack owner_wait_states must be a non-empty list")
+    if payload["owner_wait_state_count"] != len(owner_wait_states):
+        fail("KAG maturity governance pack owner_wait_state_count must equal the number of owner wait states")
+    owner_repo_order: list[str] = []
+    for index, wait_state in enumerate(owner_wait_states):
+        location = f"KAG maturity governance pack owner_wait_states[{index}]"
+        if not isinstance(wait_state, dict):
+            fail(f"{location} must be an object")
+        owner_repo = wait_state.get("owner_repo")
+        if not isinstance(owner_repo, str) or not owner_repo:
+            fail(f"{location}.owner_repo must be a non-empty string")
+        owner_repo_order.append(owner_repo)
+        if not isinstance(wait_state.get("current_kag_posture"), str) or len(wait_state["current_kag_posture"]) < 10:
+            fail(f"{location}.current_kag_posture must be a string of length >= 10")
+        if not isinstance(wait_state.get("forbidden_inference"), str) or len(wait_state["forbidden_inference"]) < 10:
+            fail(f"{location}.forbidden_inference must be a string of length >= 10")
+        validate_unique_string_list(
+            wait_state.get("waits_for"),
+            label=f"{location}.waits_for",
+        )
+    if owner_repo_order != EXPECTED_KAG_MATURITY_GOVERNANCE_OWNER_WAIT_REPO_ORDER:
+        fail("KAG maturity governance pack owner_wait_states must keep the current owner wait-state order")
+
+    stop_rule = payload["stop_rule"]
+    if not isinstance(stop_rule, dict):
+        fail("KAG maturity governance pack stop_rule must be an object")
+    blocked_surface_ids = validate_unique_string_list(
+        stop_rule.get("blocked_surface_ids"),
+        label="KAG maturity governance pack stop_rule.blocked_surface_ids",
+    )
+    validate_exact_set(
+        blocked_surface_ids,
+        {"AOA-K-0008"},
+        label="KAG maturity governance pack stop_rule.blocked_surface_ids",
+    )
+    validate_unique_string_list(
+        stop_rule.get("resume_when"),
+        label="KAG maturity governance pack stop_rule.resume_when",
+    )
+    if not isinstance(stop_rule.get("new_surface_growth"), str) or len(stop_rule["new_surface_growth"]) < 3:
+        fail("KAG maturity governance pack stop_rule.new_surface_growth must be a string of length >= 3")
+    if not isinstance(stop_rule.get("current_program"), str) or len(stop_rule["current_program"]) < 3:
+        fail("KAG maturity governance pack stop_rule.current_program must be a string of length >= 3")
+    if not isinstance(stop_rule.get("pause_threshold"), str) or len(stop_rule["pause_threshold"]) < 10:
+        fail("KAG maturity governance pack stop_rule.pause_threshold must be a string of length >= 10")
+
+    projection_recovery = payload["projection_recovery"]
+    if not isinstance(projection_recovery, dict):
+        fail("KAG maturity governance pack projection_recovery must be an object")
+    for field_name in (
+        "stress_receipt_schema_ref",
+        "regrounding_ticket_schema_ref",
+        "stress_doc_ref",
+        "quarantine_doc_ref",
+        "regrounding_pack_ref",
+    ):
+        ref = projection_recovery.get(field_name)
+        if not isinstance(ref, str) or not ref:
+            fail(f"KAG maturity governance pack projection_recovery.{field_name} must be a non-empty string")
+        resolve_known_ref(
+            ref,
+            label=f"KAG maturity governance pack projection_recovery.{field_name}",
+        )
+    health_states = validate_unique_string_list(
+        projection_recovery.get("health_states"),
+        label="KAG maturity governance pack projection_recovery.health_states",
+    )
+    if health_states != EXPECTED_KAG_MATURITY_GOVERNANCE_HEALTH_STATES:
+        fail("KAG maturity governance pack projection_recovery.health_states must keep the current health-state order")
+    mode_refs = validate_unique_string_list(
+        projection_recovery.get("mode_refs"),
+        label="KAG maturity governance pack projection_recovery.mode_refs",
+    )
+    if mode_refs != EXPECTED_KAG_MATURITY_GOVERNANCE_MODE_ORDER:
+        fail("KAG maturity governance pack projection_recovery.mode_refs must keep the current regrounding mode order")
+    validate_unique_string_list(
+        projection_recovery.get("quarantine_triggers"),
+        label="KAG maturity governance pack projection_recovery.quarantine_triggers",
+    )
+    validate_unique_string_list(
+        projection_recovery.get("quarantine_exit_requirements"),
+        label="KAG maturity governance pack projection_recovery.quarantine_exit_requirements",
+    )
+
+    if payload != expected_payload:
+        fail("KAG maturity governance pack must match the committed manifest-driven governance payload")
+
+
+def validate_kag_maturity_governance_example() -> None:
+    schema = read_json(KAG_MATURITY_GOVERNANCE_SCHEMA_PATH)
+    if not isinstance(schema, dict):
+        fail("KAG maturity governance schema must be a JSON object")
+    Draft202012Validator.check_schema(schema)
+
+    payload = read_json(KAG_MATURITY_GOVERNANCE_EXAMPLE_PATH)
+    errors = sorted(
+        Draft202012Validator(schema).iter_errors(payload),
+        key=lambda error: (list(error.absolute_path), error.message),
+    )
+    if errors:
+        first = errors[0]
+        error_path = format_schema_path(list(first.absolute_path))
+        if error_path:
+            fail(
+                f"{display_path(KAG_MATURITY_GOVERNANCE_EXAMPLE_PATH)} schema violation at "
+                f"'{error_path}': {first.message}"
+            )
+        fail(
+            f"{display_path(KAG_MATURITY_GOVERNANCE_EXAMPLE_PATH)} schema violation: "
+            f"{first.message}"
+        )
+
+    if not isinstance(payload, dict):
+        fail("KAG maturity governance example must be a JSON object")
+    if payload.get("pack_type") != "kag_maturity_governance":
+        fail("KAG maturity governance example pack_type must equal 'kag_maturity_governance'")
+    if payload.get("source_manifest_ref") != "manifests/kag_maturity_governance.json":
+        fail("KAG maturity governance example source_manifest_ref must point to manifests/kag_maturity_governance.json")
+    if payload.get("stability_tier_count") != len(payload.get("stability_tiers", [])):
+        fail("KAG maturity governance example stability_tier_count must equal the number of tiers")
+    if payload.get("surface_count") != len(payload.get("surfaces", [])):
+        fail("KAG maturity governance example surface_count must equal the number of surfaces")
+    if payload.get("owner_wait_state_count") != len(payload.get("owner_wait_states", [])):
+        fail("KAG maturity governance example owner_wait_state_count must equal the number of owner wait states")
+
+    surfaces = payload.get("surfaces")
+    if not isinstance(surfaces, list) or not surfaces:
+        fail("KAG maturity governance example surfaces must be a non-empty list")
+    example_surface = surfaces[0]
+    if not isinstance(example_surface, dict):
+        fail("KAG maturity governance example first surface must be an object")
+    if example_surface.get("surface_id") != "AOA-K-0008":
+        fail("KAG maturity governance example must center the planned-only AOA-K-0008 posture")
+    if example_surface.get("stability_tier") != "planned_contract_only":
+        fail("KAG maturity governance example first surface must stay planned_contract_only")
+    for proof_ref in validate_unique_string_list(
+        example_surface.get("proof_expectation_refs"),
+        label="KAG maturity governance example proof_expectation_refs",
+    ):
+        resolve_aoa_evals_ref(proof_ref, label="KAG maturity governance example proof_expectation_refs")
+    for field_name in (
+        "stress_receipt_schema_ref",
+        "regrounding_ticket_schema_ref",
+        "stress_doc_ref",
+        "quarantine_doc_ref",
+        "regrounding_pack_ref",
+    ):
+        projection_recovery = payload.get("projection_recovery")
+        if not isinstance(projection_recovery, dict):
+            fail("KAG maturity governance example projection_recovery must be an object")
+        ref = projection_recovery.get(field_name)
+        if not isinstance(ref, str) or not ref:
+            fail(f"KAG maturity governance example projection_recovery.{field_name} must be a non-empty string")
+        resolve_known_ref(
+            ref,
+            label=f"KAG maturity governance example projection_recovery.{field_name}",
+        )
+
+
 def validate_federation_export_registry_pack(
     payload: object,
     expected_payload: dict[str, object],
@@ -7107,6 +7888,8 @@ def main() -> int:
         validate_reasoning_handoff_pack_schema_surface()
         validate_return_regrounding_manifest_schema_surface()
         validate_return_regrounding_schema_surface()
+        validate_kag_maturity_governance_manifest_schema_surface()
+        validate_kag_maturity_governance_schema_surface()
         validate_source_owned_export_dependencies_schema_surface()
         validate_federation_export_registry_manifest_schema_surface()
         validate_federation_export_registry_schema_surface()
@@ -7133,6 +7916,7 @@ def main() -> int:
         )
         validate_reasoning_handoff_manifest()
         validate_return_regrounding_manifest()
+        validate_kag_maturity_governance_manifest(registry_manifest_surfaces)
         source_owned_export_dependencies = (
             validate_source_owned_export_dependency_manifest(
                 registry_manifest_surfaces
@@ -7174,6 +7958,9 @@ def main() -> int:
         )
         expected_reasoning_handoff_pack_payload = build_reasoning_handoff_pack_payload()
         expected_return_regrounding_pack_payload = build_return_regrounding_pack_payload(
+            expected_registry_payload
+        )
+        expected_kag_maturity_governance_payload = build_kag_maturity_governance_payload(
             expected_registry_payload
         )
         expected_federation_export_registry_payload = (
@@ -7284,6 +8071,16 @@ def main() -> int:
             label="generated compact return regrounding pack",
         )
         validate_generated_text(
+            KAG_MATURITY_GOVERNANCE_OUTPUT_PATH,
+            encode_json(expected_kag_maturity_governance_payload, pretty=True),
+            label="generated KAG maturity governance pack",
+        )
+        validate_generated_text(
+            KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH,
+            encode_json(expected_kag_maturity_governance_payload, pretty=False),
+            label="generated compact KAG maturity governance pack",
+        )
+        validate_generated_text(
             FEDERATION_SPINE_OUTPUT_PATH,
             encode_json(expected_federation_spine_payload, pretty=True),
             label="generated federation spine",
@@ -7368,6 +8165,11 @@ def main() -> int:
             read_json(RETURN_REGROUNDING_MIN_OUTPUT_PATH),
             expected_return_regrounding_pack_payload,
         )
+        validate_kag_maturity_governance_pack(
+            read_json(KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH),
+            expected_kag_maturity_governance_payload,
+            generated_surfaces_by_id,
+        )
         validate_federation_spine_pack(
             read_json(FEDERATION_SPINE_MIN_OUTPUT_PATH),
             generated_surfaces_by_id,
@@ -7396,6 +8198,7 @@ def main() -> int:
         )
         validate_reasoning_handoff_example()
         validate_return_regrounding_example(expected_return_regrounding_pack_payload)
+        validate_kag_maturity_governance_example()
         validate_federation_export_registry_example()
         validate_federation_kag_export_example()
         validate_optional_memo_source_owned_export_readiness()
@@ -7436,6 +8239,8 @@ def main() -> int:
     print("[ok] validated reasoning handoff pack schema")
     print("[ok] validated return regrounding pack manifest schema")
     print("[ok] validated return regrounding pack schema")
+    print("[ok] validated KAG maturity governance manifest schema")
+    print("[ok] validated KAG maturity governance pack schema")
     print("[ok] validated source-owned export dependency manifest schema")
     print("[ok] validated federation export registry manifest schema")
     print("[ok] validated federation export registry schema")
@@ -7454,6 +8259,7 @@ def main() -> int:
     print("[ok] validated manifests/tos_zarathustra_route_retrieval_pack.json")
     print("[ok] validated manifests/reasoning_handoff_pack.json")
     print("[ok] validated manifests/return_regrounding_pack.json")
+    print("[ok] validated manifests/kag_maturity_governance.json")
     print("[ok] validated manifests/source_owned_export_dependencies.json")
     print("[ok] validated manifests/federation_export_registry.json")
     print("[ok] validated manifests/federation_spine.json")
@@ -7469,6 +8275,7 @@ def main() -> int:
     print("[ok] validated generated reasoning handoff pack outputs are up to date")
     print("[ok] validated generated federation export registry outputs are up to date")
     print("[ok] validated generated return regrounding pack outputs are up to date")
+    print("[ok] validated generated KAG maturity governance pack outputs are up to date")
     print("[ok] validated generated federation spine outputs are up to date")
     print("[ok] validated generated cross-source node projection outputs are up to date")
     print("[ok] validated generated counterpart federation exposure review outputs are up to date")
@@ -7481,6 +8288,7 @@ def main() -> int:
     print("[ok] validated generated reasoning handoff pack structure")
     print("[ok] validated generated federation export registry structure")
     print("[ok] validated generated return regrounding pack structure")
+    print("[ok] validated generated KAG maturity governance pack structure")
     print("[ok] validated generated federation spine structure")
     print("[ok] validated generated cross-source node projection structure")
     print("[ok] validated generated counterpart federation exposure review structure")
@@ -7496,6 +8304,7 @@ def main() -> int:
     print("[ok] validated ToS Zarathustra route retrieval pack example")
     print("[ok] validated reasoning handoff guardrail example")
     print("[ok] validated return regrounding example")
+    print("[ok] validated KAG maturity governance example")
     print("[ok] validated federation export registry example")
     print("[ok] validated federation KAG export example")
     if AOA_MEMO_ROOT.exists():
