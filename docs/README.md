@@ -28,6 +28,13 @@ federation as a whole.
 - Read [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) for the bounded
   recurrence-law landing that regrounds callers back to stronger source or
   owner refs when derived posture weakens.
+- Read [KAG_MATURITY_GOVERNANCE](KAG_MATURITY_GOVERNANCE.md) for the rule that
+  defines when `aoa-kag` is mature enough to pause widening and wait on owner
+  repos.
+- Read [KAG_OWNER_WAIT_STATES](KAG_OWNER_WAIT_STATES.md) for the explicit map of
+  what `aoa-kag` must still wait on from neighboring layers.
+- Read [KAG_PROOF_EXPECTATIONS](KAG_PROOF_EXPECTATIONS.md) for the bounded proof
+  lanes that belong in `aoa-evals` rather than inside KAG doctrine.
 - Read [KAG_STRESS_REGROUNDING](KAG_STRESS_REGROUNDING.md) for additive
   projection-health and source-first fallback doctrine under drift.
 - Read [KAG_PROJECTION_QUARANTINE](KAG_PROJECTION_QUARANTINE.md) for bounded
@@ -76,6 +83,12 @@ federation as a whole.
 - [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) - how the KAG layer
   regrounds callers back to stronger source-owned and owner-owned refs when a
   derived surface begins to overreach
+- [KAG_MATURITY_GOVERNANCE](KAG_MATURITY_GOVERNANCE.md) - how `aoa-kag` defines
+  pause-worthy maturity, stability tiers, stop-rules, and donor governance
+- [KAG_OWNER_WAIT_STATES](KAG_OWNER_WAIT_STATES.md) - what `aoa-kag` may
+  consume now and what must still wait on owner-side growth
+- [KAG_PROOF_EXPECTATIONS](KAG_PROOF_EXPECTATIONS.md) - which bounded claims
+  should be proven in `aoa-evals` rather than claimed inside KAG
 - [KAG_STRESS_REGROUNDING](KAG_STRESS_REGROUNDING.md) - how projection-health
   receipts and regrounding tickets keep consumers source-first when derived
   surfaces drift
@@ -103,6 +116,9 @@ federation as a whole.
 - [BOUNDARIES](BOUNDARIES.md) - what the KAG layer owns and must not absorb
 - [SOURCE_POLICY](SOURCE_POLICY.md) - how authoritative sources and derived KAG
   surfaces should relate
+- [decisions/2026-04-13-kag-maturity-hardening](decisions/2026-04-13-kag-maturity-hardening.md)
+  - why the repository now hardens around maturity governance, wait states, and
+  stop-rules
 - `../examples/tos_retrieval_axis_surface.example.json` - compact example of the
   bridge retrieval surface
 - `../examples/tos_retrieval_axis_pack.example.json` - compact example of the

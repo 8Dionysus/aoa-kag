@@ -103,6 +103,12 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             registry_payload=registry,
         )
         self.assert_builder_matches_generated(
+            kag_generation.build_kag_maturity_governance_payload,
+            kag_generation.KAG_MATURITY_GOVERNANCE_OUTPUT_PATH,
+            kag_generation.KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH,
+            registry_payload=registry,
+        )
+        self.assert_builder_matches_generated(
             kag_generation.build_counterpart_federation_exposure_review_payload,
             kag_generation.COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
             kag_generation.COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
@@ -138,6 +144,15 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
                 "memory_truth_ownership": "forbidden",
                 "counterpart_activation": "review_gated",
                 "proof_ownership": "forbidden",
+            },
+            "kag_maturity_governance.min.json": {
+                "source_trace_required": True,
+                "source_replacement": "forbidden",
+                "routing_ownership": "forbidden",
+                "memory_truth_ownership": "forbidden",
+                "proof_ownership": "forbidden",
+                "new_surface_growth": "paused_by_owner_need",
+                "quarantine_shortcuts": "forbidden",
             },
             "tos_retrieval_axis_pack.min.json": {
                 "source_trace_required": True,
@@ -186,6 +201,9 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             GENERATED_ROOT / "federation_export_registry.min.json"
         )
         federation_spine = load_json(GENERATED_ROOT / "federation_spine.min.json")
+        maturity_governance = load_json(
+            GENERATED_ROOT / "kag_maturity_governance.min.json"
+        )
         tiny_bundle = load_json(GENERATED_ROOT / "tiny_consumer_bundle.min.json")
         retrieval_pack = load_json(GENERATED_ROOT / "tos_zarathustra_route_retrieval_pack.min.json")
 
@@ -211,6 +229,22 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         self.assertEqual(
             [repo["repo"] for repo in federation_spine["repos"]],
             ["aoa-techniques", "Tree-of-Sophia"],
+        )
+        self.assertEqual(maturity_governance["surface_count"], 11)
+        self.assertEqual(maturity_governance["owner_wait_state_count"], 9)
+        self.assertEqual(
+            maturity_governance["stop_rule"]["blocked_surface_ids"],
+            ["AOA-K-0008"],
+        )
+        self.assertEqual(
+            maturity_governance["projection_recovery"]["mode_refs"],
+            [
+                "source_export_reentry",
+                "bridge_axis_reentry",
+                "projection_boundary_reentry",
+                "handoff_guardrail_reentry",
+                "owner_boundary_reentry",
+            ],
         )
         self.assertEqual(tiny_bundle["bundle_item_count"], len(tiny_bundle["bundle_items"]))
         self.assertEqual(retrieval_pack["route_count"], len(retrieval_pack["routes"]))
@@ -263,6 +297,30 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
                 "routing_ownership": "forbidden",
                 "canon_authorship": "forbidden",
             },
+        )
+
+    def test_kag_maturity_governance_keeps_aoa_k_0008_paused(self) -> None:
+        payload = load_json(GENERATED_ROOT / "kag_maturity_governance.min.json")
+        federation_spine = load_json(GENERATED_ROOT / "federation_spine.min.json")
+        surfaces_by_id = {
+            surface["surface_id"]: surface for surface in payload["surfaces"]
+        }
+
+        self.assertEqual(
+            surfaces_by_id["AOA-K-0008"]["stability_tier"],
+            "planned_contract_only",
+        )
+        self.assertEqual(
+            surfaces_by_id["AOA-K-0008"]["quarantine_policy"],
+            "remain_contract_only_until_live_gate",
+        )
+        self.assertEqual(
+            surfaces_by_id["AOA-K-0008"]["stop_rule"],
+            "blocked_until_owner_exports_and_proof_lanes_strengthen",
+        )
+        self.assertIn(
+            "aoa-evals/bundles/aoa-stress-recovery-window/EVAL.md",
+            surfaces_by_id["AOA-K-0008"]["proof_expectation_refs"],
         )
 
         tos_repo = next(repo for repo in federation_spine["repos"] if repo["repo"] == "Tree-of-Sophia")

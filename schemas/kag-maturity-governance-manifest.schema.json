@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-maturity-governance-manifest.schema.json",
+  "title": "AoA KAG maturity governance manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "pack_type",
+    "source_inputs",
+    "stability_tiers",
+    "surface_governance",
+    "owner_wait_states",
+    "stop_rule",
+    "projection_recovery",
+    "output_paths",
+    "bounded_output_contract"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_type": {
+      "type": "string",
+      "const": "kag_maturity_governance"
+    },
+    "source_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3
+          },
+          "repo": {
+            "type": "string",
+            "minLength": 2
+          },
+          "path": {
+            "type": "string",
+            "minLength": 3
+          },
+          "role": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    },
+    "stability_tiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tier",
+          "registry_statuses",
+          "consumer_posture",
+          "expansion_posture",
+          "live_payload_allowed"
+        ],
+        "properties": {
+          "tier": {
+            "type": "string",
+            "enum": [
+              "planned_contract_only",
+              "experimental_derived",
+              "consumer_stable"
+            ]
+          },
+          "registry_statuses": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": [
+                "active",
+                "planned",
+                "experimental",
+                "deprecated"
+              ]
+            }
+          },
+          "consumer_posture": {
+            "type": "string",
+            "minLength": 3
+          },
+          "expansion_posture": {
+            "type": "string",
+            "minLength": 3
+          },
+          "live_payload_allowed": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "surface_governance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "stability_tier",
+          "consumer_posture",
+          "proof_expectation_refs",
+          "regrounding_mode_refs",
+          "quarantine_policy",
+          "stop_rule"
+        ],
+        "properties": {
+          "surface_id": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          },
+          "stability_tier": {
+            "type": "string",
+            "enum": [
+              "planned_contract_only",
+              "experimental_derived",
+              "consumer_stable"
+            ]
+          },
+          "consumer_posture": {
+            "type": "string",
+            "minLength": 3
+          },
+          "proof_expectation_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          "regrounding_mode_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          "quarantine_policy": {
+            "type": "string",
+            "minLength": 3
+          },
+          "stop_rule": {
+            "type": "string",
+            "minLength": 3
+          },
+          "proof_gap_note": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    "owner_wait_states": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "owner_repo",
+          "current_kag_posture",
+          "waits_for",
+          "forbidden_inference"
+        ],
+        "properties": {
+          "owner_repo": {
+            "type": "string",
+            "minLength": 2
+          },
+          "current_kag_posture": {
+            "type": "string",
+            "minLength": 10
+          },
+          "waits_for": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 10
+            }
+          },
+          "forbidden_inference": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    "stop_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "new_surface_growth",
+        "current_program",
+        "resume_when",
+        "blocked_surface_ids",
+        "pause_threshold"
+      ],
+      "properties": {
+        "new_surface_growth": {
+          "type": "string",
+          "minLength": 3
+        },
+        "current_program": {
+          "type": "string",
+          "minLength": 3
+        },
+        "resume_when": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 10
+          }
+        },
+        "blocked_surface_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^AOA-K-[0-9]{4}$"
+          }
+        },
+        "pause_threshold": {
+          "type": "string",
+          "minLength": 10
+        }
+      }
+    },
+    "projection_recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stress_receipt_schema_ref",
+        "regrounding_ticket_schema_ref",
+        "stress_doc_ref",
+        "quarantine_doc_ref",
+        "regrounding_pack_ref",
+        "health_states",
+        "mode_refs",
+        "quarantine_triggers",
+        "quarantine_exit_requirements"
+      ],
+      "properties": {
+        "stress_receipt_schema_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "regrounding_ticket_schema_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "stress_doc_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "quarantine_doc_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "regrounding_pack_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "health_states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "mode_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        },
+        "quarantine_triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 5
+          }
+        },
+        "quarantine_exit_requirements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 5
+          }
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full",
+        "min"
+      ],
+      "properties": {
+        "full": {
+          "type": "string",
+          "minLength": 3
+        },
+        "min": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    },
+    "bounded_output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_trace_required",
+        "source_replacement",
+        "routing_ownership",
+        "memory_truth_ownership",
+        "proof_ownership",
+        "new_surface_growth",
+        "quarantine_shortcuts"
+      ],
+      "properties": {
+        "source_trace_required": {
+          "type": "boolean"
+        },
+        "source_replacement": {
+          "type": "string",
+          "minLength": 3
+        },
+        "routing_ownership": {
+          "type": "string",
+          "minLength": 3
+        },
+        "memory_truth_ownership": {
+          "type": "string",
+          "minLength": 3
+        },
+        "proof_ownership": {
+          "type": "string",
+          "minLength": 3
+        },
+        "new_surface_growth": {
+          "type": "string",
+          "minLength": 3
+        },
+        "quarantine_shortcuts": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    }
+  }
+}

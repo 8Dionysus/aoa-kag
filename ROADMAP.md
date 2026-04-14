@@ -23,6 +23,7 @@ It now also carries one explicit counterpart consumer contract and one machine-r
 It now also carries one explicit counterpart federation exposure review artifact so the last current activation gate for `AOA-K-0008` is review-closed while the surface remains planned.
 It now also carries one bounded recurrence regrounding surface so federation entry, retrieval-axis use, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs without widening KAG sovereignty.
 For `aoa-memo`, that regrounding surface now points future durable-consequence, retention, and live-ledger pressure back to the memo-owned memory readiness boundary instead of letting KAG treat that pressure as graph or routing readiness.
+It now also carries one manifest-driven maturity-governance surface that names stability tiers, owner wait states, proof expectations, and the current stop-rule for new `AOA-K-*` growth while neighboring owner layers are still maturing.
 
 ### Current release contour
 
@@ -40,6 +41,11 @@ not a claim that KAG is a full graph engine or a source-authoritative layer:
   `generated/tos_zarathustra_route_pack.min.json`,
   `generated/tos_zarathustra_route_retrieval_pack.min.json`,
   and `docs/TOS_RAW_TABLE_INTAKE_STUB.md`
+- maturity governance and pause posture:
+  `generated/kag_maturity_governance.min.json`,
+  `docs/KAG_MATURITY_GOVERNANCE.md`,
+  `docs/KAG_OWNER_WAIT_STATES.md`,
+  and `docs/KAG_PROOF_EXPECTATIONS.md`
 - reasoning, recurrence, bridge, and regrounding posture:
   `generated/reasoning_handoff_pack.min.json`,
   `generated/return_regrounding_pack.min.json`,
@@ -103,6 +109,7 @@ Goals:
 - keep the current ToS tiny-entry donor narrow while downstream routing handoff and source-owned export growth remain explicitly bounded
 - harden one bounded `return_regrounding_pack` so current KAG pilots can fall back to stronger source or owner refs without implying graph sovereignty
 - keep memo scar, retention, and live-ledger readiness as owner-layer refs, not KAG graph expansion or routing activation
+- keep a manifest-backed stop-rule so `aoa-kag` hardens the current portfolio before inventing new `AOA-K-*` families
 
 ## Standing discipline
 
