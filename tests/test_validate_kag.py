@@ -599,6 +599,33 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("direct_relations[0]", str(context.exception))
 
+    def test_optional_memo_export_readiness_rejects_missing_provenance_thread_relation(self) -> None:
+        payload = self.memo_kag_export_payload()
+        payload["direct_relations"] = [
+            relation
+            for relation in payload["direct_relations"]
+            if relation["relation_type"] != "provenance_thread"
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            memo_root = Path(tmpdir)
+            generated = memo_root / "generated"
+            generated.mkdir()
+            (generated / "kag_export.min.json").write_text(
+                json.dumps(payload, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            (generated / "memory_object_capsules.json").write_text(
+                json.dumps({"memory_objects": []}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            with patch.object(validate_kag, "AOA_MEMO_ROOT", memo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_optional_memo_source_owned_export_readiness()
+
+        self.assertIn("direct_relations", str(context.exception))
+
 
 class ValidateQuestbookSurfaceTests(unittest.TestCase):
     def write_valid_surface(self, repo_root: Path) -> None:
