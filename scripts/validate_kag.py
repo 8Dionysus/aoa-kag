@@ -1703,14 +1703,26 @@ def validate_antifragility_stress_surfaces() -> None:
         if snippet not in quarantine_doc:
             fail(f"docs/KAG_PROJECTION_QUARANTINE.md is missing required quarantine guidance: {snippet}")
 
-    for schema_path, example_paths in (
-        (PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH, PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS),
-        (REGROUNDING_TICKET_SCHEMA_PATH, REGROUNDING_TICKET_EXAMPLE_PATHS),
+    for schema_path, example_glob, example_paths in (
+        (
+            PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH,
+            "projection_health_receipt*.example.json",
+            PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS,
+        ),
+        (
+            REGROUNDING_TICKET_SCHEMA_PATH,
+            "regrounding_ticket*.example.json",
+            REGROUNDING_TICKET_EXAMPLE_PATHS,
+        ),
     ):
         schema = read_json(schema_path)
         if not isinstance(schema, dict):
             fail(f"{display_path(schema_path)} must remain a JSON object")
         Draft202012Validator.check_schema(schema)
+        if not example_paths:
+            fail(
+                f"examples glob matched no files for {display_path(schema_path)}: {example_glob}"
+            )
         for example_path in example_paths:
             payload = read_json(example_path)
             errors = sorted(
