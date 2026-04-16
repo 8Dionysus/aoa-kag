@@ -1,0 +1,39 @@
+{
+  "schema_version": "regrounding_ticket_v1",
+  "ticket_id": "kag:reground:return-regrounding-pack:2026-04-13",
+  "created_at_utc": "2026-04-13T13:10:00Z",
+  "projection_ref": "examples/projection_health_receipt.retrieval-outage-honesty.example.json",
+  "trigger_receipt_refs": [
+    "examples/projection_health_receipt.retrieval-outage-honesty.example.json",
+    "aoa-playbooks/examples/playbook_stress_lane.retrieval-outage-honesty.example.json"
+  ],
+  "donor_rebuild_plan": {
+    "donor_roots": [
+      "AOA_PLAYBOOKS_ROOT",
+      "AOA_EVALS_ROOT"
+    ],
+    "commands": [
+      "python scripts/generate_kag.py",
+      "python scripts/validate_kag.py",
+      "python scripts/validate_nested_agents.py"
+    ]
+  },
+  "validation_steps": [
+    "Confirm that source-owned fallback refs remain readable before any derived reopen.",
+    "Regenerate the affected return and handoff packs for the retrieval-outage lane.",
+    "Verify the resulting surfaces no longer require source_first posture for the affected route.",
+    "Re-open only if the paired playbook re-entry gate explicitly allows it."
+  ],
+  "return_posture": "source_first_until_pass",
+  "expected_outputs": [
+    "generated/return_regrounding_pack.min.json",
+    "generated/reasoning_handoff_pack.min.json"
+  ],
+  "reviewer_posture": "cross_repo_review",
+  "status": "proposed",
+  "evidence_refs": [
+    "aoa-playbooks/examples/playbook_reentry_gate.retrieval-outage-honesty.example.json",
+    "aoa-evals/docs/TRACE_EVAL_BRIDGE.md"
+  ],
+  "notes": "This ticket is the honest recovery path for the derived outage. It does not authorize synthetic continuity."
+}

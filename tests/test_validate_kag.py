@@ -64,6 +64,13 @@ class ValidateKagTestCase(unittest.TestCase):
             "non_identity_boundary": "Source-owned memo export for KAG readiness; derived consumers must not treat this bridge capsule as normalized graph truth, routing authority, or replacement for Tree-of-Sophia-authored meaning.",
         }
 
+    def test_validate_antifragility_stress_surfaces_rejects_empty_example_glob(self) -> None:
+        with patch.object(validate_kag, "PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS", ()):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_antifragility_stress_surfaces()
+
+        self.assertIn("projection_health_receipt*.example.json", str(context.exception))
+
     def test_source_owned_export_dependency_manifest_accepts_memo_cross_repo_supporting(
         self,
     ) -> None:

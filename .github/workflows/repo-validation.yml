@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/aoa-playbooks
-          ref: a7c3204a5106a26a35babc4c270a367663e44e1d
+          ref: 95b910b9cf2b2a2deff9434f3c9a2fc014b20580
           path: .deps/aoa-playbooks
 
       - name: Checkout aoa-evals
@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: 8Dionysus/aoa-techniques
-          ref: 7ac5656a22867a323ac1c1fb0c420ce0cc1e5565
+          ref: 2acca1012bd35e1230e90af4c727ac223be46fab
           path: .deps/aoa-techniques
 
       - name: Setup Python

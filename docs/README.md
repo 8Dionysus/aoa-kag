@@ -39,6 +39,8 @@ federation as a whole.
   projection-health and source-first fallback doctrine under drift.
 - Read [KAG_PROJECTION_QUARANTINE](KAG_PROJECTION_QUARANTINE.md) for bounded
   quarantine posture when derived surfaces are unsafe to expand.
+- Read [KAG_REGROUNDING_CHAOS_WAVE1](KAG_REGROUNDING_CHAOS_WAVE1.md) for the
+  retrieval-outage honesty landing over current KAG regrounding surfaces.
 - Read [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) for the current
   generated retrieval-axis pack.
 - Read [REASONING_HANDOFF](REASONING_HANDOFF.md) for the runtime-to-KAG handoff
@@ -95,6 +97,9 @@ federation as a whole.
 - [KAG_PROJECTION_QUARANTINE](KAG_PROJECTION_QUARANTINE.md) - how quarantine
   preserves provenance, fallback refs, and explicit re-entry instead of hiding
   unstable projections
+- [KAG_REGROUNDING_CHAOS_WAVE1](KAG_REGROUNDING_CHAOS_WAVE1.md) - how the
+  retrieval-outage honesty example family maps onto current KAG return and
+  handoff surfaces without absorbing runtime or eval ownership
 - [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) - how the current
   generated retrieval-axis pack materializes `AOA-K-0007` without adding
   ranking or routing policy

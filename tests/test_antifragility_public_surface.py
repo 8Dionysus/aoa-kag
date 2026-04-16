@@ -25,6 +25,14 @@ class AntifragilityPublicSurfaceTests(unittest.TestCase):
                 "schemas/regrounding_ticket_v1.json",
                 "examples/regrounding_ticket.example.json",
             ),
+            (
+                "schemas/projection_health_receipt_v1.json",
+                "examples/projection_health_receipt.retrieval-outage-honesty.example.json",
+            ),
+            (
+                "schemas/regrounding_ticket_v1.json",
+                "examples/regrounding_ticket.retrieval-outage-honesty.example.json",
+            ),
         )
 
         for schema_path, example_path in surfaces:
@@ -40,11 +48,14 @@ class AntifragilityPublicSurfaceTests(unittest.TestCase):
         docs_readme = (REPO_ROOT / "docs" / "README.md").read_text(encoding="utf-8")
         regrounding = (REPO_ROOT / "docs" / "KAG_STRESS_REGROUNDING.md").read_text(encoding="utf-8")
         quarantine = (REPO_ROOT / "docs" / "KAG_PROJECTION_QUARANTINE.md").read_text(encoding="utf-8")
+        chaos = (REPO_ROOT / "docs" / "KAG_REGROUNDING_CHAOS_WAVE1.md").read_text(encoding="utf-8")
 
         self.assertIn("docs/KAG_STRESS_REGROUNDING.md", readme)
         self.assertIn("docs/KAG_PROJECTION_QUARANTINE.md", readme)
+        self.assertIn("docs/KAG_REGROUNDING_CHAOS_WAVE1.md", readme)
         self.assertIn("KAG_STRESS_REGROUNDING", docs_readme)
         self.assertIn("KAG_PROJECTION_QUARANTINE", docs_readme)
+        self.assertIn("KAG_REGROUNDING_CHAOS_WAVE1", docs_readme)
 
         for token in (
             "do not silently regenerate and republish drifted surfaces as if nothing happened",
@@ -60,18 +71,33 @@ class AntifragilityPublicSurfaceTests(unittest.TestCase):
         ):
             self.assertIn(token, quarantine)
 
-    def test_examples_target_existing_local_surfaces(self) -> None:
-        projection = load_json("examples/projection_health_receipt.example.json")
-        ticket = load_json("examples/regrounding_ticket.example.json")
-        assert isinstance(projection, dict)
-        assert isinstance(ticket, dict)
+        for token in (
+            "KAG owns projection-health truth",
+            "generated/return_regrounding_pack.min.json",
+            "`aoa-playbooks` owns the runtime-chaos lane and re-entry gate",
+        ):
+            self.assertIn(token, chaos)
 
-        self.assertTrue((REPO_ROOT / projection["bounded_scope"]["value"]).is_file())
-        for relative_path in projection["affected_generated_surfaces"]:
-            self.assertTrue((REPO_ROOT / relative_path).is_file())
-        self.assertTrue((REPO_ROOT / ticket["projection_ref"]).is_file())
-        for relative_path in ticket["expected_outputs"]:
-            self.assertTrue((REPO_ROOT / relative_path).is_file())
+    def test_examples_target_existing_local_surfaces(self) -> None:
+        for projection_path in (
+            "examples/projection_health_receipt.example.json",
+            "examples/projection_health_receipt.retrieval-outage-honesty.example.json",
+        ):
+            projection = load_json(projection_path)
+            assert isinstance(projection, dict)
+            self.assertTrue((REPO_ROOT / projection["bounded_scope"]["value"]).is_file())
+            for relative_path in projection["affected_generated_surfaces"]:
+                self.assertTrue((REPO_ROOT / relative_path).is_file())
+
+        for ticket_path in (
+            "examples/regrounding_ticket.example.json",
+            "examples/regrounding_ticket.retrieval-outage-honesty.example.json",
+        ):
+            ticket = load_json(ticket_path)
+            assert isinstance(ticket, dict)
+            self.assertTrue((REPO_ROOT / ticket["projection_ref"]).is_file())
+            for relative_path in ticket["expected_outputs"]:
+                self.assertTrue((REPO_ROOT / relative_path).is_file())
 
 
 if __name__ == "__main__":
