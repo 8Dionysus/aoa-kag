@@ -24,6 +24,7 @@ It now also carries one explicit counterpart federation exposure review artifact
 It now also carries one bounded recurrence regrounding surface so federation entry, retrieval-axis use, reasoning handoff, and cross-source projection can return callers toward stronger source-owned or owner-owned refs without widening KAG sovereignty.
 For `aoa-memo`, that regrounding surface now points future durable-consequence, retention, and live-ledger pressure back to the memo-owned memory readiness boundary instead of letting KAG treat that pressure as graph or routing readiness.
 It now also carries one manifest-driven maturity-governance surface that names stability tiers, owner wait states, proof expectations, and the current stop-rule for new `AOA-K-*` growth while neighboring owner layers are still maturing.
+It now also carries one retrieval-outage honesty example family for projection-health and regrounding so source-first recovery remains explicit when derived bridge posture weakens.
 
 ### Current release contour
 
@@ -52,7 +53,10 @@ not a claim that KAG is a full graph engine or a source-authoritative layer:
   `docs/BRIDGE_CONTRACTS.md`,
   `docs/RECURRENCE_REGROUNDING.md`,
   `docs/KAG_STRESS_REGROUNDING.md`,
-  and `docs/KAG_PROJECTION_QUARANTINE.md`
+  `docs/KAG_PROJECTION_QUARANTINE.md`,
+  `docs/KAG_REGROUNDING_CHAOS_WAVE1.md`,
+  `examples/projection_health_receipt.retrieval-outage-honesty.example.json`,
+  and `examples/regrounding_ticket.retrieval-outage-honesty.example.json`
 - federation, counterpart, tiny-consumer, and cross-source adjuncts:
   `generated/federation_spine.min.json`,
   `generated/counterpart_federation_exposure_review.min.json`,

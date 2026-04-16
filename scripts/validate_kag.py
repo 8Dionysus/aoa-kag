@@ -272,6 +272,12 @@ PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATH = (
 REGROUNDING_TICKET_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "regrounding_ticket.example.json"
 )
+PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS = tuple(
+    sorted((REPO_ROOT / "examples").glob("projection_health_receipt*.example.json"))
+)
+REGROUNDING_TICKET_EXAMPLE_PATHS = tuple(
+    sorted((REPO_ROOT / "examples").glob("regrounding_ticket*.example.json"))
+)
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
 ALLOWED_SOURCE_CLASS = {
@@ -1697,104 +1703,109 @@ def validate_antifragility_stress_surfaces() -> None:
         if snippet not in quarantine_doc:
             fail(f"docs/KAG_PROJECTION_QUARANTINE.md is missing required quarantine guidance: {snippet}")
 
-    for schema_path, example_path in (
-        (PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH, PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATH),
-        (REGROUNDING_TICKET_SCHEMA_PATH, REGROUNDING_TICKET_EXAMPLE_PATH),
+    for schema_path, example_paths in (
+        (PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH, PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS),
+        (REGROUNDING_TICKET_SCHEMA_PATH, REGROUNDING_TICKET_EXAMPLE_PATHS),
     ):
         schema = read_json(schema_path)
         if not isinstance(schema, dict):
             fail(f"{display_path(schema_path)} must remain a JSON object")
         Draft202012Validator.check_schema(schema)
-        payload = read_json(example_path)
-        errors = sorted(
-            Draft202012Validator(schema).iter_errors(payload),
-            key=lambda error: (list(error.absolute_path), error.message),
-        )
-        if errors:
-            first = errors[0]
-            error_path = format_schema_path(list(first.absolute_path))
-            if error_path:
-                fail(f"{display_path(example_path)} schema violation at '{error_path}': {first.message}")
-            fail(f"{display_path(example_path)} schema violation: {first.message}")
+        for example_path in example_paths:
+            payload = read_json(example_path)
+            errors = sorted(
+                Draft202012Validator(schema).iter_errors(payload),
+                key=lambda error: (list(error.absolute_path), error.message),
+            )
+            if errors:
+                first = errors[0]
+                error_path = format_schema_path(list(first.absolute_path))
+                if error_path:
+                    fail(f"{display_path(example_path)} schema violation at '{error_path}': {first.message}")
+                fail(f"{display_path(example_path)} schema violation: {first.message}")
 
-    projection_example = read_json(PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATH)
-    if not isinstance(projection_example, dict):
-        fail("examples/projection_health_receipt.example.json must remain an object")
-    bounded_scope = projection_example.get("bounded_scope")
-    if not isinstance(bounded_scope, dict):
-        fail("examples/projection_health_receipt.example.json bounded_scope must be an object")
-    resolve_relative_ref(
-        REPO_ROOT,
-        str(bounded_scope.get("value")),
-        label="examples/projection_health_receipt.example.json bounded_scope.value",
-    )
-    for index, ref in enumerate(validate_unique_string_list(
-        projection_example.get("affected_generated_surfaces"),
-        label="examples/projection_health_receipt.example.json affected_generated_surfaces",
-    )):
+    for projection_example_path in PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS:
+        projection_example = read_json(projection_example_path)
+        example_label = display_path(projection_example_path)
+        if not isinstance(projection_example, dict):
+            fail(f"{example_label} must remain an object")
+        bounded_scope = projection_example.get("bounded_scope")
+        if not isinstance(bounded_scope, dict):
+            fail(f"{example_label} bounded_scope must be an object")
         resolve_relative_ref(
             REPO_ROOT,
-            ref,
-            label=f"examples/projection_health_receipt.example.json affected_generated_surfaces[{index}]",
+            str(bounded_scope.get("value")),
+            label=f"{example_label} bounded_scope.value",
         )
-    for index, ref in enumerate(validate_unique_string_list(
-        projection_example.get("evidence_refs"),
-        label="examples/projection_health_receipt.example.json evidence_refs",
-    )):
-        if ":" not in ref:
-            resolve_known_ref(
+        for index, ref in enumerate(validate_unique_string_list(
+            projection_example.get("affected_generated_surfaces"),
+            label=f"{example_label} affected_generated_surfaces",
+        )):
+            resolve_relative_ref(
+                REPO_ROOT,
                 ref,
-                label=f"examples/projection_health_receipt.example.json evidence_refs[{index}]",
+                label=f"{example_label} affected_generated_surfaces[{index}]",
             )
-    for index, ref in enumerate(validate_unique_string_list(
-        projection_example.get("source_fallback_refs"),
-        label="examples/projection_health_receipt.example.json source_fallback_refs",
-    )):
-        if ":" not in ref:
-            resolve_known_ref(
-                ref,
-                label=f"examples/projection_health_receipt.example.json source_fallback_refs[{index}]",
-            )
+        for index, ref in enumerate(validate_unique_string_list(
+            projection_example.get("evidence_refs"),
+            label=f"{example_label} evidence_refs",
+        )):
+            if ":" not in ref:
+                resolve_known_ref(
+                    ref,
+                    label=f"{example_label} evidence_refs[{index}]",
+                )
+        for index, ref in enumerate(validate_unique_string_list(
+            projection_example.get("source_fallback_refs"),
+            label=f"{example_label} source_fallback_refs",
+        )):
+            if ":" not in ref:
+                resolve_known_ref(
+                    ref,
+                    label=f"{example_label} source_fallback_refs[{index}]",
+                )
 
-    regrounding_ticket = read_json(REGROUNDING_TICKET_EXAMPLE_PATH)
-    if not isinstance(regrounding_ticket, dict):
-        fail("examples/regrounding_ticket.example.json must remain an object")
-    projection_ref = regrounding_ticket.get("projection_ref")
-    if not isinstance(projection_ref, str) or not projection_ref:
-        fail("examples/regrounding_ticket.example.json projection_ref must be a non-empty string")
-    if ":" not in projection_ref:
-        resolve_known_ref(
-            projection_ref,
-            label="examples/regrounding_ticket.example.json projection_ref",
-        )
-    for index, ref in enumerate(validate_unique_string_list(
-        regrounding_ticket.get("trigger_receipt_refs"),
-        label="examples/regrounding_ticket.example.json trigger_receipt_refs",
-    )):
-        if ":" not in ref:
+    for regrounding_ticket_path in REGROUNDING_TICKET_EXAMPLE_PATHS:
+        regrounding_ticket = read_json(regrounding_ticket_path)
+        example_label = display_path(regrounding_ticket_path)
+        if not isinstance(regrounding_ticket, dict):
+            fail(f"{example_label} must remain an object")
+        projection_ref = regrounding_ticket.get("projection_ref")
+        if not isinstance(projection_ref, str) or not projection_ref:
+            fail(f"{example_label} projection_ref must be a non-empty string")
+        if ":" not in projection_ref:
             resolve_known_ref(
-                ref,
-                label=f"examples/regrounding_ticket.example.json trigger_receipt_refs[{index}]",
+                projection_ref,
+                label=f"{example_label} projection_ref",
             )
-    for index, ref in enumerate(validate_unique_string_list(
-        regrounding_ticket.get("expected_outputs"),
-        label="examples/regrounding_ticket.example.json expected_outputs",
-    )):
-        resolve_relative_ref(
-            REPO_ROOT,
-            ref,
-            label=f"examples/regrounding_ticket.example.json expected_outputs[{index}]",
-        )
-    for index, ref in enumerate(validate_unique_string_list(
-        regrounding_ticket.get("evidence_refs"),
-        label="examples/regrounding_ticket.example.json evidence_refs",
-        allow_empty=True,
-    )):
-        if ":" not in ref:
-            resolve_known_ref(
+        for index, ref in enumerate(validate_unique_string_list(
+            regrounding_ticket.get("trigger_receipt_refs"),
+            label=f"{example_label} trigger_receipt_refs",
+        )):
+            if ":" not in ref:
+                resolve_known_ref(
+                    ref,
+                    label=f"{example_label} trigger_receipt_refs[{index}]",
+                )
+        for index, ref in enumerate(validate_unique_string_list(
+            regrounding_ticket.get("expected_outputs"),
+            label=f"{example_label} expected_outputs",
+        )):
+            resolve_relative_ref(
+                REPO_ROOT,
                 ref,
-                label=f"examples/regrounding_ticket.example.json evidence_refs[{index}]",
+                label=f"{example_label} expected_outputs[{index}]",
             )
+        for index, ref in enumerate(validate_unique_string_list(
+            regrounding_ticket.get("evidence_refs"),
+            label=f"{example_label} evidence_refs",
+            allow_empty=True,
+        )):
+            if ":" not in ref:
+                resolve_known_ref(
+                    ref,
+                    label=f"{example_label} evidence_refs[{index}]",
+                )
 
 
 def validate_unique_string_list(

@@ -62,7 +62,7 @@
     "Validation",
     "Adaptation notes"
   ],
-  "technique_count": 99,
+  "technique_count": 100,
   "techniques": [
     {
       "technique_id": "AOA-T-0001",
@@ -9504,6 +9504,96 @@
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/system-recovery/isolated-service-stop-on-shared-substrate/notes/origin-evidence.md"
+          }
+        ]
+      }
+    },
+    {
+      "technique_id": "AOA-T-0100",
+      "technique_name": "stress-receipt-reground-closeout",
+      "source_ref": "aoa-techniques/techniques/system-recovery/stress-receipt-reground-closeout/TECHNIQUE.md",
+      "section_lift": {
+        "section_count": 10,
+        "sections": [
+          {
+            "heading": "Intent",
+            "order": 1
+          },
+          {
+            "heading": "When to use",
+            "order": 2
+          },
+          {
+            "heading": "When not to use",
+            "order": 3
+          },
+          {
+            "heading": "Inputs",
+            "order": 4
+          },
+          {
+            "heading": "Outputs",
+            "order": 5
+          },
+          {
+            "heading": "Core procedure",
+            "order": 6
+          },
+          {
+            "heading": "Contracts",
+            "order": 7
+          },
+          {
+            "heading": "Risks",
+            "order": 8
+          },
+          {
+            "heading": "Validation",
+            "order": 9
+          },
+          {
+            "heading": "Adaptation notes",
+            "order": 10
+          }
+        ]
+      },
+      "metadata_spine": {
+        "domain": "system-recovery",
+        "status": "promoted",
+        "summary": "Record one bounded stress event, preserve the smallest honest continuation, route through owner layers, and close out with reviewed evidence before any later proof reading.",
+        "maturity_score": 3,
+        "rigor_level": "bounded",
+        "reversibility": "easy",
+        "review_required": true,
+        "validation_strength": "source_backed",
+        "export_ready": true
+      },
+      "relation_view": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0097"
+          },
+          {
+            "relation_type": "complements",
+            "target_ref": "aoa-techniques/AOA-T-0098"
+          }
+        ]
+      },
+      "provenance_view": {
+        "public_safety_reviewed_at": "2026-04-16",
+        "note_count": 2,
+        "note_handles": [
+          {
+            "kind": "origin_evidence",
+            "title": "Origin Evidence",
+            "note_ref": "aoa-techniques/techniques/system-recovery/stress-receipt-reground-closeout/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/system-recovery/stress-receipt-reground-closeout/notes/second-context-adaptation.md"
           }
         ]
       }
