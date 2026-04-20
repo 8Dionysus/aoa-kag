@@ -7,13 +7,37 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-19
+
+### Summary
+
+- this patch adds chaos-wave regrounding and stronger maturity governance
+  across the derived KAG layer
+- memo-readiness regrounding, release posture, and roadmap/README boundaries
+  are tightened without widening source ownership
+- `aoa-kag` remains provenance-aware derived structure rather than a
+  source-authoritative repository
+
 ### Added
 
 - manifest-backed KAG maturity governance surface covering stability tiers, owner wait states, proof expectations, and the current stop-rule for new `AOA-K-*` growth
+- chaos wave 1 regrounding surfaces for current retrieval and return-pressure
+  scenarios
 
 ### Changed
 
 - tightened README and roadmap posture so the current pause threshold is explicit: maintain and prove the existing surface set while neighboring owner layers mature
+- memo-readiness regrounding, release posture, and CI/protection surfaces are
+  aligned with the current KAG maintenance line
+
+### Validation
+
+- `python scripts/release_check.py`
+
+### Notes
+
+- this patch makes the current maintenance-and-proof stop rule explicit while
+  keeping KAG subordinate to source-owning repositories
 
 ## [0.2.0] - 2026-04-10
 
