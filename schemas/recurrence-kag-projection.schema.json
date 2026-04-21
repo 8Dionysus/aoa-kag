@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa.local/schemas/recurrence-kag-projection.schema.json",
+  "title": "AoA recurrence KAG projection",
+  "type": "object",
+  "required": ["schema_version", "projection_ref", "workspace_root", "donor_refresh_obligations", "retrieval_invalidation_hints", "source_strength_hints", "regrounding_modes"],
+  "properties": {
+    "schema_version": {"const": "aoa_recurrence_kag_projection_v1"},
+    "projection_ref": {"type": "string"},
+    "workspace_root": {"type": "string"},
+    "source_packet_refs": {"type": "array", "items": {"type": "string"}},
+    "donor_refresh_obligations": {"type": "array", "items": {"type": "object"}},
+    "retrieval_invalidation_hints": {"type": "array", "items": {"type": "object"}},
+    "source_strength_hints": {"type": "array", "items": {"type": "object"}},
+    "regrounding_modes": {"type": "array", "items": {"enum": ["source_export_reentry", "bridge_axis_reentry", "projection_boundary_reentry", "handoff_guardrail_reentry", "owner_boundary_reentry"]}},
+    "boundary_notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

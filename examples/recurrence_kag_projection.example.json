@@ -1,0 +1,20 @@
+{
+  "schema_version": "aoa_recurrence_kag_projection_v1",
+  "projection_ref": "recurrence-kag-projection:example",
+  "workspace_root": "/srv/workspace",
+  "source_packet_refs": ["handoff:example"],
+  "donor_refresh_obligations": [],
+  "retrieval_invalidation_hints": [],
+  "source_strength_hints": [
+    {
+      "hint_ref": "kag-source-strength:0001",
+      "owner_repo": "aoa-techniques",
+      "stronger_source_refs": ["docs/CROSS_LAYER_TECHNIQUE_CANDIDATES.md"],
+      "weaker_derived_refs": ["handoff:example"],
+      "reason": "derived candidate needs owner source re-entry",
+      "mode": "source_export_reentry"
+    }
+  ],
+  "regrounding_modes": ["source_export_reentry"],
+  "boundary_notes": ["aoa-kag receives regrounding and donor-refresh obligations only."]
+}
