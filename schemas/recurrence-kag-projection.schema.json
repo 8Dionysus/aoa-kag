@@ -11,9 +11,27 @@
     "source_packet_refs": {"type": "array", "items": {"type": "string"}},
     "donor_refresh_obligations": {"type": "array", "items": {"type": "object"}},
     "retrieval_invalidation_hints": {"type": "array", "items": {"type": "object"}},
-    "source_strength_hints": {"type": "array", "items": {"type": "object"}},
-    "regrounding_modes": {"type": "array", "items": {"enum": ["source_export_reentry", "bridge_axis_reentry", "projection_boundary_reentry", "handoff_guardrail_reentry", "owner_boundary_reentry"]}},
+    "source_strength_hints": {"type": "array", "items": {"$ref": "#/$defs/source_strength_hint"}},
+    "regrounding_modes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/regrounding_mode"}},
     "boundary_notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "regrounding_mode": {
+      "enum": ["source_export_reentry", "bridge_axis_reentry", "projection_boundary_reentry", "handoff_guardrail_reentry", "owner_boundary_reentry"]
+    },
+    "source_strength_hint": {
+      "type": "object",
+      "required": ["hint_ref", "owner_repo", "stronger_source_refs", "weaker_derived_refs", "reason", "mode"],
+      "properties": {
+        "hint_ref": {"type": "string", "minLength": 1},
+        "owner_repo": {"type": "string", "minLength": 1},
+        "stronger_source_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "weaker_derived_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "reason": {"type": "string", "minLength": 1},
+        "mode": {"$ref": "#/$defs/regrounding_mode"}
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

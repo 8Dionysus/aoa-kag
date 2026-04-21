@@ -4,7 +4,7 @@
 
 Allowed generated candidates:
 
-- `generated/recurrence_regrounding_pack.min.json`
-- `generated/donor_refresh_obligations.min.json`
+- `generated/return_regrounding_pack.min.json`
+- `generated/reasoning_handoff_pack.min.json`
 
 The projection should point toward stronger owner/source refs when derived substrate confidence weakens. It must not turn KAG into source truth, proof authority, routing owner, memory owner, canon author, or hidden graph sovereign.
