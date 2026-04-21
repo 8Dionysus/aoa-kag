@@ -1,0 +1,26 @@
+{
+  "component_id": "component.agon.wave17.aoa_kag",
+  "forbidden_actions": [
+    "open_arena_session",
+    "issue_verdict",
+    "write_scar",
+    "mutate_rank",
+    "promote_to_tree_of_sophia",
+    "canonicalize_kag",
+    "auto_rewrite_owner_repo",
+    "hidden_scheduler_action",
+    "single_event_promotion"
+  ],
+  "observation_only": true,
+  "repo": "aoa-kag",
+  "surfaces": [
+    "generated/agon_kag_promotion_candidate_registry.min.json",
+    "config/agon_kag_promotion_candidates.seed.json",
+    "docs/AGON_KAG_PROMOTION_CANDIDATES.md",
+    "docs/AGON_KAG_DERIVED_SUBSTRATE_BOUNDARY.md",
+    "docs/AGON_KAG_TOS_THRESHOLD_BOUNDARY.md",
+    "docs/AGON_WAVE17_KAG_LANDING.md"
+  ],
+  "title": "Wave XVII aoa-kag surfaces",
+  "wave": "XVII"
+}
