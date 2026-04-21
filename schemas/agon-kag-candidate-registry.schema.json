@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "entry": {
+      "additionalProperties": false,
+      "properties": {
+        "accepts": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "assistant_contestant_allowed": {
+          "const": false
+        },
+        "authority_posture": {
+          "const": "non_authority"
+        },
+        "candidate_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "candidate_status": {
+          "const": "kag_review_candidate_only"
+        },
+        "canonical_status": {
+          "const": "not_canon"
+        },
+        "derived_substrate_posture": {
+          "const": "non_canonical_derived_view"
+        },
+        "forbidden_effects": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "kag_status": {
+          "const": "candidate_only"
+        },
+        "live_protocol": {
+          "const": false
+        },
+        "produces": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "promotion_requires": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "purpose": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "review_status": {
+          "const": "candidate_only"
+        },
+        "runtime_effect": {
+          "enum": [
+            "none",
+            "candidate_only",
+            "local_dry_run_candidate_only",
+            "local_rehearsal_candidate_only"
+          ]
+        },
+        "source_truth_posture": {
+          "const": "owner_retained"
+        },
+        "stop_lines": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "wave": {
+          "const": "XVII"
+        }
+      },
+      "required": [
+        "accepts",
+        "assistant_contestant_allowed",
+        "authority_posture",
+        "candidate_id",
+        "candidate_status",
+        "canonical_status",
+        "derived_substrate_posture",
+        "forbidden_effects",
+        "kag_status",
+        "live_protocol",
+        "produces",
+        "promotion_requires",
+        "purpose",
+        "review_status",
+        "runtime_effect",
+        "source_truth_posture",
+        "stop_lines",
+        "wave"
+      ],
+      "title": "agon-kag-candidate.schema.json item contract",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "count": {
+      "const": 9
+    },
+    "digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "kag_candidates": {
+      "items": {
+        "$ref": "#/$defs/entry"
+      },
+      "maxItems": 9,
+      "minItems": 9,
+      "type": "array"
+    },
+    "registry_id": {
+      "const": "agon.kag_promotion_candidates.registry.v1"
+    },
+    "runtime_posture": {
+      "const": "candidate_only"
+    },
+    "wave": {
+      "const": "XVII"
+    },
+    "wave_name": {
+      "const": "KAG Promotion Path"
+    }
+  },
+  "required": [
+    "registry_id",
+    "wave",
+    "wave_name",
+    "runtime_posture",
+    "count",
+    "kag_candidates",
+    "digest"
+  ],
+  "title": "agon.kag_promotion_candidates.registry.v1 generated registry contract",
+  "type": "object"
+}
