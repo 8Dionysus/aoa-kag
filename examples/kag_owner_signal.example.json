@@ -1,0 +1,26 @@
+{
+  "schema_id": "kag_owner_signal_v1",
+  "kind": "kag_owner_signal",
+  "version": "1.0",
+  "status": "proposed",
+  "summary": "Example kag_owner_signal object for Experience Adoption Forge v0.7.",
+  "refs": {
+    "source": "experience.shared_pattern_registry",
+    "owner": "aoa-kag",
+    "related": [
+      "experience.v0.6.federation_harvest",
+      "experience.v0.7.adoption_forge"
+    ]
+  },
+  "payload": {
+    "wave": "v0.7",
+    "repo": "aoa-kag",
+    "pattern_ref": "pattern.shared.wrong_surface_to_owner_landing.v1",
+    "owner_surface": "aoa-kag",
+    "requires_owner_consent": true,
+    "rollback_required": true,
+    "retention_cycles": 3,
+    "kag_may_propose": true,
+    "kag_may_force_uptake": false
+  }
+}
