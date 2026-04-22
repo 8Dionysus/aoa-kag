@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "kind": "kag_federation_lineage_link",
+  "id": "kag_federation_lineage_link.example",
+  "status": "candidate",
+  "summary": "Example kag_federation_lineage_link object for v0.6 federation harvest seed.",
+  "owner_repo": "aoa-kag",
+  "evidence_refs": [
+    "receipt://v0.6/kag_federation_lineage_link/example"
+  ],
+  "payload": {
+    "node_id": "kag.pattern.wrong_surface.001",
+    "lineage": [
+      "pattern.wrong_surface.cross_repo.001"
+    ]
+  }
+}

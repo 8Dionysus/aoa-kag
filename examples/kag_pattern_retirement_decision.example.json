@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "kind": "kag_pattern_retirement_decision",
+  "id": "kag_pattern_retirement_decision.example",
+  "status": "approved",
+  "summary": "Example kag_pattern_retirement_decision object for v0.6 federation harvest seed.",
+  "owner_repo": "aoa-kag",
+  "evidence_refs": [
+    "receipt://v0.6/kag_pattern_retirement_decision/example"
+  ],
+  "payload": {
+    "node_id": "kag.pattern.old.001",
+    "decision": "retire",
+    "reason": "obsolete_after_patch"
+  }
+}
