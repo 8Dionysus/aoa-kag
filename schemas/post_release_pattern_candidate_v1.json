@@ -23,12 +23,14 @@
     "evidence_refs": {
       "type": "array",
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
     },
     "promotion_status": {
       "type": "string"
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }
