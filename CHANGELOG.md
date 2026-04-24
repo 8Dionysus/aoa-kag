@@ -7,6 +7,45 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-04-23
+
+### Summary
+
+- this patch lands Agon KAG promotion candidates, Sophian packet surfaces,
+  KAG-to-ToS threshold boundaries, and KAG-to-owner signals while keeping KAG
+  subordinate to source-owned meaning
+- recurrence projection input contracts, post-release pattern candidates,
+  federation pattern harvest, pattern adoption dossiers, retirement/downlink
+  surfaces, and wave3 KAG candidate contracts are added beside wave2/wave3
+  hardening
+- `aoa-kag` remains the provenance-aware derived substrate layer rather than a
+  source-authoritative graph, runtime service, or proof owner
+
+### Added
+
+- Agon KAG promotion candidate registry, Sophian KAG packet registry,
+  KAG-to-ToS threshold boundaries, KAG-to-owner signals, and promotion
+  evidence bundle surfaces
+- recurrence projection input contracts, post-release pattern candidate seam,
+  federation pattern harvest, KAG pattern nodes, adoption dossiers, downlinks,
+  retirement decisions, and ToS dossier bridge surfaces
+- wave3 KAG candidate contract surfaces and generated recurrence manifests
+
+### Changed
+
+- Agon KAG review follow-ups, recurrence projection contracts,
+  source/proof boundary wording, and wave2/wave3 KAG contract hardening were
+  tightened
+
+### Validation
+
+- `python scripts/release_check.py`
+
+### Notes
+
+- this patch is a bounded derived-substrate release; source repositories still
+  own authored meaning and proof repositories still own verdict posture
+
 ## [0.2.1] - 2026-04-19
 
 ### Summary
