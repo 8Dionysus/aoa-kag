@@ -5,7 +5,7 @@ AoA KAG layer.
 
 ## Current phase
 
-`aoa-kag` has moved beyond bootstrap into `v0.2.1` derived-substrate release
+`aoa-kag` has moved beyond bootstrap into `v0.2.2` derived-substrate release
 hardening.
 The current goal is not to build a giant graph engine.
 The goal is to keep clear what the KAG layer is for, what it owns, and what it must not silently absorb.
@@ -28,7 +28,7 @@ It now also carries one retrieval-outage honesty example family for projection-h
 
 ### Current release contour
 
-For `v0.2.1`, the release contour is the current derived substrate portfolio,
+For `v0.2.2`, the release contour is the current derived substrate portfolio,
 not a claim that KAG is a full graph engine or a source-authoritative layer:
 
 - registry and source-owned federation export posture:
