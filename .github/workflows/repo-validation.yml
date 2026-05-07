@@ -25,42 +25,42 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Tree-of-Sophia
-          ref: 3d46359d1287772ac41a26ba428f925427a6158f
+          ref: b934ed059fbf741e9cf41b45281461aa307f84fd
           path: .deps/Tree-of-Sophia
 
       - name: Checkout aoa-memo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-memo
-          ref: 1dd85f6beb66fb8c518c4aac1727dee7c4055b29
+          ref: e4c84b41ea58571fda5815d2d20bc2968cd184d3
           path: .deps/aoa-memo
 
       - name: Checkout aoa-playbooks
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-playbooks
-          ref: 95b910b9cf2b2a2deff9434f3c9a2fc014b20580
+          ref: d7d7ac75b4073f40218c7d24873265d450898d3f
           path: .deps/aoa-playbooks
 
       - name: Checkout aoa-evals
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-evals
-          ref: e31fa4b612e2fe647183d4410d1568c4c7c54edf
+          ref: e46e56c41c264968364820516e9b75b34f713976
           path: .deps/aoa-evals
 
       - name: Checkout aoa-agents
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-agents
-          ref: c3c9dae910fe631146a6c4af8c4341675addeb65
+          ref: c73b5f66c6fe0e2c14b478e1a99826fbd7e0efb6
           path: .deps/aoa-agents
 
       - name: Checkout aoa-techniques
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-techniques
-          ref: 2acca1012bd35e1230e90af4c727ac223be46fab
+          ref: dca2de00d21264b95410123e7b85fa65df6203e4
           path: .deps/aoa-techniques
 
       - name: Setup Python
