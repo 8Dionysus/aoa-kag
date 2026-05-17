@@ -307,7 +307,7 @@
         "rigor_level": "strict",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -720,7 +720,7 @@
         "rigor_level": "strict",
         "reversibility": "hard",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -816,7 +816,7 @@
         "domain": "evaluation",
         "status": "canonical",
         "summary": "Read-only aggregation pattern that turns latest published summaries into a bounded remediation snapshot without replaying history or changing runtime behavior.",
-        "maturity_score": 4,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
@@ -1016,7 +1016,7 @@
         "domain": "evaluation",
         "status": "canonical",
         "summary": "Read-only integrity verdict that checks telemetry and summary-layout invariants across latest published summaries without widening the hard fail surface.",
-        "maturity_score": 4,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
@@ -1220,7 +1220,7 @@
         "domain": "docs",
         "status": "canonical",
         "summary": "Compose agent context from smaller fragments into a stable generated artifact with deterministic ordering and source traceability.",
-        "maturity_score": 4,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
@@ -2390,13 +2390,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Mirror upstream-owned content into a curated local collection through an explicit source manifest and preserved provenance so the local copy stays reviewable without pretending to be the canonical source.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2409,9 +2409,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/instruction-surface/upstream-mirroring-with-provenance/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -2486,13 +2491,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep agent-facing capability contracts in a versioned, reviewable spec so capability changes stay explicit and reusable without turning the spec into routing or registry policy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2505,9 +2510,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/capability-registry/capability-spec-versioning/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -2582,13 +2592,13 @@
       },
       "metadata_spine": {
         "domain": "history",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Capture AI coding sessions as versioned repo artifacts so project history stays searchable, reviewable, and reusable without turning session logs into memory or instruction policy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2601,9 +2611,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/history/history-artifacts/session-capture-as-repo-artifact/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -2678,13 +2693,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep one canonical skill or rule source and propagate it to multiple agent-facing targets without turning each target into a hand-maintained source of truth.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2697,9 +2712,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/instruction-surface/cross-agent-skill-propagation/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -2875,13 +2895,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Load hierarchical rule layers with explicit precedence so nested additions stay subordinate to one canonical source of ownership.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2894,9 +2914,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/instruction-surface/nested-rule-loading/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -2971,13 +2996,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep agent context in bounded fragments before deterministic assembly so modular authoring stays reviewable without collapsing into the final generated artifact.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -2990,9 +3015,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-21",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/instruction-surface/fragmented-agent-context/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3264,13 +3294,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep one meaningful decision in a reviewable note with context, options, rationale, and consequences while staying out of source-of-truth governance and architecture taxonomy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3278,9 +3308,14 @@
         "relations": []
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-22",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/docs-boundary/decision-rationale-recording/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3532,13 +3567,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Render the actual composed runtime truth before startup so operators review the effective service and config view instead of relying only on declared profiles.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3551,9 +3586,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-22",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/execution/runtime-truth-lifecycle/render-truth-before-startup/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3623,13 +3663,13 @@
       },
       "metadata_spine": {
         "domain": "evaluation",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Run selector-aware host-readiness checks before startup so environment drift becomes visible for the chosen runtime without widening into generic monitoring or lifecycle control.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3642,9 +3682,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-22",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/execution/runtime-truth-lifecycle/contextual-host-doctor/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3714,13 +3759,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Start and stop a bounded local service stack through one explicit lifecycle entrypoint so prerequisite checks, visible runtime status, and clean shutdown stay reviewable without widening into generic launcher or platform doctrine.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3737,9 +3782,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/execution/runtime-truth-lifecycle/one-command-service-lifecycle/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3814,13 +3864,13 @@
       },
       "metadata_spine": {
         "domain": "evaluation",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Benchmark one stable baseline profile first, then compare additive profiles against the same measurement surface and artifact shape so richer profiles stay additive and off the default path.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3833,9 +3883,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/execution/runtime-truth-lifecycle/baseline-first-additive-profile-benchmarks/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3905,13 +3960,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Separate reusable skill meaning from user-facing command invocation so shared capability stays portable without collapsing into slash-command syntax or command-specific workflow policy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -3924,9 +3979,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/capability-boundary/skill-vs-command-boundary/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -3996,13 +4056,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Curate a local discoverability layer over upstream-owned skill sources so selection stays editorial and reviewable without pretending the catalog owns sync, capability meaning, or registry policy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4015,9 +4075,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/skill-discovery/skill-marketplace-curation/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -4183,13 +4248,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Mark primary versus supporting source inputs explicitly when bridging multiple source surfaces so downstream readers and synthesis keep provenance priority visible without turning the bridge into graph semantics or ranking doctrine.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4206,9 +4271,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/capability-boundary/multi-source-primary-input-provenance/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -4379,13 +4449,13 @@
       },
       "metadata_spine": {
         "domain": "history",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Preserve a bounded witness trace as a reviewable artifact with step visibility, state-delta notes, and human-readable summary so a nontrivial run can be inspected before any writeback or promotion without creating a new memory-object kind.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4402,9 +4472,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/history/history-artifacts/witness-trace-as-reviewable-artifact/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -4474,13 +4549,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Lift one bounded set of authoritative repo docs and status files into derived routing knowledge without replacing the authored docs or widening into a docs taxonomy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4497,13 +4572,28 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 1,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/repo-doc-surface-lift/notes/adverse-effects-review.md"
+          },
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/repo-doc-surface-lift/notes/canonical-readiness.md"
+          },
           {
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/repo-doc-surface-lift/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/repo-doc-surface-lift/notes/second-context-adaptation.md"
           }
         ]
       }
@@ -4579,12 +4669,22 @@
       },
       "provenance_view": {
         "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 1,
+        "note_count": 3,
         "note_handles": [
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/github-review-template-lift/notes/canonical-readiness.md"
+          },
           {
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/github-review-template-lift/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/github-review-template-lift/notes/second-context-adaptation.md"
           }
         ]
       }
@@ -4640,13 +4740,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Lift authored semantic-review docs into derived boundary-review knowledge without creating automatic semantic verdicts.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4659,13 +4759,28 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-23",
-        "note_count": 1,
+        "public_safety_reviewed_at": "2026-05-14",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/semantic-review-surface-lift/notes/adverse-effects-review.md"
+          },
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/semantic-review-surface-lift/notes/canonical-readiness.md"
+          },
           {
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/semantic-review-surface-lift/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/knowledge-lift/kag-source-lift/semantic-review-surface-lift/notes/second-context-adaptation.md"
           }
         ]
       }
@@ -4721,13 +4836,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Model multi-step coding work as explicit dependency nodes and edges so blocked state and ready work stay reviewable instead of hiding in chat memory.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4740,9 +4855,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-27",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/execution/ready-work-graphs/dependency-aware-task-graph/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -4817,13 +4937,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Derive the next bounded work queue from blocker-free graph state so operators choose from what is truly ready instead of narrating readiness from memory.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4840,9 +4960,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-27",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/execution/ready-work-graphs/ready-work-from-blocker-graph/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -4917,13 +5042,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Trigger a bounded background review after a commit so findings survive as inspectable artifacts without widening into autonomous merge, rewrite, or CI governance.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -4936,9 +5061,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-27",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/review-compaction/commit-triggered-background-review/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5013,13 +5143,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Compact and revalidate review findings against current code so repeated or stale findings do not overwhelm the current review surface.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5032,9 +5162,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-27",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/review-compaction/review-findings-compaction/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5214,13 +5349,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Re-seed skill availability after context compaction so agents can reload needed skills from canonical sources without widening into full context reconstruction or prompt stuffing.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5233,9 +5368,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/review-compaction/compaction-resilient-skill-loading/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5310,13 +5450,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Separate requirements, design, and task slices so implementation planning stays reviewable without importing a full spec-driven methodology stack.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5329,9 +5469,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/execution/ready-work-graphs/requirements-design-tasks-ladder/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5406,13 +5551,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep agent communication inside durable named channels with ordered replay and explicit acknowledgment so coordination survives session gaps without widening into a full messaging platform or handoff-governance stack.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5420,9 +5565,14 @@
         "relations": []
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/handoff-continuation/channelized-agent-mailbox/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5497,13 +5647,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Write one structured handoff artifact before compaction or session rollover so the next session can resume from explicit state instead of hidden memory or transcript replay.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5516,9 +5666,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/handoff-continuation/structured-handoff-before-compaction/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5785,13 +5940,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Start a resumed or handed-off session with one visible read-and-verify ritual before the first mutation so work begins from current state rather than stale assumptions.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5804,9 +5959,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/handoff-continuation/session-opening-ritual-before-work/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5881,13 +6041,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Bootstrap cross-repo work from one explicit resource map so the next session can see which repos and surfaces matter before deeper continuation begins.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5900,9 +6060,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/handoff-continuation/cross-repo-resource-map-bootstrap/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -5977,13 +6142,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Break longer work into explicit episodes with checkpoints and continue, stop, or escalate decisions so continuation stays reviewable instead of slipping into open-ended autonomy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -5996,9 +6161,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/handoff-continuation/episode-bounded-agent-loop/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6073,13 +6243,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep registry-facing capability entries reviewable as named versioned records with explicit references and metadata so publication stays bounded without widening into discovery policy or registry product doctrine.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6092,9 +6262,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/capability-registry/versioned-agent-registry-contract/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6169,28 +6344,33 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep capability lookup reviewable as explicit bounded queries over published registry entries so discovery stays separate from ranking, marketplace curation, trust policy, and registry product doctrine.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
         "relation_count": 1,
         "relations": [
           {
-            "relation_type": "requires",
+            "relation_type": "complements",
             "target_ref": "aoa-techniques/AOA-T-0063"
           }
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/capability-registry/capability-discovery/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6265,13 +6445,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Front multiple configured MCP servers through one bounded gateway proxy so callers use one reviewable tool surface with explicit metadata and sanitization instead of binding directly to each upstream server.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6284,9 +6464,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/tool-use/tool-gateway/mcp-gateway-proxy/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6361,13 +6546,13 @@
       },
       "metadata_spine": {
         "domain": "history",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Turn already-saved session history into a replayable artifact so reviewers can inspect message flow and timeline without reopening capture semantics or widening into hosted replay-platform doctrine.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6384,9 +6569,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/history/history-artifacts/transcript-replay-artifact/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6461,13 +6651,13 @@
       },
       "metadata_spine": {
         "domain": "history",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Link code history back to saved session evidence so reviewers can reopen the originating transcript or rationale without widening the bundle into generic repo analytics or memory doctrine.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6480,9 +6670,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/history/history-artifacts/transcript-linked-code-lineage/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6557,13 +6752,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Stop mutating execution at the boundary unless an explicit allow verdict exists, and emit reviewable evidence for blocked or allowed paths instead of relying on best-effort warnings.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6576,9 +6771,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/approval-evidence/fail-closed-evidence-gate/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6653,13 +6853,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep longer-running work durable across one explicit approval seam so checkpoint, pause, and resume remain reviewable without widening into a scheduler or orchestration platform.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6672,9 +6872,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/approval-evidence/approval-bound-durable-jobs/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6749,13 +6954,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Stage OCR as detect or layout -> recognize -> structured handoff so downstream extraction stays reviewable, interchangeable, and confidence-aware instead of collapsing OCR and field logic into one opaque step.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6763,9 +6968,14 @@
         "relations": []
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/ingest/media-ingest/two-stage-document-ocr-pipeline/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6840,28 +7050,33 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Extract bounded fields after OCR through explicit templates, heuristics, and missing-or-conflict signaling so structured receipt-like data stays reviewable instead of being guessed by one opaque parser.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
         "relation_count": 1,
         "relations": [
           {
-            "relation_type": "requires",
+            "relation_type": "complements",
             "target_ref": "aoa-techniques/AOA-T-0070"
           }
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/ingest/media-ingest/template-backed-field-extraction-after-ocr/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -6936,13 +7151,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Group near-duplicate media through perceptual similarity and thresholded review buckets so cleanup stays reviewable instead of collapsing into silent deletion or one-threshold dogma.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -6950,9 +7165,14 @@
         "relations": []
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/ingest/media-ingest/perceptual-media-dedupe-with-threshold-review/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7027,13 +7247,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Bucket mixed media through bounded visual semantics plus OCR side text so screenshots, memes, receipts, and other media classes remain reviewable under explicit confidence gates instead of widening into open-ended multimodal automation.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7041,9 +7261,14 @@
         "relations": []
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/ingest/media-ingest/semantic-media-bucketing-with-vision-plus-ocr/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7118,13 +7343,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Normalize Telegram messages and media into a resumable local store with visible provenance so later workflows can inspect, route, or distill the data without collapsing auth, session, or memory doctrine into the storage contract.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7132,9 +7357,14 @@
         "relations": []
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-03-28",
-        "note_count": 4,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 5,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/ingest/media-ingest/telegram-export-normalization-to-local-store/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7209,13 +7439,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Distill a reviewed session artifact into a bounded donor pack of reusable units so candidate practice, workflow, and scenario objects can be evaluated without turning session history into memory or forcing promotion.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7232,9 +7462,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/donor-harvest/session-donor-harvest/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7304,13 +7539,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Route one bounded reusable unit to one primary owner layer and one rejected nearest-wrong target so practice, workflow, scenario, proof, recall, and role surfaces stay distinct instead of collapsing into generic reuse.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7327,9 +7562,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/decision-routing/owner-layer-triage/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7399,13 +7639,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep one bounded HARVEST_PACKET contract over a reviewed session so downstream routing, diagnosis, repair, progression, and quest seams can consume explicit packet fields without silently replacing one another.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7422,9 +7662,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/donor-harvest/harvest-packet-contract/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7494,13 +7739,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Turn one reviewed session or harvest packet into explicit decision fork cards so materially different next routes stay visible with gains, costs, owner targets, and stop conditions instead of collapsing into one hidden recommendation.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7517,9 +7762,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/decision-routing/decision-fork-cards/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7589,13 +7839,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Attach one small risk passport to each explicit next route so difficulty, risk, control mode, delegate tier, and stop-condition posture stay visible without turning branch analysis into hidden routing policy.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7612,9 +7862,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/decision-routing/risk-passport-lift/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7684,13 +7939,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Classify repeated post-session friction into bounded drift types so diagnosis can say what kind of problem is present before it claims one probable cause, owner hint, or repair shape.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7707,9 +7962,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/diagnosis-repair/session-drift-taxonomy/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7779,13 +8039,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Turn reviewed friction evidence into a bounded diagnosis packet that separates symptoms from probable causes, preserves unknowns, and names likely owner hints without mutating anything yet.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7802,9 +8062,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/diagnosis-repair/diagnosis-from-reviewed-evidence/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7874,13 +8139,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Turn a reviewed diagnosis packet into the smallest honest repair shape so the next artifact stays bounded, owner-aware, and smaller than a scenario rollout.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7897,9 +8162,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/diagnosis-repair/repair-shape-from-diagnosis/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -7969,13 +8239,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep self-repair behind explicit checkpoint posture with approval, rollback, health checks, iteration limits, and improvement-log visibility so repair stays reviewable instead of feeling like silent self-modification.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -7992,9 +8262,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/diagnosis-repair/checkpoint-bound-self-repair/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8064,13 +8339,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Lift reviewed session evidence into a bounded multi-axis progression delta with explicit verdicts and small unlock hints so growth stays descriptive and evidence-backed instead of collapsing into one score.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8087,9 +8362,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/donor-harvest/progression-evidence-lift/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8159,13 +8439,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Add quest-, RPG-, or chronicle-shaped reflection to a bounded multi-axis progression result so route legibility improves without letting flavor overwrite owner truth, proof, or routing authority.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8182,9 +8462,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/continuity/donor-harvest/multi-axis-quest-overlay/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8254,13 +8539,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Classify one recurring manual route across repeat signal, determinism, proof posture, reversibility, and approval sensitivity so automation desire becomes a bounded verdict rather than vague enthusiasm.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8277,9 +8562,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/automation-readiness/automation-fit-matrix/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8349,13 +8639,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Route one recurring human loop to the first honest automation-facing landing so seed-ready candidates become bounded skills or playbook seeds while unstable routes stay manual, repair-bound, or deferred.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8372,9 +8662,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/automation-readiness/human-loop-to-first-landing/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8444,13 +8739,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Classify whether an automation candidate crosses approval, rollback, or self-change boundaries so checkpoint-required posture appears before any seed-ready claim becomes credible.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8467,9 +8762,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-05",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/automation-readiness/approval-sensitivity-check/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8539,13 +8839,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Review one repeated reviewed quest unit and emit one bounded promotion verdict so leaf workflow, route, role, proof, and recall surfaces do not collapse into generic reuse pressure.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8562,9 +8862,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-06",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/promotion-boundary/quest-unit-promotion-review/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8634,13 +8939,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Reject the nearest wrong promotion target explicitly so repeated reviewed work does not collapse into the most convenient adjacent owner layer.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8657,9 +8962,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-06",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-12",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/promotion-boundary/nearest-wrong-target-rejection/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8729,13 +9039,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Enter federated workspaces through one explicit ingress pass and gate risky mutation through one explicit guard pass so session posture stays reviewable instead of hiding in operator memory.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8756,9 +9066,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-06",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/owner-truth-closeout/workspace-root-ingress-and-mutation-gate/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8828,9 +9143,9 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Turn a reviewed audit finding set into a live-confirmed, proof-backed closeout loop so remediation claims rest on named evidence instead of audit wording alone.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
@@ -8851,9 +9166,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-06",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/owner-truth-closeout/audit-to-closeout-proof-loop/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -8923,13 +9243,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep router recommendation truth separate from host actionability so non-executable recommendations stay visible, canonical install roots stay authoritative, and runnable actions do not masquerade as merely relevant advice.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -8946,9 +9266,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-06",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/instruction/capability-boundary/recommendation-truth-vs-host-actionability/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -9018,13 +9343,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Keep one canonical cross-repo contract owner and allow local mirrors only when explicit parity validation keeps owner metadata and vocabulary exactly aligned.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9041,9 +9366,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-07",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/owner-truth-closeout/canonical-owner-with-validated-mirror/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -9113,13 +9443,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Close a remote-only owner surface through GitHub-native issue and PR flow, then rebind staging and reality checks to the merged owner anchors so seed-garden truth does not outlive the landing.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9136,9 +9466,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-07",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/owner-truth-closeout/github-only-owner-endcap-with-reality-sync/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -9208,13 +9543,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Rebuild generated outputs against the same workflow-pinned sibling refs that CI will validate before publish so local green does not overstate merge-readiness.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9235,9 +9570,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-07",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/owner-truth-closeout/pinned-validation-matrix-before-generated-publish/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -9307,13 +9647,13 @@
       },
       "metadata_spine": {
         "domain": "system-recovery",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Continue safely in a bounded degraded mode, reground against stronger sources, and recover later through explicit source-owned evidence instead of hidden repair theater.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9326,9 +9666,19 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-07",
-        "note_count": 2,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/degrade-reground-recover/notes/adverse-effects-review.md"
+          },
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/degrade-reground-recover/notes/canonical-readiness.md"
+          },
           {
             "kind": "origin_evidence",
             "title": "Origin Evidence",
@@ -9393,13 +9743,13 @@
       },
       "metadata_spine": {
         "domain": "validation-patterns",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Start failure review from source-owned receipts, separate facts from hypotheses, and tie any recovery change to explicit evidence rather than folklore or dashboard mythology.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9416,9 +9766,19 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-07",
-        "note_count": 2,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/receipt-first-failure-analysis/notes/adverse-effects-review.md"
+          },
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/receipt-first-failure-analysis/notes/canonical-readiness.md"
+          },
           {
             "kind": "origin_evidence",
             "title": "Origin Evidence",
@@ -9483,13 +9843,13 @@
       },
       "metadata_spine": {
         "domain": "system-recovery",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Stop one bounded service while keeping shared substrate services alive, then verify both target absence and substrate continuity so closeout does not widen into unnecessary teardown.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9502,13 +9862,28 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-08",
-        "note_count": 1,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/isolated-service-stop-on-shared-substrate/notes/adverse-effects-review.md"
+          },
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/isolated-service-stop-on-shared-substrate/notes/canonical-readiness.md"
+          },
           {
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/isolated-service-stop-on-shared-substrate/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/isolated-service-stop-on-shared-substrate/notes/second-context-adaptation.md"
           }
         ]
       }
@@ -9564,13 +9939,13 @@
       },
       "metadata_spine": {
         "domain": "system-recovery",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Record one bounded stress event, preserve the smallest honest continuation, route through owner layers, and close out with reviewed evidence before any later proof reading.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9587,9 +9962,19 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-04-16",
-        "note_count": 2,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/stress-receipt-reground-closeout/notes/adverse-effects-review.md"
+          },
+          {
+            "kind": "canonical_readiness",
+            "title": "Canonical Readiness",
+            "note_ref": "aoa-techniques/techniques/recovery/antifragility-recovery/stress-receipt-reground-closeout/notes/canonical-readiness.md"
+          },
           {
             "kind": "origin_evidence",
             "title": "Origin Evidence",
@@ -9654,13 +10039,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Gate one shared pattern before local adoption by requiring owner consent, compatibility evidence, rollback, and retention watch so precedent does not silently become durable behavior.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9677,9 +10062,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-05-03",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/practice-adoption-lifecycle/local-pattern-adoption-gate/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -9749,13 +10139,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Emit one bounded skill-proposal handoff packet from a technique-side adoption review so reusable practice does not become skill acceptance or activation by implication.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9776,9 +10166,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-05-03",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/promotion-boundary/skill-proposal-handoff-packet/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -9848,13 +10243,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Review one adopted practice against current evidence, usefulness, drift, and rollback posture so it stays active only while retention remains explicit.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9875,9 +10270,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-05-03",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/practice-adoption-lifecycle/adopted-practice-retention-review/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -9947,13 +10347,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Route one adopted practice toward supersession, merge, reanchor, defer, drop, or deprecation review with owner receipt, retained lesson, and provenance intact.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "moderate",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -9974,9 +10374,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-05-03",
-        "note_count": 3,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/governance/practice-adoption-lifecycle/superseded-practice-obsolescence-route/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -10046,13 +10451,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Ask for exactly one missing evidence object that could change a bounded review state so review can narrow without broad research, verdict overclaim, or proof theater.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -10069,9 +10474,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-05-03",
-        "note_count": 2,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-missing-evidence-request/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -10081,6 +10491,11 @@
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-missing-evidence-request/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-missing-evidence-request/notes/second-context-adaptation.md"
           }
         ]
       }
@@ -10136,13 +10551,13 @@
       },
       "metadata_spine": {
         "domain": "docs",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Offer exactly one scoped evidence reference with relevance, support limit, and reliance condition so review can use a source without treating it as proof, verdict, or source-truth transfer.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -10163,9 +10578,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-05-03",
-        "note_count": 2,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-scoped-evidence-reference/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -10175,6 +10595,11 @@
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-scoped-evidence-reference/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-scoped-evidence-reference/notes/second-context-adaptation.md"
           }
         ]
       }
@@ -10230,13 +10655,13 @@
       },
       "metadata_spine": {
         "domain": "agent-workflows",
-        "status": "promoted",
+        "status": "canonical",
         "summary": "Challenge exactly one claim at one vulnerable locus, naming pressure reason and next support question so review can apply pressure without turning challenge into proof, tone, or adjudication.",
-        "maturity_score": 3,
+        "maturity_score": 5,
         "rigor_level": "bounded",
         "reversibility": "easy",
         "review_required": true,
-        "validation_strength": "source_backed",
+        "validation_strength": "cross_context",
         "export_ready": true
       },
       "relation_view": {
@@ -10257,9 +10682,14 @@
         ]
       },
       "provenance_view": {
-        "public_safety_reviewed_at": "2026-05-03",
-        "note_count": 2,
+        "public_safety_reviewed_at": "2026-05-13",
+        "note_count": 4,
         "note_handles": [
+          {
+            "kind": "adverse_effects_review",
+            "title": "Adverse Effects Review",
+            "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-locus-claim-challenge/notes/adverse-effects-review.md"
+          },
           {
             "kind": "canonical_readiness",
             "title": "Canonical Readiness",
@@ -10269,6 +10699,11 @@
             "kind": "origin_evidence",
             "title": "Origin Evidence",
             "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-locus-claim-challenge/notes/origin-evidence.md"
+          },
+          {
+            "kind": "second_context",
+            "title": "Second Context Adaptation",
+            "note_ref": "aoa-techniques/techniques/proof/review-evidence/single-locus-claim-challenge/notes/second-context-adaptation.md"
           }
         ]
       }

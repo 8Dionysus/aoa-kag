@@ -17,6 +17,7 @@ COMMANDS = [
         "validate nested AGENTS docs",
         [sys.executable, "scripts/validate_nested_agents.py"],
     ),
+    ("validate committed KAG surfaces", [sys.executable, "scripts/validate_kag.py"]),
     ("generate KAG outputs", [sys.executable, "scripts/generate_kag.py"]),
     ("validate KAG surfaces", [sys.executable, "scripts/validate_kag.py"]),
 ]

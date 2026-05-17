@@ -95,7 +95,8 @@ python scripts/release_check.py
 git status -sb
 ```
 
-`release_check.py` is side-effectful because it regenerates KAG outputs before validating them.
+`release_check.py` first validates committed KAG outputs, then regenerates them and validates again.
+That preserves stale-output detection while still proving the generator is stable.
 
 If you need targeted regeneration and direct validation, run:
 
