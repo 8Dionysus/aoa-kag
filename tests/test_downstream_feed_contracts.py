@@ -5,6 +5,8 @@ import sys
 import unittest
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_ROOT = REPO_ROOT / "scripts"
@@ -120,6 +122,32 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             kag_generation.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
             registry_payload=registry,
         )
+
+    def test_adjunct_manifest_schemas_accept_current_manifests(self) -> None:
+        pairs = (
+            (
+                REPO_ROOT / "schemas" / "tos-zarathustra-route-retrieval-pack-manifest.schema.json",
+                REPO_ROOT / "manifests" / "tos_zarathustra_route_retrieval_pack.json",
+            ),
+            (
+                REPO_ROOT / "schemas" / "federation-spine-manifest.schema.json",
+                REPO_ROOT / "manifests" / "federation_spine.json",
+            ),
+        )
+
+        for schema_path, manifest_path in pairs:
+            with self.subTest(manifest=manifest_path.name):
+                schema = load_json(schema_path)
+                manifest = load_json(manifest_path)
+                Draft202012Validator.check_schema(schema)
+                errors = sorted(
+                    Draft202012Validator(schema).iter_errors(manifest),
+                    key=lambda error: (list(error.absolute_path), error.message),
+                )
+                self.assertFalse(
+                    errors,
+                    f"{manifest_path.name}: {errors[0].message if errors else ''}",
+                )
 
     def test_bounded_output_contracts_remain_narrow(self) -> None:
         expectations = {

@@ -1,8 +1,8 @@
 # AoA-ToS Bridge Contracts
 
 This document records the first-wave bridge posture at the KAG layer.
-It is the primary coordination note for the Dionysus seed
-`archive/seed_rootline/seed.8dionysus.aoa-shared.bridges.md`.
+It is the primary coordination note for the Dionysus seed at
+`Dionysus/archive/seed_rootline/seed.8dionysus.aoa-shared.bridges.md`.
 
 It does not replace ToS ontology, memory contracts, or runtime implementation.
 It names the derived bridge surfaces that make AoA-ToS exchange explicit.

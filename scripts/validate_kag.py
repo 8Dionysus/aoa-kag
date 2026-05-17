@@ -1089,6 +1089,14 @@ VISIBLE_ROOTS = (
     AOA_AGENTS_ROOT,
     TREE_OF_SOPHIA_ROOT,
 )
+FULL_CROSS_REPO_ROOTS = {
+    "aoa-techniques": AOA_TECHNIQUES_ROOT,
+    "aoa-playbooks": AOA_PLAYBOOKS_ROOT,
+    "aoa-evals": AOA_EVALS_ROOT,
+    "aoa-memo": AOA_MEMO_ROOT,
+    "aoa-agents": AOA_AGENTS_ROOT,
+    TOS_REPO: TREE_OF_SOPHIA_ROOT,
+}
 QUESTBOOK_PATH = Path("QUESTBOOK.md")
 QUESTBOOK_INTEGRATION_PATH = Path("docs") / "QUESTBOOK_KAG_INTEGRATION.md"
 QUEST_SCHEMA_PATH = Path("schemas") / "quest.schema.json"
@@ -1220,6 +1228,18 @@ def read_yaml(path: Path) -> object:
         fail(f"missing required file: {display_path(path)}")
     except yaml.YAMLError as exc:
         fail(f"invalid YAML in {display_path(path)}: {exc}")
+
+
+def format_schema_path(parts: Sequence[object]) -> str:
+    return ".".join(str(part) for part in parts)
+
+
+def missing_full_cross_repo_roots() -> list[str]:
+    missing: list[str] = []
+    for repo, root in FULL_CROSS_REPO_ROOTS.items():
+        if not root.exists():
+            missing.append(f"{repo}={root.as_posix()}")
+    return missing
 
 
 def markdown_anchor(text: str) -> str:
@@ -1367,6 +1387,11 @@ def validate_questbook_surface() -> None:
         schema_version="quest_dispatch_v1",
         required_fields=QUEST_DISPATCH_REQUIRED_FIELDS,
     )
+    quest_schema = read_json(repo_root / QUEST_SCHEMA_PATH)
+    if not isinstance(quest_schema, dict):
+        fail(f"{display_path(repo_root / QUEST_SCHEMA_PATH)} must contain a JSON object")
+    Draft202012Validator.check_schema(quest_schema)
+    quest_validator = Draft202012Validator(quest_schema)
 
     integration_text = read_text(repo_root / QUESTBOOK_INTEGRATION_PATH)
     for token in QUESTBOOK_REQUIRED_INTEGRATION_TOKENS:
@@ -1389,6 +1414,19 @@ def validate_questbook_surface() -> None:
         payload = read_yaml(quest_path)
         if not isinstance(payload, dict):
             fail(f"{display_path(quest_path)} must contain a YAML mapping")
+        schema_errors = sorted(
+            quest_validator.iter_errors(payload),
+            key=lambda error: (list(error.absolute_path), error.message),
+        )
+        if schema_errors:
+            first = schema_errors[0]
+            error_path = format_schema_path(list(first.absolute_path))
+            if error_path:
+                fail(
+                    f"{display_path(quest_path)} schema violation at '{error_path}': "
+                    f"{first.message}"
+                )
+            fail(f"{display_path(quest_path)} schema violation: {first.message}")
         if payload.get("schema_version") != "work_quest_v1":
             fail(f"{display_path(quest_path)} schema_version must equal 'work_quest_v1'")
         if payload.get("id") != quest_id:
@@ -7884,6 +7922,7 @@ def validate_optional_memo_source_owned_export_readiness() -> None:
 
 
 def main() -> int:
+    missing_cross_repo_roots: list[str] = []
     try:
         validate_nested_agents_docs()
         validate_questbook_surface()
@@ -7930,6 +7969,15 @@ def main() -> int:
             registry_manifest_payload,
             label="registry manifest",
         )
+        missing_cross_repo_roots = missing_full_cross_repo_roots()
+        if missing_cross_repo_roots:
+            print(
+                "[warn] skipped cross-repo manifest/generated validation because "
+                "source roots are unavailable: " + ", ".join(missing_cross_repo_roots),
+                file=sys.stderr,
+            )
+            print("[ok] validated local KAG surfaces; full cross-repo validation was skipped")
+            return 0
         validate_technique_lift_manifest(registry_manifest_surfaces)
         validate_tos_text_chunk_map_manifest(registry_manifest_surfaces)
         validate_tos_retrieval_axis_manifest(registry_manifest_surfaces)

@@ -749,6 +749,28 @@ class ValidateQuestbookSurfaceTests(unittest.TestCase):
 
         self.assertIn("repo must equal 'aoa-kag'", str(context.exception))
 
+    def test_missing_required_quest_schema_field_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "aoa-kag"
+            self.write_valid_surface(repo_root)
+            quest_path = repo_root / "quests" / "AOA-KAG-Q-0002.yaml"
+            write_text(
+                quest_path,
+                quest_path.read_text(encoding="utf-8").replace(
+                    "anchor_ref:\n"
+                    "  artifact: source-owned-export-dependencies\n"
+                    "  ref: docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md\n"
+                    "  note: exports stay derived and source-owned\n",
+                    "",
+                ),
+            )
+
+            with patch.object(validate_kag, "REPO_ROOT", repo_root):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    validate_kag.validate_questbook_surface()
+
+        self.assertIn("anchor_ref", str(context.exception))
+
     def test_source_boundary_phrase_missing_fails(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_root = Path(tmpdir) / "aoa-kag"
