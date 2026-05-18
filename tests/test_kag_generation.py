@@ -338,19 +338,19 @@ class KagGenerationTestCase(unittest.TestCase):
                 "name": "memo_memory_readiness_boundary",
                 "repo": "aoa-memo",
                 "role": "owner_contract",
-                "ref": "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+                "ref": "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
             },
         )
         self.assertIn(
-            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+            "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
             modes_by_id["handoff_guardrail_reentry"]["stronger_refs"],
         )
         self.assertIn(
-            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+            "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
             modes_by_id["owner_boundary_reentry"]["stronger_refs"],
         )
         self.assertNotIn(
-            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+            "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
             modes_by_id["source_export_reentry"]["stronger_refs"],
         )
         self.assertEqual(payload["bounded_output_contract"]["memory_truth_ownership"], "forbidden")

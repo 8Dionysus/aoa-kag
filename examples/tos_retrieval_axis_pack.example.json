@@ -31,13 +31,13 @@
       "name": "memo_chunk_face",
       "repo": "aoa-memo",
       "role": "memo_chunk_face",
-      "ref": "aoa-memo/examples/memory_chunk_face.bridge.example.json"
+      "ref": "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json"
     },
     {
       "name": "memo_graph_face",
       "repo": "aoa-memo",
       "role": "memo_graph_face",
-      "ref": "aoa-memo/examples/memory_graph_face.bridge.example.json"
+      "ref": "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json"
     },
     {
       "name": "tos_node_contract",
@@ -113,8 +113,8 @@
       "bridge_surface_ref": "examples/tos_retrieval_axis_surface.example.json",
       "bridge_envelope_ref": "examples/aoa_tos_bridge_envelope.example.json",
       "memo_face_refs": [
-        "aoa-memo/examples/memory_chunk_face.bridge.example.json",
-        "aoa-memo/examples/memory_graph_face.bridge.example.json"
+        "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json",
+        "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json"
       ],
       "axis_summary": "Bundles the current Zarathustra prologue chunk set with bounded source, lineage, conflict, practice, and memo bridge handles so AoA consumers can retrieve context without ranking, routing ownership, or graph claims."
     }

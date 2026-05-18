@@ -22,14 +22,14 @@ The current bounded contract depends on:
 
 - `aoa-techniques/generated/kag_export.min.json`
 - `Tree-of-Sophia/generated/kag_export.min.json`
-- `aoa-memo/generated/kag_export.min.json`
+- `aoa-memo/mechanics/consumer-handoff/generated/kag_export.min.json`
 
-`aoa-memo/generated/kag_export.min.json` is now listed as an invariant-backed
+`aoa-memo/mechanics/consumer-handoff/generated/kag_export.min.json` is now listed as an invariant-backed
 donor export, but its `consumed_by` list is intentionally empty in this wave.
 That keeps the donor contract explicit without pretending the live generated KAG
 surfaces already consume it.
 
-`aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md` is a stronger memo-owned boundary
+`aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md` is a stronger memo-owned boundary
 for future durable-consequence, retention, recall, and live-ledger pressure.
 KAG may point back to that owner ref from regrounding surfaces, but it must not
 treat the memo donor export as scar proof, retention proof, live memory-ledger

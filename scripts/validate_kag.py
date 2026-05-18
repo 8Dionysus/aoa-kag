@@ -316,7 +316,7 @@ ALLOWED_QUERY_MODES = {"local_search", "global_search", "drift_search"}
 EXPECTED_AUTHORITATIVE_SOURCE_REFS = {
     "Tree-of-Sophia/docs/NODE_CONTRACT.md",
     "Tree-of-Sophia/docs/PRACTICE_BRANCH.md",
-    "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md",
+    "aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md",
 }
 EXPECTED_DERIVED_SURFACE_REFS = {
     "docs/BRIDGE_CONTRACTS.md#retrieval-axis-contract",
@@ -522,13 +522,13 @@ EXPECTED_RETURN_REGROUNDING_INPUTS = {
     (
         "memo_checkpoint_contract",
         "aoa-memo",
-        "examples/checkpoint_to_memory_contract.example.json",
+        "mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
         "owner_contract",
     ),
     (
         "memo_memory_readiness_boundary",
         "aoa-memo",
-        "docs/MEMORY_READINESS_BOUNDARY.md",
+        "mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
         "owner_contract",
     ),
 }
@@ -682,8 +682,8 @@ EXPECTED_TOS_RETRIEVAL_AXIS_INPUTS = {
     ("bridge_contract_doc", "aoa-kag", "docs/BRIDGE_CONTRACTS.md", "bridge_doctrine"),
     ("bridge_surface_example", "aoa-kag", "examples/tos_retrieval_axis_surface.example.json", "bridge_surface"),
     ("bridge_envelope_example", "aoa-kag", "examples/aoa_tos_bridge_envelope.example.json", "bridge_envelope"),
-    ("memo_chunk_face", "aoa-memo", "examples/memory_chunk_face.bridge.example.json", "memo_chunk_face"),
-    ("memo_graph_face", "aoa-memo", "examples/memory_graph_face.bridge.example.json", "memo_graph_face"),
+    ("memo_chunk_face", "aoa-memo", "mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json", "memo_chunk_face"),
+    ("memo_graph_face", "aoa-memo", "mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json", "memo_graph_face"),
     ("tos_node_contract", TOS_REPO, "docs/NODE_CONTRACT.md", "tos_contract"),
     ("tos_practice_branch", TOS_REPO, "docs/PRACTICE_BRANCH.md", "tos_contract"),
     ("tos_authority_surface", TOS_REPO, "examples/source_node.example.json", "authority_surface"),
@@ -808,10 +808,10 @@ EXPECTED_REASONING_HANDOFF_INPUTS = {
     ("aoa_p_0008_hook", "aoa-evals", "examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json", "eval_hook_fixture"),
     ("aoa_p_0009_playbook", "aoa-playbooks", "playbooks/restartable-inquiry-loop/PLAYBOOK.md", "playbook_doc"),
     ("aoa_p_0009_hook", "aoa-evals", "examples/artifact_to_verdict_hook.restartable-inquiry-loop.example.json", "eval_hook_fixture"),
-    ("checkpoint_to_memory_contract", "aoa-memo", "examples/checkpoint_to_memory_contract.example.json", "memo_contract_fixture"),
-    ("inquiry_checkpoint_schema", "aoa-memo", "schemas/inquiry_checkpoint.schema.json", "memo_schema"),
-    ("witness_trace_contract", "aoa-memo", "docs/WITNESS_TRACE_CONTRACT.md", "memo_doc"),
-    ("witness_trace_schema", "aoa-memo", "schemas/witness-trace.schema.json", "memo_schema"),
+    ("checkpoint_to_memory_contract", "aoa-memo", "mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json", "memo_contract_fixture"),
+    ("inquiry_checkpoint_schema", "aoa-memo", "mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json", "memo_schema"),
+    ("witness_trace_contract", "aoa-memo", "mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md", "memo_doc"),
+    ("witness_trace_schema", "aoa-memo", "mechanics/recurrence-support/schemas/witness-trace.schema.json", "memo_schema"),
 }
 EXPECTED_REASONING_HANDOFF_BINDINGS = {
     ("AOA-P-0008", "aoa_p_0008_playbook", "aoa_p_0008_hook", ("checkpoint_to_memory_contract",), None, ("witness_trace_contract", "witness_trace_schema")),
@@ -886,7 +886,7 @@ EXPECTED_FEDERATION_SPINE_CONTRACT = {
     "full_federation_claim": "forbidden",
 }
 EXPECTED_FEDERATION_SPINE_REPOS = {"aoa-techniques", TOS_REPO}
-EXPECTED_MEMO_KAG_EXPORT_PATH = "generated/kag_export.min.json"
+EXPECTED_MEMO_KAG_EXPORT_PATH = "mechanics/consumer-handoff/generated/kag_export.min.json"
 EXPECTED_MEMO_KAG_EXPORT_REQUIRED_FIELDS = {
     "owner_repo",
     "kind",
@@ -920,15 +920,15 @@ EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES = [
 EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
     {
         "relation_type": "source_memory_object",
-        "target_ref": "examples/bridge.kag-lift.example.json",
+        "target_ref": "mechanics/consumer-handoff/examples/bridge.kag-lift.example.json",
     },
     {
         "relation_type": "supported_by_claim",
-        "target_ref": "examples/claim.tos-bridge-ready.example.json",
+        "target_ref": "mechanics/consumer-handoff/examples/claim.tos-bridge-ready.example.json",
     },
     {
         "relation_type": "seeded_by_episode",
-        "target_ref": "examples/episode.tos-interpretation.example.json",
+        "target_ref": "mechanics/consumer-handoff/examples/episode.tos-interpretation.example.json",
     },
     {
         "relation_type": "points_to_tos_fragment",
@@ -936,7 +936,7 @@ EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
     },
     {
         "relation_type": "provenance_thread",
-        "target_ref": "examples/provenance_thread.kag-lift.example.json",
+        "target_ref": "mechanics/consumer-handoff/examples/provenance_thread.kag-lift.example.json",
     },
 ]
 EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
@@ -5711,7 +5711,7 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
                 fail(f"{location}.artifact_spine.supporting_artifacts must keep the bounded AOA-P-0008 route artifacts")
             if trace_sidecar_names != ["WitnessTrace"]:
                 fail(f"{location}.artifact_spine.optional_trace_sidecars must keep WitnessTrace as the only optional sidecar")
-            if trace_surfaces != ["aoa-memo/docs/WITNESS_TRACE_CONTRACT.md"]:
+            if trace_surfaces != ["aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md"]:
                 fail(f"{location}.eval_bridge.trace_surfaces must keep the witness trace contract")
             if memo_writeback_targets != ["decision", "claim", "pattern"]:
                 fail(f"{location}.memo_bridge.memo_writeback_targets must keep the bounded AOA-P-0008 writeback targets")
@@ -5725,7 +5725,7 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
                     "aoa-agents/schemas/artifact.verification_result.schema.json",
                     "aoa-agents/schemas/artifact.transition_decision.schema.json",
                     "aoa-agents/schemas/artifact.distillation_pack.schema.json",
-                    "aoa-memo/schemas/witness-trace.schema.json",
+                    "aoa-memo/mechanics/recurrence-support/schemas/witness-trace.schema.json",
                 },
                 label=f"{location}.authoritative_refs.artifact_schema_refs",
             )
@@ -5754,12 +5754,12 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
                 "memory_delta": {
                     "artifact_name": "memory_delta",
                     "checkpoint_field": "memory_delta_refs",
-                    "field_contract_ref": "aoa-memo/schemas/inquiry_checkpoint.schema.json",
+                    "field_contract_ref": "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json",
                 },
                 "canon_delta": {
                     "artifact_name": "canon_delta",
                     "checkpoint_field": "canon_delta_refs",
-                    "field_contract_ref": "aoa-memo/schemas/inquiry_checkpoint.schema.json",
+                    "field_contract_ref": "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json",
                 },
             }
             if delta_split != expected_delta_split:
@@ -5767,8 +5767,8 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
             validate_exact_set(
                 set(artifact_schema_refs),
                 {
-                    "aoa-memo/schemas/inquiry_checkpoint.schema.json",
-                    "aoa-memo/schemas/checkpoint-to-memory-contract.schema.json",
+                    "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json",
+                    "aoa-memo/mechanics/checkpoint/schemas/checkpoint-to-memory-contract.schema.json",
                 },
                 label=f"{location}.authoritative_refs.artifact_schema_refs",
             )
@@ -7436,8 +7436,8 @@ def validate_bridge_envelope_example() -> None:
         fail("bridge envelope example faces must be an object")
     expected_faces = {
         "retrieval_surface": "examples/tos_retrieval_axis_surface.example.json",
-        "chunk_face": "aoa-memo/examples/memory_chunk_face.bridge.example.json",
-        "graph_face": "aoa-memo/examples/memory_graph_face.bridge.example.json",
+        "chunk_face": "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json",
+        "graph_face": "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json",
     }
     if set(faces) != set(expected_faces):
         fail("bridge envelope example faces must expose retrieval_surface, chunk_face, and graph_face")

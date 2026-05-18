@@ -83,7 +83,7 @@ continuation.
 
 When the pressure is future memory readiness, including durable consequences,
 retention, or live memory-ledger questions, the stronger owner ref is
-`aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md`. KAG may return that ref, but it
+`aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md`. KAG may return that ref, but it
 must not turn the handoff into scar proof, retention policy, or live memory
 state.
 
