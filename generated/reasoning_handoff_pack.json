@@ -73,25 +73,25 @@
       "name": "checkpoint_to_memory_contract",
       "repo": "aoa-memo",
       "role": "memo_contract_fixture",
-      "ref": "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
+      "ref": "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json"
     },
     {
       "name": "inquiry_checkpoint_schema",
       "repo": "aoa-memo",
       "role": "memo_schema",
-      "ref": "aoa-memo/schemas/inquiry_checkpoint.schema.json"
+      "ref": "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json"
     },
     {
       "name": "witness_trace_contract",
       "repo": "aoa-memo",
       "role": "memo_doc",
-      "ref": "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md"
+      "ref": "aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md"
     },
     {
       "name": "witness_trace_schema",
       "repo": "aoa-memo",
       "role": "memo_schema",
-      "ref": "aoa-memo/schemas/witness-trace.schema.json"
+      "ref": "aoa-memo/mechanics/recurrence-support/schemas/witness-trace.schema.json"
     }
   ],
   "scenario_count": 2,
@@ -143,7 +143,7 @@
             "artifact_name": "WitnessTrace",
             "contract_strength": "doc_backed",
             "artifact_contract_refs": [
-              "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md"
+              "aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md"
             ]
           }
         ]
@@ -155,7 +155,7 @@
         ],
         "verification_surface": "verification_result",
         "trace_surfaces": [
-          "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md"
+          "aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md"
         ],
         "artifact_contract_refs": [
           "aoa-agents/schemas/artifact.route_decision.schema.json",
@@ -173,7 +173,7 @@
       "memo_bridge": {
         "memo_contract_refs": [
           "aoa-memo/examples/recall_contract.router.semantic.json",
-          "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
+          "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json"
         ],
         "memo_writeback_targets": [
           "decision",
@@ -200,8 +200,8 @@
         ],
         "memo_refs": [
           "aoa-memo/examples/recall_contract.router.semantic.json",
-          "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-          "aoa-memo/docs/WITNESS_TRACE_CONTRACT.md"
+          "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+          "aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md"
         ],
         "kag_guardrail_refs": [
           "docs/REASONING_HANDOFF.md",
@@ -217,7 +217,7 @@
           "aoa-agents/schemas/artifact.verification_result.schema.json",
           "aoa-agents/schemas/artifact.transition_decision.schema.json",
           "aoa-agents/schemas/artifact.distillation_pack.schema.json",
-          "aoa-memo/schemas/witness-trace.schema.json"
+          "aoa-memo/mechanics/recurrence-support/schemas/witness-trace.schema.json"
         ]
       },
       "return_contract": {
@@ -251,14 +251,14 @@
           "artifact_name": "inquiry_checkpoint",
           "contract_strength": "schema_backed",
           "artifact_contract_refs": [
-            "aoa-memo/schemas/inquiry_checkpoint.schema.json"
+            "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json"
           ]
         },
         "continuity_surface": {
           "artifact_name": "inquiry_checkpoint",
           "contract_strength": "schema_backed",
           "artifact_contract_refs": [
-            "aoa-memo/schemas/inquiry_checkpoint.schema.json"
+            "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json"
           ]
         },
         "supporting_artifacts": [
@@ -307,8 +307,8 @@
         "verification_surface": "inquiry_checkpoint",
         "trace_surfaces": [],
         "artifact_contract_refs": [
-          "aoa-memo/schemas/inquiry_checkpoint.schema.json",
-          "aoa-memo/schemas/checkpoint-to-memory-contract.schema.json",
+          "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json",
+          "aoa-memo/mechanics/checkpoint/schemas/checkpoint-to-memory-contract.schema.json",
           "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts",
           "aoa-playbooks/generated/playbook_registry.min.json"
         ],
@@ -321,7 +321,7 @@
       "memo_bridge": {
         "memo_contract_refs": [
           "aoa-memo/examples/recall_contract.object.working.return.json",
-          "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
+          "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json"
         ],
         "memo_writeback_targets": [
           "state_capsule",
@@ -331,12 +331,12 @@
           "memory_delta": {
             "artifact_name": "memory_delta",
             "checkpoint_field": "memory_delta_refs",
-            "field_contract_ref": "aoa-memo/schemas/inquiry_checkpoint.schema.json"
+            "field_contract_ref": "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json"
           },
           "canon_delta": {
             "artifact_name": "canon_delta",
             "checkpoint_field": "canon_delta_refs",
-            "field_contract_ref": "aoa-memo/schemas/inquiry_checkpoint.schema.json"
+            "field_contract_ref": "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json"
           }
         }
       },
@@ -357,7 +357,7 @@
         ],
         "memo_refs": [
           "aoa-memo/examples/recall_contract.object.working.return.json",
-          "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
+          "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json"
         ],
         "kag_guardrail_refs": [
           "docs/REASONING_HANDOFF.md",
@@ -368,8 +368,8 @@
           "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
         ],
         "artifact_schema_refs": [
-          "aoa-memo/schemas/inquiry_checkpoint.schema.json",
-          "aoa-memo/schemas/checkpoint-to-memory-contract.schema.json"
+          "aoa-memo/mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json",
+          "aoa-memo/mechanics/checkpoint/schemas/checkpoint-to-memory-contract.schema.json"
         ]
       },
       "return_contract": {

@@ -102,8 +102,8 @@ It links the stronger authored and derived surfaces together so a reviewer can i
 The current example ties together:
 
 - the KAG retrieval face in `examples/tos_retrieval_axis_surface.example.json`
-- the memo chunk face in `aoa-memo/examples/memory_chunk_face.bridge.example.json`
-- the memo graph face in `aoa-memo/examples/memory_graph_face.bridge.example.json`
+- the memo chunk face in `aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json`
+- the memo graph face in `aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json`
 
 ## Writeback caution
 

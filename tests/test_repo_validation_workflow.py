@@ -7,7 +7,14 @@ import unittest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
-CURRENT_AOA_TECHNIQUES_PIN = "fe4b04ed877916c46e60e70aaa9a1d4c86e81b6e"
+CURRENT_DEPENDENCY_PINS = {
+    "Tree-of-Sophia": "0278961afae2dc9b45f10e15d8a70bfdfdcdcc9c",
+    "aoa-memo": "a0fb807bf97b045517ba05a4da3d8e1e58b5483d",
+    "aoa-playbooks": "2e7b7bab23e192cf5bb2f1aee5c59f5b24f51e34",
+    "aoa-evals": "1fd85f515b9b72240a9d1c676c3935129ea84800",
+    "aoa-agents": "272801c52d359b85833944b9bea57273b42c870e",
+    "aoa-techniques": "60ceea4090fec76933fcf41cc0c963a6f1aeb2be",
+}
 
 
 class RepoValidationWorkflowTests(unittest.TestCase):
@@ -25,10 +32,12 @@ class RepoValidationWorkflowTests(unittest.TestCase):
             release_check_text.index("generate KAG outputs"),
         )
 
-    def test_repo_validation_uses_current_technique_export_pin(self) -> None:
+    def test_repo_validation_uses_current_dependency_pins(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-        self.assertIn(CURRENT_AOA_TECHNIQUES_PIN, workflow_text)
+        for repo, pin in CURRENT_DEPENDENCY_PINS.items():
+            with self.subTest(repo=repo):
+                self.assertIn(pin, workflow_text)
 
 
 if __name__ == "__main__":

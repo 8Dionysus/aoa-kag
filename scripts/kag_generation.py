@@ -302,8 +302,8 @@ RETURN_REGROUNDING_EXPECTED_INPUT_REFS = {
     "tos_kag_export": "Tree-of-Sophia/generated/kag_export.min.json",
     "tos_node_contract": "Tree-of-Sophia/docs/NODE_CONTRACT.md",
     "tos_source_node": "Tree-of-Sophia/examples/source_node.example.json",
-    "memo_checkpoint_contract": "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-    "memo_memory_readiness_boundary": "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+    "memo_checkpoint_contract": "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+    "memo_memory_readiness_boundary": "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
 }
 RETURN_REGROUNDING_ALLOWED_SAME_RUN_INPUTS = {
     "generated/federation_spine.min.json",
@@ -392,8 +392,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ],
         "supporting_surface_refs": [
             "examples/aoa_tos_bridge_envelope.example.json",
-            "aoa-memo/examples/memory_chunk_face.bridge.example.json",
-            "aoa-memo/examples/memory_graph_face.bridge.example.json",
+            "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json",
+            "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json",
         ],
         "preserved_fields": [
             "source_refs",
@@ -493,8 +493,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "aoa-playbooks/playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md",
             "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md",
             "aoa-evals/bundles/aoa-long-horizon-depth/EVAL.md",
-            "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+            "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+            "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
         ],
         "supporting_surface_refs": [
             "schemas/reasoning-handoff-guardrail.schema.json",
@@ -547,8 +547,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "docs/BOUNDARIES.md",
         ],
         "stronger_refs": [
-            "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-            "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+            "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+            "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
             "Tree-of-Sophia/docs/NODE_CONTRACT.md",
             "Tree-of-Sophia/examples/source_node.example.json",
         ],
@@ -2535,7 +2535,7 @@ def build_reasoning_handoff_scenario(
             [
                 continuity_schema_ref,
                 normalize_repo_pointer(
-                    "repo:aoa-memo/schemas/checkpoint-to-memory-contract.schema.json"
+                    "repo:aoa-memo/mechanics/checkpoint/schemas/checkpoint-to-memory-contract.schema.json"
                 ),
             ]
         )
@@ -2826,13 +2826,13 @@ def build_tos_retrieval_axis_pack_payload(
         fail(
             "ToS retrieval axis manifest bridge_envelope_example must point to examples/aoa_tos_bridge_envelope.example.json"
         )
-    if manifest_input_ref(inputs_by_name["memo_chunk_face"]) != "aoa-memo/examples/memory_chunk_face.bridge.example.json":
+    if manifest_input_ref(inputs_by_name["memo_chunk_face"]) != "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json":
         fail(
-            "ToS retrieval axis manifest memo_chunk_face must point to aoa-memo/examples/memory_chunk_face.bridge.example.json"
+            "ToS retrieval axis manifest memo_chunk_face must point to aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json"
         )
-    if manifest_input_ref(inputs_by_name["memo_graph_face"]) != "aoa-memo/examples/memory_graph_face.bridge.example.json":
+    if manifest_input_ref(inputs_by_name["memo_graph_face"]) != "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json":
         fail(
-            "ToS retrieval axis manifest memo_graph_face must point to aoa-memo/examples/memory_graph_face.bridge.example.json"
+            "ToS retrieval axis manifest memo_graph_face must point to aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json"
         )
     if manifest_input_ref(inputs_by_name["tos_node_contract"]) != "Tree-of-Sophia/docs/NODE_CONTRACT.md":
         fail("ToS retrieval axis manifest tos_node_contract must point to Tree-of-Sophia/docs/NODE_CONTRACT.md")

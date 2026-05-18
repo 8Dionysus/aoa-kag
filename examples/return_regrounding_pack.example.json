@@ -79,13 +79,13 @@
       "name": "memo_checkpoint_contract",
       "repo": "aoa-memo",
       "role": "owner_contract",
-      "ref": "aoa-memo/examples/checkpoint_to_memory_contract.example.json"
+      "ref": "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json"
     },
     {
       "name": "memo_memory_readiness_boundary",
       "repo": "aoa-memo",
       "role": "owner_contract",
-      "ref": "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md"
+      "ref": "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md"
     }
   ],
   "mode_count": 5,
@@ -135,8 +135,8 @@
       ],
       "supporting_surface_refs": [
         "examples/aoa_tos_bridge_envelope.example.json",
-        "aoa-memo/examples/memory_chunk_face.bridge.example.json",
-        "aoa-memo/examples/memory_graph_face.bridge.example.json"
+        "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json",
+        "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json"
       ],
       "preserved_fields": [
         "source_refs",
@@ -198,8 +198,8 @@
         "aoa-playbooks/playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md",
         "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md",
         "aoa-evals/bundles/aoa-long-horizon-depth/EVAL.md",
-        "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-        "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md"
+        "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+        "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md"
       ],
       "supporting_surface_refs": [
         "schemas/reasoning-handoff-guardrail.schema.json",
@@ -232,8 +232,8 @@
         "docs/BOUNDARIES.md"
       ],
       "stronger_refs": [
-        "aoa-memo/examples/checkpoint_to_memory_contract.example.json",
-        "aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md",
+        "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+        "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
         "Tree-of-Sophia/docs/NODE_CONTRACT.md",
         "Tree-of-Sophia/examples/source_node.example.json"
       ],

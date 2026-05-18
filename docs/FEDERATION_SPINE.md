@@ -82,7 +82,7 @@ remains spine-dark and routing-dark so the live spine and downstream
 `aoa-routing` ABI stay two-repo and stable.
 
 That also means memo memory readiness stays outside this live spine. KAG may
-reground callers to `aoa-memo/docs/MEMORY_READINESS_BOUNDARY.md`, but it does
+reground callers to `aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md`, but it does
 not promote memo scars, retention, or live memory-ledger behavior into spine
 exposure.
 
