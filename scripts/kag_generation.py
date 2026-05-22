@@ -797,9 +797,12 @@ def load_eval_paths_by_name() -> dict[str, str]:
         if not isinstance(entry, dict):
             fail(f"aoa-evals generated eval catalog evals[{index}] must be an object")
         name = entry.get("name")
-        eval_path = entry.get("eval_path")
-        if not isinstance(name, str) or not isinstance(eval_path, str):
+        if not isinstance(name, str):
             fail(f"aoa-evals generated eval catalog evals[{index}] must keep name and eval_path")
+        eval_path = ensure_repo_relative_path(
+            entry.get("eval_path"),
+            label=f"aoa-evals generated eval catalog evals[{index}].eval_path",
+        )
         paths_by_name[name] = eval_path
     return paths_by_name
 
