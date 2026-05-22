@@ -347,7 +347,7 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             "blocked_until_owner_exports_and_proof_lanes_strengthen",
         )
         self.assertIn(
-            "aoa-evals/bundles/aoa-stress-recovery-window/EVAL.md",
+            "aoa-evals/evals/comparison/longitudinal-window/aoa-stress-recovery-window/EVAL.md",
             surfaces_by_id["AOA-K-0008"]["proof_expectation_refs"],
         )
 

@@ -69,7 +69,7 @@
     {
       "dependency_id": "aoa-memo-kag-export",
       "repo": "aoa-memo",
-      "path": "mechanics/consumer-handoff/generated/kag_export.min.json",
+      "path": "mechanics/consumer-handoff/parts/kag-source-export/generated/kag_export.min.json",
       "expected_owner_repo": "aoa-memo",
       "expected_kind": "bridge",
       "expected_object_id": "memo.bridge.2026-03-23.tos-lineage-kag-candidate",
@@ -89,7 +89,7 @@
       ],
       "entry_surface": {
         "repo": "aoa-memo",
-        "path": "generated/memory_object_capsules.json",
+        "path": "generated/memory-objects/memory_object_capsules.json",
         "match_key": "id",
         "match_value": "memo.bridge.2026-03-23.tos-lineage-kag-candidate"
       },

@@ -13,7 +13,7 @@ The current explicit bridge home is split like this:
 
 - this document is the primary coordination note for the first-wave bridge seed
 - `schemas/bridge-retrieval-surface.schema.json` and `examples/tos_retrieval_axis_surface.example.json` define the KAG-side retrieval contract
-- `aoa-memo/docs/KAG_TOS_BRIDGE_CONTRACT.md` defines the memo-side writeback and export companion contract
+- `aoa-memo/mechanics/consumer-handoff/docs/KAG_TOS_BRIDGE_CONTRACT.md` defines the memo-side writeback and export companion contract
 - `aoa-routing/docs/FEDERATION_ENTRY_ABI.md` defines the orientation-only entry companion and does not become bridge authority
 
 ## Core rule
@@ -102,8 +102,8 @@ It links the stronger authored and derived surfaces together so a reviewer can i
 The current example ties together:
 
 - the KAG retrieval face in `examples/tos_retrieval_axis_surface.example.json`
-- the memo chunk face in `aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json`
-- the memo graph face in `aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json`
+- the memo chunk face in `aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json`
+- the memo graph face in `aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json`
 
 ## Writeback caution
 

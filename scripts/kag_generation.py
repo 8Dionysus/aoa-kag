@@ -89,6 +89,7 @@ COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH = (
 COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "counterpart_consumer_contract.example.json"
 )
+EVAL_CATALOG_PATH = AOA_EVALS_ROOT / "generated" / "eval_catalog.min.json"
 
 REGISTRY_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.json"
 REGISTRY_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.min.json"
@@ -164,6 +165,123 @@ KNOWN_REPO_ROOTS = {
     "aoa-memo": AOA_MEMO_ROOT,
     "aoa-agents": AOA_AGENTS_ROOT,
     TOS_REPO: TREE_OF_SOPHIA_ROOT,
+}
+COMPATIBILITY_REF_ALIASES = {
+    "aoa-evals": {
+        "mechanics/audit/parts/artifact-verdict-hooks/schemas/artifact-to-verdict-hook.schema.json": (
+            "schemas/artifact-to-verdict-hook.schema.json",
+        ),
+        "mechanics/audit/parts/artifact-verdict-hooks/examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json": (
+            "examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json",
+        ),
+        "mechanics/audit/parts/artifact-verdict-hooks/docs/TRACE_EVAL_BRIDGE.md": (
+            "docs/TRACE_EVAL_BRIDGE.md",
+        ),
+        "mechanics/checkpoint/parts/restartable-inquiry/examples/artifact_to_verdict_hook.restartable-inquiry-loop.example.json": (
+            "examples/artifact_to_verdict_hook.restartable-inquiry-loop.example.json",
+        ),
+        "evals/boundary/aoa-approval-boundary-adherence/EVAL.md": (
+            "bundles/aoa-approval-boundary-adherence/EVAL.md",
+        ),
+        "evals/boundary/aoa-local-text-contract-fit/EVAL.md": (
+            "bundles/aoa-local-text-contract-fit/EVAL.md",
+        ),
+        "evals/boundary/aoa-owner-fit-routing-quality/EVAL.md": (
+            "bundles/aoa-owner-fit-routing-quality/EVAL.md",
+        ),
+        "evals/capability/aoa-candidate-lineage-integrity/EVAL.md": (
+            "bundles/aoa-candidate-lineage-integrity/EVAL.md",
+        ),
+        "evals/comparison/longitudinal-window/aoa-stress-recovery-window/EVAL.md": (
+            "bundles/aoa-stress-recovery-window/EVAL.md",
+        ),
+        "evals/stress/aoa-antifragility-posture/EVAL.md": (
+            "bundles/aoa-antifragility-posture/EVAL.md",
+        ),
+        "evals/workflow/aoa-bounded-change-quality/EVAL.md": (
+            "bundles/aoa-bounded-change-quality/EVAL.md",
+        ),
+        "evals/workflow/aoa-long-horizon-depth/EVAL.md": (
+            "bundles/aoa-long-horizon-depth/EVAL.md",
+        ),
+        "evals/workflow/aoa-long-horizon-depth/checks/eval-integrity-check.md": (
+            "bundles/aoa-long-horizon-depth/checks/eval-integrity-check.md",
+        ),
+        "evals/workflow/aoa-long-horizon-depth/notes/proof-surface-contract.md": (
+            "bundles/aoa-long-horizon-depth/notes/proof-surface-contract.md",
+        ),
+        "evals/workflow/aoa-long-horizon-depth/notes/restart-contract.md": (
+            "bundles/aoa-long-horizon-depth/notes/restart-contract.md",
+        ),
+        "evals/workflow/aoa-memo-contradiction-integrity/EVAL.md": (
+            "bundles/aoa-memo-contradiction-integrity/EVAL.md",
+        ),
+        "evals/workflow/aoa-memo-recall-integrity/EVAL.md": (
+            "bundles/aoa-memo-recall-integrity/EVAL.md",
+        ),
+        "evals/workflow/aoa-return-anchor-integrity/EVAL.md": (
+            "bundles/aoa-return-anchor-integrity/EVAL.md",
+        ),
+        "evals/workflow/aoa-tool-trajectory-discipline/EVAL.md": (
+            "bundles/aoa-tool-trajectory-discipline/EVAL.md",
+        ),
+        "evals/workflow/aoa-tool-trajectory-discipline/checks/eval-integrity-check.md": (
+            "bundles/aoa-tool-trajectory-discipline/checks/eval-integrity-check.md",
+        ),
+        "evals/workflow/aoa-tool-trajectory-discipline/notes/bounded-promotion-review.md": (
+            "bundles/aoa-tool-trajectory-discipline/notes/bounded-promotion-review.md",
+        ),
+        "evals/workflow/aoa-tool-trajectory-discipline/notes/proof-surface-contract.md": (
+            "bundles/aoa-tool-trajectory-discipline/notes/proof-surface-contract.md",
+        ),
+    },
+    "aoa-memo": {
+        "examples/recall/recall_contract.object.working.return.json": (
+            "examples/recall_contract.object.working.return.json",
+        ),
+        "examples/recall/recall_contract.router.semantic.json": (
+            "examples/recall_contract.router.semantic.json",
+        ),
+        "generated/memory-objects/memory_object_capsules.json": (
+            "generated/memory_object_capsules.json",
+        ),
+        "generated/memory-objects/memory_object_catalog.min.json": (
+            "generated/memory_object_catalog.min.json",
+        ),
+        "mechanics/checkpoint/parts/checkpoint-carry-contract/schemas/inquiry_checkpoint.schema.json": (
+            "mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json",
+        ),
+        "mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json": (
+            "mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+        ),
+        "mechanics/checkpoint/parts/checkpoint-to-memory-mapping/schemas/checkpoint-to-memory-contract.schema.json": (
+            "mechanics/checkpoint/schemas/checkpoint-to-memory-contract.schema.json",
+        ),
+        "mechanics/consumer-handoff/parts/kag-source-export/generated/kag_export.min.json": (
+            "mechanics/consumer-handoff/generated/kag_export.min.json",
+        ),
+        "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/bridge.kag-lift.example.json": (
+            "mechanics/consumer-handoff/examples/bridge.kag-lift.example.json",
+        ),
+        "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/claim.tos-bridge-ready.example.json": (
+            "mechanics/consumer-handoff/examples/claim.tos-bridge-ready.example.json",
+        ),
+        "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/episode.tos-interpretation.example.json": (
+            "mechanics/consumer-handoff/examples/episode.tos-interpretation.example.json",
+        ),
+        "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json": (
+            "mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json",
+        ),
+        "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json": (
+            "mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json",
+        ),
+        "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/provenance_thread.kag-lift.example.json": (
+            "mechanics/consumer-handoff/examples/provenance_thread.kag-lift.example.json",
+        ),
+        "mechanics/recurrence-support/parts/witness-trace-contract/schemas/witness-trace.schema.json": (
+            "mechanics/recurrence-support/schemas/witness-trace.schema.json",
+        ),
+    },
 }
 TOS_ROOT_README_PATH = "README.md"
 TOS_TINY_ENTRY_DOCTRINE_PATH = "docs/TINY_ENTRY_ROUTE.md"
@@ -302,7 +420,7 @@ RETURN_REGROUNDING_EXPECTED_INPUT_REFS = {
     "tos_kag_export": "Tree-of-Sophia/generated/kag_export.min.json",
     "tos_node_contract": "Tree-of-Sophia/docs/NODE_CONTRACT.md",
     "tos_source_node": "Tree-of-Sophia/examples/source_node.example.json",
-    "memo_checkpoint_contract": "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+    "memo_checkpoint_contract": "aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json",
     "memo_memory_readiness_boundary": "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
 }
 RETURN_REGROUNDING_ALLOWED_SAME_RUN_INPUTS = {
@@ -392,8 +510,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ],
         "supporting_surface_refs": [
             "examples/aoa_tos_bridge_envelope.example.json",
-            "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json",
-            "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json",
+            "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json",
+            "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json",
         ],
         "preserved_fields": [
             "source_refs",
@@ -492,8 +610,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         "stronger_refs": [
             "aoa-playbooks/playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md",
             "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md",
-            "aoa-evals/bundles/aoa-long-horizon-depth/EVAL.md",
-            "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+            "aoa-evals/evals/workflow/aoa-long-horizon-depth/EVAL.md",
+            "aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json",
             "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
         ],
         "supporting_surface_refs": [
@@ -547,7 +665,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "docs/BOUNDARIES.md",
         ],
         "stronger_refs": [
-            "aoa-memo/mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+            "aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json",
             "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
             "Tree-of-Sophia/docs/NODE_CONTRACT.md",
             "Tree-of-Sophia/examples/source_node.example.json",
@@ -632,7 +750,29 @@ def resolve_repo_path(repo: str, path: str) -> Path:
     root = KNOWN_REPO_ROOTS.get(repo)
     if root is None:
         fail(f"unsupported repository '{repo}'")
-    return root / path
+    target = root / path
+    if target.exists():
+        return target
+    for alias in COMPATIBILITY_REF_ALIASES.get(repo, {}).get(path, ()):
+        alias_target = root / alias
+        if alias_target.exists():
+            return alias_target
+    return target
+
+
+def path_matches_current_or_alias(repo: str, current_path: str, observed_path: object) -> bool:
+    if observed_path == current_path:
+        return True
+    return observed_path in COMPATIBILITY_REF_ALIASES.get(repo, {}).get(current_path, ())
+
+
+def canonical_repo_path(repo: str, path: str) -> str:
+    if path in COMPATIBILITY_REF_ALIASES.get(repo, {}):
+        return path
+    for current_path, aliases in COMPATIBILITY_REF_ALIASES.get(repo, {}).items():
+        if path in aliases:
+            return current_path
+    return path
 
 
 def manifest_input_path(source_input: dict[str, str]) -> Path:
@@ -641,6 +781,44 @@ def manifest_input_path(source_input: dict[str, str]) -> Path:
 
 def manifest_input_ref(source_input: dict[str, str]) -> str:
     return repo_ref(source_input["repo"], source_input["path"])
+
+
+def load_eval_paths_by_name() -> dict[str, str]:
+    if not EVAL_CATALOG_PATH.exists():
+        return {}
+    payload = read_json(EVAL_CATALOG_PATH)
+    if not isinstance(payload, dict):
+        fail("aoa-evals generated eval catalog must be a JSON object")
+    evals = payload.get("evals")
+    if not isinstance(evals, list):
+        fail("aoa-evals generated eval catalog must declare evals")
+    paths_by_name: dict[str, str] = {}
+    for index, entry in enumerate(evals):
+        if not isinstance(entry, dict):
+            fail(f"aoa-evals generated eval catalog evals[{index}] must be an object")
+        name = entry.get("name")
+        eval_path = entry.get("eval_path")
+        if not isinstance(name, str) or not isinstance(eval_path, str):
+            fail(f"aoa-evals generated eval catalog evals[{index}] must keep name and eval_path")
+        paths_by_name[name] = eval_path
+    return paths_by_name
+
+
+def eval_path_for_anchor(eval_anchor: str) -> str:
+    catalog_path = load_eval_paths_by_name().get(eval_anchor)
+    if catalog_path is not None:
+        eval_path = resolve_repo_path("aoa-evals", catalog_path)
+        if eval_path.exists():
+            return canonical_repo_path("aoa-evals", catalog_path)
+
+    legacy_path = Path("bundles") / eval_anchor / "EVAL.md"
+    legacy_path_text = legacy_path.as_posix()
+    for current_path, aliases in COMPATIBILITY_REF_ALIASES.get("aoa-evals", {}).items():
+        if legacy_path_text in aliases and (AOA_EVALS_ROOT / legacy_path).exists():
+            return current_path
+    if (AOA_EVALS_ROOT / legacy_path).exists():
+        return legacy_path_text
+    fail(f"missing eval bundle for anchor '{eval_anchor}'")
 
 
 def read_csv_rows(path: Path) -> list[dict[str, str]]:
@@ -1337,7 +1515,7 @@ def load_federation_export_payload(
             f"requires {manifest_input_ref(source_input)}.entry_surface.repo to equal "
             f"'{dependency_entry_repo}'"
         )
-    if entry_path != dependency_entry_path:
+    if not path_matches_current_or_alias(entry_repo, dependency_entry_path, entry_path):
         fail(
             f"source-owned export dependency '{dependency_id}' for {consumer_surface_id} "
             f"requires {manifest_input_ref(source_input)}.entry_surface.path to equal "
@@ -2038,13 +2216,13 @@ def normalize_repo_pointer(raw_ref: str) -> str:
         fail(f"unsupported repo-qualified ref '{raw_ref}'")
     if not remainder:
         fail(f"repo-qualified ref is missing a path '{raw_ref}'")
-    return repo_ref(repo_name, "/".join(remainder))
+    return repo_ref(repo_name, canonical_repo_path(repo_name, "/".join(remainder)))
 
 
 def normalize_relative_ref(repo: str, raw_ref: str) -> str:
     if raw_ref.startswith("repo:"):
         return normalize_repo_pointer(raw_ref)
-    return repo_ref(repo, raw_ref)
+    return repo_ref(repo, canonical_repo_path(repo, raw_ref))
 
 
 def markdown_section_lines(text: str, heading: str) -> list[str]:
@@ -2321,10 +2499,7 @@ def build_artifact_descriptor(
 def build_eval_anchor_refs(eval_anchors: list[str]) -> list[str]:
     refs: list[str] = []
     for eval_anchor in eval_anchors:
-        eval_bundle_path = AOA_EVALS_ROOT / "bundles" / eval_anchor / "EVAL.md"
-        if not eval_bundle_path.exists():
-            fail(f"missing eval bundle for anchor '{eval_anchor}'")
-        refs.append(repo_ref("aoa-evals", f"bundles/{eval_anchor}/EVAL.md"))
+        refs.append(repo_ref("aoa-evals", eval_path_for_anchor(eval_anchor)))
     return refs
 
 
@@ -2535,7 +2710,7 @@ def build_reasoning_handoff_scenario(
             [
                 continuity_schema_ref,
                 normalize_repo_pointer(
-                    "repo:aoa-memo/mechanics/checkpoint/schemas/checkpoint-to-memory-contract.schema.json"
+                    "repo:aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/schemas/checkpoint-to-memory-contract.schema.json"
                 ),
             ]
         )
@@ -2826,13 +3001,13 @@ def build_tos_retrieval_axis_pack_payload(
         fail(
             "ToS retrieval axis manifest bridge_envelope_example must point to examples/aoa_tos_bridge_envelope.example.json"
         )
-    if manifest_input_ref(inputs_by_name["memo_chunk_face"]) != "aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json":
+    if manifest_input_ref(inputs_by_name["memo_chunk_face"]) != "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json":
         fail(
-            "ToS retrieval axis manifest memo_chunk_face must point to aoa-memo/mechanics/consumer-handoff/examples/memory_chunk_face.bridge.example.json"
+            "ToS retrieval axis manifest memo_chunk_face must point to aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json"
         )
-    if manifest_input_ref(inputs_by_name["memo_graph_face"]) != "aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json":
+    if manifest_input_ref(inputs_by_name["memo_graph_face"]) != "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json":
         fail(
-            "ToS retrieval axis manifest memo_graph_face must point to aoa-memo/mechanics/consumer-handoff/examples/memory_graph_face.bridge.example.json"
+            "ToS retrieval axis manifest memo_graph_face must point to aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json"
         )
     if manifest_input_ref(inputs_by_name["tos_node_contract"]) != "Tree-of-Sophia/docs/NODE_CONTRACT.md":
         fail("ToS retrieval axis manifest tos_node_contract must point to Tree-of-Sophia/docs/NODE_CONTRACT.md")
@@ -4100,16 +4275,19 @@ def build_federation_export_registry_payload() -> dict[str, object]:
                 }
             )
 
-        entry_surface = export_payload.get("entry_surface")
-        if not isinstance(entry_surface, dict):
+        payload_entry_surface = export_payload.get("entry_surface")
+        if not isinstance(payload_entry_surface, dict):
             fail(f"{repo_ref(export_repo, export_path)}.entry_surface must be an object")
+        dependency_entry_surface = dependency.get("entry_surface")
+        if not isinstance(dependency_entry_surface, dict):
+            fail(f"{dependency_id}.entry_surface must be an object")
         entry_surface_ref = repo_ref(
             require_string(
-                entry_surface.get("repo"),
+                dependency_entry_surface.get("repo"),
                 label=f"{repo_ref(export_repo, export_path)}.entry_surface.repo",
             ),
             require_string(
-                entry_surface.get("path"),
+                dependency_entry_surface.get("path"),
                 label=f"{repo_ref(export_repo, export_path)}.entry_surface.path",
             ),
         )
@@ -4912,7 +5090,7 @@ def build_kag_maturity_governance_payload(
                     f"KAG maturity governance surface '{surface_id}' proof ref must "
                     f"stay in aoa-evals: {proof_ref}"
                 )
-            proof_path = AOA_EVALS_ROOT / proof_ref.split("/", 1)[1]
+            proof_path = resolve_repo_path("aoa-evals", proof_ref.split("/", 1)[1])
             if not proof_path.exists():
                 fail(
                     f"KAG maturity governance surface '{surface_id}' references missing "
