@@ -68,6 +68,24 @@ class KagGenerationTestCase(unittest.TestCase):
                 label="absolute_path",
             )
 
+    def test_eval_catalog_rejects_absolute_paths(self) -> None:
+        with self.patched_read_json(
+            {
+                kag_generation.EVAL_CATALOG_PATH: {
+                    "evals": [
+                        {
+                            "name": "aoa-long-horizon-depth",
+                            "eval_path": "/tmp/outside/EVAL.md",
+                        }
+                    ]
+                }
+            }
+        ):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.load_eval_paths_by_name()
+
+        self.assertIn("repo-relative", str(context.exception))
+
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         self.assert_builder_matches_generated(
