@@ -92,7 +92,7 @@
       "stability_tier": "consumer_stable",
       "consumer_posture": "stable_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-local-text-contract-fit/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "source_export_reentry",
@@ -107,7 +107,7 @@
       "stability_tier": "consumer_stable",
       "consumer_posture": "stable_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-owner-fit-routing-quality/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "source_export_reentry",
@@ -122,8 +122,8 @@
       "stability_tier": "consumer_stable",
       "consumer_posture": "stable_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md",
-        "aoa-evals/bundles/aoa-candidate-lineage-integrity/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-local-text-contract-fit/EVAL.md",
+        "aoa-evals/evals/capability/aoa-candidate-lineage-integrity/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "source_export_reentry",
@@ -138,7 +138,7 @@
       "stability_tier": "consumer_stable",
       "consumer_posture": "stable_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md"
+        "aoa-evals/evals/workflow/aoa-return-anchor-integrity/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "source_export_reentry",
@@ -153,7 +153,7 @@
       "stability_tier": "experimental_derived",
       "consumer_posture": "review_gated_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-local-text-contract-fit/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "bridge_axis_reentry",
@@ -168,8 +168,8 @@
       "stability_tier": "experimental_derived",
       "consumer_posture": "review_gated_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md",
-        "aoa-evals/bundles/aoa-candidate-lineage-integrity/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-owner-fit-routing-quality/EVAL.md",
+        "aoa-evals/evals/capability/aoa-candidate-lineage-integrity/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "projection_boundary_reentry",
@@ -185,9 +185,9 @@
       "stability_tier": "experimental_derived",
       "consumer_posture": "review_gated_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md",
-        "aoa-evals/bundles/aoa-memo-recall-integrity/EVAL.md",
-        "aoa-evals/bundles/aoa-memo-contradiction-integrity/EVAL.md"
+        "aoa-evals/evals/workflow/aoa-return-anchor-integrity/EVAL.md",
+        "aoa-evals/evals/workflow/aoa-memo-recall-integrity/EVAL.md",
+        "aoa-evals/evals/workflow/aoa-memo-contradiction-integrity/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "bridge_axis_reentry",
@@ -203,9 +203,9 @@
       "stability_tier": "planned_contract_only",
       "consumer_posture": "contract_only_review_gated",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md",
-        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md",
-        "aoa-evals/bundles/aoa-stress-recovery-window/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-owner-fit-routing-quality/EVAL.md",
+        "aoa-evals/evals/workflow/aoa-return-anchor-integrity/EVAL.md",
+        "aoa-evals/evals/comparison/longitudinal-window/aoa-stress-recovery-window/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "projection_boundary_reentry",
@@ -220,8 +220,8 @@
       "stability_tier": "experimental_derived",
       "consumer_posture": "review_gated_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md",
-        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-owner-fit-routing-quality/EVAL.md",
+        "aoa-evals/evals/workflow/aoa-return-anchor-integrity/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "source_export_reentry",
@@ -237,7 +237,7 @@
       "stability_tier": "experimental_derived",
       "consumer_posture": "review_gated_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-local-text-contract-fit/EVAL.md"
+        "aoa-evals/evals/boundary/aoa-local-text-contract-fit/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "bridge_axis_reentry",
@@ -252,8 +252,8 @@
       "stability_tier": "experimental_derived",
       "consumer_posture": "review_gated_source_first",
       "proof_expectation_refs": [
-        "aoa-evals/bundles/aoa-return-anchor-integrity/EVAL.md",
-        "aoa-evals/bundles/aoa-owner-fit-routing-quality/EVAL.md"
+        "aoa-evals/evals/workflow/aoa-return-anchor-integrity/EVAL.md",
+        "aoa-evals/evals/boundary/aoa-owner-fit-routing-quality/EVAL.md"
       ],
       "regrounding_mode_refs": [
         "bridge_axis_reentry",

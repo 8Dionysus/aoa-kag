@@ -28,10 +28,23 @@ def write_text(path: Path, content: str) -> None:
 class ValidateKagTestCase(unittest.TestCase):
     def patched_read_json(self, overrides: dict[Path, object]):
         original = validate_kag.read_json
-        normalized_overrides = {
-            Path(path).resolve(): copy.deepcopy(payload)
-            for path, payload in overrides.items()
-        }
+        normalized_overrides: dict[Path, object] = {}
+        for path, payload in overrides.items():
+            resolved = Path(path).resolve()
+            normalized_overrides[resolved] = copy.deepcopy(payload)
+            for repo, root in (
+                ("aoa-memo", validate_kag.AOA_MEMO_ROOT),
+                ("aoa-evals", validate_kag.AOA_EVALS_ROOT),
+            ):
+                try:
+                    relative_path = resolved.relative_to(root.resolve()).as_posix()
+                except ValueError:
+                    continue
+                for alias in validate_kag.COMPATIBILITY_REF_ALIASES.get(repo, {}).get(
+                    relative_path,
+                    (),
+                ):
+                    normalized_overrides[(root / alias).resolve()] = copy.deepcopy(payload)
 
         def side_effect(path: Path) -> object:
             resolved = Path(path).resolve()
@@ -438,7 +451,7 @@ class ValidateKagTestCase(unittest.TestCase):
         assert isinstance(example_payload, dict)
         broken_payload = copy.deepcopy(example_payload)
         broken_payload["tos_refs"][0] = (
-            "aoa-memo/mechanics/consumer-handoff/examples/bridge.kag-lift.example.json"
+            "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/bridge.kag-lift.example.json"
         )
 
         with self.patched_read_json(
@@ -632,8 +645,8 @@ class ValidateKagTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             memo_root = Path(tmpdir)
             self.write_memo_kag_export_fixture(memo_root, payload)
-            generated = memo_root / "generated"
-            generated.mkdir()
+            generated = memo_root / "generated" / "memory-objects"
+            generated.mkdir(parents=True)
             (generated / "memory_object_capsules.json").write_text(
                 json.dumps({"capsules": []}, indent=2) + "\n",
                 encoding="utf-8",
@@ -656,8 +669,8 @@ class ValidateKagTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             memo_root = Path(tmpdir)
             self.write_memo_kag_export_fixture(memo_root, payload)
-            generated = memo_root / "generated"
-            generated.mkdir()
+            generated = memo_root / "generated" / "memory-objects"
+            generated.mkdir(parents=True)
             (generated / "memory_object_capsules.json").write_text(
                 json.dumps({"memory_objects": []}, indent=2) + "\n",
                 encoding="utf-8",

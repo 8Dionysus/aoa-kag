@@ -22,9 +22,9 @@ The current bounded contract depends on:
 
 - `aoa-techniques/generated/kag_export.min.json`
 - `Tree-of-Sophia/generated/kag_export.min.json`
-- `aoa-memo/mechanics/consumer-handoff/generated/kag_export.min.json`
+- `aoa-memo/mechanics/consumer-handoff/parts/kag-source-export/generated/kag_export.min.json`
 
-`aoa-memo/mechanics/consumer-handoff/generated/kag_export.min.json` is now listed as an invariant-backed
+`aoa-memo/mechanics/consumer-handoff/parts/kag-source-export/generated/kag_export.min.json` is now listed as an invariant-backed
 donor export, but its `consumed_by` list is intentionally empty in this wave.
 That keeps the donor contract explicit without pretending the live generated KAG
 surfaces already consume it.

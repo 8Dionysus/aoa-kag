@@ -47,7 +47,7 @@
     {
       "name": "artifact_to_verdict_hook_schema",
       "repo": "aoa-evals",
-      "path": "schemas/artifact-to-verdict-hook.schema.json",
+      "path": "mechanics/audit/parts/artifact-verdict-hooks/schemas/artifact-to-verdict-hook.schema.json",
       "role": "eval_hook_schema"
     },
     {
@@ -59,7 +59,7 @@
     {
       "name": "aoa_p_0008_hook",
       "repo": "aoa-evals",
-      "path": "examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json",
+      "path": "mechanics/audit/parts/artifact-verdict-hooks/examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json",
       "role": "eval_hook_fixture"
     },
     {
@@ -71,19 +71,19 @@
     {
       "name": "aoa_p_0009_hook",
       "repo": "aoa-evals",
-      "path": "examples/artifact_to_verdict_hook.restartable-inquiry-loop.example.json",
+      "path": "mechanics/checkpoint/parts/restartable-inquiry/examples/artifact_to_verdict_hook.restartable-inquiry-loop.example.json",
       "role": "eval_hook_fixture"
     },
     {
       "name": "checkpoint_to_memory_contract",
       "repo": "aoa-memo",
-      "path": "mechanics/checkpoint/examples/checkpoint_to_memory_contract.example.json",
+      "path": "mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json",
       "role": "memo_contract_fixture"
     },
     {
       "name": "inquiry_checkpoint_schema",
       "repo": "aoa-memo",
-      "path": "mechanics/checkpoint/schemas/inquiry_checkpoint.schema.json",
+      "path": "mechanics/checkpoint/parts/checkpoint-carry-contract/schemas/inquiry_checkpoint.schema.json",
       "role": "memo_schema"
     },
     {
@@ -95,7 +95,7 @@
     {
       "name": "witness_trace_schema",
       "repo": "aoa-memo",
-      "path": "mechanics/recurrence-support/schemas/witness-trace.schema.json",
+      "path": "mechanics/recurrence-support/parts/witness-trace-contract/schemas/witness-trace.schema.json",
       "role": "memo_schema"
     }
   ],
