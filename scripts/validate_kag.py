@@ -218,6 +218,9 @@ KAG_MATURITY_GOVERNANCE_SCHEMA_PATH = (
 SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "source-owned-export-dependencies.schema.json"
 )
+SOURCE_OWNED_EXPORT_DEPENDENCIES_DOC_PATH = (
+    REPO_ROOT / "docs" / "SOURCE_OWNED_EXPORT_DEPENDENCIES.md"
+)
 FEDERATION_EXPORT_REGISTRY_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "federation-export-registry-manifest.schema.json"
 )
@@ -921,7 +924,7 @@ EXPECTED_MEMO_KAG_EXPORT_SECTION_HANDLES = [
 EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
     {
         "relation_type": "source_memory_object",
-        "target_ref": "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/bridge.kag-lift.example.json",
+        "target_ref": "memo/objects/bridges/2026/tos-lineage-kag-candidate/object.json",
     },
     {
         "relation_type": "supported_by_claim",
@@ -940,6 +943,22 @@ EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
         "target_ref": "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/provenance_thread.kag-lift.example.json",
     },
 ]
+REQUIRED_MEMO_SOURCE_OWNED_EXPORT_CONSUMER_BOUNDARY_SNIPPETS = (
+    "Reviewed memo donor consumer boundary",
+    "`aoa-kag` is a read-only memory consumer",
+    "reviewed `aoa-memo` object ids, provenance,",
+    "lifecycle, and generated read models",
+    "`source_kind: reviewed_corpus`",
+    "`memo.bridge.2026-03-23.tos-lineage-kag-candidate`",
+    "`aoa_memo_brief`, `aoa_memo_search`, and `aoa_memo_pending_exports`",
+    "`aoa_memo_landing_plan`",
+    "access-plane or dry-run evidence only",
+    "do not authorize `aoa-kag` to",
+    "write local memo candidates, reviewed-intake exports, or durable memory",
+    "Session evidence remains `.aoa` or source-owner evidence",
+    "must not treat the donor as normalized",
+    "graph truth, routing authority, proof, or memory ownership",
+)
 EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
     "aoa-techniques": [],
     TOS_REPO: [
@@ -7948,6 +7967,16 @@ def validate_optional_memo_source_owned_export_readiness() -> None:
         )
 
 
+def validate_memo_source_owned_export_consumer_boundary_doc() -> None:
+    text = read_text(SOURCE_OWNED_EXPORT_DEPENDENCIES_DOC_PATH)
+    for snippet in REQUIRED_MEMO_SOURCE_OWNED_EXPORT_CONSUMER_BOUNDARY_SNIPPETS:
+        if snippet not in text:
+            fail(
+                "docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md is missing "
+                f"memo consumer boundary guidance: {snippet}"
+            )
+
+
 def main() -> int:
     missing_cross_repo_roots: list[str] = []
     try:
@@ -8300,6 +8329,7 @@ def main() -> int:
         validate_federation_export_registry_example()
         validate_federation_kag_export_example()
         validate_optional_memo_source_owned_export_readiness()
+        validate_memo_source_owned_export_consumer_boundary_doc()
         validate_cross_source_node_projection_example(
             expected_cross_source_node_projection_payload
         )
@@ -8407,6 +8437,7 @@ def main() -> int:
     print("[ok] validated federation KAG export example")
     if AOA_MEMO_ROOT.exists():
         print("[ok] validated optional aoa-memo source-owned export readiness")
+    print("[ok] validated memo source-owned export consumer boundary doc")
     print("[ok] validated cross-source node projection example")
     print("[ok] validated counterpart federation exposure review example")
     print("[ok] validated tiny consumer bundle example")
