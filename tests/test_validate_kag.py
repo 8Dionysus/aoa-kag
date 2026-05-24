@@ -682,6 +682,30 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("direct_relations", str(context.exception))
 
+    def test_memo_source_owned_export_consumer_boundary_validates_current_doc(self) -> None:
+        validate_kag.validate_memo_source_owned_export_consumer_boundary_doc()
+
+    def test_memo_source_owned_export_consumer_boundary_rejects_graph_truth_takeover(
+        self,
+    ) -> None:
+        original_read_text = validate_kag.read_text
+
+        def fake_read_text(path: Path) -> str:
+            text = original_read_text(path)
+            if Path(path) == validate_kag.SOURCE_OWNED_EXPORT_DEPENDENCIES_DOC_PATH:
+                return text.replace(
+                    "must not treat the donor as normalized",
+                    "may treat the donor as normalized",
+                    1,
+                )
+            return text
+
+        with patch.object(validate_kag, "read_text", side_effect=fake_read_text):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                validate_kag.validate_memo_source_owned_export_consumer_boundary_doc()
+
+        self.assertIn("must not treat the donor", str(context.exception))
+
 
 class ValidateQuestbookSurfaceTests(unittest.TestCase):
     def write_valid_surface(self, repo_root: Path) -> None:

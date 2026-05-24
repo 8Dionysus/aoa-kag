@@ -7,6 +7,16 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+### Changed
+
+- Update optional `aoa-memo` source-owned export readiness so the memo KAG donor
+  bridge is expected from the reviewed corpus bundle rather than the bridge
+  teaching fixture.
+- Clarify the memo donor export consumer boundary: `aoa-kag` reads reviewed
+  `aoa-memo` object ids, provenance, lifecycle, and generated read models as a
+  registry-visible donor route, not graph truth, proof, routing authority, or a
+  memory write path.
+
 ## [0.2.2] - 2026-04-23
 
 ### Summary
