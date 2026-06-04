@@ -379,7 +379,7 @@ EXPECTED_KAG_MATURITY_GOVERNANCE_INPUTS = {
     (
         "maturity_hardening_decision",
         "aoa-kag",
-        "docs/decisions/2026-04-13-kag-maturity-hardening.md",
+        "docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md",
         "decision_note",
     ),
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),

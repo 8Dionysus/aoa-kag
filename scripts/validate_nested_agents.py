@@ -18,6 +18,19 @@ class AgentsDocSpec:
 
 REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
     AgentsDocSpec(
+        Path("docs") / "decisions" / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "durable decision-rationale lane",
+            "AOA-KAG-D-####",
+            "KAG surfaces",
+            "Source lanes",
+            "Source repositories own authored meaning",
+            "python scripts/generate_decision_indexes.py --check",
+            "python scripts/validate_decision_records.py",
+        ),
+    ),
+    AgentsDocSpec(
         Path("manifests") / "AGENTS.md",
         (
             "# AGENTS.md Guidance for `manifests/`",

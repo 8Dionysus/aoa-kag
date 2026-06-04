@@ -2,7 +2,7 @@
 
 ## Guidance for `scripts/`
 
-`scripts/` contains generators, validators, and projection helpers for the KAG substrate.
+`scripts/` contains generators, validators, decision-index helpers, and projection helpers for the KAG substrate.
 
 Keep scripts deterministic, repo-relative, and provenance-preserving. Avoid hidden network calls, private corpora, local-only paths, and ambient credentials.
 
@@ -14,6 +14,8 @@ Verify with:
 
 ```bash
 python scripts/generate_kag.py
+python scripts/generate_decision_indexes.py --check
+python scripts/validate_decision_records.py
 python scripts/validate_kag.py
 python scripts/validate_semantic_agents.py
 ```

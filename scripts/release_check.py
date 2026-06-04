@@ -17,6 +17,14 @@ COMMANDS = [
         "validate nested AGENTS docs",
         [sys.executable, "scripts/validate_nested_agents.py"],
     ),
+    (
+        "check decision indexes",
+        [sys.executable, "scripts/generate_decision_indexes.py", "--check"],
+    ),
+    (
+        "validate decision records",
+        [sys.executable, "scripts/validate_decision_records.py"],
+    ),
     ("validate committed KAG surfaces", [sys.executable, "scripts/validate_kag.py"]),
     ("generate KAG outputs", [sys.executable, "scripts/generate_kag.py"]),
     ("validate KAG surfaces", [sys.executable, "scripts/validate_kag.py"]),

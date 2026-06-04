@@ -29,8 +29,9 @@ It does not own:
 4. `docs/KAG_MODEL.md`
 5. `docs/BOUNDARIES.md`
 6. `docs/SOURCE_POLICY.md`
-7. the target source, registry, pack, generated output, or capsule
-8. `docs/AGENTS_ROOT_REFERENCE.md` for preserved full root branches
+7. `docs/decisions/README.md` for durable KAG route rationale
+8. the target source, registry, pack, generated output, or capsule
+9. `docs/AGENTS_ROOT_REFERENCE.md` for preserved full root branches
 
 
 ## AGENTS stack law
@@ -78,6 +79,8 @@ Default read-only integrity pass:
 
 ```bash
 python scripts/validate_kag.py
+python scripts/generate_decision_indexes.py --check
+python scripts/validate_decision_records.py
 python scripts/validate_nested_agents.py
 python -m unittest discover -s tests -p 'test_*.py'
 ```
