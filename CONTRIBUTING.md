@@ -72,15 +72,24 @@ Run the current read-only validation battery:
 
 ```bash
 python scripts/validate_kag.py
+python scripts/generate_decision_indexes.py --check
+python scripts/validate_decision_records.py
 python scripts/validate_nested_agents.py
 python -m unittest discover -s tests -p 'test_*.py'
 ```
+
+If your change materially affects KAG route rationale, owner-boundary posture,
+source refs, generated-pack policy, maturity, quarantine, or regrounding, add or
+update a canonical `docs/decisions/AOA-KAG-D-####-*.md` record and regenerate
+the decision indexes.
 
 If your change touched generated KAG outputs, regenerate and revalidate them before opening the PR:
 
 ```bash
 python scripts/generate_kag.py
 python scripts/validate_kag.py
+python scripts/generate_decision_indexes.py --check
+python scripts/validate_decision_records.py
 python scripts/validate_nested_agents.py
 python -m unittest discover -s tests -p 'test_*.py'
 ```

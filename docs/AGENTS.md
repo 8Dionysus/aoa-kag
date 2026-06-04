@@ -2,7 +2,7 @@
 
 ## Guidance for `docs/`
 
-`docs/` explains the KAG model, boundaries, source policy, bridge contracts, regrounding, proof expectations, quarantine, and consumer guides.
+`docs/` explains the KAG model, boundaries, source policy, bridge contracts, regrounding, proof expectations, quarantine, decision rationale, and consumer guides.
 
 Docs may define derived-substrate doctrine, but source repositories still own authored meaning and `aoa-evals` owns proof claims.
 
@@ -14,5 +14,7 @@ Verify with:
 
 ```bash
 python scripts/validate_kag.py
+python scripts/generate_decision_indexes.py --check
+python scripts/validate_decision_records.py
 python scripts/validate_semantic_agents.py
 ```

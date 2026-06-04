@@ -2,7 +2,7 @@
 
 ## Guidance for `tests/`
 
-`tests/` protects KAG manifests, generated projections, bridge contracts, schemas, examples, and source-policy boundaries.
+`tests/` protects KAG manifests, generated projections, bridge contracts, schemas, examples, decision indexes, and source-policy boundaries.
 
 Tests should expose provenance loss, source-ref drift, projection overreach, quarantine bypass, schema mismatch, and maturity overclaiming.
 
@@ -14,5 +14,7 @@ Verify with:
 
 ```bash
 python -m pytest -q tests
+python scripts/generate_decision_indexes.py --check
+python scripts/validate_decision_records.py
 python scripts/validate_semantic_agents.py
 ```

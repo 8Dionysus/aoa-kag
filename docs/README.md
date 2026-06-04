@@ -23,6 +23,8 @@ federation as a whole.
   federation spine pilot.
 - Read [SOURCE_OWNED_EXPORT_DEPENDENCIES](SOURCE_OWNED_EXPORT_DEPENDENCIES.md)
   for the explicit source-owned export dependency contract.
+- Read [decisions](decisions/README.md) for durable KAG route rationale and
+  generated decision lookup indexes.
 - Read [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the first-wave AoA-ToS bridge
   posture.
 - Read [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) for the bounded
@@ -80,6 +82,8 @@ federation as a whole.
 - [SOURCE_OWNED_EXPORT_DEPENDENCIES](SOURCE_OWNED_EXPORT_DEPENDENCIES.md) - the
   explicit contract for the current external source-owned exports consumed by
   `aoa-kag`
+- [decisions](decisions/README.md) - durable KAG route rationale, canonical
+  `AOA-KAG-D` decision records, and generated lookup indexes
 - [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) - how the derived layer returns
   retrieval context without replacing authored sources
 - [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) - how the KAG layer
@@ -121,9 +125,12 @@ federation as a whole.
 - [BOUNDARIES](BOUNDARIES.md) - what the KAG layer owns and must not absorb
 - [SOURCE_POLICY](SOURCE_POLICY.md) - how authoritative sources and derived KAG
   surfaces should relate
-- [decisions/2026-04-13-kag-maturity-hardening](decisions/2026-04-13-kag-maturity-hardening.md)
+- [decisions/AOA-KAG-D-0001-kag-maturity-hardening](decisions/AOA-KAG-D-0001-kag-maturity-hardening.md)
   - why the repository now hardens around maturity governance, wait states, and
   stop-rules
+- [decisions/AOA-KAG-D-0002-owner-route-catalog-refresh](decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md)
+  - why KAG follows current owner route surfaces rather than stale consumer
+  paths
 - `../examples/tos_retrieval_axis_surface.example.json` - compact example of the
   bridge retrieval surface
 - `../examples/tos_retrieval_axis_pack.example.json` - compact example of the
