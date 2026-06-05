@@ -26,6 +26,9 @@ owns proof claims. `generated/`, `manifests/`, `schemas/`, `examples/`,
   PR history, not to a compatibility lookup layer.
 - Generated indexes under `docs/decisions/indexes/` are read models only. Do
   not edit them by hand.
+- `modeled_surfaces` in `docs/decisions/indexes/index_contract.yaml` is a
+  top-level list of normalized repo-relative paths under `docs/decisions/`; do
+  not use it for root non-record Markdown.
 - Material changes to rationale should usually add a new decision with explicit
   supersession prose instead of silently rewriting an accepted route.
 
