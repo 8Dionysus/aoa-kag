@@ -468,7 +468,7 @@ class ValidateKagTestCase(unittest.TestCase):
         example_payload = load_json(validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH)
         assert isinstance(example_payload, dict)
         broken_payload = copy.deepcopy(example_payload)
-        broken_payload["memory_refs"][0] = "Tree-of-Sophia/docs/NODE_CONTRACT.md"
+        broken_payload["memory_refs"][0] = "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md"
 
         with self.patched_read_json(
             {

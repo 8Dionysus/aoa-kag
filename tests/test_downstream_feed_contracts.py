@@ -321,7 +321,7 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             {
                 "adjunct_role": "standalone_handles_only",
                 "entry_order": "source_owned_tiny_entry_before_adjunct",
-                "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+                "source_first_reentry_ref": "Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json",
                 "routing_ownership": "forbidden",
                 "canon_authorship": "forbidden",
             },
@@ -365,7 +365,7 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         )
         self.assertEqual(
             adjunct_surfaces[0]["subordinate_posture"]["source_first_reentry_ref"],
-            "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+            "Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json",
         )
 
     def test_readme_surfaces_source_first_route_and_honest_validation_paths(self) -> None:

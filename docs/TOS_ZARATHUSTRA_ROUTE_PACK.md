@@ -30,8 +30,8 @@ The current pilot derives only from canonical ToS route surfaces:
 This wave does not derive from:
 
 - `Tree-of-Sophia/intake/**`
-- `Tree-of-Sophia/examples/**`
-- `Tree-of-Sophia/generated/kag_export*`
+- `Tree-of-Sophia/ToS/public-compatibility/**`
+- `Tree-of-Sophia/ToS/derived-exports/kag_export*`
 
 ## Pack rule
 

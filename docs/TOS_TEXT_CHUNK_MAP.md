@@ -20,9 +20,9 @@ surface rather than pretending to become the source.
 The current pilot stays deliberately narrow.
 It derives only from:
 
-- `Tree-of-Sophia/examples/source_node.example.json` as the authority surface
-- `Tree-of-Sophia/docs/TINY_ENTRY_ROUTE.md` as the current route surface
-- `Tree-of-Sophia/docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md` as the current capsule
+- `Tree-of-Sophia/ToS/public-compatibility/source_node.example.json` as the authority surface
+- `Tree-of-Sophia/ToS/zarathustra/public-entry/TINY_ENTRY_ROUTE.md` as the current route surface
+- `Tree-of-Sophia/ToS/zarathustra/prologue-1/TRILINGUAL_ENTRY.md` as the current capsule
   surface
 
 This keeps the wave aligned with the current bounded Zarathustra tiny-entry seam

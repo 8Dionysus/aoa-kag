@@ -49,7 +49,7 @@
       "name": "aoa_p_0008_playbook",
       "repo": "aoa-playbooks",
       "role": "playbook_doc",
-      "ref": "aoa-playbooks/playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md"
+      "ref": "aoa-playbooks/playbooks/operations/orchestration/long-horizon-model-tier-orchestra/PLAYBOOK.md"
     },
     {
       "name": "aoa_p_0008_hook",
@@ -61,7 +61,7 @@
       "name": "aoa_p_0009_playbook",
       "repo": "aoa-playbooks",
       "role": "playbook_doc",
-      "ref": "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md"
+      "ref": "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md"
     },
     {
       "name": "aoa_p_0009_hook",
@@ -98,13 +98,13 @@
   "scenarios": [
     {
       "scenario_ref": "AOA-P-0008",
-      "playbook_ref": "aoa-playbooks/playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md",
+      "playbook_ref": "aoa-playbooks/playbooks/operations/orchestration/long-horizon-model-tier-orchestra/PLAYBOOK.md",
       "artifact_spine": {
         "verification_surface": {
           "artifact_name": "verification_result",
           "contract_strength": "schema_backed",
           "artifact_contract_refs": [
-            "aoa-agents/schemas/artifact.verification_result.schema.json"
+            "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.verification_result.schema.json"
           ]
         },
         "continuity_surface": null,
@@ -113,28 +113,28 @@
             "artifact_name": "route_decision",
             "contract_strength": "schema_backed",
             "artifact_contract_refs": [
-              "aoa-agents/schemas/artifact.route_decision.schema.json"
+              "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.route_decision.schema.json"
             ]
           },
           {
             "artifact_name": "bounded_plan",
             "contract_strength": "schema_backed",
             "artifact_contract_refs": [
-              "aoa-agents/schemas/artifact.bounded_plan.schema.json"
+              "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.bounded_plan.schema.json"
             ]
           },
           {
             "artifact_name": "transition_decision",
             "contract_strength": "schema_backed",
             "artifact_contract_refs": [
-              "aoa-agents/schemas/artifact.transition_decision.schema.json"
+              "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.transition_decision.schema.json"
             ]
           },
           {
             "artifact_name": "distillation_pack",
             "contract_strength": "schema_backed",
             "artifact_contract_refs": [
-              "aoa-agents/schemas/artifact.distillation_pack.schema.json"
+              "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.distillation_pack.schema.json"
             ]
           }
         ],
@@ -158,11 +158,11 @@
           "aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md"
         ],
         "artifact_contract_refs": [
-          "aoa-agents/schemas/artifact.route_decision.schema.json",
-          "aoa-agents/schemas/artifact.bounded_plan.schema.json",
-          "aoa-agents/schemas/artifact.verification_result.schema.json",
-          "aoa-agents/schemas/artifact.transition_decision.schema.json",
-          "aoa-agents/schemas/artifact.distillation_pack.schema.json"
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.route_decision.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.bounded_plan.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.verification_result.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.transition_decision.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.distillation_pack.schema.json"
         ],
         "report_expectation": {
           "report_format": "summary-with-breakdown",
@@ -189,7 +189,7 @@
       ],
       "authoritative_refs": {
         "playbook_refs": [
-          "aoa-playbooks/playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md"
+          "aoa-playbooks/playbooks/operations/orchestration/long-horizon-model-tier-orchestra/PLAYBOOK.md"
         ],
         "eval_refs": [
           "aoa-evals/evals/workflow/aoa-long-horizon-depth/EVAL.md",
@@ -212,11 +212,11 @@
           "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
         ],
         "artifact_schema_refs": [
-          "aoa-agents/schemas/artifact.route_decision.schema.json",
-          "aoa-agents/schemas/artifact.bounded_plan.schema.json",
-          "aoa-agents/schemas/artifact.verification_result.schema.json",
-          "aoa-agents/schemas/artifact.transition_decision.schema.json",
-          "aoa-agents/schemas/artifact.distillation_pack.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.route_decision.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.bounded_plan.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.verification_result.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.transition_decision.schema.json",
+          "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.distillation_pack.schema.json",
           "aoa-memo/mechanics/recurrence-support/parts/witness-trace-contract/schemas/witness-trace.schema.json"
         ]
       },
@@ -245,7 +245,7 @@
     },
     {
       "scenario_ref": "AOA-P-0009",
-      "playbook_ref": "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md",
+      "playbook_ref": "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md",
       "artifact_spine": {
         "verification_surface": {
           "artifact_name": "inquiry_checkpoint",
@@ -266,35 +266,35 @@
             "artifact_name": "decision_ledger",
             "contract_strength": "playbook_declared",
             "artifact_contract_refs": [
-              "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
+              "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
             ]
           },
           {
             "artifact_name": "contradiction_map",
             "contract_strength": "playbook_declared",
             "artifact_contract_refs": [
-              "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
+              "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
             ]
           },
           {
             "artifact_name": "memory_delta",
             "contract_strength": "playbook_declared",
             "artifact_contract_refs": [
-              "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
+              "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
             ]
           },
           {
             "artifact_name": "canon_delta",
             "contract_strength": "playbook_declared",
             "artifact_contract_refs": [
-              "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
+              "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
             ]
           },
           {
             "artifact_name": "next_pass_brief",
             "contract_strength": "playbook_declared",
             "artifact_contract_refs": [
-              "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
+              "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts"
             ]
           }
         ],
@@ -309,7 +309,7 @@
         "artifact_contract_refs": [
           "aoa-memo/mechanics/checkpoint/parts/checkpoint-carry-contract/schemas/inquiry_checkpoint.schema.json",
           "aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/schemas/checkpoint-to-memory-contract.schema.json",
-          "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts",
+          "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md#expected-artifacts",
           "aoa-playbooks/generated/playbook_registry.min.json"
         ],
         "report_expectation": {
@@ -347,7 +347,7 @@
       ],
       "authoritative_refs": {
         "playbook_refs": [
-          "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md"
+          "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md"
         ],
         "eval_refs": [
           "aoa-evals/evals/workflow/aoa-long-horizon-depth/EVAL.md",

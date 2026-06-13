@@ -27,13 +27,13 @@
     "generated/federation_spine.min.json"
   ],
   "evidence_refs": [
-    "aoa-agents/examples/stress_handoff_envelope.example.json",
-    "aoa-playbooks/examples/playbook_stress_lane.example.json"
+    "aoa-agents/mechanics/antifragility/parts/stress-posture/examples/stress-handoff-envelope.example.json",
+    "aoa-playbooks/mechanics/antifragility/parts/stress-lanes/examples/playbook_stress_lane.example.json"
   ],
   "source_fallback_refs": [
     "aoa-agents/generated/agent_registry.min.json",
     "aoa-playbooks/generated/playbook_handoff_contracts.json",
-    "aoa-playbooks/playbooks/self-agent-checkpoint-rollout/PLAYBOOK.md"
+    "aoa-playbooks/playbooks/continuity/checkpoint/self-agent-checkpoint-rollout/PLAYBOOK.md"
   ],
   "notes": "Consumers should prefer source-owned playbook and agent surfaces until the projection is regrounded.",
   "supersedes": []

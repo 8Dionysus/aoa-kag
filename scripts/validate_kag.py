@@ -318,8 +318,8 @@ ALLOWED_SOURCE_INPUT_ROLE = {"primary", "supporting"}
 ALLOWED_COUNTERPART_MODE = {"analogy", "support", "tension", "calibration"}
 ALLOWED_QUERY_MODES = {"local_search", "global_search", "drift_search"}
 EXPECTED_AUTHORITATIVE_SOURCE_REFS = {
-    "Tree-of-Sophia/docs/NODE_CONTRACT.md",
-    "Tree-of-Sophia/docs/PRACTICE_BRANCH.md",
+    "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md",
+    "Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md",
     "aoa-memo/mechanics/recurrence-support/docs/WITNESS_TRACE_CONTRACT.md",
 }
 EXPECTED_DERIVED_SURFACE_REFS = {
@@ -508,19 +508,19 @@ EXPECTED_RETURN_REGROUNDING_INPUTS = {
     (
         "tos_kag_export",
         "Tree-of-Sophia",
-        "generated/kag_export.min.json",
+        "ToS/derived-exports/kag_export.min.json",
         "source_owned_export",
     ),
     (
         "tos_node_contract",
         "Tree-of-Sophia",
-        "docs/NODE_CONTRACT.md",
+        "ToS/doctrine/NODE_CONTRACT.md",
         "source_contract",
     ),
     (
         "tos_source_node",
         "Tree-of-Sophia",
-        "examples/source_node.example.json",
+        "ToS/public-compatibility/source_node.example.json",
         "authority_surface",
     ),
     (
@@ -688,10 +688,10 @@ EXPECTED_TOS_RETRIEVAL_AXIS_INPUTS = {
     ("bridge_envelope_example", "aoa-kag", "examples/aoa_tos_bridge_envelope.example.json", "bridge_envelope"),
     ("memo_chunk_face", "aoa-memo", "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json", "memo_chunk_face"),
     ("memo_graph_face", "aoa-memo", "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json", "memo_graph_face"),
-    ("tos_node_contract", TOS_REPO, "docs/NODE_CONTRACT.md", "tos_contract"),
-    ("tos_practice_branch", TOS_REPO, "docs/PRACTICE_BRANCH.md", "tos_contract"),
-    ("tos_authority_surface", TOS_REPO, "examples/source_node.example.json", "authority_surface"),
-    ("tos_lineage_hop", TOS_REPO, "examples/concept_node.example.json", "lineage_surface"),
+    ("tos_node_contract", TOS_REPO, "ToS/doctrine/NODE_CONTRACT.md", "tos_contract"),
+    ("tos_practice_branch", TOS_REPO, "ToS/doctrine/PRACTICE_BRANCH.md", "tos_contract"),
+    ("tos_authority_surface", TOS_REPO, "ToS/public-compatibility/source_node.example.json", "authority_surface"),
+    ("tos_lineage_hop", TOS_REPO, "ToS/public-compatibility/concept_node.example.json", "lineage_surface"),
 }
 EXPECTED_TOS_RETRIEVAL_AXIS_BINDINGS = {
     (
@@ -808,9 +808,9 @@ EXPECTED_REASONING_HANDOFF_INPUTS = {
     ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "kag_guardrail_example"),
     ("counterpart_federation_exposure_review_doc", "aoa-kag", "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md", "kag_guardrail_doc"),
     ("artifact_to_verdict_hook_schema", "aoa-evals", "mechanics/audit/parts/artifact-verdict-hooks/schemas/artifact-to-verdict-hook.schema.json", "eval_hook_schema"),
-    ("aoa_p_0008_playbook", "aoa-playbooks", "playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md", "playbook_doc"),
+    ("aoa_p_0008_playbook", "aoa-playbooks", "playbooks/operations/orchestration/long-horizon-model-tier-orchestra/PLAYBOOK.md", "playbook_doc"),
     ("aoa_p_0008_hook", "aoa-evals", "mechanics/audit/parts/artifact-verdict-hooks/examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json", "eval_hook_fixture"),
-    ("aoa_p_0009_playbook", "aoa-playbooks", "playbooks/restartable-inquiry-loop/PLAYBOOK.md", "playbook_doc"),
+    ("aoa_p_0009_playbook", "aoa-playbooks", "playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md", "playbook_doc"),
     ("aoa_p_0009_hook", "aoa-evals", "mechanics/checkpoint/parts/restartable-inquiry/examples/artifact_to_verdict_hook.restartable-inquiry-loop.example.json", "eval_hook_fixture"),
     ("checkpoint_to_memory_contract", "aoa-memo", "mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json", "memo_contract_fixture"),
     ("inquiry_checkpoint_schema", "aoa-memo", "mechanics/checkpoint/parts/checkpoint-carry-contract/schemas/inquiry_checkpoint.schema.json", "memo_schema"),
@@ -851,7 +851,7 @@ EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
         "activation_manifest",
     ),
     ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "source_owned_export"),
-    ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "source_owned_export"),
+    ("tos_kag_export", TOS_REPO, "ToS/derived-exports/kag_export.min.json", "source_owned_export"),
 }
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER = [
     "kag_registry_manifest",
@@ -936,7 +936,7 @@ EXPECTED_MEMO_KAG_EXPORT_DIRECT_RELATIONS = [
     },
     {
         "relation_type": "points_to_tos_fragment",
-        "target_ref": "repo:Tree-of-Sophia/docs/CONTEXT_COMPOST.md#memory-bridge-fragment",
+        "target_ref": "repo:Tree-of-Sophia/mechanics/distillation/parts/source-compost/docs/CONTEXT_COMPOST.md#memory-bridge-fragment",
     },
     {
         "relation_type": "provenance_thread",
@@ -976,7 +976,7 @@ EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
 }
 EXPECTED_CROSS_SOURCE_NODE_PROJECTION_INPUTS = {
     ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "primary_export"),
-    ("tos_kag_export", TOS_REPO, "generated/kag_export.min.json", "supporting_export"),
+    ("tos_kag_export", TOS_REPO, "ToS/derived-exports/kag_export.min.json", "supporting_export"),
     ("tos_retrieval_axis_pack", "aoa-kag", "generated/tos_retrieval_axis_pack.min.json", "retrieval_axis"),
     ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "federation_spine"),
 }
@@ -2781,7 +2781,7 @@ def validate_tos_zarathustra_route_pack_manifest(
         if path.startswith("examples/"):
             fail(f"{location} must not point at Tree-of-Sophia/examples")
         if path.startswith("generated/kag_export"):
-            fail(f"{location} must not point at Tree-of-Sophia/generated/kag_export")
+            fail(f"{location} must not point at Tree-of-Sophia/ToS/derived-exports/kag_export")
     if actual_source_inputs != EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_INPUTS:
         fail(
             "ToS Zarathustra route pack manifest source_inputs must match the current "
@@ -5062,8 +5062,8 @@ def validate_tos_zarathustra_route_pack(
             fail(f"{location}.node_type '{node_type}' is not allowed in the route pack")
         actual_node_type_counts[node_type] += 1
         actual_node_type_order.append(node_type)
-        if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/tree/"):
-            fail(f"{location}.authority_ref must point into Tree-of-Sophia/tree/**/node.json")
+        if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/ToS/canon/"):
+            fail(f"{location}.authority_ref must point into Tree-of-Sophia/ToS/canon/**/node.json")
         if not authority_ref.endswith("/node.json"):
             fail(f"{location}.authority_ref must resolve to a canonical node.json file")
         if "/intake/" in authority_ref or authority_ref.startswith("Tree-of-Sophia/intake/"):
@@ -5426,8 +5426,8 @@ def validate_tos_zarathustra_route_retrieval_pack(
                 fail(f"{location}.node_id '{node_id}' is duplicated")
             seen_node_ids.add(node_id)
             seen_handle_node_ids.add(node_id)
-            if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/tree/"):
-                fail(f"{location}.authority_ref must point into Tree-of-Sophia/tree/**/node.json")
+            if not isinstance(authority_ref, str) or not authority_ref.startswith("Tree-of-Sophia/ToS/canon/"):
+                fail(f"{location}.authority_ref must point into Tree-of-Sophia/ToS/canon/**/node.json")
             if not authority_ref.endswith("/node.json"):
                 fail(f"{location}.authority_ref must resolve to a canonical node.json file")
             if authority_ref.startswith("Tree-of-Sophia/intake/") or "/intake/" in authority_ref:
@@ -5764,11 +5764,11 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
             validate_exact_set(
                 set(artifact_schema_refs),
                 {
-                    "aoa-agents/schemas/artifact.route_decision.schema.json",
-                    "aoa-agents/schemas/artifact.bounded_plan.schema.json",
-                    "aoa-agents/schemas/artifact.verification_result.schema.json",
-                    "aoa-agents/schemas/artifact.transition_decision.schema.json",
-                    "aoa-agents/schemas/artifact.distillation_pack.schema.json",
+                    "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.route_decision.schema.json",
+                    "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.bounded_plan.schema.json",
+                    "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.verification_result.schema.json",
+                    "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.transition_decision.schema.json",
+                    "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/schemas/artifact.distillation_pack.schema.json",
                     "aoa-memo/mechanics/recurrence-support/parts/witness-trace-contract/schemas/witness-trace.schema.json",
                 },
                 label=f"{location}.authoritative_refs.artifact_schema_refs",
@@ -5969,7 +5969,7 @@ def validate_return_regrounding_pack(
                 stronger_refs,
                 {
                     "aoa-techniques/generated/kag_export.min.json",
-                    "Tree-of-Sophia/generated/kag_export.min.json",
+                    "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
                 },
                 label=f"{location}.stronger_refs",
             )
@@ -5997,7 +5997,7 @@ def validate_return_regrounding_pack(
                 stronger_refs,
                 {
                     "aoa-techniques/generated/kag_export.min.json",
-                    "Tree-of-Sophia/generated/kag_export.min.json",
+                    "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
                 },
                 label=f"{location}.stronger_refs",
             )
