@@ -27,10 +27,10 @@ It derives only from already-legible bridge and chunk-map surfaces:
 - `examples/aoa_tos_bridge_envelope.example.json`
 - `aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json`
 - `aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json`
-- `Tree-of-Sophia/docs/NODE_CONTRACT.md`
-- `Tree-of-Sophia/docs/PRACTICE_BRANCH.md`
-- `Tree-of-Sophia/examples/source_node.example.json`
-- `Tree-of-Sophia/examples/concept_node.example.json`
+- `Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md`
+- `Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md`
+- `Tree-of-Sophia/ToS/public-compatibility/source_node.example.json`
+- `Tree-of-Sophia/ToS/public-compatibility/concept_node.example.json`
 
 This keeps the wave reference-driven and reviewable rather than introducing a
 second hidden bridge program.

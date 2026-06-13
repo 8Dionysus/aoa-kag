@@ -43,25 +43,25 @@
       "name": "tos_node_contract",
       "repo": "Tree-of-Sophia",
       "role": "tos_contract",
-      "ref": "Tree-of-Sophia/docs/NODE_CONTRACT.md"
+      "ref": "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md"
     },
     {
       "name": "tos_practice_branch",
       "repo": "Tree-of-Sophia",
       "role": "tos_contract",
-      "ref": "Tree-of-Sophia/docs/PRACTICE_BRANCH.md"
+      "ref": "Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md"
     },
     {
       "name": "tos_authority_surface",
       "repo": "Tree-of-Sophia",
       "role": "authority_surface",
-      "ref": "Tree-of-Sophia/examples/source_node.example.json"
+      "ref": "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json"
     },
     {
       "name": "tos_lineage_hop",
       "repo": "Tree-of-Sophia",
       "role": "lineage_surface",
-      "ref": "Tree-of-Sophia/examples/concept_node.example.json"
+      "ref": "Tree-of-Sophia/ToS/public-compatibility/concept_node.example.json"
     }
   ],
   "surface_bindings": [
@@ -96,19 +96,19 @@
         "tos.source.thus-spoke-zarathustra.prologue::seg.1.1.1.12"
       ],
       "source_refs": [
-        "Tree-of-Sophia/examples/source_node.example.json",
-        "Tree-of-Sophia/docs/NODE_CONTRACT.md",
-        "Tree-of-Sophia/docs/PRACTICE_BRANCH.md"
+        "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json",
+        "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md",
+        "Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md"
       ],
       "lineage_refs": [
-        "Tree-of-Sophia/examples/concept_node.example.json",
-        "Tree-of-Sophia/docs/NODE_CONTRACT.md"
+        "Tree-of-Sophia/ToS/public-compatibility/concept_node.example.json",
+        "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md"
       ],
       "conflict_refs": [
-        "Tree-of-Sophia/docs/NODE_CONTRACT.md"
+        "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md"
       ],
       "practice_refs": [
-        "Tree-of-Sophia/docs/PRACTICE_BRANCH.md"
+        "Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md"
       ],
       "bridge_surface_ref": "examples/tos_retrieval_axis_surface.example.json",
       "bridge_envelope_ref": "examples/aoa_tos_bridge_envelope.example.json",

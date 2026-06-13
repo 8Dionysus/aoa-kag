@@ -16,9 +16,9 @@ If a later KAG surface consumes those files, it must preserve the distinction
 between:
 
 - primary witness and source files in `Tree-of-Sophia/sources/`
-- canonical authored tree surfaces in `Tree-of-Sophia/tree/`
-- public compatibility and export surfaces in `Tree-of-Sophia/examples/` and
-  `Tree-of-Sophia/generated/`
+- canonical authored tree surfaces in `Tree-of-Sophia/ToS/canon/`
+- public compatibility and export surfaces in `Tree-of-Sophia/ToS/public-compatibility/` and
+  `Tree-of-Sophia/ToS/derived-exports/`
 - raw candidate tables in `Tree-of-Sophia/intake/`
 
 ## Current non-activation posture
@@ -35,7 +35,7 @@ Current ToS-facing KAG packs still derive from the public tiny-entry and export
 seam rather than directly from raw intake tables.
 
 `AOA-K-0010` does not change that non-activation posture: it derives from
-canonical `Tree-of-Sophia/tree/**` surfaces plus the canonical relation pack,
+canonical `Tree-of-Sophia/ToS/canon/**` surfaces plus the canonical relation pack,
 not from `Tree-of-Sophia/intake/**`.
 
 ## Current upstream expectation

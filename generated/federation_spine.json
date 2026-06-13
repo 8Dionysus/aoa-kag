@@ -25,7 +25,7 @@
       "name": "tos_kag_export",
       "repo": "Tree-of-Sophia",
       "role": "source_owned_export",
-      "ref": "Tree-of-Sophia/generated/kag_export.min.json"
+      "ref": "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json"
     }
   ],
   "repo_count": 2,
@@ -45,10 +45,10 @@
     {
       "repo": "Tree-of-Sophia",
       "pilot_posture": "source_owned_export_tiny",
-      "export_ref": "Tree-of-Sophia/generated/kag_export.min.json",
+      "export_ref": "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
       "kind": "source_node",
       "object_id": "tos.source.thus-spoke-zarathustra.prologue",
-      "entry_surface_ref": "Tree-of-Sophia/examples/source_node.example.json",
+      "entry_surface_ref": "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json",
       "adjunct_surfaces": [
         {
           "surface_id": "AOA-K-0011",
@@ -66,7 +66,7 @@
           "subordinate_posture": {
             "adjunct_role": "standalone_handles_only",
             "entry_order": "source_owned_tiny_entry_before_adjunct",
-            "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+            "source_first_reentry_ref": "Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json",
             "routing_ownership": "forbidden",
             "canon_authorship": "forbidden"
           }

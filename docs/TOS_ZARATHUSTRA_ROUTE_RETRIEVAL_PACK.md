@@ -19,7 +19,7 @@ that authority.
 `aoa-kag` may derive one bounded route-local retrieval surface from
 `generated/tos_zarathustra_route_pack.min.json`, but that surface must remain a
 consumer-facing adjunct that points readers back toward canonical
-`Tree-of-Sophia/tree/**` node ownership and the canonical ToS relation pack.
+`Tree-of-Sophia/ToS/canon/**` node ownership and the canonical ToS relation pack.
 
 ## Current pilot inputs
 
@@ -60,7 +60,7 @@ The same payload also keeps one explicit subordinate posture:
 
 - `adjunct_role = standalone_handles_only`
 - `entry_order = source_owned_tiny_entry_before_adjunct`
-- `source_first_reentry_ref = Tree-of-Sophia/examples/tos_tiny_entry_route.example.json`
+- `source_first_reentry_ref = Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json`
 - `routing_ownership = forbidden`
 - `canon_authorship = forbidden`
 

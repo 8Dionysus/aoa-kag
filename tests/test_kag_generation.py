@@ -212,7 +212,7 @@ class KagGenerationTestCase(unittest.TestCase):
             {
                 "adjunct_role": "standalone_handles_only",
                 "entry_order": "source_owned_tiny_entry_before_adjunct",
-                "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+                "source_first_reentry_ref": "Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json",
                 "routing_ownership": "forbidden",
                 "canon_authorship": "forbidden",
             },
@@ -243,7 +243,7 @@ class KagGenerationTestCase(unittest.TestCase):
                     "subordinate_posture": {
                         "adjunct_role": "standalone_handles_only",
                         "entry_order": "source_owned_tiny_entry_before_adjunct",
-                        "source_first_reentry_ref": "Tree-of-Sophia/examples/tos_tiny_entry_route.example.json",
+                        "source_first_reentry_ref": "Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json",
                         "routing_ownership": "forbidden",
                         "canon_authorship": "forbidden",
                     },

@@ -284,47 +284,47 @@ COMPATIBILITY_REF_ALIASES = {
     },
 }
 TOS_ROOT_README_PATH = "README.md"
-TOS_TINY_ENTRY_DOCTRINE_PATH = "docs/TINY_ENTRY_ROUTE.md"
-TOS_TINY_ENTRY_ROUTE_PATH = "examples/tos_tiny_entry_route.example.json"
+TOS_TINY_ENTRY_DOCTRINE_PATH = "ToS/zarathustra/public-entry/TINY_ENTRY_ROUTE.md"
+TOS_TINY_ENTRY_ROUTE_PATH = "ToS/public-compatibility/tos_tiny_entry_route.example.json"
 TOS_TINY_ENTRY_ROUTE_REF = f"{TOS_REPO}/{TOS_TINY_ENTRY_ROUTE_PATH}"
 TOS_TINY_ENTRY_ROUTE_ID = "tos-tiny-entry.zarathustra-prologue"
-TOS_TINY_ENTRY_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
-TOS_TINY_ENTRY_AUTHORITY_PATH = "examples/source_node.example.json"
+TOS_TINY_ENTRY_CAPSULE_PATH = "ToS/zarathustra/prologue-1/TRILINGUAL_ENTRY.md"
+TOS_TINY_ENTRY_AUTHORITY_PATH = "ToS/public-compatibility/source_node.example.json"
 TOS_TINY_ENTRY_PRIMARY_HOP_FIELD = "bounded_hop"
 TOS_TINY_ENTRY_LEGACY_HOP_FIELD = "lineage_or_context_hop"
-TOS_TINY_ENTRY_HOP_PATH = "examples/concept_node.example.json"
-TOS_TINY_ENTRY_FALLBACK_PATH = "docs/KNOWLEDGE_MODEL.md"
+TOS_TINY_ENTRY_HOP_PATH = "ToS/public-compatibility/concept_node.example.json"
+TOS_TINY_ENTRY_FALLBACK_PATH = "ToS/doctrine/KNOWLEDGE_MODEL.md"
 TOS_ZARATHUSTRA_ROUTE_ID = "thus-spoke-zarathustra/prologue-1"
-TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH = "docs/ZARATHUSTRA_TRILINGUAL_ENTRY.md"
+TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH = "ToS/zarathustra/prologue-1/TRILINGUAL_ENTRY.md"
 TOS_ZARATHUSTRA_ROUTE_SOURCE_NODE_PATH = (
-    "tree/source/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/node.json"
+    "ToS/canon/source/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/node.json"
 )
-TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH = "tree/concept/becoming/node.json"
-TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH = "tree/concept/overcoming/node.json"
+TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH = "ToS/canon/concept/becoming/node.json"
+TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH = "ToS/canon/concept/overcoming/node.json"
 TOS_ZARATHUSTRA_ROUTE_LINEAGE_NODE_PATH = (
-    "tree/lineage/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/"
+    "ToS/canon/lineage/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/"
     "becoming-to-overcoming/node.json"
 )
 TOS_ZARATHUSTRA_ROUTE_PRINCIPLE_ROOT = (
-    "tree/principle/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+    "ToS/canon/principle/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
 )
 TOS_ZARATHUSTRA_ROUTE_EVENT_ROOT = (
-    "tree/event/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+    "ToS/canon/event/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
 )
 TOS_ZARATHUSTRA_ROUTE_STATE_ROOT = (
-    "tree/state/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+    "ToS/canon/state/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
 )
 TOS_ZARATHUSTRA_ROUTE_SUPPORT_ROOT = (
-    "tree/support/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+    "ToS/canon/support/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
 )
 TOS_ZARATHUSTRA_ROUTE_ANALOGY_ROOT = (
-    "tree/analogy/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+    "ToS/canon/analogy/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
 )
 TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT = (
-    "tree/synthesis/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
+    "ToS/canon/synthesis/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1"
 )
 TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH = (
-    "tree/relations/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/edges.csv"
+    "ToS/canon/relations/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/edges.csv"
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF = "generated/tos_zarathustra_route_pack.min.json"
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID = (
@@ -417,9 +417,9 @@ RETURN_REGROUNDING_EXPECTED_INPUT_REFS = {
     "cross_source_projection_pack": "generated/cross_source_node_projection.min.json",
     "reasoning_handoff_pack": "generated/reasoning_handoff_pack.min.json",
     "aoa_techniques_kag_export": "aoa-techniques/generated/kag_export.min.json",
-    "tos_kag_export": "Tree-of-Sophia/generated/kag_export.min.json",
-    "tos_node_contract": "Tree-of-Sophia/docs/NODE_CONTRACT.md",
-    "tos_source_node": "Tree-of-Sophia/examples/source_node.example.json",
+    "tos_kag_export": "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
+    "tos_node_contract": "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md",
+    "tos_source_node": "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json",
     "memo_checkpoint_contract": "aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json",
     "memo_memory_readiness_boundary": "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
 }
@@ -459,7 +459,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ],
         "stronger_refs": [
             "aoa-techniques/generated/kag_export.min.json",
-            "Tree-of-Sophia/generated/kag_export.min.json",
+            "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
         ],
         "supporting_surface_refs": [
             "manifests/source_owned_export_dependencies.json",
@@ -504,9 +504,9 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "docs/BRIDGE_CONTRACTS.md",
         ],
         "stronger_refs": [
-            "Tree-of-Sophia/examples/source_node.example.json",
-            "Tree-of-Sophia/docs/NODE_CONTRACT.md",
-            "Tree-of-Sophia/docs/PRACTICE_BRANCH.md",
+            "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json",
+            "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md",
+            "Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md",
         ],
         "supporting_surface_refs": [
             "examples/aoa_tos_bridge_envelope.example.json",
@@ -558,7 +558,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ],
         "stronger_refs": [
             "aoa-techniques/generated/kag_export.min.json",
-            "Tree-of-Sophia/generated/kag_export.min.json",
+            "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
         ],
         "supporting_surface_refs": [
             "generated/federation_spine.min.json",
@@ -608,8 +608,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "generated/reasoning_handoff_pack.min.json",
         ],
         "stronger_refs": [
-            "aoa-playbooks/playbooks/long-horizon-model-tier-orchestra/PLAYBOOK.md",
-            "aoa-playbooks/playbooks/restartable-inquiry-loop/PLAYBOOK.md",
+            "aoa-playbooks/playbooks/operations/orchestration/long-horizon-model-tier-orchestra/PLAYBOOK.md",
+            "aoa-playbooks/playbooks/continuity/session-growth/restartable-inquiry-loop/PLAYBOOK.md",
             "aoa-evals/evals/workflow/aoa-long-horizon-depth/EVAL.md",
             "aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json",
             "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
@@ -667,8 +667,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         "stronger_refs": [
             "aoa-memo/mechanics/checkpoint/parts/checkpoint-to-memory-mapping/examples/checkpoint_to_memory_contract.example.json",
             "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
-            "Tree-of-Sophia/docs/NODE_CONTRACT.md",
-            "Tree-of-Sophia/examples/source_node.example.json",
+            "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md",
+            "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json",
         ],
         "supporting_surface_refs": [
             "generated/reasoning_handoff_pack.min.json",
@@ -2612,7 +2612,10 @@ def build_reasoning_handoff_scenario(
     if scenario_ref == "AOA-P-0008":
         schema_refs_by_artifact: dict[str, list[str]] = {}
         for contract_ref in normalized_hook_contract_refs:
-            if not contract_ref.startswith("aoa-agents/schemas/artifact."):
+            if not contract_ref.startswith(
+                "aoa-agents/mechanics/runtime-seam/parts/artifact-contracts/"
+                "schemas/artifact."
+            ):
                 continue
             schema_name = Path(contract_ref).name
             artifact_name = schema_name.removeprefix("artifact.").removesuffix(".schema.json")
@@ -3012,19 +3015,19 @@ def build_tos_retrieval_axis_pack_payload(
         fail(
             "ToS retrieval axis manifest memo_graph_face must point to aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json"
         )
-    if manifest_input_ref(inputs_by_name["tos_node_contract"]) != "Tree-of-Sophia/docs/NODE_CONTRACT.md":
-        fail("ToS retrieval axis manifest tos_node_contract must point to Tree-of-Sophia/docs/NODE_CONTRACT.md")
-    if manifest_input_ref(inputs_by_name["tos_practice_branch"]) != "Tree-of-Sophia/docs/PRACTICE_BRANCH.md":
+    if manifest_input_ref(inputs_by_name["tos_node_contract"]) != "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md":
+        fail("ToS retrieval axis manifest tos_node_contract must point to Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md")
+    if manifest_input_ref(inputs_by_name["tos_practice_branch"]) != "Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md":
         fail(
-            "ToS retrieval axis manifest tos_practice_branch must point to Tree-of-Sophia/docs/PRACTICE_BRANCH.md"
+            "ToS retrieval axis manifest tos_practice_branch must point to Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md"
         )
-    if manifest_input_ref(inputs_by_name["tos_authority_surface"]) != "Tree-of-Sophia/examples/source_node.example.json":
+    if manifest_input_ref(inputs_by_name["tos_authority_surface"]) != "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json":
         fail(
-            "ToS retrieval axis manifest tos_authority_surface must point to Tree-of-Sophia/examples/source_node.example.json"
+            "ToS retrieval axis manifest tos_authority_surface must point to Tree-of-Sophia/ToS/public-compatibility/source_node.example.json"
         )
-    if manifest_input_ref(inputs_by_name["tos_lineage_hop"]) != "Tree-of-Sophia/examples/concept_node.example.json":
+    if manifest_input_ref(inputs_by_name["tos_lineage_hop"]) != "Tree-of-Sophia/ToS/public-compatibility/concept_node.example.json":
         fail(
-            "ToS retrieval axis manifest tos_lineage_hop must point to Tree-of-Sophia/examples/concept_node.example.json"
+            "ToS retrieval axis manifest tos_lineage_hop must point to Tree-of-Sophia/ToS/public-compatibility/concept_node.example.json"
         )
 
     seen_surface_ids: set[str] = set()
@@ -3549,8 +3552,8 @@ def build_tos_zarathustra_route_handle(
         fail(f"{label}.node_id must stay canonical and start with 'tos.'")
     if node_id.startswith("literal."):
         fail(f"{label}.node_id must not carry literal residue")
-    if not authority_ref.startswith(f"{TOS_REPO}/tree/"):
-        fail(f"{label}.authority_ref must point into Tree-of-Sophia/tree/**")
+    if not authority_ref.startswith(f"{TOS_REPO}/ToS/canon/"):
+        fail(f"{label}.authority_ref must point into Tree-of-Sophia/ToS/canon/**")
     if not authority_ref.endswith("/node.json"):
         fail(f"{label}.authority_ref must resolve to a canonical node.json file")
     if authority_ref.startswith(f"{TOS_REPO}/intake/") or "/intake/" in authority_ref:
@@ -4423,9 +4426,9 @@ def build_cross_source_node_projection_payload(
         fail(
             "cross-source node projection manifest aoa_techniques_kag_export must point to aoa-techniques/generated/kag_export.min.json"
         )
-    if manifest_input_ref(inputs_by_name["tos_kag_export"]) != "Tree-of-Sophia/generated/kag_export.min.json":
+    if manifest_input_ref(inputs_by_name["tos_kag_export"]) != "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json":
         fail(
-            "cross-source node projection manifest tos_kag_export must point to Tree-of-Sophia/generated/kag_export.min.json"
+            "cross-source node projection manifest tos_kag_export must point to Tree-of-Sophia/ToS/derived-exports/kag_export.min.json"
         )
     if manifest_input_ref(inputs_by_name["tos_retrieval_axis_pack"]) != "generated/tos_retrieval_axis_pack.min.json":
         fail(

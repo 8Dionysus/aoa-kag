@@ -21,7 +21,7 @@ The current contract is intentionally narrow:
 The current bounded contract depends on:
 
 - `aoa-techniques/generated/kag_export.min.json`
-- `Tree-of-Sophia/generated/kag_export.min.json`
+- `Tree-of-Sophia/ToS/derived-exports/kag_export.min.json`
 - `aoa-memo/mechanics/consumer-handoff/parts/kag-source-export/generated/kag_export.min.json`
 
 `aoa-memo/mechanics/consumer-handoff/parts/kag-source-export/generated/kag_export.min.json` is now listed as an invariant-backed

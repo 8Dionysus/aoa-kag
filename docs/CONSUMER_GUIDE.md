@@ -43,7 +43,7 @@ Its payload is intentionally explicit about that limit:
 - `adjunct_budget` keeps it as one opt-in standalone adjunct outside the
   numbered tiny path
 - `subordinate_posture` points back to
-  `Tree-of-Sophia/examples/tos_tiny_entry_route.example.json` before wider
+  `Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json` before wider
   derived use
 
 ## Counterpart posture

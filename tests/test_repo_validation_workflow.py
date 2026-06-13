@@ -8,12 +8,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
 CURRENT_DEPENDENCY_PINS = {
-    "Tree-of-Sophia": "0278961afae2dc9b45f10e15d8a70bfdfdcdcc9c",
-    "aoa-memo": "a0fb807bf97b045517ba05a4da3d8e1e58b5483d",
-    "aoa-playbooks": "2e7b7bab23e192cf5bb2f1aee5c59f5b24f51e34",
-    "aoa-evals": "1fd85f515b9b72240a9d1c676c3935129ea84800",
-    "aoa-agents": "272801c52d359b85833944b9bea57273b42c870e",
-    "aoa-techniques": "60ceea4090fec76933fcf41cc0c963a6f1aeb2be",
+    "Tree-of-Sophia": "3b658722d9aeb2bcfadbebffd9e648e31f72cd90",
+    "aoa-memo": "5f87c4f2db09738eae8ba782a7dff26b4be76c62",
+    "aoa-playbooks": "5667de359e7aae2f9b409435cb8fcacaab2d37b1",
+    "aoa-evals": "0bed981d9fc2974d6ba2af235d33836322d3c98e",
+    "aoa-agents": "3ac8066e74fd7bc0a4235b3b8ee057de99b8fb19",
+    "aoa-techniques": "1a7d146957108ecefc24219c7d56357c5a4a2c2c",
 }
 
 

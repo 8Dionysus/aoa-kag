@@ -21,7 +21,7 @@ The current pilot stays deliberately narrow.
 It derives only from:
 
 - `aoa-techniques/generated/kag_export.min.json`
-- `Tree-of-Sophia/generated/kag_export.min.json`
+- `Tree-of-Sophia/ToS/derived-exports/kag_export.min.json`
 - `generated/tos_retrieval_axis_pack.min.json`
 - `generated/federation_spine.min.json`
 
