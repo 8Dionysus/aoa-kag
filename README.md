@@ -10,7 +10,8 @@ It exists to make knowledge-ready structures explicit, reviewable, and bounded. 
 
 Use the shortest route by need:
 
-- role, model, and source-first posture: [CHARTER](CHARTER.md), [docs/KAG_MODEL](docs/KAG_MODEL.md), [docs/BOUNDARIES](docs/BOUNDARIES.md), and [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md)
+- role, system form, model, and source-first posture: [CHARTER](CHARTER.md), [DESIGN](DESIGN.md), [docs/KAG_MODEL](docs/KAG_MODEL.md), [docs/BOUNDARIES](docs/BOUNDARIES.md), and [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md)
+- repeatable KAG operation topology: [mechanics](mechanics/README.md)
 - durable KAG route rationale: [docs/decisions](docs/decisions/README.md) and its generated lookup indexes
 - one current bounded consumer path: [docs/CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md), [docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK](docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md), and [docs/FEDERATION_SPINE](docs/FEDERATION_SPINE.md)
 - source-owned dependencies, bridge posture, and regrounding: [docs/SOURCE_OWNED_EXPORT_DEPENDENCIES](docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md), [docs/BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs/REASONING_HANDOFF](docs/REASONING_HANDOFF.md), [docs/RECURRENCE_REGROUNDING](docs/RECURRENCE_REGROUNDING.md), [docs/BOUNDARIES](docs/BOUNDARIES.md), and [docs/SOURCE_POLICY](docs/SOURCE_POLICY.md)
@@ -24,15 +25,16 @@ Use the shortest route by need:
 ## Route by need
 
 - registry and substrate projections: `generated/kag_registry.json`, `generated/kag_registry.min.json`, and `manifests/kag_registry.json`
-- durable decision rationale: `docs/decisions/AOA-KAG-D-*.md`, `docs/decisions/indexes/*.md`, `python scripts/generate_decision_indexes.py --check`, and `python scripts/validate_decision_records.py`
+- durable decision rationale: `docs/decisions/AOA-KAG-D-*.md`, `docs/decisions/indexes/*.md`, and the `source-fast` validation lane
 - manifest-driven donor and ToS lift packs: `generated/technique_lift_pack*.json`, `generated/tos_text_chunk_map*.json`, `generated/tos_retrieval_axis_pack*.json`, `generated/tos_zarathustra_route_pack*.json`, `generated/tos_zarathustra_route_retrieval_pack*.json`, and the matching `manifests/*.json`
 - maturity stop-rule and wait-state surface: `generated/kag_maturity_governance*.json`, `manifests/kag_maturity_governance.json`, [docs/KAG_MATURITY_GOVERNANCE](docs/KAG_MATURITY_GOVERNANCE.md), [docs/KAG_OWNER_WAIT_STATES](docs/KAG_OWNER_WAIT_STATES.md), and [docs/KAG_PROOF_EXPECTATIONS](docs/KAG_PROOF_EXPECTATIONS.md)
 - reasoning, return, and federation bridge surfaces: `generated/reasoning_handoff_pack*.json`, `generated/return_regrounding_pack*.json`, `generated/federation_spine*.json`, `generated/counterpart_federation_exposure_review*.json`, and [docs/FEDERATION_KAG_READINESS](docs/FEDERATION_KAG_READINESS.md)
 - additive projection-health and regrounding adjuncts: `schemas/projection_health_receipt_v1.json`, `schemas/regrounding_ticket_v1.json`, `examples/projection_health_receipt.example.json`, `examples/regrounding_ticket.example.json`, `examples/projection_health_receipt.retrieval-outage-honesty.example.json`, `examples/regrounding_ticket.retrieval-outage-honesty.example.json`, [docs/KAG_STRESS_REGROUNDING](docs/KAG_STRESS_REGROUNDING.md), [docs/KAG_PROJECTION_QUARANTINE](docs/KAG_PROJECTION_QUARANTINE.md), and [docs/KAG_REGROUNDING_CHAOS_WAVE1.md](docs/KAG_REGROUNDING_CHAOS_WAVE1.md)
 - via negativa pruning checklist: [docs/VIA_NEGATIVA_CHECKLIST](docs/VIA_NEGATIVA_CHECKLIST.md)
 - tiny consumer and bounded cross-source adjuncts: `generated/tiny_consumer_bundle*.json`, `generated/cross_source_node_projection*.json`, and `examples/*.example.json`
-- current-state validation: `python scripts/validate_kag.py`, `python scripts/generate_decision_indexes.py --check`, `python scripts/validate_decision_records.py`, `python scripts/validate_nested_agents.py`, and `python -m unittest discover -s tests -p 'test_*.py'`
-- release-prep parity and targeted regeneration: `python scripts/release_check.py`, `python scripts/generate_kag.py`, and `git status -sb`
+- current-state validation: `python scripts/ci_gate.py --mode source-fast`
+- generated parity and targeted regeneration: `python scripts/ci_gate.py --mode generated`
+- release-prep parity: `python scripts/release_check.py` and `git status -sb`
 
 ## What `aoa-kag` owns
 
@@ -85,11 +87,7 @@ Schemas, examples, and manifests alongside those families make the derived surfa
 For a read-only current-state pass, run:
 
 ```bash
-python scripts/validate_kag.py
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-python scripts/validate_nested_agents.py
-python -m unittest discover -s tests -p 'test_*.py'
+python scripts/ci_gate.py --mode source-fast
 ```
 
 For release-prep parity, run:
@@ -99,14 +97,13 @@ python scripts/release_check.py
 git status -sb
 ```
 
-`release_check.py` first validates committed KAG outputs, then regenerates them and validates again.
-That preserves stale-output detection while still proving the generator is stable.
+`release_check.py` reads the `release` lane from `config/validation_lanes.json`;
+the active command order lives there, not in this README.
 
 If you need targeted regeneration and direct validation, run:
 
 ```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
+python scripts/ci_gate.py --mode generated
 ```
 
 If neighboring donor repositories are not checked out beside `aoa-kag`, set the relevant root variables before running the generators or validators:

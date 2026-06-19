@@ -6,21 +6,45 @@
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
 
+## command authority
+
+- [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+
 ## derived-substrate boundary
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
+
+## federation protocol
+
+- [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
 
 ## generated index parity
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
 
+## generated output boundary
+
+- [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
+
 ## generated output parity
 
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
 
+## generated-output parity
+
+- [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+
+## local KAG stop-line
+
+- [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
+
 ## maturity stop-rule
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
+
+## mechanics stop-line
+
+- [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
 
 ## owner route freshness
 
@@ -39,3 +63,5 @@
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
+- [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
+- [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)

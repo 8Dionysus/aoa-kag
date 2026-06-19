@@ -31,6 +31,27 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
         ),
     ),
     AgentsDocSpec(
+        Path("docs") / "validation" / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "validation lanes",
+            "command authority",
+            "script inventory",
+            "config/validation_lanes.json",
+            "python -m unittest tests.test_validation_command_authority tests.test_script_topology",
+        ),
+    ),
+    AgentsDocSpec(
+        Path("docs") / "testing" / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "test-home topology",
+            "test_inventory.json",
+            "scripts/run_tests.py",
+            "config/validation_lanes.json",
+        ),
+    ),
+    AgentsDocSpec(
         Path("manifests") / "AGENTS.md",
         (
             "# AGENTS.md Guidance for `manifests/`",

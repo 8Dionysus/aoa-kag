@@ -49,6 +49,13 @@ The generated outputs live at:
 - `generated/federation_spine.json`
 - `generated/federation_spine.min.json`
 
+The spine pack also publishes `artifact_identity` for the generated read-model.
+That identity is not a release signature. It tells consumers that the spine is
+a public KAG-derived federation readiness surface, owned by `aoa-kag`, produced
+from the federation spine manifest plus source-owned exports, and safe to use
+only after schema validation, source-input validation, and release-check parity
+agree with the current source inputs.
+
 ## What the spine keeps
 
 For each current pilot repo, the generated pack keeps:

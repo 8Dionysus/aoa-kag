@@ -8,6 +8,7 @@
     "pack_version",
     "pack_type",
     "source_manifest_ref",
+    "artifact_identity",
     "source_inputs",
     "repo_count",
     "repos",
@@ -25,6 +26,9 @@
     "source_manifest_ref": {
       "type": "string",
       "const": "manifests/federation_spine.json"
+    },
+    "artifact_identity": {
+      "$ref": "#/$defs/artifactIdentity"
     },
     "source_inputs": {
       "type": "array",
@@ -253,6 +257,88 @@
         "full_federation_claim": {
           "type": "string",
           "minLength": 3
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifactIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_class",
+        "surface_state",
+        "owner_repo",
+        "authority_ref",
+        "producer",
+        "consumer_expectation",
+        "privacy_boundary",
+        "content_identity",
+        "abi_epoch",
+        "contract_version",
+        "trust_layer",
+        "verification",
+        "action"
+      ],
+      "properties": {
+        "artifact_class": {
+          "const": "derived_kag_readmodel"
+        },
+        "surface_state": {
+          "const": "public_generated_federation_spine"
+        },
+        "owner_repo": {
+          "const": "aoa-kag"
+        },
+        "authority_ref": {
+          "const": "docs/FEDERATION_SPINE.md"
+        },
+        "producer": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "consumer_expectation": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "privacy_boundary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "content_identity": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "abi_epoch": {
+          "const": "aoa_kag_federation_spine_v1"
+        },
+        "contract_version": {
+          "const": "federation-spine.schema.json@aoa_kag_federation_spine_v1#artifact_identity"
+        },
+        "trust_layer": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "const": "abi_contract_signature"
+            },
+            {
+              "const": "w3c_prov_lineage"
+            }
+          ]
+        },
+        "verification": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "action": {
+          "const": "ADD_CONSUMER_EXPECTATION"
         }
       }
     }

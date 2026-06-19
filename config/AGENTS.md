@@ -10,10 +10,10 @@ Keep config explicit, provenance-aware, and reviewable. Avoid private corpora, h
 
 When config changes generated projections, rebuild and inspect provenance, source refs, quarantine posture, and maturity governance.
 
-Verify with:
+Full validation command sequences live in `config/validation_lanes.json`.
+Verify with the generated lane, then the source-fast lane:
 
 ```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
-python scripts/validate_semantic_agents.py
+python scripts/ci_gate.py --mode generated
+python scripts/ci_gate.py --mode source-fast
 ```

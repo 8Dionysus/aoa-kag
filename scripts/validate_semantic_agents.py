@@ -33,7 +33,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'owner wait states',
             'provenance-aware',
             'maturity governance',
-            'validate_kag.py',
+            'config/validation_lanes.json',
         ),
     ),
     AgentsDocSpec(
@@ -43,7 +43,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'source policy',
             'source repositories still own authored meaning',
             'quarantine posture',
-            'validate_kag.py',
+            'config/validation_lanes.json',
         ),
     ),
     AgentsDocSpec(
@@ -53,7 +53,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'provenance-preserving',
             'generated projections',
             'quarantine bypass',
-            'validate_kag.py',
+            'script_inventory.json',
         ),
     ),
     AgentsDocSpec(
@@ -63,7 +63,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'provenance loss',
             'projection overreach',
             'public-safe',
-            'python -m pytest -q tests',
+            'scripts/run_tests.py',
         ),
     ),
 )

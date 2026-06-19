@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "owner": "docs/validation/COMMAND_AUTHORITY.md",
+  "command_authority": "config/validation_lanes.json",
+  "notes": [
+    "This manifest is the canonical storage surface for active validation lane command sequences.",
+    "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences."
+  ],
+  "lanes": {
+    "source_fast": {
+      "label": "source-fast",
+      "posture": "blocking",
+      "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
+      "command_sequence": "source_fast",
+      "purpose": "Growth-safe read-only integrity gate for route cards, mechanics skeleton, decision records, semantic AGENTS docs, unit tests, and committed KAG surfaces.",
+      "does_not_own": [
+        "generated-output mutation",
+        "release stabilization",
+        "future mechanic package part-local execution"
+      ]
+    },
+    "generated": {
+      "label": "generated",
+      "posture": "blocking",
+      "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
+      "command_sequence": "generated_check",
+      "drift_paths": "generated",
+      "purpose": "Generated/read-model parity for KAG outputs derived from manifests and source-owned exports.",
+      "does_not_own": [
+        "source repository authored meaning",
+        "runtime graph/vector/index state"
+      ]
+    },
+    "release": {
+      "label": "release",
+      "posture": "blocking",
+      "owner_surface": "docs/RELEASING.md",
+      "command_sequence": "release_check",
+      "entrypoint": "scripts/release_check.py",
+      "purpose": "Release-prep validation through source-fast and generated lanes.",
+      "does_not_own": [
+        "ordinary docs status",
+        "GitHub dependency canary scheduling"
+      ]
+    },
+    "compatibility_canary": {
+      "label": "compatibility-canary",
+      "posture": "blocking",
+      "owner_surface": ".github/workflows/compatibility-canary.yml",
+      "command_sequence": "compatibility_canary",
+      "purpose": "Scheduled dependency compatibility check that reproduces unit, route, committed KAG, and generated-output drift checks against floating sibling checkouts.",
+      "does_not_own": [
+        "release artifact identity",
+        "source repository authored meaning"
+      ]
+    },
+    "advisory": {
+      "label": "advisory",
+      "posture": "non_blocking",
+      "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
+      "purpose": "Boundary inventory for future graph/RAG/runtime/local-kag pressure that aoa-kag routes but does not yet own as hard validation.",
+      "boundaries": [
+        {
+          "surface": "mechanics/part-local",
+          "posture": "route_only",
+          "owner_route": "future mechanics/<package>/parts/<part>/ route card and validator",
+          "local_check": "No active package-local lane exists until a KAG mechanic package is created."
+        },
+        {
+          "surface": "runtime graph/vector/index state",
+          "posture": "route_only",
+          "owner_route": "future runtime or storage-owning repositories",
+          "local_check": "aoa-kag checks portable derived contracts, not live runtime state."
+        },
+        {
+          "surface": "source-authored meaning",
+          "posture": "route_only",
+          "owner_route": "source repositories and Tree of Sophia",
+          "local_check": "KAG generated surfaces remain provenance-aware derived read models."
+        }
+      ]
+    }
+  },
+  "drift_paths": {
+    "generated": [
+      "generated"
+    ]
+  },
+  "command_sequences": {
+    "source_fast": [
+      [
+        "python",
+        "scripts/run_tests.py"
+      ],
+      [
+        "python",
+        "scripts/validate_nested_agents.py"
+      ],
+      [
+        "python",
+        "scripts/validate_mechanics_skeleton.py"
+      ],
+      [
+        "python",
+        "scripts/generate_decision_indexes.py",
+        "--check"
+      ],
+      [
+        "python",
+        "scripts/validate_decision_records.py"
+      ],
+      [
+        "python",
+        "scripts/validate_semantic_agents.py"
+      ],
+      [
+        "python",
+        "scripts/validate_kag.py"
+      ]
+    ],
+    "generated_check": [
+      [
+        "python",
+        "scripts/validate_kag.py"
+      ],
+      [
+        "python",
+        "scripts/generate_kag.py"
+      ],
+      [
+        "python",
+        "scripts/validate_kag.py"
+      ]
+    ],
+    "release_check": [
+      [
+        "python",
+        "scripts/ci_gate.py",
+        "--mode",
+        "source-fast"
+      ],
+      [
+        "python",
+        "scripts/ci_gate.py",
+        "--mode",
+        "generated"
+      ]
+    ],
+    "compatibility_canary": [
+      [
+        "python",
+        "scripts/run_tests.py"
+      ],
+      [
+        "python",
+        "scripts/validate_nested_agents.py"
+      ],
+      [
+        "python",
+        "scripts/validate_kag.py"
+      ],
+      [
+        "python",
+        "scripts/generate_kag.py"
+      ],
+      [
+        "git",
+        "diff",
+        "--exit-code",
+        "--",
+        "generated"
+      ]
+    ]
+  }
+}

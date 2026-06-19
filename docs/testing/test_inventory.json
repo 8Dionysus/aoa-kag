@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "owner": "docs/testing/TEST_TOPOLOGY.md",
+  "command_authority": "config/validation_lanes.json",
+  "runner_authority": "scripts/run_tests.py",
+  "required_normalized_fields": [
+    "path",
+    "home",
+    "home_scope",
+    "family",
+    "protects",
+    "owner_surface",
+    "coverage_authority",
+    "lane",
+    "mode",
+    "runtime_cost",
+    "focused_target",
+    "failure_route"
+  ],
+  "home_scopes": {
+    "root": "Repo-wide tests under tests/."
+  },
+  "homes": [
+    {
+      "home": "tests",
+      "home_scope": "root",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "root-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "tests/test_agon_kag_promotion_candidate_registry.py",
+          "family": "generated/read-model",
+          "protects": "Agon KAG promotion candidate registry build and validation contracts.",
+          "owner_surface": "docs/AGON_KAG_PROMOTION_CANDIDATES.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_agon_kag_promotion_candidate_registry.py",
+          "failure_route": "Fix the candidate seed config, builder, validator, or generated registry before changing consumer docs."
+        },
+        {
+          "path": "tests/test_agon_sophian_kag_packet_registry.py",
+          "family": "generated/read-model",
+          "protects": "Agon Sophian KAG packet registry build and validation contracts.",
+          "owner_surface": "docs/AGON_SOPHIAN_KAG_PACKET_BRIDGE.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_agon_sophian_kag_packet_registry.py",
+          "failure_route": "Fix the packet seed config, builder, validator, or generated registry before changing bridge docs."
+        },
+        {
+          "path": "tests/test_antifragility_public_surface.py",
+          "family": "docs/root-surface",
+          "protects": "Antifragility public KAG projection-health and regrounding surfaces.",
+          "owner_surface": "docs/KAG_STRESS_REGROUNDING.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_antifragility_public_surface.py",
+          "failure_route": "Fix public KAG docs, examples, or schemas before widening the antifragility surface."
+        },
+        {
+          "path": "tests/test_current_direction_routes.py",
+          "family": "docs/root-surface",
+          "protects": "Current direction and root route visibility.",
+          "owner_surface": "ROADMAP.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_current_direction_routes.py",
+          "failure_route": "Fix root route docs or roadmap/current direction claims before changing downstream readers."
+        },
+        {
+          "path": "tests/test_decision_indexes.py",
+          "family": "decision-lane",
+          "protects": "Decision record metadata and generated decision lookup indexes.",
+          "owner_surface": "docs/decisions/README.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_decision_indexes.py",
+          "failure_route": "Fix decision metadata or regenerate decision indexes before editing generated indexes."
+        },
+        {
+          "path": "tests/test_downstream_feed_contracts.py",
+          "family": "generated/read-model",
+          "protects": "Downstream feed contracts, generated KAG outputs, and federation consumer expectations.",
+          "owner_surface": "generated/AGENTS.md",
+          "runtime_cost": "medium",
+          "focused_target": "tests/test_downstream_feed_contracts.py",
+          "failure_route": "Fix manifests, generated builders, generated outputs, or consumer docs before changing downstream contract claims."
+        },
+        {
+          "path": "tests/test_experience_wave2_seed_contracts.py",
+          "family": "generated/read-model",
+          "protects": "Experience wave 2 seed KAG contracts.",
+          "owner_surface": "manifests/",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_experience_wave2_seed_contracts.py",
+          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
+        },
+        {
+          "path": "tests/test_experience_wave3_seed_contracts.py",
+          "family": "generated/read-model",
+          "protects": "Experience wave 3 seed KAG contracts.",
+          "owner_surface": "manifests/",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_experience_wave3_seed_contracts.py",
+          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
+        },
+        {
+          "path": "tests/test_experience_wave4_seed_contracts.py",
+          "family": "generated/read-model",
+          "protects": "Experience wave 4 seed KAG contracts.",
+          "owner_surface": "manifests/",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_experience_wave4_seed_contracts.py",
+          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
+        },
+        {
+          "path": "tests/test_experience_wave5_seed_contracts.py",
+          "family": "generated/read-model",
+          "protects": "Experience wave 5 seed KAG contracts.",
+          "owner_surface": "manifests/",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_experience_wave5_seed_contracts.py",
+          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
+        },
+        {
+          "path": "tests/test_kag_generation.py",
+          "family": "generated/read-model",
+          "protects": "KAG generation helpers and generated payload contracts.",
+          "owner_surface": "scripts/kag_generation.py",
+          "runtime_cost": "medium",
+          "focused_target": "tests/test_kag_generation.py",
+          "failure_route": "Fix generation helpers, manifests, or generated outputs before changing generated consumers."
+        },
+        {
+          "path": "tests/test_mechanics_skeleton.py",
+          "family": "mechanics/root-topology",
+          "protects": "Mechanics root skeleton and no-package stop-line.",
+          "owner_surface": "mechanics/AGENTS.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_mechanics_skeleton.py",
+          "failure_route": "Fix mechanics root topology before creating mechanic packages or part-local surfaces."
+        },
+        {
+          "path": "tests/test_nested_agents_docs.py",
+          "family": "AGENTS/route",
+          "protects": "Required nested AGENTS route cards.",
+          "owner_surface": "scripts/validate_nested_agents.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_nested_agents_docs.py",
+          "failure_route": "Fix the nearest nested AGENTS card or nested AGENTS validator expectations."
+        },
+        {
+          "path": "tests/test_repo_validation_workflow.py",
+          "family": "release/ci-lane",
+          "protects": "GitHub repo validation workflow dependency pins and generated drift posture.",
+          "owner_surface": ".github/workflows/repo-validation.yml",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_repo_validation_workflow.py",
+          "failure_route": "Fix workflow lane entrypoints, dependency pins, or release command authority before changing CI posture."
+        },
+        {
+          "path": "tests/test_roadmap_parity.py",
+          "family": "docs/root-surface",
+          "protects": "Roadmap parity with current KAG direction.",
+          "owner_surface": "ROADMAP.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_roadmap_parity.py",
+          "failure_route": "Fix roadmap/current direction source before changing route claims."
+        },
+        {
+          "path": "tests/test_tos_tiny_entry_hop_compat.py",
+          "family": "generated/read-model",
+          "protects": "Tree of Sophia tiny-entry compatibility in KAG generated surfaces.",
+          "owner_surface": "docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_tos_tiny_entry_hop_compat.py",
+          "failure_route": "Fix ToS tiny-entry source refs, manifests, or generated KAG output before changing compatibility claims."
+        },
+        {
+          "path": "tests/test_script_topology.py",
+          "family": "script-topology/authority",
+          "protects": "Script inventory completeness, lane inclusion, import smoke, and side-effect boundaries.",
+          "owner_surface": "docs/validation/script_inventory.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_script_topology.py",
+          "failure_route": "Fix script inventory, script topology docs, lane manifest, or the owning script route before adding or moving scripts."
+        },
+        {
+          "path": "tests/test_test_topology.py",
+          "family": "test-topology/authority",
+          "protects": "Test inventory completeness, home classification, runner coverage, and command-authority separation.",
+          "owner_surface": "docs/testing/test_inventory.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_test_topology.py",
+          "failure_route": "Fix test inventory, test topology docs, runner coverage, or the owning test route before adding or moving tests."
+        },
+        {
+          "path": "tests/test_validate_kag.py",
+          "family": "generated/read-model",
+          "protects": "Transitional validate_kag monolith behavior across source, schema, example, and generated parity contracts.",
+          "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
+          "runtime_cost": "medium",
+          "focused_target": "tests/test_validate_kag.py",
+          "failure_route": "Fix validate_kag behavior or its owner docs before splitting validator ownership."
+        },
+        {
+          "path": "tests/test_validation_command_authority.py",
+          "family": "validation/command-authority",
+          "protects": "Lane manifest authority, loader behavior, CI gate routing, workflow entrypoints, and release command storage.",
+          "owner_surface": "config/validation_lanes.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_validation_command_authority.py",
+          "failure_route": "Fix validation lane manifest, loader, CI gate, release entrypoint, or workflow route before changing command authority."
+        },
+        {
+          "path": "tests/test_validate_semantic_agents.py",
+          "family": "AGENTS/route",
+          "protects": "Semantic AGENTS route-card requirements.",
+          "owner_surface": "scripts/validate_semantic_agents.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_validate_semantic_agents.py",
+          "failure_route": "Fix semantic AGENTS docs or validator snippets before changing agent route law."
+        }
+      ]
+    }
+  ]
+}

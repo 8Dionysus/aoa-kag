@@ -68,14 +68,10 @@ A strong pull request in this repository should explain:
 
 ## Before opening a PR
 
-Run the current read-only validation battery:
+Run the current read-only validation lane:
 
 ```bash
-python scripts/validate_kag.py
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-python scripts/validate_nested_agents.py
-python -m unittest discover -s tests -p 'test_*.py'
+python scripts/ci_gate.py --mode source-fast
 ```
 
 If your change materially affects KAG route rationale, owner-boundary posture,
@@ -83,15 +79,12 @@ source refs, generated-pack policy, maturity, quarantine, or regrounding, add or
 update a canonical `docs/decisions/AOA-KAG-D-####-*.md` record and regenerate
 the decision indexes.
 
-If your change touched generated KAG outputs, regenerate and revalidate them before opening the PR:
+If your change touched generated KAG outputs, regenerate and revalidate them
+through the generated lane before opening the PR:
 
 ```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-python scripts/validate_nested_agents.py
-python -m unittest discover -s tests -p 'test_*.py'
+python scripts/ci_gate.py --mode generated
+python scripts/ci_gate.py --mode source-fast
 ```
 
 For release-prep parity, use:

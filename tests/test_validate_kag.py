@@ -429,6 +429,23 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("counterpart refs", str(context.exception))
 
+    def test_federation_spine_pack_rejects_artifact_identity_drift(self) -> None:
+        registry_surfaces = self.registry_manifest_surfaces()
+        expected_payload = validate_kag.build_federation_spine_payload(
+            validate_kag.build_registry_payload()
+        )
+        broken_payload = copy.deepcopy(expected_payload)
+        broken_payload["artifact_identity"]["trust_layer"] = ["abi_contract_signature"]
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            validate_kag.validate_federation_spine_pack(
+                broken_payload,
+                registry_surfaces,
+                expected_payload,
+            )
+
+        self.assertIn("artifact_identity", str(context.exception))
+
     def test_cross_source_projection_pack_rejects_counterpart_ref_exposure(self) -> None:
         registry_surfaces = self.registry_manifest_surfaces()
         expected_payload = validate_kag.build_cross_source_node_projection_payload(
