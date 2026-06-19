@@ -1,0 +1,181 @@
+from __future__ import annotations
+
+import json
+import subprocess
+import unittest
+from contextlib import redirect_stderr
+from io import StringIO
+from pathlib import Path
+from unittest.mock import patch
+
+from scripts import ci_gate, release_check, validation_lanes
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def command_sequence_from_manifest(name: str) -> tuple[tuple[str, ...], ...]:
+    manifest = json.loads(
+        (REPO_ROOT / "config" / "validation_lanes.json").read_text(encoding="utf-8")
+    )
+    return tuple(tuple(command) for command in manifest["command_sequences"][name])
+
+
+def drift_paths_from_manifest(name: str) -> tuple[str, ...]:
+    manifest = json.loads(
+        (REPO_ROOT / "config" / "validation_lanes.json").read_text(encoding="utf-8")
+    )
+    return tuple(manifest["drift_paths"][name])
+
+
+class ValidationCommandAuthorityTests(unittest.TestCase):
+    def test_validation_lanes_manifest_is_loader_authority(self) -> None:
+        self.assertEqual(
+            REPO_ROOT / "config" / "validation_lanes.json",
+            validation_lanes.VALIDATION_LANES_PATH,
+        )
+        self.assertEqual(
+            command_sequence_from_manifest("source_fast"),
+            validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE,
+        )
+        self.assertEqual(
+            command_sequence_from_manifest("generated_check"),
+            validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE,
+        )
+        self.assertEqual(
+            command_sequence_from_manifest("release_check"),
+            validation_lanes.RELEASE_CHECK_COMMAND_SEQUENCE,
+        )
+        self.assertEqual(
+            command_sequence_from_manifest("compatibility_canary"),
+            validation_lanes.COMPATIBILITY_CANARY_COMMAND_SEQUENCE,
+        )
+        self.assertEqual(
+            drift_paths_from_manifest("generated"),
+            validation_lanes.GENERATED_DRIFT_PATHS,
+        )
+        self.assertEqual(
+            (
+                "git",
+                "diff",
+                "--binary",
+                "--no-ext-diff",
+                "--",
+                *validation_lanes.GENERATED_DRIFT_PATHS,
+            ),
+            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
+        )
+
+    def test_validation_lanes_api_resolves_lane_ids_to_command_sequences(self) -> None:
+        self.assertEqual(
+            command_sequence_from_manifest("source_fast"),
+            validation_lanes.command_sequence_for_lane("source_fast"),
+        )
+        self.assertEqual(
+            command_sequence_from_manifest("generated_check"),
+            validation_lanes.command_sequence_for_lane("generated"),
+        )
+        self.assertEqual(
+            command_sequence_from_manifest("release_check"),
+            validation_lanes.command_sequence_for_lane("release"),
+        )
+
+        with self.assertRaisesRegex(ValueError, "does not define a command sequence"):
+            validation_lanes.command_sequence_for_lane("advisory")
+        with self.assertRaisesRegex(ValueError, "unknown lane"):
+            validation_lanes.command_sequence_for_lane("missing")
+
+    def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
+        with patch.object(ci_gate, "run_sequence") as run_sequence:
+            ci_gate.run_source_fast()
+            run_sequence.assert_called_once_with(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
+
+        with patch.object(ci_gate, "run_sequence") as run_sequence:
+            with patch.object(ci_gate, "capture_command_output", return_value="stable") as capture:
+                ci_gate.run_generated()
+            run_sequence.assert_called_once_with(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
+            self.assertEqual(
+                [
+                    (validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,),
+                    (validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,),
+                ],
+                [call.args for call in capture.call_args_list],
+            )
+
+        with patch.object(ci_gate, "run_command") as run_command:
+            ci_gate.run_release()
+            run_command.assert_called_once_with(("python", "scripts/release_check.py"))
+
+        with patch.object(ci_gate, "run_sequence") as run_sequence:
+            ci_gate.run_compatibility_canary()
+            run_sequence.assert_called_once_with(
+                validation_lanes.COMPATIBILITY_CANARY_COMMAND_SEQUENCE
+            )
+
+    def test_generated_lane_fails_when_projection_snapshot_changes(self) -> None:
+        with patch.object(ci_gate, "run_sequence"):
+            with patch.object(
+                ci_gate,
+                "capture_command_output",
+                side_effect=("before", "after"),
+            ):
+                with redirect_stderr(StringIO()):
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        ci_gate.run_generated()
+
+    def test_release_check_preserves_entrypoint_without_owning_sequence(self) -> None:
+        self.assertEqual("release", release_check.RELEASE_LANE_ID)
+        self.assertEqual(
+            validation_lanes.command_sequence_for_lane("release"),
+            release_check.release_lane_commands(),
+        )
+
+        release_check_text = (REPO_ROOT / "scripts" / "release_check.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)", release_check_text)
+        self.assertNotIn("COMMANDS =", release_check_text)
+        self.assertNotIn('"validate committed KAG surfaces"', release_check_text)
+        self.assertNotIn('"generate KAG outputs"', release_check_text)
+
+    def test_workflows_call_lane_entrypoints_not_inline_sequences(self) -> None:
+        repo_validation = (
+            REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
+        ).read_text(encoding="utf-8")
+        canary = (
+            REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("python scripts/release_check.py", repo_validation)
+        self.assertNotIn("python scripts/run_tests.py", repo_validation)
+        self.assertNotIn("python scripts/validate_kag.py", repo_validation)
+        self.assertIn("python scripts/ci_gate.py --mode compatibility-canary", canary)
+        self.assertNotIn("python scripts/generate_kag.py", canary)
+
+    def test_active_docs_route_to_lane_ids_instead_of_full_sequences(self) -> None:
+        active_docs = (
+            "AGENTS.md",
+            ".github/AGENTS.md",
+            "config/AGENTS.md",
+            "scripts/AGENTS.md",
+            "tests/AGENTS.md",
+            "docs/RELEASING.md",
+            "docs/validation/COMMAND_AUTHORITY.md",
+        )
+        forbidden_sequence_markers = (
+            "scripts/run_tests.py\npython scripts/validate_nested_agents.py",
+            "scripts/validate_kag.py\npython scripts/generate_kag.py",
+            "scripts/generate_decision_indexes.py --check\npython scripts/validate_decision_records.py",
+        )
+
+        for relative_path in active_docs:
+            text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+            with self.subTest(surface=relative_path):
+                self.assertRegex(text, r"(source-fast|generated|release|validation_lanes|COMMAND_AUTHORITY)")
+            for marker in forbidden_sequence_markers:
+                with self.subTest(surface=relative_path, marker=marker):
+                    self.assertNotIn(marker, text)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -8,6 +8,9 @@ federation as a whole.
 ## Start here
 
 - Read [CHARTER](../CHARTER.md) for the role and boundaries of the KAG layer.
+- Read [DESIGN](../DESIGN.md) for the system form of the KAG layer.
+- Read [mechanics](../mechanics/README.md) for repeatable KAG operation
+  topology.
 - Read [KAG_MODEL](KAG_MODEL.md) for the conceptual model.
 - Read [CONSUMER_GUIDE](CONSUMER_GUIDE.md) for the current narrow consumer path
   through experimental surfaces.
@@ -25,6 +28,10 @@ federation as a whole.
   for the explicit source-owned export dependency contract.
 - Read [decisions](decisions/README.md) for durable KAG route rationale and
   generated decision lookup indexes.
+- Read [validation command authority](validation/COMMAND_AUTHORITY.md) for
+  active validation lanes, command storage, and script topology.
+- Read [test topology](testing/TEST_TOPOLOGY.md) for test homes, coverage
+  authority, and failure routes.
 - Read [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the first-wave AoA-ToS bridge
   posture.
 - Read [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) for the bounded
@@ -65,6 +72,8 @@ federation as a whole.
 ## Docs in this repository
 
 - [KAG_MODEL](KAG_MODEL.md) - what the KAG layer is for
+- [root DESIGN](../DESIGN.md) - the system form of the KAG layer
+- [root mechanics](../mechanics/README.md) - repeatable KAG operation topology
 - [CONSUMER_GUIDE](CONSUMER_GUIDE.md) - the current narrow consumer path
   through chunk maps, retrieval axes, the federation spine, and bounded
   cross-source projection
@@ -84,6 +93,10 @@ federation as a whole.
   `aoa-kag`
 - [decisions](decisions/README.md) - durable KAG route rationale, canonical
   `AOA-KAG-D` decision records, and generated lookup indexes
+- [validation/COMMAND_AUTHORITY](validation/COMMAND_AUTHORITY.md) - active
+  validation lanes, command storage, script inventory, and failure routes
+- [testing/TEST_TOPOLOGY](testing/TEST_TOPOLOGY.md) - test homes, coverage
+  authority, and test inventory route
 - [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) - how the derived layer returns
   retrieval context without replacing authored sources
 - [RECURRENCE_REGROUNDING](RECURRENCE_REGROUNDING.md) - how the KAG layer

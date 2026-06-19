@@ -11,7 +11,9 @@ See also:
 
 1. Keep the release bounded to derived KAG surfaces and bridge contracts.
 2. Update `CHANGELOG.md` in the `Summary / Validation / Notes` shape.
-3. Run the repo-level verifier:
+3. Run the repo-level verifier. The active release command sequence lives in
+   `config/validation_lanes.json`; `release_check.py` is the entrypoint and
+   worktree stabilizer:
    - `python scripts/release_check.py`
 4. Run federation preflight:
    - `aoa release audit /srv --phase preflight --repo aoa-kag --strict --json`

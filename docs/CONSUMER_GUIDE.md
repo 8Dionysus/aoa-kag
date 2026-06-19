@@ -91,9 +91,7 @@ Do not treat these surfaces as:
 For a read-only current-state pass, use:
 
 ```bash
-python scripts/validate_kag.py
-python scripts/validate_nested_agents.py
-python -m unittest discover -s tests -p 'test_*.py'
+python scripts/ci_gate.py --mode source-fast
 ```
 
 For release-prep parity, use:

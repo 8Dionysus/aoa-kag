@@ -133,6 +133,14 @@ class KagGenerationTestCase(unittest.TestCase):
             registry_payload=registry_payload,
         )
 
+    def test_federation_spine_builder_emits_artifact_identity(self) -> None:
+        registry_payload = kag_generation.build_registry_payload()
+        payload = kag_generation.build_federation_spine_payload(registry_payload)
+        self.assertEqual(
+            payload["artifact_identity"],
+            kag_generation.FEDERATION_SPINE_ARTIFACT_IDENTITY,
+        )
+
     def test_federation_export_registry_builder_matches_generated_outputs(self) -> None:
         self.assert_builder_matches_generated(
             kag_generation.build_federation_export_registry_payload,

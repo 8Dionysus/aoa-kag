@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from jsonschema import Draft202012Validator
+import validate_mechanics_skeleton
 import validate_nested_agents
 import yaml
 
@@ -30,6 +31,7 @@ from kag_generation import (
     FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH,
     FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH,
     FEDERATION_SPINE_MANIFEST_PATH,
+    FEDERATION_SPINE_ARTIFACT_IDENTITY,
     FEDERATION_SPINE_MIN_OUTPUT_PATH,
     FEDERATION_SPINE_OUTPUT_PATH,
     KAG_MATURITY_GOVERNANCE_MANIFEST_PATH,
@@ -1214,6 +1216,13 @@ def validate_nested_agents_docs() -> None:
     if issues:
         joined = "; ".join(issues)
         fail(f"nested AGENTS docs validation failed: {joined}")
+
+
+def validate_mechanics_skeleton_surface() -> None:
+    issues = validate_mechanics_skeleton.validate(REPO_ROOT)
+    if issues:
+        joined = "; ".join(issues)
+        fail(f"mechanics skeleton validation failed: {joined}")
 
 
 def display_path(path: Path) -> str:
@@ -6646,6 +6655,7 @@ def validate_federation_spine_pack(
         "pack_version",
         "pack_type",
         "source_manifest_ref",
+        "artifact_identity",
         "source_inputs",
         "repo_count",
         "repos",
@@ -6660,6 +6670,8 @@ def validate_federation_spine_pack(
         fail("federation spine pack pack_type must equal 'federation_spine'")
     if payload["source_manifest_ref"] != "manifests/federation_spine.json":
         fail("federation spine pack source_manifest_ref must point to manifests/federation_spine.json")
+    if payload["artifact_identity"] != FEDERATION_SPINE_ARTIFACT_IDENTITY:
+        fail("federation spine pack artifact_identity must match the published KAG readmodel contract")
     if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
         fail("federation spine pack bounded_output_contract must match the current source-first guardrail")
     if payload["source_inputs"] != expected_payload["source_inputs"]:
@@ -7981,6 +7993,7 @@ def main() -> int:
     missing_cross_repo_roots: list[str] = []
     try:
         validate_nested_agents_docs()
+        validate_mechanics_skeleton_surface()
         validate_questbook_surface()
         validate_schema_surface()
         validate_bridge_schema_surface()
@@ -8342,6 +8355,7 @@ def main() -> int:
         return 1
 
     print("[ok] validated nested AGENTS docs")
+    print("[ok] validated mechanics skeleton")
     print("[ok] validated questbook boundary-runtime surfaces")
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")

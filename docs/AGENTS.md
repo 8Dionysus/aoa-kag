@@ -10,11 +10,9 @@ Keep provenance, source refs, maturity stop-rules, quarantine posture, and regro
 
 When docs change a bridge or consumer path, check manifests, generated projections, schemas, examples, and the source owner named by the path.
 
-Verify with:
+Full validation command sequences live in `config/validation_lanes.json`.
+Verify with the nearest lane:
 
 ```bash
-python scripts/validate_kag.py
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-python scripts/validate_semantic_agents.py
+python scripts/ci_gate.py --mode source-fast
 ```

@@ -26,19 +26,25 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
     def test_release_check_validates_committed_outputs_before_regeneration(self) -> None:
         release_check_text = RELEASE_CHECK_PATH.read_text(encoding="utf-8")
+        manifest_text = (REPO_ROOT / "config" / "validation_lanes.json").read_text(
+            encoding="utf-8"
+        )
 
+        self.assertIn("validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)", release_check_text)
+        self.assertIn('"generated_check"', manifest_text)
         self.assertLess(
-            release_check_text.index("validate committed KAG surfaces"),
-            release_check_text.index("generate KAG outputs"),
+            manifest_text.index('"scripts/validate_kag.py"'),
+            manifest_text.index('"scripts/generate_kag.py"'),
         )
 
     def test_release_check_includes_decision_record_guards(self) -> None:
-        release_check_text = RELEASE_CHECK_PATH.read_text(encoding="utf-8")
+        manifest_text = (REPO_ROOT / "config" / "validation_lanes.json").read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("check decision indexes", release_check_text)
-        self.assertIn("scripts/generate_decision_indexes.py", release_check_text)
-        self.assertIn("validate decision records", release_check_text)
-        self.assertIn("scripts/validate_decision_records.py", release_check_text)
+        self.assertIn('"scripts/generate_decision_indexes.py"', manifest_text)
+        self.assertIn('"--check"', manifest_text)
+        self.assertIn('"scripts/validate_decision_records.py"', manifest_text)
 
     def test_repo_validation_uses_current_dependency_pins(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")

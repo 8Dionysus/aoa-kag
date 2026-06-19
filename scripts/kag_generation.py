@@ -157,6 +157,31 @@ KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH = (
 QUERY_MODE_HEADING = re.compile(r"^###\s+`([^`]+)`\s*$")
 KAG_REPO = "aoa-kag"
 TOS_REPO = "Tree-of-Sophia"
+FEDERATION_SPINE_ARTIFACT_IDENTITY = {
+    "artifact_class": "derived_kag_readmodel",
+    "surface_state": "public_generated_federation_spine",
+    "owner_repo": "aoa-kag",
+    "authority_ref": "docs/FEDERATION_SPINE.md",
+    "producer": "scripts/generate_kag.py from manifests/federation_spine.json and source-owned exports",
+    "consumer_expectation": (
+        "consumers verify pack_version, source_inputs, bounded_output_contract, "
+        "source-owned export refs, and validate_kag before using the spine as "
+        "derived federation readiness"
+    ),
+    "privacy_boundary": (
+        "public derived refs only; no private session, memo, runtime, source "
+        "payload body, or local host evidence"
+    ),
+    "content_identity": (
+        "generated/federation_spine.json and generated/federation_spine.min.json "
+        "rebuilt from the federation spine manifest and compared by release_check"
+    ),
+    "abi_epoch": "aoa_kag_federation_spine_v1",
+    "contract_version": "federation-spine.schema.json@aoa_kag_federation_spine_v1#artifact_identity",
+    "trust_layer": ["abi_contract_signature", "w3c_prov_lineage"],
+    "verification": ["python scripts/validate_kag.py", "python scripts/release_check.py"],
+    "action": "ADD_CONSUMER_EXPECTATION",
+}
 KNOWN_REPO_ROOTS = {
     KAG_REPO: REPO_ROOT,
     "aoa-techniques": AOA_TECHNIQUES_ROOT,
@@ -4103,6 +4128,7 @@ def build_federation_spine_payload(
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
         "source_manifest_ref": "manifests/federation_spine.json",
+        "artifact_identity": FEDERATION_SPINE_ARTIFACT_IDENTITY,
         "source_inputs": emitted_source_inputs,
         "repo_count": len(repos),
         "repos": repos,

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "layer": "aoa-kag",
+  "root_contract": {
+    "allowed_root_files": [
+      "AGENTS.md",
+      "README.md",
+      "topology.json"
+    ],
+    "forbidden_root_entries": [
+      "_meta",
+      "backlog",
+      "legacy",
+      "notes",
+      "scratch",
+      "templates"
+    ]
+  },
+  "active_packages": [],
+  "package_contract": {
+    "required_files": [
+      "AGENTS.md",
+      "README.md",
+      "PARTS.md",
+      "PROVENANCE.md"
+    ],
+    "optional_files": [
+      "ROADMAP.md",
+      "LANDING_LOG.md",
+      "parts",
+      "legacy"
+    ]
+  }
+}
