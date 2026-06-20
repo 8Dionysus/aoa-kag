@@ -85,8 +85,8 @@
       "minItems": 1,
       "type": "array"
     },
-    "wave": {
-      "const": "XVII"
+    "review_stage": {
+      "const": "kag_promotion_path"
     }
   },
   "required": [
@@ -107,7 +107,7 @@
     "runtime_effect",
     "source_truth_posture",
     "stop_lines",
-    "wave"
+    "review_stage"
   ],
   "title": "agon-kag-candidate.schema.json item contract",
   "type": "object"

@@ -55,6 +55,7 @@ and where does a stronger claim return?
 | root surfaces | public entry, charter boundary, system form, agent route law, current direction |
 | `docs/` | authored explanation of KAG model, source policy, boundaries, bridge contracts, maturity, quarantine, regrounding, and consumer posture |
 | `docs/decisions/` | durable rationale for KAG route, boundary, manifest, generated-pack, validator, and federation choices |
+| `kag/` | source-home preflight for future repo-local KAG subtrees, portable record classes, rollout stop-lines, and runtime-state exclusions |
 | `mechanics/` | repeatable KAG operation topology and future package routes around substrate work |
 | `manifests/` | source-authored control surfaces for what should be lifted and what outputs should exist |
 | `generated/` | derived KAG read models and compact payloads built from source surfaces |
@@ -100,8 +101,10 @@ The repository should support:
 - schema-checked payloads and examples;
 - bounded bridge and handoff routes;
 - maturity and owner-wait stop-rules;
-- future repo-local `/kag` subtree contracts without template-copying them into
-  sibling repositories before the protocol exists;
+- a repo-local `/kag` subtree protocol rooted in the `kag/` source-home
+  preflight, without
+  template-copying it into sibling repositories before schemas, examples, and
+  validation exist;
 - downstream `aoa-kag-mcp` and `aoa-kag-skills` layers that remain downstream
   of core substrate contracts.
 
@@ -143,9 +146,10 @@ objects, dispatch, identities, or live state.
 
 ### 7. Federation before warehouse
 
-Future local `/kag` organs should let repositories own their local indexes,
-graphs, and nodes through a shared protocol. `aoa-kag` should define and compose
-the protocol, not absorb every mutable graph artifact.
+The `kag/` source-home preflight should let future repositories own their local
+indexes, graph nodes, graph edges, and projections through a shared protocol.
+`aoa-kag` should define and compose the protocol, not absorb every mutable
+graph artifact.
 
 ### 8. Agent guidance is route law
 
@@ -178,8 +182,8 @@ risk.
 - retrieval packs becoming routing policy;
 - KAG surfaces becoming proof, memory, role, playbook, or runtime doctrine;
 - framework adapters defining substrate ontology;
-- future `/kag` directory plans scattered across current docs instead of kept
-  behind an explicit protocol stop-line.
+- sibling `/kag` directory plans scattered across current docs instead of kept
+  behind the explicit `kag/` protocol stop-line.
 
 ## Relationship to Other Root Surfaces
 
@@ -189,6 +193,8 @@ risk.
 [`DESIGN.AGENTS.md`](DESIGN.AGENTS.md) holds the design form of the
 agent-facing route mesh.
 [`ROADMAP.md`](ROADMAP.md) names current direction.
+[`kag/`](kag/README.md) holds the local-subtree source-home and protocol
+preflight.
 [`docs/KAG_MODEL.md`](docs/KAG_MODEL.md) defines the conceptual KAG model.
 [`docs/BOUNDARIES.md`](docs/BOUNDARIES.md) names owner boundaries.
 [`docs/SOURCE_POLICY.md`](docs/SOURCE_POLICY.md) defines source-first posture.
@@ -207,6 +213,7 @@ Agents should consult this file when a change alters:
 - root surfaces;
 - source versus derived authority;
 - mechanics topology or package posture;
+- local `/kag` protocol posture or sibling local-subtree rollout stop-lines;
 - manifest and generated-surface posture;
 - KAG owner boundaries;
 - federation or local `/kag` protocol posture;

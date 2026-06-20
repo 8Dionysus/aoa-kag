@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa.local/aoa-kag/mechanics/experience/parts/release-patterns/schemas/post_release_pattern_candidate_v1.json",
+  "title": "post_release_pattern_candidate",
+  "type": "object",
+  "description": "post_release_pattern_candidate schema for AoA experience deployment watchtower v0.5.",
+  "required": [
+    "candidate_id",
+    "release_id",
+    "pattern",
+    "evidence_refs",
+    "promotion_status"
+  ],
+  "properties": {
+    "candidate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "release_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pattern": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "promotion_status": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "candidate"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

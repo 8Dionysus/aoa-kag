@@ -73,10 +73,10 @@
     "pause_threshold": "No new AOA-K surfaces until owner-layer growth creates a real contract need."
   },
   "projection_recovery": {
-    "stress_receipt_schema_ref": "schemas/projection_health_receipt_v1.json",
-    "regrounding_ticket_schema_ref": "schemas/regrounding_ticket_v1.json",
-    "stress_doc_ref": "docs/KAG_STRESS_REGROUNDING.md",
-    "quarantine_doc_ref": "docs/KAG_PROJECTION_QUARANTINE.md",
+    "stress_receipt_schema_ref": "mechanics/antifragility/parts/projection-health/schemas/projection_health_receipt_v1.json",
+    "regrounding_ticket_schema_ref": "mechanics/antifragility/parts/retrieval-outage-regrounding/schemas/regrounding_ticket_v1.json",
+    "stress_doc_ref": "mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md",
+    "quarantine_doc_ref": "mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md",
     "regrounding_pack_ref": "generated/return_regrounding_pack.min.json",
     "health_states": [
       "healthy",

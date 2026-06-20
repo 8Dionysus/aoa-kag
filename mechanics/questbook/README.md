@@ -1,0 +1,43 @@
+# Questbook
+
+This package maps the common AoA Questbook mechanic into the KAG layer.
+
+## Mechanic card
+
+Status: mapped common-center mechanic; no active part directories yet.
+
+### Trigger
+
+Use this package when KAG work creates a durable derived-layer obligation,
+quest source update, quest catalog change, or dispatch posture change.
+
+### Local owns
+
+`aoa-kag` owns KAG-local quest source shape, public obligation posture, quest
+schema compatibility, and generated quest examples for derived-substrate work.
+
+### Stronger owner split
+
+`Agents-of-Abyss` owns common Questbook law. Owner repositories own acceptance,
+proof, implementation, and closure evidence for their work. Generated views
+remain weaker than quest source.
+
+### Inputs
+
+`QUESTBOOK.md`, `quests/`, quest schemas, quest dispatch examples, KAG decision
+records, and owner-route refs.
+
+### Outputs
+
+KAG-local quest records, public obligation index updates, quest catalog or
+dispatch examples, and owner-routed follow-up.
+
+### Must not claim
+
+Owner acceptance, proof closure, implementation landing, private scratch,
+roadmap replacement, or generated-view authority.
+
+### Next route
+
+Start with `PARTS.md`. Create a part only when quest source, public index, or
+generated dispatch posture needs its own local contract beyond root validation.

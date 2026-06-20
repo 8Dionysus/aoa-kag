@@ -18,7 +18,8 @@
     "failure_route"
   ],
   "home_scopes": {
-    "root": "Repo-wide tests under tests/."
+    "root": "Repo-wide tests under tests/.",
+    "mechanics-part": "Active mechanic-owned tests under mechanics/<package>/parts/<part>/tests/."
   },
   "homes": [
     {
@@ -28,33 +29,6 @@
       "lane": "root-tests",
       "mode": "blocking",
       "files": [
-        {
-          "path": "tests/test_agon_kag_promotion_candidate_registry.py",
-          "family": "generated/read-model",
-          "protects": "Agon KAG promotion candidate registry build and validation contracts.",
-          "owner_surface": "docs/AGON_KAG_PROMOTION_CANDIDATES.md",
-          "runtime_cost": "fast",
-          "focused_target": "tests/test_agon_kag_promotion_candidate_registry.py",
-          "failure_route": "Fix the candidate seed config, builder, validator, or generated registry before changing consumer docs."
-        },
-        {
-          "path": "tests/test_agon_sophian_kag_packet_registry.py",
-          "family": "generated/read-model",
-          "protects": "Agon Sophian KAG packet registry build and validation contracts.",
-          "owner_surface": "docs/AGON_SOPHIAN_KAG_PACKET_BRIDGE.md",
-          "runtime_cost": "fast",
-          "focused_target": "tests/test_agon_sophian_kag_packet_registry.py",
-          "failure_route": "Fix the packet seed config, builder, validator, or generated registry before changing bridge docs."
-        },
-        {
-          "path": "tests/test_antifragility_public_surface.py",
-          "family": "docs/root-surface",
-          "protects": "Antifragility public KAG projection-health and regrounding surfaces.",
-          "owner_surface": "docs/KAG_STRESS_REGROUNDING.md",
-          "runtime_cost": "fast",
-          "focused_target": "tests/test_antifragility_public_surface.py",
-          "failure_route": "Fix public KAG docs, examples, or schemas before widening the antifragility surface."
-        },
         {
           "path": "tests/test_current_direction_routes.py",
           "family": "docs/root-surface",
@@ -83,42 +57,6 @@
           "failure_route": "Fix manifests, generated builders, generated outputs, or consumer docs before changing downstream contract claims."
         },
         {
-          "path": "tests/test_experience_wave2_seed_contracts.py",
-          "family": "generated/read-model",
-          "protects": "Experience wave 2 seed KAG contracts.",
-          "owner_surface": "manifests/",
-          "runtime_cost": "fast",
-          "focused_target": "tests/test_experience_wave2_seed_contracts.py",
-          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
-        },
-        {
-          "path": "tests/test_experience_wave3_seed_contracts.py",
-          "family": "generated/read-model",
-          "protects": "Experience wave 3 seed KAG contracts.",
-          "owner_surface": "manifests/",
-          "runtime_cost": "fast",
-          "focused_target": "tests/test_experience_wave3_seed_contracts.py",
-          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
-        },
-        {
-          "path": "tests/test_experience_wave4_seed_contracts.py",
-          "family": "generated/read-model",
-          "protects": "Experience wave 4 seed KAG contracts.",
-          "owner_surface": "manifests/",
-          "runtime_cost": "fast",
-          "focused_target": "tests/test_experience_wave4_seed_contracts.py",
-          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
-        },
-        {
-          "path": "tests/test_experience_wave5_seed_contracts.py",
-          "family": "generated/read-model",
-          "protects": "Experience wave 5 seed KAG contracts.",
-          "owner_surface": "manifests/",
-          "runtime_cost": "fast",
-          "focused_target": "tests/test_experience_wave5_seed_contracts.py",
-          "failure_route": "Fix the owning seed surface before changing generated KAG projections."
-        },
-        {
           "path": "tests/test_kag_generation.py",
           "family": "generated/read-model",
           "protects": "KAG generation helpers and generated payload contracts.",
@@ -128,9 +66,18 @@
           "failure_route": "Fix generation helpers, manifests, or generated outputs before changing generated consumers."
         },
         {
+          "path": "tests/test_kag_home.py",
+          "family": "kag/source-home-preflight",
+          "protects": "Local /kag source-home manifest, protocol topology, reserved future surfaces, source-home evidence map, and no-premature-directory boundary.",
+          "owner_surface": "kag/README.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_home.py",
+          "failure_route": "Fix kag/ route docs, source-home manifest, or protocol stop-lines before creating local KAG payload surfaces."
+        },
+        {
           "path": "tests/test_mechanics_skeleton.py",
           "family": "mechanics/root-topology",
-          "protects": "Mechanics root skeleton and no-package stop-line.",
+          "protects": "Mechanics package map, KAG-only stop-line, and no-part-directory boundary.",
           "owner_surface": "mechanics/AGENTS.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_mechanics_skeleton.py",
@@ -216,6 +163,222 @@
           "runtime_cost": "fast",
           "focused_target": "tests/test_validate_semantic_agents.py",
           "failure_route": "Fix semantic AGENTS docs or validator snippets before changing agent route law."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/antifragility/parts/projection-health/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/antifragility/parts/projection-health/tests/test_projection_health_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Antifragility projection-health receipt schema/example contracts and source-first stress docs.",
+          "owner_surface": "mechanics/antifragility/parts/projection-health/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/antifragility/parts/projection-health/tests/test_projection_health_contracts.py",
+          "failure_route": "Fix the projection-health part contract, schema/example packets, docs, or validation route before changing stress consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/antifragility/parts/projection-quarantine/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/antifragility/parts/projection-quarantine/tests/test_projection_quarantine_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Antifragility projection quarantine docs and health-state contract posture.",
+          "owner_surface": "mechanics/antifragility/parts/projection-quarantine/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/antifragility/parts/projection-quarantine/tests/test_projection_quarantine_contracts.py",
+          "failure_route": "Fix the projection-quarantine part contract, docs, or validation route before changing quarantine posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/antifragility/parts/retrieval-outage-regrounding/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/antifragility/parts/retrieval-outage-regrounding/tests/test_retrieval_outage_regrounding_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Antifragility retrieval-outage regrounding ticket schema/example contracts and owner-split docs.",
+          "owner_surface": "mechanics/antifragility/parts/retrieval-outage-regrounding/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/antifragility/parts/retrieval-outage-regrounding/tests/test_retrieval_outage_regrounding_contracts.py",
+          "failure_route": "Fix the retrieval-outage-regrounding part contract, schema/example packets, docs, or validation route before changing recovery consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/method-growth/parts/pattern-candidate-lineage/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/method-growth/parts/pattern-candidate-lineage/tests/test_pattern_candidate_lineage_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Method-growth pattern candidate lineage schema/example contracts.",
+          "owner_surface": "mechanics/method-growth/parts/pattern-candidate-lineage/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/method-growth/parts/pattern-candidate-lineage/tests/test_pattern_candidate_lineage_contracts.py",
+          "failure_route": "Fix the pattern-candidate-lineage part contract, schema/example packets, or validation route before changing lineage consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/method-growth/parts/promotion-dossier/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/method-growth/parts/promotion-dossier/tests/test_promotion_dossier_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Method-growth promotion evidence and ToS dossier bridge schema/example contracts.",
+          "owner_surface": "mechanics/method-growth/parts/promotion-dossier/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/method-growth/parts/promotion-dossier/tests/test_promotion_dossier_contracts.py",
+          "failure_route": "Fix the promotion-dossier part contract, schema/example packets, or validation route before changing promotion consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/method-growth/parts/owner-downlink/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/method-growth/parts/owner-downlink/tests/test_owner_downlink_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Method-growth owner downlink and adoption-consent schema/example contracts.",
+          "owner_surface": "mechanics/method-growth/parts/owner-downlink/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/method-growth/parts/owner-downlink/tests/test_owner_downlink_contracts.py",
+          "failure_route": "Fix the owner-downlink part contract, schema/example packets, or validation route before changing downlink consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/method-growth/parts/retirement/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/method-growth/parts/retirement/tests/test_retirement_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Method-growth retirement decision and retirement downlink schema/example contracts.",
+          "owner_surface": "mechanics/method-growth/parts/retirement/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/method-growth/parts/retirement/tests/test_retirement_contracts.py",
+          "failure_route": "Fix the retirement part contract, schema/example packets, or validation route before changing retirement consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/experience/parts/governance-precedent/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/experience/parts/governance-precedent/tests/test_governance_precedent_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Experience governance precedent, promotion dossier, and ToS bridge schema/example contracts.",
+          "owner_surface": "mechanics/experience/parts/governance-precedent/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/experience/parts/governance-precedent/tests/test_governance_precedent_contracts.py",
+          "failure_route": "Fix the governance-precedent part contract, schema/example packets, or validation route before changing governance consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/experience/parts/release-patterns/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/experience/parts/release-patterns/tests/test_release_pattern_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Experience release, installation, and post-release pattern candidate schema/example contracts.",
+          "owner_surface": "mechanics/experience/parts/release-patterns/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/experience/parts/release-patterns/tests/test_release_pattern_contracts.py",
+          "failure_route": "Fix the release-pattern part contract, schema/example packets, or validation route before changing release-pattern consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/experience/parts/office-service-patterns/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/experience/parts/office-service-patterns/tests/test_office_service_pattern_contracts.py",
+          "family": "mechanics/part-contract",
+          "protects": "Experience office train and service pattern candidate schema/example contracts.",
+          "owner_surface": "mechanics/experience/parts/office-service-patterns/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/experience/parts/office-service-patterns/tests/test_office_service_pattern_contracts.py",
+          "failure_route": "Fix the office-service-patterns part contract, schema/example packets, or validation route before changing office/service consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/agon/parts/promotion-candidates/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/agon/parts/promotion-candidates/tests/test_promotion_candidate_registry.py",
+          "family": "mechanics/part-generated-read-model",
+          "protects": "Agon promotion-candidate source config, part-local builder and validator, and generated registry companion.",
+          "owner_surface": "mechanics/agon/parts/promotion-candidates/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/agon/parts/promotion-candidates/tests/test_promotion_candidate_registry.py",
+          "failure_route": "Fix the owning part contract, source config, builder, validator, or generated registry before changing promotion-candidate consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/agon/parts/sophian-threshold-packets/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/agon/parts/sophian-threshold-packets/tests/test_sophian_threshold_packet_registry.py",
+          "family": "mechanics/part-generated-read-model",
+          "protects": "Agon Sophian-threshold source config, part-local builder and validator, and generated packet registry companion.",
+          "owner_surface": "mechanics/agon/parts/sophian-threshold-packets/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/agon/parts/sophian-threshold-packets/tests/test_sophian_threshold_packet_registry.py",
+          "failure_route": "Fix the owning part contract, source config, builder, validator, or generated registry before changing Sophian threshold consumers."
         }
       ]
     }

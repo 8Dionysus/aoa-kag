@@ -12,11 +12,11 @@ runtime, or mechanic concern lands in one broad script without owner routing.
 
 | Lane | Posture | Owns | Does not own |
 |---|---|---|---|
-| `source-fast` | blocking growth gate | route cards, mechanics skeleton, decision records, semantic AGENTS docs, unit tests, committed KAG validation | generated-output mutation, release stabilization, runtime graph/vector/index state |
+| `source-fast` | blocking growth gate | route cards, `kag/` source-home preflight, mechanics skeleton, active mechanics part tests, decision records, semantic AGENTS docs, unit tests, committed KAG validation | generated-output mutation, release stabilization, runtime graph/vector/index state |
 | `generated` | blocking projection gate | generated KAG output rebuild parity and drift snapshot for `generated/` | source repository authored meaning, live runtime state |
 | `release` | blocking release gate | release-prep execution through source-fast and generated lanes | ordinary docs status, compatibility-canary scheduling |
 | `compatibility-canary` | blocking scheduled/manual canary | floating sibling checkout compatibility and generated-output drift check | release artifact identity |
-| `advisory` | non-blocking boundary inventory | future mechanics part-local, graph/RAG/runtime, and source-authority stop-lines | hard runtime policy, eval verdicts, memory truth |
+| `advisory` | non-blocking boundary inventory | future graph/RAG/runtime and source-authority stop-lines | hard runtime policy, eval verdicts, memory truth |
 
 ## Current Validator Shape
 
@@ -46,12 +46,27 @@ source repository means.
 
 ## Mechanics Boundary
 
-The current mechanics lane has only a root skeleton. No
-`mechanics/<package>/parts/<part>/` script or test lane exists yet.
+The current mechanics lane has common-center package route homes, active Agon
+part-local scripts/tests for promotion candidates and Sophian threshold
+packets, active Antifragility recovery contract tests, active Experience
+contract packet tests, and active Method-growth contract packet tests.
+`scripts/run_tests.py` covers those focused tests through the source-fast lane.
 
-When a future KAG mechanic package is created, package-local builders,
+When a future KAG mechanic part is created, package-local builders,
 validators, and tests should live beside the part that owns the payload and be
-covered by a dedicated lane added to `config/validation_lanes.json`.
+covered by `scripts/run_tests.py` or a dedicated lane only when the part needs
+execution semantics beyond unittest discovery.
+
+## Local KAG Protocol Boundary
+
+The `kag/` lane is a source-home preflight, not a generated payload home and not
+a runtime graph store. Its current protection comes from nested AGENTS
+validation and root tests that verify the source-home manifest, reserved future
+surfaces, and no-premature-directory stop-line.
+
+Future schema, example, builder, validator, or generated projection surfaces
+for repo-local KAG organs should use their normal owner homes first. Add a
+dedicated `kag/` validator only when portable record contracts become active.
 
 ## Inventory
 

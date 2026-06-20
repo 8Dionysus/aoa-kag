@@ -25,6 +25,7 @@
 ## generated output boundary
 
 - [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
+- [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 
 ## generated output parity
 
@@ -33,6 +34,11 @@
 ## generated-output parity
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+
+## local KAG protocol boundary
+
+- [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
+- [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 
 ## local KAG stop-line
 
@@ -46,6 +52,10 @@
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
 
+## mechanics topology
+
+- [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
+
 ## owner route freshness
 
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
@@ -54,9 +64,25 @@
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
 
+## part-local stop-line
+
+- [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
+
 ## quarantine and re-entry
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
+
+## runtime-state exclusion
+
+- [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
+
+## sibling rollout stop-line
+
+- [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
+
+## source-home symmetry
+
+- [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 
 ## source-owned authority
 
@@ -65,3 +91,5 @@
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
 - [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+- [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
+- [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)

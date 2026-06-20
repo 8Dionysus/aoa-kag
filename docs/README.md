@@ -9,6 +9,8 @@ federation as a whole.
 
 - Read [CHARTER](../CHARTER.md) for the role and boundaries of the KAG layer.
 - Read [DESIGN](../DESIGN.md) for the system form of the KAG layer.
+- Read [kag](../kag/README.md) for the local-subtree source-home and protocol
+  preflight.
 - Read [mechanics](../mechanics/README.md) for repeatable KAG operation
   topology.
 - Read [KAG_MODEL](KAG_MODEL.md) for the conceptual model.
@@ -44,12 +46,12 @@ federation as a whole.
   what `aoa-kag` must still wait on from neighboring layers.
 - Read [KAG_PROOF_EXPECTATIONS](KAG_PROOF_EXPECTATIONS.md) for the bounded proof
   lanes that belong in `aoa-evals` rather than inside KAG doctrine.
-- Read [KAG_STRESS_REGROUNDING](KAG_STRESS_REGROUNDING.md) for additive
+- Read [stress-regrounding](../mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md) for additive
   projection-health and source-first fallback doctrine under drift.
-- Read [KAG_PROJECTION_QUARANTINE](KAG_PROJECTION_QUARANTINE.md) for bounded
+- Read [projection-quarantine](../mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md) for bounded
   quarantine posture when derived surfaces are unsafe to expand.
-- Read [KAG_REGROUNDING_CHAOS_WAVE1](KAG_REGROUNDING_CHAOS_WAVE1.md) for the
-  retrieval-outage honesty landing over current KAG regrounding surfaces.
+- Read [retrieval-outage-regrounding](../mechanics/antifragility/parts/retrieval-outage-regrounding/docs/retrieval-outage-regrounding.md) for the
+  retrieval-outage honesty route over current KAG regrounding surfaces.
 - Read [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) for the current
   generated retrieval-axis pack.
 - Read [REASONING_HANDOFF](REASONING_HANDOFF.md) for the runtime-to-KAG handoff
@@ -58,7 +60,7 @@ federation as a whole.
   manifest-driven generated lift seam from `aoa-techniques`.
 - Read [TOS_TEXT_CHUNK_MAP](TOS_TEXT_CHUNK_MAP.md) for the current ToS chunk-map
   pilot.
-- Read [TOS_RAW_TABLE_INTAKE_STUB](TOS_RAW_TABLE_INTAKE_STUB.md) for the current
+- Read [TOS_RAW_TABLE_INTAKE_HOLD](TOS_RAW_TABLE_INTAKE_HOLD.md) for the current
   non-activated placeholder seam for future ToS raw candidate tables.
 - Read [CROSS_SOURCE_NODE_PROJECTION](CROSS_SOURCE_NODE_PROJECTION.md) for the
   current bounded cross-source projection pilot.
@@ -73,6 +75,8 @@ federation as a whole.
 
 - [KAG_MODEL](KAG_MODEL.md) - what the KAG layer is for
 - [root DESIGN](../DESIGN.md) - the system form of the KAG layer
+- [root kag](../kag/README.md) - the source-home preflight for future repo-local KAG
+  subtrees
 - [root mechanics](../mechanics/README.md) - repeatable KAG operation topology
 - [CONSUMER_GUIDE](CONSUMER_GUIDE.md) - the current narrow consumer path
   through chunk maps, retrieval axes, the federation spine, and bounded
@@ -108,13 +112,13 @@ federation as a whole.
   consume now and what must still wait on owner-side growth
 - [KAG_PROOF_EXPECTATIONS](KAG_PROOF_EXPECTATIONS.md) - which bounded claims
   should be proven in `aoa-evals` rather than claimed inside KAG
-- [KAG_STRESS_REGROUNDING](KAG_STRESS_REGROUNDING.md) - how projection-health
+- [stress-regrounding](../mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md) - how projection-health
   receipts and regrounding tickets keep consumers source-first when derived
   surfaces drift
-- [KAG_PROJECTION_QUARANTINE](KAG_PROJECTION_QUARANTINE.md) - how quarantine
+- [projection-quarantine](../mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md) - how quarantine
   preserves provenance, fallback refs, and explicit re-entry instead of hiding
   unstable projections
-- [KAG_REGROUNDING_CHAOS_WAVE1](KAG_REGROUNDING_CHAOS_WAVE1.md) - how the
+- [retrieval-outage-regrounding](../mechanics/antifragility/parts/retrieval-outage-regrounding/docs/retrieval-outage-regrounding.md) - how the
   retrieval-outage honesty example family maps onto current KAG return and
   handoff surfaces without absorbing runtime or eval ownership
 - [TOS_RETRIEVAL_AXIS_PACK](TOS_RETRIEVAL_AXIS_PACK.md) - how the current
@@ -122,7 +126,7 @@ federation as a whole.
   ranking or routing policy
 - [TOS_TEXT_CHUNK_MAP](TOS_TEXT_CHUNK_MAP.md) - how the current ToS chunk-map
   pack materializes stable source-linked chunk units
-- [TOS_RAW_TABLE_INTAKE_STUB](TOS_RAW_TABLE_INTAKE_STUB.md) - how future raw
+- [TOS_RAW_TABLE_INTAKE_HOLD](TOS_RAW_TABLE_INTAKE_HOLD.md) - how future raw
   candidate tables from `Tree-of-Sophia/intake/...` are reserved conceptually
   without activating a new KAG pack yet
 - [CROSS_SOURCE_NODE_PROJECTION](CROSS_SOURCE_NODE_PROJECTION.md) - how the

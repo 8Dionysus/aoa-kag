@@ -41,7 +41,7 @@ not a claim that KAG is a full graph engine or a source-authoritative layer:
   `generated/tos_retrieval_axis_pack.min.json`,
   `generated/tos_zarathustra_route_pack.min.json`,
   `generated/tos_zarathustra_route_retrieval_pack.min.json`,
-  and `docs/TOS_RAW_TABLE_INTAKE_STUB.md`
+  and `docs/TOS_RAW_TABLE_INTAKE_HOLD.md`
 - maturity governance and pause posture:
   `generated/kag_maturity_governance.min.json`,
   `docs/KAG_MATURITY_GOVERNANCE.md`,
@@ -52,11 +52,11 @@ not a claim that KAG is a full graph engine or a source-authoritative layer:
   `generated/return_regrounding_pack.min.json`,
   `docs/BRIDGE_CONTRACTS.md`,
   `docs/RECURRENCE_REGROUNDING.md`,
-  `docs/KAG_STRESS_REGROUNDING.md`,
-  `docs/KAG_PROJECTION_QUARANTINE.md`,
-  `docs/KAG_REGROUNDING_CHAOS_WAVE1.md`,
-  `examples/projection_health_receipt.retrieval-outage-honesty.example.json`,
-  and `examples/regrounding_ticket.retrieval-outage-honesty.example.json`
+  `mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md`,
+  `mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md`,
+  `mechanics/antifragility/parts/retrieval-outage-regrounding/docs/retrieval-outage-regrounding.md`,
+  `mechanics/antifragility/parts/projection-health/examples/projection_health_receipt.retrieval-outage-honesty.example.json`,
+  and `mechanics/antifragility/parts/retrieval-outage-regrounding/examples/regrounding_ticket.retrieval-outage-honesty.example.json`
 - federation, counterpart, tiny-consumer, and cross-source adjuncts:
   `generated/federation_spine.min.json`,
   `generated/counterpart_federation_exposure_review.min.json`,
