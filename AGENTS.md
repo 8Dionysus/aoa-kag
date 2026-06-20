@@ -36,6 +36,11 @@ read `DESIGN.AGENTS.md`.
 For changes to repeatable KAG operation topology or future mechanic packages,
 also read `mechanics/README.md` and `mechanics/AGENTS.md`.
 
+For changes to the `kag/` source-home preflight, repo-local `/kag` protocol
+shape, local subtree rollout posture, portable graph/index record classes, or
+sibling `/kag` stop-lines, also read `kag/AGENTS.md`, `kag/README.md`,
+`kag/source_home.manifest.json`, and `kag/LOCAL_SUBTREE_PROTOCOL.md`.
+
 For changes to repository authority, owner boundaries, root posture, or claims
 about what `aoa-kag` may own, also read `CHARTER.md`,
 `docs/BOUNDARIES.md`, and `docs/SOURCE_POLICY.md`.
@@ -109,8 +114,8 @@ This repository owns:
 - source-first graph and retrieval projection posture;
 - bridge, consumer, reasoning-handoff, federation, quarantine, and regrounding
   seams when defined here;
-- future framework-neutral local `/kag` protocol contracts when they are
-  explicitly designed here.
+- framework-neutral local `/kag` source-home and protocol contracts when they
+  are explicitly designed in `kag/`.
 
 It does not own:
 
@@ -127,10 +132,11 @@ For first reading or outside orientation, use this route:
 1. `README.md`
 2. `CHARTER.md`
 3. `DESIGN.md`
-4. `docs/KAG_MODEL.md`
-5. `docs/BOUNDARIES.md`
-6. `docs/SOURCE_POLICY.md`
-7. `ROADMAP.md`
+4. `kag/README.md`
+5. `docs/KAG_MODEL.md`
+6. `docs/BOUNDARIES.md`
+7. `docs/SOURCE_POLICY.md`
+8. `ROADMAP.md`
 
 For agent editing, use this route:
 
@@ -152,9 +158,10 @@ competing root card.
 | --- | --- | --- |
 | `first-reading` | you need the shortest honest repository overview | `README.md` |
 | `authority-boundary` | repository authority, owner split, source ownership, or root posture changes | `CHARTER.md` |
-| `system-design` | KAG form, source/generated authority, federation posture, local `/kag` protocol posture, or layer relationships change | `DESIGN.md` |
+| `system-design` | KAG form, source/generated authority, federation posture, local `/kag` source-home or protocol posture, or layer relationships change | `DESIGN.md` |
 | `agent-surface-design` | AGENTS shape, local-card placement, route modes, validation posture, or closeout changes | `DESIGN.AGENTS.md` |
 | `mechanic-change` | repeatable KAG operation topology, mechanics root contract, or future package posture changes | `mechanics/README.md` |
+| `local-kag-source-home` | `kag/` source-home preflight, local `/kag` protocol shape, repo-local subtree contract, sibling rollout stop-line, or portable graph/index record posture changes | `kag/README.md` |
 | `model-boundary` | KAG model, ownership, source policy, bridge contract, or non-identity boundary changes | `docs/KAG_MODEL.md` |
 | `decision-rationale` | durable route rationale or decision metadata changes | `docs/decisions/README.md` |
 | `manifest-change` | source-authored lift controls, donor refs, output refs, or pack activation posture change | `manifests/AGENTS.md` |
@@ -242,6 +249,10 @@ Update only the ones that moved; otherwise say no update was needed.
   changed.
 - `mechanics/README.md`, `mechanics/AGENTS.md`, or `mechanics/topology.json`
   when repeatable KAG operation topology or mechanics package posture changed.
+- `kag/README.md`, `kag/AGENTS.md`, `kag/source_home.manifest.json`, or
+  `kag/LOCAL_SUBTREE_PROTOCOL.md` when `kag/` source-home posture, local `/kag`
+  protocol posture, portable record classes, runtime-state exclusion, or
+  sibling rollout stop-lines changed.
 - `ROADMAP.md` when current direction, stop-rules, owner wait states, or future
   contour changed.
 - `docs/decisions/` when future agents need rationale for a route, owner split,
@@ -259,8 +270,8 @@ Update only the ones that moved; otherwise say no update was needed.
   runtime, or Tree of Sophia doctrine;
 - graph-ready or retrieval-ready wording starts to replace provenance or source
   authority;
-- a future local `/kag` idea needs protocol design before sibling directories
-  can be added.
+- sibling `/kag` rollout pressure appears before protocol schema, examples, and
+  validation exist.
 
 ## Report
 

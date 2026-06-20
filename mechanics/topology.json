@@ -1,6 +1,7 @@
 {
   "version": 1,
   "layer": "aoa-kag",
+  "common_mechanic_source": "Agents-of-Abyss/mechanics",
   "root_contract": {
     "allowed_root_files": [
       "AGENTS.md",
@@ -16,7 +17,228 @@
       "templates"
     ]
   },
-  "active_packages": [],
+  "active_packages": [
+    {
+      "path": "agon",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/agon",
+      "local_status": "mapped",
+      "parts_status": "active_part_dirs",
+      "local_function": "KAG-side Agon promotion candidates and Sophian threshold packet routes.",
+      "candidate_part_routes": ["promotion-candidates", "sophian-threshold-packets"],
+      "active_part_routes": [
+        {
+          "path": "promotion-candidates",
+          "owner_surface": "mechanics/agon/parts/promotion-candidates/CONTRACT.md",
+          "validation_surface": "mechanics/agon/parts/promotion-candidates/VALIDATION.md",
+          "payload_class": "promotion-candidate-registry"
+        },
+        {
+          "path": "sophian-threshold-packets",
+          "owner_surface": "mechanics/agon/parts/sophian-threshold-packets/CONTRACT.md",
+          "validation_surface": "mechanics/agon/parts/sophian-threshold-packets/VALIDATION.md",
+          "payload_class": "sophian-threshold-packet-registry"
+        }
+      ],
+      "legacy_status": "active_former_path_accounting"
+    },
+    {
+      "path": "antifragility",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/antifragility",
+      "local_status": "mapped",
+      "parts_status": "active_part_dirs",
+      "local_function": "Projection health, quarantine, and source-first recovery under stress.",
+      "candidate_part_routes": ["projection-health", "projection-quarantine", "retrieval-outage-regrounding"],
+      "active_part_routes": [
+        {
+          "path": "projection-health",
+          "owner_surface": "mechanics/antifragility/parts/projection-health/CONTRACT.md",
+          "validation_surface": "mechanics/antifragility/parts/projection-health/VALIDATION.md",
+          "payload_class": "projection-health-receipts"
+        },
+        {
+          "path": "projection-quarantine",
+          "owner_surface": "mechanics/antifragility/parts/projection-quarantine/CONTRACT.md",
+          "validation_surface": "mechanics/antifragility/parts/projection-quarantine/VALIDATION.md",
+          "payload_class": "projection-quarantine-rules"
+        },
+        {
+          "path": "retrieval-outage-regrounding",
+          "owner_surface": "mechanics/antifragility/parts/retrieval-outage-regrounding/CONTRACT.md",
+          "validation_surface": "mechanics/antifragility/parts/retrieval-outage-regrounding/VALIDATION.md",
+          "payload_class": "regrounding-ticket-contracts"
+        }
+      ],
+      "legacy_status": "active_former_path_accounting"
+    },
+    {
+      "path": "audit",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/audit",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Derived-surface evidence visibility, proof expectation refs, and exposure review routing.",
+      "candidate_part_routes": ["proof-expectation-refs", "owner-evidence-route", "exposure-review"]
+    },
+    {
+      "path": "boundary-bridge",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/boundary-bridge",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Source-owned export, counterpart, ToS, memo, and cross-source derived projection bridges.",
+      "candidate_part_routes": ["source-owned-export", "tos-retrieval-axis", "counterpart-edge", "cross-source-projection", "federation-spine"]
+    },
+    {
+      "path": "checkpoint",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/checkpoint",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Reasoning handoff and checkpoint-shaped return packets that remain weaker than owner state.",
+      "candidate_part_routes": ["reasoning-handoff", "owner-return-packet"]
+    },
+    {
+      "path": "distillation",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/distillation",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Source lifts, ToS chunk and route packs, and donor-derived projection narrowing.",
+      "candidate_part_routes": ["technique-lift", "tos-text-chunk-map", "tos-route-lift"]
+    },
+    {
+      "path": "experience",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/experience",
+      "local_status": "mapped",
+      "parts_status": "active_part_dirs",
+      "local_function": "Experience-derived contracts for governance, service, office, release, and installation pattern pressure.",
+      "candidate_part_routes": ["governance-precedent", "office-service-patterns", "release-patterns"],
+      "active_part_routes": [
+        {
+          "path": "governance-precedent",
+          "owner_surface": "mechanics/experience/parts/governance-precedent/CONTRACT.md",
+          "validation_surface": "mechanics/experience/parts/governance-precedent/VALIDATION.md",
+          "payload_class": "governance-precedent-contracts"
+        },
+        {
+          "path": "release-patterns",
+          "owner_surface": "mechanics/experience/parts/release-patterns/CONTRACT.md",
+          "validation_surface": "mechanics/experience/parts/release-patterns/VALIDATION.md",
+          "payload_class": "release-installation-pattern-contracts"
+        },
+        {
+          "path": "office-service-patterns",
+          "owner_surface": "mechanics/experience/parts/office-service-patterns/CONTRACT.md",
+          "validation_surface": "mechanics/experience/parts/office-service-patterns/VALIDATION.md",
+          "payload_class": "office-service-pattern-contracts"
+        }
+      ],
+      "legacy_status": "active_former_path_accounting"
+    },
+    {
+      "path": "growth-cycle",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/growth-cycle",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Surface-growth pause posture, owner-wait states, and progression pressure for existing AOA-K surfaces.",
+      "candidate_part_routes": ["owner-wait-state", "surface-growth-stop-rule"]
+    },
+    {
+      "path": "method-growth",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/method-growth",
+      "local_status": "mapped",
+      "parts_status": "active_part_dirs",
+      "local_function": "Pattern candidate lineage, promotion dossiers, downlinks, and retirement routes.",
+      "candidate_part_routes": ["pattern-candidate-lineage", "promotion-dossier", "owner-downlink", "retirement"],
+      "active_part_routes": [
+        {
+          "path": "pattern-candidate-lineage",
+          "owner_surface": "mechanics/method-growth/parts/pattern-candidate-lineage/CONTRACT.md",
+          "validation_surface": "mechanics/method-growth/parts/pattern-candidate-lineage/VALIDATION.md",
+          "payload_class": "pattern-candidate-lineage-contracts"
+        },
+        {
+          "path": "promotion-dossier",
+          "owner_surface": "mechanics/method-growth/parts/promotion-dossier/CONTRACT.md",
+          "validation_surface": "mechanics/method-growth/parts/promotion-dossier/VALIDATION.md",
+          "payload_class": "promotion-dossier-contracts"
+        },
+        {
+          "path": "owner-downlink",
+          "owner_surface": "mechanics/method-growth/parts/owner-downlink/CONTRACT.md",
+          "validation_surface": "mechanics/method-growth/parts/owner-downlink/VALIDATION.md",
+          "payload_class": "owner-downlink-contracts"
+        },
+        {
+          "path": "retirement",
+          "owner_surface": "mechanics/method-growth/parts/retirement/CONTRACT.md",
+          "validation_surface": "mechanics/method-growth/parts/retirement/VALIDATION.md",
+          "payload_class": "pattern-retirement-contracts"
+        }
+      ],
+      "legacy_status": "active_former_path_accounting"
+    },
+    {
+      "path": "questbook",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/questbook",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "KAG-local public obligations, quest source contracts, and quest dispatch/catalog projections.",
+      "candidate_part_routes": ["public-index", "quest-store", "quest-dispatch"]
+    },
+    {
+      "path": "recurrence",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/recurrence",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Return regrounding and recurrence projection routes back to stronger source refs.",
+      "candidate_part_routes": ["return-regrounding", "recurrence-projection-inputs", "retrieval-drift-reentry"]
+    },
+    {
+      "path": "release-support",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/release-support",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Release contour, artifact identity, and generated parity support for bounded KAG releases.",
+      "candidate_part_routes": ["release-lane", "artifact-identity", "release-contour"]
+    },
+    {
+      "path": "rpg",
+      "mechanic_class": "common-center",
+      "center_mechanic_ref": "Agents-of-Abyss/mechanics/rpg",
+      "local_status": "mapped",
+      "parts_status": "no_active_part_dirs",
+      "local_function": "Adjunct readable progression vocabulary for KAG quests and surfaces without hidden ontology.",
+      "candidate_part_routes": []
+    }
+  ],
+  "local_only_mechanics": [],
+  "local_only_candidate_pressure": [
+    {
+      "id": "local-kag-subtree-protocol",
+      "status": "source_home_preflight_active",
+      "home_ref": "kag/README.md",
+      "decision_ref": "docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md",
+      "prior_decision_ref": "docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md",
+      "reason": "Future repo-local /kag indexes, graph nodes, edges, and projections now have a source-home preflight, but no KAG-only mechanics package or part is active until schemas, examples, and validation exist."
+    }
+  ],
+  "external_owner_routes": [
+    {
+      "path": "titan",
+      "status": "external-owner-route",
+      "owner": "aoa-agents and role/runtime owner repositories",
+      "reason": "Titan is present in sibling mechanics but is not a center common package for aoa-kag to author locally."
+    }
+  ],
   "package_contract": {
     "required_files": [
       "AGENTS.md",

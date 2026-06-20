@@ -21,6 +21,7 @@ ALLOWED_ORGAN_LANES = {
     "capability/security contract",
     "release/ci-lane",
     "mechanics/root-topology",
+    "mechanics/part-local",
 }
 
 ALLOWED_VALIDATION_LANES = {

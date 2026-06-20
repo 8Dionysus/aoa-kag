@@ -72,6 +72,18 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
         ),
     ),
     AgentsDocSpec(
+        Path("kag") / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "source-home preflight",
+            "local-subtree protocol",
+            "live graph stores",
+            "source_home.manifest.json",
+            "Do not create `nodes/`, `edges/`, `indexes/`, `projections/`, `receipts/`",
+            "sibling `/kag` rollout readiness",
+        ),
+    ),
+    AgentsDocSpec(
         Path("schemas") / "AGENTS.md",
         (
             "# AGENTS.md Guidance for `schemas/`",

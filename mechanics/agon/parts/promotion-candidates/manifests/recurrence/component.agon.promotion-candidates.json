@@ -1,0 +1,25 @@
+{
+  "component_id": "component.agon.promotion-candidates",
+  "forbidden_actions": [
+    "open_arena_session",
+    "issue_verdict",
+    "write_scar",
+    "mutate_rank",
+    "promote_to_tree_of_sophia",
+    "canonicalize_kag",
+    "auto_rewrite_owner_repo",
+    "hidden_scheduler_action",
+    "single_event_promotion"
+  ],
+  "observation_only": true,
+  "repo": "aoa-kag",
+  "surfaces": [
+    "generated/agon_kag_promotion_candidate_registry.min.json",
+    "mechanics/agon/parts/promotion-candidates/config/promotion-candidate-registry.source.json",
+    "mechanics/agon/parts/promotion-candidates/docs/promotion-candidates.md",
+    "mechanics/agon/parts/promotion-candidates/docs/derived-substrate-boundary.md",
+    "mechanics/agon/parts/promotion-candidates/docs/promotion-candidate-route.md"
+  ],
+  "title": "Agon promotion-candidate surfaces",
+  "review_stage": "promotion_candidates"
+}

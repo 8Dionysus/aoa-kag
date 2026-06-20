@@ -85,8 +85,8 @@ Then branch by task:
   `docs/REASONING_HANDOFF.md`
 - recurrence, regrounding, or projection quarantine:
   `docs/RECURRENCE_REGROUNDING.md`,
-  `docs/KAG_STRESS_REGROUNDING.md`, and
-  `docs/KAG_PROJECTION_QUARANTINE.md`
+  `mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md`, and
+  `mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md`
 - consumer or federation posture:
   `docs/CONSUMER_GUIDE.md`,
   `docs/COUNTERPART_CONSUMER_CONTRACT.md`,

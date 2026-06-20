@@ -86,8 +86,8 @@
           "minItems": 1,
           "type": "array"
         },
-        "wave": {
-          "const": "XVII"
+        "review_stage": {
+          "const": "kag_promotion_path"
         }
       },
       "required": [
@@ -108,7 +108,7 @@
         "runtime_effect",
         "source_truth_posture",
         "stop_lines",
-        "wave"
+        "review_stage"
       ],
       "title": "agon-kag-candidate.schema.json item contract",
       "type": "object"
@@ -138,17 +138,17 @@
     "runtime_posture": {
       "const": "candidate_only"
     },
-    "wave": {
-      "const": "XVII"
+    "review_stage": {
+      "const": "kag_promotion_path"
     },
-    "wave_name": {
+    "review_stage_label": {
       "const": "KAG Promotion Path"
     }
   },
   "required": [
     "registry_id",
-    "wave",
-    "wave_name",
+    "review_stage",
+    "review_stage_label",
     "runtime_posture",
     "count",
     "kag_candidates",

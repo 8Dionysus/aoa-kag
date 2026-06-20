@@ -59,10 +59,10 @@
     "tos_canonization_allowed": {
       "const": false
     },
-    "wave": {
-      "const": "XVIII"
+    "review_stage": {
+      "const": "sophian_threshold"
     },
-    "wave_name": {
+    "review_stage_label": {
       "const": "Sophian Threshold"
     }
   },
@@ -80,8 +80,8 @@
     "runtime_effect",
     "target_repo",
     "tos_canonization_allowed",
-    "wave",
-    "wave_name"
+    "review_stage",
+    "review_stage_label"
   ],
   "title": "agon-sophian-kag-packet.schema.json item contract",
   "type": "object"

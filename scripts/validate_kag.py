@@ -266,23 +266,37 @@ RETURN_REGROUNDING_EXAMPLE_PATH = (
 KAG_MATURITY_GOVERNANCE_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "kag_maturity_governance.example.json"
 )
-KAG_STRESS_REGROUNDING_DOC_PATH = REPO_ROOT / "docs" / "KAG_STRESS_REGROUNDING.md"
-KAG_PROJECTION_QUARANTINE_DOC_PATH = REPO_ROOT / "docs" / "KAG_PROJECTION_QUARANTINE.md"
-PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "projection_health_receipt_v1.json"
+ANTIFRAGILITY_PARTS_ROOT = REPO_ROOT / "mechanics" / "antifragility" / "parts"
+PROJECTION_HEALTH_PART_ROOT = ANTIFRAGILITY_PARTS_ROOT / "projection-health"
+PROJECTION_QUARANTINE_PART_ROOT = ANTIFRAGILITY_PARTS_ROOT / "projection-quarantine"
+RETRIEVAL_OUTAGE_REGROUNDING_PART_ROOT = (
+    ANTIFRAGILITY_PARTS_ROOT / "retrieval-outage-regrounding"
 )
-REGROUNDING_TICKET_SCHEMA_PATH = REPO_ROOT / "schemas" / "regrounding_ticket_v1.json"
+KAG_STRESS_REGROUNDING_DOC_PATH = (
+    PROJECTION_HEALTH_PART_ROOT / "docs" / "stress-regrounding.md"
+)
+KAG_PROJECTION_QUARANTINE_DOC_PATH = (
+    PROJECTION_QUARANTINE_PART_ROOT / "docs" / "projection-quarantine.md"
+)
+PROJECTION_HEALTH_RECEIPT_SCHEMA_PATH = (
+    PROJECTION_HEALTH_PART_ROOT / "schemas" / "projection_health_receipt_v1.json"
+)
+REGROUNDING_TICKET_SCHEMA_PATH = (
+    RETRIEVAL_OUTAGE_REGROUNDING_PART_ROOT / "schemas" / "regrounding_ticket_v1.json"
+)
 PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "projection_health_receipt.example.json"
+    PROJECTION_HEALTH_PART_ROOT / "examples" / "projection_health_receipt.example.json"
 )
 REGROUNDING_TICKET_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "regrounding_ticket.example.json"
+    RETRIEVAL_OUTAGE_REGROUNDING_PART_ROOT
+    / "examples"
+    / "regrounding_ticket.example.json"
 )
 PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS = tuple(
-    sorted((REPO_ROOT / "examples").glob("projection_health_receipt*.example.json"))
+    sorted((PROJECTION_HEALTH_PART_ROOT / "examples").glob("projection_health_receipt*.example.json"))
 )
 REGROUNDING_TICKET_EXAMPLE_PATHS = tuple(
-    sorted((REPO_ROOT / "examples").glob("regrounding_ticket*.example.json"))
+    sorted((RETRIEVAL_OUTAGE_REGROUNDING_PART_ROOT / "examples").glob("regrounding_ticket*.example.json"))
 )
 
 ALLOWED_STATUS = {"active", "planned", "experimental", "deprecated"}
@@ -400,13 +414,13 @@ EXPECTED_KAG_MATURITY_GOVERNANCE_INPUTS = {
     (
         "projection_health_receipt_schema",
         "aoa-kag",
-        "schemas/projection_health_receipt_v1.json",
+        "mechanics/antifragility/parts/projection-health/schemas/projection_health_receipt_v1.json",
         "stress_schema",
     ),
     (
         "regrounding_ticket_schema",
         "aoa-kag",
-        "schemas/regrounding_ticket_v1.json",
+        "mechanics/antifragility/parts/retrieval-outage-regrounding/schemas/regrounding_ticket_v1.json",
         "recovery_schema",
     ),
 }
@@ -1757,18 +1771,27 @@ def validate_antifragility_stress_surfaces() -> None:
     regrounding_doc = read_text(KAG_STRESS_REGROUNDING_DOC_PATH)
     quarantine_doc = read_text(KAG_PROJECTION_QUARANTINE_DOC_PATH)
 
-    for token in ("docs/KAG_STRESS_REGROUNDING.md", "docs/KAG_PROJECTION_QUARANTINE.md"):
+    for token in (
+        "mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md",
+        "mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md",
+    ):
         if token not in readme:
             fail(f"README.md must link {token}")
-    for token in ("KAG_STRESS_REGROUNDING", "KAG_PROJECTION_QUARANTINE"):
+    for token in ("stress-regrounding", "projection-quarantine"):
         if token not in docs_readme:
             fail(f"docs/README.md must mention {token}")
     for snippet in REQUIRED_KAG_STRESS_REGROUNDING_SNIPPETS:
         if snippet not in regrounding_doc:
-            fail(f"docs/KAG_STRESS_REGROUNDING.md is missing required stress guidance: {snippet}")
+            fail(
+                "mechanics/antifragility/parts/projection-health/docs/"
+                f"stress-regrounding.md is missing required stress guidance: {snippet}"
+            )
     for snippet in REQUIRED_KAG_PROJECTION_QUARANTINE_SNIPPETS:
         if snippet not in quarantine_doc:
-            fail(f"docs/KAG_PROJECTION_QUARANTINE.md is missing required quarantine guidance: {snippet}")
+            fail(
+                "mechanics/antifragility/parts/projection-quarantine/docs/"
+                f"projection-quarantine.md is missing required quarantine guidance: {snippet}"
+            )
 
     for schema_path, example_glob, example_paths in (
         (

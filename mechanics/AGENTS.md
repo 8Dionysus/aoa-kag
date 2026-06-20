@@ -21,7 +21,7 @@ memory truth, routing policy, runtime implementation, or framework adapter.
 4. `mechanics/README.md`
 5. `mechanics/topology.json`
 6. target package `AGENTS.md`, `README.md`, `PARTS.md`, and `PROVENANCE.md`
-   when an active package exists
+   when an active package is touched
 7. target part `README.md` and validation route when a part exists
 8. the stronger source, manifest, generated, schema, script, test, decision, or
    owner-repository surface named by the route
@@ -32,16 +32,21 @@ memory truth, routing policy, runtime implementation, or framework adapter.
 - Root `mechanics/` has only `README.md`, `AGENTS.md`, and `topology.json`.
 - Do not add root rosters, migration ledgers, backlogs, templates, notes,
   `_meta/`, scratch, or root `legacy/` holding surfaces.
-- Do not create package directories until repeatable KAG operation pressure has
-  source surfaces, payload classes, owner split, stop-lines, and local
-  validation.
+- Common-center package directories are KAG-local route homes. They do not
+  import center authority or move artifacts by themselves.
+- Do not create non-center package directories until repeatable KAG operation
+  pressure has source surfaces, payload classes, owner split, stop-lines, and
+  local validation.
+- Do not create part directories until a functioning sub-mechanic has a stable
+  purpose, payload class, local contract, stop-lines, and validation.
 - Do not move docs, manifests, generated outputs, schemas, examples, scripts,
   tests, or eval intake into mechanics just to mirror sibling repositories.
 - Do not claim source-authored meaning, proof doctrine, memory truth, routing
   authority, role meaning, scenario composition, skill execution, technique
   canon, runtime state, or Tree of Sophia canon from this lane.
-- Future local `/kag` protocol pressure stays behind the decision stop-line
-  until `aoa-kag` defines an active protocol contract.
+- Local `/kag` protocol pressure routes through `kag/`. It still stays out of
+  mechanics packages and sibling repositories until schemas, examples, and
+  validation activate the contract.
 
 ## Validation
 

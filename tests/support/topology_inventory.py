@@ -51,6 +51,13 @@ def classify_test_home(relative_path: str) -> tuple[str, str]:
     parts = Path(relative_path).parts
     if parts[0] == "tests":
         return "root", "tests"
+    if (
+        len(parts) >= 6
+        and parts[0] == "mechanics"
+        and parts[2] == "parts"
+        and parts[4] == "tests"
+    ):
+        return "mechanics-part", "/".join(parts[:5])
     raise ValueError(f"{relative_path}: unsupported test home")
 
 

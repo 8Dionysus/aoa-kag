@@ -23,7 +23,7 @@ It should give them a navigable route mesh:
 - a root card that names repository identity, owner boundaries, route choice,
   validation posture, and closeout;
 - local cards for durable districts such as `docs/`, `docs/decisions/`,
-  `mechanics/`, `manifests/`, `generated/`, `schemas/`, `examples/`,
+  `kag/`, `mechanics/`, `manifests/`, `generated/`, `schemas/`, `examples/`,
   `scripts/`, `tests/`, `config/`, `evals/`, `.agents/`, `Spark/`, and
   `.github/`;
 - source surfaces that keep KAG model, source policy, manifests, schemas,
@@ -51,9 +51,9 @@ A healthy `aoa-kag` agent-facing layer has:
 
 - a clear root `AGENTS.md` that begins with the canonical route-card shape;
 - local `AGENTS.md` cards in durable editable districts;
-- explicit owner boundaries for docs, decisions, manifests, generated outputs,
-  mechanics, schemas, examples, scripts, tests, config, eval intake, companion
-  lanes, and GitHub surfaces;
+- explicit owner boundaries for docs, decisions, local KAG protocol, manifests,
+  generated outputs, mechanics, schemas, examples, scripts, tests, config, eval
+  intake, companion lanes, and GitHub surfaces;
 - named validation routes near the work;
 - negative boundaries that prevent source-authority drift;
 - generated companions that help navigation without becoming source truth;
@@ -106,6 +106,14 @@ local `/kag` protocol by implication.
 
 Mechanic packages should appear only when repeatable operation pressure has an
 owner split, payload class, stop-line, and validation route.
+
+### KAG source-home cards
+
+`kag/AGENTS.md`, `kag/README.md`, and `kag/source_home.manifest.json` route the
+local-subtree source-home preflight. They should name active source families,
+future record classes, runtime-state exclusions, rollout stop-lines, and sibling
+handoff rules without becoming generated payload authority or sibling
+repository templates.
 
 ### Generated cards
 
@@ -177,8 +185,8 @@ It must not:
   runtime authority;
 - claim live graph, index, embedding, or retrieval state unless the runtime
   owner proves it;
-- convert future local `/kag` protocol pressure into sibling directory
-  templates before the protocol exists;
+- convert `kag/` protocol preflight into sibling directory templates before
+  schemas, examples, and validation exist;
 - hide semantic changes under "docs-only", "metadata-only", or formatting
   language.
 
@@ -261,8 +269,8 @@ design surface names what validation should prove:
 - schema and example contracts stay aligned;
 - decision indexes are current when decision metadata moves;
 - KAG-local eval intake does not claim central proof verdicts;
-- future local `/kag` protocol pressure remains behind its stop-line until the
-  core protocol exists.
+- local `/kag` protocol pressure routes through `kag/` and remains behind its
+  sibling rollout stop-line until schemas, examples, and validation exist.
 
 ## Relationship to Other Surfaces
 
@@ -274,6 +282,7 @@ Nested `AGENTS.md` cards narrow local work.
 `docs/KAG_MODEL.md`, `docs/BOUNDARIES.md`, and `docs/SOURCE_POLICY.md` own the
 model, owner boundaries, and source-first posture.
 `docs/decisions/` preserves durable KAG route rationale.
+`kag/` holds the local-subtree protocol preflight.
 `mechanics/` routes repeatable KAG operation topology.
 `manifests/` owns source-authored lift controls.
 `generated/` remains derived.
@@ -309,6 +318,7 @@ move:
 
 - root `AGENTS.md`;
 - affected nested `AGENTS.md` cards;
+- `kag/` protocol cards when local-subtree posture moved;
 - `README.md` or docs maps;
 - `DESIGN.md`;
 - validators for root design, local cards, generated freshness, and release

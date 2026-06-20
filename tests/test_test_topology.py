@@ -29,8 +29,8 @@ REQUIRED_NORMALIZED_FIELDS = {
     "focused_target",
     "failure_route",
 }
-HOME_SCOPES = {"root"}
-LANES = {"root-tests"}
+HOME_SCOPES = {"root", "mechanics-part"}
+LANES = {"root-tests", "mechanics-part-tests"}
 MODES = {"blocking"}
 RUNTIME_COSTS = {"fast", "medium", "slow"}
 
@@ -92,9 +92,13 @@ class TestTopologyAuthorityTests(unittest.TestCase):
                 self.assertEqual(expected_home, entry["home"])
                 self.assertTrue(entry["path"].startswith(f"{entry['home']}/"))
 
-    def test_run_tests_covers_root_home(self) -> None:
+    def test_run_tests_covers_blocking_homes(self) -> None:
         entries = topology_inventory.normalized_inventory_entries()
-        expected_homes = {entry["home"] for entry in entries if entry["home_scope"] == "root"}
+        expected_homes = {
+            entry["home"]
+            for entry in entries
+            if entry["home_scope"] in {"root", "mechanics-part"}
+        }
 
         self.assertTrue(expected_homes)
         self.assertTrue(expected_homes <= topology_inventory.run_tests_homes())

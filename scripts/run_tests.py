@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run root unittest discovery for aoa-kag."""
+"""Run unittest discovery for active aoa-kag test homes."""
 
 from __future__ import annotations
 
@@ -8,7 +8,21 @@ import sys
 from pathlib import Path
 
 
-TEST_DIRS = (Path("tests"),)
+TEST_DIRS = (
+    Path("tests"),
+    Path("mechanics/agon/parts/promotion-candidates/tests"),
+    Path("mechanics/agon/parts/sophian-threshold-packets/tests"),
+    Path("mechanics/antifragility/parts/projection-health/tests"),
+    Path("mechanics/antifragility/parts/projection-quarantine/tests"),
+    Path("mechanics/antifragility/parts/retrieval-outage-regrounding/tests"),
+    Path("mechanics/experience/parts/governance-precedent/tests"),
+    Path("mechanics/experience/parts/release-patterns/tests"),
+    Path("mechanics/experience/parts/office-service-patterns/tests"),
+    Path("mechanics/method-growth/parts/pattern-candidate-lineage/tests"),
+    Path("mechanics/method-growth/parts/promotion-dossier/tests"),
+    Path("mechanics/method-growth/parts/owner-downlink/tests"),
+    Path("mechanics/method-growth/parts/retirement/tests"),
+)
 
 
 def has_unittest_files(test_dir: Path) -> bool:

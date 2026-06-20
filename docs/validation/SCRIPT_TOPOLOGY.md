@@ -65,10 +65,20 @@ module split is needed.
 
 ## Non-Root Scripts
 
-No non-root mechanic-owned scripts are active yet. Future
-`mechanics/<package>/parts/<part>/scripts/` builders and validators should be
-inventoried here and covered by a dedicated lane only after a package-local
-route exists.
+Active mechanic-owned scripts may live under
+`mechanics/<package>/parts/<part>/scripts/` only after the part is listed in
+`mechanics/topology.json` and has `README.md`, `CONTRACT.md`, `VALIDATION.md`,
+and focused tests. Agon currently owns part-local promotion-candidate and
+Sophian-threshold builders/validators; their generated companions stay in
+root `generated/`. Antifragility currently owns part-local projection-health,
+projection-quarantine, and retrieval-outage recovery contract packets and
+focused tests. Experience currently owns part-local governance,
+release/installation, and office/service schema/example contract packets and
+focused tests. Method-growth currently owns part-local schema/example contract
+packets and focused tests.
+
+Additional part scripts must be inventoried here before entering a blocking
+lane.
 
 The `.agents/skills/*/scripts` helpers are deterministic contract tools inside
 exported skill companion material. They can model dry-run, readiness, and risk

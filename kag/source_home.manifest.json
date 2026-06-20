@@ -1,0 +1,217 @@
+{
+  "schema_version": "aoa_kag_source_home_preflight_v1",
+  "owner_repo": "aoa-kag",
+  "home": "kag/",
+  "status": "preflight",
+  "role": "source-home preflight for KAG-owned local-subtree protocol law, substrate posture, owner-return routes, and future portable record contracts",
+  "decision_refs": [
+    "docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md",
+    "docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md"
+  ],
+  "home_rules": [
+    "kag/ owns KAG source-home law and local-subtree protocol posture; it is not a payload warehouse.",
+    "Current manifests, generated read models, schemas, examples, scripts, tests, and mechanics remain in their existing owner homes until a reviewed KAG source family moves.",
+    "The only active source families in this preflight are the home route cards, this source-home manifest, and the local-subtree protocol.",
+    "Future local record classes are reserved vocabulary, not active directories, until schema, example, validator, pilot owner, and decision record exist.",
+    "Generated readers summarize KAG records; live graph, vector, embedding, runtime index, and cache state stay outside Git-tracked source-home truth."
+  ],
+  "branches": [
+    {
+      "id": "preflight_contract",
+      "path": "kag/",
+      "role": "Root preflight branch for KAG source-home route law before portable record classes are active.",
+      "families": [
+        "home_route_cards",
+        "source_home_manifest",
+        "local_subtree_protocol"
+      ],
+      "owner_surface": "kag/AGENTS.md",
+      "stop_lines": [
+        "Do not split this branch into empty future-surface directories.",
+        "Do not treat source-home preflight as sibling /kag rollout readiness.",
+        "Do not move generated payloads, root manifests, or mechanic payloads here by symmetry."
+      ]
+    }
+  ],
+  "families": [
+    {
+      "id": "home_route_cards",
+      "branch": "preflight_contract",
+      "path": "kag/",
+      "source_kind": "route_card_pair",
+      "meaning": "Human and agent-facing entry law for the KAG source-home preflight.",
+      "source_files": [
+        "kag/AGENTS.md",
+        "kag/README.md"
+      ],
+      "owner_surface": "kag/AGENTS.md",
+      "routes_to": [
+        "AGENTS.md",
+        "DESIGN.md",
+        "DESIGN.AGENTS.md",
+        "docs/decisions/",
+        "mechanics/",
+        "manifests/",
+        "generated/",
+        "schemas/",
+        "examples/"
+      ],
+      "validators": [
+        "scripts/validate_nested_agents.py",
+        "tests/test_kag_home.py"
+      ],
+      "stop_lines": [
+        "Do not make route cards stronger than source refs, schemas, validators, or owner decisions.",
+        "Do not bury future rollout intent in prose without a decision route."
+      ]
+    },
+    {
+      "id": "source_home_manifest",
+      "branch": "preflight_contract",
+      "path": "kag/source_home.manifest.json",
+      "source_kind": "source_home_manifest",
+      "meaning": "Machine-readable atlas for what kag/ currently owns, what it reserves, and which stronger owners must accept adjacent pressure.",
+      "source_files": [
+        "kag/source_home.manifest.json"
+      ],
+      "owner_surface": "kag/AGENTS.md",
+      "routes_to": [
+        "tests/test_kag_home.py",
+        "docs/testing/test_inventory.json",
+        "docs/validation/script_inventory.json"
+      ],
+      "validators": [
+        "tests/test_kag_home.py"
+      ],
+      "stop_lines": [
+        "Do not use the manifest as a generated reader.",
+        "Do not add active record families without real files, schemas, examples, and validators."
+      ]
+    },
+    {
+      "id": "local_subtree_protocol",
+      "branch": "preflight_contract",
+      "path": "kag/LOCAL_SUBTREE_PROTOCOL.md",
+      "source_kind": "local_kag_subtree_protocol",
+      "meaning": "Preflight protocol for future repo-local KAG organs: source refs, portable record classes, storage posture, rollout order, and runtime-state exclusions.",
+      "source_files": [
+        "kag/LOCAL_SUBTREE_PROTOCOL.md"
+      ],
+      "owner_surface": "kag/AGENTS.md",
+      "routes_to": [
+        "docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md",
+        "docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md",
+        "mechanics/topology.json"
+      ],
+      "validators": [
+        "tests/test_kag_home.py",
+        "scripts/validate_nested_agents.py"
+      ],
+      "stop_lines": [
+        "Do not authorize sibling /kag directories from this protocol alone.",
+        "Do not infer graph edges without source refs or a declared derived method.",
+        "Do not treat local indexes as ranking, proof, memory acceptance, or routing authority."
+      ]
+    }
+  ],
+  "reserved_future_surfaces": [
+    {
+      "path": "manifest.json",
+      "status": "reserved_protocol_name",
+      "activation_condition": "schema, example, validator, pilot owner, and decision record exist",
+      "role": "repo-local KAG organ manifest for source refs, record classes, generation routes, validators, storage posture, and freshness mode"
+    },
+    {
+      "path": "nodes/",
+      "status": "reserved_protocol_name",
+      "activation_condition": "node schema, source-ref validator, and pilot owner exist",
+      "role": "portable source-linked node records"
+    },
+    {
+      "path": "edges/",
+      "status": "reserved_protocol_name",
+      "activation_condition": "edge schema, relation policy, no-inference guard, and pilot owner exist",
+      "role": "bounded direct or explicitly derived edge records"
+    },
+    {
+      "path": "indexes/",
+      "status": "reserved_protocol_name",
+      "activation_condition": "index contract forbids embedding, vector, runtime-search, and cache state",
+      "role": "lightweight lookup indexes over portable local KAG records"
+    },
+    {
+      "path": "projections/",
+      "status": "reserved_protocol_name",
+      "activation_condition": "builder and generated-parity validator exist",
+      "role": "compact consumer read models derived from manifest-backed records"
+    },
+    {
+      "path": "receipts/",
+      "status": "reserved_protocol_name",
+      "activation_condition": "receipt schema and closeout route exist",
+      "role": "generation, validation, freshness, and regrounding receipts"
+    }
+  ],
+  "current_payload_routes": {
+    "source_manifests": "manifests/",
+    "generated_read_models": "generated/",
+    "schemas": "schemas/",
+    "examples": "examples/",
+    "builders_and_validators": "scripts/",
+    "repo_tests": "tests/",
+    "operation_topology": "mechanics/"
+  },
+  "stronger_owner_routes": [
+    {
+      "pressure": "AoA organ constitution, center doctrine, or cross-repo owner law",
+      "route": "Agents-of-Abyss"
+    },
+    {
+      "pressure": "ToS-authored source meaning, canon, or philosophy graph workbench",
+      "route": "Tree-of-Sophia"
+    },
+    {
+      "pressure": "agent role meaning or runtime-seam role posture",
+      "route": "aoa-agents"
+    },
+    {
+      "pressure": "scenario choreography or playbook bundle meaning",
+      "route": "aoa-playbooks"
+    },
+    {
+      "pressure": "dispatch, route selection, or navigation authority",
+      "route": "aoa-routing"
+    },
+    {
+      "pressure": "typed helper, SDK facade, or public package behavior",
+      "route": "aoa-sdk"
+    },
+    {
+      "pressure": "skill workflow source meaning",
+      "route": "aoa-skills"
+    },
+    {
+      "pressure": "technique canon or source-lift method meaning",
+      "route": "aoa-techniques"
+    },
+    {
+      "pressure": "durable memory object, recall truth, or reviewed memory corpus",
+      "route": "aoa-memo"
+    },
+    {
+      "pressure": "proof verdict, eval claim, or scoring authority",
+      "route": "aoa-evals"
+    },
+    {
+      "pressure": "runtime service, graph database, vector index, cache, worker, or deployment state",
+      "route": "abyss-stack"
+    }
+  ],
+  "stop_lines": [
+    "No sibling /kag rollout from this preflight alone.",
+    "No live graph, vector, embedding, runtime search, or cache state in this source home.",
+    "No source-authored meaning transfer into KAG records.",
+    "No proof verdict, memory acceptance, ranking truth, or routing authority.",
+    "No empty future-surface directories without schema and validation."
+  ]
+}
