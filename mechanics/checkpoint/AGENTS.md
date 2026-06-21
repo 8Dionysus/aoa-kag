@@ -22,12 +22,15 @@ being changed.
 - `aoa-memo` owns memory writeback and durable memory objects.
 - `aoa-evals` owns proof.
 - `aoa-routing` owns live re-entry.
-- No part directory is active until a part-local checkpoint contract and validator exist.
+- Active part directories must stay listed in `mechanics/topology.json` and keep
+  a part-local checkpoint contract, validator, and focused tests.
 
 ## Validation
 
 Run `python scripts/validate_mechanics_skeleton.py`.
 If handoff packs move, run the relevant KAG validator/tests and release gate.
+For the active reasoning handoff part, run
+`python mechanics/checkpoint/parts/reasoning-handoff/scripts/validate_reasoning_handoff.py`.
 
 ## Closeout
 

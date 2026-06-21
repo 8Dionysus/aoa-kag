@@ -4,7 +4,7 @@ The active source config is
 `config/sophian-threshold-packet-registry.source.json`.
 
 The active generated read model is
-`generated/agon_sophian_kag_packet_registry.min.json`.
+`generated/agon_sophian_kag_packet_registry.min.json` inside this part.
 
 ## Payload Rules
 

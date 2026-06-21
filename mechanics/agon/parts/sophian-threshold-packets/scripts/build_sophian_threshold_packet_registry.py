@@ -9,8 +9,9 @@ import sys
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[5]
-SRC = ROOT / 'mechanics/agon/parts/sophian-threshold-packets/config/sophian-threshold-packet-registry.source.json'
-OUT = ROOT / 'generated/agon_sophian_kag_packet_registry.min.json'
+PART_ROOT = ROOT / 'mechanics/agon/parts/sophian-threshold-packets'
+SRC = PART_ROOT / 'config/sophian-threshold-packet-registry.source.json'
+OUT = PART_ROOT / 'generated/agon_sophian_kag_packet_registry.min.json'
 ITEM_KEY = 'sophian_kag_packet_candidates'
 REGISTRY_ID = 'agon.sophian_kag_packet.registry.v1'
 REVIEW_STAGE = 'sophian_threshold'

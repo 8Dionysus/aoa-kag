@@ -31,7 +31,7 @@ These can sit beside existing `generated/*` and `manifests/*` families without c
 
 ## Health states
 
-Wave 3 uses a small health vocabulary:
+The current projection-health route uses a small health vocabulary:
 
 - `healthy`
 - `degraded_source_first`

@@ -92,7 +92,7 @@ A good KAG surface should make it easier to answer:
 
 ## Bridge contracts
 
-The first-wave bridge rule is:
+The first bridge rule is:
 
 **KAG may return bounded retrieval context, but it does not replace authored source truth**
 
@@ -105,11 +105,13 @@ Bridge-ready retrieval surfaces should preserve source refs and, where relevant:
 
 See [BRIDGE_CONTRACTS](BRIDGE_CONTRACTS.md) for the compact contract.
 
-The third-wave counterpart rule is:
+The counterpart rule is:
 
 **KAG may project counterpart edges, but the projection does not prove conceptual and operational identity**
 
-See [COUNTERPART_EDGE_CONTRACTS](COUNTERPART_EDGE_CONTRACTS.md) for the compact contract.
+See
+[counterpart-edge-contracts](../mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-edge-contracts.md)
+for the compact contract.
 
 ## Relationship to neighboring layers
 

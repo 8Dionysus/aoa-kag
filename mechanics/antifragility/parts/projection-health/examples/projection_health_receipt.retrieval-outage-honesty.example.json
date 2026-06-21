@@ -7,7 +7,7 @@
   "projection_id": "return-regrounding-pack:runtime-chaos-retrieval-outage-honesty",
   "bounded_scope": {
     "kind": "projection",
-    "value": "generated/return_regrounding_pack.min.json",
+    "value": "mechanics/recurrence/parts/return-regrounding/generated/return_regrounding_pack.min.json",
     "notes": "Derived source-first return pack used when runtime-chaos retrieval posture must reground callers back to stronger playbook and eval refs."
   },
   "donor_roots": [
@@ -23,8 +23,8 @@
     "python scripts/validate_nested_agents.py#retrieval-outage-honesty-contract"
   ],
   "affected_generated_surfaces": [
-    "generated/return_regrounding_pack.min.json",
-    "generated/reasoning_handoff_pack.min.json"
+    "mechanics/recurrence/parts/return-regrounding/generated/return_regrounding_pack.min.json",
+    "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json"
   ],
   "evidence_refs": [
     "aoa-playbooks/mechanics/antifragility/parts/stress-lanes/examples/playbook_stress_lane.retrieval-outage-honesty.example.json",
@@ -33,7 +33,7 @@
   "source_fallback_refs": [
     "aoa-playbooks/playbooks/operations/recovery/runtime-chaos-recovery/PLAYBOOK.md",
     "aoa-evals/mechanics/audit/parts/artifact-verdict-hooks/docs/TRACE_EVAL_BRIDGE.md",
-    "docs/RECURRENCE_REGROUNDING.md"
+    "mechanics/recurrence/parts/return-regrounding/docs/recurrence-regrounding.md"
   ],
   "notes": "Consumers should prefer source-first posture until the return and handoff packs validate again for the affected route.",
   "supersedes": []

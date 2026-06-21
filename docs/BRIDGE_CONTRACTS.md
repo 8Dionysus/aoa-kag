@@ -1,7 +1,7 @@
 # AoA-ToS Bridge Contracts
 
-This document records the first-wave bridge posture at the KAG layer.
-It is the primary coordination note for the Dionysus seed at
+This document records the first bridge posture at the KAG layer.
+It is the primary coordination note for the Dionysus source ref at
 `Dionysus/archive/seed_rootline/seed.8dionysus.aoa-shared.bridges.md`.
 
 It does not replace ToS ontology, memory contracts, or runtime implementation.
@@ -11,8 +11,8 @@ It names the derived bridge surfaces that make AoA-ToS exchange explicit.
 
 The current explicit bridge home is split like this:
 
-- this document is the primary coordination note for the first-wave bridge seed
-- `schemas/bridge-retrieval-surface.schema.json` and `examples/tos_retrieval_axis_surface.example.json` define the KAG-side retrieval contract
+- this document is the primary coordination note for the first bridge source ref
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/schemas/bridge-retrieval-surface.schema.json` and `mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json` define the KAG-side retrieval contract
 - `aoa-memo/mechanics/consumer-handoff/docs/KAG_TOS_BRIDGE_CONTRACT.md` defines the memo-side writeback and export companion contract
 - `aoa-routing/docs/FEDERATION_ENTRY_ABI.md` defines the orientation-only entry companion and does not become bridge authority
 
@@ -69,21 +69,21 @@ When KAG returns a bridge-ready retrieval surface, it should be able to expose:
 
 This keeps retrieval richer than a similarity dump while still remaining derived and reviewable.
 
-See `examples/tos_retrieval_axis_surface.example.json` for a compact bridge-ready example tied to `AOA-K-0007`.
-The schema-backed contract for that surface is `schemas/bridge-retrieval-surface.schema.json`.
+See `mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json` for a compact bridge-ready example tied to `AOA-K-0007`.
+The schema-backed contract for that surface is `mechanics/boundary-bridge/parts/tos-retrieval-axis/schemas/bridge-retrieval-surface.schema.json`.
 The current generated pack that materializes that same bounded axis posture now
 lives at:
 
-- `generated/tos_retrieval_axis_pack.json`
-- `generated/tos_retrieval_axis_pack.min.json`
-- `docs/TOS_RETRIEVAL_AXIS_PACK.md`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/docs/tos-retrieval-axis-pack.md`
 
 ## Shared bridge envelope contract
 
-Strict first-wave closure for the AoA-ToS bridge now uses one shared linkage object:
+Strict bridge closure for the AoA-ToS bridge now uses one shared linkage object:
 
-- `schemas/bridge-envelope.schema.json`
-- `examples/aoa_tos_bridge_envelope.example.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/schemas/bridge-envelope.schema.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/aoa_tos_bridge_envelope.example.json`
 
 This envelope is intentionally narrow.
 It keeps only:
@@ -101,7 +101,7 @@ It links the stronger authored and derived surfaces together so a reviewer can i
 
 The current example ties together:
 
-- the KAG retrieval face in `examples/tos_retrieval_axis_surface.example.json`
+- the KAG retrieval face in `mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json`
 - the memo chunk face in `aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json`
 - the memo graph face in `aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json`
 

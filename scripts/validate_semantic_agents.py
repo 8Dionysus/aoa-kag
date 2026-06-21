@@ -17,6 +17,26 @@ class AgentsDocSpec:
 
 REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
     AgentsDocSpec(
+        Path('.agents/AGENTS.md'),
+        (
+            'agent-facing companion lanes',
+            'Codex Spark guidance',
+            'source-owner truth',
+            'Do not restore root `Spark/`',
+            'validate_nested_agents.py',
+        ),
+    ),
+    AgentsDocSpec(
+        Path('.agents/spark/AGENTS.md'),
+        (
+            'GPT-5.3-Codex-Spark',
+            'done-or-handoff',
+            'one KAG seam',
+            'source-first',
+            'validate_semantic_agents.py',
+        ),
+    ),
+    AgentsDocSpec(
         Path('.agents/skills/AGENTS.md'),
         (
             'KAG-layer maintenance',
@@ -24,6 +44,16 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'Source repositories keep authored meaning',
             'public-safe',
             'validate_kag.py',
+        ),
+    ),
+    AgentsDocSpec(
+        Path('quests/AGENTS.md'),
+        (
+            'source quest record district',
+            'public-safe',
+            'quests/<lane>/<state>',
+            'mechanics/questbook',
+            'validate_quest_store.py',
         ),
     ),
     AgentsDocSpec(

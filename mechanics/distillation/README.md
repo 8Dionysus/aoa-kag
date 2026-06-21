@@ -4,7 +4,9 @@ This package maps the common AoA Distillation mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active part routes:
+`parts/technique-lift/`, `parts/tos-text-chunk-map/`, and
+`parts/tos-route-lift/`.
 
 ### Trigger
 
@@ -39,5 +41,6 @@ or runtime activation.
 
 ### Next route
 
-Start with `PARTS.md`. Create a part only when one lift family needs a clearer
-local contract and nearest artifact home than root KAG districts provide.
+Start with `PARTS.md`. Use the active part routes for technique lift, ToS text
+chunk mapping, and ToS route-pack lift. Retrieval-handle boundary behavior
+routes through boundary-bridge.

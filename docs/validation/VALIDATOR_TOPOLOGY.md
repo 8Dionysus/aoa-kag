@@ -14,7 +14,7 @@ runtime, or mechanic concern lands in one broad script without owner routing.
 |---|---|---|---|
 | `source-fast` | blocking growth gate | route cards, `kag/` source-home preflight, mechanics skeleton, active mechanics part tests, decision records, semantic AGENTS docs, unit tests, committed KAG validation | generated-output mutation, release stabilization, runtime graph/vector/index state |
 | `generated` | blocking projection gate | generated KAG output rebuild parity and drift snapshot for `generated/` | source repository authored meaning, live runtime state |
-| `release` | blocking release gate | release-prep execution through source-fast and generated lanes | ordinary docs status, compatibility-canary scheduling |
+| `release` | blocking release gate | release-prep execution through source-fast, generated, and OS Abyss artifact bundle lanes | ordinary docs status, compatibility-canary scheduling |
 | `compatibility-canary` | blocking scheduled/manual canary | floating sibling checkout compatibility and generated-output drift check | release artifact identity |
 | `advisory` | non-blocking boundary inventory | future graph/RAG/runtime and source-authority stop-lines | hard runtime policy, eval verdicts, memory truth |
 
@@ -48,9 +48,24 @@ source repository means.
 
 The current mechanics lane has common-center package route homes, active Agon
 part-local scripts/tests for promotion candidates and Sophian threshold
-packets, active Antifragility recovery contract tests, active Experience
-contract packet tests, and active Method-growth contract packet tests.
+packets, active Antifragility recovery contract tests, active Audit proof-ref
+and exposure-review tests, active Boundary-bridge source-owned export,
+retrieval-axis, cross-source projection, and federation-spine tests, active
+Checkpoint reasoning-handoff validator/tests, active Distillation technique
+lift, ToS chunk-map, and ToS route-lift tests, active Experience contract
+packet tests, active Method-growth contract packet tests, active Questbook
+quest-store validator/tests, active Recurrence return-regrounding
+validator/tests, and active Release-support release-lane tests.
 `scripts/run_tests.py` covers those focused tests through the source-fast lane.
+
+`scripts/validate_kag.py` still remains the repo-wide compatibility and
+generated/read-model entrypoint, but focused mechanics ownership now routes
+through part validators or part tests where a part owns the operation contract:
+`mechanics/boundary-bridge/parts/source-owned-export/scripts/validate_source_owned_export.py`,
+`mechanics/checkpoint/parts/reasoning-handoff/scripts/validate_reasoning_handoff.py`,
+`mechanics/growth-cycle/parts/surface-growth-stop-rule/scripts/validate_surface_growth_stop_rule.py`,
+`mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py`, and
+`mechanics/recurrence/parts/return-regrounding/scripts/validate_return_regrounding.py`.
 
 When a future KAG mechanic part is created, package-local builders,
 validators, and tests should live beside the part that owns the payload and be

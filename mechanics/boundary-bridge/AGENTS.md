@@ -22,13 +22,16 @@ the bridge.
 - Bridge outputs do not transfer source authority.
 - KAG projections do not become ToS, memo, routing, proof, or runtime truth.
 - Counterpart and cross-source surfaces stay non-identity surfaces.
-- No part directory is active until a part-local bridge contract and validator exist.
+- Active part directories must stay listed in `mechanics/topology.json` and keep
+  a part-local bridge contract, validator, and focused tests.
 
 ## Validation
 
 Run `python scripts/validate_mechanics_skeleton.py`.
 If bridge-generated surfaces move, run the relevant KAG generator, validator,
 focused tests, and release gate.
+For the active source-owned export part, run
+`python mechanics/boundary-bridge/parts/source-owned-export/scripts/validate_source_owned_export.py`.
 
 ## Closeout
 

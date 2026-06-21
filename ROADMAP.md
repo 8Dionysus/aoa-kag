@@ -33,38 +33,38 @@ not a claim that KAG is a full graph engine or a source-authoritative layer:
 
 - registry and source-owned federation export posture:
   `generated/kag_registry.min.json`,
-  `generated/federation_export_registry.min.json`,
-  and `docs/FEDERATION_KAG_READINESS.md`
+  `mechanics/boundary-bridge/parts/source-owned-export/generated/federation_export_registry.min.json`,
+  and `mechanics/boundary-bridge/parts/source-owned-export/docs/federation-kag-readiness.md`
 - manifest-driven and ToS-derived packs:
-  `generated/technique_lift_pack.min.json`,
-  `generated/tos_text_chunk_map.min.json`,
-  `generated/tos_retrieval_axis_pack.min.json`,
-  `generated/tos_zarathustra_route_pack.min.json`,
-  `generated/tos_zarathustra_route_retrieval_pack.min.json`,
-  and `docs/TOS_RAW_TABLE_INTAKE_HOLD.md`
+  `mechanics/distillation/parts/technique-lift/generated/technique_lift_pack.min.json`,
+  `mechanics/distillation/parts/tos-text-chunk-map/generated/tos_text_chunk_map.min.json`,
+  `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json`,
+  `mechanics/distillation/parts/tos-route-lift/generated/tos_zarathustra_route_pack.min.json`,
+  `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_zarathustra_route_retrieval_pack.min.json`,
+  and `mechanics/distillation/parts/tos-route-lift/docs/tos-raw-table-intake-hold.md`
 - maturity governance and pause posture:
-  `generated/kag_maturity_governance.min.json`,
-  `docs/KAG_MATURITY_GOVERNANCE.md`,
-  `docs/KAG_OWNER_WAIT_STATES.md`,
-  and `docs/KAG_PROOF_EXPECTATIONS.md`
+  `mechanics/growth-cycle/parts/surface-growth-stop-rule/generated/kag_maturity_governance.min.json`,
+  `mechanics/growth-cycle/parts/surface-growth-stop-rule/docs/kag-maturity-governance.md`,
+  `mechanics/growth-cycle/parts/surface-growth-stop-rule/docs/kag-owner-wait-states.md`,
+  and `mechanics/audit/parts/proof-expectation-refs/docs/kag-proof-expectations.md`
 - reasoning, recurrence, bridge, and regrounding posture:
-  `generated/reasoning_handoff_pack.min.json`,
-  `generated/return_regrounding_pack.min.json`,
+  `mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json`,
+  `mechanics/recurrence/parts/return-regrounding/generated/return_regrounding_pack.min.json`,
   `docs/BRIDGE_CONTRACTS.md`,
-  `docs/RECURRENCE_REGROUNDING.md`,
+  `mechanics/recurrence/parts/return-regrounding/docs/recurrence-regrounding.md`,
   `mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md`,
   `mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md`,
   `mechanics/antifragility/parts/retrieval-outage-regrounding/docs/retrieval-outage-regrounding.md`,
   `mechanics/antifragility/parts/projection-health/examples/projection_health_receipt.retrieval-outage-honesty.example.json`,
   and `mechanics/antifragility/parts/retrieval-outage-regrounding/examples/regrounding_ticket.retrieval-outage-honesty.example.json`
 - federation, counterpart, tiny-consumer, and cross-source adjuncts:
-  `generated/federation_spine.min.json`,
-  `generated/counterpart_federation_exposure_review.min.json`,
-  `generated/tiny_consumer_bundle.min.json`,
-  `generated/cross_source_node_projection.min.json`,
-  `docs/COUNTERPART_CONSUMER_CONTRACT.md`,
-  `docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md`,
-  and `docs/COUNTERPART_EDGE_CONTRACTS.md`
+  `mechanics/boundary-bridge/parts/federation-spine/generated/federation_spine.min.json`,
+  `mechanics/audit/parts/exposure-review/generated/counterpart_federation_exposure_review.min.json`,
+  `mechanics/boundary-bridge/parts/tiny-consumer-bundle/generated/tiny_consumer_bundle.min.json`,
+  `mechanics/boundary-bridge/parts/cross-source-projection/generated/cross_source_node_projection.min.json`,
+  `mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-consumer-contract.md`,
+  `mechanics/audit/parts/exposure-review/docs/counterpart-federation-exposure-review.md`,
+  and `mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-edge-contracts.md`
 
 Roadmap drift is a KAG-layer risk: if this file falls back to bootstrap-only
 language while the repository publishes release-ready derived surfaces, callers

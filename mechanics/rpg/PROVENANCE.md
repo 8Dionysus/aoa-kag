@@ -11,7 +11,11 @@ an RPG-adjacent KAG wording route needs center or questbook trace.
 ## KAG source surfaces
 
 - `QUESTBOOK.md`
-- `docs/QUESTBOOK_KAG_INTEGRATION.md`
+- `mechanics/questbook/parts/quest-store/docs/questbook-kag-integration.md`
 - `docs/CONSUMER_GUIDE.md`
+
+These surfaces are not active RPG payload homes today. They remain questbook or
+docs-owned route surfaces until a real vocabulary overlay has canonical ids,
+owner refs, stop-lines, and focused validation.
 
 No package-local `legacy/` route is active yet.

@@ -144,6 +144,10 @@
         "scripts/ci_gate.py",
         "--mode",
         "generated"
+      ],
+      [
+        "python",
+        "scripts/validate_abyss_machine_kag_registry_bundle.py"
       ]
     ],
     "compatibility_canary": [

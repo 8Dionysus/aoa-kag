@@ -4,7 +4,7 @@ The active source config is
 `config/promotion-candidate-registry.source.json`.
 
 The active generated read model is
-`generated/agon_kag_promotion_candidate_registry.min.json`.
+`generated/agon_kag_promotion_candidate_registry.min.json` inside this part.
 
 ## Payload Rules
 

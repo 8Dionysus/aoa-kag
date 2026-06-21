@@ -80,20 +80,20 @@ Before making changes, read in this order:
 Then branch by task:
 
 - source-owned dependencies, bridge posture, or reasoning handoff:
-  `docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md`,
+  `mechanics/boundary-bridge/parts/source-owned-export/docs/source-owned-export-dependencies.md`,
   `docs/BRIDGE_CONTRACTS.md`, and
-  `docs/REASONING_HANDOFF.md`
+  `mechanics/checkpoint/parts/reasoning-handoff/docs/reasoning-handoff.md`
 - recurrence, regrounding, or projection quarantine:
-  `docs/RECURRENCE_REGROUNDING.md`,
+  `mechanics/recurrence/parts/return-regrounding/docs/recurrence-regrounding.md`,
   `mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md`, and
   `mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md`
 - consumer or federation posture:
   `docs/CONSUMER_GUIDE.md`,
-  `docs/COUNTERPART_CONSUMER_CONTRACT.md`,
-  `docs/FEDERATION_KAG_READINESS.md`, and
-  `docs/FEDERATION_SPINE.md`
+  `mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-consumer-contract.md`,
+  `mechanics/boundary-bridge/parts/source-owned-export/docs/federation-kag-readiness.md`, and
+  `mechanics/boundary-bridge/parts/federation-spine/docs/federation-spine.md`
 - technique or ToS lift packs:
-  `docs/TECHNIQUE_LIFT_PACK.md` and the relevant `docs/TOS_*` pack docs
+  `mechanics/distillation/parts/technique-lift/docs/technique-lift-pack.md` and the relevant `docs/TOS_*` pack docs
 
 If you are editing inside `manifests/`, `generated/`, `schemas/`, or
 `examples/`, also follow the nested `AGENTS.md` in that directory.

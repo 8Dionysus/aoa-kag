@@ -10,8 +10,8 @@ topic folders or future parking space.
 
 | Part | Role | Generated output |
 | --- | --- | --- |
-| `promotion-candidates` | KAG-side candidate registry for Agon-derived pattern families. | `generated/agon_kag_promotion_candidate_registry.min.json` |
-| `sophian-threshold-packets` | Candidate-only packet registry for possible Sophian threshold review. | `generated/agon_sophian_kag_packet_registry.min.json` |
+| `promotion-candidates` | KAG-side candidate registry for Agon-derived pattern families. | `promotion-candidates/generated/agon_kag_promotion_candidate_registry.min.json` |
+| `sophian-threshold-packets` | Candidate-only packet registry for possible Sophian threshold review. | `sophian-threshold-packets/generated/agon_sophian_kag_packet_registry.min.json` |
 
 Generated outputs stay root published read models. Part-local configs, scripts,
 tests, and route docs own the operation that builds and validates them.

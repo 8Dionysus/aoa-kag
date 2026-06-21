@@ -39,119 +39,374 @@ TREE_OF_SOPHIA_ROOT = repo_root_from_env(
 )
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
-TECHNIQUE_LIFT_MANIFEST_PATH = REPO_ROOT / "manifests" / "technique_lift_pack.json"
-TOS_TEXT_CHUNK_MAP_MANIFEST_PATH = REPO_ROOT / "manifests" / "tos_text_chunk_map.json"
+TECHNIQUE_LIFT_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "distillation" / "parts" / "technique-lift"
+)
+TECHNIQUE_LIFT_MANIFEST_PATH = (
+    TECHNIQUE_LIFT_PART_ROOT / "manifests" / "technique_lift_pack.json"
+)
+TECHNIQUE_LIFT_MANIFEST_REF = (
+    "mechanics/distillation/parts/technique-lift/manifests/technique_lift_pack.json"
+)
+TECHNIQUE_LIFT_OUTPUT_REF = (
+    "mechanics/distillation/parts/technique-lift/generated/technique_lift_pack.json"
+)
+TECHNIQUE_LIFT_MIN_OUTPUT_REF = (
+    "mechanics/distillation/parts/technique-lift/generated/technique_lift_pack.min.json"
+)
+TOS_TEXT_CHUNK_MAP_PART_ROOT = (
+    REPO_ROOT
+    / "mechanics"
+    / "distillation"
+    / "parts"
+    / "tos-text-chunk-map"
+)
+TOS_TEXT_CHUNK_MAP_MANIFEST_PATH = (
+    TOS_TEXT_CHUNK_MAP_PART_ROOT / "manifests" / "tos_text_chunk_map.json"
+)
+TOS_TEXT_CHUNK_MAP_MANIFEST_REF = (
+    "mechanics/distillation/parts/tos-text-chunk-map/manifests/tos_text_chunk_map.json"
+)
+TOS_TEXT_CHUNK_MAP_OUTPUT_REF = (
+    "mechanics/distillation/parts/tos-text-chunk-map/generated/tos_text_chunk_map.json"
+)
+TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF = (
+    "mechanics/distillation/parts/tos-text-chunk-map/generated/tos_text_chunk_map.min.json"
+)
+TOS_RETRIEVAL_AXIS_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "boundary-bridge" / "parts" / "tos-retrieval-axis"
+)
 TOS_RETRIEVAL_AXIS_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "tos_retrieval_axis_pack.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "manifests" / "tos_retrieval_axis_pack.json"
+)
+TOS_RETRIEVAL_AXIS_MANIFEST_REF = (
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/manifests/"
+    "tos_retrieval_axis_pack.json"
+)
+TOS_RETRIEVAL_AXIS_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/"
+    "tos_retrieval_axis_pack.json"
+)
+TOS_RETRIEVAL_AXIS_MIN_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/"
+    "tos_retrieval_axis_pack.min.json"
+)
+TOS_ROUTE_LIFT_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "distillation" / "parts" / "tos-route-lift"
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "tos_zarathustra_route_pack.json"
+    TOS_ROUTE_LIFT_PART_ROOT / "manifests" / "tos_zarathustra_route_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_REF = (
+    "mechanics/distillation/parts/tos-route-lift/manifests/tos_zarathustra_route_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_REF = (
+    "mechanics/distillation/parts/tos-route-lift/generated/tos_zarathustra_route_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_REF = (
+    "mechanics/distillation/parts/tos-route-lift/generated/"
+    "tos_zarathustra_route_pack.min.json"
 )
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "tos_zarathustra_route_retrieval_pack.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT
+    / "manifests"
+    / "tos_zarathustra_route_retrieval_pack.json"
 )
-REASONING_HANDOFF_MANIFEST_PATH = REPO_ROOT / "manifests" / "reasoning_handoff_pack.json"
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_REF = (
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/manifests/"
+    "tos_zarathustra_route_retrieval_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/"
+    "tos_zarathustra_route_retrieval_pack.json"
+)
+TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/"
+    "tos_zarathustra_route_retrieval_pack.min.json"
+)
+REASONING_HANDOFF_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "checkpoint" / "parts" / "reasoning-handoff"
+)
+REASONING_HANDOFF_MANIFEST_PATH = (
+    REASONING_HANDOFF_PART_ROOT / "manifests" / "reasoning_handoff_pack.json"
+)
+REASONING_HANDOFF_MANIFEST_REF = (
+    "mechanics/checkpoint/parts/reasoning-handoff/manifests/"
+    "reasoning_handoff_pack.json"
+)
+REASONING_HANDOFF_OUTPUT_REF = (
+    "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.json"
+)
+REASONING_HANDOFF_MIN_OUTPUT_REF = (
+    "mechanics/checkpoint/parts/reasoning-handoff/generated/"
+    "reasoning_handoff_pack.min.json"
+)
 SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "source_owned_export_dependencies.json"
+    REPO_ROOT
+    / "mechanics"
+    / "boundary-bridge"
+    / "parts"
+    / "source-owned-export"
+    / "manifests"
+    / "source_owned_export_dependencies.json"
+)
+SOURCE_OWNED_EXPORT_PART_ROOT = SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH.parents[1]
+SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_REF = (
+    "mechanics/boundary-bridge/parts/source-owned-export/manifests/"
+    "source_owned_export_dependencies.json"
 )
 FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "federation_export_registry.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT / "manifests" / "federation_export_registry.json"
 )
-FEDERATION_SPINE_MANIFEST_PATH = REPO_ROOT / "manifests" / "federation_spine.json"
+FEDERATION_EXPORT_REGISTRY_MANIFEST_REF = (
+    "mechanics/boundary-bridge/parts/source-owned-export/manifests/"
+    "federation_export_registry.json"
+)
+FEDERATION_EXPORT_REGISTRY_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/source-owned-export/generated/"
+    "federation_export_registry.json"
+)
+FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/source-owned-export/generated/"
+    "federation_export_registry.min.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_PART_ROOT = (
+    REPO_ROOT
+    / "mechanics"
+    / "boundary-bridge"
+    / "parts"
+    / "cross-source-projection"
+)
 CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "cross_source_node_projection.json"
+    CROSS_SOURCE_NODE_PROJECTION_PART_ROOT
+    / "manifests"
+    / "cross_source_node_projection.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_MANIFEST_REF = (
+    "mechanics/boundary-bridge/parts/cross-source-projection/manifests/"
+    "cross_source_node_projection.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_DOC_REF = (
+    "mechanics/boundary-bridge/parts/cross-source-projection/docs/"
+    "cross-source-node-projection.md"
+)
+CROSS_SOURCE_NODE_PROJECTION_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/cross-source-projection/generated/"
+    "cross_source_node_projection.json"
+)
+CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/cross-source-projection/generated/"
+    "cross_source_node_projection.min.json"
+)
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "audit" / "parts" / "exposure-review"
+)
+COUNTERPART_EDGE_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "boundary-bridge" / "parts" / "counterpart-edge"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "counterpart_federation_exposure_review.json"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT
+    / "manifests"
+    / "counterpart_federation_exposure_review.json"
+)
+TINY_CONSUMER_BUNDLE_PART_ROOT = (
+    REPO_ROOT
+    / "mechanics"
+    / "boundary-bridge"
+    / "parts"
+    / "tiny-consumer-bundle"
 )
 TINY_CONSUMER_BUNDLE_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "tiny_consumer_bundle.json"
+    TINY_CONSUMER_BUNDLE_PART_ROOT / "manifests" / "tiny_consumer_bundle.json"
+)
+RETURN_REGROUNDING_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "recurrence" / "parts" / "return-regrounding"
 )
 RETURN_REGROUNDING_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "return_regrounding_pack.json"
+    RETURN_REGROUNDING_PART_ROOT / "manifests" / "return_regrounding_pack.json"
+)
+RETURN_REGROUNDING_MANIFEST_REF = (
+    "mechanics/recurrence/parts/return-regrounding/manifests/"
+    "return_regrounding_pack.json"
+)
+RETURN_REGROUNDING_OUTPUT_REF = (
+    "mechanics/recurrence/parts/return-regrounding/generated/"
+    "return_regrounding_pack.json"
+)
+RETURN_REGROUNDING_MIN_OUTPUT_REF = (
+    "mechanics/recurrence/parts/return-regrounding/generated/"
+    "return_regrounding_pack.min.json"
+)
+SURFACE_GROWTH_STOP_RULE_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "growth-cycle" / "parts" / "surface-growth-stop-rule"
+)
+PROOF_EXPECTATION_REFS_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "audit" / "parts" / "proof-expectation-refs"
 )
 KAG_MATURITY_GOVERNANCE_MANIFEST_PATH = (
-    REPO_ROOT / "manifests" / "kag_maturity_governance.json"
+    SURFACE_GROWTH_STOP_RULE_PART_ROOT
+    / "manifests"
+    / "kag_maturity_governance.json"
 )
-REASONING_HANDOFF_GUARDRAIL_PATH = REPO_ROOT / "docs" / "REASONING_HANDOFF.md"
+KAG_MATURITY_GOVERNANCE_MANIFEST_REF = (
+    "mechanics/growth-cycle/parts/surface-growth-stop-rule/manifests/"
+    "kag_maturity_governance.json"
+)
+KAG_MATURITY_GOVERNANCE_DOC_REF = (
+    "mechanics/growth-cycle/parts/surface-growth-stop-rule/docs/"
+    "kag-maturity-governance.md"
+)
+KAG_OWNER_WAIT_STATES_DOC_REF = (
+    "mechanics/growth-cycle/parts/surface-growth-stop-rule/docs/"
+    "kag-owner-wait-states.md"
+)
+KAG_PROOF_EXPECTATIONS_DOC_REF = (
+    "mechanics/audit/parts/proof-expectation-refs/docs/"
+    "kag-proof-expectations.md"
+)
+KAG_MATURITY_GOVERNANCE_OUTPUT_REF = (
+    "mechanics/growth-cycle/parts/surface-growth-stop-rule/generated/"
+    "kag_maturity_governance.json"
+)
+KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_REF = (
+    "mechanics/growth-cycle/parts/surface-growth-stop-rule/generated/"
+    "kag_maturity_governance.min.json"
+)
+FEDERATION_SPINE_PART_ROOT = (
+    REPO_ROOT / "mechanics" / "boundary-bridge" / "parts" / "federation-spine"
+)
+FEDERATION_SPINE_MANIFEST_PATH = (
+    FEDERATION_SPINE_PART_ROOT / "manifests" / "federation_spine.json"
+)
+FEDERATION_SPINE_MANIFEST_REF = (
+    "mechanics/boundary-bridge/parts/federation-spine/manifests/"
+    "federation_spine.json"
+)
+FEDERATION_SPINE_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/federation-spine/generated/"
+    "federation_spine.json"
+)
+FEDERATION_SPINE_MIN_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/federation-spine/generated/"
+    "federation_spine.min.json"
+)
+REASONING_HANDOFF_GUARDRAIL_PATH = (
+    REASONING_HANDOFF_PART_ROOT / "docs" / "reasoning-handoff.md"
+)
 REASONING_HANDOFF_GUARDRAIL_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
+    REASONING_HANDOFF_PART_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_PATH = (
-    REPO_ROOT / "docs" / "COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT
+    / "docs"
+    / "counterpart-federation-exposure-review.md"
 )
 COUNTERPART_CONSUMER_CONTRACT_DOC_PATH = (
-    REPO_ROOT / "docs" / "COUNTERPART_CONSUMER_CONTRACT.md"
+    COUNTERPART_EDGE_PART_ROOT / "docs" / "counterpart-consumer-contract.md"
 )
 COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
+    COUNTERPART_EDGE_PART_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
 )
 COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "counterpart_consumer_contract.example.json"
+    COUNTERPART_EDGE_PART_ROOT / "examples" / "counterpart_consumer_contract.example.json"
 )
 EVAL_CATALOG_PATH = AOA_EVALS_ROOT / "generated" / "eval_catalog.min.json"
 
 REGISTRY_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.json"
 REGISTRY_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.min.json"
-TECHNIQUE_LIFT_OUTPUT_PATH = REPO_ROOT / "generated" / "technique_lift_pack.json"
-TECHNIQUE_LIFT_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "technique_lift_pack.min.json"
-TOS_TEXT_CHUNK_MAP_OUTPUT_PATH = REPO_ROOT / "generated" / "tos_text_chunk_map.json"
-TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "tos_text_chunk_map.min.json"
+TECHNIQUE_LIFT_OUTPUT_PATH = (
+    TECHNIQUE_LIFT_PART_ROOT / "generated" / "technique_lift_pack.json"
 )
-TOS_RETRIEVAL_AXIS_OUTPUT_PATH = REPO_ROOT / "generated" / "tos_retrieval_axis_pack.json"
+TECHNIQUE_LIFT_MIN_OUTPUT_PATH = (
+    TECHNIQUE_LIFT_PART_ROOT / "generated" / "technique_lift_pack.min.json"
+)
+TOS_TEXT_CHUNK_MAP_OUTPUT_PATH = (
+    TOS_TEXT_CHUNK_MAP_PART_ROOT / "generated" / "tos_text_chunk_map.json"
+)
+TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH = (
+    TOS_TEXT_CHUNK_MAP_PART_ROOT / "generated" / "tos_text_chunk_map.min.json"
+)
+TOS_RETRIEVAL_AXIS_OUTPUT_PATH = (
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "generated" / "tos_retrieval_axis_pack.json"
+)
 TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "tos_retrieval_axis_pack.min.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "generated" / "tos_retrieval_axis_pack.min.json"
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "tos_zarathustra_route_pack.json"
+    TOS_ROUTE_LIFT_PART_ROOT / "generated" / "tos_zarathustra_route_pack.json"
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "tos_zarathustra_route_pack.min.json"
+    TOS_ROUTE_LIFT_PART_ROOT / "generated" / "tos_zarathustra_route_pack.min.json"
 )
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "tos_zarathustra_route_retrieval_pack.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT
+    / "generated"
+    / "tos_zarathustra_route_retrieval_pack.json"
 )
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "tos_zarathustra_route_retrieval_pack.min.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT
+    / "generated"
+    / "tos_zarathustra_route_retrieval_pack.min.json"
 )
-REASONING_HANDOFF_OUTPUT_PATH = REPO_ROOT / "generated" / "reasoning_handoff_pack.json"
+REASONING_HANDOFF_OUTPUT_PATH = (
+    REASONING_HANDOFF_PART_ROOT / "generated" / "reasoning_handoff_pack.json"
+)
 REASONING_HANDOFF_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "reasoning_handoff_pack.min.json"
+    REASONING_HANDOFF_PART_ROOT / "generated" / "reasoning_handoff_pack.min.json"
 )
 FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "federation_export_registry.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT / "generated" / "federation_export_registry.json"
 )
 FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "federation_export_registry.min.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT
+    / "generated"
+    / "federation_export_registry.min.json"
 )
-FEDERATION_SPINE_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.json"
-FEDERATION_SPINE_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "federation_spine.min.json"
+FEDERATION_SPINE_OUTPUT_PATH = FEDERATION_SPINE_PART_ROOT / "generated" / "federation_spine.json"
+FEDERATION_SPINE_MIN_OUTPUT_PATH = (
+    FEDERATION_SPINE_PART_ROOT / "generated" / "federation_spine.min.json"
+)
 CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "cross_source_node_projection.json"
+    CROSS_SOURCE_NODE_PROJECTION_PART_ROOT
+    / "generated"
+    / "cross_source_node_projection.json"
 )
 CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "cross_source_node_projection.min.json"
+    CROSS_SOURCE_NODE_PROJECTION_PART_ROOT
+    / "generated"
+    / "cross_source_node_projection.min.json"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "counterpart_federation_exposure_review.json"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT
+    / "generated"
+    / "counterpart_federation_exposure_review.json"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "counterpart_federation_exposure_review.min.json"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT
+    / "generated"
+    / "counterpart_federation_exposure_review.min.json"
 )
-TINY_CONSUMER_BUNDLE_OUTPUT_PATH = REPO_ROOT / "generated" / "tiny_consumer_bundle.json"
+TINY_CONSUMER_BUNDLE_OUTPUT_PATH = (
+    TINY_CONSUMER_BUNDLE_PART_ROOT / "generated" / "tiny_consumer_bundle.json"
+)
 TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "tiny_consumer_bundle.min.json"
+    TINY_CONSUMER_BUNDLE_PART_ROOT / "generated" / "tiny_consumer_bundle.min.json"
 )
-RETURN_REGROUNDING_OUTPUT_PATH = REPO_ROOT / "generated" / "return_regrounding_pack.json"
+RETURN_REGROUNDING_OUTPUT_PATH = (
+    RETURN_REGROUNDING_PART_ROOT / "generated" / "return_regrounding_pack.json"
+)
 RETURN_REGROUNDING_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "return_regrounding_pack.min.json"
+    RETURN_REGROUNDING_PART_ROOT / "generated" / "return_regrounding_pack.min.json"
 )
 KAG_MATURITY_GOVERNANCE_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "kag_maturity_governance.json"
+    SURFACE_GROWTH_STOP_RULE_PART_ROOT
+    / "generated"
+    / "kag_maturity_governance.json"
 )
 KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH = (
-    REPO_ROOT / "generated" / "kag_maturity_governance.min.json"
+    SURFACE_GROWTH_STOP_RULE_PART_ROOT
+    / "generated"
+    / "kag_maturity_governance.min.json"
 )
 
 QUERY_MODE_HEADING = re.compile(r"^###\s+`([^`]+)`\s*$")
@@ -161,8 +416,12 @@ FEDERATION_SPINE_ARTIFACT_IDENTITY = {
     "artifact_class": "derived_kag_readmodel",
     "surface_state": "public_generated_federation_spine",
     "owner_repo": "aoa-kag",
-    "authority_ref": "docs/FEDERATION_SPINE.md",
-    "producer": "scripts/generate_kag.py from manifests/federation_spine.json and source-owned exports",
+    "authority_ref": "mechanics/boundary-bridge/parts/federation-spine/docs/federation-spine.md",
+    "producer": (
+        "scripts/generate_kag.py from "
+        "mechanics/boundary-bridge/parts/federation-spine/manifests/"
+        "federation_spine.json and source-owned exports"
+    ),
     "consumer_expectation": (
         "consumers verify pack_version, source_inputs, bounded_output_contract, "
         "source-owned export refs, and validate_kag before using the spine as "
@@ -173,14 +432,47 @@ FEDERATION_SPINE_ARTIFACT_IDENTITY = {
         "payload body, or local host evidence"
     ),
     "content_identity": (
-        "generated/federation_spine.json and generated/federation_spine.min.json "
-        "rebuilt from the federation spine manifest and compared by release_check"
+        "mechanics/boundary-bridge/parts/federation-spine/generated/"
+        "federation_spine.json and "
+        "mechanics/boundary-bridge/parts/federation-spine/generated/"
+        "federation_spine.min.json rebuilt from the federation spine manifest "
+        "and compared by release_check"
     ),
     "abi_epoch": "aoa_kag_federation_spine_v1",
     "contract_version": "federation-spine.schema.json@aoa_kag_federation_spine_v1#artifact_identity",
     "trust_layer": ["abi_contract_signature", "w3c_prov_lineage"],
     "verification": ["python scripts/validate_kag.py", "python scripts/release_check.py"],
     "action": "ADD_CONSUMER_EXPECTATION",
+}
+KAG_REGISTRY_ARTIFACT_IDENTITY = {
+    "artifact_class": "derived_kag_registry_readmodel_bundle",
+    "surface_state": "public_generated_kag_registry",
+    "owner_repo": "aoa-kag",
+    "authority_ref": "docs/KAG_MODEL.md",
+    "producer": "scripts/generate_kag.py from manifests/kag_registry.json",
+    "consumer_expectation": (
+        "consumers verify artifact_identity, version, layer, schema conformance, "
+        "generated parity, validate_kag, and OS Abyss ABI/SBOM-lite/SLSA "
+        "sidecars before using the registry as a derived KAG surface catalog"
+    ),
+    "privacy_boundary": (
+        "public derived refs and compact summaries only; no private session, memo "
+        "payload body, source corpus body, secrets, live runtime state, or local "
+        "host evidence"
+    ),
+    "content_identity": (
+        "generated/kag_registry.json and generated/kag_registry.min.json rebuilt "
+        "from manifests/kag_registry.json and compared by validate_kag"
+    ),
+    "abi_epoch": "aoa_kag_registry_readmodel_v1",
+    "contract_version": "schemas/kag-registry.schema.json@aoa_kag_registry_readmodel_v1#artifact_identity",
+    "trust_layer": ["abi_contract_signature", "sbom", "slsa_in_toto"],
+    "verification": [
+        "python scripts/validate_kag.py",
+        "python scripts/ci_gate.py --mode generated",
+        "python scripts/validate_abyss_machine_kag_registry_bundle.py",
+    ],
+    "action": "ADD_RELEASE_PROVENANCE",
 }
 KNOWN_REPO_ROOTS = {
     KAG_REPO: REPO_ROOT,
@@ -351,7 +643,7 @@ TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT = (
 TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH = (
     "ToS/canon/relations/friedrich-nietzsche/thus-spoke-zarathustra/prologue-1/edges.csv"
 )
-TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF = "generated/tos_zarathustra_route_pack.min.json"
+TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF = TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_REF
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID = (
     f"AOA-K-0011::{TOS_ZARATHUSTRA_ROUTE_ID}"
 )
@@ -401,30 +693,62 @@ TOS_STANDALONE_ADJUNCT_SUBORDINATE_POSTURE = {
     "routing_ownership": "forbidden",
     "canon_authorship": "forbidden",
 }
-REASONING_HANDOFF_GUARDRAIL_REF = "docs/REASONING_HANDOFF.md"
+REASONING_HANDOFF_GUARDRAIL_REF = "mechanics/checkpoint/parts/reasoning-handoff/docs/reasoning-handoff.md"
 REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF = (
-    "schemas/reasoning-handoff-guardrail.schema.json"
+    "mechanics/checkpoint/parts/reasoning-handoff/schemas/reasoning-handoff-guardrail.schema.json"
 )
-COUNTERPART_EDGE_CONTRACT_DOC_REF = "docs/COUNTERPART_EDGE_CONTRACTS.md"
-COUNTERPART_EDGE_SCHEMA_REF = "schemas/counterpart-edge-surface.schema.json"
-COUNTERPART_EDGE_EXAMPLE_REF = "examples/counterpart_edge_view.example.json"
+COUNTERPART_EDGE_CONTRACT_DOC_REF = (
+    "mechanics/boundary-bridge/parts/counterpart-edge/docs/"
+    "counterpart-edge-contracts.md"
+)
+COUNTERPART_EDGE_SCHEMA_REF = (
+    "mechanics/boundary-bridge/parts/counterpart-edge/schemas/"
+    "counterpart-edge-surface.schema.json"
+)
+COUNTERPART_EDGE_EXAMPLE_REF = (
+    "mechanics/boundary-bridge/parts/counterpart-edge/examples/"
+    "counterpart_edge_view.example.json"
+)
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF = (
-    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md"
+    "mechanics/audit/parts/exposure-review/docs/"
+    "counterpart-federation-exposure-review.md"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_REF = (
-    "manifests/counterpart_federation_exposure_review.json"
+    "mechanics/audit/parts/exposure-review/manifests/"
+    "counterpart_federation_exposure_review.json"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF = (
-    "generated/counterpart_federation_exposure_review.min.json"
+    "mechanics/audit/parts/exposure-review/generated/"
+    "counterpart_federation_exposure_review.min.json"
 )
-COUNTERPART_CONSUMER_CONTRACT_DOC_REF = "docs/COUNTERPART_CONSUMER_CONTRACT.md"
+COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_REF = (
+    "mechanics/audit/parts/exposure-review/generated/"
+    "counterpart_federation_exposure_review.json"
+)
+COUNTERPART_CONSUMER_CONTRACT_DOC_REF = (
+    "mechanics/boundary-bridge/parts/counterpart-edge/docs/"
+    "counterpart-consumer-contract.md"
+)
 COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF = (
-    "schemas/counterpart-consumer-contract.schema.json"
+    "mechanics/boundary-bridge/parts/counterpart-edge/schemas/"
+    "counterpart-consumer-contract.schema.json"
 )
 COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF = (
-    "examples/counterpart_consumer_contract.example.json"
+    "mechanics/boundary-bridge/parts/counterpart-edge/examples/"
+    "counterpart_consumer_contract.example.json"
 )
-TINY_CONSUMER_BUNDLE_MANIFEST_REF = "manifests/tiny_consumer_bundle.json"
+TINY_CONSUMER_BUNDLE_MANIFEST_REF = (
+    "mechanics/boundary-bridge/parts/tiny-consumer-bundle/manifests/"
+    "tiny_consumer_bundle.json"
+)
+TINY_CONSUMER_BUNDLE_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/tiny-consumer-bundle/generated/"
+    "tiny_consumer_bundle.json"
+)
+TINY_CONSUMER_BUNDLE_MIN_OUTPUT_REF = (
+    "mechanics/boundary-bridge/parts/tiny-consumer-bundle/generated/"
+    "tiny_consumer_bundle.min.json"
+)
 RETURN_REGROUNDING_MODE_ORDER = [
     "source_export_reentry",
     "bridge_axis_reentry",
@@ -435,12 +759,12 @@ RETURN_REGROUNDING_MODE_ORDER = [
 RETURN_REGROUNDING_EXPECTED_INPUT_REFS = {
     "boundaries_doc": "docs/BOUNDARIES.md",
     "bridge_contract_doc": "docs/BRIDGE_CONTRACTS.md",
-    "reasoning_handoff_doc": "docs/REASONING_HANDOFF.md",
-    "source_owned_export_dependencies_manifest": "manifests/source_owned_export_dependencies.json",
-    "federation_spine_pack": "generated/federation_spine.min.json",
-    "retrieval_axis_pack": "generated/tos_retrieval_axis_pack.min.json",
-    "cross_source_projection_pack": "generated/cross_source_node_projection.min.json",
-    "reasoning_handoff_pack": "generated/reasoning_handoff_pack.min.json",
+    "reasoning_handoff_doc": "mechanics/checkpoint/parts/reasoning-handoff/docs/reasoning-handoff.md",
+    "source_owned_export_dependencies_manifest": SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_REF,
+    "federation_spine_pack": FEDERATION_SPINE_MIN_OUTPUT_REF,
+    "retrieval_axis_pack": "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json",
+    "cross_source_projection_pack": CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
+    "reasoning_handoff_pack": "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
     "aoa_techniques_kag_export": "aoa-techniques/generated/kag_export.min.json",
     "tos_kag_export": "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
     "tos_node_contract": "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md",
@@ -449,10 +773,10 @@ RETURN_REGROUNDING_EXPECTED_INPUT_REFS = {
     "memo_memory_readiness_boundary": "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
 }
 RETURN_REGROUNDING_ALLOWED_SAME_RUN_INPUTS = {
-    "generated/federation_spine.min.json",
-    "generated/tos_retrieval_axis_pack.min.json",
-    "generated/cross_source_node_projection.min.json",
-    "generated/reasoning_handoff_pack.min.json",
+    FEDERATION_SPINE_MIN_OUTPUT_REF,
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json",
+    CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
+    "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
 }
 RETURN_REGROUNDING_EXPECTED_REGISTRY_POSTURE = {
     "AOA-K-0006": "experimental",
@@ -479,16 +803,16 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ),
         "query_mode_hint": "local_search",
         "trigger_surface_refs": [
-            "generated/federation_spine.min.json",
-            "generated/reasoning_handoff_pack.min.json",
+            FEDERATION_SPINE_MIN_OUTPUT_REF,
+            "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
         ],
         "stronger_refs": [
             "aoa-techniques/generated/kag_export.min.json",
             "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
         ],
         "supporting_surface_refs": [
-            "manifests/source_owned_export_dependencies.json",
-            "docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md",
+            "mechanics/boundary-bridge/parts/source-owned-export/manifests/source_owned_export_dependencies.json",
+            "mechanics/boundary-bridge/parts/source-owned-export/docs/source-owned-export-dependencies.md",
         ],
         "preserved_fields": [
             "provenance_note",
@@ -524,8 +848,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ),
         "query_mode_hint": "global_search",
         "trigger_surface_refs": [
-            "generated/tos_retrieval_axis_pack.min.json",
-            "examples/tos_retrieval_axis_surface.example.json",
+            "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json",
+            "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json",
             "docs/BRIDGE_CONTRACTS.md",
         ],
         "stronger_refs": [
@@ -534,7 +858,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "Tree-of-Sophia/ToS/doctrine/PRACTICE_BRANCH.md",
         ],
         "supporting_surface_refs": [
-            "examples/aoa_tos_bridge_envelope.example.json",
+            "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/aoa_tos_bridge_envelope.example.json",
             "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json",
             "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json",
         ],
@@ -578,17 +902,17 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ),
         "query_mode_hint": "drift_search",
         "trigger_surface_refs": [
-            "generated/cross_source_node_projection.min.json",
-            "docs/CROSS_SOURCE_NODE_PROJECTION.md",
+            CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
+            CROSS_SOURCE_NODE_PROJECTION_DOC_REF,
         ],
         "stronger_refs": [
             "aoa-techniques/generated/kag_export.min.json",
             "Tree-of-Sophia/ToS/derived-exports/kag_export.min.json",
         ],
         "supporting_surface_refs": [
-            "generated/federation_spine.min.json",
-            "generated/tos_retrieval_axis_pack.min.json",
-            "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
+            FEDERATION_SPINE_MIN_OUTPUT_REF,
+            "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json",
+            COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF,
         ],
         "preserved_fields": [
             "primary_input",
@@ -628,9 +952,9 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         ),
         "query_mode_hint": "global_search",
         "trigger_surface_refs": [
-            "docs/REASONING_HANDOFF.md",
-            "examples/reasoning_handoff_guardrail.example.json",
-            "generated/reasoning_handoff_pack.min.json",
+            "mechanics/checkpoint/parts/reasoning-handoff/docs/reasoning-handoff.md",
+            "mechanics/checkpoint/parts/reasoning-handoff/examples/reasoning_handoff_guardrail.example.json",
+            "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
         ],
         "stronger_refs": [
             "aoa-playbooks/playbooks/operations/orchestration/long-horizon-model-tier-orchestra/PLAYBOOK.md",
@@ -640,7 +964,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md",
         ],
         "supporting_surface_refs": [
-            "schemas/reasoning-handoff-guardrail.schema.json",
+            "mechanics/checkpoint/parts/reasoning-handoff/schemas/reasoning-handoff-guardrail.schema.json",
             "docs/BOUNDARIES.md",
         ],
         "preserved_fields": [
@@ -686,7 +1010,7 @@ RETURN_REGROUNDING_MODE_DETAILS = {
         "query_mode_hint": "consumer_read_path",
         "trigger_surface_refs": [
             "docs/BRIDGE_CONTRACTS.md",
-            "docs/REASONING_HANDOFF.md",
+            "mechanics/checkpoint/parts/reasoning-handoff/docs/reasoning-handoff.md",
             "docs/BOUNDARIES.md",
         ],
         "stronger_refs": [
@@ -696,8 +1020,8 @@ RETURN_REGROUNDING_MODE_DETAILS = {
             "Tree-of-Sophia/ToS/public-compatibility/source_node.example.json",
         ],
         "supporting_surface_refs": [
-            "generated/reasoning_handoff_pack.min.json",
-            "examples/aoa_tos_bridge_envelope.example.json",
+            "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
+            "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/aoa_tos_bridge_envelope.example.json",
         ],
         "preserved_fields": [
             "source_refs",
@@ -1083,7 +1407,7 @@ def load_tos_tiny_entry_hop_surface(payload: dict[str, object], *, route_label: 
     if hop_surface != TOS_TINY_ENTRY_HOP_PATH:
         fail(
             f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD} must stay "
-            f"'{TOS_TINY_ENTRY_HOP_PATH}' in the current KAG wave"
+            f"'{TOS_TINY_ENTRY_HOP_PATH}' in the current KAG route scope"
         )
     return hop_surface
 
@@ -1097,7 +1421,7 @@ def load_tos_tiny_entry_route_payload() -> dict[str, object]:
     route_label = repo_ref(TOS_REPO, TOS_TINY_ENTRY_ROUTE_PATH)
     route_id = require_string(payload.get("route_id"), label=f"{route_label}.route_id")
     if route_id != TOS_TINY_ENTRY_ROUTE_ID:
-        fail(f"{route_label}.route_id must stay '{TOS_TINY_ENTRY_ROUTE_ID}' in the current KAG wave")
+        fail(f"{route_label}.route_id must stay '{TOS_TINY_ENTRY_ROUTE_ID}' in the current KAG route scope")
 
     root_surface = ensure_tos_relative_surface_path(
         payload.get("root_surface"),
@@ -1167,7 +1491,7 @@ def load_tos_source_node_payload() -> dict[str, object]:
         label=f"{source_label}.node_type",
     )
     if node_type != "source":
-        fail(f"{source_label}.node_type must stay 'source' in the current KAG wave")
+        fail(f"{source_label}.node_type must stay 'source' in the current KAG route scope")
 
     require_string(
         payload.get("source_anchor"),
@@ -1598,6 +1922,8 @@ def build_registry_payload() -> dict[str, object]:
     payload = read_json(REGISTRY_MANIFEST_PATH)
     if not isinstance(payload, dict):
         fail("registry manifest must be a JSON object")
+    if payload.get("artifact_identity") != KAG_REGISTRY_ARTIFACT_IDENTITY:
+        fail("registry manifest artifact_identity must match KAG_REGISTRY_ARTIFACT_IDENTITY")
     return payload
 
 
@@ -1843,7 +2169,7 @@ def build_technique_lift_pack_payload(
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
         "source_repo": manifest["source_repo"],
-        "source_manifest_ref": "manifests/technique_lift_pack.json",
+        "source_manifest_ref": TECHNIQUE_LIFT_MANIFEST_REF,
         "source_inputs": [
             {
                 "name": source_input["name"],
@@ -2140,7 +2466,7 @@ def build_tos_text_chunk_map_payload(
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
         "source_repo": manifest["source_repo"],
-        "source_manifest_ref": "manifests/tos_text_chunk_map.json",
+        "source_manifest_ref": TOS_TEXT_CHUNK_MAP_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "surface_bindings": surface_bindings,
         "surface_id": binding_surface["id"],
@@ -2874,7 +3200,7 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
     if counterpart_consumer_contract["consumer_surface_type"] != "reasoning_handoff_guardrail":
         fail(
             "counterpart consumer contract must stay bound to the reasoning handoff "
-            "guardrail in the current wave"
+            "guardrail in the current scope"
         )
 
     guardrail_text = read_text(guardrail_doc_path)
@@ -2932,7 +3258,7 @@ def build_reasoning_handoff_pack_payload() -> dict[str, object]:
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/reasoning_handoff_pack.json",
+        "source_manifest_ref": REASONING_HANDOFF_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "scenario_count": len(scenarios),
         "scenarios": scenarios,
@@ -3018,19 +3344,20 @@ def build_tos_retrieval_axis_pack_payload(
         )
 
     chunk_map_input = inputs_by_name["tos_text_chunk_map"]
-    if manifest_input_ref(chunk_map_input) != "generated/tos_text_chunk_map.min.json":
+    if manifest_input_ref(chunk_map_input) != TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF:
         fail(
-            "ToS retrieval axis manifest tos_text_chunk_map must point to generated/tos_text_chunk_map.min.json"
+            "ToS retrieval axis manifest tos_text_chunk_map must point to "
+            f"{TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF}"
         )
     if manifest_input_ref(inputs_by_name["bridge_contract_doc"]) != "docs/BRIDGE_CONTRACTS.md":
         fail("ToS retrieval axis manifest bridge_contract_doc must point to docs/BRIDGE_CONTRACTS.md")
-    if manifest_input_ref(inputs_by_name["bridge_surface_example"]) != "examples/tos_retrieval_axis_surface.example.json":
+    if manifest_input_ref(inputs_by_name["bridge_surface_example"]) != "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json":
         fail(
-            "ToS retrieval axis manifest bridge_surface_example must point to examples/tos_retrieval_axis_surface.example.json"
+            "ToS retrieval axis manifest bridge_surface_example must point to mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json"
         )
-    if manifest_input_ref(inputs_by_name["bridge_envelope_example"]) != "examples/aoa_tos_bridge_envelope.example.json":
+    if manifest_input_ref(inputs_by_name["bridge_envelope_example"]) != "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/aoa_tos_bridge_envelope.example.json":
         fail(
-            "ToS retrieval axis manifest bridge_envelope_example must point to examples/aoa_tos_bridge_envelope.example.json"
+            "ToS retrieval axis manifest bridge_envelope_example must point to mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/aoa_tos_bridge_envelope.example.json"
         )
     if manifest_input_ref(inputs_by_name["memo_chunk_face"]) != "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json":
         fail(
@@ -3161,7 +3488,7 @@ def build_tos_retrieval_axis_pack_payload(
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/tos_retrieval_axis_pack.json",
+        "source_manifest_ref": TOS_RETRIEVAL_AXIS_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "surface_bindings": surface_bindings,
         "surface_id": binding_surface["id"],
@@ -3352,7 +3679,7 @@ def build_tos_zarathustra_route_pack_payload(
     if surface_0010 is None:
         fail("registry manifest must declare AOA-K-0010 before building the route pack")
     if surface_0010.get("status") != "experimental":
-        fail("AOA-K-0010 must remain experimental in the current route-pack wave")
+        fail("AOA-K-0010 must remain experimental in the current route-pack scope")
 
     expected_inputs = {
         "tos_route_source_node": (
@@ -3543,7 +3870,7 @@ def build_tos_zarathustra_route_pack_payload(
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
         "source_repo": manifest["source_repo"],
-        "source_manifest_ref": "manifests/tos_zarathustra_route_pack.json",
+        "source_manifest_ref": TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "surface_bindings": surface_bindings,
         "surface_id": binding_surface["id"],
@@ -3635,7 +3962,7 @@ def build_tos_zarathustra_route_retrieval_pack_payload(
             "registry manifest must declare AOA-K-0011 before building the route retrieval pack"
         )
     if surface_0011.get("status") != "experimental":
-        fail("AOA-K-0011 must remain experimental in the current route retrieval wave")
+        fail("AOA-K-0011 must remain experimental in the current route retrieval scope")
 
     expected_inputs = {
         "tos_zarathustra_route_pack": (
@@ -3854,7 +4181,7 @@ def build_tos_zarathustra_route_retrieval_pack_payload(
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/tos_zarathustra_route_retrieval_pack.json",
+        "source_manifest_ref": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "surface_bindings": surface_bindings,
         "surface_id": binding_surface["id"],
@@ -3923,7 +4250,7 @@ def build_federation_spine_payload(
 
     required_manifest_inputs = {
         "kag_registry_manifest": "manifests/kag_registry.json",
-        "federation_export_registry_manifest": "manifests/federation_export_registry.json",
+        "federation_export_registry_manifest": FEDERATION_EXPORT_REGISTRY_MANIFEST_REF,
     }
     for input_name, expected_ref in required_manifest_inputs.items():
         source_input = inputs_by_name.get(input_name)
@@ -4088,7 +4415,7 @@ def build_federation_spine_payload(
             if repo_name != TOS_REPO:
                 fail(
                     f"{adjunct_location} is not allowed because adjunct surfaces "
-                    "are only enabled for Tree-of-Sophia in the current wave"
+                    "are only enabled for Tree-of-Sophia in the current scope"
                 )
             resolve_path = REPO_ROOT / adjunct_surface_ref
             if not resolve_path.exists():
@@ -4127,7 +4454,7 @@ def build_federation_spine_payload(
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/federation_spine.json",
+        "source_manifest_ref": FEDERATION_SPINE_MANIFEST_REF,
         "artifact_identity": FEDERATION_SPINE_ARTIFACT_IDENTITY,
         "source_inputs": emitted_source_inputs,
         "repo_count": len(repos),
@@ -4355,7 +4682,7 @@ def build_federation_export_registry_payload() -> dict[str, object]:
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/federation_export_registry.json",
+        "source_manifest_ref": FEDERATION_EXPORT_REGISTRY_MANIFEST_REF,
         "export_count": len(normalized_exports),
         "exports": normalized_exports,
     }
@@ -4416,8 +4743,8 @@ def build_cross_source_node_projection_payload(
         allow_same_run_generated_input = (
             repo == "aoa-kag"
             and path in {
-                "generated/tos_retrieval_axis_pack.min.json",
-                "generated/federation_spine.min.json",
+                "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json",
+                FEDERATION_SPINE_MIN_OUTPUT_REF,
             }
         )
         if not input_path.exists() and not allow_same_run_generated_input:
@@ -4456,13 +4783,14 @@ def build_cross_source_node_projection_payload(
         fail(
             "cross-source node projection manifest tos_kag_export must point to Tree-of-Sophia/ToS/derived-exports/kag_export.min.json"
         )
-    if manifest_input_ref(inputs_by_name["tos_retrieval_axis_pack"]) != "generated/tos_retrieval_axis_pack.min.json":
+    if manifest_input_ref(inputs_by_name["tos_retrieval_axis_pack"]) != "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json":
         fail(
-            "cross-source node projection manifest tos_retrieval_axis_pack must point to generated/tos_retrieval_axis_pack.min.json"
+            "cross-source node projection manifest tos_retrieval_axis_pack must point to mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json"
         )
-    if manifest_input_ref(inputs_by_name["federation_spine"]) != "generated/federation_spine.min.json":
+    if manifest_input_ref(inputs_by_name["federation_spine"]) != FEDERATION_SPINE_MIN_OUTPUT_REF:
         fail(
-            "cross-source node projection manifest federation_spine must point to generated/federation_spine.min.json"
+            "cross-source node projection manifest federation_spine must point to "
+            f"{FEDERATION_SPINE_MIN_OUTPUT_REF}"
         )
 
     seen_surface_ids: set[str] = set()
@@ -4718,7 +5046,7 @@ def build_cross_source_node_projection_payload(
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/cross_source_node_projection.json",
+        "source_manifest_ref": CROSS_SOURCE_NODE_PROJECTION_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "surface_bindings": surface_bindings,
         "surface_id": binding_surface["id"],
@@ -4909,7 +5237,7 @@ def build_return_regrounding_pack_payload(
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/return_regrounding_pack.json",
+        "source_manifest_ref": RETURN_REGROUNDING_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "mode_count": len(modes),
         "modes": modes,
@@ -5236,7 +5564,7 @@ def build_kag_maturity_governance_payload(
     regrounding_pack_ref = ensure_local_ref_exists(
         projection_recovery.get("regrounding_pack_ref"),
         label="KAG maturity governance projection_recovery.regrounding_pack_ref",
-        allow_missing_refs={"generated/return_regrounding_pack.min.json"},
+        allow_missing_refs={RETURN_REGROUNDING_MIN_OUTPUT_REF},
     )
     health_states = require_string_list(
         projection_recovery.get("health_states"),
@@ -5264,17 +5592,23 @@ def build_kag_maturity_governance_payload(
     full_output_path = ensure_local_ref_exists(
         output_paths.get("full"),
         label="KAG maturity governance output_paths.full",
-        allow_missing_refs={"generated/kag_maturity_governance.json"},
+        allow_missing_refs={KAG_MATURITY_GOVERNANCE_OUTPUT_REF},
     )
     min_output_path = ensure_local_ref_exists(
         output_paths.get("min"),
         label="KAG maturity governance output_paths.min",
-        allow_missing_refs={"generated/kag_maturity_governance.min.json"},
+        allow_missing_refs={KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_REF},
     )
-    if full_output_path != "generated/kag_maturity_governance.json":
-        fail("KAG maturity governance output_paths.full must stay generated/kag_maturity_governance.json")
-    if min_output_path != "generated/kag_maturity_governance.min.json":
-        fail("KAG maturity governance output_paths.min must stay generated/kag_maturity_governance.min.json")
+    if full_output_path != KAG_MATURITY_GOVERNANCE_OUTPUT_REF:
+        fail(
+            "KAG maturity governance output_paths.full must stay "
+            f"{KAG_MATURITY_GOVERNANCE_OUTPUT_REF}"
+        )
+    if min_output_path != KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_REF:
+        fail(
+            "KAG maturity governance output_paths.min must stay "
+            f"{KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_REF}"
+        )
 
     source_trace_required = bounded_output_contract.get("source_trace_required")
     if not isinstance(source_trace_required, bool):
@@ -5310,7 +5644,7 @@ def build_kag_maturity_governance_payload(
     return {
         "pack_version": manifest["manifest_version"],
         "pack_type": manifest["pack_type"],
-        "source_manifest_ref": "manifests/kag_maturity_governance.json",
+        "source_manifest_ref": KAG_MATURITY_GOVERNANCE_MANIFEST_REF,
         "source_inputs": emitted_source_inputs,
         "stability_tier_count": len(emitted_stability_tiers),
         "stability_tiers": emitted_stability_tiers,
@@ -5368,10 +5702,10 @@ def build_counterpart_federation_exposure_review_payload(
     inputs_by_name: dict[str, dict[str, str]] = {}
     emitted_source_inputs: list[dict[str, str]] = []
     allow_same_run_generated_inputs = {
-        "generated/reasoning_handoff_pack.min.json",
-        "generated/tiny_consumer_bundle.min.json",
-        "generated/federation_spine.min.json",
-        "generated/cross_source_node_projection.min.json",
+        "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
+        TINY_CONSUMER_BUNDLE_MIN_OUTPUT_REF,
+        FEDERATION_SPINE_MIN_OUTPUT_REF,
+        CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
     }
     for source_input in source_inputs:
         if not isinstance(source_input, dict):
@@ -5437,7 +5771,7 @@ def build_counterpart_federation_exposure_review_payload(
     if counterpart_consumer_contract["surface_status"] != "planned":
         fail(
             "counterpart federation exposure review requires AOA-K-0008 to remain "
-            "planned in the current wave"
+            "planned in the current scope"
         )
     if expected_reviewed_surface_ref != COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF:
         fail(
@@ -5524,7 +5858,7 @@ def build_counterpart_federation_exposure_review_payload(
         if surface_input not in inputs_by_name:
             fail(f"{location}.surface_input references unknown source input")
         if surface_name != surface_input:
-            fail(f"{location}.surface_name must match surface_input in the current wave")
+            fail(f"{location}.surface_name must match surface_input in the current review scope")
         seen_surface_names.add(surface_name)
 
         reviewed_surface: dict[str, object] = {
@@ -5627,10 +5961,10 @@ def build_tiny_consumer_bundle_payload(
     inputs_by_name: dict[str, dict[str, str]] = {}
     emitted_source_inputs: list[dict[str, str]] = []
     allow_same_run_generated_inputs = {
-        "generated/tos_text_chunk_map.min.json",
-        "generated/tos_retrieval_axis_pack.min.json",
-        "generated/federation_spine.min.json",
-        "generated/cross_source_node_projection.min.json",
+        TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF,
+        "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json",
+        FEDERATION_SPINE_MIN_OUTPUT_REF,
+        CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
     }
     for source_input in source_inputs:
         if not isinstance(source_input, dict):

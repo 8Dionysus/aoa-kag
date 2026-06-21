@@ -103,10 +103,10 @@ Tradeoffs:
 - `ROADMAP.md`
 - `CHARTER.md`
 - `docs/KAG_MODEL.md`
-- `docs/FEDERATION_KAG_READINESS.md`
-- `docs/FEDERATION_SPINE.md`
-- `docs/KAG_MATURITY_GOVERNANCE.md`
-- `docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md`
+- `mechanics/boundary-bridge/parts/source-owned-export/docs/federation-kag-readiness.md`
+- `mechanics/boundary-bridge/parts/federation-spine/docs/federation-spine.md`
+- `mechanics/growth-cycle/parts/surface-growth-stop-rule/docs/kag-maturity-governance.md`
+- `mechanics/boundary-bridge/parts/source-owned-export/docs/source-owned-export-dependencies.md`
 
 ## Validation
 

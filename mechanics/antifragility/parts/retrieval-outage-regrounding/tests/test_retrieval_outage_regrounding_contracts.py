@@ -31,7 +31,7 @@ class RetrievalOutageRegroundingContractTests(unittest.TestCase):
         doc = (PART_ROOT / "docs" / "retrieval-outage-regrounding.md").read_text(encoding="utf-8")
         for token in (
             "KAG owns projection-health truth",
-            "generated/return_regrounding_pack.min.json",
+            "mechanics/recurrence/parts/return-regrounding/generated/return_regrounding_pack.min.json",
             "`aoa-playbooks` owns the runtime-chaos lane and re-entry gate",
         ):
             self.assertIn(token, doc)

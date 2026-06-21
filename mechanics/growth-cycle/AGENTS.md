@@ -22,13 +22,16 @@ changed.
 - Growth-cycle posture does not authorize new KAG surfaces by itself.
 - Owner wait states require stronger owner evidence.
 - `aoa-evals` owns proof strength.
-- No part directory is active until a part-local growth contract and validator exist.
+- Active part directories must stay listed in `mechanics/topology.json` and keep
+  a part-local growth contract, validator, and focused tests.
 
 ## Validation
 
 Run `python scripts/validate_mechanics_skeleton.py`.
 If maturity governance moves, run generated parity, focused tests, and release
 checks.
+For the active stop-rule part, run
+`python mechanics/growth-cycle/parts/surface-growth-stop-rule/scripts/validate_surface_growth_stop_rule.py`.
 
 ## Closeout
 

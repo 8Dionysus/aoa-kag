@@ -114,7 +114,7 @@
           "path": "tests/test_tos_tiny_entry_hop_compat.py",
           "family": "generated/read-model",
           "protects": "Tree of Sophia tiny-entry compatibility in KAG generated surfaces.",
-          "owner_surface": "docs/TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK.md",
+          "owner_surface": "mechanics/boundary-bridge/parts/tos-retrieval-axis/docs/tos-zarathustra-route-retrieval-pack.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_tos_tiny_entry_hop_compat.py",
           "failure_route": "Fix ToS tiny-entry source refs, manifests, or generated KAG output before changing compatibility claims."
@@ -140,11 +140,20 @@
         {
           "path": "tests/test_validate_kag.py",
           "family": "generated/read-model",
-          "protects": "Transitional validate_kag monolith behavior across source, schema, example, and generated parity contracts.",
+          "protects": "Transitional validate_kag compatibility behavior for repo-wide generated/read-model validation and remaining repo-wide example contracts; mechanics-focused assertions live in part tests.",
           "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
           "runtime_cost": "medium",
           "focused_target": "tests/test_validate_kag.py",
-          "failure_route": "Fix validate_kag behavior or its owner docs before splitting validator ownership."
+          "failure_route": "Fix validate_kag compatibility behavior, repo-wide examples, or the affected part tests before changing validator ownership."
+        },
+        {
+          "path": "tests/test_validate_abyss_machine_kag_registry_bundle.py",
+          "family": "release/artifact-bundle",
+          "protects": "Portable fallback behavior for the KAG registry artifact bundle validator when abyss_machine is unavailable in CI.",
+          "owner_surface": "scripts/validate_abyss_machine_kag_registry_bundle.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_validate_abyss_machine_kag_registry_bundle.py",
+          "failure_route": "Fix the artifact bundle validator, portable fallback contract, or release bundle docs before changing release artifact checks."
         },
         {
           "path": "tests/test_validation_command_authority.py",
@@ -343,6 +352,294 @@
           "runtime_cost": "fast",
           "focused_target": "mechanics/experience/parts/office-service-patterns/tests/test_office_service_pattern_contracts.py",
           "failure_route": "Fix the office-service-patterns part contract, schema/example packets, or validation route before changing office/service consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/questbook/parts/quest-store/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/questbook/parts/quest-store/tests/test_quest_store.py",
+          "family": "mechanics/part-contract",
+          "protects": "Questbook quest source shape, public index posture, schema-backed records, and catalog/dispatch example alignment.",
+          "owner_surface": "mechanics/questbook/parts/quest-store/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/questbook/parts/quest-store/tests/test_quest_store.py",
+          "failure_route": "Fix the quest-store part contract, source records, schemas, examples, or validation route before changing questbook consumers."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/boundary-bridge/parts/source-owned-export/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/boundary-bridge/parts/source-owned-export/tests/test_source_owned_export.py",
+          "family": "mechanics/part-contract",
+          "protects": "Boundary-bridge source-owned export dependency posture, memo donor registry-only activation, owner-primary ingress, and memo read-only consumer stop-line.",
+          "owner_surface": "mechanics/boundary-bridge/parts/source-owned-export/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/boundary-bridge/parts/source-owned-export/tests/test_source_owned_export.py",
+          "failure_route": "Fix the source-owned-export part contract, dependency manifest, federation export registry manifest, memo donor export, or validation route before changing donor ingress posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/audit/parts/proof-expectation-refs/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/audit/parts/proof-expectation-refs/tests/test_proof_expectation_refs.py",
+          "family": "mechanics/part-contract",
+          "protects": "Audit proof expectation refs, aoa-evals proof-owner boundary, and no-verdict KAG maturity posture.",
+          "owner_surface": "mechanics/audit/parts/proof-expectation-refs/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/audit/parts/proof-expectation-refs/tests/test_proof_expectation_refs.py",
+          "failure_route": "Fix the proof-expectation-refs part contract, proof expectation docs, maturity manifest, generated pack, or validation route before changing proof-ref posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/audit/parts/exposure-review/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/audit/parts/exposure-review/tests/test_exposure_review.py",
+          "family": "mechanics/part-contract",
+          "protects": "Audit counterpart federation exposure review, planned-only AOA-K-0008 posture, tiny bundle review refs, and counterpart leak stop-lines.",
+          "owner_surface": "mechanics/audit/parts/exposure-review/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/audit/parts/exposure-review/tests/test_exposure_review.py",
+          "failure_route": "Fix the exposure-review part contract, counterpart docs, manifest, generated review pack, tiny bundle refs, or validation route before changing counterpart exposure posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/boundary-bridge/parts/counterpart-edge/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/boundary-bridge/parts/counterpart-edge/tests/test_counterpart_edge.py",
+          "family": "mechanics/part-contract",
+          "protects": "Boundary-bridge counterpart edge contracts, planned-only AOA-K-0008 posture, part-local schema/example refs, and consumer contract guardrails.",
+          "owner_surface": "mechanics/boundary-bridge/parts/counterpart-edge/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/boundary-bridge/parts/counterpart-edge/tests/test_counterpart_edge.py",
+          "failure_route": "Fix the counterpart-edge part contract, docs, schemas, examples, or validation route before changing counterpart consumer refs."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/boundary-bridge/parts/tos-retrieval-axis/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/boundary-bridge/parts/tos-retrieval-axis/tests/test_tos_retrieval_axis.py",
+          "family": "mechanics/part-contract",
+          "protects": "Boundary-bridge ToS retrieval axis, source-first reentry, standalone adjunct limits, and AOA-K-0011 handle parity.",
+          "owner_surface": "mechanics/boundary-bridge/parts/tos-retrieval-axis/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/boundary-bridge/parts/tos-retrieval-axis/tests/test_tos_retrieval_axis.py",
+          "failure_route": "Fix the tos-retrieval-axis part contract, manifests, generated retrieval packs, route pack parity, or validation route before changing retrieval bridge posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/boundary-bridge/parts/cross-source-projection/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/boundary-bridge/parts/cross-source-projection/tests/test_cross_source_projection.py",
+          "family": "mechanics/part-contract",
+          "protects": "Boundary-bridge cross-source projection pairing, primary/supporting source split, and counterpart exclusion.",
+          "owner_surface": "mechanics/boundary-bridge/parts/cross-source-projection/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/boundary-bridge/parts/cross-source-projection/tests/test_cross_source_projection.py",
+          "failure_route": "Fix the cross-source-projection part contract, projection manifest, generated output, source-owned dependencies, or validation route before changing one-hop projection posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/boundary-bridge/parts/federation-spine/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/boundary-bridge/parts/federation-spine/tests/test_federation_spine.py",
+          "family": "mechanics/part-contract",
+          "protects": "Boundary-bridge federation spine artifact identity, source-owned export donor set, ToS adjunct budget, and counterpart exclusion.",
+          "owner_surface": "mechanics/boundary-bridge/parts/federation-spine/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/boundary-bridge/parts/federation-spine/tests/test_federation_spine.py",
+          "failure_route": "Fix the federation-spine part contract, source-owned export registry, spine manifest, generated pack, or validation route before changing federation spine posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/boundary-bridge/parts/tiny-consumer-bundle/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/boundary-bridge/parts/tiny-consumer-bundle/tests/test_tiny_consumer_bundle.py",
+          "family": "mechanics/part-generated-read-model",
+          "protects": "Boundary-bridge tiny consumer bundle manifest, schema/example parity, part-local generated outputs, and deferred counterpart stop-line.",
+          "owner_surface": "mechanics/boundary-bridge/parts/tiny-consumer-bundle/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/boundary-bridge/parts/tiny-consumer-bundle/tests/test_tiny_consumer_bundle.py",
+          "failure_route": "Fix the tiny-consumer-bundle part contract, manifest, schemas, example, generated outputs, or validation route before changing the consumer bundle."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/distillation/parts/technique-lift/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/distillation/parts/technique-lift/tests/test_technique_lift.py",
+          "family": "mechanics/part-contract",
+          "protects": "Distillation technique lift pack, AOA-K-0001 through AOA-K-0004 source ownership, and generated output parity.",
+          "owner_surface": "mechanics/distillation/parts/technique-lift/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/distillation/parts/technique-lift/tests/test_technique_lift.py",
+          "failure_route": "Fix the technique-lift part contract, aoa-techniques source refs, manifest, generated pack, or validation route before changing technique lift posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/distillation/parts/tos-text-chunk-map/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/distillation/parts/tos-text-chunk-map/tests/test_tos_text_chunk_map.py",
+          "family": "mechanics/part-contract",
+          "protects": "Distillation ToS text chunk map, source-first refs, counterpart-projection stop-line, and generated output parity.",
+          "owner_surface": "mechanics/distillation/parts/tos-text-chunk-map/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/distillation/parts/tos-text-chunk-map/tests/test_tos_text_chunk_map.py",
+          "failure_route": "Fix the tos-text-chunk-map part contract, ToS source refs, manifest, generated pack, example, or validation route before changing chunk-map posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/distillation/parts/tos-route-lift/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/distillation/parts/tos-route-lift/tests/test_tos_route_lift.py",
+          "family": "mechanics/part-contract",
+          "protects": "Distillation ToS route pack family order, canonical authority refs, edge endpoint integrity, and generated output parity.",
+          "owner_surface": "mechanics/distillation/parts/tos-route-lift/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/distillation/parts/tos-route-lift/tests/test_tos_route_lift.py",
+          "failure_route": "Fix the tos-route-lift part contract, ToS source refs, route manifest, generated route pack, example, or validation route before changing route lift posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/release-support/parts/release-lane/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/release-support/parts/release-lane/tests/test_release_lane.py",
+          "family": "mechanics/part-contract",
+          "protects": "Release-support release lane delegation, command authority storage, public release entrypoint, and source-fast stop-line.",
+          "owner_surface": "mechanics/release-support/parts/release-lane/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/release-support/parts/release-lane/tests/test_release_lane.py",
+          "failure_route": "Fix the release-lane part contract, validation lane manifest, release entrypoint, or command-authority docs before changing release support posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/checkpoint/parts/reasoning-handoff/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/checkpoint/parts/reasoning-handoff/tests/test_reasoning_handoff.py",
+          "family": "mechanics/part-contract",
+          "protects": "Checkpoint reasoning handoff guardrail refs, generated handoff pack contract, counterpart contract refs, missing external owner roots, and owner-state stop-lines.",
+          "owner_surface": "mechanics/checkpoint/parts/reasoning-handoff/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/checkpoint/parts/reasoning-handoff/tests/test_reasoning_handoff.py",
+          "failure_route": "Fix the reasoning-handoff part contract, handoff docs, manifest, generated pack, example guardrail, or validation route before changing handoff posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/growth-cycle/parts/surface-growth-stop-rule/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/growth-cycle/parts/surface-growth-stop-rule/tests/test_surface_growth_stop_rule.py",
+          "family": "mechanics/part-contract",
+          "protects": "Growth-cycle maturity governance stop-rule, owner wait-state order, blocked surface posture, bounded output contract, and example centering.",
+          "owner_surface": "mechanics/growth-cycle/parts/surface-growth-stop-rule/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/growth-cycle/parts/surface-growth-stop-rule/tests/test_surface_growth_stop_rule.py",
+          "failure_route": "Fix the surface-growth stop-rule part contract, maturity docs, manifest, generated pack, example payload, or validation route before changing growth-cycle posture."
+        }
+      ]
+    },
+    {
+      "home": "mechanics/recurrence/parts/return-regrounding/tests",
+      "home_scope": "mechanics-part",
+      "coverage_authority": "scripts/run_tests.py",
+      "lane": "mechanics-part-tests",
+      "mode": "blocking",
+      "files": [
+        {
+          "path": "mechanics/recurrence/parts/return-regrounding/tests/test_return_regrounding.py",
+          "family": "mechanics/part-contract",
+          "protects": "Recurrence return-regrounding mode order, stronger-ref stop-lines, memo readiness ownership, bounded output contract, and source-first return posture.",
+          "owner_surface": "mechanics/recurrence/parts/return-regrounding/CONTRACT.md",
+          "runtime_cost": "fast",
+          "focused_target": "mechanics/recurrence/parts/return-regrounding/tests/test_return_regrounding.py",
+          "failure_route": "Fix the return-regrounding part contract, regrounding docs, manifest, generated pack, example payload, or validation route before changing return posture."
         }
       ]
     },

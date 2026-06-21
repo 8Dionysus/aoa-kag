@@ -4,7 +4,8 @@ This package maps the common AoA Growth Cycle mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active part route:
+`parts/surface-growth-stop-rule/`.
 
 ### Trigger
 
@@ -39,5 +40,6 @@ surface creation, or hidden scheduler authority.
 
 ### Next route
 
-Start with `PARTS.md`. Create a part only when one growth route needs its own
-KAG-local contract beyond current maturity governance.
+Start with `PARTS.md`. Use `parts/surface-growth-stop-rule/` for the current
+maturity stop-rule route. Create another part only when a distinct growth route
+needs its own KAG-local contract beyond current maturity governance.

@@ -66,9 +66,9 @@ Tradeoffs:
 
 - `scripts/kag_generation.py`
 - `scripts/validate_kag.py`
-- `generated/reasoning_handoff_pack.min.json`
-- `generated/return_regrounding_pack.min.json`
-- `generated/kag_maturity_governance.min.json`
+- `mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json`
+- `mechanics/recurrence/parts/return-regrounding/generated/return_regrounding_pack.min.json`
+- `mechanics/growth-cycle/parts/surface-growth-stop-rule/generated/kag_maturity_governance.min.json`
 - `aoa-evals/generated/eval_catalog.min.json`
 
 ## Validation

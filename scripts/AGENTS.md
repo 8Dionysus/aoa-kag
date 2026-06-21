@@ -21,4 +21,5 @@ Use lane entrypoints instead of copying release sequences:
 ```bash
 python scripts/ci_gate.py --mode source-fast
 python scripts/ci_gate.py --mode generated
+python scripts/validate_abyss_machine_kag_registry_bundle.py
 ```

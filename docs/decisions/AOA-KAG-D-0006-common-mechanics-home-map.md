@@ -34,10 +34,19 @@ These packages are local route cards. They do not import center doctrine, move
 artifacts by symmetry, or claim proof, memory, routing, runtime, skill,
 technique, playbook, role, or Tree of Sophia authority.
 
-No `mechanics/<package>/parts/<part>/` directories are active yet. Package
-`PARTS.md` files may name candidate part pressure, but a real part appears only
-when it has a stable payload class, owner split, stop-lines, local contract,
-and validation.
+At the original common-home decision point, package `PARTS.md` files named
+candidate part pressure before active part directories existed. That was a
+stop-line, not a permanent status claim. A real part appears only when it has a
+stable payload class, owner split, stop-lines, local contract, and validation.
+The current active part set is owned by `mechanics/topology.json` and the
+package `PARTS.md` files.
+
+Subsequent mechanics refactor work promoted real payload families into
+part-local homes only after they had owner splits, contracts, validation notes,
+and focused tests. Root docs, manifests, schemas, examples, and generated
+read-models remain in their canonical root homes when they are public source or
+projection surfaces; the operation contract that governs them routes through
+the owning mechanics part.
 
 No KAG-only mechanics package is active yet. The local `/kag` subtree
 source-home and protocol pressure routes through AOA-KAG-D-0004 and the `kag/`
@@ -100,8 +109,15 @@ Tradeoffs:
 - `mechanics/README.md`
 - `mechanics/AGENTS.md`
 - `mechanics/topology.json`
+- `mechanics/*/PARTS.md`
+- `mechanics/*/parts/*/CONTRACT.md`
+- `mechanics/*/parts/*/VALIDATION.md`
 - `scripts/validate_mechanics_skeleton.py`
 - `tests/test_mechanics_skeleton.py`
+- `scripts/run_tests.py`
+- `docs/testing/test_inventory.json`
+- `docs/validation/script_inventory.json`
+- `docs/validation/VALIDATOR_TOPOLOGY.md`
 - `DESIGN.md`
 - `DESIGN.AGENTS.md`
 - `docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`
@@ -119,6 +135,8 @@ Run:
 ```bash
 python scripts/validate_mechanics_skeleton.py
 python -m unittest tests.test_mechanics_skeleton
+python scripts/run_tests.py
+python scripts/ci_gate.py --mode source-fast
 python scripts/generate_decision_indexes.py
 python scripts/generate_decision_indexes.py --check
 python scripts/validate_decision_records.py

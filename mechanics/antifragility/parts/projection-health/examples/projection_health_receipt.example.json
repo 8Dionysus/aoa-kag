@@ -7,7 +7,7 @@
   "projection_id": "reasoning-handoff-pack:agents-playbooks-bridge",
   "bounded_scope": {
     "kind": "projection",
-    "value": "generated/reasoning_handoff_pack.min.json",
+    "value": "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
     "notes": "Derived bridge between agent handoff posture and recurring playbook routes."
   },
   "donor_roots": [
@@ -23,8 +23,8 @@
     "python scripts/validate_nested_agents.py#2026-04-07T15:39:10Z"
   ],
   "affected_generated_surfaces": [
-    "generated/reasoning_handoff_pack.min.json",
-    "generated/federation_spine.min.json"
+    "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
+    "mechanics/boundary-bridge/parts/federation-spine/generated/federation_spine.min.json"
   ],
   "evidence_refs": [
     "aoa-agents/mechanics/antifragility/parts/stress-posture/examples/stress-handoff-envelope.example.json",

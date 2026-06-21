@@ -8,5 +8,6 @@ python mechanics/agon/parts/promotion-candidates/scripts/validate_promotion_cand
 python -m unittest discover -s mechanics/agon/parts/promotion-candidates/tests -p 'test_*.py'
 ```
 
-The builder may write only `generated/agon_kag_promotion_candidate_registry.min.json`
-when run without `--check`.
+The builder may write only this part's
+`generated/agon_kag_promotion_candidate_registry.min.json` when run without
+`--check`.

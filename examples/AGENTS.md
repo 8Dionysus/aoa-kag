@@ -1,13 +1,17 @@
 # AGENTS.md Guidance for `examples/`
 
 ## Purpose
-`examples/` holds public-safe illustrative payloads that show how KAG schemas are expected to look. These files help readers and validators, but they are not live generated state and they are not hidden corpus extracts.
+`examples/` holds root-publication illustrative payloads when root `schemas/`
+need a public-safe example. In the current topology, mechanic-owned examples
+live under `mechanics/<package>/parts/<part>/examples/` with their owning part.
 
 ## Editing posture
 - Keep every example illustrative, sanitized, and easy to review.
-- Keep each example aligned to its corresponding schema in `schemas/`.
+- Keep each example aligned to its corresponding root or part-local schema.
 - Prefer bounded, minimal examples that surface provenance and contract posture without pretending to be exhaustive.
 - No secrets, private corpora, hidden environment assumptions, or private infra details.
+- Do not add part-owned examples to root `examples/` unless a
+  root-publication or compatibility contract explicitly owns that proxy.
 
 ## Review rules
 - Update examples when a paired schema or manifest contract changes.

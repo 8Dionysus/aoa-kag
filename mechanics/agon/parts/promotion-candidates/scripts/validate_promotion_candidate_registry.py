@@ -10,11 +10,16 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 ROOT = pathlib.Path(__file__).resolve().parents[5]
-SRC = ROOT / 'mechanics/agon/parts/promotion-candidates/config/promotion-candidate-registry.source.json'
-OUT = ROOT / 'generated/agon_kag_promotion_candidate_registry.min.json'
-ENTRY_SCHEMA = ROOT / 'schemas/agon-kag-candidate.schema.json'
-REGISTRY_SCHEMA = ROOT / 'schemas/agon-kag-candidate-registry.schema.json'
-BUILDER = ROOT / 'mechanics/agon/parts/promotion-candidates/scripts/build_promotion_candidate_registry.py'
+PART_ROOT = ROOT / 'mechanics/agon/parts/promotion-candidates'
+SRC = PART_ROOT / 'config/promotion-candidate-registry.source.json'
+OUT = PART_ROOT / 'generated/agon_kag_promotion_candidate_registry.min.json'
+ENTRY_SCHEMA = PART_ROOT / 'schemas/agon-kag-candidate.schema.json'
+REGISTRY_SCHEMA = PART_ROOT / 'schemas/agon-kag-candidate-registry.schema.json'
+EXAMPLES = (
+    PART_ROOT / 'examples/agon_kag_pattern_family_intake.example.json',
+    PART_ROOT / 'examples/agon_kag_tos_threshold_packet_candidate.example.json',
+)
+BUILDER = PART_ROOT / 'scripts/build_promotion_candidate_registry.py'
 ITEM_KEY = 'kag_candidates'
 REGISTRY_ID = 'agon.kag_promotion_candidates.registry.v1'
 REVIEW_STAGE = 'kag_promotion_path'
@@ -127,6 +132,9 @@ def validate() -> int:
     for schema_path in (ENTRY_SCHEMA, REGISTRY_SCHEMA):
         if not schema_path.exists():
             return fail(f'missing schema {schema_path}')
+    for example_path in EXAMPLES:
+        if not example_path.exists():
+            return fail(f'missing example {example_path}')
 
     source = load_json(SRC)
     err = validate_source_metadata(source)
@@ -152,6 +160,15 @@ def validate() -> int:
         if key in seen:
             return fail(f'duplicate {UNIQUE_KEY_FIELD} {key}')
         seen.add(key)
+
+    for example_path in EXAMPLES:
+        example = load_json(example_path)
+        err = schema_error(ENTRY_SCHEMA, example, f'example {example_path.relative_to(ROOT)}')
+        if err:
+            return fail(err)
+        err = validate_item(example)
+        if err:
+            return fail(f'example {example_path.relative_to(ROOT)} failed item validation: {err}')
 
     registry = load_json(OUT)
     try:

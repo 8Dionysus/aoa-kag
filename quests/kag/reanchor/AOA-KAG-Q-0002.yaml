@@ -1,0 +1,54 @@
+schema_version: work_quest_v1
+id: AOA-KAG-Q-0002
+title: Track source-owned export dependency gaps before widening federation exposure
+summary: Use quests to capture export obligations and missing dependency contracts
+  before they become silent cross-repo drift.
+repo: aoa-kag
+owner_surface: exports/federation-readiness
+theme_ref: ''
+milestone_ref: ''
+kind: guardrail
+state: reanchor
+band: frontier
+difficulty: d3_seam
+risk: r2_contract
+control_mode: human_codex_copilot
+delegate_tier: planner
+fallback_tier: verifier
+wrapper_class: hybrid
+write_scope: repo_local
+split_required: true
+complexity_basis:
+  scope: 2
+  ambiguity: 1
+  boundary: 2
+  verification: 2
+parent: null
+depends_on: []
+activation:
+  mode: immediate
+anchor_ref:
+  artifact: source-owned-export-dependencies
+  ref: mechanics/boundary-bridge/parts/source-owned-export/docs/source-owned-export-dependencies.md
+  note: exports stay derived and source-owned
+handoff_role: kag-maintainer
+evidence:
+  - dependency gaps receive stable quest IDs before exposure widens
+  - federation-facing export changes remain bounded
+  - source owners stay explicit
+harvest:
+  target: none
+opened_at: '2026-03-31'
+touched_at: '2026-03-31'
+tags:
+  - export
+  - dependency
+  - federation
+notes: >-
+  Stage 5 export-dependency review found a bounded readiness/live gap: aoa-memo
+  now publishes a readiness-only source-owned donor export, but the live
+  dependency manifest and federation spine still name a bounded two-repo pilot
+  with only aoa-techniques and Tree-of-Sophia. Reanchor this quest until a
+  source-owner-approved contract names whether aoa-memo remains readiness-only
+  or is promoted into the live source-owned dependency set.
+public_safe: true

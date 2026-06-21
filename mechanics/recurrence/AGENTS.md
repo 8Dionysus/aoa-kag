@@ -24,13 +24,16 @@ changed.
 - `aoa-memo` owns memory truth.
 - `aoa-evals` owns proof.
 - Source repositories own source meaning.
-- No part directory is active until a part-local return contract and validator exist.
+- Active part directories must stay listed in `mechanics/topology.json` and keep
+  a part-local return contract, validator, and focused tests.
 
 ## Validation
 
 Run `python scripts/validate_mechanics_skeleton.py`.
 If recurrence payloads move, run the relevant KAG generator, validator, focused
 tests, and release gate.
+For the active return-regrounding part, run
+`python mechanics/recurrence/parts/return-regrounding/scripts/validate_return_regrounding.py`.
 
 ## Closeout
 

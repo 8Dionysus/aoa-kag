@@ -30,8 +30,8 @@ posture, local `/kag` protocol posture, or root surface roles, also read
 `DESIGN.md`.
 
 For changes to `AGENTS.md` card shape, root-to-local precedence, route modes,
-validation posture, closeout expectations, or agent-facing guidance shape, also
-read `DESIGN.AGENTS.md`.
+validation posture, closeout expectations, Codex Spark lane placement, or
+agent-facing guidance shape, also read `DESIGN.AGENTS.md`.
 
 For changes to repeatable KAG operation topology or future mechanic packages,
 also read `mechanics/README.md` and `mechanics/AGENTS.md`.
@@ -168,6 +168,7 @@ competing root card.
 | `generated-surface` | generated payloads, compact outputs, or registry read models change | `generated/AGENTS.md` |
 | `schema-example` | payload contracts or public-safe examples change | `schemas/AGENTS.md` or `examples/AGENTS.md` |
 | `builder-validator` | generators, validators, decision-index helpers, or test guards change | `scripts/AGENTS.md` |
+| `agent-companion-lane` | `.agents/` companion lanes, exported skill guidance, or Spark fast-loop posture changes | `.agents/AGENTS.md` |
 | `proof-pressure` | KAG-local eval intake, cases, fixtures, suites, or reports change | `evals/AGENTS.md` |
 | `direction-change` | current direction, stop-rules, owner wait states, or future contour changes | `ROADMAP.md` |
 
@@ -241,8 +242,8 @@ Update only the ones that moved; otherwise say no update was needed.
   authority, federation posture, local `/kag` protocol posture, or layer
   relationships changed.
 - `DESIGN.AGENTS.md` when agent-facing form, card shape, route modes,
-  validation posture, closeout expectations, generated companions, or local
-  card placement changed.
+  validation posture, closeout expectations, generated companions, local card
+  placement, or Spark fast-loop posture changed.
 - `CHARTER.md`, `docs/BOUNDARIES.md`, or `docs/SOURCE_POLICY.md` when
   repository authority, owner boundaries, or source-first policy changed.
 - `README.md` or `docs/README.md` when first-reading or docs-map routes

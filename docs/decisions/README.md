@@ -80,7 +80,7 @@ as soon as a new decision lands.
 Use the generated indexes instead:
 
 - [by number](indexes/by-number.md) for the complete canonical ledger;
-- [by date](indexes/by-date.md) for recent landings;
+- [by date](indexes/by-date.md) for recent activations;
 - [by surface](indexes/by-surface.md), [by KAG surface](indexes/by-kag-surface.md),
   and [by source lane](indexes/by-source-lane.md) for route-pressure lookup;
 - [by guard](indexes/by-guard.md) for validation, owner-boundary,

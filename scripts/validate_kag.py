@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -12,7 +13,6 @@ from typing import Any, Sequence
 from jsonschema import Draft202012Validator
 import validate_mechanics_skeleton
 import validate_nested_agents
-import yaml
 
 from kag_generation import (
     AOA_AGENTS_ROOT,
@@ -21,38 +21,90 @@ from kag_generation import (
     AOA_PLAYBOOKS_ROOT,
     AOA_TECHNIQUES_ROOT,
     COMPATIBILITY_REF_ALIASES,
+    COUNTERPART_CONSUMER_CONTRACT_DOC_REF,
+    COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF,
+    COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF,
+    COUNTERPART_EDGE_CONTRACT_DOC_REF,
+    COUNTERPART_EDGE_EXAMPLE_REF,
+    COUNTERPART_EDGE_PART_ROOT,
+    COUNTERPART_EDGE_SCHEMA_REF,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF,
     COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_REF,
     COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF,
     COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_REF,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT,
     CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_MANIFEST_REF,
     CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
     CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
+    CROSS_SOURCE_NODE_PROJECTION_OUTPUT_REF,
+    CROSS_SOURCE_NODE_PROJECTION_PART_ROOT,
     FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH,
+    FEDERATION_EXPORT_REGISTRY_MANIFEST_REF,
     FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH,
+    FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_REF,
     FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH,
+    FEDERATION_EXPORT_REGISTRY_OUTPUT_REF,
     FEDERATION_SPINE_MANIFEST_PATH,
+    FEDERATION_SPINE_MANIFEST_REF,
     FEDERATION_SPINE_ARTIFACT_IDENTITY,
     FEDERATION_SPINE_MIN_OUTPUT_PATH,
+    FEDERATION_SPINE_MIN_OUTPUT_REF,
     FEDERATION_SPINE_OUTPUT_PATH,
+    FEDERATION_SPINE_OUTPUT_REF,
+    FEDERATION_SPINE_PART_ROOT,
+    KAG_REGISTRY_ARTIFACT_IDENTITY,
+    KAG_MATURITY_GOVERNANCE_DOC_REF,
     KAG_MATURITY_GOVERNANCE_MANIFEST_PATH,
+    KAG_MATURITY_GOVERNANCE_MANIFEST_REF,
     KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH,
+    KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_REF,
     KAG_MATURITY_GOVERNANCE_OUTPUT_PATH,
+    KAG_MATURITY_GOVERNANCE_OUTPUT_REF,
+    KAG_OWNER_WAIT_STATES_DOC_REF,
+    KAG_PROOF_EXPECTATIONS_DOC_REF,
+    SURFACE_GROWTH_STOP_RULE_PART_ROOT,
     REGISTRY_MANIFEST_PATH,
     REGISTRY_MIN_OUTPUT_PATH,
     REGISTRY_OUTPUT_PATH,
+    REASONING_HANDOFF_GUARDRAIL_REF,
+    REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF,
     REASONING_HANDOFF_MANIFEST_PATH,
+    REASONING_HANDOFF_MANIFEST_REF,
     REASONING_HANDOFF_MIN_OUTPUT_PATH,
+    REASONING_HANDOFF_MIN_OUTPUT_REF,
     REASONING_HANDOFF_OUTPUT_PATH,
+    REASONING_HANDOFF_OUTPUT_REF,
+    REASONING_HANDOFF_PART_ROOT,
     RETURN_REGROUNDING_MANIFEST_PATH,
+    RETURN_REGROUNDING_MANIFEST_REF,
     RETURN_REGROUNDING_MIN_OUTPUT_PATH,
+    RETURN_REGROUNDING_MIN_OUTPUT_REF,
     RETURN_REGROUNDING_OUTPUT_PATH,
+    RETURN_REGROUNDING_OUTPUT_REF,
+    RETURN_REGROUNDING_PART_ROOT,
     SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_PATH,
+    SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_REF,
+    SOURCE_OWNED_EXPORT_PART_ROOT,
     TECHNIQUE_LIFT_MANIFEST_PATH,
+    TECHNIQUE_LIFT_MANIFEST_REF,
     TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
+    TECHNIQUE_LIFT_MIN_OUTPUT_REF,
     TECHNIQUE_LIFT_OUTPUT_PATH,
+    TECHNIQUE_LIFT_OUTPUT_REF,
+    TECHNIQUE_LIFT_PART_ROOT,
     TOS_TEXT_CHUNK_MAP_MANIFEST_PATH,
+    TOS_TEXT_CHUNK_MAP_MANIFEST_REF,
     TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+    TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF,
     TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
+    TOS_TEXT_CHUNK_MAP_OUTPUT_REF,
+    TOS_TEXT_CHUNK_MAP_PART_ROOT,
+    TOS_ROUTE_LIFT_PART_ROOT,
     TOS_ZARATHUSTRA_ROUTE_ANALOGY_ROOT,
     TOS_ZARATHUSTRA_ROUTE_BECOMING_CONCEPT_PATH,
     TOS_ZARATHUSTRA_ROUTE_CAPSULE_PATH,
@@ -64,26 +116,40 @@ from kag_generation import (
     TOS_ZARATHUSTRA_ROUTE_NODE_TYPE_COUNTS,
     TOS_ZARATHUSTRA_ROUTE_OVERCOMING_CONCEPT_PATH,
     TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_PATH,
+    TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_REF,
     TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_REF,
     TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_REF,
     TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF,
     TOS_ZARATHUSTRA_ROUTE_PRINCIPLE_ROOT,
     TOS_ZARATHUSTRA_ROUTE_RELATION_PACK_PATH,
     TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
     TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_PATH,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_REF,
     TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_REF,
     TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH,
+    TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_REF,
     TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_SUMMARY,
     TOS_ZARATHUSTRA_ROUTE_SOURCE_NODE_PATH,
     TOS_ZARATHUSTRA_ROUTE_STATE_ROOT,
     TOS_ZARATHUSTRA_ROUTE_SUPPORT_ROOT,
     TOS_ZARATHUSTRA_ROUTE_SYNTHESIS_ROOT,
     TOS_RETRIEVAL_AXIS_MANIFEST_PATH,
+    TOS_RETRIEVAL_AXIS_MANIFEST_REF,
     TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+    TOS_RETRIEVAL_AXIS_MIN_OUTPUT_REF,
     TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+    TOS_RETRIEVAL_AXIS_OUTPUT_REF,
+    TOS_RETRIEVAL_AXIS_PART_ROOT,
     TINY_CONSUMER_BUNDLE_MANIFEST_PATH,
+    TINY_CONSUMER_BUNDLE_MANIFEST_REF,
     TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+    TINY_CONSUMER_BUNDLE_MIN_OUTPUT_REF,
     TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
+    TINY_CONSUMER_BUNDLE_OUTPUT_REF,
+    TINY_CONSUMER_BUNDLE_PART_ROOT,
     TOS_REPO,
     TOS_ROOT_README_PATH,
     TOS_TINY_ENTRY_AUTHORITY_PATH,
@@ -115,6 +181,15 @@ from kag_generation import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 KAG_REPO = "aoa-kag"
+QUEST_STORE_VALIDATOR_PATH = (
+    REPO_ROOT
+    / "mechanics"
+    / "questbook"
+    / "parts"
+    / "quest-store"
+    / "scripts"
+    / "validate_quest_store.py"
+)
 
 
 def repo_root_from_env(env_name: str, default: Path) -> Path:
@@ -129,142 +204,186 @@ TREE_OF_SOPHIA_ROOT = repo_root_from_env(
 )
 
 SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-registry.schema.json"
-BRIDGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"
-BRIDGE_EXAMPLE_PATH = REPO_ROOT / "examples" / "tos_retrieval_axis_surface.example.json"
-BRIDGE_ENVELOPE_SCHEMA_PATH = REPO_ROOT / "schemas" / "bridge-envelope.schema.json"
-BRIDGE_ENVELOPE_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "aoa_tos_bridge_envelope.example.json"
+BRIDGE_SCHEMA_PATH = (
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"
 )
-COUNTERPART_SCHEMA_PATH = REPO_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
-COUNTERPART_EXAMPLE_PATH = REPO_ROOT / "examples" / "counterpart_edge_view.example.json"
+BRIDGE_EXAMPLE_PATH = (
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "examples" / "tos_retrieval_axis_surface.example.json"
+)
+BRIDGE_ENVELOPE_SCHEMA_PATH = (
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "schemas" / "bridge-envelope.schema.json"
+)
+BRIDGE_ENVELOPE_EXAMPLE_PATH = (
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "examples" / "aoa_tos_bridge_envelope.example.json"
+)
+COUNTERPART_SCHEMA_PATH = COUNTERPART_EDGE_PART_ROOT / "schemas" / "counterpart-edge-surface.schema.json"
+COUNTERPART_EXAMPLE_PATH = COUNTERPART_EDGE_PART_ROOT / "examples" / "counterpart_edge_view.example.json"
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "counterpart-federation-exposure-review-manifest.schema.json"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT
+    / "schemas"
+    / "counterpart-federation-exposure-review-manifest.schema.json"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "counterpart-federation-exposure-review.schema.json"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT
+    / "schemas"
+    / "counterpart-federation-exposure-review.schema.json"
 )
 COUNTERPART_FEDERATION_EXPOSURE_REVIEW_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "counterpart_federation_exposure_review.example.json"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_PART_ROOT
+    / "examples"
+    / "counterpart_federation_exposure_review.example.json"
 )
 COUNTERPART_CONSUMER_CONTRACT_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
+    COUNTERPART_EDGE_PART_ROOT / "schemas" / "counterpart-consumer-contract.schema.json"
 )
 COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "counterpart_consumer_contract.example.json"
+    COUNTERPART_EDGE_PART_ROOT / "examples" / "counterpart_consumer_contract.example.json"
 )
 REASONING_HANDOFF_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
+    REASONING_HANDOFF_PART_ROOT / "schemas" / "reasoning-handoff-guardrail.schema.json"
 )
 REASONING_HANDOFF_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "reasoning_handoff_guardrail.example.json"
+    REASONING_HANDOFF_PART_ROOT / "examples" / "reasoning_handoff_guardrail.example.json"
 )
 TECHNIQUE_LIFT_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "technique-lift-pack-manifest.schema.json"
+    TECHNIQUE_LIFT_PART_ROOT / "schemas" / "technique-lift-pack-manifest.schema.json"
 )
-TECHNIQUE_LIFT_PACK_SCHEMA_PATH = REPO_ROOT / "schemas" / "technique-lift-pack.schema.json"
+TECHNIQUE_LIFT_PACK_SCHEMA_PATH = (
+    TECHNIQUE_LIFT_PART_ROOT / "schemas" / "technique-lift-pack.schema.json"
+)
 TOS_TEXT_CHUNK_MAP_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-text-chunk-map-manifest.schema.json"
+    TOS_TEXT_CHUNK_MAP_PART_ROOT / "schemas" / "tos-text-chunk-map-manifest.schema.json"
 )
 TOS_TEXT_CHUNK_MAP_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-text-chunk-map.schema.json"
+    TOS_TEXT_CHUNK_MAP_PART_ROOT / "schemas" / "tos-text-chunk-map.schema.json"
 )
 TOS_TEXT_CHUNK_MAP_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "tos_text_chunk_map.example.json"
+    TOS_TEXT_CHUNK_MAP_PART_ROOT / "examples" / "tos_text_chunk_map.example.json"
 )
 TOS_RETRIEVAL_AXIS_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-retrieval-axis-pack-manifest.schema.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "schemas" / "tos-retrieval-axis-pack-manifest.schema.json"
 )
 TOS_RETRIEVAL_AXIS_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-retrieval-axis-pack.schema.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "schemas" / "tos-retrieval-axis-pack.schema.json"
 )
 TOS_RETRIEVAL_AXIS_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "tos_retrieval_axis_pack.example.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT / "examples" / "tos_retrieval_axis_pack.example.json"
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-zarathustra-route-pack-manifest.schema.json"
+    TOS_ROUTE_LIFT_PART_ROOT / "schemas" / "tos-zarathustra-route-pack-manifest.schema.json"
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-zarathustra-route-pack.schema.json"
+    TOS_ROUTE_LIFT_PART_ROOT / "schemas" / "tos-zarathustra-route-pack.schema.json"
 )
 TOS_ZARATHUSTRA_ROUTE_PACK_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "tos_zarathustra_route_pack.example.json"
+    TOS_ROUTE_LIFT_PART_ROOT / "examples" / "tos_zarathustra_route_pack.example.json"
 )
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-zarathustra-route-retrieval-pack-manifest.schema.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT
+    / "schemas"
+    / "tos-zarathustra-route-retrieval-pack-manifest.schema.json"
 )
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tos-zarathustra-route-retrieval-pack.schema.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT
+    / "schemas"
+    / "tos-zarathustra-route-retrieval-pack.schema.json"
 )
 TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "tos_zarathustra_route_retrieval_pack.example.json"
+    TOS_RETRIEVAL_AXIS_PART_ROOT
+    / "examples"
+    / "tos_zarathustra_route_retrieval_pack.example.json"
 )
 TOS_TEXT_CHUNK_MAP_EXAMPLE_SEGMENT_ID = "seg.1.1.1.10"
 REASONING_HANDOFF_PACK_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "reasoning-handoff-pack-manifest.schema.json"
+    REASONING_HANDOFF_PART_ROOT
+    / "schemas"
+    / "reasoning-handoff-pack-manifest.schema.json"
 )
 REASONING_HANDOFF_PACK_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "reasoning-handoff-pack.schema.json"
+    REASONING_HANDOFF_PART_ROOT / "schemas" / "reasoning-handoff-pack.schema.json"
 )
 RETURN_REGROUNDING_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "return-regrounding-pack-manifest.schema.json"
+    RETURN_REGROUNDING_PART_ROOT
+    / "schemas"
+    / "return-regrounding-pack-manifest.schema.json"
 )
 RETURN_REGROUNDING_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "return-regrounding-pack.schema.json"
+    RETURN_REGROUNDING_PART_ROOT / "schemas" / "return-regrounding-pack.schema.json"
 )
 KAG_MATURITY_GOVERNANCE_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "kag-maturity-governance-manifest.schema.json"
+    SURFACE_GROWTH_STOP_RULE_PART_ROOT
+    / "schemas"
+    / "kag-maturity-governance-manifest.schema.json"
 )
 KAG_MATURITY_GOVERNANCE_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "kag-maturity-governance.schema.json"
+    SURFACE_GROWTH_STOP_RULE_PART_ROOT
+    / "schemas"
+    / "kag-maturity-governance.schema.json"
 )
 SOURCE_OWNED_EXPORT_DEPENDENCIES_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "source-owned-export-dependencies.schema.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT
+    / "schemas"
+    / "source-owned-export-dependencies.schema.json"
 )
 SOURCE_OWNED_EXPORT_DEPENDENCIES_DOC_PATH = (
-    REPO_ROOT / "docs" / "SOURCE_OWNED_EXPORT_DEPENDENCIES.md"
+    SOURCE_OWNED_EXPORT_PART_ROOT / "docs" / "source-owned-export-dependencies.md"
 )
 FEDERATION_EXPORT_REGISTRY_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "federation-export-registry-manifest.schema.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT
+    / "schemas"
+    / "federation-export-registry-manifest.schema.json"
 )
 FEDERATION_EXPORT_REGISTRY_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "federation-export-registry.schema.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT / "schemas" / "federation-export-registry.schema.json"
 )
 FEDERATION_EXPORT_REGISTRY_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "federation_export_registry.example.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT / "examples" / "federation_export_registry.example.json"
 )
 FEDERATION_KAG_EXPORT_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "federation-kag-export.schema.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT / "schemas" / "federation-kag-export.schema.json"
 )
 FEDERATION_KAG_EXPORT_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "federation_kag_export.example.json"
+    SOURCE_OWNED_EXPORT_PART_ROOT / "examples" / "federation_kag_export.example.json"
 )
 FEDERATION_SPINE_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "federation-spine-manifest.schema.json"
+    FEDERATION_SPINE_PART_ROOT / "schemas" / "federation-spine-manifest.schema.json"
 )
-FEDERATION_SPINE_SCHEMA_PATH = REPO_ROOT / "schemas" / "federation-spine.schema.json"
+FEDERATION_SPINE_SCHEMA_PATH = (
+    FEDERATION_SPINE_PART_ROOT / "schemas" / "federation-spine.schema.json"
+)
 CROSS_SOURCE_NODE_PROJECTION_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "cross-source-node-projection-manifest.schema.json"
+    CROSS_SOURCE_NODE_PROJECTION_PART_ROOT
+    / "schemas"
+    / "cross-source-node-projection-manifest.schema.json"
 )
 CROSS_SOURCE_NODE_PROJECTION_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "cross-source-node-projection.schema.json"
+    CROSS_SOURCE_NODE_PROJECTION_PART_ROOT
+    / "schemas"
+    / "cross-source-node-projection.schema.json"
 )
 CROSS_SOURCE_NODE_PROJECTION_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "cross_source_node_projection.example.json"
+    CROSS_SOURCE_NODE_PROJECTION_PART_ROOT
+    / "examples"
+    / "cross_source_node_projection.example.json"
 )
 TINY_CONSUMER_BUNDLE_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tiny-consumer-bundle-manifest.schema.json"
+    TINY_CONSUMER_BUNDLE_PART_ROOT
+    / "schemas"
+    / "tiny-consumer-bundle-manifest.schema.json"
 )
 TINY_CONSUMER_BUNDLE_SCHEMA_PATH = (
-    REPO_ROOT / "schemas" / "tiny-consumer-bundle.schema.json"
+    TINY_CONSUMER_BUNDLE_PART_ROOT / "schemas" / "tiny-consumer-bundle.schema.json"
 )
 TINY_CONSUMER_BUNDLE_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "tiny_consumer_bundle.example.json"
+    TINY_CONSUMER_BUNDLE_PART_ROOT / "examples" / "tiny_consumer_bundle.example.json"
 )
 RETURN_REGROUNDING_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "return_regrounding_pack.example.json"
+    RETURN_REGROUNDING_PART_ROOT / "examples" / "return_regrounding_pack.example.json"
 )
 KAG_MATURITY_GOVERNANCE_EXAMPLE_PATH = (
-    REPO_ROOT / "examples" / "kag_maturity_governance.example.json"
+    SURFACE_GROWTH_STOP_RULE_PART_ROOT
+    / "examples"
+    / "kag_maturity_governance.example.json"
 )
 ANTIFRAGILITY_PARTS_ROOT = REPO_ROOT / "mechanics" / "antifragility" / "parts"
 PROJECTION_HEALTH_PART_ROOT = ANTIFRAGILITY_PARTS_ROOT / "projection-health"
@@ -340,26 +459,26 @@ EXPECTED_AUTHORITATIVE_SOURCE_REFS = {
 }
 EXPECTED_DERIVED_SURFACE_REFS = {
     "docs/BRIDGE_CONTRACTS.md#retrieval-axis-contract",
-    "examples/tos_retrieval_axis_surface.example.json",
-    "docs/COUNTERPART_EDGE_CONTRACTS.md",
-    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
-    "examples/counterpart_edge_view.example.json",
-    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
-    "examples/counterpart_consumer_contract.example.json",
+    "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json",
+    COUNTERPART_EDGE_CONTRACT_DOC_REF,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF,
+    COUNTERPART_EDGE_EXAMPLE_REF,
+    COUNTERPART_CONSUMER_CONTRACT_DOC_REF,
+    COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF,
 }
 EXPECTED_COUNTERPART_CONSUMER_CONTRACT_REFS = {
-    "counterpart_contract_doc": "docs/COUNTERPART_EDGE_CONTRACTS.md",
-    "counterpart_contract_schema": "schemas/counterpart-edge-surface.schema.json",
-    "counterpart_contract_example": "examples/counterpart_edge_view.example.json",
+    "counterpart_contract_doc": COUNTERPART_EDGE_CONTRACT_DOC_REF,
+    "counterpart_contract_schema": COUNTERPART_EDGE_SCHEMA_REF,
+    "counterpart_contract_example": COUNTERPART_EDGE_EXAMPLE_REF,
 }
 EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS = [
-    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
-    "examples/counterpart_consumer_contract.example.json",
-    "docs/COUNTERPART_EDGE_CONTRACTS.md",
-    "examples/counterpart_edge_view.example.json",
+    COUNTERPART_CONSUMER_CONTRACT_DOC_REF,
+    COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF,
+    COUNTERPART_EDGE_CONTRACT_DOC_REF,
+    COUNTERPART_EDGE_EXAMPLE_REF,
 ]
 EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF = (
-    "generated/counterpart_federation_exposure_review.min.json"
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF
 )
 EXPECTED_COUNTERPART_CONSUMER_FORBIDDEN_INTERPRETATIONS = [
     "identity_proof",
@@ -389,9 +508,9 @@ EXPECTED_RETURN_REGROUNDING_CONTRACT = {
     "proof_ownership": "forbidden",
 }
 EXPECTED_KAG_MATURITY_GOVERNANCE_INPUTS = {
-    ("maturity_governance_doc", "aoa-kag", "docs/KAG_MATURITY_GOVERNANCE.md", "governance_doc"),
-    ("owner_wait_states_doc", "aoa-kag", "docs/KAG_OWNER_WAIT_STATES.md", "wait_state_doc"),
-    ("proof_expectations_doc", "aoa-kag", "docs/KAG_PROOF_EXPECTATIONS.md", "proof_expectations_doc"),
+    ("maturity_governance_doc", "aoa-kag", KAG_MATURITY_GOVERNANCE_DOC_REF, "governance_doc"),
+    ("owner_wait_states_doc", "aoa-kag", KAG_OWNER_WAIT_STATES_DOC_REF, "wait_state_doc"),
+    ("proof_expectations_doc", "aoa-kag", KAG_PROOF_EXPECTATIONS_DOC_REF, "proof_expectations_doc"),
     (
         "maturity_hardening_decision",
         "aoa-kag",
@@ -402,13 +521,13 @@ EXPECTED_KAG_MATURITY_GOVERNANCE_INPUTS = {
     (
         "federation_export_registry_manifest",
         "aoa-kag",
-        "manifests/federation_export_registry.json",
+        FEDERATION_EXPORT_REGISTRY_MANIFEST_REF,
         "activation_manifest",
     ),
     (
         "return_regrounding_manifest",
         "aoa-kag",
-        "manifests/return_regrounding_pack.json",
+        RETURN_REGROUNDING_MANIFEST_REF,
         "reentry_manifest",
     ),
     (
@@ -464,8 +583,8 @@ EXPECTED_KAG_MATURITY_GOVERNANCE_MODE_ORDER = [
     "owner_boundary_reentry",
 ]
 EXPECTED_KAG_MATURITY_GOVERNANCE_OUTPUT_PATHS = {
-    "full": "generated/kag_maturity_governance.json",
-    "min": "generated/kag_maturity_governance.min.json",
+    "full": KAG_MATURITY_GOVERNANCE_OUTPUT_REF,
+    "min": KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_REF,
 }
 EXPECTED_KAG_MATURITY_GOVERNANCE_HEALTH_STATES = [
     "healthy",
@@ -484,35 +603,35 @@ EXPECTED_KAG_MATURITY_GOVERNANCE_CONTRACT = {
 EXPECTED_RETURN_REGROUNDING_INPUTS = {
     ("boundaries_doc", "aoa-kag", "docs/BOUNDARIES.md", "boundary_doc"),
     ("bridge_contract_doc", "aoa-kag", "docs/BRIDGE_CONTRACTS.md", "bridge_doc"),
-    ("reasoning_handoff_doc", "aoa-kag", "docs/REASONING_HANDOFF.md", "handoff_doc"),
+    ("reasoning_handoff_doc", "aoa-kag", "mechanics/checkpoint/parts/reasoning-handoff/docs/reasoning-handoff.md", "handoff_doc"),
     (
         "source_owned_export_dependencies_manifest",
         "aoa-kag",
-        "manifests/source_owned_export_dependencies.json",
+        SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_REF,
         "dependency_manifest",
     ),
     (
         "federation_spine_pack",
         "aoa-kag",
-        "generated/federation_spine.min.json",
+        FEDERATION_SPINE_MIN_OUTPUT_REF,
         "derived_pack",
     ),
     (
         "retrieval_axis_pack",
         "aoa-kag",
-        "generated/tos_retrieval_axis_pack.min.json",
+        TOS_RETRIEVAL_AXIS_MIN_OUTPUT_REF,
         "derived_pack",
     ),
     (
         "cross_source_projection_pack",
         "aoa-kag",
-        "generated/cross_source_node_projection.min.json",
+        CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
         "derived_pack",
     ),
     (
         "reasoning_handoff_pack",
         "aoa-kag",
-        "generated/reasoning_handoff_pack.min.json",
+        "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json",
         "derived_pack",
     ),
     (
@@ -665,8 +784,8 @@ EXPECTED_TECHNIQUE_LIFT_BINDINGS = {
     ),
 }
 EXPECTED_TECHNIQUE_LIFT_OUTPUT_PATHS = {
-    "full": "generated/technique_lift_pack.json",
-    "min": "generated/technique_lift_pack.min.json",
+    "full": TECHNIQUE_LIFT_OUTPUT_REF,
+    "min": TECHNIQUE_LIFT_MIN_OUTPUT_REF,
 }
 EXPECTED_TECHNIQUE_LIFT_CONTRACT = {
     "source_trace_required": True,
@@ -688,8 +807,8 @@ EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS = {
     ),
 }
 EXPECTED_TOS_TEXT_CHUNK_MAP_OUTPUT_PATHS = {
-    "full": "generated/tos_text_chunk_map.json",
-    "min": "generated/tos_text_chunk_map.min.json",
+    "full": TOS_TEXT_CHUNK_MAP_OUTPUT_REF,
+    "min": TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF,
 }
 EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT = {
     "source_trace_required": True,
@@ -698,10 +817,20 @@ EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT = {
     "federation_export_activation": "forbidden",
 }
 EXPECTED_TOS_RETRIEVAL_AXIS_INPUTS = {
-    ("tos_text_chunk_map", "aoa-kag", "generated/tos_text_chunk_map.min.json", "chunk_map"),
+    ("tos_text_chunk_map", "aoa-kag", TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF, "chunk_map"),
     ("bridge_contract_doc", "aoa-kag", "docs/BRIDGE_CONTRACTS.md", "bridge_doctrine"),
-    ("bridge_surface_example", "aoa-kag", "examples/tos_retrieval_axis_surface.example.json", "bridge_surface"),
-    ("bridge_envelope_example", "aoa-kag", "examples/aoa_tos_bridge_envelope.example.json", "bridge_envelope"),
+    (
+        "bridge_surface_example",
+        "aoa-kag",
+        "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json",
+        "bridge_surface",
+    ),
+    (
+        "bridge_envelope_example",
+        "aoa-kag",
+        "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/aoa_tos_bridge_envelope.example.json",
+        "bridge_envelope",
+    ),
     ("memo_chunk_face", "aoa-memo", "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json", "memo_chunk_face"),
     ("memo_graph_face", "aoa-memo", "mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json", "memo_graph_face"),
     ("tos_node_contract", TOS_REPO, "ToS/doctrine/NODE_CONTRACT.md", "tos_contract"),
@@ -719,8 +848,8 @@ EXPECTED_TOS_RETRIEVAL_AXIS_BINDINGS = {
     ),
 }
 EXPECTED_TOS_RETRIEVAL_AXIS_OUTPUT_PATHS = {
-    "full": "generated/tos_retrieval_axis_pack.json",
-    "min": "generated/tos_retrieval_axis_pack.min.json",
+    "full": TOS_RETRIEVAL_AXIS_OUTPUT_REF,
+    "min": TOS_RETRIEVAL_AXIS_MIN_OUTPUT_REF,
 }
 EXPECTED_TOS_RETRIEVAL_AXIS_CONTRACT = {
     "source_trace_required": True,
@@ -753,8 +882,8 @@ EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_BINDINGS = {
     ),
 }
 EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATHS = {
-    "full": "generated/tos_zarathustra_route_pack.json",
-    "min": "generated/tos_zarathustra_route_pack.min.json",
+    "full": TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_REF,
+    "min": TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_REF,
 }
 EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_CONTRACT = {
     "source_trace_required": True,
@@ -781,8 +910,8 @@ EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_BINDINGS = {
     ),
 }
 EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATHS = {
-    "full": "generated/tos_zarathustra_route_retrieval_pack.json",
-    "min": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+    "full": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_REF,
+    "min": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_REF,
 }
 EXPECTED_TOS_STANDALONE_ADJUNCT_BUDGET = {
     "max_adjunct_surfaces": 1,
@@ -817,12 +946,27 @@ EXPECTED_REASONING_HANDOFF_SOURCE_ROOT_ENVS = {
     "aoa-agents": "AOA_AGENTS_ROOT",
 }
 EXPECTED_REASONING_HANDOFF_INPUTS = {
-    ("reasoning_handoff_doc", "aoa-kag", "docs/REASONING_HANDOFF.md", "kag_guardrail_doc"),
-    ("reasoning_handoff_schema", "aoa-kag", "schemas/reasoning-handoff-guardrail.schema.json", "kag_guardrail_schema"),
-    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "kag_guardrail_doc"),
-    ("counterpart_consumer_contract_schema", "aoa-kag", "schemas/counterpart-consumer-contract.schema.json", "kag_guardrail_schema"),
-    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "kag_guardrail_example"),
-    ("counterpart_federation_exposure_review_doc", "aoa-kag", "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md", "kag_guardrail_doc"),
+    (
+        "reasoning_handoff_doc",
+        "aoa-kag",
+        REASONING_HANDOFF_GUARDRAIL_REF,
+        "kag_guardrail_doc",
+    ),
+    (
+        "reasoning_handoff_schema",
+        "aoa-kag",
+        REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF,
+        "kag_guardrail_schema",
+    ),
+    ("counterpart_consumer_contract_doc", "aoa-kag", COUNTERPART_CONSUMER_CONTRACT_DOC_REF, "kag_guardrail_doc"),
+    ("counterpart_consumer_contract_schema", "aoa-kag", COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF, "kag_guardrail_schema"),
+    ("counterpart_consumer_contract_example", "aoa-kag", COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF, "kag_guardrail_example"),
+    (
+        "counterpart_federation_exposure_review_doc",
+        "aoa-kag",
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF,
+        "kag_guardrail_doc",
+    ),
     ("artifact_to_verdict_hook_schema", "aoa-evals", "mechanics/audit/parts/artifact-verdict-hooks/schemas/artifact-to-verdict-hook.schema.json", "eval_hook_schema"),
     ("aoa_p_0008_playbook", "aoa-playbooks", "playbooks/operations/orchestration/long-horizon-model-tier-orchestra/PLAYBOOK.md", "playbook_doc"),
     ("aoa_p_0008_hook", "aoa-evals", "mechanics/audit/parts/artifact-verdict-hooks/examples/artifact_to_verdict_hook.long-horizon-model-tier-orchestra.example.json", "eval_hook_fixture"),
@@ -838,8 +982,8 @@ EXPECTED_REASONING_HANDOFF_BINDINGS = {
     ("AOA-P-0009", "aoa_p_0009_playbook", "aoa_p_0009_hook", ("checkpoint_to_memory_contract",), "inquiry_checkpoint_schema", ()),
 }
 EXPECTED_REASONING_HANDOFF_OUTPUT_PATHS = {
-    "full": "generated/reasoning_handoff_pack.json",
-    "min": "generated/reasoning_handoff_pack.min.json",
+    "full": REASONING_HANDOFF_OUTPUT_REF,
+    "min": REASONING_HANDOFF_MIN_OUTPUT_REF,
 }
 EXPECTED_REASONING_HANDOFF_CONTRACT = {
     "source_trace_required": True,
@@ -851,19 +995,19 @@ EXPECTED_REASONING_HANDOFF_CONTRACT = {
 }
 EXPECTED_REASONING_HANDOFF_SCENARIOS = {"AOA-P-0008", "AOA-P-0009"}
 EXPECTED_REASONING_HANDOFF_KAG_GUARDRAIL_REFS = [
-    "docs/REASONING_HANDOFF.md",
-    "schemas/reasoning-handoff-guardrail.schema.json",
-    "docs/COUNTERPART_CONSUMER_CONTRACT.md",
-    "schemas/counterpart-consumer-contract.schema.json",
-    "examples/counterpart_consumer_contract.example.json",
-    "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
+    REASONING_HANDOFF_GUARDRAIL_REF,
+    REASONING_HANDOFF_GUARDRAIL_SCHEMA_REF,
+    COUNTERPART_CONSUMER_CONTRACT_DOC_REF,
+    COUNTERPART_CONSUMER_CONTRACT_SCHEMA_REF,
+    COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF,
+    COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF,
 ]
 EXPECTED_FEDERATION_SPINE_SOURCE_INPUTS = {
     ("kag_registry_manifest", "aoa-kag", "manifests/kag_registry.json", "registry_manifest"),
     (
         "federation_export_registry_manifest",
         "aoa-kag",
-        "manifests/federation_export_registry.json",
+        FEDERATION_EXPORT_REGISTRY_MANIFEST_REF,
         "activation_manifest",
     ),
     ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "source_owned_export"),
@@ -876,8 +1020,8 @@ EXPECTED_FEDERATION_SPINE_SOURCE_INPUT_ORDER = [
     "tos_kag_export",
 ]
 EXPECTED_FEDERATION_EXPORT_REGISTRY_OUTPUT_PATHS = {
-    "full": "generated/federation_export_registry.json",
-    "min": "generated/federation_export_registry.min.json",
+    "full": FEDERATION_EXPORT_REGISTRY_OUTPUT_REF,
+    "min": FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_REF,
 }
 EXPECTED_FEDERATION_SPINE_BINDINGS = {
     (
@@ -895,8 +1039,8 @@ EXPECTED_FEDERATION_SPINE_BINDINGS = {
 }
 EXPECTED_FEDERATION_SPINE_REPO_ORDER = ["aoa-techniques", TOS_REPO]
 EXPECTED_FEDERATION_SPINE_OUTPUT_PATHS = {
-    "full": "generated/federation_spine.json",
-    "min": "generated/federation_spine.min.json",
+    "full": FEDERATION_SPINE_OUTPUT_REF,
+    "min": FEDERATION_SPINE_MIN_OUTPUT_REF,
 }
 EXPECTED_FEDERATION_SPINE_CONTRACT = {
     "source_trace_required": True,
@@ -981,7 +1125,7 @@ EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
         {
             "surface_id": "AOA-K-0011",
             "surface_name": "tos-zarathustra-route-retrieval-surface",
-            "surface_ref": "generated/tos_zarathustra_route_retrieval_pack.min.json",
+            "surface_ref": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_REF,
             "match_key": "retrieval_id",
             "target_value": TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_ID,
             "route_id": TOS_ZARATHUSTRA_ROUTE_ID,
@@ -993,8 +1137,8 @@ EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO = {
 EXPECTED_CROSS_SOURCE_NODE_PROJECTION_INPUTS = {
     ("aoa_techniques_kag_export", "aoa-techniques", "generated/kag_export.min.json", "primary_export"),
     ("tos_kag_export", TOS_REPO, "ToS/derived-exports/kag_export.min.json", "supporting_export"),
-    ("tos_retrieval_axis_pack", "aoa-kag", "generated/tos_retrieval_axis_pack.min.json", "retrieval_axis"),
-    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "federation_spine"),
+    ("tos_retrieval_axis_pack", "aoa-kag", TOS_RETRIEVAL_AXIS_MIN_OUTPUT_REF, "retrieval_axis"),
+    ("federation_spine", "aoa-kag", FEDERATION_SPINE_MIN_OUTPUT_REF, "federation_spine"),
 }
 EXPECTED_CROSS_SOURCE_NODE_PROJECTION_BINDINGS = {
     (
@@ -1006,8 +1150,8 @@ EXPECTED_CROSS_SOURCE_NODE_PROJECTION_BINDINGS = {
     ),
 }
 EXPECTED_CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATHS = {
-    "full": "generated/cross_source_node_projection.json",
-    "min": "generated/cross_source_node_projection.min.json",
+    "full": CROSS_SOURCE_NODE_PROJECTION_OUTPUT_REF,
+    "min": CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF,
 }
 EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT = {
     "source_trace_required": True,
@@ -1017,13 +1161,13 @@ EXPECTED_CROSS_SOURCE_NODE_PROJECTION_CONTRACT = {
     "routing_ownership": "forbidden",
 }
 EXPECTED_TINY_CONSUMER_BUNDLE_INPUTS = {
-    ("tos_text_chunk_map", "aoa-kag", "generated/tos_text_chunk_map.min.json", "generated_surface"),
-    ("tos_retrieval_axis_pack", "aoa-kag", "generated/tos_retrieval_axis_pack.min.json", "generated_surface"),
-    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "generated_surface"),
-    ("cross_source_node_projection", "aoa-kag", "generated/cross_source_node_projection.min.json", "generated_surface"),
+    ("tos_text_chunk_map", "aoa-kag", TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_REF, "generated_surface"),
+    ("tos_retrieval_axis_pack", "aoa-kag", TOS_RETRIEVAL_AXIS_MIN_OUTPUT_REF, "generated_surface"),
+    ("federation_spine", "aoa-kag", FEDERATION_SPINE_MIN_OUTPUT_REF, "generated_surface"),
+    ("cross_source_node_projection", "aoa-kag", CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF, "generated_surface"),
     ("consumer_guide", "aoa-kag", "docs/CONSUMER_GUIDE.md", "consumer_doc"),
-    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "counterpart_contract"),
-    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "counterpart_contract"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", COUNTERPART_CONSUMER_CONTRACT_DOC_REF, "counterpart_contract"),
+    ("counterpart_consumer_contract_example", "aoa-kag", COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF, "counterpart_contract"),
 }
 EXPECTED_TINY_CONSUMER_BUNDLE_ORDER = [
     "tos_text_chunk_map",
@@ -1035,8 +1179,8 @@ EXPECTED_TINY_CONSUMER_BUNDLE_ORDER = [
     "counterpart_consumer_contract_example",
 ]
 EXPECTED_TINY_CONSUMER_BUNDLE_OUTPUT_PATHS = {
-    "full": "generated/tiny_consumer_bundle.json",
-    "min": "generated/tiny_consumer_bundle.min.json",
+    "full": TINY_CONSUMER_BUNDLE_OUTPUT_REF,
+    "min": TINY_CONSUMER_BUNDLE_MIN_OUTPUT_REF,
 }
 EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART = {
     "surface_id": "AOA-K-0008",
@@ -1044,21 +1188,21 @@ EXPECTED_TINY_CONSUMER_BUNDLE_DEFERRED_COUNTERPART = {
     "posture": "planned_contract_only",
     "federation_exposure_review_ref": EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
     "allowed_refs": EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS,
-    "forbidden_active_payload_refs": ["examples/counterpart_edge_view.example.json"],
+    "forbidden_active_payload_refs": [COUNTERPART_EDGE_EXAMPLE_REF],
     "forbidden_interpretations": [
         "active_retrieval_payload",
         "active_projection_payload",
     ],
 }
 EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_INPUTS = {
-    ("reasoning_handoff_pack", "aoa-kag", "generated/reasoning_handoff_pack.min.json", "reviewed_surface"),
-    ("tiny_consumer_bundle", "aoa-kag", "generated/tiny_consumer_bundle.min.json", "reviewed_surface"),
-    ("federation_spine", "aoa-kag", "generated/federation_spine.min.json", "reviewed_surface"),
-    ("cross_source_node_projection", "aoa-kag", "generated/cross_source_node_projection.min.json", "reviewed_surface"),
-    ("counterpart_consumer_contract_doc", "aoa-kag", "docs/COUNTERPART_CONSUMER_CONTRACT.md", "counterpart_contract"),
-    ("counterpart_consumer_contract_example", "aoa-kag", "examples/counterpart_consumer_contract.example.json", "counterpart_contract"),
-    ("counterpart_edge_contract_doc", "aoa-kag", "docs/COUNTERPART_EDGE_CONTRACTS.md", "counterpart_contract"),
-    ("counterpart_edge_contract_example", "aoa-kag", "examples/counterpart_edge_view.example.json", "counterpart_contract"),
+    ("reasoning_handoff_pack", "aoa-kag", "mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json", "reviewed_surface"),
+    ("tiny_consumer_bundle", "aoa-kag", TINY_CONSUMER_BUNDLE_MIN_OUTPUT_REF, "reviewed_surface"),
+    ("federation_spine", "aoa-kag", FEDERATION_SPINE_MIN_OUTPUT_REF, "reviewed_surface"),
+    ("cross_source_node_projection", "aoa-kag", CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_REF, "reviewed_surface"),
+    ("counterpart_consumer_contract_doc", "aoa-kag", COUNTERPART_CONSUMER_CONTRACT_DOC_REF, "counterpart_contract"),
+    ("counterpart_consumer_contract_example", "aoa-kag", COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_REF, "counterpart_contract"),
+    ("counterpart_edge_contract_doc", "aoa-kag", COUNTERPART_EDGE_CONTRACT_DOC_REF, "counterpart_contract"),
+    ("counterpart_edge_contract_example", "aoa-kag", COUNTERPART_EDGE_EXAMPLE_REF, "counterpart_contract"),
 }
 EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER = [
     "reasoning_handoff_pack",
@@ -1071,8 +1215,8 @@ EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_ORDER = [
     "counterpart_edge_contract_example",
 ]
 EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATHS = {
-    "full": "generated/counterpart_federation_exposure_review.json",
-    "min": "generated/counterpart_federation_exposure_review.min.json",
+    "full": COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_REF,
+    "min": COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_REF,
 }
 EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_CONTRACT = {
     "silent_federation_exposure": "forbidden",
@@ -1133,40 +1277,6 @@ FULL_CROSS_REPO_ROOTS = {
     "aoa-agents": AOA_AGENTS_ROOT,
     TOS_REPO: TREE_OF_SOPHIA_ROOT,
 }
-QUESTBOOK_PATH = Path("QUESTBOOK.md")
-QUESTBOOK_INTEGRATION_PATH = Path("docs") / "QUESTBOOK_KAG_INTEGRATION.md"
-QUEST_SCHEMA_PATH = Path("schemas") / "quest.schema.json"
-QUEST_DISPATCH_SCHEMA_PATH = Path("schemas") / "quest_dispatch.schema.json"
-QUEST_CATALOG_EXAMPLE_PATH = Path("examples") / "quest_catalog.min.example.json"
-QUEST_DISPATCH_EXAMPLE_PATH = Path("examples") / "quest_dispatch.min.example.json"
-QUEST_IDS = (
-    "AOA-KAG-Q-0001",
-    "AOA-KAG-Q-0002",
-    "AOA-KAG-Q-0003",
-    "AOA-KAG-Q-0004",
-)
-QUESTBOOK_REQUIRED_INDEX_TOKENS = (
-    "source-owned export dependency gaps",
-    "primary truth",
-    "examples/quest_catalog.min.example.json",
-    "examples/quest_dispatch.min.example.json",
-)
-CLOSED_QUEST_STATES = {"done", "dropped"}
-QUESTBOOK_REQUIRED_INTEGRATION_TOKENS = (
-    "source repos remain the owners of meaning",
-    "`aoa-kag` remains the owner of derived, provenance-aware structures and bounded export contracts",
-    "CHARTER.md",
-    "docs/KAG_MODEL.md",
-    "docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md",
-    "docs/FEDERATION_KAG_READINESS.md",
-    "docs/BRIDGE_CONTRACTS.md",
-    "docs/RECURRENCE_REGROUNDING.md",
-    "docs/CROSS_SOURCE_NODE_PROJECTION.md",
-)
-QUESTBOOK_FORBIDDEN_TOKENS = (
-    "ATM10-Agent",
-    "aoa-sdk",
-)
 REQUIRED_KAG_STRESS_REGROUNDING_SNIPPETS = (
     "Teach the derived substrate to become more honest under drift.",
     "do not silently regenerate and republish drifted surfaces as if nothing happened",
@@ -1179,44 +1289,6 @@ REQUIRED_KAG_PROJECTION_QUARANTINE_SNIPPETS = (
     "narrow consumer posture",
     "silently disappear without review",
 )
-QUEST_SCHEMA_REQUIRED_FIELDS = (
-    "schema_version",
-    "id",
-    "title",
-    "repo",
-    "owner_surface",
-    "kind",
-    "state",
-    "band",
-    "difficulty",
-    "risk",
-    "control_mode",
-    "delegate_tier",
-    "write_scope",
-    "activation",
-    "anchor_ref",
-    "evidence",
-    "opened_at",
-    "touched_at",
-    "public_safe",
-)
-QUEST_DISPATCH_REQUIRED_FIELDS = (
-    "schema_version",
-    "id",
-    "repo",
-    "state",
-    "band",
-    "difficulty",
-    "risk",
-    "control_mode",
-    "delegate_tier",
-    "split_required",
-    "write_scope",
-    "activation_mode",
-    "public_safe",
-)
-
-
 class ValidationError(RuntimeError):
     pass
 
@@ -1262,15 +1334,6 @@ def read_text(path: Path) -> str:
         return path.read_text(encoding="utf-8")
     except FileNotFoundError:
         fail(f"missing required file: {display_path(path)}")
-
-
-def read_yaml(path: Path) -> object:
-    try:
-        return yaml.safe_load(path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        fail(f"missing required file: {display_path(path)}")
-    except yaml.YAMLError as exc:
-        fail(f"invalid YAML in {display_path(path)}: {exc}")
 
 
 def format_schema_path(parts: Sequence[object]) -> str:
@@ -1320,227 +1383,19 @@ def validate_top_level_schema(path: Path, label: str) -> None:
         fail(f"{label} schema is missing required top-level keys: {', '.join(missing)}")
 
 
-def validate_quest_schema_envelope(
-    path: Path,
-    *,
-    title: str,
-    schema_version: str,
-    required_fields: Sequence[str],
-) -> None:
-    schema = read_json(path)
-    if not isinstance(schema, dict):
-        fail(f"{display_path(path)} must contain a JSON object")
-    required_top_level = {"$schema", "$id", "title", "type", "properties", "required"}
-    missing_top_level = sorted(required_top_level - set(schema))
-    if missing_top_level:
-        fail(
-            f"{display_path(path)} is missing required top-level keys: {', '.join(missing_top_level)}"
-        )
-    if schema.get("title") != title:
-        fail(f"{display_path(path)} title must equal '{title}'")
-    required = schema.get("required")
-    if not isinstance(required, list):
-        fail(f"{display_path(path)} required must be a list")
-    missing_required = [field for field in required_fields if field not in required]
-    if missing_required:
-        fail(
-            f"{display_path(path)} required must include: {', '.join(missing_required)}"
-        )
-    properties = schema.get("properties")
-    if not isinstance(properties, dict):
-        fail(f"{display_path(path)} properties must be an object")
-    schema_version_entry = properties.get("schema_version")
-    if (
-        not isinstance(schema_version_entry, dict)
-        or schema_version_entry.get("const") != schema_version
-    ):
-        fail(
-            f"{display_path(path)} schema_version must stay pinned to '{schema_version}'"
-        )
-
-
-def build_expected_quest_catalog_entry(quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "id": quest_id,
-        "title": payload["title"],
-        "repo": payload["repo"],
-        "theme_ref": payload.get("theme_ref", ""),
-        "milestone_ref": payload.get("milestone_ref", ""),
-        "state": payload["state"],
-        "band": payload["band"],
-        "kind": payload["kind"],
-        "difficulty": payload["difficulty"],
-        "risk": payload["risk"],
-        "owner_surface": payload["owner_surface"],
-        "source_path": f"quests/{quest_id}.yaml",
-        "public_safe": payload["public_safe"],
-    }
-
-
-def build_expected_quest_dispatch_entry(
-    quest_id: str,
-    payload: dict[str, Any],
-    actual: dict[str, Any],
-) -> dict[str, Any]:
-    expected = {
-        "schema_version": "quest_dispatch_v1",
-        "id": quest_id,
-        "repo": payload["repo"],
-        "state": payload["state"],
-        "band": payload["band"],
-        "difficulty": payload["difficulty"],
-        "risk": payload["risk"],
-        "control_mode": payload["control_mode"],
-        "delegate_tier": payload["delegate_tier"],
-        "split_required": payload.get("split_required", False),
-        "write_scope": payload["write_scope"],
-        "activation_mode": payload["activation"]["mode"],
-        "source_path": f"quests/{quest_id}.yaml",
-        "public_safe": payload["public_safe"],
-    }
-    if "fallback_tier" in actual:
-        expected["fallback_tier"] = payload.get("fallback_tier")
-    if "wrapper_class" in actual:
-        expected["wrapper_class"] = payload.get("wrapper_class")
-    return expected
-
-
 def validate_questbook_surface() -> None:
-    repo_root = REPO_ROOT
-    for path in (
-        repo_root / QUESTBOOK_PATH,
-        repo_root / QUESTBOOK_INTEGRATION_PATH,
-        repo_root / QUEST_SCHEMA_PATH,
-        repo_root / QUEST_DISPATCH_SCHEMA_PATH,
-        repo_root / QUEST_CATALOG_EXAMPLE_PATH,
-        repo_root / QUEST_DISPATCH_EXAMPLE_PATH,
-    ):
-        if not path.is_file():
-            fail(f"missing required file: {display_path(path)}")
-
-    validate_quest_schema_envelope(
-        repo_root / QUEST_SCHEMA_PATH,
-        title="aoa-kag work_quest_v1",
-        schema_version="work_quest_v1",
-        required_fields=QUEST_SCHEMA_REQUIRED_FIELDS,
+    spec = importlib.util.spec_from_file_location(
+        "_aoa_kag_quest_store_validator",
+        QUEST_STORE_VALIDATOR_PATH,
     )
-    validate_quest_schema_envelope(
-        repo_root / QUEST_DISPATCH_SCHEMA_PATH,
-        title="aoa-kag quest_dispatch_v1",
-        schema_version="quest_dispatch_v1",
-        required_fields=QUEST_DISPATCH_REQUIRED_FIELDS,
-    )
-    quest_schema = read_json(repo_root / QUEST_SCHEMA_PATH)
-    if not isinstance(quest_schema, dict):
-        fail(f"{display_path(repo_root / QUEST_SCHEMA_PATH)} must contain a JSON object")
-    Draft202012Validator.check_schema(quest_schema)
-    quest_validator = Draft202012Validator(quest_schema)
-
-    integration_text = read_text(repo_root / QUESTBOOK_INTEGRATION_PATH)
-    for token in QUESTBOOK_REQUIRED_INTEGRATION_TOKENS:
-        if token not in integration_text:
-            fail(
-                f"{display_path(repo_root / QUESTBOOK_INTEGRATION_PATH)} must mention '{token}' explicitly"
-            )
-    for token in QUESTBOOK_FORBIDDEN_TOKENS:
-        if token in integration_text:
-            fail(
-                f"{display_path(repo_root / QUESTBOOK_INTEGRATION_PATH)} must not mention out-of-scope surface '{token}'"
-            )
-
-    quest_payloads: dict[str, dict[str, Any]] = {}
-    quests_root = repo_root / "quests"
-    active_quest_ids: list[str] = []
-    closed_quest_ids: list[str] = []
-    for quest_id in QUEST_IDS:
-        quest_path = quests_root / f"{quest_id}.yaml"
-        payload = read_yaml(quest_path)
-        if not isinstance(payload, dict):
-            fail(f"{display_path(quest_path)} must contain a YAML mapping")
-        schema_errors = sorted(
-            quest_validator.iter_errors(payload),
-            key=lambda error: (list(error.absolute_path), error.message),
-        )
-        if schema_errors:
-            first = schema_errors[0]
-            error_path = format_schema_path(list(first.absolute_path))
-            if error_path:
-                fail(
-                    f"{display_path(quest_path)} schema violation at '{error_path}': "
-                    f"{first.message}"
-                )
-            fail(f"{display_path(quest_path)} schema violation: {first.message}")
-        if payload.get("schema_version") != "work_quest_v1":
-            fail(f"{display_path(quest_path)} schema_version must equal 'work_quest_v1'")
-        if payload.get("id") != quest_id:
-            fail(f"{display_path(quest_path)} id must equal '{quest_id}'")
-        if payload.get("repo") != "aoa-kag":
-            fail(f"{display_path(quest_path)} repo must equal 'aoa-kag'")
-        if payload.get("public_safe") is not True:
-            fail(f"{display_path(quest_path)} public_safe must be true")
-        quest_payloads[quest_id] = payload
-        if payload.get("state") in CLOSED_QUEST_STATES:
-            closed_quest_ids.append(quest_id)
-        else:
-            active_quest_ids.append(quest_id)
-
-    questbook_text = read_text(repo_root / QUESTBOOK_PATH)
-    for token in QUESTBOOK_REQUIRED_INDEX_TOKENS:
-        if token not in questbook_text:
-            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must mention '{token}' explicitly")
-    for quest_id in active_quest_ids:
-        if quest_id not in questbook_text:
-            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must reference active quest id '{quest_id}'")
-    for quest_id in closed_quest_ids:
-        if quest_id in questbook_text:
-            fail(f"{display_path(repo_root / QUESTBOOK_PATH)} must not list closed quest id '{quest_id}'")
-    for token in QUESTBOOK_FORBIDDEN_TOKENS:
-        if token in questbook_text:
-            fail(
-                f"{display_path(repo_root / QUESTBOOK_PATH)} must not mention out-of-scope surface '{token}'"
-            )
-
-    catalog_payload = read_json(repo_root / QUEST_CATALOG_EXAMPLE_PATH)
-    if not isinstance(catalog_payload, list):
-        fail(f"{display_path(repo_root / QUEST_CATALOG_EXAMPLE_PATH)} must contain a JSON array")
-    expected_catalog = [
-        build_expected_quest_catalog_entry(quest_id, quest_payloads[quest_id])
-        for quest_id in QUEST_IDS
-    ]
-    if catalog_payload != expected_catalog:
-        fail(
-            f"{display_path(repo_root / QUEST_CATALOG_EXAMPLE_PATH)} must stay aligned with quests/*.yaml"
-        )
-
-    dispatch_payload = read_json(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)
-    if not isinstance(dispatch_payload, list):
-        fail(f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} must contain a JSON array")
-    if len(dispatch_payload) != len(QUEST_IDS):
-        fail(
-            f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} must contain {len(QUEST_IDS)} entries"
-        )
-    for entry, quest_id in zip(dispatch_payload, QUEST_IDS, strict=True):
-        if not isinstance(entry, dict):
-            fail(
-                f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} entries must be JSON objects"
-            )
-        requires_artifacts = entry.get("requires_artifacts")
-        if not isinstance(requires_artifacts, list) or not requires_artifacts or not all(
-            isinstance(item, str) and item for item in requires_artifacts
-        ):
-            fail(
-                f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} entry '{quest_id}' must keep a non-empty requires_artifacts list"
-            )
-        expected_entry = build_expected_quest_dispatch_entry(
-            quest_id,
-            quest_payloads[quest_id],
-            entry,
-        )
-        comparable_entry = {key: entry.get(key) for key in expected_entry}
-        if comparable_entry != expected_entry:
-            fail(
-                f"{display_path(repo_root / QUEST_DISPATCH_EXAMPLE_PATH)} entry '{quest_id}' must stay aligned with quests/*.yaml"
-            )
+    if spec is None or spec.loader is None:
+        fail(f"cannot load quest-store validator: {display_path(QUEST_STORE_VALIDATOR_PATH)}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    try:
+        module.validate_questbook_surface(REPO_ROOT)
+    except module.QuestStoreValidationError as exc:
+        fail(str(exc))
 
 
 def validate_schema_surface() -> None:
@@ -2187,7 +2042,7 @@ def validate_tos_tiny_entry_hop_surface(payload: dict[str, object], *, route_lab
     if hop_surface != TOS_TINY_ENTRY_HOP_PATH:
         fail(
             f"{route_label}.{TOS_TINY_ENTRY_PRIMARY_HOP_FIELD} must stay "
-            f"'{TOS_TINY_ENTRY_HOP_PATH}' in the current KAG wave"
+            f"'{TOS_TINY_ENTRY_HOP_PATH}' in the current KAG route scope"
         )
     return hop_surface
 
@@ -2200,7 +2055,7 @@ def validate_registry_payload(
     if not isinstance(payload, dict):
         fail(f"{label} must be a JSON object")
 
-    for key in ("version", "layer", "surfaces"):
+    for key in ("version", "layer", "artifact_identity", "surfaces"):
         if key not in payload:
             fail(f"{label} is missing required key '{key}'")
 
@@ -2208,13 +2063,15 @@ def validate_registry_payload(
         fail(f"{label} 'version' must be an integer >= 1")
     if payload["layer"] != "aoa-kag":
         fail(f"{label} 'layer' must equal 'aoa-kag'")
+    if payload["artifact_identity"] != KAG_REGISTRY_ARTIFACT_IDENTITY:
+        fail(f"{label} artifact_identity must match KAG_REGISTRY_ARTIFACT_IDENTITY")
 
     surfaces = payload["surfaces"]
     if not isinstance(surfaces, list) or not surfaces:
         fail(f"{label} 'surfaces' must be a non-empty list")
 
     seen_ids: set[str] = set()
-    required_seed = {
+    required_surfaces = {
         "technique-section-lift",
         "metadata-spine-projection",
         "bounded-relation-view",
@@ -2335,9 +2192,12 @@ def validate_registry_payload(
         if len(source_repos) > 1 and source_inputs is None:
             fail(f"{location}.source_inputs is required when more than one source repo is declared")
 
-    missing_seed = sorted(required_seed - seen_names)
-    if missing_seed:
-        fail(f"{label} is missing required seed surfaces: {', '.join(missing_seed)}")
+    missing_required_surfaces = sorted(required_surfaces - seen_names)
+    if missing_required_surfaces:
+        fail(
+            f"{label} is missing required registry surfaces: "
+            f"{', '.join(missing_required_surfaces)}"
+        )
     validate_special_registry_surfaces(surfaces_by_id, label=label)
     return surfaces_by_id
 
@@ -2353,7 +2213,7 @@ def validate_special_registry_surfaces(
     if surface_0005.get("name") != "tos-text-chunk-map":
         fail(f"{label} AOA-K-0005 must keep name 'tos-text-chunk-map'")
     if surface_0005.get("status") != "experimental":
-        fail(f"{label} AOA-K-0005 must be experimental in the current Wave 2 pilot")
+        fail(f"{label} AOA-K-0005 must be experimental in the current chunk-map pilot")
     if surface_0005.get("source_class") != "tos_text":
         fail(f"{label} AOA-K-0005 must keep 'tos_text' as its primary source_class")
     if surface_0005.get("derived_kind") != "chunk_map":
@@ -2373,7 +2233,7 @@ def validate_special_registry_surfaces(
     if surface_0006.get("name") != "cross-source-node-projection":
         fail(f"{label} AOA-K-0006 must keep name 'cross-source-node-projection'")
     if surface_0006.get("status") != "experimental":
-        fail(f"{label} AOA-K-0006 must be experimental in the current Wave 5 pilot")
+        fail(f"{label} AOA-K-0006 must be experimental in the current projection pilot")
     if surface_0006.get("source_class") != "technique_bundle":
         fail(f"{label} AOA-K-0006 must keep 'technique_bundle' as its primary source_class")
     if surface_0006.get("derived_kind") != "node_projection":
@@ -2395,7 +2255,7 @@ def validate_special_registry_surfaces(
     if surface_0007.get("name") != "tos-retrieval-axis-surface":
         fail(f"{label} AOA-K-0007 must keep name 'tos-retrieval-axis-surface'")
     if surface_0007.get("status") != "experimental":
-        fail(f"{label} AOA-K-0007 must be experimental in the current Wave 3 pilot")
+        fail(f"{label} AOA-K-0007 must be experimental in the current retrieval-axis pilot")
     if surface_0007.get("source_class") != "tos_text":
         fail(f"{label} AOA-K-0007 must keep 'tos_text' as its primary source_class")
     if surface_0007.get("derived_kind") != "retrieval_surface":
@@ -2655,7 +2515,7 @@ def validate_tos_text_chunk_map_manifest(
             fail(f"{location} must only bind experimental registry surfaces")
         if surface.get("source_repos") != [TOS_REPO]:
             fail(
-                f"{location} must point to Tree-of-Sophia-only experimental surfaces in this Wave 2 pilot"
+                f"{location} must point to Tree-of-Sophia-only experimental surfaces in this chunk-map pilot"
             )
 
     if actual_bindings != EXPECTED_TOS_TEXT_CHUNK_MAP_BINDINGS:
@@ -2857,7 +2717,7 @@ def validate_tos_zarathustra_route_pack_manifest(
         if surface.get("status") != "experimental":
             fail(f"{location} must only bind experimental registry surfaces")
         if surface.get("source_repos") != [TOS_REPO]:
-            fail(f"{location} must stay Tree-of-Sophia-only in this additive route wave")
+            fail(f"{location} must stay Tree-of-Sophia-only in this additive route scope")
     if actual_bindings != EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_BINDINGS:
         fail(
             "ToS Zarathustra route pack manifest surface_bindings must match the "
@@ -2989,7 +2849,7 @@ def validate_tos_zarathustra_route_retrieval_pack_manifest(
             fail(f"{location} must only bind experimental registry surfaces")
         if surface.get("source_repos") != [TOS_REPO]:
             fail(
-                f"{location} must stay Tree-of-Sophia-only in this standalone retrieval wave"
+                f"{location} must stay Tree-of-Sophia-only in this standalone retrieval scope"
             )
     if actual_bindings != EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_BINDINGS:
         fail(
@@ -3205,8 +3065,8 @@ def validate_return_regrounding_manifest() -> None:
         fail("return regrounding manifest mode_bindings must keep the current stable mode order")
 
     if payload["output_paths"] != {
-        "full": "generated/return_regrounding_pack.json",
-        "min": "generated/return_regrounding_pack.min.json",
+        "full": RETURN_REGROUNDING_OUTPUT_REF,
+        "min": RETURN_REGROUNDING_MIN_OUTPUT_REF,
     }:
         fail("return regrounding manifest output_paths must match the committed generated output paths")
     if payload["bounded_output_contract"] != EXPECTED_RETURN_REGROUNDING_CONTRACT:
@@ -3990,12 +3850,12 @@ def validate_federation_spine_manifest(
     registry_manifest_input = source_inputs_by_name.get("federation_export_registry_manifest")
     if registry_manifest_input != (
         "aoa-kag",
-        "manifests/federation_export_registry.json",
+        FEDERATION_EXPORT_REGISTRY_MANIFEST_REF,
         "activation_manifest",
     ):
         fail(
             "federation spine manifest must keep federation_export_registry_manifest "
-            "pointing to manifests/federation_export_registry.json"
+            f"pointing to {FEDERATION_EXPORT_REGISTRY_MANIFEST_REF}"
         )
 
     repo_bindings = payload["repo_bindings"]
@@ -4169,7 +4029,7 @@ def validate_federation_spine_manifest(
 
         expected_adjunct_surfaces = EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO.get(repo_name)
         if expected_adjunct_surfaces is None:
-            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine wave")
+            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine scope")
         if normalized_adjunct_surfaces != expected_adjunct_surfaces:
             fail(
                 f"{location}.adjunct_surfaces must match the current bounded adjunct "
@@ -4529,7 +4389,7 @@ def validate_counterpart_federation_exposure_review_manifest() -> None:
         seen_review_names.add(surface_name)
         actual_review_order.append(surface_name)
         if surface_name != surface_input:
-            fail(f"{location}.surface_name must match surface_input in the current wave")
+            fail(f"{location}.surface_name must match surface_input in the current review scope")
         if exposure_posture != EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_POSTURES.get(surface_name):
             fail(
                 f"{location}.exposure_posture must match the current reviewed posture "
@@ -4628,9 +4488,10 @@ def validate_tos_text_chunk_map_pack(
         fail("ToS text chunk map pack pack_type must equal 'tos_text_chunk_map'")
     if payload["source_repo"] != TOS_REPO:
         fail("ToS text chunk map pack source_repo must equal 'Tree-of-Sophia'")
-    if payload["source_manifest_ref"] != "manifests/tos_text_chunk_map.json":
+    if payload["source_manifest_ref"] != TOS_TEXT_CHUNK_MAP_MANIFEST_REF:
         fail(
-            "ToS text chunk map pack source_manifest_ref must point to manifests/tos_text_chunk_map.json"
+            "ToS text chunk map pack source_manifest_ref must point to "
+            f"{TOS_TEXT_CHUNK_MAP_MANIFEST_REF}"
         )
     if payload["bounded_output_contract"] != EXPECTED_TOS_TEXT_CHUNK_MAP_CONTRACT:
         fail("ToS text chunk map pack bounded_output_contract must match the current source-first guardrail")
@@ -5001,10 +4862,10 @@ def validate_tos_zarathustra_route_pack(
         fail("ToS Zarathustra route pack pack_type must equal 'tos_zarathustra_route_pack'")
     if payload["source_repo"] != TOS_REPO:
         fail("ToS Zarathustra route pack source_repo must equal 'Tree-of-Sophia'")
-    if payload["source_manifest_ref"] != "manifests/tos_zarathustra_route_pack.json":
+    if payload["source_manifest_ref"] != TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_REF:
         fail(
             "ToS Zarathustra route pack source_manifest_ref must point to "
-            "manifests/tos_zarathustra_route_pack.json"
+            f"{TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_REF}"
         )
     if payload["route_id"] != TOS_ZARATHUSTRA_ROUTE_ID:
         fail(
@@ -5261,11 +5122,11 @@ def validate_tos_zarathustra_route_retrieval_pack(
         )
     if (
         payload["source_manifest_ref"]
-        != "manifests/tos_zarathustra_route_retrieval_pack.json"
+        != TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_REF
     ):
         fail(
             "ToS Zarathustra route retrieval pack source_manifest_ref must point to "
-            "manifests/tos_zarathustra_route_retrieval_pack.json"
+            f"{TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_REF}"
         )
     if (
         payload["bounded_output_contract"]
@@ -5356,7 +5217,7 @@ def validate_tos_zarathustra_route_retrieval_pack(
     if route["route_pack_ref"] != TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF:
         fail(
             "ToS Zarathustra route retrieval pack route_pack_ref must point to "
-            "generated/tos_zarathustra_route_pack.min.json"
+            f"{TOS_ZARATHUSTRA_ROUTE_PACK_INPUT_REF}"
         )
     if "/intake/" in route["route_pack_ref"] or route["route_pack_ref"].startswith("Tree-of-Sophia/intake/"):
         fail("ToS Zarathustra route retrieval pack route_pack_ref must not point at intake")
@@ -5446,7 +5307,7 @@ def validate_tos_zarathustra_route_retrieval_pack(
             if set(handle) != {"node_id", "authority_ref"}:
                 fail(
                     f"{location} must keep exactly node_id and authority_ref in the "
-                    "handles-only wave"
+                    "handles-only retrieval scope"
                 )
             node_id = handle["node_id"]
             authority_ref = handle["authority_ref"]
@@ -5556,8 +5417,11 @@ def validate_reasoning_handoff_pack(payload: object) -> None:
         fail("reasoning handoff pack pack_version must equal 1")
     if payload["pack_type"] != "reasoning_handoff_pack":
         fail("reasoning handoff pack pack_type must equal 'reasoning_handoff_pack'")
-    if payload["source_manifest_ref"] != "manifests/reasoning_handoff_pack.json":
-        fail("reasoning handoff pack source_manifest_ref must point to manifests/reasoning_handoff_pack.json")
+    if payload["source_manifest_ref"] != REASONING_HANDOFF_MANIFEST_REF:
+        fail(
+            "reasoning handoff pack source_manifest_ref must point to "
+            f"{REASONING_HANDOFF_MANIFEST_REF}"
+        )
     if payload["bounded_output_contract"] != EXPECTED_REASONING_HANDOFF_CONTRACT:
         fail("reasoning handoff pack bounded_output_contract must match the current source-first guardrail")
 
@@ -5881,8 +5745,11 @@ def validate_return_regrounding_pack(
         fail("return regrounding pack pack_version must equal 1")
     if payload["pack_type"] != "return_regrounding_pack":
         fail("return regrounding pack pack_type must equal 'return_regrounding_pack'")
-    if payload["source_manifest_ref"] != "manifests/return_regrounding_pack.json":
-        fail("return regrounding pack source_manifest_ref must point to manifests/return_regrounding_pack.json")
+    if payload["source_manifest_ref"] != RETURN_REGROUNDING_MANIFEST_REF:
+        fail(
+            "return regrounding pack source_manifest_ref must point to "
+            f"{RETURN_REGROUNDING_MANIFEST_REF}"
+        )
     if payload["bounded_output_contract"] != EXPECTED_RETURN_REGROUNDING_CONTRACT:
         fail("return regrounding pack bounded_output_contract must match the current source-first guardrail")
 
@@ -5921,7 +5788,7 @@ def validate_return_regrounding_pack(
     mode_order: list[str] = []
     counterpart_forbidden_refs = set(EXPECTED_COUNTERPART_CONSUMER_ALLOWED_REFS) | {
         EXPECTED_COUNTERPART_FEDERATION_EXPOSURE_REVIEW_REF,
-        "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md",
+        COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF,
     }
 
     for index, mode in enumerate(modes):
@@ -6033,7 +5900,7 @@ def validate_return_regrounding_pack(
                 },
                 label=f"{location}.stronger_refs",
             )
-            if "docs/COUNTERPART_FEDERATION_EXPOSURE_REVIEW.md" not in supporting_surface_refs:
+            if COUNTERPART_FEDERATION_EXPOSURE_REVIEW_DOC_REF not in supporting_surface_refs:
                 fail(f"{location}.supporting_surface_refs must keep the counterpart exposure review as a supporting boundary ref")
         elif mode_id == "handoff_guardrail_reentry":
             if not all(
@@ -6104,8 +5971,11 @@ def validate_kag_maturity_governance_pack(
         fail("KAG maturity governance pack pack_version must equal 1")
     if payload["pack_type"] != "kag_maturity_governance":
         fail("KAG maturity governance pack pack_type must equal 'kag_maturity_governance'")
-    if payload["source_manifest_ref"] != "manifests/kag_maturity_governance.json":
-        fail("KAG maturity governance pack source_manifest_ref must point to manifests/kag_maturity_governance.json")
+    if payload["source_manifest_ref"] != KAG_MATURITY_GOVERNANCE_MANIFEST_REF:
+        fail(
+            "KAG maturity governance pack source_manifest_ref must point to "
+            f"{KAG_MATURITY_GOVERNANCE_MANIFEST_REF}"
+        )
     if payload["bounded_output_contract"] != EXPECTED_KAG_MATURITY_GOVERNANCE_CONTRACT:
         fail("KAG maturity governance pack bounded_output_contract must match the current source-first stop-rule contract")
 
@@ -6374,8 +6244,11 @@ def validate_kag_maturity_governance_example() -> None:
         fail("KAG maturity governance example must be a JSON object")
     if payload.get("pack_type") != "kag_maturity_governance":
         fail("KAG maturity governance example pack_type must equal 'kag_maturity_governance'")
-    if payload.get("source_manifest_ref") != "manifests/kag_maturity_governance.json":
-        fail("KAG maturity governance example source_manifest_ref must point to manifests/kag_maturity_governance.json")
+    if payload.get("source_manifest_ref") != KAG_MATURITY_GOVERNANCE_MANIFEST_REF:
+        fail(
+            "KAG maturity governance example source_manifest_ref must point to "
+            f"{KAG_MATURITY_GOVERNANCE_MANIFEST_REF}"
+        )
     if payload.get("stability_tier_count") != len(payload.get("stability_tiers", [])):
         fail("KAG maturity governance example stability_tier_count must equal the number of tiers")
     if payload.get("surface_count") != len(payload.get("surfaces", [])):
@@ -6438,10 +6311,10 @@ def validate_federation_export_registry_pack(
         fail("federation export registry pack pack_version must equal 1")
     if payload["pack_type"] != "federation_export_registry":
         fail("federation export registry pack pack_type must equal 'federation_export_registry'")
-    if payload["source_manifest_ref"] != "manifests/federation_export_registry.json":
+    if payload["source_manifest_ref"] != FEDERATION_EXPORT_REGISTRY_MANIFEST_REF:
         fail(
             "federation export registry pack source_manifest_ref must point to "
-            "manifests/federation_export_registry.json"
+            f"{FEDERATION_EXPORT_REGISTRY_MANIFEST_REF}"
         )
 
     exports = payload["exports"]
@@ -6691,8 +6564,11 @@ def validate_federation_spine_pack(
         fail("federation spine pack pack_version must equal 1")
     if payload["pack_type"] != "federation_spine":
         fail("federation spine pack pack_type must equal 'federation_spine'")
-    if payload["source_manifest_ref"] != "manifests/federation_spine.json":
-        fail("federation spine pack source_manifest_ref must point to manifests/federation_spine.json")
+    if payload["source_manifest_ref"] != FEDERATION_SPINE_MANIFEST_REF:
+        fail(
+            "federation spine pack source_manifest_ref must point to "
+            f"{FEDERATION_SPINE_MANIFEST_REF}"
+        )
     if payload["artifact_identity"] != FEDERATION_SPINE_ARTIFACT_IDENTITY:
         fail("federation spine pack artifact_identity must match the published KAG readmodel contract")
     if payload["bounded_output_contract"] != EXPECTED_FEDERATION_SPINE_CONTRACT:
@@ -6886,7 +6762,7 @@ def validate_federation_spine_pack(
             )
         expected_adjunct_surfaces = EXPECTED_FEDERATION_SPINE_ADJUNCTS_BY_REPO.get(repo_name)
         if expected_adjunct_surfaces is None:
-            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine wave")
+            fail(f"{location}.repo '{repo_name}' is not allowed in the current spine scope")
         if normalized_adjunct_surfaces != expected_adjunct_surfaces:
             fail(
                 f"{location}.adjunct_surfaces must match the current bounded adjunct "
@@ -7008,10 +6884,10 @@ def validate_tiny_consumer_bundle_pack(expected_payload: dict[str, object]) -> N
         fail("tiny consumer bundle pack bundle_version must equal 1")
     if payload["bundle_type"] != "tiny_consumer_bundle":
         fail("tiny consumer bundle pack bundle_type must equal 'tiny_consumer_bundle'")
-    if payload["source_manifest_ref"] != "manifests/tiny_consumer_bundle.json":
+    if payload["source_manifest_ref"] != TINY_CONSUMER_BUNDLE_MANIFEST_REF:
         fail(
             "tiny consumer bundle pack source_manifest_ref must point to "
-            "manifests/tiny_consumer_bundle.json"
+            f"{TINY_CONSUMER_BUNDLE_MANIFEST_REF}"
         )
     if payload["source_inputs"] != expected_payload["source_inputs"]:
         fail("tiny consumer bundle pack source_inputs must match the manifest-driven donor set")
@@ -7091,10 +6967,10 @@ def validate_counterpart_federation_exposure_review_pack(
             "counterpart federation exposure review pack review_type must equal "
             "'counterpart_federation_exposure_review'"
         )
-    if payload["source_manifest_ref"] != "manifests/counterpart_federation_exposure_review.json":
+    if payload["source_manifest_ref"] != COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_REF:
         fail(
             "counterpart federation exposure review pack source_manifest_ref must point "
-            "to manifests/counterpart_federation_exposure_review.json"
+            f"to {COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_REF}"
         )
     if payload["source_inputs"] != expected_payload["source_inputs"]:
         fail(
@@ -7216,8 +7092,11 @@ def validate_technique_lift_pack(
         fail("technique lift pack pack_type must equal 'technique_lift_pack'")
     if payload["source_repo"] != "aoa-techniques":
         fail("technique lift pack source_repo must equal 'aoa-techniques'")
-    if payload["source_manifest_ref"] != "manifests/technique_lift_pack.json":
-        fail("technique lift pack source_manifest_ref must point to manifests/technique_lift_pack.json")
+    if payload["source_manifest_ref"] != TECHNIQUE_LIFT_MANIFEST_REF:
+        fail(
+            "technique lift pack source_manifest_ref must point to "
+            f"{TECHNIQUE_LIFT_MANIFEST_REF}"
+        )
 
     source_inputs = payload["source_inputs"]
     if not isinstance(source_inputs, list) or not source_inputs:
@@ -7514,7 +7393,7 @@ def validate_bridge_envelope_example() -> None:
     if not isinstance(faces, dict):
         fail("bridge envelope example faces must be an object")
     expected_faces = {
-        "retrieval_surface": "examples/tos_retrieval_axis_surface.example.json",
+        "retrieval_surface": "mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json",
         "chunk_face": "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_chunk_face.bridge.example.json",
         "graph_face": "aoa-memo/mechanics/consumer-handoff/parts/kag-tos-bridge-handoff/examples/memory_graph_face.bridge.example.json",
     }
@@ -8007,7 +7886,7 @@ def validate_memo_source_owned_export_consumer_boundary_doc() -> None:
     for snippet in REQUIRED_MEMO_SOURCE_OWNED_EXPORT_CONSUMER_BOUNDARY_SNIPPETS:
         if snippet not in text:
             fail(
-                "docs/SOURCE_OWNED_EXPORT_DEPENDENCIES.md is missing "
+                "mechanics/boundary-bridge/parts/source-owned-export/docs/source-owned-export-dependencies.md is missing "
                 f"memo consumer boundary guidance: {snippet}"
             )
 
@@ -8379,7 +8258,7 @@ def main() -> int:
 
     print("[ok] validated nested AGENTS docs")
     print("[ok] validated mechanics skeleton")
-    print("[ok] validated questbook boundary-runtime surfaces")
+    print("[ok] validated questbook quest-store surfaces")
     print("[ok] validated KAG registry schema surface")
     print("[ok] validated bridge retrieval surface schema")
     print("[ok] validated bridge envelope schema")
@@ -8417,20 +8296,20 @@ def main() -> int:
     print("[ok] validated tiny consumer bundle manifest schema")
     print("[ok] validated tiny consumer bundle schema")
     print("[ok] validated manifests/kag_registry.json")
-    print("[ok] validated manifests/technique_lift_pack.json")
-    print("[ok] validated manifests/tos_text_chunk_map.json")
-    print("[ok] validated manifests/tos_retrieval_axis_pack.json")
-    print("[ok] validated manifests/tos_zarathustra_route_pack.json")
-    print("[ok] validated manifests/tos_zarathustra_route_retrieval_pack.json")
-    print("[ok] validated manifests/reasoning_handoff_pack.json")
-    print("[ok] validated manifests/return_regrounding_pack.json")
-    print("[ok] validated manifests/kag_maturity_governance.json")
-    print("[ok] validated manifests/source_owned_export_dependencies.json")
-    print("[ok] validated manifests/federation_export_registry.json")
-    print("[ok] validated manifests/federation_spine.json")
-    print("[ok] validated manifests/cross_source_node_projection.json")
-    print("[ok] validated manifests/counterpart_federation_exposure_review.json")
-    print("[ok] validated manifests/tiny_consumer_bundle.json")
+    print(f"[ok] validated {TECHNIQUE_LIFT_MANIFEST_REF}")
+    print(f"[ok] validated {TOS_TEXT_CHUNK_MAP_MANIFEST_REF}")
+    print(f"[ok] validated {TOS_RETRIEVAL_AXIS_MANIFEST_REF}")
+    print(f"[ok] validated {TOS_ZARATHUSTRA_ROUTE_PACK_MANIFEST_REF}")
+    print(f"[ok] validated {TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_REF}")
+    print(f"[ok] validated {REASONING_HANDOFF_MANIFEST_REF}")
+    print(f"[ok] validated {RETURN_REGROUNDING_MANIFEST_REF}")
+    print(f"[ok] validated {KAG_MATURITY_GOVERNANCE_MANIFEST_REF}")
+    print(f"[ok] validated {SOURCE_OWNED_EXPORT_DEPENDENCIES_MANIFEST_REF}")
+    print(f"[ok] validated {FEDERATION_EXPORT_REGISTRY_MANIFEST_REF}")
+    print(f"[ok] validated {FEDERATION_SPINE_MANIFEST_REF}")
+    print(f"[ok] validated {CROSS_SOURCE_NODE_PROJECTION_MANIFEST_REF}")
+    print(f"[ok] validated {COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_REF}")
+    print("[ok] validated mechanics/boundary-bridge/parts/tiny-consumer-bundle/manifests/tiny_consumer_bundle.json")
     print("[ok] validated generated registry outputs are up to date")
     print("[ok] validated generated technique lift pack outputs are up to date")
     print("[ok] validated generated ToS text chunk map outputs are up to date")
