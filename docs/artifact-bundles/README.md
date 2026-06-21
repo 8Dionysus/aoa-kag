@@ -8,13 +8,15 @@ The current release-relevant surface is the generated KAG registry readmodel:
 - `kag_registry.bundle.json` describes the ABI subject, release controls, and
   consumer contract for `generated/kag_registry.min.json`.
 - `python scripts/validate_abyss_machine_kag_registry_bundle.py` builds,
-  signs, verifies, registry-roundtrips, and adversarially checks the
+  signs, verifies, registry-roundtrips, materializes the subject store, runs
+  an agent-intent trust gate for `aoa-kag`, and adversarially checks the
   ABI/SBOM-lite/SLSA bundle through `abyss-machine` when that package is
   available.
 - In portable CI where `abyss_machine` is not installed, the same validator
   checks the repo-local manifest contract, artifact identity parity, subject
-  inventory, and public-safety scan. Use `--require-abyss-machine` for a host
-  lane that must fail unless the full OS Abyss artifact-bundle roundtrip runs.
+  inventory, consumer-path shape, and public-safety scan. Use
+  `--require-abyss-machine` for a host lane that must fail unless the full OS
+  Abyss artifact-bundle roundtrip runs.
 
 These manifests are not runtime state. They are portable release inputs; local
 bundle directories, registry records, and sidecars are generated evidence.

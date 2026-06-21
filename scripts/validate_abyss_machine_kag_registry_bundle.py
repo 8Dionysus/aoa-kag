@@ -182,7 +182,10 @@ def _assert_manifest_contract_shape(manifest: Path) -> None:
         "artifacts sign",
         "artifacts verify",
         "artifacts release-check",
-        "artifacts bundle-registry",
+        "artifacts bundle-register",
+        "artifacts materialize-subjects",
+        "artifacts trust-gate",
+        "artifacts registry-latest",
     ):
         if token not in commands:
             raise ValueError(f"manifest consumer_command must include {token}")
@@ -384,6 +387,40 @@ def _registry_roundtrip(
     }
 
 
+def _registry_roundtrip_with_subject_store(
+    artifact_bundles: Any,
+    bundle_dir: Path,
+    registry_dir: Path,
+    store_root: Path,
+    *,
+    lifecycle_state: str,
+    evidence_ref: str,
+) -> dict[str, Any]:
+    env_root = "ABYSS_MACHINE_ARTIFACT_SUBJECT_STORE_ROOT"
+    env_roots = "ABYSS_MACHINE_ARTIFACT_SUBJECT_STORE_ROOTS"
+    old_root = os.environ.get(env_root)
+    old_roots = os.environ.get(env_roots)
+    os.environ[env_root] = str(store_root)
+    os.environ[env_roots] = str(store_root)
+    try:
+        return _registry_roundtrip(
+            artifact_bundles,
+            bundle_dir,
+            registry_dir,
+            lifecycle_state=lifecycle_state,
+            evidence_ref=evidence_ref,
+        )
+    finally:
+        if old_root is None:
+            os.environ.pop(env_root, None)
+        else:
+            os.environ[env_root] = old_root
+        if old_roots is None:
+            os.environ.pop(env_roots, None)
+        else:
+            os.environ[env_roots] = old_roots
+
+
 def _verify_missing_sidecar(
     artifact_bundles: Any,
     abyss_repo_root: Path,
@@ -397,6 +434,27 @@ def _verify_missing_sidecar(
     path = candidate / sidecar_name
     if path.exists():
         path.unlink()
+    verification = artifact_bundles.verify_bundle(candidate, repo_root=abyss_repo_root)
+    return {
+        "ok": verification.get("ok") is False and bool(verification.get("missing")),
+        "verification": verification,
+    }
+
+
+def _verify_missing_sbom_control(
+    artifact_bundles: Any,
+    abyss_repo_root: Path,
+    bundle_dir: Path,
+    tmp_root: Path,
+) -> dict[str, Any]:
+    candidate = _copy_bundle(bundle_dir, tmp_root / "missing-sbom")
+    for sidecar_name in (
+        artifact_bundles.SBOM_CYCLONEDX_SIDECAR,
+        artifact_bundles.SBOM_SPDX_SIDECAR,
+    ):
+        path = candidate / sidecar_name
+        if path.exists():
+            path.unlink()
     verification = artifact_bundles.verify_bundle(candidate, repo_root=abyss_repo_root)
     return {
         "ok": verification.get("ok") is False and bool(verification.get("missing")),
@@ -505,6 +563,62 @@ def _verify_terminal_registry_state(
     }
 
 
+def _verify_materialized_subject_store(
+    artifact_bundles: Any,
+    manifest: Path,
+    bundle_dir: Path,
+    registry_dir: Path,
+    tmp_root: Path,
+) -> dict[str, Any]:
+    store_root = tmp_root / "subject-store"
+    pre_registry = _registry_roundtrip(
+        artifact_bundles,
+        bundle_dir,
+        registry_dir,
+        lifecycle_state="release-ready",
+        evidence_ref="materialized-subject-store-precondition",
+    )
+    materialized = artifact_bundles.materialize_artifact_subjects(
+        bundle_dir,
+        store_root=store_root,
+        registry_dir=registry_dir,
+        manifest_ref=manifest,
+        consumer_intent="agent",
+        expected_source_repo=OWNER_REPO,
+    )
+    refreshed_registry = _registry_roundtrip_with_subject_store(
+        artifact_bundles,
+        bundle_dir,
+        registry_dir,
+        store_root,
+        lifecycle_state="release-ready",
+        evidence_ref="materialized-subject-store-rehearsal",
+    )
+    latest_record = refreshed_registry.get("latest", {}).get("latest_by_artifact_class", {}).get(ARTIFACT_CLASS, {})
+    store_status = latest_record.get("artifact_subject_store") if isinstance(latest_record, dict) else {}
+    gate = artifact_bundles.trust_gate(
+        registry_dir,
+        artifact_class=ARTIFACT_CLASS,
+        subject_digest=str(materialized.get("aggregate_digest") or ""),
+        consumer_intent="agent",
+        expected_source_repo=OWNER_REPO,
+    )
+    return {
+        "ok": bool(
+            pre_registry.get("ok")
+            and materialized.get("ok")
+            and refreshed_registry.get("ok")
+            and isinstance(store_status, dict)
+            and store_status.get("ok") is True
+            and gate.get("verdict") == "allow"
+        ),
+        "pre_registry": pre_registry,
+        "materialized": materialized,
+        "refreshed_registry": refreshed_registry,
+        "trust_gate": gate,
+    }
+
+
 def _run_adversarial_checks(
     artifact_bundles: Any,
     abyss_repo_root: Path,
@@ -531,6 +645,12 @@ def _run_adversarial_checks(
                 sidecar_name=artifact_bundles.ABI_SIDECAR,
                 label="missing-abi",
             ),
+            "missing_sbom": _verify_missing_sbom_control(
+                artifact_bundles,
+                abyss_repo_root,
+                bundle_dir,
+                tmp_root,
+            ),
             "wrong_external_subject": _verify_wrong_external_subject(
                 artifact_bundles,
                 abyss_repo_root,
@@ -550,6 +670,13 @@ def _run_adversarial_checks(
             "terminal_registry_state": _verify_terminal_registry_state(
                 artifact_bundles,
                 bundle_dir,
+                tmp_root,
+            ),
+            "materialized_subject_store": _verify_materialized_subject_store(
+                artifact_bundles,
+                manifest,
+                bundle_dir,
+                tmp_root / "materialized-registry",
                 tmp_root,
             ),
         }

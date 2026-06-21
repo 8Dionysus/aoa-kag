@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import patch
 
@@ -5,6 +6,17 @@ from scripts import validate_abyss_machine_kag_registry_bundle as validator
 
 
 class AbyssMachineKagRegistryBundleValidatorTest(unittest.TestCase):
+    def test_manifest_declares_materialized_consumer_trust_gate_path(self) -> None:
+        manifest = json.loads(validator.DEFAULT_MANIFEST.read_text(encoding="utf-8"))
+        commands = "\n".join(manifest["consumer_command"])
+
+        self.assertIn("bundle-register", commands)
+        self.assertIn("materialize-subjects", commands)
+        self.assertIn("trust-gate", commands)
+        self.assertIn("registry-latest", commands)
+        self.assertIn("--expected-source-repo aoa-kag", commands)
+        self.assertIn("--source-repo aoa-kag", commands)
+
     def test_portable_contract_fallback_when_abyss_machine_is_unavailable(self) -> None:
         with patch.object(
             validator,
