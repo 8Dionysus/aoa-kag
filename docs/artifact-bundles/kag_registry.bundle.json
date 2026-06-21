@@ -108,6 +108,9 @@
     "abyss-machine artifacts sign BUNDLE_DIR",
     "abyss-machine artifacts verify BUNDLE_DIR",
     "abyss-machine artifacts release-check BUNDLE_DIR",
-    "abyss-machine artifacts bundle-registry --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --json"
+    "abyss-machine artifacts bundle-register BUNDLE_DIR --registry-dir REGISTRY_DIR --lifecycle-state release-ready --consumer aoa-kag:kag-registry --json",
+    "abyss-machine artifacts materialize-subjects BUNDLE_DIR --registry-dir REGISTRY_DIR --manifest docs/artifact-bundles/kag_registry.bundle.json --consumer-intent agent --expected-source-repo aoa-kag --json",
+    "abyss-machine artifacts trust-gate --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --consumer-intent agent --source-repo aoa-kag --subject-digest SUBJECT_DIGEST --json",
+    "abyss-machine artifacts registry-latest --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --source-repo aoa-kag --json"
   ]
 }
