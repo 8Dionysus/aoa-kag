@@ -7,24 +7,24 @@ Read these surfaces as bounded guides to source-owned meaning, not as
 replacements for that meaning.
 
 If you want the current machine-readable package for this path, start with
-`generated/tiny_consumer_bundle.min.json`.
+`mechanics/boundary-bridge/parts/tiny-consumer-bundle/generated/tiny_consumer_bundle.min.json`.
 
 ## Recommended read path
 
-1. Start with `generated/tos_text_chunk_map.min.json`.
+1. Start with `mechanics/distillation/parts/tos-text-chunk-map/generated/tos_text_chunk_map.min.json`.
    This gives the current source-linked retrieval units for the bounded
    Zarathustra authority slice.
-2. Move to `generated/tos_retrieval_axis_pack.min.json`.
+2. Move to `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_retrieval_axis_pack.min.json`.
    This adds bounded source, lineage, conflict, practice, and memo handles
    without ranking or routing policy.
-3. Read `generated/federation_spine.min.json`.
+3. Read `mechanics/boundary-bridge/parts/federation-spine/generated/federation_spine.min.json`.
    This gives the current two-repo source-owned tiny export entrypoints for
    `aoa-techniques` and `Tree-of-Sophia`.
-4. Read `generated/cross_source_node_projection.min.json`.
+4. Read `mechanics/boundary-bridge/parts/cross-source-projection/generated/cross_source_node_projection.min.json`.
    This gives the current one-hop projection that pairs one primary AoA export
    with one supporting ToS export while keeping non-identity explicit.
 5. When provenance weakens or a derived surface starts sounding stronger than
-   the source that feeds it, read `generated/return_regrounding_pack.min.json`.
+   the source that feeds it, read `mechanics/recurrence/parts/return-regrounding/generated/return_regrounding_pack.min.json`.
    This gives the current bounded re-entry map back to stronger source-owned or
    owner-owned refs.
 
@@ -32,7 +32,7 @@ If you want the current machine-readable package for this path, start with
 
 `AOA-K-0011` is available as a separate standalone adjunct at:
 
-- `generated/tos_zarathustra_route_retrieval_pack.min.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_zarathustra_route_retrieval_pack.min.json`
 
 Use it when you want one handles-only route-family read surface over the full
 canonical Zarathustra `prologue-1` bundle. Do not treat it as a replacement for
@@ -48,15 +48,15 @@ Its payload is intentionally explicit about that limit:
 
 ## Counterpart posture
 
-`counterpart_refs` remain contract-only in the current wave.
+`counterpart_refs` remain contract-only in the current planned scope.
 
 Use:
 
-- `generated/counterpart_federation_exposure_review.min.json`
-- `docs/COUNTERPART_CONSUMER_CONTRACT.md`
-- `examples/counterpart_consumer_contract.example.json`
+- `mechanics/audit/parts/exposure-review/generated/counterpart_federation_exposure_review.min.json`
+- `mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-consumer-contract.md`
+- `mechanics/boundary-bridge/parts/counterpart-edge/examples/counterpart_consumer_contract.example.json`
 
-Do not treat `examples/counterpart_edge_view.example.json` as an active
+Do not treat `mechanics/boundary-bridge/parts/counterpart-edge/examples/counterpart_edge_view.example.json` as an active
 generated retrieval or projection payload.
 
 ## Recommended consumer posture

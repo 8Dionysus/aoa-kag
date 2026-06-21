@@ -4,7 +4,8 @@ This package maps the common AoA Release-support mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active part route:
+`parts/release-lane/`.
 
 ### Trigger
 
@@ -39,5 +40,6 @@ truth, runtime deployment, or owner acceptance.
 
 ### Next route
 
-Start with `PARTS.md`. Create a part only when release-support artifacts need
-their own local contract beyond root release validation.
+Start with `PARTS.md`. Use `parts/release-lane/` for release command posture.
+Keep command storage in `config/validation_lanes.json` and public entrypoints
+under `scripts/`.

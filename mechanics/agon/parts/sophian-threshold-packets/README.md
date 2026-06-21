@@ -11,8 +11,8 @@ candidates without granting KAG any Tree of Sophia canon authority.
 ## Inputs
 
 - `config/sophian-threshold-packet-registry.source.json`
-- root schemas for `agon-sophian-kag-packet`
-- root examples for threshold packet payload shape
+- part-local schemas for `agon-sophian-kag-packet`
+- part-local examples for threshold packet payload shape
 - owner-routed evidence and explicit boundary checks
 
 ## Outputs

@@ -13,7 +13,8 @@ obligations, quest source posture, and quest dispatch or catalog projections.
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
 `mechanics/README.md`, this package `README.md`, `PARTS.md`, `PROVENANCE.md`,
-`QUESTBOOK.md`, and `docs/QUESTBOOK_KAG_INTEGRATION.md`.
+`QUESTBOOK.md`, and
+`parts/quest-store/docs/questbook-kag-integration.md`.
 
 ## Boundaries
 
@@ -21,13 +22,18 @@ Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
 - Generated quest views do not author quest meaning.
 - Owner repositories prove acceptance or closure.
 - KAG quests should stay about derived-substrate work.
-- No part directory is active until a part-local quest contract and validator exist.
+- `parts/quest-store/` owns focused quest source, public-index, and
+  catalog/dispatch alignment validation.
+- Additional part directories need a part-local quest contract and validator
+  first.
 
 ## Validation
 
 Run `python scripts/validate_mechanics_skeleton.py`.
-If quest surfaces move, run `python scripts/validate_kag.py` and focused
-questbook tests before broader release checks.
+If quest surfaces move, run
+`python mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py`,
+focused questbook tests, `python scripts/validate_kag.py`, and broader release
+checks when the change is release-facing.
 
 ## Closeout
 

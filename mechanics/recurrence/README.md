@@ -4,7 +4,8 @@ This package maps the common AoA Recurrence mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active part route:
+`parts/return-regrounding/`.
 
 ### Trigger
 
@@ -39,5 +40,6 @@ runtime recovery, source rewrite, or hidden graph repair.
 
 ### Next route
 
-Start with `PARTS.md`. Create a part only when one recurrence route needs its
-own local contract and validation beyond root KAG generated checks.
+Start with `PARTS.md`. Use `parts/return-regrounding/` for the current return
+route. Create another part only when one recurrence route needs its own local
+contract and validation beyond root KAG generated checks.

@@ -13,8 +13,14 @@ KAG quest route needs source or owner-route trace.
 ## KAG source surfaces
 
 - `QUESTBOOK.md`
-- `quests/`
-- `docs/QUESTBOOK_KAG_INTEGRATION.md`
-- quest schemas, examples, validator routes, and focused tests.
+- `quests/` lane/state source records
+- `mechanics/questbook/parts/quest-store/docs/questbook-kag-integration.md`
+- part-local quest schemas, examples, validator routes, and focused tests.
+
+## Active local part routes
+
+- `mechanics/questbook/parts/quest-store/` owns focused validation for quest
+  source shape, public index posture, schemas, and quest catalog/dispatch
+  example alignment while lane/state quest records remain source surfaces.
 
 No package-local `legacy/` route is active yet.

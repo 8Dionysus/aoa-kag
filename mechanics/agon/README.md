@@ -42,6 +42,5 @@ canonization, source truth, direct ToS promotion, or proof acceptance.
 ### Next route
 
 Start with `PARTS.md`. Use the active part route when changing promotion
-candidates or Sophian threshold packets. Root generated registries, schemas,
-and examples remain repo-wide read-model and contract homes until a later part
-contract narrows them safely.
+candidates or Sophian threshold packets. Generated registries, schemas, and
+examples live under the owning part routes.

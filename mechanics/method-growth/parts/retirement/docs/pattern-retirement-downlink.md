@@ -2,7 +2,7 @@
 
 Version: v0.7
 Owner surface: `aoa-kag`
-Seed family: Experience Adoption Forge
+Pattern family: Experience Adoption Forge
 
 ## Purpose
 

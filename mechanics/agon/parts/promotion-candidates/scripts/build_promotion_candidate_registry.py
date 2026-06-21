@@ -9,8 +9,9 @@ import sys
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[5]
-SRC = ROOT / 'mechanics/agon/parts/promotion-candidates/config/promotion-candidate-registry.source.json'
-OUT = ROOT / 'generated/agon_kag_promotion_candidate_registry.min.json'
+PART_ROOT = ROOT / 'mechanics/agon/parts/promotion-candidates'
+SRC = PART_ROOT / 'config/promotion-candidate-registry.source.json'
+OUT = PART_ROOT / 'generated/agon_kag_promotion_candidate_registry.min.json'
 ITEM_KEY = 'kag_candidates'
 REGISTRY_ID = 'agon.kag_promotion_candidates.registry.v1'
 REVIEW_STAGE = 'kag_promotion_path'

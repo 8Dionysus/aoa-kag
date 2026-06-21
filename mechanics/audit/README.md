@@ -4,7 +4,8 @@ This package maps the common AoA Audit mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active part routes:
+`parts/proof-expectation-refs/` and `parts/exposure-review/`.
 
 ### Trigger
 
@@ -40,5 +41,7 @@ state, or activation authority.
 
 ### Next route
 
-Start with `PARTS.md`. Create a part only when an audit family needs its own
-contract and validation beyond current root KAG validators.
+Start with `PARTS.md`. Use `parts/proof-expectation-refs/` for proof-ref
+audit posture and `parts/exposure-review/` for counterpart exposure review.
+Promote `owner-evidence-route` only when it has a distinct audit payload beyond
+the source-owned export bridge route.

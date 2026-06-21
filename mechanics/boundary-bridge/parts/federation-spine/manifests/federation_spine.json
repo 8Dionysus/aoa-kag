@@ -1,0 +1,83 @@
+{
+  "manifest_version": 1,
+  "pack_type": "federation_spine",
+  "source_inputs": [
+    {
+      "name": "kag_registry_manifest",
+      "repo": "aoa-kag",
+      "path": "manifests/kag_registry.json",
+      "role": "registry_manifest"
+    },
+    {
+      "name": "federation_export_registry_manifest",
+      "repo": "aoa-kag",
+      "path": "mechanics/boundary-bridge/parts/source-owned-export/manifests/federation_export_registry.json",
+      "role": "activation_manifest"
+    },
+    {
+      "name": "aoa_techniques_kag_export",
+      "repo": "aoa-techniques",
+      "path": "generated/kag_export.min.json",
+      "role": "source_owned_export"
+    },
+    {
+      "name": "tos_kag_export",
+      "repo": "Tree-of-Sophia",
+      "path": "ToS/derived-exports/kag_export.min.json",
+      "role": "source_owned_export"
+    }
+  ],
+  "repo_bindings": [
+    {
+      "surface_id": "AOA-K-0009",
+      "repo": "aoa-techniques",
+      "pilot_posture": "source_owned_export_tiny",
+      "export_input": "aoa_techniques_kag_export",
+      "adjunct_surfaces": [],
+      "provenance_note": "Consumes the current source-owned tiny aoa-techniques export directly during the bounded two-repo pilot.",
+      "non_identity_boundary": "This derived spine guides federation entry through a source-owned tiny export and does not replace authored technique meaning or move routing ownership into aoa-kag."
+    },
+    {
+      "surface_id": "AOA-K-0009",
+      "repo": "Tree-of-Sophia",
+      "pilot_posture": "source_owned_export_tiny",
+      "export_input": "tos_kag_export",
+      "adjunct_surfaces": [
+        {
+          "surface_id": "AOA-K-0011",
+          "surface_name": "tos-zarathustra-route-retrieval-surface",
+          "surface_ref": "mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_zarathustra_route_retrieval_pack.min.json",
+          "match_key": "retrieval_id",
+          "target_value": "AOA-K-0011::thus-spoke-zarathustra/prologue-1",
+          "route_id": "thus-spoke-zarathustra/prologue-1",
+          "adjunct_budget": {
+            "max_adjunct_surfaces": 1,
+            "max_route_families": 1,
+            "numbered_tiny_path_inclusion": "forbidden",
+            "default_activation": "opt_in_only"
+          },
+          "subordinate_posture": {
+            "adjunct_role": "standalone_handles_only",
+            "entry_order": "source_owned_tiny_entry_before_adjunct",
+            "source_first_reentry_ref": "Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json",
+            "routing_ownership": "forbidden",
+            "canon_authorship": "forbidden"
+          }
+        }
+      ],
+      "provenance_note": "Consumes the current source-owned tiny Tree-of-Sophia export directly from the bounded authority, capsule, and tiny-entry slice.",
+      "non_identity_boundary": "This derived spine guides federation entry through a source-owned tiny ToS export and does not replace ToS-authored authority or move canon ownership into aoa-kag."
+    }
+  ],
+  "output_paths": {
+    "full": "mechanics/boundary-bridge/parts/federation-spine/generated/federation_spine.json",
+    "min": "mechanics/boundary-bridge/parts/federation-spine/generated/federation_spine.min.json"
+  },
+  "bounded_output_contract": {
+    "source_trace_required": true,
+    "source_replacement": "forbidden",
+    "routing_ownership": "forbidden",
+    "canon_authorship": "forbidden",
+    "full_federation_claim": "forbidden"
+  }
+}

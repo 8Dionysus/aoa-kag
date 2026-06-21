@@ -4,7 +4,8 @@ This package maps the common AoA Checkpoint mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active part route:
+`parts/reasoning-handoff/`.
 
 ### Trigger
 
@@ -39,5 +40,6 @@ restart, or source mutation.
 
 ### Next route
 
-Start with `PARTS.md`. Create a part only when one checkpoint-shaped handoff
-family needs its own local contract and validation.
+Start with `PARTS.md`. Use `parts/reasoning-handoff/` for the current handoff
+guardrail route. Create another part only when one checkpoint-shaped handoff or
+return family needs its own local contract and validation.

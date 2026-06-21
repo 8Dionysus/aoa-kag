@@ -31,10 +31,11 @@ Do not use it for:
 
 ## Backing files
 
-- `quests/*.yaml`
-- `schemas/quest.schema.json`
-- `schemas/quest_dispatch.schema.json`
-- `examples/quest_catalog.min.example.json`
-- `examples/quest_dispatch.min.example.json`
+- `quests/kag/<state>/AOA-KAG-Q-*.yaml`
+- `mechanics/questbook/parts/quest-store/schemas/quest.schema.json`
+- `mechanics/questbook/parts/quest-store/schemas/quest_dispatch.schema.json`
+- `mechanics/questbook/parts/quest-store/examples/quest_catalog.min.example.json`
+- `mechanics/questbook/parts/quest-store/examples/quest_dispatch.min.example.json`
 
-The files under `examples/*.example.json` are reviewable examples. They are not generated state and they are not runtime authority.
+The quest-store example files are reviewable examples. They are not generated
+state and they are not runtime authority.

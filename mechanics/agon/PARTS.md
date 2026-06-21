@@ -20,8 +20,8 @@ When a part becomes active, it should own:
 
 | Part | Use when | Active route |
 | --- | --- | --- |
-| `promotion-candidates` | Agon-derived pattern families ask for KAG candidate review. | `parts/promotion-candidates/README.md`, `CONTRACT.md`, `VALIDATION.md`; part-local config, manifests, scripts, docs, and tests; root generated registry, schemas, and examples remain repo-wide companions. |
-| `sophian-threshold-packets` | Agon KAG candidates ask whether a Sophian review packet is possible. | `parts/sophian-threshold-packets/README.md`, `CONTRACT.md`, `VALIDATION.md`; part-local config, manifests, scripts, docs, and tests; root generated registry, schemas, and examples remain repo-wide companions. |
+| `promotion-candidates` | Agon-derived pattern families ask for KAG candidate review. | `parts/promotion-candidates/README.md`, `CONTRACT.md`, `VALIDATION.md`; part-local config, manifests, scripts, docs, generated registry, schemas, examples, and tests. |
+| `sophian-threshold-packets` | Agon KAG candidates ask whether a Sophian review packet is possible. | `parts/sophian-threshold-packets/README.md`, `CONTRACT.md`, `VALIDATION.md`; part-local config, manifests, scripts, docs, generated registry, schemas, examples, and tests. |
 
 Do not create additional `parts/<part>/` directories until the new slice has a
 local contract, validation route, and artifacts that are clearer inside the

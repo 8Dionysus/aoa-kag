@@ -4,7 +4,9 @@ This package maps the common AoA Boundary Bridge mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active part routes:
+`parts/source-owned-export/`, `parts/tos-retrieval-axis/`,
+`parts/cross-source-projection/`, and `parts/federation-spine/`.
 
 ### Trigger
 
@@ -39,5 +41,7 @@ authority, graph sovereignty, or owner acceptance.
 
 ### Next route
 
-Start with `PARTS.md`. Promote a bridge part only when one bridge family needs
-its own contract, validation route, and nearest artifact home.
+Start with `PARTS.md`. Use active bridge parts for donor ingress, ToS
+retrieval handles, cross-source projection, and federation spine posture.
+Counterpart exposure review routes through audit until a distinct active
+counterpart-edge payload exists.

@@ -10,11 +10,13 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 ROOT = pathlib.Path(__file__).resolve().parents[5]
-SRC = ROOT / 'mechanics/agon/parts/sophian-threshold-packets/config/sophian-threshold-packet-registry.source.json'
-OUT = ROOT / 'generated/agon_sophian_kag_packet_registry.min.json'
-ENTRY_SCHEMA = ROOT / 'schemas/agon-sophian-kag-packet.schema.json'
-REGISTRY_SCHEMA = ROOT / 'schemas/agon-sophian-kag-packet-registry.schema.json'
-BUILDER = ROOT / 'mechanics/agon/parts/sophian-threshold-packets/scripts/build_sophian_threshold_packet_registry.py'
+PART_ROOT = ROOT / 'mechanics/agon/parts/sophian-threshold-packets'
+SRC = PART_ROOT / 'config/sophian-threshold-packet-registry.source.json'
+OUT = PART_ROOT / 'generated/agon_sophian_kag_packet_registry.min.json'
+ENTRY_SCHEMA = PART_ROOT / 'schemas/agon-sophian-kag-packet.schema.json'
+REGISTRY_SCHEMA = PART_ROOT / 'schemas/agon-sophian-kag-packet-registry.schema.json'
+REGISTRY_EXAMPLE = PART_ROOT / 'examples/agon_sophian_kag_packet_registry.example.json'
+BUILDER = PART_ROOT / 'scripts/build_sophian_threshold_packet_registry.py'
 ITEM_KEY = 'sophian_kag_packet_candidates'
 REGISTRY_ID = 'agon.sophian_kag_packet.registry.v1'
 REVIEW_STAGE = 'sophian_threshold'
@@ -120,6 +122,8 @@ def validate() -> int:
     for schema_path in (ENTRY_SCHEMA, REGISTRY_SCHEMA):
         if not schema_path.exists():
             return fail(f'missing schema {schema_path}')
+    if not REGISTRY_EXAMPLE.exists():
+        return fail(f'missing example {REGISTRY_EXAMPLE}')
 
     source = load_json(SRC)
     err = validate_source_metadata(source)
@@ -154,6 +158,10 @@ def validate() -> int:
     if registry != expected_registry:
         return fail('generated registry is stale or does not match builder output')
     err = schema_error(REGISTRY_SCHEMA, registry, 'generated registry')
+    if err:
+        return fail(err)
+    registry_example = load_json(REGISTRY_EXAMPLE)
+    err = schema_error(REGISTRY_SCHEMA, registry_example, f'example {REGISTRY_EXAMPLE.relative_to(ROOT)}')
     if err:
         return fail(err)
     if registry.get('count') != EXPECTED_COUNT:

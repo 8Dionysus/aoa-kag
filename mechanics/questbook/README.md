@@ -4,7 +4,7 @@ This package maps the common AoA Questbook mechanic into the KAG layer.
 
 ## Mechanic card
 
-Status: mapped common-center mechanic; no active part directories yet.
+Status: mapped common-center mechanic; active `quest-store` part route exists.
 
 ### Trigger
 
@@ -34,10 +34,12 @@ dispatch examples, and owner-routed follow-up.
 
 ### Must not claim
 
-Owner acceptance, proof closure, implementation landing, private scratch,
+Owner acceptance, proof closure, implementation activation, private scratch,
 roadmap replacement, or generated-view authority.
 
 ### Next route
 
-Start with `PARTS.md`. Create a part only when quest source, public index, or
-generated dispatch posture needs its own local contract beyond root validation.
+Start with `PARTS.md`. Use `parts/quest-store/` when quest source shape,
+public index posture, or catalog/dispatch example alignment changes. Create
+additional parts only when public-index or dispatch pressure needs a clearer
+contract than the quest-store route provides.

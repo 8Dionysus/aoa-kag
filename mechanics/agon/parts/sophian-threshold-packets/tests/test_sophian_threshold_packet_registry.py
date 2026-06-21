@@ -7,7 +7,7 @@ import sys
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[5]
-GENERATED = ROOT / 'generated/agon_sophian_kag_packet_registry.min.json'
+GENERATED = ROOT / 'mechanics/agon/parts/sophian-threshold-packets/generated/agon_sophian_kag_packet_registry.min.json'
 SCRIPT = ROOT / 'mechanics/agon/parts/sophian-threshold-packets/scripts/build_sophian_threshold_packet_registry.py'
 VALIDATOR = ROOT / 'mechanics/agon/parts/sophian-threshold-packets/scripts/validate_sophian_threshold_packet_registry.py'
 EXPECTED_COUNT = 7

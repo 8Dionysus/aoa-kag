@@ -9,11 +9,12 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[5]
 BUILDER = ROOT / 'mechanics/agon/parts/promotion-candidates/scripts/build_promotion_candidate_registry.py'
 VALIDATOR = ROOT / 'mechanics/agon/parts/promotion-candidates/scripts/validate_promotion_candidate_registry.py'
+GENERATED = ROOT / 'mechanics/agon/parts/promotion-candidates/generated/agon_kag_promotion_candidate_registry.min.json'
 
 
 class AgonKagPromotionCandidateRegistryTestCase(unittest.TestCase):
     def test_promotion_candidate_registry_shape(self) -> None:
-        reg = json.loads((ROOT / 'generated/agon_kag_promotion_candidate_registry.min.json').read_text(encoding='utf-8'))
+        reg = json.loads(GENERATED.read_text(encoding='utf-8'))
         self.assertEqual(reg['review_stage'], 'kag_promotion_path')
         self.assertEqual(reg['count'], 9)
         self.assertEqual(len(reg['kag_candidates']), 9)

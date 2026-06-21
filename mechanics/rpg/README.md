@@ -39,5 +39,6 @@ quest closure, or decorative game skin as authority.
 
 ### Next route
 
-Start with `PARTS.md`. No active KAG part pressure is present yet; keep this as
-a common route home until a real vocabulary overlay needs validation.
+Start with `PARTS.md`. No active KAG RPG payload exists yet; current quest and
+consumer docs use canonical ids and questbook/docs ownership without an RPG
+vocabulary overlay.

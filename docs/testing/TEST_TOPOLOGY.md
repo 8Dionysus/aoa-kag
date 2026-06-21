@@ -27,7 +27,7 @@ mechanics part test homes.
 
 | Home Scope | Homes | Protects | Coverage Authority | Failure Route |
 |---|---|---|---|---|
-| `root` | `tests/` | Repo-wide route, docs, `kag/` source-home preflight, generated projection, validator, CI, mechanics skeleton, and release contracts. | `scripts/run_tests.py` | Fix the root-owned source or validator before changing future mechanic-local tests. |
+| `root` | `tests/` | Repo-wide route, docs, `kag/` source-home preflight, generated projection, validator, CI, mechanics skeleton, and release contracts. | `scripts/run_tests.py` | Fix the repo-wide source, owning part source, or validator before changing future mechanic-local tests. |
 | `mechanics-part` | `mechanics/<package>/parts/<part>/tests/` | Active mechanic-owned payload builders, validators, source configs, and generated read-model companions for that part. | `scripts/run_tests.py` | Fix the owning part contract, validation route, source config, builder, validator, or generated companion before widening the part. |
 
 ## Families
@@ -37,7 +37,7 @@ mechanics part test homes.
 | `AGENTS/route` | Nested and semantic route-card shape. | AGENTS cards and semantic validators. |
 | `docs/root-surface` | Root/docs routing, roadmap parity, and public KAG posture. | `README.md`, `ROADMAP.md`, `docs/`. |
 | `decision-lane` | Decision record metadata and generated lookup indexes. | `docs/decisions/`. |
-| `generated/read-model` | Generated KAG read models and downstream feed contracts. | `manifests/`, `generated/`, builders, part-local builders, and `scripts/validate_kag.py`. |
+| `generated/read-model` | Generated KAG read models and downstream feed contracts. | repo-wide and part-local manifests/generated companions, builders, and `scripts/validate_kag.py`. |
 | `kag/source-home-preflight` | Local `/kag` source-home manifest, protocol topology, reserved future surfaces, and no-premature-directory boundary. | `kag/`. |
 | `release/ci-lane` | CI lane composition, release stabilization, and workflow posture. | `config/validation_lanes.json`, `.github/workflows/*`, `scripts/release_check.py`. |
 | `mechanics/root-topology` | Current mechanics package map, KAG-only stop-line, and no-part-directory boundary. | `mechanics/`. |

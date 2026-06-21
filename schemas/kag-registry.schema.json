@@ -4,7 +4,7 @@
   "title": "AoA KAG registry",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "layer", "surfaces"],
+  "required": ["version", "layer", "artifact_identity", "surfaces"],
   "properties": {
     "version": {
       "type": "integer",
@@ -13,6 +13,91 @@
     "layer": {
       "type": "string",
       "const": "aoa-kag"
+    },
+    "artifact_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_class",
+        "surface_state",
+        "owner_repo",
+        "authority_ref",
+        "producer",
+        "consumer_expectation",
+        "privacy_boundary",
+        "content_identity",
+        "abi_epoch",
+        "contract_version",
+        "trust_layer",
+        "verification",
+        "action"
+      ],
+      "properties": {
+        "artifact_class": {
+          "type": "string",
+          "const": "derived_kag_registry_readmodel_bundle"
+        },
+        "surface_state": {
+          "type": "string",
+          "const": "public_generated_kag_registry"
+        },
+        "owner_repo": {
+          "type": "string",
+          "const": "aoa-kag"
+        },
+        "authority_ref": {
+          "type": "string",
+          "const": "docs/KAG_MODEL.md"
+        },
+        "producer": {
+          "type": "string",
+          "const": "scripts/generate_kag.py from manifests/kag_registry.json"
+        },
+        "consumer_expectation": {
+          "type": "string",
+          "minLength": 40
+        },
+        "privacy_boundary": {
+          "type": "string",
+          "minLength": 40
+        },
+        "content_identity": {
+          "type": "string",
+          "const": "generated/kag_registry.json and generated/kag_registry.min.json rebuilt from manifests/kag_registry.json and compared by validate_kag"
+        },
+        "abi_epoch": {
+          "type": "string",
+          "const": "aoa_kag_registry_readmodel_v1"
+        },
+        "contract_version": {
+          "type": "string",
+          "const": "schemas/kag-registry.schema.json@aoa_kag_registry_readmodel_v1#artifact_identity"
+        },
+        "trust_layer": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            {"const": "abi_contract_signature"},
+            {"const": "sbom"},
+            {"const": "slsa_in_toto"}
+          ]
+        },
+        "verification": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            {"const": "python scripts/validate_kag.py"},
+            {"const": "python scripts/ci_gate.py --mode generated"},
+            {"const": "python scripts/validate_abyss_machine_kag_registry_bundle.py"}
+          ]
+        },
+        "action": {
+          "type": "string",
+          "const": "ADD_RELEASE_PROVENANCE"
+        }
+      }
     },
     "surfaces": {
       "type": "array",

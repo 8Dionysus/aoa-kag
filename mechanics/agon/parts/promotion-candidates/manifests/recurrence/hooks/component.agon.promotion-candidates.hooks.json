@@ -15,7 +15,9 @@
       ],
       "hook_id": "component.agon.promotion-candidates.drift_watch",
       "surface_globs": [
-        "generated/agon_kag_promotion_candidate_registry.min.json",
+        "mechanics/agon/parts/promotion-candidates/generated/agon_kag_promotion_candidate_registry.min.json",
+        "mechanics/agon/parts/promotion-candidates/schemas/agon-kag-candidate.schema.json",
+        "mechanics/agon/parts/promotion-candidates/schemas/agon-kag-candidate-registry.schema.json",
         "mechanics/agon/parts/promotion-candidates/config/promotion-candidate-registry.source.json",
         "mechanics/agon/parts/promotion-candidates/docs/promotion-candidates.md",
         "mechanics/agon/parts/promotion-candidates/docs/derived-substrate-boundary.md",

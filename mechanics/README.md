@@ -139,10 +139,12 @@ card.
 
 - Source-owned meaning stays in the source repository.
 - KAG model and boundary explanation stay under `docs/`.
-- Manifest-driven source controls stay under `manifests/`.
-- Root generated read models stay under `generated/`.
-- Root schemas and examples stay in `schemas/` and `examples/` while they are
-  repo-wide contracts.
+- Repo-wide manifest-driven source controls stay under `manifests/`; part-owned
+  manifest controls stay with their owning part.
+- Repo-wide generated read models stay under `generated/`; part-owned generated
+  companions stay with their owning part.
+- Repo-wide schemas and examples stay in `schemas/` and `examples/` while they
+  are repo-wide contracts.
 - Root scripts stay in `scripts/` when they are repo-wide validators, builders,
   release gates, or public compatibility entrypoints.
 - Mechanic-owned docs, schemas, examples, config, manifests, generated

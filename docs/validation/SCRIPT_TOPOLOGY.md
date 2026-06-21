@@ -46,6 +46,7 @@ commands outside the inventory, and unclear side-effect boundaries.
 | `projection_builder` | generated/read-model writes from source controls | may write tracked projections; must not define source meaning |
 | `projection_validator` | generated/read-model parity checks | compares projections; does not own source truth |
 | `decision_index_builder` | generated decision lookup indexes | may write decision indexes; decision notes remain source truth |
+| `artifact_bundle_validator` | release artifact bundle sidecars, signatures, and registry rehearsal | may create temporary OS Abyss evidence outside the repo; must not write source or generated truth |
 | `skill_local_contract_tool` | exported skill companion contract helpers | advisory/local-only; not CI hard gates for this repo |
 | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner` | command execution and release/test orchestration | load command authority from `config/validation_lanes.json` |
 | `script_route_card` | local route and stop-line guidance | semantic AGENTS validators cover shape |
@@ -72,10 +73,28 @@ and focused tests. Agon currently owns part-local promotion-candidate and
 Sophian-threshold builders/validators; their generated companions stay in
 root `generated/`. Antifragility currently owns part-local projection-health,
 projection-quarantine, and retrieval-outage recovery contract packets and
-focused tests. Experience currently owns part-local governance,
+focused tests. Audit currently owns proof expectation and exposure review
+part-tests without adding extra script surfaces. Boundary-bridge currently owns
+the part-local source-owned export validator, retrieval-axis tests,
+cross-source projection tests, and federation-spine tests while source docs,
+manifests, generated read models, schemas, and examples remain in their root
+homes. Checkpoint currently owns the part-local reasoning-handoff validator and
+focused tests while handoff docs, manifests, generated read models, schemas,
+and examples remain in their root homes. Distillation currently owns technique
+lift, ToS chunk-map, and ToS route-lift part-tests without adding extra script
+surfaces. Experience currently owns part-local governance,
 release/installation, and office/service schema/example contract packets and
 focused tests. Method-growth currently owns part-local schema/example contract
-packets and focused tests.
+packets and focused tests. Growth-cycle currently owns the part-local
+surface-growth stop-rule validator and focused tests while maturity docs,
+manifest controls, generated read models, schemas, and examples remain in
+their root homes. Questbook currently owns the part-local quest-store validator
+and focused tests; lane/state quest records remain in `quests/` while schemas
+and examples remain under the quest-store part. Recurrence
+currently owns the part-local return-regrounding validator and focused tests
+while regrounding docs, manifests, generated read models, schemas, and examples
+remain in their root homes. Release-support currently owns release-lane
+part-tests without adding extra script surfaces.
 
 Additional part scripts must be inventoried here before entering a blocking
 lane.

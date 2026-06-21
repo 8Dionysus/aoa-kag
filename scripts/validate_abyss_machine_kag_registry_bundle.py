@@ -1,0 +1,747 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib
+import json
+import os
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MANIFEST = REPO_ROOT / "docs" / "artifact-bundles" / "kag_registry.bundle.json"
+DEFAULT_SUBJECT = REPO_ROOT / "generated" / "kag_registry.min.json"
+ARTIFACT_CLASS = "derived_kag_registry_readmodel_bundle"
+OWNER_REPO = "aoa-kag"
+EXPECTED_REQUIRED_CONTROLS = ["abi_signature", "sbom", "slsa_in_toto"]
+
+
+class ArtifactBundlesUnavailable(RuntimeError):
+    pass
+
+
+def _candidate_abyss_machine_roots() -> list[Path]:
+    candidates: list[Path] = []
+    env_root = os.environ.get("ABYSS_MACHINE_REPO_ROOT")
+    if env_root:
+        candidates.append(Path(env_root))
+    candidates.extend(
+        [
+            REPO_ROOT.parent / "abyss-machine",
+            Path.home() / "src" / "abyss-machine",
+            Path("/srv/AbyssOS/abyss-machine"),
+        ]
+    )
+    return candidates
+
+
+def _public_seed_root() -> Path:
+    return Path(
+        os.environ.get("ABYSS_MACHINE_PUBLIC_SEED_ROOT", "/usr/local/share/abyss-machine")
+    ).expanduser()
+
+
+def _import_from_package_root(package_root: Path) -> tuple[Any, Path, str] | None:
+    root = package_root.expanduser().resolve()
+    if (root / "abyss_machine" / "artifact_bundles.py").is_file():
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+        return importlib.import_module("abyss_machine.artifact_bundles"), _public_seed_root(), str(root)
+    return None
+
+
+def _import_artifact_bundles() -> tuple[Any, Path | None, str | None]:
+    package_root = os.environ.get("ABYSS_MACHINE_PACKAGE_ROOT")
+    if package_root:
+        imported = _import_from_package_root(Path(package_root))
+        if imported is not None:
+            return imported
+    for candidate in _candidate_abyss_machine_roots():
+        root = candidate.expanduser().resolve()
+        module_root = root / "src"
+        if (module_root / "abyss_machine" / "artifact_bundles.py").is_file():
+            if str(module_root) not in sys.path:
+                sys.path.insert(0, str(module_root))
+            return importlib.import_module("abyss_machine.artifact_bundles"), root, None
+    installed = _import_from_package_root(Path("/usr/local/libexec"))
+    if installed is not None:
+        return installed
+    try:
+        artifact_bundles = importlib.import_module("abyss_machine.artifact_bundles")
+    except ModuleNotFoundError as exc:
+        if exc.name == "abyss_machine":
+            raise ArtifactBundlesUnavailable(
+                "abyss_machine.artifact_bundles is unavailable; "
+                "falling back to repo-local bundle contract validation"
+            ) from exc
+        raise
+    return artifact_bundles, getattr(artifact_bundles, "REPO_ROOT", None), None
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path} must contain a JSON object")
+    return payload
+
+
+def _portable_ref(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return resolved.name
+
+
+def _default_tmp_root() -> Path | None:
+    for raw in (os.environ.get("ABYSS_MACHINE_TMP_ROOT"), "/srv/abyss-machine/tmp"):
+        if not raw:
+            continue
+        path = Path(raw)
+        if path.is_dir():
+            return path
+    return None
+
+
+def _manifest_subject_paths(manifest: dict[str, Any]) -> list[Path]:
+    manifest_path = Path(str(manifest.get("_manifest_path")))
+    subject_root = (manifest_path.parent / str(manifest.get("subject_repo_root") or ".")).resolve()
+    paths: list[Path] = []
+    abi_subject = manifest.get("abi_subject")
+    if isinstance(abi_subject, dict) and abi_subject.get("path"):
+        paths.append(subject_root / str(abi_subject["path"]))
+    for item in manifest.get("artifact_subjects") or []:
+        if isinstance(item, dict) and item.get("path"):
+            paths.append(subject_root / str(item["path"]))
+    return sorted(set(paths))
+
+
+def _manifest_subject_root(manifest: dict[str, Any]) -> Path:
+    manifest_path = Path(str(manifest.get("_manifest_path")))
+    return (manifest_path.parent / str(manifest.get("subject_repo_root") or ".")).resolve()
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _repo_relative(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(REPO_ROOT.resolve()).as_posix()
+    except ValueError as exc:
+        raise ValueError(f"bundle subject escapes repo root: {path}") from exc
+
+
+def _subject_inventory(manifest: Path) -> list[dict[str, Any]]:
+    payload = _load_json(manifest)
+    payload["_manifest_path"] = str(manifest)
+    root = _manifest_subject_root(payload)
+    if root != REPO_ROOT.resolve():
+        raise ValueError("manifest subject_repo_root must resolve to the aoa-kag repo root")
+    inventory: list[dict[str, Any]] = []
+    for path in _manifest_subject_paths(payload):
+        if not path.is_file():
+            raise ValueError(f"manifest subject is missing: {_portable_ref(path)}")
+        inventory.append(
+            {
+                "path": _repo_relative(path),
+                "sha256": _sha256(path),
+                "size_bytes": path.stat().st_size,
+            }
+        )
+    return inventory
+
+
+def _assert_manifest_contract_shape(manifest: Path) -> None:
+    payload = _load_json(manifest)
+    if payload.get("schema") != "abyss_machine_artifact_bundle_manifest_v1":
+        raise ValueError("manifest schema must be abyss_machine_artifact_bundle_manifest_v1")
+    if payload.get("mode") != "os_abyss_local":
+        raise ValueError("manifest mode must be os_abyss_local")
+    if payload.get("public_safe") is not True:
+        raise ValueError("manifest public_safe must be true")
+    if not payload.get("policy_ref"):
+        raise ValueError("manifest policy_ref is required")
+    if not isinstance(payload.get("artifact_subjects"), list) or not payload["artifact_subjects"]:
+        raise ValueError("manifest artifact_subjects must be a non-empty list")
+    contract = payload.get("consumer_contract")
+    if not isinstance(contract, dict) or contract.get("registry_required") is not True:
+        raise ValueError("manifest consumer_contract.registry_required must be true")
+    commands = "\n".join(str(item) for item in payload.get("consumer_command") or [])
+    for token in (
+        "artifacts build-sidecars",
+        "artifacts sign",
+        "artifacts verify",
+        "artifacts release-check",
+        "artifacts bundle-registry",
+    ):
+        if token not in commands:
+            raise ValueError(f"manifest consumer_command must include {token}")
+
+
+def _assert_manifest_matches_subject(manifest: Path, subject: Path) -> None:
+    payload = _load_json(manifest)
+    if payload.get("artifact_class") != ARTIFACT_CLASS:
+        raise ValueError(f"manifest artifact_class must be {ARTIFACT_CLASS}")
+    if payload.get("owner_repo") != OWNER_REPO:
+        raise ValueError(f"manifest owner_repo must be {OWNER_REPO}")
+    manifest_identity = payload.get("artifact_identity")
+    if not isinstance(manifest_identity, dict):
+        raise ValueError("manifest artifact_identity must be an object")
+    if manifest_identity.get("artifact_class") != ARTIFACT_CLASS:
+        raise ValueError(f"manifest artifact_identity.artifact_class must be {ARTIFACT_CLASS}")
+    if manifest_identity.get("abi_epoch") != "aoa_kag_registry_readmodel_v1":
+        raise ValueError("manifest artifact_identity.abi_epoch must be aoa_kag_registry_readmodel_v1")
+    payload["_manifest_path"] = str(manifest)
+    paths = _manifest_subject_paths(payload)
+    if subject.resolve() not in {path.resolve() for path in paths}:
+        raise ValueError(f"manifest does not include subject: {_portable_ref(subject)}")
+
+    subject_payload = _load_json(subject)
+    subject_identity = subject_payload.get("artifact_identity")
+    if not isinstance(subject_identity, dict):
+        raise ValueError("subject artifact_identity must be an object")
+    for key, value in manifest_identity.items():
+        if subject_identity.get(key) != value:
+            raise ValueError(f"subject artifact_identity.{key} does not match manifest")
+    if subject_identity.get("owner_repo") != OWNER_REPO:
+        raise ValueError(f"subject artifact_identity.owner_repo must be {OWNER_REPO}")
+    if subject_identity.get("trust_layer") != ["abi_contract_signature", "sbom", "slsa_in_toto"]:
+        raise ValueError("subject artifact_identity.trust_layer must be ABI, SBOM-lite, and SLSA/in-toto")
+
+
+def _assert_public_safe_subjects(manifest: Path, subject: Path) -> None:
+    payload = _load_json(manifest)
+    payload["_manifest_path"] = str(manifest)
+    paths = _manifest_subject_paths(payload)
+    if subject.resolve() not in {path.resolve() for path in paths}:
+        paths.append(subject)
+    forbidden = [
+        str(REPO_ROOT.resolve()),
+        str(Path.home()),
+        "/srv/abyss-machine",
+        "/var/lib/abyss-machine",
+        "/etc/abyss-machine",
+        "PASSWORD=",
+        "TOKEN=",
+        "SECRET=",
+        "BEGIN PRIVATE",
+    ]
+    leaks: list[str] = []
+    for path in sorted(set(paths)):
+        text = path.read_text(encoding="utf-8")
+        if any(item and item in text for item in forbidden):
+            leaks.append(_portable_ref(path))
+    if leaks:
+        raise ValueError(
+            "KAG registry bundle subjects contain private or machine-local markers: "
+            + ", ".join(leaks)
+        )
+
+
+def _assert_public_payloads_do_not_leak_local_roots(
+    root: Path,
+    abyss_machine_root: Path | None,
+    *,
+    label: str,
+) -> None:
+    forbidden = [str(REPO_ROOT.resolve())]
+    if abyss_machine_root is not None:
+        forbidden.append(str(abyss_machine_root.resolve()))
+    leaks: list[str] = []
+    for path in sorted(root.rglob("*")) if root.exists() else []:
+        if path.is_file() and path.suffix in {".json", ".jsonl"}:
+            text = path.read_text(encoding="utf-8")
+            if any(item and item in text for item in forbidden):
+                leaks.append(path.name)
+    if leaks:
+        raise ValueError(f"public artifact {label} leaks local repo roots: " + ", ".join(leaks))
+
+
+def _assert_expected_controls(verify: dict[str, Any], identity: dict[str, Any]) -> None:
+    required = verify.get("required_controls")
+    verified = verify.get("verified_controls")
+    if required != EXPECTED_REQUIRED_CONTROLS:
+        raise ValueError(f"unexpected required controls: {required!r}")
+    if verified != EXPECTED_REQUIRED_CONTROLS:
+        raise ValueError(f"unexpected verified controls: {verified!r}")
+    deferred = identity.get("deferred_controls") if isinstance(identity.get("deferred_controls"), dict) else {}
+    for control in ("ml_bom", "sigstore_cosign", "c2pa"):
+        decision = deferred.get(control)
+        if (
+            not isinstance(decision, dict)
+            or decision.get("required") is not False
+            or not decision.get("reason")
+        ):
+            raise ValueError(f"missing explicit deferred reason for {control}")
+
+
+def _validate_portable_contract(
+    manifest: Path,
+    subject: Path,
+    bundle_dir: Path,
+    registry_dir: Path,
+    unavailable_reason: str,
+) -> dict[str, Any]:
+    _assert_manifest_contract_shape(manifest)
+    _assert_manifest_matches_subject(manifest, subject)
+    _assert_public_safe_subjects(manifest, subject)
+    inventory = _subject_inventory(manifest)
+    subject_identity = _load_json(subject).get("artifact_identity")
+    deferred_controls = (
+        subject_identity.get("deferred_controls")
+        if isinstance(subject_identity, dict) and isinstance(subject_identity.get("deferred_controls"), dict)
+        else {}
+    )
+    with tempfile.TemporaryDirectory(
+        prefix="aoa-kag-registry-portable-negative-",
+        dir=_default_tmp_root(),
+    ) as tmp:
+        private_marker = _verify_private_registry_marker(manifest, subject, Path(tmp))
+    return {
+        "ok": True,
+        "schema": "aoa_kag_abyss_machine_registry_readmodel_artifact_bundle_validation_v1",
+        "mode": "portable_contract_only",
+        "manifest_ref": _portable_ref(manifest),
+        "subject_ref": _portable_ref(subject),
+        "bundle_dir": _portable_ref(bundle_dir),
+        "registry_dir": _portable_ref(registry_dir),
+        "artifact_class": ARTIFACT_CLASS,
+        "required_controls": EXPECTED_REQUIRED_CONTROLS,
+        "verified_controls": [
+            "repo_local_manifest_contract",
+            "artifact_identity_parity",
+            "subject_inventory",
+            "public_safety_scan",
+        ],
+        "external_controls_unavailable": EXPECTED_REQUIRED_CONTROLS,
+        "deferred_controls": deferred_controls,
+        "unavailable_reason": unavailable_reason,
+        "subject_inventory": inventory,
+        "registry": {
+            "ok": True,
+            "mode": "portable_contract_only",
+            "registry_required": True,
+        },
+        "adversarial_checks": {
+            "ok": bool(private_marker.get("ok")),
+            "mode": "portable_contract_only",
+            "checks": {"private_registry_marker": private_marker},
+        },
+        "steps": {
+            "portable_contract": {"ok": True},
+            "artifact_bundle_roundtrip": {
+                "ok": False,
+                "skipped": True,
+                "reason": unavailable_reason,
+            },
+        },
+    }
+
+
+def _copy_bundle(bundle_dir: Path, target: Path) -> Path:
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(bundle_dir, target)
+    return target
+
+
+def _registry_roundtrip(
+    artifact_bundles: Any,
+    bundle_dir: Path,
+    registry_dir: Path,
+    *,
+    lifecycle_state: str,
+    evidence_ref: str,
+) -> dict[str, Any]:
+    registered = artifact_bundles.write_bundle_registry_record(
+        bundle_dir,
+        registry_dir,
+        lifecycle_state=lifecycle_state,
+        consumer_refs=["aoa-kag:kag-registry"],
+        evidence_refs=[evidence_ref],
+    )
+    latest = artifact_bundles.read_bundle_registry(registry_dir, artifact_class=ARTIFACT_CLASS)
+    latest_record = latest.get("latest_by_artifact_class", {}).get(ARTIFACT_CLASS)
+    return {
+        "ok": bool(
+            registered.get("ok")
+            and isinstance(latest_record, dict)
+            and latest_record.get("record_id") == registered.get("record", {}).get("record_id")
+            and latest_record.get("lifecycle_state") == lifecycle_state
+        ),
+        "registered": registered,
+        "latest": latest,
+    }
+
+
+def _verify_missing_sidecar(
+    artifact_bundles: Any,
+    abyss_repo_root: Path,
+    bundle_dir: Path,
+    tmp_root: Path,
+    *,
+    sidecar_name: str,
+    label: str,
+) -> dict[str, Any]:
+    candidate = _copy_bundle(bundle_dir, tmp_root / label)
+    path = candidate / sidecar_name
+    if path.exists():
+        path.unlink()
+    verification = artifact_bundles.verify_bundle(candidate, repo_root=abyss_repo_root)
+    return {
+        "ok": verification.get("ok") is False and bool(verification.get("missing")),
+        "verification": verification,
+    }
+
+
+def _verify_wrong_external_subject(
+    artifact_bundles: Any,
+    abyss_repo_root: Path,
+    bundle_dir: Path,
+    tmp_root: Path,
+) -> dict[str, Any]:
+    candidate = _copy_bundle(bundle_dir, tmp_root / "wrong-external-subject")
+    path = candidate / artifact_bundles.ABI_SIDECAR
+    sidecar = json.loads(path.read_text(encoding="utf-8"))
+    external_subject = sidecar.get("external_subject")
+    if not isinstance(external_subject, dict):
+        return {"ok": False, "error": "ABI sidecar has no external_subject"}
+    external_subject["sha256"] = "sha256:" + ("0" * 64)
+    path.write_text(
+        json.dumps(sidecar, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    verification = artifact_bundles.verify_bundle(candidate, repo_root=abyss_repo_root)
+    return {
+        "ok": verification.get("ok") is False
+        and any(
+            "subject digest does not match ABI external_subject sha256" in item
+            for item in verification.get("errors", [])
+        ),
+        "verification": verification,
+    }
+
+
+def _verify_private_registry_marker(manifest: Path, subject: Path, tmp_root: Path) -> dict[str, Any]:
+    candidate = tmp_root / "private-kag-registry.min.json"
+    shutil.copyfile(subject, candidate)
+    candidate.write_text(
+        candidate.read_text(encoding="utf-8") + "\nTOKEN=private-negative\n",
+        encoding="utf-8",
+    )
+    try:
+        _assert_public_safe_subjects(manifest, candidate)
+    except ValueError as exc:
+        return {
+            "ok": "KAG registry bundle subjects contain private or machine-local markers" in str(exc),
+            "error": str(exc),
+        }
+    return {"ok": False, "error": "private KAG registry marker was not detected"}
+
+
+def _verify_unverified_latest_rejected(
+    artifact_bundles: Any,
+    bundle_dir: Path,
+    tmp_root: Path,
+) -> dict[str, Any]:
+    candidate = _copy_bundle(bundle_dir, tmp_root / "unverified-latest")
+    path = candidate / artifact_bundles.SLSA_INTOTO_SIDECAR
+    if path.exists():
+        path.unlink()
+    registered = artifact_bundles.write_bundle_registry_record(
+        candidate,
+        tmp_root / "unverified-registry",
+        lifecycle_state="release-ready",
+    )
+    return {
+        "ok": registered.get("ok") is False
+        and any("successful bundle verification" in item for item in registered.get("errors", [])),
+        "registered": registered,
+    }
+
+
+def _verify_terminal_registry_state(
+    artifact_bundles: Any,
+    bundle_dir: Path,
+    tmp_root: Path,
+) -> dict[str, Any]:
+    registry_dir = tmp_root / "terminal-registry"
+    release_ready = _registry_roundtrip(
+        artifact_bundles,
+        bundle_dir,
+        registry_dir,
+        lifecycle_state="release-ready",
+        evidence_ref="terminal-state-rehearsal",
+    )
+    revoked = artifact_bundles.write_bundle_registry_record(
+        bundle_dir,
+        registry_dir,
+        lifecycle_state="revoked",
+        revocation_reason="aoa-kag registry terminal-state rehearsal",
+    )
+    after_revoke = artifact_bundles.read_bundle_registry(
+        registry_dir,
+        artifact_class=ARTIFACT_CLASS,
+    )
+    return {
+        "ok": bool(
+            release_ready.get("ok")
+            and revoked.get("ok")
+            and not after_revoke.get("latest_by_artifact_class")
+        ),
+        "release_ready": release_ready,
+        "revoked": revoked,
+        "after_revoke": after_revoke,
+    }
+
+
+def _run_adversarial_checks(
+    artifact_bundles: Any,
+    abyss_repo_root: Path,
+    manifest: Path,
+    subject: Path,
+    bundle_dir: Path,
+) -> dict[str, Any]:
+    with tempfile.TemporaryDirectory(prefix="aoa-kag-registry-negative-", dir=_default_tmp_root()) as tmp:
+        tmp_root = Path(tmp)
+        checks = {
+            "missing_slsa": _verify_missing_sidecar(
+                artifact_bundles,
+                abyss_repo_root,
+                bundle_dir,
+                tmp_root,
+                sidecar_name=artifact_bundles.SLSA_INTOTO_SIDECAR,
+                label="missing-slsa",
+            ),
+            "missing_abi": _verify_missing_sidecar(
+                artifact_bundles,
+                abyss_repo_root,
+                bundle_dir,
+                tmp_root,
+                sidecar_name=artifact_bundles.ABI_SIDECAR,
+                label="missing-abi",
+            ),
+            "wrong_external_subject": _verify_wrong_external_subject(
+                artifact_bundles,
+                abyss_repo_root,
+                bundle_dir,
+                tmp_root,
+            ),
+            "private_registry_marker": _verify_private_registry_marker(
+                manifest,
+                subject,
+                tmp_root,
+            ),
+            "unverified_latest_rejected": _verify_unverified_latest_rejected(
+                artifact_bundles,
+                bundle_dir,
+                tmp_root,
+            ),
+            "terminal_registry_state": _verify_terminal_registry_state(
+                artifact_bundles,
+                bundle_dir,
+                tmp_root,
+            ),
+        }
+    return {
+        "ok": all(bool(item.get("ok")) for item in checks.values()),
+        "checks": checks,
+    }
+
+
+def _validate_in_bundle_dir(
+    manifest: Path,
+    subject: Path,
+    bundle_dir: Path,
+    registry_dir: Path,
+    *,
+    clean: bool,
+    require_abyss_machine: bool,
+) -> dict[str, Any]:
+    try:
+        artifact_bundles, abyss_machine_root, package_root = _import_artifact_bundles()
+    except ArtifactBundlesUnavailable as exc:
+        if require_abyss_machine:
+            raise
+        return _validate_portable_contract(manifest, subject, bundle_dir, registry_dir, str(exc))
+    _assert_manifest_matches_subject(manifest, subject)
+    _assert_public_safe_subjects(manifest, subject)
+    if clean and bundle_dir.exists():
+        shutil.rmtree(bundle_dir)
+    if clean and registry_dir.exists():
+        shutil.rmtree(registry_dir)
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    abyss_repo_root = abyss_machine_root or artifact_bundles.REPO_ROOT
+    producer_command = "python scripts/validate_abyss_machine_kag_registry_bundle.py"
+    build = artifact_bundles.build_sidecars(
+        bundle_dir,
+        manifest_ref=manifest,
+        repo_root=abyss_repo_root,
+        producer_command=producer_command,
+    )
+    sign = artifact_bundles.sign_bundle(bundle_dir, repo_root=abyss_repo_root)
+    verify = artifact_bundles.verify_bundle(bundle_dir, repo_root=abyss_repo_root)
+    release_check = artifact_bundles.release_check(bundle_dir, repo_root=abyss_repo_root)
+    identity = _load_json(bundle_dir / artifact_bundles.IDENTITY_SIDECAR)
+    _assert_expected_controls(verify, identity)
+    _assert_public_payloads_do_not_leak_local_roots(
+        bundle_dir,
+        abyss_machine_root,
+        label="sidecars",
+    )
+    registry = _registry_roundtrip(
+        artifact_bundles,
+        bundle_dir,
+        registry_dir,
+        lifecycle_state="release-ready",
+        evidence_ref=_portable_ref(bundle_dir) + "/artifact.verify.json",
+    )
+    _assert_public_payloads_do_not_leak_local_roots(
+        registry_dir,
+        abyss_machine_root,
+        label="registry",
+    )
+    adversarial = _run_adversarial_checks(
+        artifact_bundles,
+        abyss_repo_root,
+        manifest,
+        subject,
+        bundle_dir,
+    )
+
+    return {
+        "ok": bool(
+            build.get("ok")
+            and sign.get("ok")
+            and verify.get("ok")
+            and release_check.get("ok")
+            and registry.get("ok")
+            and adversarial.get("ok")
+        ),
+        "schema": "aoa_kag_abyss_machine_registry_readmodel_artifact_bundle_validation_v1",
+        "manifest_ref": _portable_ref(manifest),
+        "subject_ref": _portable_ref(subject),
+        "bundle_dir": _portable_ref(bundle_dir),
+        "registry_dir": _portable_ref(registry_dir),
+        "artifact_class": ARTIFACT_CLASS,
+        "required_controls": verify.get("required_controls"),
+        "verified_controls": verify.get("verified_controls"),
+        "deferred_controls": identity.get("deferred_controls"),
+        "abyss_machine_repo_root": str(abyss_repo_root),
+        "abyss_machine_package_root": package_root,
+        "registry": registry,
+        "adversarial_checks": adversarial,
+        "steps": {
+            "build_sidecars": build,
+            "sign": sign,
+            "verify": verify,
+            "release_check": release_check,
+        },
+    }
+
+
+def validate_bundle(
+    manifest: Path,
+    subject: Path,
+    bundle_dir: Path | None,
+    registry_dir: Path | None,
+    *,
+    clean: bool,
+    require_abyss_machine: bool = False,
+) -> dict[str, Any]:
+    if bundle_dir is not None:
+        target_registry = registry_dir or bundle_dir.parent / "kag-registry-bundle-registry"
+        return _validate_in_bundle_dir(
+            manifest,
+            subject,
+            bundle_dir,
+            target_registry,
+            clean=clean,
+            require_abyss_machine=require_abyss_machine,
+        )
+
+    tmp_root = _default_tmp_root()
+    with tempfile.TemporaryDirectory(prefix="aoa-kag-registry-bundle-", dir=tmp_root) as tmp:
+        target = Path(tmp) / "kag-registry-bundle"
+        target_registry = Path(tmp) / "kag-registry-bundle-registry"
+        return _validate_in_bundle_dir(
+            manifest,
+            subject,
+            target,
+            target_registry,
+            clean=False,
+            require_abyss_machine=require_abyss_machine,
+        )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Validate aoa-kag registry through OS Abyss artifact bundles."
+    )
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--subject", type=Path, default=DEFAULT_SUBJECT)
+    parser.add_argument("--bundle-dir", type=Path)
+    parser.add_argument("--registry-dir", type=Path)
+    parser.add_argument(
+        "--no-clean",
+        action="store_true",
+        help="do not remove the previous generated bundle directory first",
+    )
+    parser.add_argument(
+        "--require-abyss-machine",
+        action="store_true",
+        help="fail instead of using repo-local portable validation when abyss_machine is unavailable",
+    )
+    parser.add_argument("--json", action="store_true", help="print the full validation payload")
+    args = parser.parse_args()
+
+    manifest = args.manifest if args.manifest.is_absolute() else REPO_ROOT / args.manifest
+    subject = args.subject if args.subject.is_absolute() else REPO_ROOT / args.subject
+    bundle_dir = None
+    if args.bundle_dir is not None:
+        bundle_dir = args.bundle_dir if args.bundle_dir.is_absolute() else REPO_ROOT / args.bundle_dir
+    registry_dir = None
+    if args.registry_dir is not None:
+        registry_dir = (
+            args.registry_dir if args.registry_dir.is_absolute() else REPO_ROOT / args.registry_dir
+        )
+
+    payload = validate_bundle(
+        manifest,
+        subject,
+        bundle_dir,
+        registry_dir,
+        clean=not args.no_clean,
+        require_abyss_machine=args.require_abyss_machine,
+    )
+    if args.json:
+        print(json.dumps(payload, sort_keys=True))
+    elif payload["ok"]:
+        if payload.get("mode") == "portable_contract_only":
+            print(
+                "[ok] aoa-kag registry artifact bundle portable contract verified: "
+                f"{payload['manifest_ref']} ({', '.join(payload['verified_controls'])}; "
+                "abyss-machine roundtrip unavailable)"
+            )
+        else:
+            print(
+                "[ok] abyss-machine aoa-kag registry artifact bundle verified: "
+                f"{payload['bundle_dir']} ({', '.join(payload['verified_controls'])}; "
+                f"registry={payload['registry_dir']})"
+            )
+    return 0 if payload["ok"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -28,7 +28,7 @@ the next real dependency belonged in another owner repo.
 - every live surface must have re-entry and quarantine posture;
 - owner wait states must be named explicitly;
 - proof expectations must be named explicitly;
-- new `AOA-K-*` surfaces must pass a stop-rule before landing.
+- new `AOA-K-*` surfaces must pass a stop-rule before activation.
 
 ## Options Considered
 
@@ -70,10 +70,10 @@ Tradeoffs:
 
 This decision is carried by:
 
-- `docs/KAG_MATURITY_GOVERNANCE.md`
-- `docs/KAG_OWNER_WAIT_STATES.md`
-- `docs/KAG_PROOF_EXPECTATIONS.md`
-- `generated/kag_maturity_governance.min.json`
+- `mechanics/growth-cycle/parts/surface-growth-stop-rule/docs/kag-maturity-governance.md`
+- `mechanics/growth-cycle/parts/surface-growth-stop-rule/docs/kag-owner-wait-states.md`
+- `mechanics/audit/parts/proof-expectation-refs/docs/kag-proof-expectations.md`
+- `mechanics/growth-cycle/parts/surface-growth-stop-rule/generated/kag_maturity_governance.min.json`
 
 Those docs define the living rule. This note explains why the rule exists.
 

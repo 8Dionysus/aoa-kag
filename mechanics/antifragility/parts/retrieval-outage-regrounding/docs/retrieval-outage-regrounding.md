@@ -26,8 +26,8 @@ matter in the current repository contour:
 
 - `mechanics/antifragility/parts/projection-health/examples/projection_health_receipt.retrieval-outage-honesty.example.json`
 - `mechanics/antifragility/parts/retrieval-outage-regrounding/examples/regrounding_ticket.retrieval-outage-honesty.example.json`
-- `generated/return_regrounding_pack.min.json`
-- `generated/reasoning_handoff_pack.min.json`
+- `mechanics/recurrence/parts/return-regrounding/generated/return_regrounding_pack.min.json`
+- `mechanics/checkpoint/parts/reasoning-handoff/generated/reasoning_handoff_pack.min.json`
 
 That mapping is intentional.
 `aoa-kag` already owns the return and handoff adjuncts that can honestly narrow

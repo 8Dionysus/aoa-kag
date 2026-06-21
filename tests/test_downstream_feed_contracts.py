@@ -44,9 +44,13 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         current = load_json(GENERATED_ROOT / "kag_registry.min.json")
 
         self.assertEqual(current, registry)
-        self.assertEqual(set(current.keys()), {"version", "layer", "surfaces"})
+        self.assertEqual(set(current.keys()), {"version", "layer", "artifact_identity", "surfaces"})
         self.assertEqual(current["version"], 1)
         self.assertEqual(current["layer"], "aoa-kag")
+        self.assertEqual(
+            current["artifact_identity"],
+            kag_generation.KAG_REGISTRY_ARTIFACT_IDENTITY,
+        )
         self.assertEqual([item["id"] for item in current["surfaces"]], [f"AOA-K-000{i}" for i in range(1, 10)] + ["AOA-K-0010", "AOA-K-0011"])
 
     def test_generated_consumer_packs_match_builders(self) -> None:
@@ -126,12 +130,16 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
     def test_adjunct_manifest_schemas_accept_current_manifests(self) -> None:
         pairs = (
             (
-                REPO_ROOT / "schemas" / "tos-zarathustra-route-retrieval-pack-manifest.schema.json",
-                REPO_ROOT / "manifests" / "tos_zarathustra_route_retrieval_pack.json",
+                kag_generation.TOS_RETRIEVAL_AXIS_PART_ROOT
+                / "schemas"
+                / "tos-zarathustra-route-retrieval-pack-manifest.schema.json",
+                kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MANIFEST_PATH,
             ),
             (
-                REPO_ROOT / "schemas" / "federation-spine-manifest.schema.json",
-                REPO_ROOT / "manifests" / "federation_spine.json",
+                kag_generation.FEDERATION_SPINE_PART_ROOT
+                / "schemas"
+                / "federation-spine-manifest.schema.json",
+                kag_generation.FEDERATION_SPINE_MANIFEST_PATH,
             ),
         )
 
@@ -151,21 +159,21 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
 
     def test_bounded_output_contracts_remain_narrow(self) -> None:
         expectations = {
-            "federation_spine.min.json": {
+            kag_generation.FEDERATION_SPINE_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "routing_ownership": "forbidden",
                 "canon_authorship": "forbidden",
                 "full_federation_claim": "forbidden",
             },
-            "reasoning_handoff_pack.min.json": {
+            kag_generation.REASONING_HANDOFF_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "routing_ownership": "forbidden",
                 "memory_truth_ownership": "forbidden",
                 "verdict_ownership": "forbidden",
             },
-            "return_regrounding_pack.min.json": {
+            kag_generation.RETURN_REGROUNDING_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "routing_ownership": "forbidden",
@@ -173,7 +181,7 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
                 "counterpart_activation": "review_gated",
                 "proof_ownership": "forbidden",
             },
-            "kag_maturity_governance.min.json": {
+            kag_generation.KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "routing_ownership": "forbidden",
@@ -182,33 +190,33 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
                 "new_surface_growth": "paused_by_owner_need",
                 "quarantine_shortcuts": "forbidden",
             },
-            "tos_retrieval_axis_pack.min.json": {
+            kag_generation.TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "scoring_or_ranking": "forbidden",
                 "routing_ownership": "forbidden",
                 "graph_normalization": "forbidden",
             },
-            "tos_text_chunk_map.min.json": {
+            kag_generation.TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "counterpart_projection": "forbidden",
                 "federation_export_activation": "forbidden",
             },
-            "cross_source_node_projection.min.json": {
+            kag_generation.CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "counterpart_activation": "forbidden",
                 "graph_expansion": "forbidden",
                 "routing_ownership": "forbidden",
             },
-            "counterpart_federation_exposure_review.min.json": {
+            kag_generation.COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH: {
                 "silent_federation_exposure": "forbidden",
                 "generated_counterpart_payload_inference": "forbidden",
                 "routing_ownership": "forbidden",
                 "source_replacement": "forbidden",
             },
-            "tos_zarathustra_route_retrieval_pack.min.json": {
+            kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH: {
                 "source_trace_required": True,
                 "source_replacement": "forbidden",
                 "scoring_or_ranking": "forbidden",
@@ -218,22 +226,23 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             },
         }
 
-        for name, contract_expectations in expectations.items():
-            payload = load_json(GENERATED_ROOT / name)
+        for path, contract_expectations in expectations.items():
+            payload = load_json(path)
             contract = payload["bounded_output_contract"]
+            surface = path.relative_to(REPO_ROOT).as_posix()
             for key, value in contract_expectations.items():
-                self.assertEqual(contract[key], value, msg=f"{name}:{key}")
+                self.assertEqual(contract[key], value, msg=f"{surface}:{key}")
 
     def test_consumer_bundle_and_spine_keep_expected_counts(self) -> None:
         federation_export_registry = load_json(
-            GENERATED_ROOT / "federation_export_registry.min.json"
+            kag_generation.FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH
         )
-        federation_spine = load_json(GENERATED_ROOT / "federation_spine.min.json")
-        maturity_governance = load_json(
-            GENERATED_ROOT / "kag_maturity_governance.min.json"
+        federation_spine = load_json(kag_generation.FEDERATION_SPINE_MIN_OUTPUT_PATH)
+        maturity_governance = load_json(kag_generation.KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH)
+        tiny_bundle = load_json(kag_generation.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH)
+        retrieval_pack = load_json(
+            kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH
         )
-        tiny_bundle = load_json(GENERATED_ROOT / "tiny_consumer_bundle.min.json")
-        retrieval_pack = load_json(GENERATED_ROOT / "tos_zarathustra_route_retrieval_pack.min.json")
 
         self.assertEqual(federation_export_registry["export_count"], 3)
         self.assertEqual(
@@ -280,16 +289,21 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
 
     def test_aoa_k_0011_stays_inspectable_but_separate_from_tiny_entry_bundle(self) -> None:
         registry = load_json(GENERATED_ROOT / "kag_registry.min.json")
-        tiny_bundle = load_json(GENERATED_ROOT / "tiny_consumer_bundle.min.json")
-        retrieval_pack = load_json(GENERATED_ROOT / "tos_zarathustra_route_retrieval_pack.min.json")
-        federation_spine = load_json(GENERATED_ROOT / "federation_spine.min.json")
+        tiny_bundle = load_json(kag_generation.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH)
+        retrieval_pack = load_json(
+            kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH
+        )
+        federation_spine = load_json(kag_generation.FEDERATION_SPINE_MIN_OUTPUT_PATH)
 
         registry_entry = next(item for item in registry["surfaces"] if item["id"] == "AOA-K-0011")
         self.assertEqual(registry_entry["status"], "experimental")
         self.assertEqual(registry_entry["derived_kind"], "retrieval_surface")
 
         tiny_bundle_refs = {item["ref"] for item in tiny_bundle["bundle_items"]}
-        self.assertNotIn("generated/tos_zarathustra_route_retrieval_pack.min.json", tiny_bundle_refs)
+        self.assertNotIn(
+            kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_REF,
+            tiny_bundle_refs,
+        )
         self.assertNotIn(
             "tos_zarathustra_route_retrieval_pack",
             {item["name"] for item in tiny_bundle["bundle_items"]},
@@ -328,8 +342,8 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         )
 
     def test_kag_maturity_governance_keeps_aoa_k_0008_paused(self) -> None:
-        payload = load_json(GENERATED_ROOT / "kag_maturity_governance.min.json")
-        federation_spine = load_json(GENERATED_ROOT / "federation_spine.min.json")
+        payload = load_json(kag_generation.KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH)
+        federation_spine = load_json(kag_generation.FEDERATION_SPINE_MIN_OUTPUT_PATH)
         surfaces_by_id = {
             surface["surface_id"]: surface for surface in payload["surfaces"]
         }
@@ -357,7 +371,7 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         self.assertEqual(adjunct_surfaces[0]["surface_id"], "AOA-K-0011")
         self.assertEqual(
             adjunct_surfaces[0]["surface_ref"],
-            "generated/tos_zarathustra_route_retrieval_pack.min.json",
+            kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_REF,
         )
         self.assertEqual(
             adjunct_surfaces[0]["adjunct_budget"]["numbered_tiny_path_inclusion"],

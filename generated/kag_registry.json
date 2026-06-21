@@ -1,6 +1,29 @@
 {
   "version": 1,
   "layer": "aoa-kag",
+  "artifact_identity": {
+    "artifact_class": "derived_kag_registry_readmodel_bundle",
+    "surface_state": "public_generated_kag_registry",
+    "owner_repo": "aoa-kag",
+    "authority_ref": "docs/KAG_MODEL.md",
+    "producer": "scripts/generate_kag.py from manifests/kag_registry.json",
+    "consumer_expectation": "consumers verify artifact_identity, version, layer, schema conformance, generated parity, validate_kag, and OS Abyss ABI/SBOM-lite/SLSA sidecars before using the registry as a derived KAG surface catalog",
+    "privacy_boundary": "public derived refs and compact summaries only; no private session, memo payload body, source corpus body, secrets, live runtime state, or local host evidence",
+    "content_identity": "generated/kag_registry.json and generated/kag_registry.min.json rebuilt from manifests/kag_registry.json and compared by validate_kag",
+    "abi_epoch": "aoa_kag_registry_readmodel_v1",
+    "contract_version": "schemas/kag-registry.schema.json@aoa_kag_registry_readmodel_v1#artifact_identity",
+    "trust_layer": [
+      "abi_contract_signature",
+      "sbom",
+      "slsa_in_toto"
+    ],
+    "verification": [
+      "python scripts/validate_kag.py",
+      "python scripts/ci_gate.py --mode generated",
+      "python scripts/validate_abyss_machine_kag_registry_bundle.py"
+    ],
+    "action": "ADD_RELEASE_PROVENANCE"
+  },
   "surfaces": [
     {
       "id": "AOA-K-0001",

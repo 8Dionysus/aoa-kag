@@ -64,7 +64,7 @@ and where does a stronger claim return?
 | `scripts/` | deterministic builders, validators, decision-index helpers, and substrate checks |
 | `tests/` | regression proof for contracts, parity, guardrails, and current routes |
 | `evals/` | KAG-local eval pressure port before central proof acceptance |
-| `.agents/`, `Spark/`, `.github/`, `config/` | companion, platform, and configuration lanes that support KAG work without becoming substrate truth |
+| `.agents/`, `.agents/spark/`, `.github/`, `config/` | companion, Spark fast-loop, platform, and configuration lanes that support KAG work without becoming substrate truth |
 
 Each class may support another. No class should silently steal another class's
 authority.

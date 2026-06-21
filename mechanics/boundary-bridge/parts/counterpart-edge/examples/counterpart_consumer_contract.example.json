@@ -1,0 +1,25 @@
+{
+  "contract_type": "counterpart_consumer_contract",
+  "surface_id": "AOA-K-0008",
+  "surface_status": "planned",
+  "consumer_surface_type": "reasoning_handoff_guardrail",
+  "allowed_return_field": "counterpart_refs",
+  "federation_exposure_review_ref": "mechanics/audit/parts/exposure-review/generated/counterpart_federation_exposure_review.min.json",
+  "required_contract_refs": {
+    "counterpart_contract_doc": "mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-edge-contracts.md",
+    "counterpart_contract_schema": "mechanics/boundary-bridge/parts/counterpart-edge/schemas/counterpart-edge-surface.schema.json",
+    "counterpart_contract_example": "mechanics/boundary-bridge/parts/counterpart-edge/examples/counterpart_edge_view.example.json"
+  },
+  "allowed_refs": [
+    "mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-consumer-contract.md",
+    "mechanics/boundary-bridge/parts/counterpart-edge/examples/counterpart_consumer_contract.example.json",
+    "mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-edge-contracts.md",
+    "mechanics/boundary-bridge/parts/counterpart-edge/examples/counterpart_edge_view.example.json"
+  ],
+  "forbidden_interpretations": [
+    "identity_proof",
+    "routing_authority",
+    "graph_sovereign_activation",
+    "silent_federation_exposure"
+  ]
+}

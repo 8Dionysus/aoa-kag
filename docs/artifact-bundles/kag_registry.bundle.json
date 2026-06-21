@@ -1,0 +1,113 @@
+{
+  "schema": "abyss_machine_artifact_bundle_manifest_v1",
+  "id": "aoa-kag-registry-readmodel-bundle",
+  "artifact_class": "derived_kag_registry_readmodel_bundle",
+  "owner_repo": "aoa-kag",
+  "policy_ref": "repo:abyss-machine/manifests/artifact_signature_policy.manifest.json",
+  "mode": "os_abyss_local",
+  "public_safe": true,
+  "purpose": "Repo-local OS Abyss artifact bundle input for the generated KAG registry readmodel.",
+  "subject_repo_root": "../..",
+  "artifact_source": {
+    "kind": "generated_kag_registry_readmodel",
+    "content_identity_ref": "generated/kag_registry.min.json",
+    "artifact_identity_ref": "generated/kag_registry.min.json#/artifact_identity"
+  },
+  "artifact_identity": {
+    "artifact_class": "derived_kag_registry_readmodel_bundle",
+    "abi_epoch": "aoa_kag_registry_readmodel_v1"
+  },
+  "abi_subject": {
+    "path": "generated/kag_registry.min.json",
+    "artifact_identity_pointer": "/artifact_identity"
+  },
+  "artifact_subjects": [
+    {
+      "path": "generated/kag_registry.min.json",
+      "role": "kag_registry_readmodel"
+    },
+    {
+      "path": "generated/kag_registry.json",
+      "role": "kag_registry_readmodel_full"
+    },
+    {
+      "path": "manifests/kag_registry.json",
+      "role": "source_manifest"
+    },
+    {
+      "path": "schemas/kag-registry.schema.json",
+      "role": "schema"
+    },
+    {
+      "path": "scripts/generate_kag.py",
+      "role": "generator_entrypoint"
+    },
+    {
+      "path": "scripts/kag_generation.py",
+      "role": "generator_library"
+    },
+    {
+      "path": "scripts/validate_kag.py",
+      "role": "validator"
+    },
+    {
+      "path": "config/validation_lanes.json",
+      "role": "validation_lane_authority"
+    },
+    {
+      "path": "generated/AGENTS.md",
+      "role": "generated_route_card"
+    },
+    {
+      "path": "manifests/AGENTS.md",
+      "role": "manifest_route_card"
+    },
+    {
+      "path": "scripts/AGENTS.md",
+      "role": "script_route_card"
+    },
+    {
+      "path": "docs/KAG_MODEL.md",
+      "role": "authority_doc"
+    },
+    {
+      "path": "docs/RELEASING.md",
+      "role": "release_doc"
+    }
+  ],
+  "build_type": "urn:abyssos:buildtype:aoa-kag-registry-readmodel:v1",
+  "package": {
+    "ecosystem": "generated-readmodel",
+    "name": "aoa-kag-registry-readmodel-bundle",
+    "purl": "pkg:generic/aoa-kag-registry-readmodel-bundle@0"
+  },
+  "lifecycle": {
+    "initial_state": "candidate",
+    "promotion_path": [
+      "candidate",
+      "built-local",
+      "manually-verified",
+      "release-ready",
+      "published",
+      "superseded",
+      "revoked"
+    ],
+    "latest_eligible_states": [
+      "manually-verified",
+      "release-ready",
+      "published"
+    ]
+  },
+  "consumer_contract": {
+    "stable_interface": "python scripts/validate_abyss_machine_kag_registry_bundle.py",
+    "consumer_expectation": "KAG consumers select a derived_kag_registry_readmodel_bundle from the registry latest readmodel only after ABI verification, SBOM-lite subject inventory, SLSA/in-toto generation provenance, validate_kag, generated parity, and owner-boundary checks pass.",
+    "registry_required": true
+  },
+  "consumer_command": [
+    "abyss-machine artifacts build-sidecars --manifest docs/artifact-bundles/kag_registry.bundle.json --bundle-dir BUNDLE_DIR",
+    "abyss-machine artifacts sign BUNDLE_DIR",
+    "abyss-machine artifacts verify BUNDLE_DIR",
+    "abyss-machine artifacts release-check BUNDLE_DIR",
+    "abyss-machine artifacts bundle-registry --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --json"
+  ]
+}

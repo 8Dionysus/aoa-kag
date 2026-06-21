@@ -11,8 +11,8 @@ keeps the path back to stronger owner review visible.
 ## Inputs
 
 - `config/promotion-candidate-registry.source.json`
-- root schemas for `agon-kag-candidate`
-- root examples for Agon candidate payload shape
+- part-local schemas for `agon-kag-candidate`
+- part-local examples for Agon candidate payload shape
 - owner review, memo evidence, eval alignment, and recurrence support refs
 
 ## Outputs

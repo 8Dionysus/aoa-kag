@@ -8,5 +8,6 @@ python mechanics/agon/parts/sophian-threshold-packets/scripts/validate_sophian_t
 python -m unittest discover -s mechanics/agon/parts/sophian-threshold-packets/tests -p 'test_*.py'
 ```
 
-The builder may write only `generated/agon_sophian_kag_packet_registry.min.json`
-when run without `--check`.
+The builder may write only this part's
+`generated/agon_sophian_kag_packet_registry.min.json` when run without
+`--check`.

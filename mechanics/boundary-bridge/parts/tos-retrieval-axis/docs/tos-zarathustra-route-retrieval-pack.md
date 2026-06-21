@@ -1,0 +1,96 @@
+# ToS Zarathustra Route Retrieval Pack
+
+This document records `AOA-K-0011`, the first standalone consumer-facing
+retrieval surface derived from the canonical-tree-derived Zarathustra route
+pack.
+
+It materializes one handles-only retrieval adjunct for
+`thus-spoke-zarathustra/prologue-1` without widening the numbered tiny consumer
+path and without taking routing ownership.
+
+The live payload now also keeps that limit machine-checkable through
+`adjunct_budget` and `subordinate_posture`.
+
+## Core rule
+
+The retrieval pack returns handles back to ToS authority; it does not replace
+that authority.
+
+`aoa-kag` may derive one bounded route-local retrieval surface from
+`mechanics/distillation/parts/tos-route-lift/generated/tos_zarathustra_route_pack.min.json`, but that surface must remain a
+consumer-facing adjunct that points readers back toward canonical
+`Tree-of-Sophia/ToS/canon/**` node ownership and the canonical ToS relation pack.
+
+## Current pilot inputs
+
+The current pilot derives only from:
+
+- `mechanics/distillation/parts/tos-route-lift/generated/tos_zarathustra_route_pack.min.json`
+
+This retrieval scope does not derive from:
+
+- `Tree-of-Sophia/intake/**`
+- `aoa-memo/**`
+- `aoa-routing/**`
+- widened `AOA-K-0005` or `AOA-K-0007` donors
+
+## Retrieval rule
+
+The current retrieval rule is:
+
+- one retrieval route object for the bounded Zarathustra `prologue-1` route
+- preserve the canonical `route_id`
+- preserve `route_pack_ref`, `route_capsule_ref`, and `relation_pack_ref`
+- preserve `node_type_counts` and `edge_kind_counts` from `AOA-K-0010`
+- return family-level handle arrays only
+- keep each handle item limited to `node_id` plus `authority_ref`
+- keep one bounded `retrieval_summary`
+- add no ranking, scoring, path bundles, query cards, or routing hints
+
+## Adjunct budget and subordinate posture
+
+The current payload keeps one explicit adjunct budget:
+
+- `max_adjunct_surfaces = 1`
+- `max_route_families = 1`
+- `numbered_tiny_path_inclusion = forbidden`
+- `default_activation = opt_in_only`
+
+The same payload also keeps one explicit subordinate posture:
+
+- `adjunct_role = standalone_handles_only`
+- `entry_order = source_owned_tiny_entry_before_adjunct`
+- `source_first_reentry_ref = Tree-of-Sophia/ToS/public-compatibility/tos_tiny_entry_route.example.json`
+- `routing_ownership = forbidden`
+- `canon_authorship = forbidden`
+
+## Current pilot surfaces
+
+The current pilot surfaces are:
+
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/schemas/tos-zarathustra-route-retrieval-pack-manifest.schema.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/schemas/tos-zarathustra-route-retrieval-pack.schema.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_zarathustra_route_retrieval_pack.example.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/manifests/tos_zarathustra_route_retrieval_pack.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_zarathustra_route_retrieval_pack.json`
+- `mechanics/boundary-bridge/parts/tos-retrieval-axis/generated/tos_zarathustra_route_retrieval_pack.min.json`
+
+## What this retrieval scope does not do
+
+This retrieval scope does not:
+
+- replace `AOA-K-0005` or `AOA-K-0007`
+- join the numbered recommended consumer path yet
+- add segment entrypoints or thematic bundles
+- rank sources, nodes, or route families
+- widen into routing policy or graph normalization
+- replace ToS route-pack authority with KAG-owned summaries
+
+## Regeneration posture
+
+Use:
+
+```bash
+python scripts/generate_kag.py
+python scripts/validate_kag.py
+```

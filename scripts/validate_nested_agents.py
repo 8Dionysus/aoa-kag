@@ -18,6 +18,48 @@ class AgentsDocSpec:
 
 REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
     AgentsDocSpec(
+        Path(".agents") / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "agent-facing companion lanes",
+            "Codex Spark guidance",
+            "Do not restore root `Spark/` as an active lane",
+            "python scripts/validate_nested_agents.py",
+            "python scripts/validate_semantic_agents.py",
+        ),
+    ),
+    AgentsDocSpec(
+        Path(".agents") / "spark" / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "real-time, interruptible Codex Spark lane",
+            "GPT-5.3-Codex-Spark",
+            "done-or-handoff",
+            "one KAG seam",
+            "python scripts/validate_nested_agents.py",
+            "python scripts/validate_semantic_agents.py",
+        ),
+    ),
+    AgentsDocSpec(
+        Path("quests") / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "source quest record district",
+            "quests/<lane>/<state>/<quest-file>",
+            "Do not keep active source records as root `quests/AOA-KAG-Q-*.yaml` aliases",
+            "python mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py",
+        ),
+    ),
+    AgentsDocSpec(
+        Path("quests") / "kag" / "AGENTS.md",
+        (
+            "# AGENTS.md",
+            "AOA-KAG-Q-*.yaml",
+            "state directory must match",
+            "Run the quest-store validation route",
+        ),
+    ),
+    AgentsDocSpec(
         Path("docs") / "decisions" / "AGENTS.md",
         (
             "# AGENTS.md",
