@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from contextlib import ExitStack, contextmanager
 import importlib.util
 import json
 from pathlib import Path
@@ -40,17 +41,31 @@ def load_json(path: Path) -> object:
 
 
 class SourceOwnedExportTests(unittest.TestCase):
-    def patched_read_json(self, overrides: dict[Path, object]):
-        original = source_export.validate_kag.read_json
+    @contextmanager
+    def patched_read_json(self, target_modules, overrides: dict[Path, object]):
+        if not isinstance(target_modules, tuple):
+            target_modules = (target_modules,)
         normalized = {Path(path).resolve(): copy.deepcopy(payload) for path, payload in overrides.items()}
 
-        def side_effect(path: Path) -> object:
-            resolved = Path(path).resolve()
-            if resolved in normalized:
-                return copy.deepcopy(normalized[resolved])
-            return original(path)
+        def side_effect_for(original):
+            def side_effect(path: Path) -> object:
+                resolved = Path(path).resolve()
+                if resolved in normalized:
+                    return copy.deepcopy(normalized[resolved])
+                return original(path)
 
-        return patch.object(source_export.validate_kag, "read_json", side_effect=side_effect)
+            return side_effect
+
+        with ExitStack() as stack:
+            for module in target_modules:
+                stack.enter_context(
+                    patch.object(
+                        module,
+                        "read_json",
+                        side_effect=side_effect_for(module.read_json),
+                    )
+                )
+            yield
 
     def memo_kag_export_payload(self) -> dict[str, object]:
         return {
@@ -87,6 +102,7 @@ class SourceOwnedExportTests(unittest.TestCase):
         ]
 
         with self.patched_read_json(
+            source_export.manifest_contracts,
             {
                 source_export.validate_kag.AOA_MEMO_ROOT
                 / source_export.validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH: broken_payload,
@@ -109,6 +125,7 @@ class SourceOwnedExportTests(unittest.TestCase):
         memo_export["activation"]["spine_visible"] = True
 
         with self.patched_read_json(
+            source_export.manifest_contracts,
             {
                 source_export.validate_kag.FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH: manifest,
             }
@@ -125,29 +142,30 @@ class SourceOwnedExportTests(unittest.TestCase):
         manifest["exports"][0]["routing_binding"]["kind"] = "other_view"
 
         with self.patched_read_json(
+            source_export.manifest_contracts,
             {
                 source_export.validate_kag.FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH: manifest,
             }
         ):
             with self.assertRaises(source_export.validate_kag.ValidationError) as context:
-                dependencies = source_export.validate_kag.validate_source_owned_export_dependency_manifest(
+                dependencies = source_export.manifest_contracts.validate_source_owned_export_dependency_manifest(
                     source_export.registry_manifest_surfaces()
                 )
-                source_export.validate_kag.validate_federation_export_registry_manifest(
+                source_export.manifest_contracts.validate_federation_export_registry_manifest(
                     dependencies
                 )
 
         self.assertIn("routing_binding.kind", str(context.exception))
 
     def test_memo_boundary_doc_must_keep_read_only_consumer_stop_line(self) -> None:
-        original = source_export.validate_kag.read_text
+        original = source_export.sibling_readiness.read_text
 
         def read_text(path: Path) -> str:
             if Path(path).resolve() == source_export.validate_kag.SOURCE_OWNED_EXPORT_DEPENDENCIES_DOC_PATH.resolve():
                 return "Reviewed memo donor consumer boundary\n"
             return original(path)
 
-        with patch.object(source_export.validate_kag, "read_text", side_effect=read_text):
+        with patch.object(source_export.sibling_readiness, "read_text", side_effect=read_text):
             with self.assertRaises(source_export.SourceOwnedExportValidationError) as context:
                 source_export.validate_source_owned_export_boundary()
 
@@ -165,8 +183,12 @@ class SourceOwnedExportTests(unittest.TestCase):
     def test_optional_memo_export_readiness_allows_missing_root(self) -> None:
         missing_root = REPO_ROOT / ".tmp" / "missing-aoa-memo-export"
 
-        with patch.object(source_export.validate_kag, "AOA_MEMO_ROOT", missing_root):
-            source_export.validate_kag.validate_optional_memo_source_owned_export_readiness()
+        with patch.object(source_export.sibling_readiness, "AOA_MEMO_ROOT", missing_root), patch.object(
+            source_export.source_refs,
+            "AOA_MEMO_ROOT",
+            missing_root,
+        ):
+            source_export.sibling_readiness.validate_optional_memo_source_owned_export_readiness()
 
     def test_optional_memo_export_readiness_rejects_wrong_entry_surface(self) -> None:
         payload = self.memo_kag_export_payload()
@@ -176,9 +198,13 @@ class SourceOwnedExportTests(unittest.TestCase):
             memo_root = Path(tmpdir)
             self.write_memo_export_fixture(memo_root, payload)
 
-            with patch.object(source_export.validate_kag, "AOA_MEMO_ROOT", memo_root):
+            with patch.object(source_export.sibling_readiness, "AOA_MEMO_ROOT", memo_root), patch.object(
+                source_export.source_refs,
+                "AOA_MEMO_ROOT",
+                memo_root,
+            ):
                 with self.assertRaises(source_export.validate_kag.ValidationError) as context:
-                    source_export.validate_kag.validate_optional_memo_source_owned_export_readiness()
+                    source_export.sibling_readiness.validate_optional_memo_source_owned_export_readiness()
 
         self.assertIn("entry_surface", str(context.exception))
 
@@ -190,9 +216,13 @@ class SourceOwnedExportTests(unittest.TestCase):
             memo_root = Path(tmpdir)
             self.write_memo_export_fixture(memo_root, payload)
 
-            with patch.object(source_export.validate_kag, "AOA_MEMO_ROOT", memo_root):
+            with patch.object(source_export.sibling_readiness, "AOA_MEMO_ROOT", memo_root), patch.object(
+                source_export.source_refs,
+                "AOA_MEMO_ROOT",
+                memo_root,
+            ):
                 with self.assertRaises(source_export.validate_kag.ValidationError) as context:
-                    source_export.validate_kag.validate_optional_memo_source_owned_export_readiness()
+                    source_export.sibling_readiness.validate_optional_memo_source_owned_export_readiness()
 
         self.assertIn("source_inputs", str(context.exception))
 
@@ -209,9 +239,13 @@ class SourceOwnedExportTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with patch.object(source_export.validate_kag, "AOA_MEMO_ROOT", memo_root):
+            with patch.object(source_export.sibling_readiness, "AOA_MEMO_ROOT", memo_root), patch.object(
+                source_export.source_refs,
+                "AOA_MEMO_ROOT",
+                memo_root,
+            ):
                 with self.assertRaises(source_export.validate_kag.ValidationError) as context:
-                    source_export.validate_kag.validate_optional_memo_source_owned_export_readiness()
+                    source_export.sibling_readiness.validate_optional_memo_source_owned_export_readiness()
 
         self.assertIn("direct_relations[0]", str(context.exception))
 
@@ -233,14 +267,18 @@ class SourceOwnedExportTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with patch.object(source_export.validate_kag, "AOA_MEMO_ROOT", memo_root):
+            with patch.object(source_export.sibling_readiness, "AOA_MEMO_ROOT", memo_root), patch.object(
+                source_export.source_refs,
+                "AOA_MEMO_ROOT",
+                memo_root,
+            ):
                 with self.assertRaises(source_export.validate_kag.ValidationError) as context:
-                    source_export.validate_kag.validate_optional_memo_source_owned_export_readiness()
+                    source_export.sibling_readiness.validate_optional_memo_source_owned_export_readiness()
 
         self.assertIn("direct_relations", str(context.exception))
 
     def test_memo_source_owned_export_consumer_boundary_rejects_graph_truth_takeover(self) -> None:
-        original_read_text = source_export.validate_kag.read_text
+        original_read_text = source_export.sibling_readiness.read_text
 
         def fake_read_text(path: Path) -> str:
             text = original_read_text(path)
@@ -252,9 +290,9 @@ class SourceOwnedExportTests(unittest.TestCase):
                 )
             return text
 
-        with patch.object(source_export.validate_kag, "read_text", side_effect=fake_read_text):
+        with patch.object(source_export.sibling_readiness, "read_text", side_effect=fake_read_text):
             with self.assertRaises(source_export.validate_kag.ValidationError) as context:
-                source_export.validate_kag.validate_memo_source_owned_export_consumer_boundary_doc()
+                source_export.sibling_readiness.validate_memo_source_owned_export_consumer_boundary_doc()
 
         self.assertIn("must not treat the donor", str(context.exception))
 

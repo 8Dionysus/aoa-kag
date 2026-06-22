@@ -13,6 +13,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import validate_kag
+from scripts.validators import example_contracts, local_contracts
 
 
 def load_json(path: Path) -> object:
@@ -20,21 +21,21 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
-    def patched_read_json(self, overrides: dict[Path, object]):
-        original = validate_kag.read_json
+    def patched_read_json(self, target_module, overrides: dict[Path, object]):
+        original = target_module.read_json
         normalized_overrides: dict[Path, object] = {}
         for path, payload in overrides.items():
             resolved = Path(path).resolve()
             normalized_overrides[resolved] = copy.deepcopy(payload)
             for repo, root in (
-                ("aoa-memo", validate_kag.AOA_MEMO_ROOT),
-                ("aoa-evals", validate_kag.AOA_EVALS_ROOT),
+                ("aoa-memo", target_module.AOA_MEMO_ROOT),
+                ("aoa-evals", target_module.AOA_EVALS_ROOT),
             ):
                 try:
                     relative_path = resolved.relative_to(root.resolve()).as_posix()
                 except ValueError:
                     continue
-                for alias in validate_kag.COMPATIBILITY_REF_ALIASES.get(repo, {}).get(
+                for alias in target_module.COMPATIBILITY_REF_ALIASES.get(repo, {}).get(
                     relative_path,
                     (),
                 ):
@@ -46,7 +47,7 @@ class ValidateKagTestCase(unittest.TestCase):
                 return copy.deepcopy(normalized_overrides[resolved])
             return original(path)
 
-        return patch.object(validate_kag, "read_json", side_effect=side_effect)
+        return patch.object(target_module, "read_json", side_effect=side_effect)
 
     def registry_manifest_surfaces(self) -> dict[str, dict[str, object]]:
         registry_manifest_payload = validate_kag.read_json(validate_kag.REGISTRY_MANIFEST_PATH)
@@ -73,9 +74,9 @@ class ValidateKagTestCase(unittest.TestCase):
         self.assertIn("artifact_identity", str(context.exception))
 
     def test_validate_antifragility_stress_surfaces_rejects_empty_example_glob(self) -> None:
-        with patch.object(validate_kag, "PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS", ()):
+        with patch.object(local_contracts, "PROJECTION_HEALTH_RECEIPT_EXAMPLE_PATHS", ()):
             with self.assertRaises(validate_kag.ValidationError) as context:
-                validate_kag.validate_antifragility_stress_surfaces()
+                local_contracts.validate_antifragility_stress_surfaces()
 
         self.assertIn("projection_health_receipt*.example.json", str(context.exception))
 
@@ -88,12 +89,13 @@ class ValidateKagTestCase(unittest.TestCase):
         )
 
         with self.patched_read_json(
+            example_contracts,
             {
                 validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH: broken_payload,
             }
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
-                validate_kag.validate_bridge_envelope_example()
+                example_contracts.validate_bridge_envelope_example()
 
         self.assertIn("tos_refs[0]", str(context.exception))
 
@@ -104,12 +106,13 @@ class ValidateKagTestCase(unittest.TestCase):
         broken_payload["memory_refs"][0] = "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md"
 
         with self.patched_read_json(
+            example_contracts,
             {
                 validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH: broken_payload,
             }
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
-                validate_kag.validate_bridge_envelope_example()
+                example_contracts.validate_bridge_envelope_example()
 
         self.assertIn("memory_refs[0]", str(context.exception))
 

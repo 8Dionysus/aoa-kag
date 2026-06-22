@@ -2,48 +2,42 @@
 
 ## Applies to
 
-This card applies to `docs/validation/` and all descendants.
+`docs/validation/`.
 
 ## Role
 
-`docs/validation/` owns the active map of validation lanes, command authority,
-validator posture, script inventory, lane posture, and failure routes for
+This directory maps validation lanes, command authority, validator posture,
+validator inventory, script inventory, lane posture, and failure routes for
 `aoa-kag`.
 
-It documents how guards are routed. It does not author KAG source meaning,
-generated payload meaning, runtime graph state, eval verdicts, memory truth, or
-sibling-repo authority.
+## Inputs
 
-## Read before editing
+- `config/validation_lanes.json`
+- `scripts/validation_lanes.py`
+- `scripts/ci_gate.py`
+- `docs/validation/VALIDATOR_TOPOLOGY.md`
+- `docs/validation/validator_inventory.json`
+- `docs/validation/SCRIPT_TOPOLOGY.md`
+- `docs/validation/script_inventory.json`
 
-Read root `AGENTS.md`, `DESIGN.md`, `DESIGN.AGENTS.md`,
-`config/validation_lanes.json`, `scripts/validation_lanes.py`, and
-`scripts/ci_gate.py`.
+## Routes
 
-For script-surface changes, also read `SCRIPT_TOPOLOGY.md` and
-`script_inventory.json`.
-
-## Boundaries
-
-- Do not duplicate full lane command sequences in docs.
-- Do not let `script_inventory.json` become command authority; it describes
-  owner, lane, side-effect, and focused test coverage only.
-- Do not promote future graph, RAG, runtime, local `/kag`, eval, memory, or
-  mechanic part-local notes into hard gates until `aoa-kag` owns one concrete
-  checked surface.
-- Do not let generated validators define source-authored meaning from sibling
-  repositories or Tree of Sophia.
+| Surface | Function |
+| --- | --- |
+| `config/validation_lanes.json` | command authority |
+| `VALIDATOR_TOPOLOGY.md` | validator family map |
+| `validator_inventory.json` | validator module inventory |
+| `SCRIPT_TOPOLOGY.md` | script family map |
+| `script_inventory.json` | script surface inventory |
 
 ## Validation
 
-Run:
-
 ```bash
-python -m unittest tests.test_validation_command_authority tests.test_script_topology
+python -m unittest tests.test_validation_command_authority tests.test_script_topology tests.test_validator_module_topology
 python scripts/ci_gate.py --mode source-fast
 ```
 
-For release-visible lane changes, run:
+For release-visible lane changes:
 
 ```bash
 python scripts/release_check.py
@@ -51,6 +45,5 @@ python scripts/release_check.py
 
 ## Closeout
 
-Report changed lane ids, command-authority surfaces, script inventory entries,
-checks run, checks skipped, and any advisory boundary intentionally left out of
-a hard gate.
+Report changed lane ids, inventories, focused checks, broader lane checks, and
+the next owner route.

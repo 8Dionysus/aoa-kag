@@ -10,6 +10,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import kag_generation
 import validate_kag
+from scripts.validators import local_contracts
 
 
 def write_text(path: Path, content: str) -> None:
@@ -63,8 +64,8 @@ class TestTosTinyEntryHopCompatibility(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             tos_root = Path(tmpdir)
             self.write_tos_root(tos_root, payload)
-            with mock.patch.object(validate_kag, "TREE_OF_SOPHIA_ROOT", tos_root):
-                loaded = validate_kag.validate_tos_tiny_entry_route()
+            with mock.patch.object(local_contracts, "TREE_OF_SOPHIA_ROOT", tos_root):
+                loaded = local_contracts.validate_tos_tiny_entry_route()
 
         self.assertEqual(loaded["bounded_hop"], "ToS/public-compatibility/concept_node.example.json")
 
@@ -105,9 +106,9 @@ class TestTosTinyEntryHopCompatibility(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             tos_root = Path(tmpdir)
             self.write_tos_root(tos_root, payload)
-            with mock.patch.object(validate_kag, "TREE_OF_SOPHIA_ROOT", tos_root):
+            with mock.patch.object(local_contracts, "TREE_OF_SOPHIA_ROOT", tos_root):
                 with self.assertRaises(validate_kag.ValidationError) as exc:
-                    validate_kag.validate_tos_tiny_entry_route()
+                    local_contracts.validate_tos_tiny_entry_route()
 
         message = str(exc.exception)
         self.assertIn("bounded_hop", message)

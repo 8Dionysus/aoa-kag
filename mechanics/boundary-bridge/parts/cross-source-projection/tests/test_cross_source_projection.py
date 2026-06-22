@@ -14,6 +14,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 import kag_generation
 import validate_kag
+from scripts.validators import manifest_contracts
 
 
 def load_json(path: Path) -> object:
@@ -28,8 +29,8 @@ def registry_surfaces() -> dict[str, dict[str, object]]:
 
 
 class CrossSourceProjectionTests(unittest.TestCase):
-    def patched_read_json(self, overrides: dict[Path, object]):
-        original = validate_kag.read_json
+    def patched_read_json(self, target_module, overrides: dict[Path, object]):
+        original = target_module.read_json
         normalized = {Path(path).resolve(): copy.deepcopy(payload) for path, payload in overrides.items()}
 
         def side_effect(path: Path) -> object:
@@ -38,7 +39,7 @@ class CrossSourceProjectionTests(unittest.TestCase):
                 return copy.deepcopy(normalized[resolved])
             return original(path)
 
-        return patch.object(validate_kag, "read_json", side_effect=side_effect)
+        return patch.object(target_module, "read_json", side_effect=side_effect)
 
     def patched_generation_read_json(self, overrides: dict[Path, object]):
         original = kag_generation.read_json
@@ -94,10 +95,11 @@ class CrossSourceProjectionTests(unittest.TestCase):
         ):
             with self.subTest(case=label):
                 with self.patched_read_json(
+                    manifest_contracts,
                     {validate_kag.CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH: manifest_override}
                 ):
                     with self.assertRaises(validate_kag.ValidationError) as context:
-                        validate_kag.validate_cross_source_node_projection_manifest(
+                        manifest_contracts.validate_cross_source_node_projection_manifest(
                             surfaces,
                             dependencies,
                         )
