@@ -84,6 +84,74 @@ class MechanicsSkeletonTests(unittest.TestCase):
             any(issue.endswith("mechanics/agon/README.md: missing heading '### Trigger'") for issue in issues)
         )
 
+    def test_root_readme_package_map_must_match_topology(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            copy_mechanics_tree(root)
+            readme_path = root / "mechanics" / "README.md"
+            readme_path.write_text(
+                readme_path.read_text(encoding="utf-8").replace("| `agon` |", "| `ag0n` |"),
+                encoding="utf-8",
+            )
+
+            issues = validate_mechanics_skeleton.validate(root)
+
+        self.assertTrue(
+            any(
+                issue.endswith(
+                    "mechanics/README.md: common mechanics map must include package row '| `agon` |'"
+                )
+                for issue in issues
+            )
+        )
+
+    def test_package_status_must_match_active_parts_topology(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            copy_mechanics_tree(root)
+            readme_path = root / "mechanics" / "agon" / "README.md"
+            readme_path.write_text(
+                readme_path.read_text(encoding="utf-8").replace(
+                    "Status: mapped common-center mechanic; active part-local routes exist for\n"
+                    "promotion candidates and Sophian threshold packets.",
+                    "Status: mapped common-center mechanic; no active part directories yet.",
+                ),
+                encoding="utf-8",
+            )
+
+            issues = validate_mechanics_skeleton.validate(root)
+
+        self.assertTrue(
+            any(
+                issue.endswith(
+                    "mechanics/agon/README.md: Status paragraph must reflect active part routes from topology"
+                )
+                for issue in issues
+            )
+        )
+
+    def test_parts_map_must_name_topology_candidate_routes(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            copy_mechanics_tree(root)
+            parts_path = root / "mechanics" / "agon" / "PARTS.md"
+            parts_path.write_text(
+                parts_path.read_text(encoding="utf-8").replace("`promotion-candidates`", "`promotion-candidatez`"),
+                encoding="utf-8",
+            )
+
+            issues = validate_mechanics_skeleton.validate(root)
+
+        self.assertTrue(
+            any(
+                issue.endswith(
+                    "mechanics/agon/PARTS.md: candidate part route 'promotion-candidates' "
+                    "from topology must be named"
+                )
+                for issue in issues
+            )
+        )
+
     def test_premature_part_directory_fails(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

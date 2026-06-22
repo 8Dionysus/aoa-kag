@@ -41,7 +41,7 @@ class TestTopologyAuthorityTests(unittest.TestCase):
         for required in (
             "root",
             "family -> protects -> owner surface -> home scope -> coverage authority",
-            "Test files are not command authority.",
+            "Test files describe coverage.",
             "`config/validation_lanes.json`",
             "`scripts/run_tests.py` owns unittest discovery",
         ):

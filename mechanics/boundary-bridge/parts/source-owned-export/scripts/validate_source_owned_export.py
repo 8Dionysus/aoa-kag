@@ -11,10 +11,26 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import validate_kag
+try:
+    from scripts.validators import (
+        common,
+        manifest_contracts,
+        projection_parity,
+        sibling_readiness,
+        source_refs,
+    )
+except ImportError:  # pragma: no cover - exercised by direct script execution
+    from validators import (  # type: ignore
+        common,
+        manifest_contracts,
+        projection_parity,
+        sibling_readiness,
+        source_refs,
+    )
 
 T = TypeVar("T")
 
-MEMO_SOURCE_KEY = ("aoa-memo", validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH)
+MEMO_SOURCE_KEY = ("aoa-memo", common.EXPECTED_MEMO_KAG_EXPORT_PATH)
 EXPECTED_MEMO_ACTIVATION = {
     "registry_visible": True,
     "spine_visible": False,
@@ -33,25 +49,25 @@ def fail(message: str) -> None:
 def root_check(callback: Callable[..., T], *args: Any) -> T:
     try:
         return callback(*args)
-    except validate_kag.ValidationError as exc:
+    except common.ValidationError as exc:
         fail(str(exc))
 
 
 def registry_manifest_surfaces() -> dict[str, dict[str, object]]:
-    payload = validate_kag.read_json(validate_kag.REGISTRY_MANIFEST_PATH)
+    payload = common.read_json(common.REGISTRY_MANIFEST_PATH)
     try:
-        return validate_kag.validate_registry_payload(
+        return projection_parity.validate_registry_payload(
             payload,
             label="registry manifest",
         )
-    except validate_kag.ValidationError as exc:
+    except common.ValidationError as exc:
         fail(str(exc))
 
 
 def validate_source_owned_export_boundary() -> None:
     surfaces_by_id = registry_manifest_surfaces()
     dependencies = root_check(
-        validate_kag.validate_source_owned_export_dependency_manifest,
+        manifest_contracts.validate_source_owned_export_dependency_manifest,
         surfaces_by_id,
     )
 
@@ -62,7 +78,7 @@ def validate_source_owned_export_boundary() -> None:
         fail("aoa-memo donor export must remain registry-only with empty consumed_by")
 
     federation_entries = root_check(
-        validate_kag.validate_federation_export_registry_manifest,
+        manifest_contracts.validate_federation_export_registry_manifest,
         dependencies,
     )
     memo_export = federation_entries.get(MEMO_SOURCE_KEY)
@@ -75,8 +91,8 @@ def validate_source_owned_export_boundary() -> None:
     if memo_export.get("adjunct_surfaces") != []:
         fail("aoa-memo donor export must not expose adjunct surfaces while registry-only")
 
-    root_check(validate_kag.validate_optional_memo_source_owned_export_readiness)
-    root_check(validate_kag.validate_memo_source_owned_export_consumer_boundary_doc)
+    root_check(sibling_readiness.validate_optional_memo_source_owned_export_readiness)
+    root_check(sibling_readiness.validate_memo_source_owned_export_consumer_boundary_doc)
 
 
 def main() -> int:

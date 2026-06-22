@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "owner": "docs/validation/VALIDATOR_TOPOLOGY.md",
+  "command_authority": "config/validation_lanes.json",
+  "summary": "Functional map for validate_kag entrypoint and validator modules.",
+  "required_fields": [
+    "path",
+    "module_type",
+    "function",
+    "inputs",
+    "outputs",
+    "covered_by"
+  ],
+  "validator_modules": [
+    {
+      "path": "scripts/validate_kag.py",
+      "module_type": "adapter",
+      "function": "CLI entrypoint for repo-wide KAG validation.",
+      "inputs": [
+        "scripts/validators package"
+      ],
+      "outputs": [
+        "process exit status and status output"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/__init__.py",
+      "module_type": "adapter",
+      "function": "Package re-export surface for validator modules.",
+      "inputs": [
+        "scripts/validators modules"
+      ],
+      "outputs": [
+        "importable validator namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/generation.py",
+      "module_type": "generation_port",
+      "function": "Import KAG generation constants and payload builders for validator modules.",
+      "inputs": [
+        "scripts/kag_generation.py"
+      ],
+      "outputs": [
+        "generation constants and builder functions"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected_contracts.py",
+      "module_type": "expected_contracts",
+      "function": "Store expected paths, allowed values, and expected payload contract data used by validators.",
+      "inputs": [
+        "generation constants",
+        "repo environment roots"
+      ],
+      "outputs": [
+        "expected contract data and path constants"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/common.py",
+      "module_type": "shared",
+      "function": "Shared validator errors, file readers, markdown helpers, schema helpers, and list/set helpers.",
+      "inputs": [
+        "repo paths",
+        "JSON/text files",
+        "schema payloads"
+      ],
+      "outputs": [
+        "shared validator helpers"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/source_refs.py",
+      "module_type": "source_refs",
+      "function": "Resolve repo-relative and cross-repo source references.",
+      "inputs": [
+        "source refs",
+        "configured sibling roots"
+      ],
+      "outputs": [
+        "resolved paths or validation errors"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/schema_surfaces.py",
+      "module_type": "schema",
+      "function": "Validate JSON schema surfaces used by KAG packs and examples.",
+      "inputs": [
+        "schema files"
+      ],
+      "outputs": [
+        "schema validation verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/local_contracts.py",
+      "module_type": "local_contract",
+      "function": "Validate local route, mechanics skeleton, questbook, antifragility, and ToS tiny-entry contracts.",
+      "inputs": [
+        "route cards",
+        "mechanics skeleton",
+        "questbook validator",
+        "ToS tiny-entry surface"
+      ],
+      "outputs": [
+        "local contract verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifest_contracts.py",
+      "module_type": "manifest",
+      "function": "Validate KAG manifest source-input and output contracts.",
+      "inputs": [
+        "manifest files",
+        "registry surfaces",
+        "source refs"
+      ],
+      "outputs": [
+        "manifest contract verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection_parity.py",
+      "module_type": "projection",
+      "function": "Validate generated/read-model parity and generated pack structure.",
+      "inputs": [
+        "generated payloads",
+        "expected payload builders"
+      ],
+      "outputs": [
+        "projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py",
+      "projection_only": true
+    },
+    {
+      "path": "scripts/validators/example_contracts.py",
+      "module_type": "example",
+      "function": "Validate public-safe example payload contracts.",
+      "inputs": [
+        "example payloads",
+        "expected generated payloads"
+      ],
+      "outputs": [
+        "example contract verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/sibling_readiness.py",
+      "module_type": "sibling_readiness",
+      "function": "Validate optional sibling source-owned export readiness.",
+      "inputs": [
+        "optional sibling export payloads",
+        "source-owned export boundary doc"
+      ],
+      "outputs": [
+        "sibling readiness verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestrator.py",
+      "module_type": "orchestrator",
+      "function": "Run validate_kag checks in the repo-wide order and print status lines.",
+      "inputs": [
+        "validator modules",
+        "KAG source and generated surfaces"
+      ],
+      "outputs": [
+        "repo-wide validation status"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    }
+  ]
+}

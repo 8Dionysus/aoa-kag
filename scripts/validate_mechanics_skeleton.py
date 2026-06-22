@@ -61,6 +61,7 @@ README_SNIPPETS = (
     "python scripts/validate_mechanics_skeleton.py",
 )
 PARTS_STOP_LINE = "No part directories are active yet."
+PARTS_NO_CANDIDATES_LINE = "No active KAG-specific"
 
 
 def _load_json(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -91,6 +92,21 @@ def _legacy_path_token(path: Path) -> str | None:
             if any(token.startswith(prefix) for prefix in FORBIDDEN_ACTIVE_PATH_PREFIXES):
                 return token
     return None
+
+
+def _status_paragraph(text: str) -> str:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if not line.startswith("Status:"):
+            continue
+        paragraph = [line.strip()]
+        for next_line in lines[index + 1 :]:
+            stripped = next_line.strip()
+            if not stripped or stripped.startswith("#"):
+                break
+            paragraph.append(stripped)
+        return " ".join(paragraph)
+    return ""
 
 
 def validate(repo_root: Path = REPO_ROOT) -> list[str]:
@@ -288,10 +304,28 @@ def validate(repo_root: Path = REPO_ROOT) -> list[str]:
         for snippet in README_SNIPPETS:
             if snippet not in readme_text:
                 issues.append(f"mechanics/README.md: missing snippet {snippet!r}")
+        if topology is not None and isinstance(topology.get("active_packages"), list):
+            _validate_root_readme_package_map(readme_text, topology["active_packages"], issues)
     else:
         issues.append("mechanics/README.md: file is missing")
 
     return issues
+
+
+def _validate_root_readme_package_map(
+    readme_text: str,
+    active_packages: list[Any],
+    issues: list[str],
+) -> None:
+    for package in active_packages:
+        if not isinstance(package, dict) or not isinstance(package.get("path"), str):
+            continue
+        package_name = package["path"]
+        row_prefix = f"| `{package_name}` |"
+        if row_prefix not in readme_text:
+            issues.append(
+                f"mechanics/README.md: common mechanics map must include package row {row_prefix!r}"
+            )
 
 
 def _validate_package_surfaces(
@@ -318,6 +352,7 @@ def _validate_package_surfaces(
                 issues.append(f"{_display(readme_path)}: missing heading {heading!r}")
         if "Status: mapped common-center mechanic" not in readme_text:
             issues.append(f"{_display(readme_path)}: must name mapped common-center status")
+        _validate_package_readme_status(readme_path, readme_text, package, issues)
     else:
         issues.append(f"{_display(readme_path)}: file is missing")
 
@@ -328,6 +363,7 @@ def _validate_package_surfaces(
             issues.append(f"{_display(parts_path)}: missing part stop-line")
         if package.get("parts_status") == "active_part_dirs" and PARTS_STOP_LINE in parts_text:
             issues.append(f"{_display(parts_path)}: must not keep the no-active-parts stop-line")
+        _validate_package_parts_map(parts_path, parts_text, package, issues)
     else:
         issues.append(f"{_display(parts_path)}: file is missing")
 
@@ -358,6 +394,64 @@ def _validate_package_surfaces(
             legacy_agents = legacy_dir / "AGENTS.md"
             if legacy_agents.is_file():
                 _validate_agent_headings(legacy_agents, issues)
+
+
+def _validate_package_readme_status(
+    readme_path: Path,
+    readme_text: str,
+    package: dict[str, Any],
+    issues: list[str],
+) -> None:
+    status = _status_paragraph(readme_text)
+    if not status:
+        issues.append(f"{_display(readme_path)}: mechanic card must include a Status paragraph")
+        return
+    parts_status = package.get("parts_status")
+    normalized = status.casefold()
+    if parts_status == "active_part_dirs" and (
+        "active" not in normalized or "part" not in normalized or "no active part" in normalized
+    ):
+        issues.append(
+            f"{_display(readme_path)}: Status paragraph must reflect active part routes from topology"
+        )
+    if parts_status == "no_active_part_dirs" and "no active part directories yet" not in normalized:
+        issues.append(
+            f"{_display(readme_path)}: Status paragraph must reflect no active part directories from topology"
+        )
+
+
+def _validate_package_parts_map(
+    parts_path: Path,
+    parts_text: str,
+    package: dict[str, Any],
+    issues: list[str],
+) -> None:
+    candidate_part_routes = package.get("candidate_part_routes")
+    if not isinstance(candidate_part_routes, list):
+        return
+    parts_status = package.get("parts_status")
+    if candidate_part_routes:
+        for part_name in candidate_part_routes:
+            if f"`{part_name}`" not in parts_text:
+                issues.append(
+                    f"{_display(parts_path)}: candidate part route {part_name!r} "
+                    "from topology must be named"
+                )
+    elif parts_status == "no_active_part_dirs" and PARTS_NO_CANDIDATES_LINE not in parts_text:
+        issues.append(f"{_display(parts_path)}: must preserve no-candidate part pressure line")
+
+    active_part_routes = package.get("active_part_routes", [])
+    if not isinstance(active_part_routes, list):
+        return
+    for route in active_part_routes:
+        if not isinstance(route, dict) or not isinstance(route.get("path"), str):
+            continue
+        part_name = route["path"]
+        if f"`{part_name}`" not in parts_text:
+            issues.append(
+                f"{_display(parts_path)}: active part route {part_name!r} "
+                "from topology must be named"
+            )
 
 
 def _validate_active_parts(

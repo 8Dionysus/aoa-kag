@@ -84,7 +84,7 @@ class ReasoningHandoffTests(unittest.TestCase):
             with self.assertRaises(handoff.ReasoningHandoffValidationError) as context:
                 handoff.validate_reasoning_handoff_boundary()
 
-        self.assertIn("derived_surface_refs", str(context.exception))
+        self.assertIn("required counterpart refs", str(context.exception))
 
     def test_example_allows_missing_external_dependency_roots(self) -> None:
         missing_tos_root = REPO_ROOT / ".tmp" / "missing-Tree-of-Sophia"
