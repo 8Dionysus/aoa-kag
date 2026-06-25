@@ -10,12 +10,18 @@ class AbyssMachineKagRegistryBundleValidatorTest(unittest.TestCase):
         manifest = json.loads(validator.DEFAULT_MANIFEST.read_text(encoding="utf-8"))
         commands = "\n".join(manifest["consumer_command"])
 
-        self.assertIn("bundle-register", commands)
+        self.assertIn("evidence-promote", commands)
         self.assertIn("materialize-subjects", commands)
         self.assertIn("trust-gate", commands)
         self.assertIn("registry-latest", commands)
-        self.assertIn("--expected-source-repo aoa-kag", commands)
+        self.assertIn("--consumer-ref aoa-kag:kag-registry", commands)
         self.assertIn("--source-repo aoa-kag", commands)
+        self.assertIn("--trust-root-mode host_managed", commands)
+        self.assertTrue(manifest["consumer_contract"]["subject_store_required"])
+        self.assertEqual(
+            manifest["consumer_contract"]["admission_gate"],
+            "fail_closed_consumer_admission",
+        )
 
     def test_portable_contract_fallback_when_abyss_machine_is_unavailable(self) -> None:
         with patch.object(
