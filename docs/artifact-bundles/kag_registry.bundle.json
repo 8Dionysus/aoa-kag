@@ -100,17 +100,20 @@
   },
   "consumer_contract": {
     "stable_interface": "python scripts/validate_abyss_machine_kag_registry_bundle.py",
-    "consumer_expectation": "KAG consumers select a derived_kag_registry_readmodel_bundle from the registry latest readmodel only after ABI verification, SBOM-lite subject inventory, SLSA/in-toto generation provenance, validate_kag, generated parity, and owner-boundary checks pass.",
-    "registry_required": true
+    "consumer_expectation": "KAG consumers select a derived_kag_registry_readmodel_bundle from the registry latest readmodel only after ABI verification, SBOM-lite subject inventory, SLSA/in-toto generation provenance, durable evidence promotion, materialized subject-store verification, source/trust-root matching, validate_kag, generated parity, and owner-boundary checks pass.",
+    "registry_required": true,
+    "subject_store_required": true,
+    "admission_gate": "fail_closed_consumer_admission",
+    "consumer_verdict": "allow_or_deny_required_before_use"
   },
   "consumer_command": [
     "abyss-machine artifacts build-sidecars --manifest docs/artifact-bundles/kag_registry.bundle.json --bundle-dir BUNDLE_DIR",
     "abyss-machine artifacts sign BUNDLE_DIR",
     "abyss-machine artifacts verify BUNDLE_DIR",
     "abyss-machine artifacts release-check BUNDLE_DIR",
-    "abyss-machine artifacts bundle-register BUNDLE_DIR --registry-dir REGISTRY_DIR --lifecycle-state release-ready --consumer aoa-kag:kag-registry --json",
-    "abyss-machine artifacts materialize-subjects BUNDLE_DIR --registry-dir REGISTRY_DIR --manifest docs/artifact-bundles/kag_registry.bundle.json --consumer-intent agent --expected-source-repo aoa-kag --json",
-    "abyss-machine artifacts trust-gate --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --consumer-intent agent --source-repo aoa-kag --subject-digest SUBJECT_DIGEST --json",
-    "abyss-machine artifacts registry-latest --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --source-repo aoa-kag --json"
+    "abyss-machine artifacts evidence-promote BUNDLE_DIR --registry-dir REGISTRY_DIR --lifecycle-state release-ready --consumer-ref aoa-kag:kag-registry --evidence-ref BUNDLE_DIR/artifact.verify.json --source-repo aoa-kag --source-ref docs/artifact-bundles/kag_registry.bundle.json --producer aoa-kag-registry-readmodel-builder --trust-root-mode host_managed --json",
+    "abyss-machine artifacts materialize-subjects BUNDLE_DIR --store-root SUBJECT_STORE_ROOT --registry-dir REGISTRY_DIR --manifest docs/artifact-bundles/kag_registry.bundle.json --consumer-intent agent --source-repo aoa-kag --trust-root-mode host_managed --json",
+    "abyss-machine artifacts trust-gate --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --consumer-intent agent --source-repo aoa-kag --trust-root-mode host_managed --subject-digest SUBJECT_DIGEST --json",
+    "abyss-machine artifacts registry-latest --registry-dir REGISTRY_DIR --artifact-class derived_kag_registry_readmodel_bundle --consumer-intent agent --source-repo aoa-kag --trust-root-mode host_managed --json"
   ]
 }
