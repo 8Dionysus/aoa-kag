@@ -166,6 +166,47 @@ class ScriptTopologyTests(unittest.TestCase):
         self.assertTrue(groups)
         self.assertEqual(inventory_families, grouped_families)
 
+    def test_generation_package_surfaces_are_owner_routed(self) -> None:
+        expected_paths = {
+            "scripts/generation/AGENTS.md",
+            "scripts/generation/__init__.py",
+            "scripts/generation/common.py",
+            "scripts/generation/consumer.py",
+            "scripts/generation/context.py",
+            "scripts/generation/federation.py",
+            "scripts/generation/governance.py",
+            "scripts/generation/handoff.py",
+            "scripts/generation/markdown.py",
+            "scripts/generation/registry.py",
+            "scripts/generation/regrounding.py",
+            "scripts/generation/source_refs.py",
+            "scripts/generation/technique.py",
+            "scripts/generation/tos.py",
+            "scripts/generation/writer.py",
+        }
+        entries_by_path = {entry["path"]: entry for entry in inventory_entries()}
+
+        self.assertEqual(
+            expected_paths,
+            {
+                path
+                for path in entries_by_path
+                if path.startswith("scripts/generation/")
+            },
+        )
+        for path in expected_paths - {"scripts/generation/AGENTS.md"}:
+            with self.subTest(path=path):
+                self.assertEqual(
+                    "scripts/generation/AGENTS.md",
+                    entries_by_path[path]["owner_surface"],
+                )
+                self.assertEqual("projection/generated", entries_by_path[path]["organ_lane"])
+
+        self.assertEqual(
+            "script_route_card",
+            entries_by_path["scripts/generation/AGENTS.md"]["family"],
+        )
+
     def test_lane_commands_reference_inventoried_scripts_not_hidden_commands(self) -> None:
         command_paths = all_lane_command_script_paths()
 

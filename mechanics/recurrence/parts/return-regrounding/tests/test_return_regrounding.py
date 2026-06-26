@@ -7,7 +7,17 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
+import sys
+
 REPO_ROOT = Path(__file__).resolve().parents[5]
+SCRIPTS_ROOT = REPO_ROOT / "scripts"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from tests.support.generation_patch import patched_generation_read_json
+
 VALIDATOR_PATH = (
     REPO_ROOT
     / "mechanics"
@@ -45,16 +55,7 @@ class ReturnRegroundingTests(unittest.TestCase):
         )
 
     def patched_generation_read_json(self, overrides: dict[Path, object]):
-        original = regrounding.kag_generation.read_json
-        normalized = {Path(path).resolve(): copy.deepcopy(payload) for path, payload in overrides.items()}
-
-        def side_effect(path: Path) -> object:
-            resolved = Path(path).resolve()
-            if resolved in normalized:
-                return copy.deepcopy(normalized[resolved])
-            return original(path)
-
-        return patch.object(regrounding.kag_generation, "read_json", side_effect=side_effect)
+        return patched_generation_read_json(overrides)
 
     def test_valid_return_regrounding_boundary_passes(self) -> None:
         regrounding.validate_return_regrounding_boundary()
