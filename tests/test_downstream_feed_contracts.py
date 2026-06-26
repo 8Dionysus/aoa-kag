@@ -385,14 +385,21 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
     def test_readme_surfaces_source_first_route_and_honest_validation_paths(self) -> None:
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("- role, system form, model, and source-first posture:", readme)
-        self.assertIn("- docs map:", readme)
+        self.assertIn("Use this README as the public front door", readme)
+        self.assertIn("## What This Repository Does", readme)
+        self.assertIn("## Start Here", readme)
+        self.assertIn("## KAG Check", readme)
+        self.assertIn("## Core Districts", readme)
+        self.assertIn("## Working Rule", readme)
+        self.assertIn("source-linked lift", readme)
+        self.assertIn("[KAG_MODEL](docs/KAG_MODEL.md)", readme)
+        self.assertIn("[docs](docs/README.md)", readme)
         self.assertIn("docs/validation/COMMAND_AUTHORITY.md", readme)
         self.assertIn("nearest `AGENTS.md`", readme)
-        self.assertLess(
-            readme.index("- role, system form, model, and source-first posture:"),
-            readme.index("- docs map:"),
-        )
+        self.assertLess(readme.index("## What This Repository Does"), readme.index("## KAG Check"))
+        self.assertLess(readme.index("## KAG Check"), readme.index("## Current Contour"))
+        self.assertNotIn("## Route by need", readme)
+        self.assertNotIn("## Current public surfaces", readme)
 
         for command in (
             "python scripts/ci_gate.py --mode source-fast",
