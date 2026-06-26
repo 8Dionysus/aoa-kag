@@ -16,6 +16,19 @@ Test files describe coverage. Command sequences live in
 `config/validation_lanes.json`. `scripts/run_tests.py` owns unittest discovery
 for root and active mechanics part test homes.
 
+## Coverage Kinds
+
+Each inventory file entry names one or more `coverage_kinds`.
+
+| Coverage Kind | Function |
+|---|---|
+| `topology/inventory` | route, inventory, lane, discovery, or module-topology authority |
+| `source/route-contract` | authored route, source-policy, contract, or boundary wording |
+| `generated/parity` | generated/read-model parity, builder output, or compact payload contract |
+| `mechanics/part-behavior` | one active mechanics part's local behavior or part-owned contract |
+| `release/artifact-trust` | release, CI, workflow, artifact bundle, or trust-gate behavior |
+| `sibling/live-dependency` | explicit sibling-source compatibility or optional live dependency posture |
+
 ## Home Scopes
 
 | Home Scope | Homes | Protects | Coverage Authority | Failure Route |
@@ -44,6 +57,9 @@ for root and active mechanics part test homes.
 - Inventory entries name `focused_target`.
 - Root and active mechanics part unittest homes are discoverable from
   `scripts/run_tests.py`.
+- Part-local builder and validator scripts are discovered by
+  `scripts/run_part_local_checks.py`; tests keep that runner in the
+  `source-fast` lane and aligned with the script inventory.
 - Release command order lives in `config/validation_lanes.json`.
 - Mechanic part-local test homes enter runner coverage through an active part
   route.

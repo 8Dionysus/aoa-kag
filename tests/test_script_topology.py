@@ -9,7 +9,7 @@ import unittest
 from contextlib import contextmanager
 from pathlib import Path
 
-from scripts import validation_lanes
+from scripts import run_part_local_checks, validation_lanes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -95,6 +95,13 @@ def all_lane_command_script_paths() -> set[str]:
     return command_script_paths(commands)
 
 
+def discovered_part_local_check_scripts() -> set[str]:
+    return {
+        path.relative_to(REPO_ROOT).as_posix()
+        for path in run_part_local_checks.discovered_part_local_scripts()
+    }
+
+
 @contextmanager
 def import_path_for(script_path: Path):
     old_path = list(sys.path)
@@ -148,6 +155,17 @@ class ScriptTopologyTests(unittest.TestCase):
                 self.assertIsInstance(entry["side_effects"], str)
                 self.assertTrue(entry["ci_inclusion"])
 
+    def test_script_families_have_function_groups(self) -> None:
+        inventory = load_inventory()
+        groups = inventory.get("function_groups", {})
+        grouped_families = {
+            family for families in groups.values() for family in families
+        }
+        inventory_families = {entry["family"] for entry in inventory_entries()}
+
+        self.assertTrue(groups)
+        self.assertEqual(inventory_families, grouped_families)
+
     def test_lane_commands_reference_inventoried_scripts_not_hidden_commands(self) -> None:
         command_paths = all_lane_command_script_paths()
 
@@ -158,6 +176,33 @@ class ScriptTopologyTests(unittest.TestCase):
         self.assertNotIn("scripts/release_check.py", source_fast_paths)
         self.assertNotIn("scripts/ci_gate.py", source_fast_paths)
         self.assertNotIn("scripts/generate_kag.py", source_fast_paths)
+        self.assertIn("scripts/run_part_local_checks.py", source_fast_paths)
+
+    def test_part_local_check_runner_covers_part_local_scripts(self) -> None:
+        part_local_inventory_paths = {
+            entry["path"]
+            for entry in inventory_entries()
+            if entry["organ_lane"] == "mechanics/part-local"
+            and entry["path"].startswith("mechanics/")
+            and entry["path"].endswith(".py")
+        }
+        command_paths = {
+            part
+            for command in run_part_local_checks.coverage_commands()
+            for part in command
+            if part.endswith(".py")
+        }
+        build_commands = [
+            command
+            for command in run_part_local_checks.coverage_commands()
+            if command[1].split("/")[-1].startswith("build_")
+        ]
+
+        self.assertEqual(part_local_inventory_paths, discovered_part_local_check_scripts())
+        self.assertEqual(part_local_inventory_paths, command_paths)
+        self.assertTrue(build_commands)
+        for command in build_commands:
+            self.assertEqual("--check", command[-1])
 
     def test_side_effect_boundaries_are_visible(self) -> None:
         for entry in inventory_entries():

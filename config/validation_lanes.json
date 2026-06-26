@@ -64,7 +64,7 @@
           "surface": "mechanics/part-local",
           "posture": "source_fast_when_listed",
           "owner_route": "mechanics/<package>/parts/<part>/ route card and validator",
-          "local_check": "Agon, Antifragility, Experience, and Method-growth part-local tests are active through scripts/run_tests.py; future parts require topology and inventory entries before entering source-fast."
+          "local_check": "Active part-local tests are covered by scripts/run_tests.py; discovered build_*.py --check and validate_*.py part-local scripts are covered by scripts/run_part_local_checks.py."
         },
         {
           "surface": "runtime graph/vector/index state",
@@ -91,6 +91,10 @@
       [
         "python",
         "scripts/run_tests.py"
+      ],
+      [
+        "python",
+        "scripts/run_part_local_checks.py"
       ],
       [
         "python",

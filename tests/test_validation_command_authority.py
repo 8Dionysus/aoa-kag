@@ -148,6 +148,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
 
         self.assertIn("python scripts/release_check.py", repo_validation)
         self.assertNotIn("python scripts/run_tests.py", repo_validation)
+        self.assertNotIn("python scripts/run_part_local_checks.py", repo_validation)
         self.assertNotIn("python scripts/validate_kag.py", repo_validation)
         self.assertIn("python scripts/ci_gate.py --mode compatibility-canary", canary)
         self.assertNotIn("python scripts/generate_kag.py", canary)
@@ -163,7 +164,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             "docs/validation/COMMAND_AUTHORITY.md",
         )
         forbidden_sequence_markers = (
-            "scripts/run_tests.py\npython scripts/validate_nested_agents.py",
+            "scripts/run_tests.py\npython scripts/run_part_local_checks.py",
+            "scripts/run_part_local_checks.py\npython scripts/validate_nested_agents.py",
             "scripts/validate_kag.py\npython scripts/generate_kag.py",
             "scripts/generate_decision_indexes.py --check\npython scripts/validate_decision_records.py",
         )
