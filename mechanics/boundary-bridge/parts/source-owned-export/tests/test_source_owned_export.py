@@ -34,6 +34,7 @@ def load_validator():
 
 
 source_export = load_validator()
+from scripts.validators.manifests import federation_export_registry, source_owned_export
 
 
 def load_json(path: Path) -> object:
@@ -102,11 +103,11 @@ class SourceOwnedExportTests(unittest.TestCase):
         ]
 
         with self.patched_read_json(
-            source_export.manifest_contracts,
+            source_owned_export,
             {
                 source_export.validate_kag.AOA_MEMO_ROOT
                 / source_export.validate_kag.EXPECTED_MEMO_KAG_EXPORT_PATH: broken_payload,
-            }
+            },
         ):
             with self.assertRaises(source_export.SourceOwnedExportValidationError) as context:
                 source_export.validate_source_owned_export_boundary()
@@ -125,10 +126,10 @@ class SourceOwnedExportTests(unittest.TestCase):
         memo_export["activation"]["spine_visible"] = True
 
         with self.patched_read_json(
-            source_export.manifest_contracts,
+            federation_export_registry,
             {
                 source_export.validate_kag.FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH: manifest,
-            }
+            },
         ):
             with self.assertRaises(source_export.SourceOwnedExportValidationError) as context:
                 source_export.validate_source_owned_export_boundary()
@@ -142,10 +143,10 @@ class SourceOwnedExportTests(unittest.TestCase):
         manifest["exports"][0]["routing_binding"]["kind"] = "other_view"
 
         with self.patched_read_json(
-            source_export.manifest_contracts,
+            federation_export_registry,
             {
                 source_export.validate_kag.FEDERATION_EXPORT_REGISTRY_MANIFEST_PATH: manifest,
-            }
+            },
         ):
             with self.assertRaises(source_export.validate_kag.ValidationError) as context:
                 dependencies = source_export.manifest_contracts.validate_source_owned_export_dependency_manifest(

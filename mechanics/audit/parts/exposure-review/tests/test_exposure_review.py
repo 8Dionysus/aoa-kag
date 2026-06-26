@@ -15,6 +15,9 @@ if str(SCRIPTS_ROOT) not in sys.path:
 import kag_generation
 import validate_kag
 from scripts.validators import example_contracts, manifest_contracts, projection_parity
+from scripts.validators.examples import counterpart_examples
+from scripts.validators.manifests import counterpart_federation_exposure_review
+from scripts.validators.projection import tiny_consumer_bundle
 
 
 def load_json(path: Path) -> object:
@@ -74,8 +77,8 @@ class ExposureReviewTests(unittest.TestCase):
         broken_status = copy.deepcopy(payload)
         broken_status["surface_status"] = "experimental"
         with self.patched_validate_read_json(
-            example_contracts,
-            {validate_kag.COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH: broken_status}
+            counterpart_examples,
+            {validate_kag.COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH: broken_status},
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
                 example_contracts.validate_counterpart_consumer_contract_example(surfaces)
@@ -84,8 +87,8 @@ class ExposureReviewTests(unittest.TestCase):
         broken_ref = copy.deepcopy(payload)
         broken_ref.pop("federation_exposure_review_ref", None)
         with self.patched_validate_read_json(
-            example_contracts,
-            {validate_kag.COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH: broken_ref}
+            counterpart_examples,
+            {validate_kag.COUNTERPART_CONSUMER_CONTRACT_EXAMPLE_PATH: broken_ref},
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
                 example_contracts.validate_counterpart_consumer_contract_example(surfaces)
@@ -98,8 +101,8 @@ class ExposureReviewTests(unittest.TestCase):
         broken["review_bindings"] = list(reversed(broken["review_bindings"]))
 
         with self.patched_validate_read_json(
-            manifest_contracts,
-            {validate_kag.COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH: broken}
+            counterpart_federation_exposure_review,
+            {validate_kag.COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MANIFEST_PATH: broken},
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
                 manifest_contracts.validate_counterpart_federation_exposure_review_manifest()
@@ -116,8 +119,8 @@ class ExposureReviewTests(unittest.TestCase):
         )
 
         with self.patched_validate_read_json(
-            projection_parity,
-            {validate_kag.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH: broken}
+            tiny_consumer_bundle,
+            {validate_kag.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH: broken},
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
                 projection_parity.validate_tiny_consumer_bundle_pack(expected)

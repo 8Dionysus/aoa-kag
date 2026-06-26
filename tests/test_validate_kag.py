@@ -14,6 +14,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 import validate_kag
 from scripts.validators import example_contracts, local_contracts
+from scripts.validators.examples import bridge_examples
 
 
 def load_json(path: Path) -> object:
@@ -89,10 +90,10 @@ class ValidateKagTestCase(unittest.TestCase):
         )
 
         with self.patched_read_json(
-            example_contracts,
+            bridge_examples,
             {
                 validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH: broken_payload,
-            }
+            },
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
                 example_contracts.validate_bridge_envelope_example()
@@ -106,10 +107,10 @@ class ValidateKagTestCase(unittest.TestCase):
         broken_payload["memory_refs"][0] = "Tree-of-Sophia/ToS/doctrine/NODE_CONTRACT.md"
 
         with self.patched_read_json(
-            example_contracts,
+            bridge_examples,
             {
                 validate_kag.BRIDGE_ENVELOPE_EXAMPLE_PATH: broken_payload,
-            }
+            },
         ):
             with self.assertRaises(validate_kag.ValidationError) as context:
                 example_contracts.validate_bridge_envelope_example()
