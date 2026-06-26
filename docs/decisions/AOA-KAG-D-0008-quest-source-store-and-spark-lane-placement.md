@@ -130,18 +130,7 @@ package, generated read model, proof surface, or runtime route.
 
 ## Validation
 
-Run:
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
-```bash
-python mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py
-python -m unittest discover -s mechanics/questbook/parts/quest-store/tests -p 'test_*.py'
-python scripts/validate_nested_agents.py
-python scripts/validate_semantic_agents.py
-python -m unittest tests.test_nested_agents_docs tests.test_validate_semantic_agents
-python scripts/generate_decision_indexes.py
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-```
-
-Use `python scripts/ci_gate.py --mode source-fast` when the route-facing change
-is ready for closeout.
+Use `docs/validation/COMMAND_AUTHORITY.md` when the route-facing change is
+ready for closeout.

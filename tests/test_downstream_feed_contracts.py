@@ -387,6 +387,8 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
 
         self.assertIn("- role, system form, model, and source-first posture:", readme)
         self.assertIn("- docs map:", readme)
+        self.assertIn("docs/validation/COMMAND_AUTHORITY.md", readme)
+        self.assertIn("nearest `AGENTS.md`", readme)
         self.assertLess(
             readme.index("- role, system form, model, and source-first posture:"),
             readme.index("- docs map:"),
@@ -398,19 +400,21 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             "python scripts/release_check.py",
             "git status -sb",
         ):
-            self.assertIn(command, readme)
+            self.assertNotIn(command, readme)
 
     def test_agents_and_contributing_distinguish_current_validation_from_release_prep(self) -> None:
         agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
         contributing = (REPO_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
 
-        for text in (agents, contributing):
-            for command in (
-                "python scripts/ci_gate.py --mode source-fast",
-                "python scripts/release_check.py",
-                "git status -sb",
-            ):
-                self.assertIn(command, text)
+        for command in (
+            "python scripts/ci_gate.py --mode source-fast",
+            "python scripts/release_check.py",
+            "git status -sb",
+        ):
+            self.assertIn(command, agents)
+            self.assertNotIn(command, contributing)
+        self.assertIn("docs/validation/COMMAND_AUTHORITY.md", contributing)
+        self.assertIn("nearest `AGENTS.md`", contributing)
 
     def test_consumer_guide_verification_posture_mentions_read_only_and_release_prep(self) -> None:
         guide = (REPO_ROOT / "docs" / "CONSUMER_GUIDE.md").read_text(encoding="utf-8")
@@ -420,7 +424,9 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             "python scripts/release_check.py",
             "git status -sb",
         ):
-            self.assertIn(command, guide)
+            self.assertNotIn(command, guide)
+        self.assertIn("docs/validation/COMMAND_AUTHORITY.md", guide)
+        self.assertIn("nearest `AGENTS.md`", guide)
 
 
 if __name__ == "__main__":

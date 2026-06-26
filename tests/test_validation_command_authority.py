@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import unittest
 from contextlib import redirect_stderr
@@ -12,6 +13,13 @@ from scripts import ci_gate, release_check, validation_lanes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+MARKDOWN_COMMAND_BLOCK = re.compile(r"```[^\n]*\n(?P<body>.*?)(?:\n```)", re.DOTALL)
+EXECUTABLE_VALIDATION_LINE = re.compile(
+    r"(?m)^\s*(?:-\s*)?(?:python(?:\s+-m)?\s+|pytest\b|git\s+status\b|gh\s+|aoa\s+)"
+)
+INLINE_EXECUTABLE_VALIDATION_COMMAND = re.compile(
+    r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+status\b)[^`]+`"
+)
 
 
 def command_sequence_from_manifest(name: str) -> tuple[tuple[str, ...], ...]:
@@ -26,6 +34,17 @@ def drift_paths_from_manifest(name: str) -> tuple[str, ...]:
         (REPO_ROOT / "config" / "validation_lanes.json").read_text(encoding="utf-8")
     )
     return tuple(manifest["drift_paths"][name])
+
+
+def tracked_markdown_paths() -> tuple[Path, ...]:
+    result = subprocess.run(
+        ("git", "ls-files", "*.md"),
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return tuple(REPO_ROOT / line for line in result.stdout.splitlines() if line)
 
 
 class ValidationCommandAuthorityTests(unittest.TestCase):
@@ -177,6 +196,40 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             for marker in forbidden_sequence_markers:
                 with self.subTest(surface=relative_path, marker=marker):
                     self.assertNotIn(marker, text)
+
+    def test_non_agent_markdown_does_not_embed_validation_command_blocks(self) -> None:
+        offenders: list[str] = []
+        for path in tracked_markdown_paths():
+            relative_path = path.relative_to(REPO_ROOT).as_posix()
+            if relative_path.endswith("AGENTS.md"):
+                continue
+            if relative_path == "docs/validation/COMMAND_AUTHORITY.md":
+                continue
+
+            text = path.read_text(encoding="utf-8")
+            for match in MARKDOWN_COMMAND_BLOCK.finditer(text):
+                if not EXECUTABLE_VALIDATION_LINE.search(match.group("body")):
+                    continue
+                line_number = text[: match.start()].count("\n") + 1
+                offenders.append(f"{relative_path}:{line_number}")
+
+        self.assertEqual([], offenders)
+
+    def test_non_agent_markdown_does_not_embed_inline_validation_commands(self) -> None:
+        offenders: list[str] = []
+        for path in tracked_markdown_paths():
+            relative_path = path.relative_to(REPO_ROOT).as_posix()
+            if relative_path.endswith("AGENTS.md"):
+                continue
+            if relative_path == "docs/validation/COMMAND_AUTHORITY.md":
+                continue
+
+            text = path.read_text(encoding="utf-8")
+            for match in INLINE_EXECUTABLE_VALIDATION_COMMAND.finditer(text):
+                line_number = text[: match.start()].count("\n") + 1
+                offenders.append(f"{relative_path}:{line_number}")
+
+        self.assertEqual([], offenders)
 
 
 if __name__ == "__main__":

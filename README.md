@@ -39,9 +39,7 @@ Use the shortest route by need:
 - additive projection-health and regrounding adjuncts: `mechanics/antifragility/parts/projection-health/schemas/projection_health_receipt_v1.json`, `mechanics/antifragility/parts/retrieval-outage-regrounding/schemas/regrounding_ticket_v1.json`, `mechanics/antifragility/parts/projection-health/examples/projection_health_receipt.example.json`, `mechanics/antifragility/parts/retrieval-outage-regrounding/examples/regrounding_ticket.example.json`, `mechanics/antifragility/parts/projection-health/examples/projection_health_receipt.retrieval-outage-honesty.example.json`, `mechanics/antifragility/parts/retrieval-outage-regrounding/examples/regrounding_ticket.retrieval-outage-honesty.example.json`, [stress-regrounding](mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md), [projection-quarantine](mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md), and [retrieval-outage-regrounding](mechanics/antifragility/parts/retrieval-outage-regrounding/docs/retrieval-outage-regrounding.md)
 - via negativa pruning checklist: [docs/VIA_NEGATIVA_CHECKLIST](docs/VIA_NEGATIVA_CHECKLIST.md)
 - tiny consumer and bounded cross-source adjuncts: `mechanics/boundary-bridge/parts/tiny-consumer-bundle/generated/tiny_consumer_bundle*.json`, `mechanics/boundary-bridge/parts/cross-source-projection/generated/cross_source_node_projection*.json`, and focused part examples
-- current-state validation: `python scripts/ci_gate.py --mode source-fast`
-- generated parity and targeted regeneration: `python scripts/ci_gate.py --mode generated`
-- release-prep parity plus KAG registry ABI/SBOM-lite/SLSA bundle verification: `python scripts/release_check.py` and `git status -sb`
+- validation command authority: [docs/validation/COMMAND_AUTHORITY](docs/validation/COMMAND_AUTHORITY.md), with focused local checks routed by the nearest `AGENTS.md`
 
 ## What `aoa-kag` owns
 
@@ -93,29 +91,13 @@ Schemas, examples, and manifests alongside those families make the derived surfa
 
 ## Build and validate
 
-For a read-only current-state pass, run:
-
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
-
-For release-prep parity, run:
-
-```bash
-python scripts/release_check.py
-git status -sb
-```
+Use [docs/validation/COMMAND_AUTHORITY](docs/validation/COMMAND_AUTHORITY.md)
+and the nearest `AGENTS.md` for executable validation commands.
 
 `release_check.py` reads the `release` lane from `config/validation_lanes.json`;
 the active command order lives there, not in this README. The release lane also
 verifies the generated KAG registry as an OS Abyss ABI/SBOM-lite/SLSA artifact
 bundle.
-
-If you need targeted regeneration and direct validation, run:
-
-```bash
-python scripts/ci_gate.py --mode generated
-```
 
 If neighboring donor repositories are not checked out beside `aoa-kag`, set the relevant root variables before running the generators or validators:
 

@@ -19,7 +19,7 @@
 - **Coordinator**: выбирает один derived substrate seam
 - **Scout**: картографирует source-owned inputs, projection outputs и provenance traces
 - **Builder**: делает минимальный lift/projection diff
-- **Verifier**: запускает `python scripts/validate_kag.py`
+- **Verifier**: uses the validation route from `docs/validation/COMMAND_AUTHORITY.md`
 - **Boundary Keeper**: следит за source-first discipline и anti-graph-empire posture
 
 ## Параллельные дорожки
@@ -80,14 +80,7 @@ Rules:
 ```
 
 ## Промпт для Verifier
-```text
-Run:
-- python scripts/validate_kag.py
-Then report:
-- commands run
-- which derived surfaces changed
-- whether provenance and boundedness remained explicit
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
 ## Промпт для Boundary Keeper
 ```text
@@ -100,9 +93,7 @@ Check:
 ```
 
 ## Verify
-```bash
-python scripts/validate_kag.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
 ## Done when
 - один derived substrate seam tightened

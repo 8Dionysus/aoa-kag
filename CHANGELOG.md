@@ -65,7 +65,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Validation
 
-- `python scripts/release_check.py`
+- Release validation used the release lane in
+  `docs/validation/COMMAND_AUTHORITY.md`.
 
 ### Notes
 
@@ -97,7 +98,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Validation
 
-- `python scripts/release_check.py`
+- Release validation used the release lane in
+  `docs/validation/COMMAND_AUTHORITY.md`.
 
 ### Notes
 
@@ -114,7 +116,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Validation
 
-- `python scripts/release_check.py`
+- Release validation used the release lane in
+  `docs/validation/COMMAND_AUTHORITY.md`.
 
 ### Notes
 
@@ -193,7 +196,8 @@ This changelog entry uses the release-prep merge date.
 
 ### Validation
 
-- `python scripts/release_check.py`
+- Release validation used the release lane in
+  `docs/validation/COMMAND_AUTHORITY.md`.
 
 ### Notes
 

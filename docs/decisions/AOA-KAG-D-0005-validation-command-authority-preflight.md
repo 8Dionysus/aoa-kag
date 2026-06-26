@@ -90,13 +90,4 @@ its larger validator-module split into this preflight.
 
 ## Validation
 
-Run:
-
-```bash
-python -m unittest tests.test_validation_command_authority tests.test_script_topology tests.test_test_topology
-python scripts/ci_gate.py --mode source-fast
-python scripts/ci_gate.py --mode generated
-python scripts/release_check.py
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

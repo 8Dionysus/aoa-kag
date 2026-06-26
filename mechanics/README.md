@@ -169,15 +169,4 @@ candidate part pressure in `PARTS.md` without creating directories.
 
 ## Validation
 
-For mechanics root changes, run:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/validate_nested_agents.py
-```
-
-For release-facing changes, also run:
-
-```bash
-python scripts/release_check.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

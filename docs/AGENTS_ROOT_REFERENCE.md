@@ -142,25 +142,11 @@ repository integrity.
 
 ### VERIFY
 
-Run the validation commands documented in `README.md`.
-
-For a read-only current-state pass, use:
-
-```bash
-python scripts/validate_kag.py
-python scripts/validate_nested_agents.py
-python -m unittest discover -s tests -p 'test_*.py'
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for
+executable validation commands.
 
 If registries, packs, or other generated KAG surfaces changed, regenerate them
-and rerun the read-only pass above.
-
-For release-prep parity, use:
-
-```bash
-python scripts/release_check.py
-git status -sb
-```
+through the generated lane named in command authority before closeout.
 
 Confirm that:
 

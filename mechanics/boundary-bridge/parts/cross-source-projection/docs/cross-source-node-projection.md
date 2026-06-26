@@ -66,11 +66,7 @@ This projection scope does not:
 
 ## Regeneration posture
 
-Use:
-
-```bash
-python scripts/release_check.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
 For the current deferred counterpart posture, see
 `mechanics/boundary-bridge/parts/counterpart-edge/docs/counterpart-consumer-contract.md`

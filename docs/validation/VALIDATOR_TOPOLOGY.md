@@ -6,15 +6,16 @@ route cards, and mechanics surfaces.
 
 ## Lane Map
 
-| Lane | Function | Entry |
-| --- | --- | --- |
-| `source-fast` | read-only source and topology integrity | `python scripts/ci_gate.py --mode source-fast` |
-| `generated` | generated/read-model parity | `python scripts/ci_gate.py --mode generated` |
-| `release` | release-prep validation | `python scripts/release_check.py` |
-| `compatibility-canary` | floating sibling compatibility check | `python scripts/ci_gate.py --mode compatibility-canary` |
-| `advisory` | route inventory for later KAG pressure | `python scripts/ci_gate.py --mode advisory` |
+| Lane | Function |
+| --- | --- |
+| `source-fast` | read-only source and topology integrity |
+| `generated` | generated/read-model parity |
+| `release` | release-prep validation |
+| `compatibility-canary` | floating sibling compatibility check |
+| `advisory` | route inventory for later KAG pressure |
 
-Lane command storage lives in `config/validation_lanes.json`.
+Lane command storage lives in `config/validation_lanes.json`; executable lane
+entries are listed in `docs/validation/COMMAND_AUTHORITY.md`.
 
 ## validate_kag Shape
 

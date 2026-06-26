@@ -1,9 +1,5 @@
 # ToS Retrieval Axis Validation
 
-Run:
-
-```bash
-python -m unittest discover -s mechanics/boundary-bridge/parts/tos-retrieval-axis/tests -p 'test_*.py'
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
 For generated-output changes, also run the generated lane and release lane.

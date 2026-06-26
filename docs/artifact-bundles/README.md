@@ -7,8 +7,8 @@ The current release-relevant surface is the generated KAG registry readmodel:
 
 - `kag_registry.bundle.json` describes the ABI subject, release controls, and
   consumer contract for `generated/kag_registry.min.json`.
-- `python scripts/validate_abyss_machine_kag_registry_bundle.py` builds,
-  signs, verifies, promotes durable release-ready evidence with source and
+- The artifact-bundle validator builds, signs, verifies, promotes
+  durable release-ready evidence with source and
   host-managed trust-root metadata, materializes the subject store, runs an
   agent-intent trust gate for `aoa-kag`, and adversarially checks the
   ABI/SBOM-lite/SLSA bundle through `abyss-machine` when that package is
