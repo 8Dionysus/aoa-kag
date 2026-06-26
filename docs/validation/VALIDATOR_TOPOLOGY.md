@@ -23,7 +23,7 @@ implementation lives in `scripts/validators/`.
 
 | Module | Function |
 | --- | --- |
-| `scripts/validators/generation.py` | KAG generation constants and payload builders |
+| `scripts/validators/generation.py` | KAG generation constants and payload builders from the generation package/facade |
 | `scripts/validators/expected_contracts.py` | expected contract data facade |
 | `scripts/validators/expected/core.py` | repo roots, schema/example paths, allowed values, and shared path sets |
 | `scripts/validators/expected/registry_contracts.py` | registry boundary, counterpart, provenance, and guardrail expectations |

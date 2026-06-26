@@ -11,6 +11,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import kag_generation
 import validate_kag
 from scripts.validators import local_contracts
+from tests.support.generation_patch import patched_generation_attribute
 
 
 def write_text(path: Path, content: str) -> None:
@@ -54,7 +55,7 @@ class TestTosTinyEntryHopCompatibility(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             tos_root = Path(tmpdir)
             self.write_tos_root(tos_root, payload)
-            with mock.patch.object(kag_generation, "TREE_OF_SOPHIA_ROOT", tos_root):
+            with patched_generation_attribute("TREE_OF_SOPHIA_ROOT", tos_root):
                 loaded = kag_generation.load_tos_tiny_entry_route_payload()
 
         self.assertEqual(loaded["bounded_hop"], "ToS/public-compatibility/concept_node.example.json")
@@ -77,7 +78,7 @@ class TestTosTinyEntryHopCompatibility(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             tos_root = Path(tmpdir)
             self.write_tos_root(tos_root, payload)
-            with mock.patch.object(kag_generation, "TREE_OF_SOPHIA_ROOT", tos_root):
+            with patched_generation_attribute("TREE_OF_SOPHIA_ROOT", tos_root):
                 loaded = kag_generation.load_tos_tiny_entry_route_payload()
 
         self.assertEqual(loaded["bounded_hop"], loaded["lineage_or_context_hop"])
@@ -90,7 +91,7 @@ class TestTosTinyEntryHopCompatibility(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             tos_root = Path(tmpdir)
             self.write_tos_root(tos_root, payload)
-            with mock.patch.object(kag_generation, "TREE_OF_SOPHIA_ROOT", tos_root):
+            with patched_generation_attribute("TREE_OF_SOPHIA_ROOT", tos_root):
                 with self.assertRaises(kag_generation.GenerationError) as exc:
                     kag_generation.load_tos_tiny_entry_route_payload()
 

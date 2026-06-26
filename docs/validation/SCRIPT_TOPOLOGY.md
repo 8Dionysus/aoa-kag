@@ -36,7 +36,7 @@ The machine-readable script map is
 | `manifest_validator` | manifest source-input and output contract checks |
 | `validator_orchestrator_facade` | validate_kag orchestration import surface |
 | `validator_orchestration` | validate_kag phase execution |
-| `projection_builder` | generated/read-model writers |
+| `projection_builder` | generated/read-model writers and generation entrypoints |
 | `projection_validator_facade` | generated/read-model parity import surface |
 | `projection_validator` | generated/read-model parity checks |
 | `example_validator_facade` | public example validator import surface |
@@ -47,7 +47,7 @@ The machine-readable script map is
 | `part_local_script_runner` | discovered part-local builder and validator checks |
 | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner` | lane, release, and test execution |
 | `script_route_card` | local route card |
-| `projection_helper` | shared generation helper |
+| `projection_helper` | shared generation package modules and compatibility helpers |
 
 ## Function Groups
 
@@ -68,10 +68,27 @@ release checks, and test discovery.
 `scripts/validate_kag.py` is the entrypoint. The implementation map lives in
 `docs/validation/validator_inventory.json`.
 
+`scripts/generate_kag.py` is the KAG generated-output entrypoint.
+`scripts/kag_generation.py` is the compatibility facade for existing imports.
+The implementation modules live in `scripts/generation/`.
+
 `scripts/run_part_local_checks.py` discovers active
 `mechanics/<package>/parts/<part>/scripts/build_*.py` and `validate_*.py`
 surfaces, runs builders with `--check`, and runs validators directly from the
 `source-fast` lane.
+
+## Generation Package
+
+Generation implementation lives under:
+
+```text
+scripts/generation/
+```
+
+`scripts/generation/AGENTS.md` is the local route card. The package keeps
+context, shared helpers, source-reference loading, domain builders, and output
+writing separated while preserving the public compatibility surface exported by
+`scripts/kag_generation.py`.
 
 ## Part-Local Scripts
 

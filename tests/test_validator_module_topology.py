@@ -392,6 +392,14 @@ class ValidatorModuleTopologyTests(unittest.TestCase):
                 self.assertTrue(entry["inputs"])
                 self.assertTrue(entry["outputs"])
 
+    def test_generation_validator_port_routes_to_generation_package(self) -> None:
+        entries_by_path = {entry["path"]: entry for entry in validator_inventory_entries()}
+        generation_entry = entries_by_path["scripts/validators/generation.py"]
+
+        self.assertEqual("generation_port", generation_entry["module_type"])
+        self.assertIn("scripts/generation package", generation_entry["inputs"])
+        self.assertIn("scripts/kag_generation.py compatibility facade", generation_entry["inputs"])
+
     def test_lane_entrypoints_stay_at_script_level(self) -> None:
         lanes = load_json(LANES_PATH)
 

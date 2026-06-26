@@ -9,6 +9,22 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Changed
 
+- Refactor KAG mechanics topology into package/part homes with part-local
+  contracts, validation routes, and script/test coverage.
+- Split repo validators into owner modules for expected contracts, manifests,
+  generated projection parity, examples, and orchestration while preserving
+  `scripts/validate_kag.py` as the lane entrypoint.
+- Harden script and test topology with machine-readable inventories, route
+  cards, part-local script discovery, and source-fast coverage for active
+  mechanics scripts.
+- Refactor KAG generation implementation into `scripts/generation/` domain
+  modules while preserving `scripts/kag_generation.py` as the compatibility
+  facade and `scripts/generate_kag.py` as the generated-output entrypoint.
+- Promote KAG registry artifact trust gates and registry evidence routes so
+  generated/read-model payloads keep explicit artifact identity and source
+  ownership.
+- Add canonical decision-lane modeling and source-home eval routes so decision,
+  eval, and KAG-home surfaces are checked by local topology tests.
 - Update optional `aoa-memo` source-owned export readiness so the memo KAG donor
   bridge is expected from the reviewed corpus bundle rather than the bridge
   teaching fixture.

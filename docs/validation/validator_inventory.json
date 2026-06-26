@@ -39,9 +39,10 @@
     {
       "path": "scripts/validators/generation.py",
       "module_type": "generation_port",
-      "function": "Import KAG generation constants and payload builders for validator modules.",
+      "function": "Import KAG generation constants and payload builders from the generation package/facade for validator modules.",
       "inputs": [
-        "scripts/kag_generation.py"
+        "scripts/generation package",
+        "scripts/kag_generation.py compatibility facade"
       ],
       "outputs": [
         "generation constants and builder functions"

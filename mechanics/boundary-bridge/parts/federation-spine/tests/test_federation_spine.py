@@ -9,11 +9,14 @@ from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[5]
 SCRIPTS_ROOT = REPO_ROOT / "scripts"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import kag_generation
 import validate_kag
+from tests.support.generation_patch import patched_generation_read_json
 
 
 def load_json(path: Path) -> object:
@@ -35,16 +38,7 @@ def source_dependencies() -> dict[tuple[str, str], dict[str, object]]:
 
 class FederationSpineTests(unittest.TestCase):
     def patched_generation_read_json(self, overrides: dict[Path, object]):
-        original = kag_generation.read_json
-        normalized = {Path(path).resolve(): copy.deepcopy(payload) for path, payload in overrides.items()}
-
-        def side_effect(path: Path) -> object:
-            resolved = Path(path).resolve()
-            if resolved in normalized:
-                return copy.deepcopy(normalized[resolved])
-            return original(path)
-
-        return patch.object(kag_generation, "read_json", side_effect=side_effect)
+        return patched_generation_read_json(overrides)
 
     def test_current_federation_spine_contract_validates(self) -> None:
         surfaces = registry_surfaces()

@@ -13,7 +13,7 @@ This directory contains the implementation modules for the repo-wide
 
 | Surface | Function |
 | --- | --- |
-| `generation.py` | KAG generation constants and payload builders |
+| `generation.py` | KAG generation constants and payload builders from `scripts/generation/` through the compatibility facade |
 | `expected_contracts.py` | expected contract data facade |
 | `expected/` | expected paths, allowed values, and payload contract data by family |
 | `common.py` | shared validator errors, file readers, markdown helpers, schema helpers |

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import ast
 import copy
 import json
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_ROOT = REPO_ROOT / "scripts"
@@ -13,6 +13,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import kag_generation
+from tests.support.generation_patch import patched_generation_read_json
 
 
 def load_json(path: Path) -> object:
@@ -21,19 +22,7 @@ def load_json(path: Path) -> object:
 
 class KagGenerationTestCase(unittest.TestCase):
     def patched_read_json(self, overrides: dict[Path, object]):
-        original = kag_generation.read_json
-        normalized_overrides = {
-            Path(path).resolve(): copy.deepcopy(payload)
-            for path, payload in overrides.items()
-        }
-
-        def side_effect(path: Path) -> object:
-            resolved = Path(path).resolve()
-            if resolved in normalized_overrides:
-                return copy.deepcopy(normalized_overrides[resolved])
-            return original(path)
-
-        return patch.object(kag_generation, "read_json", side_effect=side_effect)
+        return patched_generation_read_json(overrides)
 
     def assert_builder_matches_generated(
         self,
@@ -53,6 +42,54 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertEqual(
             kag_generation.encode_json(payload, pretty=False),
             min_output_path.read_text(encoding="utf-8"),
+        )
+
+    def test_kag_generation_facade_stays_thin(self) -> None:
+        text = (SCRIPTS_ROOT / "kag_generation.py").read_text(encoding="utf-8")
+        tree = ast.parse(text)
+        definitions = {
+            node.name
+            for node in tree.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        }
+
+        self.assertLessEqual(len(text.splitlines()), 8)
+        self.assertEqual(set(), definitions)
+        self.assertIn("from generation import *", text)
+
+    def test_generated_output_paths_cover_all_writer_outputs(self) -> None:
+        self.assertEqual(
+            [
+                kag_generation.REGISTRY_OUTPUT_PATH,
+                kag_generation.REGISTRY_MIN_OUTPUT_PATH,
+                kag_generation.TECHNIQUE_LIFT_OUTPUT_PATH,
+                kag_generation.TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
+                kag_generation.TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
+                kag_generation.TOS_TEXT_CHUNK_MAP_MIN_OUTPUT_PATH,
+                kag_generation.TOS_RETRIEVAL_AXIS_OUTPUT_PATH,
+                kag_generation.TOS_RETRIEVAL_AXIS_MIN_OUTPUT_PATH,
+                kag_generation.TOS_ZARATHUSTRA_ROUTE_PACK_OUTPUT_PATH,
+                kag_generation.TOS_ZARATHUSTRA_ROUTE_PACK_MIN_OUTPUT_PATH,
+                kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_OUTPUT_PATH,
+                kag_generation.TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_MIN_OUTPUT_PATH,
+                kag_generation.REASONING_HANDOFF_OUTPUT_PATH,
+                kag_generation.REASONING_HANDOFF_MIN_OUTPUT_PATH,
+                kag_generation.FEDERATION_EXPORT_REGISTRY_OUTPUT_PATH,
+                kag_generation.FEDERATION_EXPORT_REGISTRY_MIN_OUTPUT_PATH,
+                kag_generation.FEDERATION_SPINE_OUTPUT_PATH,
+                kag_generation.FEDERATION_SPINE_MIN_OUTPUT_PATH,
+                kag_generation.CROSS_SOURCE_NODE_PROJECTION_OUTPUT_PATH,
+                kag_generation.CROSS_SOURCE_NODE_PROJECTION_MIN_OUTPUT_PATH,
+                kag_generation.RETURN_REGROUNDING_OUTPUT_PATH,
+                kag_generation.RETURN_REGROUNDING_MIN_OUTPUT_PATH,
+                kag_generation.KAG_MATURITY_GOVERNANCE_OUTPUT_PATH,
+                kag_generation.KAG_MATURITY_GOVERNANCE_MIN_OUTPUT_PATH,
+                kag_generation.COUNTERPART_FEDERATION_EXPOSURE_REVIEW_OUTPUT_PATH,
+                kag_generation.COUNTERPART_FEDERATION_EXPOSURE_REVIEW_MIN_OUTPUT_PATH,
+                kag_generation.TINY_CONSUMER_BUNDLE_OUTPUT_PATH,
+                kag_generation.TINY_CONSUMER_BUNDLE_MIN_OUTPUT_PATH,
+            ],
+            kag_generation.GENERATED_OUTPUT_PATHS,
         )
 
     def test_ordered_unique_preserves_first_seen_order(self) -> None:

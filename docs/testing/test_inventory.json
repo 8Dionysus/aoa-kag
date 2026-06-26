@@ -70,11 +70,11 @@
         {
           "path": "tests/test_kag_generation.py",
           "family": "generated/read-model",
-          "protects": "KAG generation helpers and generated payload contracts.",
-          "owner_surface": "scripts/kag_generation.py",
+          "protects": "KAG generation package, compatibility facade, and generated payload contracts.",
+          "owner_surface": "scripts/generation/AGENTS.md",
           "runtime_cost": "medium",
           "focused_target": "tests/test_kag_generation.py",
-          "failure_route": "Route through generation helpers, manifests, or generated outputs.",
+          "failure_route": "Route through generation package modules, manifests, compatibility facade, or generated outputs.",
           "coverage_kinds": [
             "generated/parity",
             "sibling/live-dependency"
