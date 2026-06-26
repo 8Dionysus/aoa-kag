@@ -21,6 +21,7 @@ REQUIRED_NORMALIZED_FIELDS = {
     "home_scope",
     "family",
     "protects",
+    "coverage_kinds",
     "owner_surface",
     "coverage_authority",
     "lane",
@@ -33,6 +34,14 @@ HOME_SCOPES = {"root", "mechanics-part"}
 LANES = {"root-tests", "mechanics-part-tests"}
 MODES = {"blocking"}
 RUNTIME_COSTS = {"fast", "medium", "slow"}
+COVERAGE_KINDS = {
+    "topology/inventory",
+    "source/route-contract",
+    "generated/parity",
+    "mechanics/part-behavior",
+    "release/artifact-trust",
+    "sibling/live-dependency",
+}
 
 
 class TestTopologyAuthorityTests(unittest.TestCase):
@@ -63,9 +72,21 @@ class TestTopologyAuthorityTests(unittest.TestCase):
                 self.assertIn(entry["lane"], LANES)
                 self.assertIn(entry["mode"], MODES)
                 self.assertIn(entry["runtime_cost"], RUNTIME_COSTS)
+                self.assertIsInstance(entry["coverage_kinds"], list)
+                self.assertTrue(entry["coverage_kinds"])
+                self.assertTrue(set(entry["coverage_kinds"]) <= COVERAGE_KINDS)
                 self.assertFalse(topology_inventory.looks_like_command(entry["focused_target"]))
                 self.assertFalse(topology_inventory.looks_like_command(entry["coverage_authority"]))
                 self.assertNotIn("command", entry)
+
+    def test_required_coverage_kind_families_are_present(self) -> None:
+        observed = {
+            kind
+            for entry in topology_inventory.normalized_inventory_entries()
+            for kind in entry["coverage_kinds"]
+        }
+
+        self.assertEqual(COVERAGE_KINDS, observed)
 
     def test_test_discovery_ignores_dependency_checkouts(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

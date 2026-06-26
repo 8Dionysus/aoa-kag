@@ -9,6 +9,7 @@
     "home_scope",
     "family",
     "protects",
+    "coverage_kinds",
     "owner_surface",
     "coverage_authority",
     "lane",
@@ -36,7 +37,10 @@
           "owner_surface": "ROADMAP.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_current_direction_routes.py",
-          "failure_route": "Route through root route docs or roadmap/current direction claims."
+          "failure_route": "Route through root route docs or roadmap/current direction claims.",
+          "coverage_kinds": [
+            "source/route-contract"
+          ]
         },
         {
           "path": "tests/test_decision_indexes.py",
@@ -45,7 +49,10 @@
           "owner_surface": "docs/decisions/README.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_decision_indexes.py",
-          "failure_route": "Route through decision metadata or regenerate decision indexes."
+          "failure_route": "Route through decision metadata or regenerate decision indexes.",
+          "coverage_kinds": [
+            "topology/inventory"
+          ]
         },
         {
           "path": "tests/test_downstream_feed_contracts.py",
@@ -54,7 +61,11 @@
           "owner_surface": "generated/AGENTS.md",
           "runtime_cost": "medium",
           "focused_target": "tests/test_downstream_feed_contracts.py",
-          "failure_route": "Route through manifests, generated builders, generated outputs, or consumer docs."
+          "failure_route": "Route through manifests, generated builders, generated outputs, or consumer docs.",
+          "coverage_kinds": [
+            "generated/parity",
+            "sibling/live-dependency"
+          ]
         },
         {
           "path": "tests/test_kag_generation.py",
@@ -63,7 +74,11 @@
           "owner_surface": "scripts/kag_generation.py",
           "runtime_cost": "medium",
           "focused_target": "tests/test_kag_generation.py",
-          "failure_route": "Route through generation helpers, manifests, or generated outputs."
+          "failure_route": "Route through generation helpers, manifests, or generated outputs.",
+          "coverage_kinds": [
+            "generated/parity",
+            "sibling/live-dependency"
+          ]
         },
         {
           "path": "tests/test_kag_home.py",
@@ -72,7 +87,11 @@
           "owner_surface": "kag/README.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_kag_home.py",
-          "failure_route": "Route through kag/ docs, source-home manifest, and protocol surfaces."
+          "failure_route": "Route through kag/ docs, source-home manifest, and protocol surfaces.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "source/route-contract"
+          ]
         },
         {
           "path": "tests/test_mechanics_skeleton.py",
@@ -81,7 +100,11 @@
           "owner_surface": "mechanics/AGENTS.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_mechanics_skeleton.py",
-          "failure_route": "Route through mechanics root topology and package source surfaces."
+          "failure_route": "Route through mechanics root topology and package source surfaces.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "source/route-contract"
+          ]
         },
         {
           "path": "tests/test_nested_agents_docs.py",
@@ -90,7 +113,11 @@
           "owner_surface": "scripts/validate_nested_agents.py",
           "runtime_cost": "fast",
           "focused_target": "tests/test_nested_agents_docs.py",
-          "failure_route": "Fix the nearest nested AGENTS card or nested AGENTS validator expectations."
+          "failure_route": "Fix the nearest nested AGENTS card or nested AGENTS validator expectations.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "source/route-contract"
+          ]
         },
         {
           "path": "tests/test_repo_validation_workflow.py",
@@ -99,7 +126,11 @@
           "owner_surface": ".github/workflows/repo-validation.yml",
           "runtime_cost": "fast",
           "focused_target": "tests/test_repo_validation_workflow.py",
-          "failure_route": "Route through workflow lane entrypoints, dependency pins, or release command authority."
+          "failure_route": "Route through workflow lane entrypoints, dependency pins, or release command authority.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "topology/inventory"
+          ]
         },
         {
           "path": "tests/test_roadmap_parity.py",
@@ -108,7 +139,10 @@
           "owner_surface": "ROADMAP.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_roadmap_parity.py",
-          "failure_route": "Route through roadmap/current direction source."
+          "failure_route": "Route through roadmap/current direction source.",
+          "coverage_kinds": [
+            "source/route-contract"
+          ]
         },
         {
           "path": "tests/test_tos_tiny_entry_hop_compat.py",
@@ -117,7 +151,11 @@
           "owner_surface": "mechanics/boundary-bridge/parts/tos-retrieval-axis/docs/tos-zarathustra-route-retrieval-pack.md",
           "runtime_cost": "fast",
           "focused_target": "tests/test_tos_tiny_entry_hop_compat.py",
-          "failure_route": "Route through ToS tiny-entry source refs, manifests, or generated KAG output."
+          "failure_route": "Route through ToS tiny-entry source refs, manifests, or generated KAG output.",
+          "coverage_kinds": [
+            "generated/parity",
+            "sibling/live-dependency"
+          ]
         },
         {
           "path": "tests/test_script_topology.py",
@@ -126,7 +164,10 @@
           "owner_surface": "docs/validation/script_inventory.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_script_topology.py",
-          "failure_route": "Route through script inventory, script topology docs, lane manifest, and the owning script surface."
+          "failure_route": "Route through script inventory, script topology docs, lane manifest, and the owning script surface.",
+          "coverage_kinds": [
+            "topology/inventory"
+          ]
         },
         {
           "path": "tests/test_test_topology.py",
@@ -135,7 +176,10 @@
           "owner_surface": "docs/testing/test_inventory.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_test_topology.py",
-          "failure_route": "Route through test inventory, test topology docs, runner coverage, and the owning test surface."
+          "failure_route": "Route through test inventory, test topology docs, runner coverage, and the owning test surface.",
+          "coverage_kinds": [
+            "topology/inventory"
+          ]
         },
         {
           "path": "tests/test_validate_kag.py",
@@ -144,7 +188,11 @@
           "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
           "runtime_cost": "medium",
           "focused_target": "tests/test_validate_kag.py",
-          "failure_route": "Route through validate_kag modules, repo-wide examples, and affected part tests."
+          "failure_route": "Route through validate_kag modules, repo-wide examples, and affected part tests.",
+          "coverage_kinds": [
+            "generated/parity",
+            "source/route-contract"
+          ]
         },
         {
           "path": "tests/test_validator_module_topology.py",
@@ -153,7 +201,10 @@
           "owner_surface": "docs/validation/validator_inventory.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validator_module_topology.py",
-          "failure_route": "Route through validator owner modules, validator inventory, script/test inventories, and command-authority surfaces."
+          "failure_route": "Route through validator owner modules, validator inventory, script/test inventories, and command-authority surfaces.",
+          "coverage_kinds": [
+            "topology/inventory"
+          ]
         },
         {
           "path": "tests/test_validate_abyss_machine_kag_registry_bundle.py",
@@ -162,7 +213,10 @@
           "owner_surface": "scripts/validate_abyss_machine_kag_registry_bundle.py",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validate_abyss_machine_kag_registry_bundle.py",
-          "failure_route": "Route through the artifact bundle validator, portable fallback contract, or release bundle docs."
+          "failure_route": "Route through the artifact bundle validator, portable fallback contract, or release bundle docs.",
+          "coverage_kinds": [
+            "release/artifact-trust"
+          ]
         },
         {
           "path": "tests/test_validation_command_authority.py",
@@ -171,7 +225,11 @@
           "owner_surface": "config/validation_lanes.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validation_command_authority.py",
-          "failure_route": "Route through validation lane manifest, loader, CI gate, release entrypoint, or workflow route."
+          "failure_route": "Route through validation lane manifest, loader, CI gate, release entrypoint, or workflow route.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "release/artifact-trust"
+          ]
         },
         {
           "path": "tests/test_validate_semantic_agents.py",
@@ -180,7 +238,11 @@
           "owner_surface": "scripts/validate_semantic_agents.py",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validate_semantic_agents.py",
-          "failure_route": "Route through semantic AGENTS docs or validator snippets."
+          "failure_route": "Route through semantic AGENTS docs or validator snippets.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -198,7 +260,11 @@
           "owner_surface": "mechanics/antifragility/parts/projection-health/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/antifragility/parts/projection-health/tests/test_projection_health_contracts.py",
-          "failure_route": "Route through the projection-health part contract, schema/example packets, docs, or validation route."
+          "failure_route": "Route through the projection-health part contract, schema/example packets, docs, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -216,7 +282,11 @@
           "owner_surface": "mechanics/antifragility/parts/projection-quarantine/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/antifragility/parts/projection-quarantine/tests/test_projection_quarantine_contracts.py",
-          "failure_route": "Route through the projection-quarantine part contract, docs, or validation route."
+          "failure_route": "Route through the projection-quarantine part contract, docs, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -234,7 +304,11 @@
           "owner_surface": "mechanics/antifragility/parts/retrieval-outage-regrounding/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/antifragility/parts/retrieval-outage-regrounding/tests/test_retrieval_outage_regrounding_contracts.py",
-          "failure_route": "Route through the retrieval-outage-regrounding part contract, schema/example packets, docs, or validation route."
+          "failure_route": "Route through the retrieval-outage-regrounding part contract, schema/example packets, docs, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -252,7 +326,11 @@
           "owner_surface": "mechanics/method-growth/parts/pattern-candidate-lineage/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/method-growth/parts/pattern-candidate-lineage/tests/test_pattern_candidate_lineage_contracts.py",
-          "failure_route": "Route through the pattern-candidate-lineage part contract, schema/example packets, or validation route."
+          "failure_route": "Route through the pattern-candidate-lineage part contract, schema/example packets, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -270,7 +348,11 @@
           "owner_surface": "mechanics/method-growth/parts/promotion-dossier/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/method-growth/parts/promotion-dossier/tests/test_promotion_dossier_contracts.py",
-          "failure_route": "Route through the promotion-dossier part contract, schema/example packets, or validation route."
+          "failure_route": "Route through the promotion-dossier part contract, schema/example packets, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -288,7 +370,11 @@
           "owner_surface": "mechanics/method-growth/parts/owner-downlink/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/method-growth/parts/owner-downlink/tests/test_owner_downlink_contracts.py",
-          "failure_route": "Route through the owner-downlink part contract, schema/example packets, or validation route."
+          "failure_route": "Route through the owner-downlink part contract, schema/example packets, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -306,7 +392,11 @@
           "owner_surface": "mechanics/method-growth/parts/retirement/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/method-growth/parts/retirement/tests/test_retirement_contracts.py",
-          "failure_route": "Route through the retirement part contract, schema/example packets, or validation route."
+          "failure_route": "Route through the retirement part contract, schema/example packets, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -324,7 +414,11 @@
           "owner_surface": "mechanics/experience/parts/governance-precedent/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/experience/parts/governance-precedent/tests/test_governance_precedent_contracts.py",
-          "failure_route": "Route through the governance-precedent part contract, schema/example packets, or validation route."
+          "failure_route": "Route through the governance-precedent part contract, schema/example packets, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -342,7 +436,11 @@
           "owner_surface": "mechanics/experience/parts/release-patterns/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/experience/parts/release-patterns/tests/test_release_pattern_contracts.py",
-          "failure_route": "Route through the release-pattern part contract, schema/example packets, or validation route."
+          "failure_route": "Route through the release-pattern part contract, schema/example packets, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -360,7 +458,11 @@
           "owner_surface": "mechanics/experience/parts/office-service-patterns/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/experience/parts/office-service-patterns/tests/test_office_service_pattern_contracts.py",
-          "failure_route": "Route through the office-service-patterns part contract, schema/example packets, or validation route."
+          "failure_route": "Route through the office-service-patterns part contract, schema/example packets, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -378,7 +480,11 @@
           "owner_surface": "mechanics/questbook/parts/quest-store/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/questbook/parts/quest-store/tests/test_quest_store.py",
-          "failure_route": "Route through the quest-store part contract, source records, schemas, examples, or validation route."
+          "failure_route": "Route through the quest-store part contract, source records, schemas, examples, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -396,7 +502,12 @@
           "owner_surface": "mechanics/boundary-bridge/parts/source-owned-export/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/boundary-bridge/parts/source-owned-export/tests/test_source_owned_export.py",
-          "failure_route": "Route through the source-owned-export part contract, dependency manifest, federation export registry manifest, memo donor export, or validation route."
+          "failure_route": "Route through the source-owned-export part contract, dependency manifest, federation export registry manifest, memo donor export, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "sibling/live-dependency"
+          ]
         }
       ]
     },
@@ -414,7 +525,11 @@
           "owner_surface": "mechanics/audit/parts/proof-expectation-refs/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/audit/parts/proof-expectation-refs/tests/test_proof_expectation_refs.py",
-          "failure_route": "Route through the proof-expectation-refs part contract, proof expectation docs, maturity manifest, generated pack, or validation route."
+          "failure_route": "Route through the proof-expectation-refs part contract, proof expectation docs, maturity manifest, generated pack, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -432,7 +547,12 @@
           "owner_surface": "mechanics/audit/parts/exposure-review/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/audit/parts/exposure-review/tests/test_exposure_review.py",
-          "failure_route": "Route through the exposure-review part contract, counterpart docs, manifest, generated review pack, tiny bundle refs, or validation route."
+          "failure_route": "Route through the exposure-review part contract, counterpart docs, manifest, generated review pack, tiny bundle refs, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity"
+          ]
         }
       ]
     },
@@ -450,7 +570,11 @@
           "owner_surface": "mechanics/boundary-bridge/parts/counterpart-edge/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/boundary-bridge/parts/counterpart-edge/tests/test_counterpart_edge.py",
-          "failure_route": "Route through the counterpart-edge part contract, docs, schemas, examples, or validation route."
+          "failure_route": "Route through the counterpart-edge part contract, docs, schemas, examples, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -468,7 +592,11 @@
           "owner_surface": "mechanics/boundary-bridge/parts/tos-retrieval-axis/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/boundary-bridge/parts/tos-retrieval-axis/tests/test_tos_retrieval_axis.py",
-          "failure_route": "Route through the tos-retrieval-axis part contract, manifests, generated retrieval packs, route pack parity, or validation route."
+          "failure_route": "Route through the tos-retrieval-axis part contract, manifests, generated retrieval packs, route pack parity, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -486,7 +614,13 @@
           "owner_surface": "mechanics/boundary-bridge/parts/cross-source-projection/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/boundary-bridge/parts/cross-source-projection/tests/test_cross_source_projection.py",
-          "failure_route": "Route through the cross-source-projection part contract, projection manifest, generated output, source-owned dependencies, or validation route."
+          "failure_route": "Route through the cross-source-projection part contract, projection manifest, generated output, source-owned dependencies, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity",
+            "sibling/live-dependency"
+          ]
         }
       ]
     },
@@ -504,7 +638,13 @@
           "owner_surface": "mechanics/boundary-bridge/parts/federation-spine/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/boundary-bridge/parts/federation-spine/tests/test_federation_spine.py",
-          "failure_route": "Route through the federation-spine part contract, source-owned export registry, spine manifest, generated pack, or validation route."
+          "failure_route": "Route through the federation-spine part contract, source-owned export registry, spine manifest, generated pack, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity",
+            "sibling/live-dependency"
+          ]
         }
       ]
     },
@@ -522,7 +662,12 @@
           "owner_surface": "mechanics/boundary-bridge/parts/tiny-consumer-bundle/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/boundary-bridge/parts/tiny-consumer-bundle/tests/test_tiny_consumer_bundle.py",
-          "failure_route": "Route through the tiny-consumer-bundle part contract, manifest, schemas, example, generated outputs, or validation route."
+          "failure_route": "Route through the tiny-consumer-bundle part contract, manifest, schemas, example, generated outputs, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity"
+          ]
         }
       ]
     },
@@ -540,7 +685,11 @@
           "owner_surface": "mechanics/distillation/parts/technique-lift/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/distillation/parts/technique-lift/tests/test_technique_lift.py",
-          "failure_route": "Route through the technique-lift part contract, aoa-techniques source refs, manifest, generated pack, or validation route."
+          "failure_route": "Route through the technique-lift part contract, aoa-techniques source refs, manifest, generated pack, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -558,7 +707,11 @@
           "owner_surface": "mechanics/distillation/parts/tos-text-chunk-map/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/distillation/parts/tos-text-chunk-map/tests/test_tos_text_chunk_map.py",
-          "failure_route": "Route through the tos-text-chunk-map part contract, ToS source refs, manifest, generated pack, example, or validation route."
+          "failure_route": "Route through the tos-text-chunk-map part contract, ToS source refs, manifest, generated pack, example, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -576,7 +729,11 @@
           "owner_surface": "mechanics/distillation/parts/tos-route-lift/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/distillation/parts/tos-route-lift/tests/test_tos_route_lift.py",
-          "failure_route": "Route through the tos-route-lift part contract, ToS source refs, route manifest, generated route pack, example, or validation route."
+          "failure_route": "Route through the tos-route-lift part contract, ToS source refs, route manifest, generated route pack, example, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -594,7 +751,11 @@
           "owner_surface": "mechanics/release-support/parts/release-lane/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/release-support/parts/release-lane/tests/test_release_lane.py",
-          "failure_route": "Route through the release-lane part contract, validation lane manifest, release entrypoint, or command-authority docs."
+          "failure_route": "Route through the release-lane part contract, validation lane manifest, release entrypoint, or command-authority docs.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract"
+          ]
         }
       ]
     },
@@ -612,7 +773,12 @@
           "owner_surface": "mechanics/checkpoint/parts/reasoning-handoff/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/checkpoint/parts/reasoning-handoff/tests/test_reasoning_handoff.py",
-          "failure_route": "Route through the reasoning-handoff part contract, handoff docs, manifest, generated pack, example guardrail, or validation route."
+          "failure_route": "Route through the reasoning-handoff part contract, handoff docs, manifest, generated pack, example guardrail, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity"
+          ]
         }
       ]
     },
@@ -630,7 +796,12 @@
           "owner_surface": "mechanics/growth-cycle/parts/surface-growth-stop-rule/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/growth-cycle/parts/surface-growth-stop-rule/tests/test_surface_growth_stop_rule.py",
-          "failure_route": "Route through the surface-growth stop-rule part contract, maturity docs, manifest, generated pack, example payload, or validation route."
+          "failure_route": "Route through the surface-growth stop-rule part contract, maturity docs, manifest, generated pack, example payload, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity"
+          ]
         }
       ]
     },
@@ -648,7 +819,12 @@
           "owner_surface": "mechanics/recurrence/parts/return-regrounding/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/recurrence/parts/return-regrounding/tests/test_return_regrounding.py",
-          "failure_route": "Route through the return-regrounding part contract, regrounding docs, manifest, generated pack, example payload, or validation route."
+          "failure_route": "Route through the return-regrounding part contract, regrounding docs, manifest, generated pack, example payload, or validation route.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity"
+          ]
         }
       ]
     },
@@ -666,7 +842,12 @@
           "owner_surface": "mechanics/agon/parts/promotion-candidates/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/agon/parts/promotion-candidates/tests/test_promotion_candidate_registry.py",
-          "failure_route": "Route through the owning part contract, source config, builder, validator, or generated registry."
+          "failure_route": "Route through the owning part contract, source config, builder, validator, or generated registry.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity"
+          ]
         }
       ]
     },
@@ -684,7 +865,12 @@
           "owner_surface": "mechanics/agon/parts/sophian-threshold-packets/CONTRACT.md",
           "runtime_cost": "fast",
           "focused_target": "mechanics/agon/parts/sophian-threshold-packets/tests/test_sophian_threshold_packet_registry.py",
-          "failure_route": "Route through the owning part contract, source config, builder, validator, or generated registry."
+          "failure_route": "Route through the owning part contract, source config, builder, validator, or generated registry.",
+          "coverage_kinds": [
+            "mechanics/part-behavior",
+            "source/route-contract",
+            "generated/parity"
+          ]
         }
       ]
     }

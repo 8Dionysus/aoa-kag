@@ -12,6 +12,7 @@
 | `scripts/ci_gate.py` | CI lane executor |
 | `scripts/release_check.py` | release entrypoint |
 | `scripts/run_tests.py` | unittest discovery for root and active mechanics part tests |
+| `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
 | `scripts/validate_kag.py` | repo-wide KAG validation entrypoint |
 
 ## Lane Entries

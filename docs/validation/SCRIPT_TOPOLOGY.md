@@ -44,9 +44,21 @@ The machine-readable script map is
 | `decision_index_builder` | decision lookup index writer |
 | `artifact_bundle_validator` | release artifact bundle check |
 | `skill_local_contract_tool` | exported skill companion helper |
+| `part_local_script_runner` | discovered part-local builder and validator checks |
 | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner` | lane, release, and test execution |
 | `script_route_card` | local route card |
 | `projection_helper` | shared generation helper |
+
+## Function Groups
+
+| Function Group | Families |
+| --- | --- |
+| command authority / lane runners | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner`, `part_local_script_runner` |
+| generation builders | `projection_builder`, `projection_helper`, `decision_index_builder`, `validator_generation_port` |
+| validators | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator` |
+| topology and route inventory | `script_route_card` |
+| release / artifact tooling | `artifact_bundle_validator` |
+| skill companion helpers | `skill_local_contract_tool` |
 
 ## Root Scripts
 
@@ -55,6 +67,11 @@ release checks, and test discovery.
 
 `scripts/validate_kag.py` is the entrypoint. The implementation map lives in
 `docs/validation/validator_inventory.json`.
+
+`scripts/run_part_local_checks.py` discovers active
+`mechanics/<package>/parts/<part>/scripts/build_*.py` and `validate_*.py`
+surfaces, runs builders with `--check`, and runs validators directly from the
+`source-fast` lane.
 
 ## Part-Local Scripts
 

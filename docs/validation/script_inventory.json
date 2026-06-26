@@ -4,6 +4,14 @@
   "command_authority": "config/validation_lanes.json",
   "notes": ["This inventory describes every tracked non-pyc file under */scripts/*.", "Command authority lives in config/validation_lanes.json.", "Route cards under script directories own local script boundaries."],
   "required_fields": ["path", "family", "organ_lane", "owner_surface", "source_truth", "reads", "writes", "side_effects", "validation_lane", "ci_inclusion", "test_target", "disposition"],
+  "function_groups": {
+    "command_authority_lane_runners": ["lane_executor", "lane_loader", "part_local_script_runner", "release_entrypoint", "test_runner"],
+    "generation_builders": ["decision_index_builder", "projection_builder", "projection_helper", "validator_generation_port"],
+    "validators": ["example_validator", "example_validator_facade", "manifest_validator", "manifest_validator_facade", "projection_validator", "projection_validator_facade", "source_validator", "validator_adapter", "validator_entrypoint", "validator_expected_contracts", "validator_expected_contracts_facade", "validator_orchestration", "validator_orchestrator_facade", "validator_shared"],
+    "topology_and_route_inventory": ["script_route_card"],
+    "release_artifact_tooling": ["artifact_bundle_validator"],
+    "skill_companion_helpers": ["skill_local_contract_tool"]
+  },
   "script_surfaces": [
     {
       "path": "scripts/AGENTS.md",
@@ -213,6 +221,20 @@
       "validation_lane": "source_fast",
       "ci_inclusion": "source-fast and release lanes",
       "test_target": "tests/test_test_topology.py",
+      "disposition": "keep"
+    },
+    {
+      "path": "scripts/run_part_local_checks.py",
+      "family": "part_local_script_runner",
+      "organ_lane": "mechanics/part-local",
+      "owner_surface": "docs/validation/SCRIPT_TOPOLOGY.md",
+      "source_truth": ["mechanics/*/parts/*/scripts/*.py", "config/validation_lanes.json", "scripts/run_part_local_checks.py"],
+      "reads": ["mechanics/*/parts/*/scripts/build_*.py", "mechanics/*/parts/*/scripts/validate_*.py"],
+      "writes": [],
+      "side_effects": "validation output only; executes discovered part-local builder --check and validator commands",
+      "validation_lane": "source_fast",
+      "ci_inclusion": "source-fast lane runs this runner after unittest discovery",
+      "test_target": "tests/test_script_topology.py",
       "disposition": "keep"
     },
     {
