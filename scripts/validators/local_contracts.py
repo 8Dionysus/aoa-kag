@@ -35,10 +35,7 @@ def validate_antifragility_stress_surfaces() -> None:
     regrounding_doc = read_text(KAG_STRESS_REGROUNDING_DOC_PATH)
     quarantine_doc = read_text(KAG_PROJECTION_QUARANTINE_DOC_PATH)
 
-    for token in (
-        "mechanics/antifragility/parts/projection-health/docs/stress-regrounding.md",
-        "mechanics/antifragility/parts/projection-quarantine/docs/projection-quarantine.md",
-    ):
+    for token in ("[docs](docs/README.md)", "[mechanics](mechanics/README.md)"):
         if token not in readme:
             fail(f"README.md must link {token}")
     for token in ("stress-regrounding", "projection-quarantine"):
