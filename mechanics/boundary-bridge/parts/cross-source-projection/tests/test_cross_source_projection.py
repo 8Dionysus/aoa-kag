@@ -15,6 +15,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 import kag_generation
 import validate_kag
 from scripts.validators import manifest_contracts
+from scripts.validators.manifests import cross_source_node_projection
 
 
 def load_json(path: Path) -> object:
@@ -95,8 +96,8 @@ class CrossSourceProjectionTests(unittest.TestCase):
         ):
             with self.subTest(case=label):
                 with self.patched_read_json(
-                    manifest_contracts,
-                    {validate_kag.CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH: manifest_override}
+                    cross_source_node_projection,
+                    {validate_kag.CROSS_SOURCE_NODE_PROJECTION_MANIFEST_PATH: manifest_override},
                 ):
                     with self.assertRaises(validate_kag.ValidationError) as context:
                         manifest_contracts.validate_cross_source_node_projection_manifest(

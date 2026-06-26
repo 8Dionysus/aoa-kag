@@ -545,6 +545,52 @@ def _trust_gate_allow_latest(
     return payload
 
 
+def _trust_gate_denies_missing_subject_store(
+    artifact_bundles: Any,
+    registry_dir: Path,
+    registry_roundtrip: dict[str, Any],
+) -> dict[str, Any]:
+    record = registry_roundtrip.get("promoted", {}).get("record", {})
+    trust_gate = artifact_bundles.trust_gate(
+        registry_dir,
+        artifact_class=ARTIFACT_CLASS,
+        subject_digest=str(record.get("subject_digest") or ""),
+        consumer_intent=CONSUMER_INTENT,
+        expected_source_repo=OWNER_REPO,
+        expected_trust_root_mode=TRUST_ROOT_MODE,
+    )
+    inspected_claims = trust_gate.get("inspected_claims", {})
+    decision = trust_gate.get("decision", {})
+    artifact_subject_store = inspected_claims.get("artifact_subject_store", {})
+    blockers = set()
+    for key in ("blockers", "reasons"):
+        values = trust_gate.get(key)
+        if isinstance(values, list):
+            blockers.update(str(item) for item in values)
+    if isinstance(decision, dict) and isinstance(decision.get("blockers"), list):
+        blockers.update(str(item) for item in decision["blockers"])
+    payload = {
+        "ok": bool(
+            trust_gate.get("ok") is False
+            and trust_gate.get("verdict") == "deny"
+            and isinstance(decision, dict)
+            and decision.get("model") == "fail_closed_consumer_admission"
+            and decision.get("allow") is False
+            and "required_artifact_subject_store_not_verified" in blockers
+            and inspected_claims.get("registry_latest", {}).get("selected_record_is_latest") is True
+            and inspected_claims.get("controls", {}).get("required_controls_missing") == []
+            and inspected_claims.get("source", {}).get("source_repo_matched") is True
+            and inspected_claims.get("trust_root", {}).get("trust_root_mode_matched") is True
+            and inspected_claims.get("verification", {}).get("ok") is True
+            and isinstance(artifact_subject_store, dict)
+            and artifact_subject_store.get("required") is True
+            and artifact_subject_store.get("ok") is False
+        ),
+        "trust_gate": trust_gate,
+    }
+    return payload
+
+
 def _verify_missing_sidecar(
     artifact_bundles: Any,
     abyss_repo_root: Path,
@@ -905,11 +951,10 @@ def _validate_in_bundle_dir(
         manifest=manifest,
         abyss_repo_root=abyss_repo_root,
     )
-    pre_materialization_gate = _trust_gate_allow_latest(
+    pre_materialization_gate = _trust_gate_denies_missing_subject_store(
         artifact_bundles,
         registry_dir,
         registry,
-        require_subject_store=False,
     )
     materialized = artifact_bundles.materialize_artifact_subjects(
         bundle_dir,

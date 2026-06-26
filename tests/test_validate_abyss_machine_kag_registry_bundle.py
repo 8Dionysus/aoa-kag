@@ -1,8 +1,17 @@
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from scripts import validate_abyss_machine_kag_registry_bundle as validator
+
+
+class _FakeArtifactBundles:
+    def __init__(self, trust_gate_response: dict) -> None:
+        self.trust_gate_response = trust_gate_response
+
+    def trust_gate(self, *args, **kwargs) -> dict:
+        return self.trust_gate_response
 
 
 class AbyssMachineKagRegistryBundleValidatorTest(unittest.TestCase):
@@ -58,6 +67,33 @@ class AbyssMachineKagRegistryBundleValidatorTest(unittest.TestCase):
                     clean=False,
                     require_abyss_machine=True,
                 )
+
+    def test_pre_materialization_gate_accepts_fail_closed_subject_store_denial(self) -> None:
+        trust_gate_response = {
+            "ok": False,
+            "verdict": "deny",
+            "blockers": ["required_artifact_subject_store_not_verified"],
+            "decision": {
+                "model": "fail_closed_consumer_admission",
+                "allow": False,
+                "blockers": ["required_artifact_subject_store_not_verified"],
+            },
+            "inspected_claims": {
+                "registry_latest": {"selected_record_is_latest": True},
+                "controls": {"required_controls_missing": []},
+                "source": {"source_repo_matched": True},
+                "trust_root": {"trust_root_mode_matched": True},
+                "verification": {"ok": True},
+                "artifact_subject_store": {"required": True, "ok": False},
+            },
+        }
+        payload = validator._trust_gate_denies_missing_subject_store(
+            _FakeArtifactBundles(trust_gate_response),
+            Path("registry"),
+            {"promoted": {"record": {"subject_digest": "sha256:subject"}}},
+        )
+
+        self.assertTrue(payload["ok"])
 
 
 if __name__ == "__main__":

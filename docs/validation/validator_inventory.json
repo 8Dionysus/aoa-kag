@@ -50,14 +50,178 @@
     },
     {
       "path": "scripts/validators/expected_contracts.py",
-      "module_type": "expected_contracts",
-      "function": "Store expected paths, allowed values, and expected payload contract data used by validators.",
+      "module_type": "expected_facade",
+      "function": "Import facade for expected contract data modules.",
       "inputs": [
-        "generation constants",
-        "repo environment roots"
+        "scripts/validators/expected package"
       ],
       "outputs": [
-        "expected contract data and path constants"
+        "importable expected contract namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/__init__.py",
+      "module_type": "adapter",
+      "function": "Package re-export surface for expected contract modules.",
+      "inputs": [
+        "expected contract modules"
+      ],
+      "outputs": [
+        "importable expected contract namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/core.py",
+      "module_type": "expected_core",
+      "function": "Define repo roots, schema/example paths, allowed values, and shared path sets.",
+      "inputs": [
+        "repo root",
+        "generation constants",
+        "environment overrides"
+      ],
+      "outputs": [
+        "core expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/registry_contracts.py",
+      "module_type": "expected_registry_contracts",
+      "function": "Define registry boundary, counterpart, provenance, and guardrail expectations.",
+      "inputs": [
+        "registry contract refs",
+        "counterpart refs"
+      ],
+      "outputs": [
+        "registry expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/governance_contracts.py",
+      "module_type": "expected_governance_contracts",
+      "function": "Define KAG maturity governance expectations.",
+      "inputs": [
+        "governance refs",
+        "registry statuses"
+      ],
+      "outputs": [
+        "governance expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/recurrence_contracts.py",
+      "module_type": "expected_recurrence_contracts",
+      "function": "Define return-regrounding expectations.",
+      "inputs": [
+        "recurrence refs",
+        "counterpart refs"
+      ],
+      "outputs": [
+        "recurrence expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/technique_contracts.py",
+      "module_type": "expected_technique_contracts",
+      "function": "Define technique-lift expectations.",
+      "inputs": [
+        "technique refs"
+      ],
+      "outputs": [
+        "technique expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/tos_contracts.py",
+      "module_type": "expected_tos_contracts",
+      "function": "Define Tree-of-Sophia route, chunk, retrieval, and adjunct expectations.",
+      "inputs": [
+        "Tree-of-Sophia refs"
+      ],
+      "outputs": [
+        "ToS expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/handoff_contracts.py",
+      "module_type": "expected_handoff_contracts",
+      "function": "Define reasoning-handoff expectations.",
+      "inputs": [
+        "handoff refs",
+        "recurrence expectations"
+      ],
+      "outputs": [
+        "handoff expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/federation_contracts.py",
+      "module_type": "expected_federation_contracts",
+      "function": "Define federation spine, export registry, and memo donor expectations.",
+      "inputs": [
+        "federation refs",
+        "ToS adjunct expectations"
+      ],
+      "outputs": [
+        "federation expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/cross_source_contracts.py",
+      "module_type": "expected_cross_source_contracts",
+      "function": "Define cross-source node projection expectations.",
+      "inputs": [
+        "cross-source projection refs"
+      ],
+      "outputs": [
+        "cross-source expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/consumer_contracts.py",
+      "module_type": "expected_consumer_contracts",
+      "function": "Define tiny consumer bundle and counterpart exposure review expectations.",
+      "inputs": [
+        "consumer refs",
+        "counterpart refs"
+      ],
+      "outputs": [
+        "consumer expected contract data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/registry_surface_inputs.py",
+      "module_type": "expected_registry_surface_inputs",
+      "function": "Define registry surface source-input expectations.",
+      "inputs": [
+        "registry surface ids"
+      ],
+      "outputs": [
+        "registry source-input expected data"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/expected/docs_contracts.py",
+      "module_type": "expected_docs_contracts",
+      "function": "Define markdown, date, root, and snippet expectations.",
+      "inputs": [
+        "repo roots",
+        "documentation snippets"
+      ],
+      "outputs": [
+        "documentation expected contract data"
       ],
       "covered_by": "tests/test_validator_module_topology.py"
     },
@@ -117,42 +281,579 @@
     },
     {
       "path": "scripts/validators/manifest_contracts.py",
-      "module_type": "manifest",
-      "function": "Validate KAG manifest source-input and output contracts.",
+      "module_type": "manifest_facade",
+      "function": "Import facade for source manifest contract validators.",
       "inputs": [
-        "manifest files",
+        "scripts/validators/manifests package"
+      ],
+      "outputs": [
+        "importable manifest validator namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/__init__.py",
+      "module_type": "adapter",
+      "function": "Package re-export surface for manifest validator modules.",
+      "inputs": [
+        "manifest validator modules"
+      ],
+      "outputs": [
+        "importable manifest validator namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/technique_lift.py",
+      "module_type": "manifest_technique_lift",
+      "function": "Validate technique-lift manifest source-input and output contracts.",
+      "inputs": [
+        "technique-lift manifest",
         "registry surfaces",
         "source refs"
       ],
       "outputs": [
-        "manifest contract verdicts"
+        "technique-lift manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/tos_text_chunk_map.py",
+      "module_type": "manifest_tos_text_chunk_map",
+      "function": "Validate ToS text chunk map manifest source-input and output contracts.",
+      "inputs": [
+        "ToS text chunk map manifest",
+        "registry surfaces",
+        "source refs"
+      ],
+      "outputs": [
+        "ToS text chunk map manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/tos_retrieval_axis.py",
+      "module_type": "manifest_tos_retrieval_axis",
+      "function": "Validate ToS retrieval axis manifest source-input and output contracts.",
+      "inputs": [
+        "ToS retrieval axis manifest",
+        "registry surfaces",
+        "source refs"
+      ],
+      "outputs": [
+        "ToS retrieval axis manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/tos_zarathustra_route.py",
+      "module_type": "manifest_tos_zarathustra_route",
+      "function": "Validate ToS Zarathustra route manifest source-input and output contracts.",
+      "inputs": [
+        "ToS Zarathustra route manifest",
+        "registry surfaces",
+        "source refs"
+      ],
+      "outputs": [
+        "ToS Zarathustra route manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/tos_zarathustra_route_retrieval.py",
+      "module_type": "manifest_tos_zarathustra_route_retrieval",
+      "function": "Validate ToS Zarathustra route retrieval manifest source-input and output contracts.",
+      "inputs": [
+        "ToS Zarathustra route retrieval manifest",
+        "registry surfaces",
+        "source refs"
+      ],
+      "outputs": [
+        "ToS Zarathustra route retrieval manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/reasoning_handoff.py",
+      "module_type": "manifest_reasoning_handoff",
+      "function": "Validate reasoning-handoff manifest source-input and output contracts.",
+      "inputs": [
+        "reasoning-handoff manifest",
+        "source refs"
+      ],
+      "outputs": [
+        "reasoning-handoff manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/return_regrounding.py",
+      "module_type": "manifest_return_regrounding",
+      "function": "Validate return-regrounding manifest source-input and output contracts.",
+      "inputs": [
+        "return-regrounding manifest",
+        "source refs"
+      ],
+      "outputs": [
+        "return-regrounding manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/governance.py",
+      "module_type": "manifest_governance",
+      "function": "Validate KAG maturity governance manifest contracts.",
+      "inputs": [
+        "KAG maturity governance manifest",
+        "registry surfaces",
+        "source refs"
+      ],
+      "outputs": [
+        "KAG maturity governance manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/source_owned_export.py",
+      "module_type": "manifest_source_owned_export",
+      "function": "Validate source-owned export dependency manifest contracts.",
+      "inputs": [
+        "source-owned export dependency manifest",
+        "registry surfaces",
+        "source-owned export payloads"
+      ],
+      "outputs": [
+        "source-owned export dependency map"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/federation_export_registry.py",
+      "module_type": "manifest_federation_export_registry",
+      "function": "Validate federation export registry manifest contracts.",
+      "inputs": [
+        "federation export registry manifest",
+        "source-owned export dependency map"
+      ],
+      "outputs": [
+        "federation export registry entry map"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/federation_spine.py",
+      "module_type": "manifest_federation_spine",
+      "function": "Validate federation spine manifest contracts.",
+      "inputs": [
+        "federation spine manifest",
+        "registry surfaces",
+        "source-owned export dependency map",
+        "federation export registry entry map"
+      ],
+      "outputs": [
+        "federation spine manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/cross_source_node_projection.py",
+      "module_type": "manifest_cross_source_node_projection",
+      "function": "Validate cross-source node projection manifest contracts.",
+      "inputs": [
+        "cross-source node projection manifest",
+        "registry surfaces",
+        "source-owned export dependency map"
+      ],
+      "outputs": [
+        "cross-source node projection manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/tiny_consumer_bundle.py",
+      "module_type": "manifest_tiny_consumer_bundle",
+      "function": "Validate tiny consumer bundle manifest contracts.",
+      "inputs": [
+        "tiny consumer bundle manifest",
+        "registry surfaces",
+        "source refs"
+      ],
+      "outputs": [
+        "tiny consumer bundle manifest verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/manifests/counterpart_federation_exposure_review.py",
+      "module_type": "manifest_counterpart_federation_exposure_review",
+      "function": "Validate counterpart federation exposure review manifest contracts.",
+      "inputs": [
+        "counterpart federation exposure review manifest",
+        "source refs"
+      ],
+      "outputs": [
+        "counterpart federation exposure review manifest verdicts"
       ],
       "covered_by": "tests/test_validator_module_topology.py"
     },
     {
       "path": "scripts/validators/projection_parity.py",
-      "module_type": "projection",
-      "function": "Validate generated/read-model parity and generated pack structure.",
+      "module_type": "projection_facade",
+      "function": "Import facade for generated/read-model projection validators.",
       "inputs": [
-        "generated payloads",
-        "expected payload builders"
+        "scripts/validators/projection package"
       ],
       "outputs": [
-        "projection parity verdicts"
+        "importable projection validator namespace"
       ],
       "covered_by": "tests/test_validator_module_topology.py",
       "projection_only": true
     },
     {
-      "path": "scripts/validators/example_contracts.py",
-      "module_type": "example",
-      "function": "Validate public-safe example payload contracts.",
+      "path": "scripts/validators/projection/__init__.py",
+      "module_type": "adapter",
+      "function": "Package re-export surface for projection validator modules.",
       "inputs": [
-        "example payloads",
+        "projection validator modules"
+      ],
+      "outputs": [
+        "importable projection validator namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/registry.py",
+      "module_type": "projection_registry",
+      "function": "Validate registry payloads and special registry surfaces.",
+      "inputs": [
+        "registry payloads",
+        "expected registry contracts"
+      ],
+      "outputs": [
+        "registry parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/tos_text_chunk_map.py",
+      "module_type": "projection_tos_text_chunk_map",
+      "function": "Validate ToS text chunk map generated pack structure.",
+      "inputs": [
+        "ToS text chunk map generated payload",
+        "expected text chunk payload builder"
+      ],
+      "outputs": [
+        "ToS text chunk map projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/tos_retrieval_axis.py",
+      "module_type": "projection_tos_retrieval_axis",
+      "function": "Validate ToS retrieval axis generated pack structure.",
+      "inputs": [
+        "ToS retrieval axis generated payload",
+        "expected retrieval axis payload builder"
+      ],
+      "outputs": [
+        "ToS retrieval axis projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/tos_zarathustra_route.py",
+      "module_type": "projection_tos_zarathustra_route",
+      "function": "Validate ToS Zarathustra route generated pack structure.",
+      "inputs": [
+        "ToS Zarathustra route generated payload",
+        "expected route payload builder"
+      ],
+      "outputs": [
+        "ToS Zarathustra route projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/tos_zarathustra_route_retrieval.py",
+      "module_type": "projection_tos_zarathustra_route_retrieval",
+      "function": "Validate ToS Zarathustra route retrieval generated pack structure.",
+      "inputs": [
+        "ToS Zarathustra route retrieval generated payload",
+        "expected route retrieval payload builder"
+      ],
+      "outputs": [
+        "ToS Zarathustra route retrieval projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/reasoning_handoff.py",
+      "module_type": "projection_reasoning_handoff",
+      "function": "Validate reasoning-handoff generated pack structure.",
+      "inputs": [
+        "reasoning-handoff generated payload",
+        "expected reasoning-handoff payload builder"
+      ],
+      "outputs": [
+        "reasoning-handoff projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/return_regrounding.py",
+      "module_type": "projection_return_regrounding",
+      "function": "Validate return-regrounding generated pack structure.",
+      "inputs": [
+        "return-regrounding generated payload",
+        "expected return-regrounding payload builder"
+      ],
+      "outputs": [
+        "return-regrounding projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/governance.py",
+      "module_type": "projection_governance",
+      "function": "Validate KAG maturity governance generated pack structure.",
+      "inputs": [
+        "maturity governance generated payloads",
+        "expected governance payload builder"
+      ],
+      "outputs": [
+        "governance projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/federation_export_registry.py",
+      "module_type": "projection_federation_export_registry",
+      "function": "Validate federation export registry generated pack structure.",
+      "inputs": [
+        "federation export registry generated payload",
+        "expected federation export registry payload builder"
+      ],
+      "outputs": [
+        "federation export registry projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/federation_spine.py",
+      "module_type": "projection_federation_spine",
+      "function": "Validate federation spine generated pack structure.",
+      "inputs": [
+        "federation spine generated payload",
+        "expected federation spine payload builder"
+      ],
+      "outputs": [
+        "federation spine projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/cross_source_node_projection.py",
+      "module_type": "projection_cross_source_node_projection",
+      "function": "Validate cross-source node projection generated pack structure.",
+      "inputs": [
+        "cross-source node projection generated payload",
+        "expected cross-source projection payload builder"
+      ],
+      "outputs": [
+        "cross-source node projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/tiny_consumer_bundle.py",
+      "module_type": "projection_tiny_consumer_bundle",
+      "function": "Validate tiny consumer bundle generated pack structure.",
+      "inputs": [
+        "tiny consumer bundle generated payload",
+        "expected tiny consumer bundle payload builder"
+      ],
+      "outputs": [
+        "tiny consumer bundle projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/counterpart_federation_exposure_review.py",
+      "module_type": "projection_counterpart_federation_exposure_review",
+      "function": "Validate counterpart federation exposure review generated pack structure.",
+      "inputs": [
+        "counterpart federation exposure review generated payload",
+        "expected exposure review payload builder"
+      ],
+      "outputs": [
+        "counterpart federation exposure review projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/projection/technique.py",
+      "module_type": "projection_technique",
+      "function": "Validate generated text parity and technique-lift generated pack structure.",
+      "inputs": [
+        "generated payload text",
+        "expected technique payload builder"
+      ],
+      "outputs": [
+        "technique projection parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/example_contracts.py",
+      "module_type": "example_facade",
+      "function": "Import facade for public example validators.",
+      "inputs": [
+        "scripts/validators/examples package"
+      ],
+      "outputs": [
+        "importable example validator namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/__init__.py",
+      "module_type": "adapter",
+      "function": "Package re-export surface for example validator modules.",
+      "inputs": [
+        "example validator modules"
+      ],
+      "outputs": [
+        "importable example validator namespace"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/tos_examples.py",
+      "module_type": "example_tos",
+      "function": "Validate Tree-of-Sophia example payloads.",
+      "inputs": [
+        "ToS examples",
         "expected generated payloads"
       ],
       "outputs": [
-        "example contract verdicts"
+        "ToS example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/recurrence_examples.py",
+      "module_type": "example_recurrence",
+      "function": "Validate return-regrounding example payloads.",
+      "inputs": [
+        "return-regrounding example",
+        "expected generated payload"
+      ],
+      "outputs": [
+        "return-regrounding example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/governance_examples.py",
+      "module_type": "example_governance",
+      "function": "Validate KAG maturity governance example payloads.",
+      "inputs": [
+        "governance example",
+        "governance schema"
+      ],
+      "outputs": [
+        "governance example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/federation_examples.py",
+      "module_type": "example_federation",
+      "function": "Validate federation export and KAG export example payloads.",
+      "inputs": [
+        "federation examples",
+        "expected memo export contracts"
+      ],
+      "outputs": [
+        "federation example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/cross_source_examples.py",
+      "module_type": "example_cross_source",
+      "function": "Validate cross-source node projection example payloads.",
+      "inputs": [
+        "cross-source example",
+        "expected generated payload"
+      ],
+      "outputs": [
+        "cross-source example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/tiny_consumer_bundle_examples.py",
+      "module_type": "example_tiny_consumer_bundle",
+      "function": "Validate tiny consumer bundle example payloads.",
+      "inputs": [
+        "tiny consumer bundle example",
+        "expected generated payload"
+      ],
+      "outputs": [
+        "tiny consumer bundle example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/exposure_review_examples.py",
+      "module_type": "example_exposure_review",
+      "function": "Validate counterpart federation exposure review example payloads.",
+      "inputs": [
+        "counterpart exposure review example",
+        "expected generated payload"
+      ],
+      "outputs": [
+        "counterpart exposure review example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/bridge_examples.py",
+      "module_type": "example_bridge",
+      "function": "Validate bridge retrieval and bridge envelope example payloads.",
+      "inputs": [
+        "bridge examples",
+        "registry surfaces"
+      ],
+      "outputs": [
+        "bridge example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/counterpart_examples.py",
+      "module_type": "example_counterpart",
+      "function": "Validate counterpart edge and counterpart consumer contract example payloads.",
+      "inputs": [
+        "counterpart examples",
+        "registry surfaces"
+      ],
+      "outputs": [
+        "counterpart example verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/examples/reasoning_handoff_examples.py",
+      "module_type": "example_reasoning_handoff",
+      "function": "Validate reasoning-handoff example payloads.",
+      "inputs": [
+        "reasoning-handoff example",
+        "counterpart contracts"
+      ],
+      "outputs": [
+        "reasoning-handoff example verdicts"
       ],
       "covered_by": "tests/test_validator_module_topology.py"
     },
@@ -171,14 +872,127 @@
     },
     {
       "path": "scripts/validators/orchestrator.py",
-      "module_type": "orchestrator",
-      "function": "Run validate_kag checks in the repo-wide order and print status lines.",
+      "module_type": "orchestrator_facade",
+      "function": "Import facade for validate_kag orchestration phases.",
       "inputs": [
-        "validator modules",
-        "KAG source and generated surfaces"
+        "scripts/validators/orchestration package"
       ],
       "outputs": [
-        "repo-wide validation status"
+        "importable validate_kag main function"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/__init__.py",
+      "module_type": "adapter",
+      "function": "Package re-export surface for validate_kag orchestration.",
+      "inputs": [
+        "orchestration runner"
+      ],
+      "outputs": [
+        "importable validate_kag main function"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/static_surfaces.py",
+      "module_type": "orchestration_static_surfaces",
+      "function": "Run local, schema, route, and stress surface checks.",
+      "inputs": [
+        "local validators",
+        "schema validators"
+      ],
+      "outputs": [
+        "static validation verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/manifests.py",
+      "module_type": "orchestration_manifests",
+      "function": "Load registry context and run manifest contract checks.",
+      "inputs": [
+        "registry manifest",
+        "manifest validators"
+      ],
+      "outputs": [
+        "manifest validation context"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/expected_payloads.py",
+      "module_type": "orchestration_expected_payloads",
+      "function": "Build expected generated payloads for parity checks.",
+      "inputs": [
+        "registry payload",
+        "payload builders"
+      ],
+      "outputs": [
+        "expected generated payload map"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/generated_text.py",
+      "module_type": "orchestration_generated_text",
+      "function": "Run generated text parity checks.",
+      "inputs": [
+        "expected generated payload map",
+        "generated output files"
+      ],
+      "outputs": [
+        "generated text parity verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/generated_structures.py",
+      "module_type": "orchestration_generated_structures",
+      "function": "Run generated structure checks.",
+      "inputs": [
+        "expected generated payload map",
+        "generated compact outputs"
+      ],
+      "outputs": [
+        "generated structure verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/examples.py",
+      "module_type": "orchestration_examples",
+      "function": "Run public example checks.",
+      "inputs": [
+        "expected generated payload map",
+        "generated registry surfaces"
+      ],
+      "outputs": [
+        "example validation verdicts"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/status.py",
+      "module_type": "orchestration_status",
+      "function": "Print validate_kag success status output.",
+      "inputs": [
+        "validation phase completion"
+      ],
+      "outputs": [
+        "status lines"
+      ],
+      "covered_by": "tests/test_validator_module_topology.py"
+    },
+    {
+      "path": "scripts/validators/orchestration/runner.py",
+      "module_type": "orchestration_runner",
+      "function": "Run top-level validate_kag flow.",
+      "inputs": [
+        "orchestration phases"
+      ],
+      "outputs": [
+        "validate_kag exit code"
       ],
       "covered_by": "tests/test_validator_module_topology.py"
     }

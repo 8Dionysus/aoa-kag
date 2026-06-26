@@ -29,11 +29,18 @@ The machine-readable script map is
 | `validator_entrypoint` | repo-wide validation CLI |
 | `validator_adapter` | validator package import surface |
 | `validator_generation_port` | KAG generation constants and payload builders |
+| `validator_expected_contracts_facade` | expected contract data import surface |
 | `validator_expected_contracts` | expected paths, allowed values, and payload contract data |
 | `validator_shared` | shared validator helpers |
-| `validator_orchestrator` | validate_kag call order and status output |
+| `manifest_validator_facade` | manifest contract import surface |
+| `manifest_validator` | manifest source-input and output contract checks |
+| `validator_orchestrator_facade` | validate_kag orchestration import surface |
+| `validator_orchestration` | validate_kag phase execution |
 | `projection_builder` | generated/read-model writers |
+| `projection_validator_facade` | generated/read-model parity import surface |
 | `projection_validator` | generated/read-model parity checks |
+| `example_validator_facade` | public example validator import surface |
+| `example_validator` | public example payload checks |
 | `decision_index_builder` | decision lookup index writer |
 | `artifact_bundle_validator` | release artifact bundle check |
 | `skill_local_contract_tool` | exported skill companion helper |
