@@ -41,14 +41,14 @@ CURRENT_RELEASE_SURFACES = (
 
 
 class RoadmapParityTestCase(unittest.TestCase):
-    def test_roadmap_matches_current_v0_2_0_release_contour(self) -> None:
+    def test_roadmap_matches_current_release_contour(self) -> None:
         roadmap = (REPO_ROOT / "ROADMAP.md").read_text(encoding="utf-8")
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-        self.assertIn("Current release: `v0.2.2`", readme)
-        self.assertIn("## [0.2.2]", changelog)
-        self.assertIn("`v0.2.2`", roadmap)
+        self.assertIn("Current release: `v0.4.0`", readme)
+        self.assertIn("## [0.4.0]", changelog)
+        self.assertIn("`v0.4.0`", roadmap)
         self.assertIn("release contour", roadmap)
         self.assertIn("Roadmap drift", roadmap)
         self.assertIn("source repositories remain authoritative", roadmap)

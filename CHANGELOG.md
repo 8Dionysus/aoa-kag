@@ -7,6 +7,21 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-26
+
+### Summary
+
+- this release hardens `aoa-kag` from a growing derived-substrate pilot into a
+  cleaner release-ready KAG topology with mechanics, validators, scripts,
+  tests, generation, command authority, and root-doc routes separated by owner
+  function
+- the KAG layer remains bounded: generated graph-ready and retrieval-ready
+  surfaces are source-linked derived read models, not source truth, proof,
+  routing, memory truth, runtime state, or a full graph engine
+- release evidence now includes stronger KAG registry artifact identity,
+  local-source-home and eval-route preflight, decision-lane modeling, and a
+  compact public README front door
+
 ### Changed
 
 - Refactor KAG mechanics topology into package/part homes with part-local
@@ -32,6 +47,27 @@ Tracking starts with the community-docs baseline for this repository.
   `aoa-memo` object ids, provenance, lifecycle, and generated read models as a
   registry-visible donor route, not graph truth, proof, routing authority, or a
   memory write path.
+- Centralize validation command authority so route cards and public docs point
+  to lane owners instead of carrying duplicated command blocks.
+- Rework the root README as a compact front door that routes detailed
+  inventories to `docs/`, `mechanics/`, manifests, generated companions, local
+  route cards, and release authority.
+
+### Validation
+
+- Release validation used the release lane in
+  `docs/validation/COMMAND_AUTHORITY.md`.
+- Release preflight used `docs/RELEASING.md` and the AoA release audit route
+  for `aoa-kag`.
+
+### Notes
+
+- this is a bounded derived-substrate release over the landed post-`v0.2.2`
+  history; source repositories still own authored meaning and proof
+  repositories still own verdict posture
+- this release prep changes version and release documentation surfaces only;
+  it does not widen KAG ownership, activate a full graph engine, or alter
+  generated payload semantics
 
 ## [0.2.2] - 2026-04-23
 
