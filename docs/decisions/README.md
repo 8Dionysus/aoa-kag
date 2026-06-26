@@ -20,7 +20,7 @@ route to their owning surfaces instead.
 | output | canonical decision note, generated lookup indexes, and route back to the owning KAG or source-owner surface |
 | owner | `docs/decisions/AGENTS.md` for lane law; decision notes for rationale; generated indexes for lookup only |
 | next route | owning generated/schema/example/script/test surface first, then nearest route card, `README.md`, `ROADMAP.md`, generated lookup indexes, or the affected source owner |
-| validation | `python scripts/generate_decision_indexes.py --check` and `python scripts/validate_decision_records.py`, plus the owning validator for the changed surface |
+| validation | `docs/decisions/AGENTS.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the owning validator route for the changed surface |
 
 ## Authority
 
@@ -60,17 +60,8 @@ metadata:
 - [Decisions by source lane](indexes/by-source-lane.md)
 - [Decisions by validation or guard family](indexes/by-guard.md)
 
-Regenerate the read models after decision metadata changes:
-
-```bash
-python scripts/generate_decision_indexes.py
-```
-
-Check generated parity before closeout:
-
-```bash
-python scripts/generate_decision_indexes.py --check
-```
+Regenerate and check the decision read models through `docs/decisions/AGENTS.md`
+and `docs/validation/COMMAND_AUTHORITY.md`.
 
 ## Lookup Route
 

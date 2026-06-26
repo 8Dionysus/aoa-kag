@@ -88,15 +88,4 @@ Do not treat these surfaces as:
 
 ## Verification posture
 
-For a read-only current-state pass, use:
-
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
-
-For release-prep parity, use:
-
-```bash
-python scripts/release_check.py
-git status -sb
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

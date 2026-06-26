@@ -125,15 +125,4 @@ counterpart payloads or imply `AOA-K-0008` activation.
 
 ## Regeneration posture
 
-Use:
-
-```bash
-python scripts/release_check.py
-```
-
-If you only need regeneration and drift validation, use:
-
-```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

@@ -68,11 +68,8 @@ A strong pull request in this repository should explain:
 
 ## Before opening a PR
 
-Run the current read-only validation lane:
-
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` before
+opening a PR.
 
 If your change materially affects KAG route rationale, owner-boundary posture,
 source refs, generated-pack policy, maturity, quarantine, or regrounding, add or
@@ -80,19 +77,7 @@ update a canonical `docs/decisions/AOA-KAG-D-####-*.md` record and regenerate
 the decision indexes.
 
 If your change touched generated KAG outputs, regenerate and revalidate them
-through the generated lane before opening the PR:
-
-```bash
-python scripts/ci_gate.py --mode generated
-python scripts/ci_gate.py --mode source-fast
-```
-
-For release-prep parity, use:
-
-```bash
-python scripts/release_check.py
-git status -sb
-```
+through the generated lane named in command authority.
 
 ## Style guidance
 

@@ -79,9 +79,4 @@ This pilot does not:
 
 ## Regeneration posture
 
-Use:
-
-```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

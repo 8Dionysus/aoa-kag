@@ -36,5 +36,6 @@ sovereignty, consumer ranking, or release approval.
 
 ### Next route
 
-Change `manifests/tiny_consumer_bundle.json`, regenerate with
-`python scripts/generate_kag.py`, then validate with `python scripts/validate_kag.py`.
+Change `manifests/tiny_consumer_bundle.json`, then use
+`docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for the
+generated refresh and validation route.

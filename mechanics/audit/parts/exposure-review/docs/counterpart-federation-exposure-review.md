@@ -63,8 +63,4 @@ generated surface and validation law.
 
 ## Regeneration posture
 
-Use:
-
-```bash
-python scripts/release_check.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

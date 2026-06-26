@@ -1,7 +1,3 @@
 # Pattern Candidate Lineage Validation
 
-Run:
-
-```bash
-python -m unittest discover -s mechanics/method-growth/parts/pattern-candidate-lineage/tests -p 'test_*.py'
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

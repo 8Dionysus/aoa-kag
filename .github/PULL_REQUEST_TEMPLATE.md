@@ -32,7 +32,7 @@ Describe how you checked the change.
 Examples:
 - read for consistency with `CHARTER.md`
 - checked `docs/KAG_MODEL.md`, `docs/BOUNDARIES.md`, and `docs/SOURCE_POLICY.md` for alignment
-- ran `python scripts/validate_kag.py`
+- ran the relevant validation route from `docs/validation/COMMAND_AUTHORITY.md`
 
 ## Notes
 

@@ -58,7 +58,8 @@ README_SNIPPETS = (
     "KAG-local homes for the common center mechanics",
     "No KAG-only mechanic package is active yet.",
     "## Parts Rule",
-    "python scripts/validate_mechanics_skeleton.py",
+    "docs/validation/COMMAND_AUTHORITY.md",
+    "nearest `AGENTS.md`",
 )
 PARTS_STOP_LINE = "No part directories are active yet."
 PARTS_NO_CANDIDATES_LINE = "No active KAG-specific"

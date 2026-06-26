@@ -75,12 +75,7 @@ This pilot does not:
 
 ## Regeneration posture
 
-Use:
-
-```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
 If `Tree-of-Sophia` is not checked out beside this repository, point the
 scripts at it with `TREE_OF_SOPHIA_ROOT`.

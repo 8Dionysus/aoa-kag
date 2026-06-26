@@ -63,12 +63,7 @@ This handoff scope does not:
 
 ## Regeneration posture
 
-Use:
-
-```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
 If the donor repositories are not checked out beside `aoa-kag`, point the
 scripts at them with:

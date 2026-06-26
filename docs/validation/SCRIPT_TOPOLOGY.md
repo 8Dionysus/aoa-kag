@@ -102,7 +102,4 @@ Part-local tests and `scripts/run_tests.py` cover active part scripts.
 
 ## Validation
 
-```bash
-python -m unittest tests.test_script_topology
-python scripts/ci_gate.py --mode source-fast
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

@@ -130,20 +130,4 @@ Tradeoffs:
 
 ## Validation
 
-Run:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python -m unittest tests.test_mechanics_skeleton
-python scripts/run_tests.py
-python scripts/ci_gate.py --mode source-fast
-python scripts/generate_decision_indexes.py
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-```
-
-For release-facing closeout, also run:
-
-```bash
-python scripts/release_check.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

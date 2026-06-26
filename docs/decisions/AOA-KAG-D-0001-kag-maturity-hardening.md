@@ -79,10 +79,4 @@ Those docs define the living rule. This note explains why the rule exists.
 
 ## Validation
 
-Run:
-
-```bash
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-python scripts/validate_kag.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.

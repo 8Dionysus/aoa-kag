@@ -65,12 +65,7 @@ This first lift scope does not:
 
 ## Regeneration posture
 
-Use:
-
-```bash
-python scripts/generate_kag.py
-python scripts/validate_kag.py
-```
+Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
 
 If `aoa-techniques` is not checked out next to this repository, point the
 scripts at it with `AOA_TECHNIQUES_ROOT`.

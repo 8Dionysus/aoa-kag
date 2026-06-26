@@ -18,7 +18,7 @@ home directories are named `kag/`.
 | output | checked source-home manifest, local-subtree protocol, rollout stop-line, and stronger-owner route |
 | owner | `kag/AGENTS.md`, this README, `source_home.manifest.json`, `LOCAL_SUBTREE_PROTOCOL.md`, and decision records |
 | next route | `docs/decisions/`, `mechanics/`, `manifests/`, `generated/`, `schemas/`, `examples/`, or the stronger source owner named by the protocol |
-| validation | `python scripts/validate_nested_agents.py`, `python -m unittest tests.test_kag_home tests.test_nested_agents_docs`, and broader source-fast when route-facing |
+| validation | `kag/AGENTS.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the broader source-fast lane when route-facing |
 
 ## Why This Home Exists
 
