@@ -13,7 +13,7 @@ model-level, generated, mechanic-local, local `/kag` protocol, release-facing,
 or agent-facing, follow the linked owner surface instead of expanding this
 page.
 
-> Current release: `v0.2.2`. See [CHANGELOG](CHANGELOG.md) for release notes.
+> Current release: `v0.4.0`. See [CHANGELOG](CHANGELOG.md) for release notes.
 
 ## What This Repository Does
 

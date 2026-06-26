@@ -17,5 +17,5 @@ See also:
    entrypoint and worktree stabilizer. It includes source-fast, generated
    parity, and the OS Abyss KAG registry ABI/SBOM-lite/SLSA bundle validator.
 4. Run federation preflight:
-   - `aoa release audit /srv --phase preflight --repo aoa-kag --strict --json`
+   - `aoa release audit /srv/AbyssOS --phase preflight --repo aoa-kag --strict --json`
 5. Publish only through `aoa release publish`.
