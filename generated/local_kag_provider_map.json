@@ -128,6 +128,10 @@
           "lane": "owner-local"
         },
         {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        },
+        {
           "route": "scripts/release_check.py",
           "lane": "release"
         }
@@ -204,6 +208,10 @@
           "lane": "owner-local"
         },
         {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        },
+        {
           "route": "scripts/ci_gate.py --mode source-fast",
           "lane": "source-fast"
         }
@@ -278,12 +286,86 @@
           "source_class": "skill_source",
           "role": "supporting",
           "authority": "derived_readmodel"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-approval-gate-check/SKILL.md",
+          "source_class": "skill_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-approval-gate-check/techniques.yaml",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-dry-run-first/SKILL.md",
+          "source_class": "skill_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-dry-run-first/techniques.yaml",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-local-stack-bringup/SKILL.md",
+          "source_class": "skill_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-local-stack-bringup/techniques.yaml",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-safe-infra-change/SKILL.md",
+          "source_class": "skill_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-safe-infra-change/techniques.yaml",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-sanitized-share/SKILL.md",
+          "source_class": "skill_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-skills",
+          "path": "skills/risk/aoa-sanitized-share/techniques.yaml",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
         }
       ],
       "validation_routes": [
         {
           "route": "scripts/lanes/ci_gate.py --mode source-fast",
           "lane": "source-fast"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -358,6 +440,10 @@
         {
           "route": "scripts/release_gate/release_check.py",
           "lane": "release"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -431,6 +517,10 @@
         {
           "route": "scripts/validate_agent_source_home.py",
           "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -496,6 +586,10 @@
         {
           "route": "scripts/validate_playbooks.py",
           "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -561,6 +655,10 @@
         {
           "route": "scripts/ci_gate.py --mode source-fast",
           "lane": "source-fast"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -627,6 +725,10 @@
         {
           "route": "scripts/validate_repo.py",
           "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -700,6 +802,10 @@
         {
           "route": "scripts/validate_source_home.py",
           "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -760,12 +866,23 @@
           "source_class": "sdk_source",
           "role": "supporting",
           "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-sdk",
+          "path": "src/aoa_sdk/kag/registry.py",
+          "source_class": "sdk_source",
+          "role": "supporting",
+          "authority": "authored_source"
         }
       ],
       "validation_routes": [
         {
           "route": "scripts/validate_sdk_source_home.py",
           "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
