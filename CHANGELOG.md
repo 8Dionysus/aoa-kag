@@ -7,6 +7,21 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+### Added
+
+- Activate the first repo-local KAG provider foundation under `kag/`, including
+  provider records, readiness indexes, MCP-facing projection shape, validation
+  receipts, and the local KAG subtree protocol.
+- Add the local KAG subtree schema, example packet, readiness matrix, validator
+  coverage, and `AOA-KAG-D-0010` decision record for the provider activation
+  line.
+
+### Changed
+
+- Align the release workflow dependency pins with the merged
+  `Tree-of-Sophia/kag/` and `aoa-techniques/kag/` provider homes so
+  `aoa-kag` validates against the current source-owned provider surfaces.
+
 ## [0.4.0] - 2026-06-26
 
 ### Summary
@@ -22,10 +37,38 @@ Tracking starts with the community-docs baseline for this repository.
   local-source-home and eval-route preflight, decision-lane modeling, and a
   compact public README front door
 
+### Added
+
+- Add repo-local route cards across root districts, including `.agents/`,
+  `.github/`, `config/`, `docs/`, `evals/`, `generated/`, `manifests/`,
+  `mechanics/`, `quests/`, `schemas/`, `scripts/`, and `tests/`.
+- Add `DESIGN.md` and `DESIGN.AGENTS.md` so the public design surface and
+  agent-facing design route are explicit.
+- Add the portable AoA agent/skill foundation under `.agents/skills/` and the
+  `.agents/spark/` route for Codex Spark session surfaces.
+- Add a local eval port with `evals/PORT.yaml`, local intake/suite/report
+  homes, and source-home eval routes.
+- Add the modeled decision lane with canonical `AOA-KAG-D-*` records,
+  generated decision indexes, and decision-record validation.
+- Add mechanics package homes, `PARTS.md`, `PROVENANCE.md`, part contracts,
+  package-local validators, package-local tests, and active legacy accounting
+  for the KAG mechanics split.
+- Add Questbook source-store topology under `quests/kag/` with captured, done,
+  and reanchor lanes.
+- Add validation lane manifests, script inventory, validator inventory, test
+  inventory, nested/semantic AGENTS validators, mechanics skeleton validation,
+  command-authority validation, and repo-validation workflow coverage.
+- Add KAG registry artifact bundle verification through
+  `scripts/validate_abyss_machine_kag_registry_bundle.py` and artifact-bundle
+  docs.
+
 ### Changed
 
 - Refactor KAG mechanics topology into package/part homes with part-local
   contracts, validation routes, and script/test coverage.
+- Move previously flat root mechanics material into owner-shaped mechanics
+  packages while preserving historical accounting in package-local legacy
+  surfaces.
 - Split repo validators into owner modules for expected contracts, manifests,
   generated projection parity, examples, and orchestration while preserving
   `scripts/validate_kag.py` as the lane entrypoint.
@@ -52,6 +95,9 @@ Tracking starts with the community-docs baseline for this repository.
 - Rework the root README as a compact front door that routes detailed
   inventories to `docs/`, `mechanics/`, manifests, generated companions, local
   route cards, and release authority.
+- Refresh shared AoA skill links, self-diagnose and memory-route surfaces,
+  memo KAG bridge routes, eval catalog path guards, AGENTS topology, roadmap
+  parity, and contributor/release docs against the current OS Abyss route law.
 
 ### Validation
 
@@ -59,6 +105,8 @@ Tracking starts with the community-docs baseline for this repository.
   `docs/validation/COMMAND_AUTHORITY.md`.
 - Release preflight used `docs/RELEASING.md` and the AoA release audit route
   for `aoa-kag`.
+- The release range was rebuilt from the landed post-`v0.2.2` first-parent
+  history, not from changelog prose alone.
 
 ### Notes
 
