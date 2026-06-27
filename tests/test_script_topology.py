@@ -180,6 +180,7 @@ class ScriptTopologyTests(unittest.TestCase):
             "scripts/generation/governance.py",
             "scripts/generation/handoff.py",
             "scripts/generation/markdown.py",
+            "scripts/generation/provider_map.py",
             "scripts/generation/registry.py",
             "scripts/generation/regrounding.py",
             "scripts/generation/source_refs.py",

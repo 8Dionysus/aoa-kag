@@ -392,6 +392,20 @@
       "disposition": "keep"
     },
     {
+      "path": "scripts/generation/provider_map.py",
+      "family": "projection_builder",
+      "organ_lane": "projection/generated",
+      "owner_surface": "scripts/generation/AGENTS.md",
+      "source_truth": ["manifests/local_kag_readiness.json", "repo-local kag provider homes", "scripts/generation/context.py"],
+      "reads": ["local KAG readiness manifest and provider packet metadata"],
+      "writes": [],
+      "side_effects": "builds local KAG provider map and MCP handoff payload",
+      "validation_lane": "generated",
+      "ci_inclusion": "generated lane and generation tests",
+      "test_target": "tests/test_kag_generation.py",
+      "disposition": "keep"
+    },
+    {
       "path": "scripts/generation/writer.py",
       "family": "projection_builder",
       "organ_lane": "projection/generated",

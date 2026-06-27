@@ -37,7 +37,15 @@ EXPECTED_ACTIVE_FAMILIES = {
 }
 
 EXPECTED_PROVIDER_READY_REPOS = {
+    "Agents-of-Abyss",
     "aoa-kag",
+    "aoa-agents",
+    "aoa-evals",
+    "aoa-memo",
+    "aoa-playbooks",
+    "aoa-routing",
+    "aoa-sdk",
+    "aoa-skills",
     "Tree-of-Sophia",
     "aoa-techniques",
 }
@@ -113,6 +121,7 @@ class KagHomeTests(unittest.TestCase):
         self.assertIn("Current Files", readme)
         self.assertIn("Tree-of-Sophia", readme)
         self.assertIn("aoa-techniques", readme)
+        self.assertIn("aoa-skills", readme)
         self.assertIn("OS Surface Layer", readme)
         self.assertIn("connectors", readme)
         self.assertIn("Required Home", protocol)

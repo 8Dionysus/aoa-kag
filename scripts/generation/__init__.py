@@ -7,6 +7,7 @@ from .federation import *
 from .governance import *
 from .handoff import *
 from .markdown import *
+from .provider_map import *
 from .registry import *
 from .regrounding import *
 from .source_refs import *

@@ -57,20 +57,28 @@ surfaces that matter for indexing and MCP access:
 
 ## OS Abyss Provider Pattern
 
-The first provider-ready homes are:
+The provider-ready homes are:
 
 | Repository | Local home | First source route |
 | --- | --- | --- |
 | `aoa-kag` | `kag/` | local subtree schema and readiness matrix |
 | `Tree-of-Sophia` | `kag/` | `ToS/derived-exports/kag_export.min.json` |
 | `aoa-techniques` | `kag/` | `generated/kag_export.min.json` |
+| `aoa-skills` | `kag/` | `generated/skill_graph.json` |
+| `Agents-of-Abyss` | `kag/` | `generated/ecosystem_registry.min.json` |
+| `aoa-agents` | `kag/` | `agents/source_home.manifest.json` |
+| `aoa-playbooks` | `kag/` | `playbooks/source_home.manifest.json` |
+| `aoa-memo` | `kag/` | `generated/memory/memo_registry.min.json` |
+| `aoa-evals` | `kag/` | `generated/eval_report_index.min.json` |
+| `aoa-routing` | `kag/` | `routing/source_home.manifest.json` |
+| `aoa-sdk` | `kag/` | `sdk/source_home.manifest.json` |
 
-All three homes expose the same record classes while returning to their own
-source owners.
+All homes expose the same record classes while returning to their own source
+owners.
 
 ## Consumer Route
 
 `aoa-kag` composes provider packets into registry and composition surfaces.
 `abyss-stack` consumes the portable packet for runtime mirrors. `aoa-kag-mcp`
-will expose resources, roots, selected tools, and prompts from validated
-provider packets.
+will expose resources, roots, selected tools, and prompts from
+`generated/local_kag_provider_map.min.json` and validated provider packets.

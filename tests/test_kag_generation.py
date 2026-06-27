@@ -62,6 +62,8 @@ class KagGenerationTestCase(unittest.TestCase):
             [
                 kag_generation.REGISTRY_OUTPUT_PATH,
                 kag_generation.REGISTRY_MIN_OUTPUT_PATH,
+                kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH,
+                kag_generation.LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH,
                 kag_generation.TECHNIQUE_LIFT_OUTPUT_PATH,
                 kag_generation.TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
                 kag_generation.TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
@@ -145,6 +147,34 @@ class KagGenerationTestCase(unittest.TestCase):
                 kag_generation.build_registry_payload()
 
         self.assertIn("artifact_identity", str(context.exception))
+
+    def test_local_kag_provider_map_builder_matches_generated_outputs(self) -> None:
+        self.assert_builder_matches_generated(
+            kag_generation.build_local_kag_provider_map_payload,
+            kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH,
+            kag_generation.LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH,
+        )
+
+    def test_local_kag_provider_map_carries_mcp_handoff_planes(self) -> None:
+        payload = kag_generation.build_local_kag_provider_map_payload()
+        handoff = payload["mcp_handoff"]
+
+        self.assertEqual(
+            handoff["service_route"],
+            "abyss-stack/mcp/services/aoa-kag-mcp",
+        )
+        self.assertEqual(
+            {item["uri_template"] for item in handoff["resource_templates"]},
+            {
+                "aoa-kag://providers/{repo}/manifest",
+                "aoa-kag://providers/{repo}/records/{record_class}",
+                "aoa-kag://registry/provider-map",
+                "aoa-kag://readiness/os-surfaces",
+            },
+        )
+        self.assertTrue(handoff["root_boundaries"])
+        self.assertIn("validation_status", handoff["tools"])
+        self.assertIn("bounded_provider_query", handoff["prompts"])
 
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()

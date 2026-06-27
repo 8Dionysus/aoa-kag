@@ -9,6 +9,7 @@ Do not hand-edit files in `generated/`. Regenerate them with `python scripts/gen
 ## Editing posture
 - Expect paired `.json` and `.min.json` surfaces when a pack publishes both full and compact forms.
 - Keep `generated/kag_registry*.json` aligned with the `artifact_identity` declared in `manifests/kag_registry.json`; it is the ABI subject for `docs/artifact-bundles/kag_registry.bundle.json`.
+- Keep `generated/local_kag_provider_map*.json` aligned with `manifests/local_kag_readiness.json` and validated repo-local `kag/` provider homes; it is the MCP handoff read model.
 - Do not pull part-local generated companions back into root unless a root-publication or compatibility contract explicitly owns that proxy.
 - Review every diff against the corresponding manifest, docs, and donor-source refs before accepting it.
 - Keep provenance fields, posture flags, review gates, and output refs intact.
