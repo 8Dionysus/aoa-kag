@@ -23,6 +23,10 @@
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
 - [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
 
+## direct repo readiness
+
+- [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+
 ## eval catalog
 
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
@@ -51,6 +55,10 @@
 
 - [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
 
+## local KAG subtree contract
+
+- [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+
 ## local KAG subtree protocol
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
@@ -59,6 +67,10 @@
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
 
+## MCP access shape
+
+- [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+
 ## mechanics common homes
 
 - [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
@@ -66,6 +78,10 @@
 ## mechanics preflight
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+
+## OS surface readiness
+
+- [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 
 ## owner route catalog
 
@@ -83,6 +99,10 @@
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
 
+## provider packet
+
+- [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+
 ## quest source records
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
@@ -90,6 +110,10 @@
 ## Questbook mechanic
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
+
+## registry/composition input
+
+- [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 
 ## script topology
 

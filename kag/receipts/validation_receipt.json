@@ -1,0 +1,54 @@
+{
+  "schema_version": "aoa-local-kag-record-v1",
+  "repo": "aoa-kag",
+  "local_id": "receipt:validation:kag-provider",
+  "record_class": "receipt",
+  "source_refs": [
+    {
+      "repo": "aoa-kag",
+      "path": "scripts/validators/local_kag_subtree.py",
+      "source_class": "kag_contract",
+      "role": "primary",
+      "authority": "authored_source"
+    },
+    {
+      "repo": "aoa-kag",
+      "path": "tests/test_validate_kag.py",
+      "source_class": "kag_contract",
+      "role": "supporting",
+      "authority": "authored_source"
+    }
+  ],
+  "source_owner": "aoa-kag",
+  "provenance_mode": "strict_source_linked",
+  "derived_method": "local subtree validator receipt",
+  "generated_or_authored": "generated_from_source",
+  "status": "active",
+  "owner_return_route": {
+    "repo": "aoa-kag",
+    "surface": "scripts/validators/local_kag_subtree.py",
+    "route_kind": "validation"
+  },
+  "freshness": {
+    "mode": "validator_receipt",
+    "state": "current",
+    "checked_ref": "tests/test_validate_kag.py"
+  },
+  "builder": {
+    "route": "python -m unittest tests.test_validate_kag",
+    "surface": "tests/test_validate_kag.py"
+  },
+  "validator": {
+    "route": "scripts/validate_kag.py",
+    "lane": "local-kag"
+  },
+  "storage_posture": {
+    "git_surface": "receipt",
+    "payload_class": "receipt",
+    "runtime_route": "source-repo"
+  },
+  "consumer_route": "aoa-kag registry",
+  "receipt_kind": "validation",
+  "result": "valid",
+  "fallback_route": "scripts/validators/local_kag_subtree.py"
+}

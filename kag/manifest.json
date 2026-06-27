@@ -1,0 +1,52 @@
+{
+  "schema_version": "aoa-local-kag-manifest-v1",
+  "repo": "aoa-kag",
+  "owner_surface": "kag/AGENTS.md",
+  "source_surfaces": [
+    {
+      "repo": "aoa-kag",
+      "path": "schemas/local-kag-subtree.schema.json",
+      "source_class": "kag_contract",
+      "role": "primary",
+      "authority": "authored_source"
+    },
+    {
+      "repo": "aoa-kag",
+      "path": "manifests/local_kag_readiness.json",
+      "source_class": "kag_contract",
+      "role": "primary",
+      "authority": "authored_source"
+    },
+    {
+      "repo": "aoa-kag",
+      "path": "examples/local_kag_subtree.example.json",
+      "source_class": "kag_contract",
+      "role": "supporting",
+      "authority": "authored_source"
+    }
+  ],
+  "record_classes": ["node", "edge", "index", "projection", "receipt"],
+  "storage_posture": {
+    "git_surface": "portable_records",
+    "payload_class": "manifest",
+    "runtime_route": "source-repo"
+  },
+  "validation_routes": [
+    {
+      "route": "scripts/validate_kag.py",
+      "lane": "local-kag"
+    },
+    {
+      "route": "python scripts/ci_gate.py --mode source-fast",
+      "lane": "source-fast"
+    }
+  ],
+  "consumer_routes": ["aoa-kag registry", "abyss-stack federation mirror", "aoa-kag-mcp resource"],
+  "owner_return_routes": [
+    {
+      "repo": "aoa-kag",
+      "surface": "kag/LOCAL_SUBTREE_PROTOCOL.md",
+      "route_kind": "validation"
+    }
+  ]
+}

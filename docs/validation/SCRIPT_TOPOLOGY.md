@@ -68,6 +68,9 @@ release checks, and test discovery.
 `scripts/validate_kag.py` is the entrypoint. The implementation map lives in
 `docs/validation/validator_inventory.json`.
 
+`scripts/validators/local_kag_subtree.py` checks the repo-local KAG subtree
+contract, example packet, and OS Abyss readiness matrix.
+
 `scripts/generate_kag.py` is the KAG generated-output entrypoint.
 `scripts/kag_generation.py` is the compatibility facade for existing imports.
 The implementation modules live in `scripts/generation/`.

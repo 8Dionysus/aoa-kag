@@ -33,6 +33,7 @@ OWNER_MODULES = {
     "scripts/validators/source_refs.py",
     "scripts/validators/schema_surfaces.py",
     "scripts/validators/local_contracts.py",
+    "scripts/validators/local_kag_subtree.py",
     "scripts/validators/manifests/technique_lift.py",
     "scripts/validators/manifests/tos_text_chunk_map.py",
     "scripts/validators/manifests/tos_retrieval_axis.py",

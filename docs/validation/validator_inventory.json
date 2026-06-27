@@ -281,6 +281,20 @@
       "covered_by": "tests/test_validator_module_topology.py"
     },
     {
+      "path": "scripts/validators/local_kag_subtree.py",
+      "module_type": "local_kag_subtree_contract",
+      "function": "Validate repo-local KAG subtree schema, example packet, readiness matrix, record links, registry coverage, and MCP access shape.",
+      "inputs": [
+        "schemas/local-kag-subtree.schema.json",
+        "examples/local_kag_subtree.example.json",
+        "manifests/local_kag_readiness.json"
+      ],
+      "outputs": [
+        "local KAG subtree contract verdicts"
+      ],
+      "covered_by": "tests/test_validate_kag.py"
+    },
+    {
       "path": "scripts/validators/manifest_contracts.py",
       "module_type": "manifest_facade",
       "function": "Import facade for source manifest contract validators.",

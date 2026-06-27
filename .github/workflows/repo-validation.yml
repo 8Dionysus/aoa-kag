@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Tree-of-Sophia
-          ref: 3b658722d9aeb2bcfadbebffd9e648e31f72cd90
+          ref: c6151cc658e45bf5d3ac2f9409a4f6b5523b58cd
           path: .deps/Tree-of-Sophia
 
       - name: Checkout aoa-memo
@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-techniques
-          ref: 1a7d146957108ecefc24219c7d56357c5a4a2c2c
+          ref: 8ab16bc88e88a928d28e33384756ca426ebfa2d6
           path: .deps/aoa-techniques
 
       - name: Setup Python

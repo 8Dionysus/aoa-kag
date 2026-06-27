@@ -1,0 +1,53 @@
+{
+  "schema_version": "aoa-local-kag-record-v1",
+  "repo": "aoa-kag",
+  "local_id": "index:kag:provider-readiness",
+  "record_class": "index",
+  "source_refs": [
+    {
+      "repo": "aoa-kag",
+      "path": "manifests/local_kag_readiness.json",
+      "source_class": "kag_contract",
+      "role": "primary",
+      "authority": "authored_source"
+    }
+  ],
+  "source_owner": "aoa-kag",
+  "provenance_mode": "strict_source_linked",
+  "derived_method": "inventory over local provider records",
+  "generated_or_authored": "generated_from_source",
+  "status": "active",
+  "owner_return_route": {
+    "repo": "aoa-kag",
+    "surface": "manifests/local_kag_readiness.json",
+    "route_kind": "validation"
+  },
+  "freshness": {
+    "mode": "source_snapshot",
+    "state": "current",
+    "checked_ref": "manifests/local_kag_readiness.json"
+  },
+  "builder": {
+    "route": "local KAG provider record",
+    "surface": "kag/manifest.json"
+  },
+  "validator": {
+    "route": "scripts/validate_kag.py",
+    "lane": "local-kag"
+  },
+  "storage_posture": {
+    "git_surface": "portable_records",
+    "payload_class": "index",
+    "runtime_route": "source-repo"
+  },
+  "consumer_route": "aoa-kag registry",
+  "index_kind": "inventory",
+  "indexed_record_classes": ["node", "edge"],
+  "source_record_ids": [
+    "node:kag:local-subtree-contract",
+    "node:kag:readiness-matrix",
+    "node:kag:os-surface-layer",
+    "edge:kag-contract:declares-readiness",
+    "edge:kag-readiness:routes-os-surfaces"
+  ]
+}

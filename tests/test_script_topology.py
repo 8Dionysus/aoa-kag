@@ -46,7 +46,7 @@ REQUIRED_ENTRY_FIELDS = {
     "test_target",
     "disposition",
 }
-EXCLUDED_DISCOVERY_PARTS = {".deps", ".git", "__pycache__"}
+EXCLUDED_DISCOVERY_PARTS = {".deps", ".git", "__pycache__", "dist"}
 
 
 def load_inventory() -> dict:
@@ -130,10 +130,13 @@ class ScriptTopologyTests(unittest.TestCase):
             repo_root = Path(tmpdir)
             local_script = repo_root / "scripts" / "local.py"
             dependency_script = repo_root / ".deps" / "aoa-memo" / "scripts" / "memo.py"
+            dist_script = repo_root / "dist" / "artifact" / "scripts" / "copied.py"
             local_script.parent.mkdir(parents=True)
             dependency_script.parent.mkdir(parents=True)
+            dist_script.parent.mkdir(parents=True)
             local_script.write_text("", encoding="utf-8")
             dependency_script.write_text("", encoding="utf-8")
+            dist_script.write_text("", encoding="utf-8")
 
             self.assertEqual({"scripts/local.py"}, discovered_script_surfaces(repo_root))
 
