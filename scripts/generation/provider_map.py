@@ -5,18 +5,63 @@ from collections import Counter
 from .common import *
 
 
-def _provider_manifest(repo: str) -> dict[str, object]:
+RECORD_CLASS_DIRECTORIES = {
+    "node": "nodes",
+    "edge": "edges",
+    "index": "indexes",
+    "projection": "projections",
+    "receipt": "receipts",
+}
+PROVIDER_RECORD_DIRECTORIES = tuple(RECORD_CLASS_DIRECTORIES.values())
+
+
+def _existing_provider_map_by_repo() -> dict[str, dict[str, object]]:
+    if not LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH.exists():
+        return {}
+    payload = read_json(LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+    if not isinstance(payload, dict):
+        fail("existing local KAG provider map must be a JSON object")
+    providers = payload.get("providers")
+    if not isinstance(providers, list):
+        fail("existing local KAG provider map must declare providers")
+    result: dict[str, dict[str, object]] = {}
+    for index, provider in enumerate(providers):
+        if not isinstance(provider, dict):
+            fail(f"existing local KAG provider map providers[{index}] must be an object")
+        repo = require_string(provider.get("repo"), label=f"providers[{index}].repo")
+        result[repo] = provider
+    return result
+
+
+def _provider_manifest(
+    repo: str, fallback_provider: dict[str, object] | None
+) -> dict[str, object]:
     manifest_path = resolve_repo_path(repo, "kag/manifest.json")
+    if not manifest_path.exists() and fallback_provider is not None:
+        return fallback_provider
     payload = read_json(manifest_path)
     if not isinstance(payload, dict):
         fail(f"{repo} local KAG manifest must be a JSON object")
     return payload
 
 
-def _provider_record_counts(repo: str) -> dict[str, int]:
+def _provider_record_counts(
+    repo: str, fallback_provider: dict[str, object] | None
+) -> dict[str, int]:
     root = resolve_repo_path(repo, "kag")
+    if not root.exists() and fallback_provider is not None:
+        counts = fallback_provider.get("record_counts")
+        if not isinstance(counts, dict):
+            fail(f"{repo} fallback local KAG provider must declare record_counts")
+        result: dict[str, int] = {}
+        for group in PROVIDER_RECORD_DIRECTORIES:
+            value = counts.get(group)
+            if not isinstance(value, int) or value < 1:
+                fail(f"{repo} fallback local KAG provider record_counts.{group} must be positive")
+            result[group] = value
+        return result
     result: dict[str, int] = {}
-    for group in ("nodes", "edges", "indexes", "projections", "receipts"):
+    for group in PROVIDER_RECORD_DIRECTORIES:
         directory = root / group
         if not directory.is_dir():
             fail(f"{repo} local KAG provider is missing kag/{group}/")
@@ -39,6 +84,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
     status_counts = Counter()
     providers: list[dict[str, object]] = []
     remaining_routes: list[dict[str, object]] = []
+    fallback_providers = _existing_provider_map_by_repo()
     for entry in sorted(repos, key=lambda item: item["adoption_order"]):
         if not isinstance(entry, dict):
             fail("local KAG readiness repo entries must be objects")
@@ -46,7 +92,8 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         status = require_string(entry.get("provider_status"), label=f"{repo} provider_status")
         status_counts[status] += 1
         if status == "provider_ready":
-            manifest = _provider_manifest(repo)
+            fallback_provider = fallback_providers.get(repo)
+            manifest = _provider_manifest(repo, fallback_provider)
             providers.append(
                 {
                     "repo": repo,
@@ -54,7 +101,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     "local_kag_path": "kag/",
                     "manifest_ref": "kag/manifest.json",
                     "record_class_coverage": entry["first_record_classes"],
-                    "record_counts": _provider_record_counts(repo),
+                    "record_counts": _provider_record_counts(repo, fallback_provider),
                     "source_surfaces": manifest["source_surfaces"],
                     "validation_routes": manifest["validation_routes"],
                     "consumer_routes": manifest["consumer_routes"],
@@ -107,7 +154,8 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                 },
                 {
                     "uri_template": "aoa-kag://providers/{repo}/records/{record_class}",
-                    "source": "{repo}/kag/{record_class}/",
+                    "source": "{repo}/kag/{record_class_directory}/",
+                    "record_class_directory_map": RECORD_CLASS_DIRECTORIES,
                 },
                 {
                     "uri_template": "aoa-kag://registry/provider-map",

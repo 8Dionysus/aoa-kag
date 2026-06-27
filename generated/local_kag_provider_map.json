@@ -1277,7 +1277,14 @@
       },
       {
         "uri_template": "aoa-kag://providers/{repo}/records/{record_class}",
-        "source": "{repo}/kag/{record_class}/"
+        "source": "{repo}/kag/{record_class_directory}/",
+        "record_class_directory_map": {
+          "node": "nodes",
+          "edge": "edges",
+          "index": "indexes",
+          "projection": "projections",
+          "receipt": "receipts"
+        }
       },
       {
         "uri_template": "aoa-kag://registry/provider-map",
