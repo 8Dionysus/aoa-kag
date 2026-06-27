@@ -13,7 +13,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import kag_generation
-from tests.support.generation_patch import patched_generation_read_json
+from tests.support.generation_patch import patched_generation_attribute, patched_generation_read_json
 
 
 def load_json(path: Path) -> object:
@@ -23,6 +23,9 @@ def load_json(path: Path) -> object:
 class KagGenerationTestCase(unittest.TestCase):
     def patched_read_json(self, overrides: dict[Path, object]):
         return patched_generation_read_json(overrides)
+
+    def patch_generation_attribute(self, name: str, value: object):
+        return patched_generation_attribute(name, value)
 
     def assert_builder_matches_generated(
         self,
@@ -62,6 +65,8 @@ class KagGenerationTestCase(unittest.TestCase):
             [
                 kag_generation.REGISTRY_OUTPUT_PATH,
                 kag_generation.REGISTRY_MIN_OUTPUT_PATH,
+                kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH,
+                kag_generation.LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH,
                 kag_generation.TECHNIQUE_LIFT_OUTPUT_PATH,
                 kag_generation.TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
                 kag_generation.TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
@@ -145,6 +150,67 @@ class KagGenerationTestCase(unittest.TestCase):
                 kag_generation.build_registry_payload()
 
         self.assertIn("artifact_identity", str(context.exception))
+
+    def test_local_kag_provider_map_builder_matches_generated_outputs(self) -> None:
+        self.assert_builder_matches_generated(
+            kag_generation.build_local_kag_provider_map_payload,
+            kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH,
+            kag_generation.LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH,
+        )
+
+    def test_local_kag_provider_map_falls_back_to_committed_provider_packets(self) -> None:
+        expected_payload = load_json(kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(expected_payload, dict)
+        missing_roots = dict(kag_generation.KNOWN_REPO_ROOTS)
+        for provider in expected_payload["providers"]:
+            if provider["repo"] == "aoa-kag":
+                continue
+            missing_roots[provider["repo"]] = REPO_ROOT / ".missing-deps" / provider["repo"]
+
+        with self.patched_read_json({}), self.patch_generation_attribute(
+            "KNOWN_REPO_ROOTS", missing_roots
+        ):
+            self.assertEqual(
+                kag_generation.build_local_kag_provider_map_payload(),
+                expected_payload,
+            )
+
+    def test_local_kag_provider_map_carries_mcp_handoff_planes(self) -> None:
+        payload = kag_generation.build_local_kag_provider_map_payload()
+        handoff = payload["mcp_handoff"]
+        records_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"] == "aoa-kag://providers/{repo}/records/{record_class}"
+        )
+
+        self.assertEqual(
+            handoff["service_route"],
+            "abyss-stack/mcp/services/aoa-kag-mcp",
+        )
+        self.assertEqual(
+            {item["uri_template"] for item in handoff["resource_templates"]},
+            {
+                "aoa-kag://providers/{repo}/manifest",
+                "aoa-kag://providers/{repo}/records/{record_class}",
+                "aoa-kag://registry/provider-map",
+                "aoa-kag://readiness/os-surfaces",
+            },
+        )
+        self.assertTrue(handoff["root_boundaries"])
+        self.assertIn("validation_status", handoff["tools"])
+        self.assertIn("bounded_provider_query", handoff["prompts"])
+        self.assertEqual(records_template["source"], "{repo}/kag/{record_class_directory}/")
+        self.assertEqual(
+            records_template["record_class_directory_map"],
+            {
+                "node": "nodes",
+                "edge": "edges",
+                "index": "indexes",
+                "projection": "projections",
+                "receipt": "receipts",
+            },
+        )
 
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()

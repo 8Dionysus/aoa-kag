@@ -6,6 +6,7 @@ from .consumer import build_counterpart_federation_exposure_review_payload, buil
 from .federation import build_cross_source_node_projection_payload, build_federation_export_registry_payload, build_federation_spine_payload
 from .governance import build_kag_maturity_governance_payload
 from .handoff import build_reasoning_handoff_pack_payload
+from .provider_map import build_local_kag_provider_map_payload
 from .registry import build_registry_payload
 from .regrounding import build_return_regrounding_pack_payload
 from .technique import build_technique_lift_pack_payload
@@ -15,6 +16,8 @@ from .tos import build_tos_retrieval_axis_pack_payload, build_tos_text_chunk_map
 GENERATED_OUTPUT_PATHS = [
     REGISTRY_OUTPUT_PATH,
     REGISTRY_MIN_OUTPUT_PATH,
+    LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH,
+    LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH,
     TECHNIQUE_LIFT_OUTPUT_PATH,
     TECHNIQUE_LIFT_MIN_OUTPUT_PATH,
     TOS_TEXT_CHUNK_MAP_OUTPUT_PATH,
@@ -45,6 +48,7 @@ GENERATED_OUTPUT_PATHS = [
 
 def write_generated_outputs() -> list[Path]:
     registry_payload = build_registry_payload()
+    local_kag_provider_map_payload = build_local_kag_provider_map_payload()
     technique_lift_pack_payload = build_technique_lift_pack_payload(registry_payload)
     tos_text_chunk_map_payload = build_tos_text_chunk_map_payload(registry_payload)
     tos_retrieval_axis_pack_payload = build_tos_retrieval_axis_pack_payload(
@@ -81,6 +85,16 @@ def write_generated_outputs() -> list[Path]:
 
     write_json(REGISTRY_OUTPUT_PATH, registry_payload, pretty=True)
     write_json(REGISTRY_MIN_OUTPUT_PATH, registry_payload, pretty=False)
+    write_json(
+        LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH,
+        local_kag_provider_map_payload,
+        pretty=True,
+    )
+    write_json(
+        LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH,
+        local_kag_provider_map_payload,
+        pretty=False,
+    )
     write_json(TECHNIQUE_LIFT_OUTPUT_PATH, technique_lift_pack_payload, pretty=True)
     write_json(TECHNIQUE_LIFT_MIN_OUTPUT_PATH, technique_lift_pack_payload, pretty=False)
     write_json(TOS_TEXT_CHUNK_MAP_OUTPUT_PATH, tos_text_chunk_map_payload, pretty=True)

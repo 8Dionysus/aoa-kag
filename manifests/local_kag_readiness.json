@@ -60,7 +60,7 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["aoa-kag registry", "aoa-kag-mcp resource"],
       "owner_return_routes": [{"repo": "Agents-of-Abyss", "surface": "docs/FEDERATION_RULES.md", "route_kind": "authored_meaning"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 4,
       "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "prompt", "root"]
@@ -120,9 +120,9 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["aoa-kag registry", "aoa-agents runtime consumers"],
       "owner_return_routes": [{"repo": "aoa-agents", "surface": "agents/README.md", "route_kind": "authored_meaning"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 5,
-      "first_record_classes": ["node", "index", "projection", "receipt"],
+      "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "root"]
     },
     {
@@ -140,9 +140,9 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["aoa-kag registry", "aoa-evals MCP"],
       "owner_return_routes": [{"repo": "aoa-evals", "surface": "evals/README.md", "route_kind": "proof"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 8,
-      "first_record_classes": ["node", "edge", "index", "receipt"],
+      "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "tool", "root"]
     },
     {
@@ -180,9 +180,9 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["aoa-kag registry", "aoa-memo MCP"],
       "owner_return_routes": [{"repo": "aoa-memo", "surface": "memo/README.md", "route_kind": "memory"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 7,
-      "first_record_classes": ["node", "index", "projection", "receipt"],
+      "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "tool", "root"]
     },
     {
@@ -200,9 +200,9 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["aoa-kag registry"],
       "owner_return_routes": [{"repo": "aoa-playbooks", "surface": "playbooks/README.md", "route_kind": "authored_meaning"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 6,
-      "first_record_classes": ["node", "edge", "index", "receipt"],
+      "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "root"]
     },
     {
@@ -220,9 +220,9 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["aoa-kag registry", "aoa-routing consumers"],
       "owner_return_routes": [{"repo": "aoa-routing", "surface": "routing/README.md", "route_kind": "routing"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 9,
-      "first_record_classes": ["node", "edge", "index", "receipt"],
+      "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "tool", "root"]
     },
     {
@@ -240,9 +240,9 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["future aoa-kag-mcp", "Python SDK users"],
       "owner_return_routes": [{"repo": "aoa-sdk", "surface": "sdk/README.md", "route_kind": "authored_meaning"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 10,
-      "first_record_classes": ["projection", "receipt"],
+      "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "tool", "root"]
     },
     {
@@ -260,7 +260,7 @@
       "release_gate": "repo-local release lane",
       "runtime_consumers": ["Codex skill installer", "aoa-kag registry"],
       "owner_return_routes": [{"repo": "aoa-skills", "surface": "skills/README.md", "route_kind": "authored_meaning"}],
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "adoption_order": 3,
       "first_record_classes": ["node", "edge", "index", "projection", "receipt"],
       "mcp_access_shape": ["resource", "tool", "prompt", "root"]

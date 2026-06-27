@@ -28,6 +28,10 @@
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 
+## generated readmodel
+
+- [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+
 ## generated/maturity
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
@@ -40,12 +44,17 @@
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+- [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
 
 ## manifests
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+
+## MCP handoff
+
+- [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
 
 ## mechanics/topology
 
@@ -88,6 +97,7 @@
 ## sibling provider homes
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+- [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
 
 ## test topology
 
@@ -110,3 +120,4 @@
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+- [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)

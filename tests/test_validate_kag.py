@@ -173,6 +173,38 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("every OS surface class", str(context.exception))
 
+    def test_local_kag_readiness_rejects_missing_source_ready_provider(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        for entry in broken_payload["repos"]:
+            if entry["repo"] == "aoa-skills":
+                entry["provider_status"] = "candidate"
+                break
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_contract()
+
+        self.assertIn("source-ready provider repo", str(context.exception))
+
+    def test_local_kag_provider_roots_cover_source_ready_providers(self) -> None:
+        self.assertEqual(
+            local_kag_subtree.EXPECTED_PROVIDER_READY_REPOS,
+            set(local_kag_subtree.PROVIDER_REPO_ROOTS),
+        )
+        for repo in local_kag_subtree.EXPECTED_PROVIDER_READY_REPOS:
+            with self.subTest(repo=repo):
+                self.assertEqual(
+                    local_kag_subtree.KNOWN_REPO_ROOTS[repo],
+                    local_kag_subtree.PROVIDER_REPO_ROOTS[repo],
+                )
+
     def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)

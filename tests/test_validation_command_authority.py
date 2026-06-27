@@ -20,6 +20,18 @@ EXECUTABLE_VALIDATION_LINE = re.compile(
 INLINE_EXECUTABLE_VALIDATION_COMMAND = re.compile(
     r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+status\b)[^`]+`"
 )
+CANARY_PROVIDER_ROOT_ENVS = {
+    "Agents-of-Abyss": "AGENTS_OF_ABYSS_ROOT",
+    "Tree-of-Sophia": "TREE_OF_SOPHIA_ROOT",
+    "aoa-agents": "AOA_AGENTS_ROOT",
+    "aoa-evals": "AOA_EVALS_ROOT",
+    "aoa-memo": "AOA_MEMO_ROOT",
+    "aoa-playbooks": "AOA_PLAYBOOKS_ROOT",
+    "aoa-routing": "AOA_ROUTING_ROOT",
+    "aoa-sdk": "AOA_SDK_ROOT",
+    "aoa-skills": "AOA_SKILLS_ROOT",
+    "aoa-techniques": "AOA_TECHNIQUES_ROOT",
+}
 
 
 def command_sequence_from_manifest(name: str) -> tuple[tuple[str, ...], ...]:
@@ -34,6 +46,17 @@ def drift_paths_from_manifest(name: str) -> tuple[str, ...]:
         (REPO_ROOT / "config" / "validation_lanes.json").read_text(encoding="utf-8")
     )
     return tuple(manifest["drift_paths"][name])
+
+
+def provider_ready_repos_from_manifest() -> set[str]:
+    manifest = json.loads(
+        (REPO_ROOT / "manifests" / "local_kag_readiness.json").read_text(encoding="utf-8")
+    )
+    return {
+        entry["repo"]
+        for entry in manifest["repos"]
+        if entry["provider_status"] == "provider_ready"
+    }
 
 
 def tracked_markdown_paths() -> tuple[Path, ...]:
@@ -171,6 +194,19 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertNotIn("python scripts/validate_kag.py", repo_validation)
         self.assertIn("python scripts/ci_gate.py --mode compatibility-canary", canary)
         self.assertNotIn("python scripts/generate_kag.py", canary)
+
+    def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
+        canary = (
+            REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
+        ).read_text(encoding="utf-8")
+
+        expected_sibling_providers = provider_ready_repos_from_manifest() - {"aoa-kag"}
+        self.assertEqual(expected_sibling_providers, set(CANARY_PROVIDER_ROOT_ENVS))
+        for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
+            with self.subTest(repo=repo):
+                self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", canary)
+                self.assertIn(f"repository: 8Dionysus/{repo}", canary)
+                self.assertIn(f"path: .deps/{repo}", canary)
 
     def test_active_docs_route_to_lane_ids_instead_of_full_sequences(self) -> None:
         active_docs = (

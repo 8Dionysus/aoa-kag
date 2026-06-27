@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterator
 from unittest.mock import patch
 
-from generation import common, consumer, context, federation, governance, handoff, registry
+from generation import common, consumer, context, federation, governance, handoff, provider_map, registry
 from generation import regrounding, source_refs, technique, tos
 
 
@@ -22,6 +22,7 @@ GENERATION_MODULES = (
     regrounding,
     governance,
     consumer,
+    provider_map,
 )
 
 READ_JSON_MODULES = tuple(

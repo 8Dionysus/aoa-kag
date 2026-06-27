@@ -98,3 +98,11 @@ The validated provider packet gives future `aoa-kag-mcp` four access planes:
 | `aoa-kag` | `kag/` | local subtree schema and readiness matrix |
 | `Tree-of-Sophia` | `kag/` | ToS source-owned KAG export and graph projection |
 | `aoa-techniques` | `kag/` | technique source-owned KAG export and AOA-T-0043 bundle |
+| `aoa-skills` | `kag/` | skill graph and canonical skill source home |
+| `Agents-of-Abyss` | `kag/` | ecosystem registry and federation rules |
+| `aoa-agents` | `kag/` | agent source-home manifest and role registry |
+| `aoa-playbooks` | `kag/` | playbook source-home manifest and scenario registry |
+| `aoa-memo` | `kag/` | memory registry and reviewed memory corpus route |
+| `aoa-evals` | `kag/` | eval report index and proof bundle route |
+| `aoa-routing` | `kag/` | routing source-home manifest and cross-repo registry |
+| `aoa-sdk` | `kag/` | SDK source-home manifest and typed KAG helper route |

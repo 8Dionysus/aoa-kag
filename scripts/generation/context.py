@@ -33,11 +33,18 @@ AOA_PLAYBOOKS_ROOT = repo_root_from_env(
 AOA_EVALS_ROOT = repo_root_from_env("AOA_EVALS_ROOT", REPO_ROOT.parent / "aoa-evals")
 AOA_MEMO_ROOT = repo_root_from_env("AOA_MEMO_ROOT", REPO_ROOT.parent / "aoa-memo")
 AOA_AGENTS_ROOT = repo_root_from_env("AOA_AGENTS_ROOT", REPO_ROOT.parent / "aoa-agents")
+AGENTS_OF_ABYSS_ROOT = repo_root_from_env(
+    "AGENTS_OF_ABYSS_ROOT", REPO_ROOT.parent / "Agents-of-Abyss"
+)
+AOA_ROUTING_ROOT = repo_root_from_env("AOA_ROUTING_ROOT", REPO_ROOT.parent / "aoa-routing")
+AOA_SDK_ROOT = repo_root_from_env("AOA_SDK_ROOT", REPO_ROOT.parent / "aoa-sdk")
+AOA_SKILLS_ROOT = repo_root_from_env("AOA_SKILLS_ROOT", REPO_ROOT.parent / "aoa-skills")
 TREE_OF_SOPHIA_ROOT = repo_root_from_env(
     "TREE_OF_SOPHIA_ROOT", REPO_ROOT.parent / "Tree-of-Sophia"
 )
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
+LOCAL_KAG_READINESS_MANIFEST_PATH = REPO_ROOT / "manifests" / "local_kag_readiness.json"
 TECHNIQUE_LIFT_PART_ROOT = (
     REPO_ROOT / "mechanics" / "distillation" / "parts" / "technique-lift"
 )
@@ -313,6 +320,10 @@ EVAL_CATALOG_PATH = AOA_EVALS_ROOT / "generated" / "eval_catalog.min.json"
 
 REGISTRY_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.json"
 REGISTRY_MIN_OUTPUT_PATH = REPO_ROOT / "generated" / "kag_registry.min.json"
+LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH = REPO_ROOT / "generated" / "local_kag_provider_map.json"
+LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "local_kag_provider_map.min.json"
+)
 TECHNIQUE_LIFT_OUTPUT_PATH = (
     TECHNIQUE_LIFT_PART_ROOT / "generated" / "technique_lift_pack.json"
 )
@@ -475,11 +486,15 @@ KAG_REGISTRY_ARTIFACT_IDENTITY = {
 }
 KNOWN_REPO_ROOTS = {
     KAG_REPO: REPO_ROOT,
-    "aoa-techniques": AOA_TECHNIQUES_ROOT,
-    "aoa-playbooks": AOA_PLAYBOOKS_ROOT,
+    "Agents-of-Abyss": AGENTS_OF_ABYSS_ROOT,
+    "aoa-agents": AOA_AGENTS_ROOT,
     "aoa-evals": AOA_EVALS_ROOT,
     "aoa-memo": AOA_MEMO_ROOT,
-    "aoa-agents": AOA_AGENTS_ROOT,
+    "aoa-playbooks": AOA_PLAYBOOKS_ROOT,
+    "aoa-routing": AOA_ROUTING_ROOT,
+    "aoa-sdk": AOA_SDK_ROOT,
+    "aoa-skills": AOA_SKILLS_ROOT,
+    "aoa-techniques": AOA_TECHNIQUES_ROOT,
     TOS_REPO: TREE_OF_SOPHIA_ROOT,
 }
 COMPATIBILITY_REF_ALIASES = {

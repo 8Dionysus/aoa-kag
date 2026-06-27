@@ -59,6 +59,19 @@ EXPECTED_OS_SURFACE_CLASSES = {
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 REQUIRED_MCP_SHAPE = {"resource", "root"}
+EXPECTED_PROVIDER_READY_REPOS = {
+    "Agents-of-Abyss",
+    "Tree-of-Sophia",
+    "aoa-agents",
+    "aoa-evals",
+    "aoa-kag",
+    "aoa-memo",
+    "aoa-playbooks",
+    "aoa-routing",
+    "aoa-sdk",
+    "aoa-skills",
+    "aoa-techniques",
+}
 
 PROVIDER_RECORD_DIRS = {
     "nodes": "nodeRecord",
@@ -69,9 +82,8 @@ PROVIDER_RECORD_DIRS = {
 }
 
 PROVIDER_REPO_ROOTS = {
-    "aoa-kag": REPO_ROOT,
-    "Tree-of-Sophia": TREE_OF_SOPHIA_ROOT,
-    "aoa-techniques": REPO_ROOT.parent / "aoa-techniques",
+    repo: KNOWN_REPO_ROOTS[repo]
+    for repo in EXPECTED_PROVIDER_READY_REPOS
 }
 
 AUTHORITY_PHRASES = (
@@ -237,8 +249,12 @@ def _validate_readiness_matrix(payload: dict[str, object]) -> None:
         if not entry.get("owner_return_routes"):
             fail(f"local KAG readiness row {repo} must keep owner_return_routes")
 
-    if not {"aoa-kag", "Tree-of-Sophia", "aoa-techniques"} <= ready_repos:
-        fail("local KAG readiness matrix must include aoa-kag, Tree-of-Sophia, and aoa-techniques as provider-ready")
+    if not EXPECTED_PROVIDER_READY_REPOS <= ready_repos:
+        missing = sorted(EXPECTED_PROVIDER_READY_REPOS - ready_repos)
+        fail(
+            "local KAG readiness matrix must include every current source-ready "
+            f"provider repo as provider-ready: {', '.join(missing)}"
+        )
 
     _validate_os_surfaces(payload)
 

@@ -26,6 +26,7 @@ generation. `scripts/generate_kag.py` is the CLI entrypoint and
 | `regrounding.py` | return-regrounding payload construction |
 | `governance.py` | KAG maturity governance payload construction |
 | `consumer.py` | tiny-consumer bundle and counterpart exposure review payload construction |
+| `provider_map.py` | local KAG provider map and MCP handoff payload construction |
 | `writer.py` | generated output orchestration and output path contract |
 | `__init__.py` | package re-export surface for the compatibility facade |
 

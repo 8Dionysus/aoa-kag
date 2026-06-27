@@ -17,6 +17,13 @@
       "source_class": "kag_contract",
       "role": "supporting",
       "authority": "authored_source"
+    },
+    {
+      "repo": "aoa-kag",
+      "path": "generated/local_kag_provider_map.min.json",
+      "source_class": "generated_readmodel",
+      "role": "supporting",
+      "authority": "derived_readmodel"
     }
   ],
   "source_owner": "aoa-kag",
@@ -55,5 +62,5 @@
     "node:kag:os-surface-layer",
     "index:kag:provider-readiness"
   ],
-  "consumer_shape": "resource exposes schema, direct repo readiness, OS surface readiness, and owner-return pointers"
+  "consumer_shape": "resource exposes schema, provider map, direct repo readiness, OS surface readiness, owner-return pointers, and MCP handoff planes"
 }
