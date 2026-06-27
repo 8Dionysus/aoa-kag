@@ -193,6 +193,18 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("source-ready provider repo", str(context.exception))
 
+    def test_local_kag_provider_roots_cover_source_ready_providers(self) -> None:
+        self.assertEqual(
+            local_kag_subtree.EXPECTED_PROVIDER_READY_REPOS,
+            set(local_kag_subtree.PROVIDER_REPO_ROOTS),
+        )
+        for repo in local_kag_subtree.EXPECTED_PROVIDER_READY_REPOS:
+            with self.subTest(repo=repo):
+                self.assertEqual(
+                    local_kag_subtree.KNOWN_REPO_ROOTS[repo],
+                    local_kag_subtree.PROVIDER_REPO_ROOTS[repo],
+                )
+
     def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)

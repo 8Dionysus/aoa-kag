@@ -82,9 +82,8 @@ PROVIDER_RECORD_DIRS = {
 }
 
 PROVIDER_REPO_ROOTS = {
-    "aoa-kag": REPO_ROOT,
-    "Tree-of-Sophia": TREE_OF_SOPHIA_ROOT,
-    "aoa-techniques": REPO_ROOT.parent / "aoa-techniques",
+    repo: KNOWN_REPO_ROOTS[repo]
+    for repo in EXPECTED_PROVIDER_READY_REPOS
 }
 
 AUTHORITY_PHRASES = (
