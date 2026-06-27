@@ -8,12 +8,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
 CURRENT_DEPENDENCY_PINS = {
-    "Tree-of-Sophia": "3b658722d9aeb2bcfadbebffd9e648e31f72cd90",
+    "Tree-of-Sophia": "c6151cc658e45bf5d3ac2f9409a4f6b5523b58cd",
     "aoa-memo": "5f87c4f2db09738eae8ba782a7dff26b4be76c62",
     "aoa-playbooks": "5667de359e7aae2f9b409435cb8fcacaab2d37b1",
     "aoa-evals": "0bed981d9fc2974d6ba2af235d33836322d3c98e",
     "aoa-agents": "3ac8066e74fd7bc0a4235b3b8ee057de99b8fb19",
-    "aoa-techniques": "1a7d146957108ecefc24219c7d56357c5a4a2c2c",
+    "aoa-techniques": "8ab16bc88e88a928d28e33384756ca426ebfa2d6",
 }
 
 

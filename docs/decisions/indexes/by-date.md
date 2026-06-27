@@ -25,3 +25,7 @@
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
+
+## 2026-06-26
+
+- [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)

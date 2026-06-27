@@ -2,75 +2,75 @@
 
 ## Applies to
 
-This card applies to `kag/` and every nested path until a nearer `AGENTS.md`
-narrows the lane.
+This card applies to `kag/` and every nested path until a nearer card narrows
+the lane.
 
 ## Role
 
-`kag/` is the KAG source-home preflight for `aoa-kag`.
+`kag/` is the KAG source home and local provider home for `aoa-kag`.
 
-It owns the route law for KAG-owned local-subtree protocol posture: what a
-future repo-local KAG organ would need to make indexes, nodes, edges,
-projections, receipts, source refs, and owner-return routes reviewable.
+It owns the operating route for repo-local KAG subtrees: manifest shape,
+portable record classes, source refs, owner-return routes, validation receipts,
+registry/composition readiness, and MCP-readable resource shape.
 
-It does not own current generated payloads, root manifests, live graph stores,
-vector indexes, embedding caches, runtime databases, proof verdicts, memory
-truth, routing policy, source-authored meaning, or sibling repository `/kag`
-directories.
+## Operating Card
 
-## Read before editing
+| Field | Route |
+| --- | --- |
+| input | local subtree schema, example packet, readiness matrix, provider records |
+| output | active local provider packet, protocol docs, validation receipt, registry/composition inputs |
+| owner | `kag/AGENTS.md`, `kag/README.md`, `kag/source_home.manifest.json`, `kag/manifest.json` |
+| next route | source surface -> local provider record -> readiness matrix -> registry/composition -> runtime/MCP consumer |
+| validation | local subtree validator, source-fast lane, touched sibling owner checks |
 
-1. root `AGENTS.md`
-2. `DESIGN.md`
-3. `DESIGN.AGENTS.md` when route-card form or local guidance changes
-4. `kag/README.md`
-5. `kag/source_home.manifest.json`
-6. `kag/LOCAL_SUBTREE_PROTOCOL.md`
-7. `docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`
-8. nearest decision record when source-home, protocol, or rollout status changes
-9. affected source-owner, manifest, generated, schema, script, test, mechanics,
-   or runtime-owner surfaces named by the protocol route
+## Source Routes
 
-## Boundaries
+- `schemas/local-kag-subtree.schema.json`
+- `examples/local_kag_subtree.example.json`
+- `manifests/local_kag_readiness.json`
+- `scripts/validators/local_kag_subtree.py`
+- `tests/test_validate_kag.py`
 
-- Keep this home source-home-preflight-first until reviewed KAG record schemas,
-  examples, validators, and a pilot owner exist.
-- Keep `source_home.manifest.json` aligned with the active source families in
-  this directory.
-- Do not create `nodes/`, `edges/`, `indexes/`, `projections/`, `receipts/`, or
-  sibling `/kag` directories by template copying.
-- Do not move current `manifests/`, `generated/`, `schemas/`, `examples/`,
-  `scripts/`, `tests/`, or `mechanics/` payloads here by symmetry.
-- Do not store live graph databases, vector stores, embedding indexes, runtime
-  caches, benchmark outputs, or mutable search state in this repository home.
-- Do not treat local subtree records as authored source truth; every future
-  record must remain source-linked and returnable to the owning repository.
-- Do not treat indexes as proof, ranking truth, routing authority, or memory
-  acceptance.
+## Provider Records
+
+| Surface | Role |
+| --- | --- |
+| `manifest.json` | local provider manifest |
+| `nodes/` | source-linked contract and readiness nodes |
+| `edges/` | bounded relation records between local nodes |
+| `indexes/` | lightweight inventory records |
+| `projections/` | MCP/resource-facing compact views |
+| `receipts/` | validation and freshness receipts |
+
+## Boundary Routes
+
+| Pressure | Route |
+| --- | --- |
+| authored meaning in a source repository | owning source repository |
+| proof verdicts and scoring | `aoa-evals` |
+| durable memory truth | `aoa-memo` |
+| dispatch and route authority | `aoa-routing` |
+| runtime graph, vector, cache, worker, or deployment state | `abyss-stack` and `.aoa` runtime stores |
+| portable KAG protocol, registry, composition, and provider validation | `aoa-kag` |
 
 ## Validation
 
-For `kag/` source-home or protocol changes, run:
+For this home:
 
 ```bash
-python scripts/validate_nested_agents.py
-python -m unittest tests.test_kag_home tests.test_nested_agents_docs
+python -m unittest tests.test_kag_home tests.test_validate_kag
 ```
 
-For structural, decision, or release-facing changes, also run:
+For source-fast coverage:
 
 ```bash
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
 python scripts/ci_gate.py --mode source-fast
 ```
 
-Do not claim sibling `/kag` rollout readiness until a future protocol validator,
-schema/example lane, and pilot owner exist.
+For provider-ready sibling checkouts, run each touched owner route after the
+`aoa-kag` validator names the provider packet clean.
 
 ## Closeout
 
-Report whether the `kag/` source-home manifest, protocol, stop-line, generated
-payload posture, mechanics posture, or sibling rollout posture changed; which
-checks ran; which checks were skipped; and which owner route should handle the
-next local-subtree step.
+Report changed provider records, readiness rows, registry/composition surfaces,
+validation run, sibling checks, and the next consumer route for `aoa-kag-mcp`.

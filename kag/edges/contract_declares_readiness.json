@@ -1,0 +1,55 @@
+{
+  "schema_version": "aoa-local-kag-record-v1",
+  "repo": "aoa-kag",
+  "local_id": "edge:kag-contract:declares-readiness",
+  "record_class": "edge",
+  "source_refs": [
+    {
+      "repo": "aoa-kag",
+      "path": "schemas/local-kag-subtree.schema.json",
+      "source_class": "kag_contract",
+      "role": "primary",
+      "authority": "authored_source"
+    },
+    {
+      "repo": "aoa-kag",
+      "path": "manifests/local_kag_readiness.json",
+      "source_class": "kag_contract",
+      "role": "supporting",
+      "authority": "authored_source"
+    }
+  ],
+  "source_owner": "aoa-kag",
+  "provenance_mode": "strict_source_linked",
+  "derived_method": "schema and readiness manifest relation",
+  "generated_or_authored": "authored_control",
+  "status": "active",
+  "owner_return_route": {
+    "repo": "aoa-kag",
+    "surface": "kag/LOCAL_SUBTREE_PROTOCOL.md",
+    "route_kind": "validation"
+  },
+  "freshness": {
+    "mode": "source_snapshot",
+    "state": "current",
+    "checked_ref": "manifests/local_kag_readiness.json"
+  },
+  "builder": {
+    "route": "local KAG provider record",
+    "surface": "kag/manifest.json"
+  },
+  "validator": {
+    "route": "scripts/validate_kag.py",
+    "lane": "local-kag"
+  },
+  "storage_posture": {
+    "git_surface": "portable_records",
+    "payload_class": "edge",
+    "runtime_route": "source-repo"
+  },
+  "consumer_route": "aoa-kag registry",
+  "from_id": "node:kag:local-subtree-contract",
+  "to_id": "node:kag:readiness-matrix",
+  "edge_kind": "declares",
+  "edge_trace": "schemas/local-kag-subtree.schema.json defines the readiness packet consumed by manifests/local_kag_readiness.json"
+}

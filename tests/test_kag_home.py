@@ -13,19 +13,10 @@ EXPECTED_ROOT_FILES = {
     "README.md",
     "LOCAL_SUBTREE_PROTOCOL.md",
     "source_home.manifest.json",
+    "manifest.json",
 }
 
-RESERVED_FUTURE_SURFACES = {
-    "manifest.json",
-    "nodes/",
-    "edges/",
-    "indexes/",
-    "projections/",
-    "receipts/",
-}
-
-FORBIDDEN_ACTIVE_PAYLOAD_PATHS = {
-    "manifest.json",
+EXPECTED_RECORD_DIRS = {
     "nodes",
     "edges",
     "indexes",
@@ -37,98 +28,97 @@ EXPECTED_ACTIVE_FAMILIES = {
     "home_route_cards",
     "source_home_manifest",
     "local_subtree_protocol",
+    "provider_manifest",
+    "node_records",
+    "edge_records",
+    "index_records",
+    "projection_records",
+    "receipt_records",
 }
 
-EXPECTED_SOURCE_HOME_EVIDENCE = {
+EXPECTED_PROVIDER_READY_REPOS = {
+    "aoa-kag",
     "Tree-of-Sophia",
-    "aoa-agents",
-    "aoa-playbooks",
-    "aoa-routing",
-    "aoa-sdk",
-    "aoa-skills",
     "aoa-techniques",
-    "aoa-memo",
-    "aoa-evals",
-    "Agents-of-Abyss",
 }
 
-def load_manifest() -> dict[str, object]:
-    payload = json.loads((KAG_ROOT / "source_home.manifest.json").read_text(encoding="utf-8"))
+
+def load_json(relative_path: str) -> dict[str, object]:
+    payload = json.loads((REPO_ROOT / relative_path).read_text(encoding="utf-8"))
     assert isinstance(payload, dict)
     return payload
 
 
 class KagHomeTests(unittest.TestCase):
-    def test_kag_home_root_files_are_exact_and_present(self) -> None:
+    def test_kag_home_root_files_and_record_dirs_are_present(self) -> None:
         root_files = {
             path.name
             for path in KAG_ROOT.iterdir()
             if path.is_file()
         }
+        root_dirs = {
+            path.name
+            for path in KAG_ROOT.iterdir()
+            if path.is_dir()
+        }
 
         self.assertEqual(EXPECTED_ROOT_FILES, root_files)
+        self.assertEqual(EXPECTED_RECORD_DIRS, root_dirs)
+        for directory in EXPECTED_RECORD_DIRS:
+            with self.subTest(directory=directory):
+                self.assertTrue(list((KAG_ROOT / directory).glob("*.json")))
 
-        manifest = load_manifest()
-        self.assertEqual("aoa_kag_source_home_preflight_v1", manifest["schema_version"])
+    def test_source_home_manifest_names_active_protocol_and_provider_families(self) -> None:
+        manifest = load_json("kag/source_home.manifest.json")
+
+        self.assertEqual("aoa_kag_source_home_v2", manifest["schema_version"])
         self.assertEqual("aoa-kag", manifest["owner_repo"])
         self.assertEqual("kag/", manifest["home"])
-        self.assertEqual("preflight", manifest["status"])
-        self.assertIn(
-            "docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md",
-            manifest["decision_refs"],
-        )
+        self.assertEqual("active_protocol_provider", manifest["status"])
+        self.assertEqual(EXPECTED_PROVIDER_READY_REPOS, set(manifest["provider_ready_repos"]))
 
-    def test_source_home_manifest_names_only_active_preflight_families(self) -> None:
-        manifest = load_manifest()
         branches = manifest["branches"]
         self.assertIsInstance(branches, list)
-        self.assertEqual(["preflight_contract"], [branch["id"] for branch in branches])
-        self.assertEqual("kag/", branches[0]["path"])
-        self.assertEqual(sorted(EXPECTED_ACTIVE_FAMILIES), sorted(branches[0]["families"]))
+        self.assertEqual(["protocol", "provider_packet"], [branch["id"] for branch in branches])
 
         families = manifest["families"]
         self.assertIsInstance(families, list)
         self.assertEqual(EXPECTED_ACTIVE_FAMILIES, {family["id"] for family in families})
         for family in families:
             with self.subTest(family=family["id"]):
-                self.assertEqual("preflight_contract", family["branch"])
                 self.assertIn("owner_surface", family)
                 self.assertIn("validators", family)
                 for source_file in family["source_files"]:
                     self.assertTrue((REPO_ROOT / source_file).is_file())
 
-    def test_reserved_future_surfaces_are_named_but_not_created(self) -> None:
-        manifest = load_manifest()
-        surfaces = {
-            item["path"]
-            for item in manifest["reserved_future_surfaces"]
-        }
+    def test_provider_manifest_names_all_record_classes_and_consumers(self) -> None:
+        manifest = load_json("kag/manifest.json")
 
-        self.assertEqual(RESERVED_FUTURE_SURFACES, surfaces)
-        for relative_path in FORBIDDEN_ACTIVE_PAYLOAD_PATHS:
-            with self.subTest(path=relative_path):
-                self.assertFalse((KAG_ROOT / relative_path).exists())
+        self.assertEqual("aoa-local-kag-manifest-v1", manifest["schema_version"])
+        self.assertEqual("aoa-kag", manifest["repo"])
+        self.assertEqual("kag/AGENTS.md", manifest["owner_surface"])
+        self.assertEqual(
+            {"node", "edge", "index", "projection", "receipt"},
+            set(manifest["record_classes"]),
+        )
+        self.assertIn("aoa-kag registry", manifest["consumer_routes"])
+        self.assertIn("aoa-kag-mcp resource", manifest["consumer_routes"])
 
-    def test_source_home_evidence_map_names_real_home_pattern_repos(self) -> None:
-        readme = (KAG_ROOT / "README.md").read_text(encoding="utf-8")
-
-        self.assertIn("This is about the AoA source-home pattern.", readme)
-        for repo in EXPECTED_SOURCE_HOME_EVIDENCE:
-            with self.subTest(repo=repo):
-                self.assertIn(repo, readme)
-
-    def test_protocol_docs_keep_runtime_and_sibling_rollout_stop_lines(self) -> None:
+    def test_protocol_and_route_docs_name_current_provider_flow(self) -> None:
         readme = (KAG_ROOT / "README.md").read_text(encoding="utf-8")
         protocol = (KAG_ROOT / "LOCAL_SUBTREE_PROTOCOL.md").read_text(encoding="utf-8")
         agents = (KAG_ROOT / "AGENTS.md").read_text(encoding="utf-8")
 
-        self.assertIn("source-home preflight", readme)
-        self.assertIn("It is not a payload warehouse.", readme)
-        self.assertIn("No sibling `/kag` rollout from this home yet.", readme)
-        self.assertIn("Do not create sibling `/kag` directories", protocol)
-        self.assertIn("live graph databases", protocol)
-        self.assertIn("source_home.manifest.json", agents)
-        self.assertIn("Do not create `nodes/`, `edges/`, `indexes/`", agents)
+        self.assertIn("KAG Source Home", readme)
+        self.assertIn("Current Files", readme)
+        self.assertIn("Tree-of-Sophia", readme)
+        self.assertIn("aoa-techniques", readme)
+        self.assertIn("OS Surface Layer", readme)
+        self.assertIn("connectors", readme)
+        self.assertIn("Required Home", protocol)
+        self.assertIn("MCP Access Shape", protocol)
+        self.assertIn("runtime_source_repo", protocol)
+        self.assertIn("Provider Records", agents)
         self.assertIn("## Closeout", agents)
 
 

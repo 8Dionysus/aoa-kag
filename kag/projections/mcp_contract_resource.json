@@ -1,0 +1,59 @@
+{
+  "schema_version": "aoa-local-kag-record-v1",
+  "repo": "aoa-kag",
+  "local_id": "projection:mcp:kag-contract-resource",
+  "record_class": "projection",
+  "source_refs": [
+    {
+      "repo": "aoa-kag",
+      "path": "schemas/local-kag-subtree.schema.json",
+      "source_class": "kag_contract",
+      "role": "primary",
+      "authority": "authored_source"
+    },
+    {
+      "repo": "aoa-kag",
+      "path": "manifests/local_kag_readiness.json",
+      "source_class": "kag_contract",
+      "role": "supporting",
+      "authority": "authored_source"
+    }
+  ],
+  "source_owner": "aoa-kag",
+  "provenance_mode": "strict_source_linked",
+  "derived_method": "MCP-readable contract resource projection",
+  "generated_or_authored": "generated_from_source",
+  "status": "active",
+  "owner_return_route": {
+    "repo": "aoa-kag",
+    "surface": "kag/LOCAL_SUBTREE_PROTOCOL.md",
+    "route_kind": "validation"
+  },
+  "freshness": {
+    "mode": "source_snapshot",
+    "state": "current",
+    "checked_ref": "schemas/local-kag-subtree.schema.json"
+  },
+  "builder": {
+    "route": "local KAG provider record",
+    "surface": "kag/manifest.json"
+  },
+  "validator": {
+    "route": "scripts/validate_kag.py",
+    "lane": "local-kag"
+  },
+  "storage_posture": {
+    "git_surface": "compact_readmodel",
+    "payload_class": "projection",
+    "runtime_route": "source-repo"
+  },
+  "consumer_route": "aoa-kag-mcp resource",
+  "projection_kind": "mcp_packet",
+  "source_record_ids": [
+    "node:kag:local-subtree-contract",
+    "node:kag:readiness-matrix",
+    "node:kag:os-surface-layer",
+    "index:kag:provider-readiness"
+  ],
+  "consumer_shape": "resource exposes schema, direct repo readiness, OS surface readiness, and owner-return pointers"
+}

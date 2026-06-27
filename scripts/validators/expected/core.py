@@ -32,6 +32,12 @@ TREE_OF_SOPHIA_ROOT = repo_root_from_env(
 
 SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-registry.schema.json"
 
+LOCAL_KAG_SUBTREE_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-subtree.schema.json"
+
+LOCAL_KAG_SUBTREE_EXAMPLE_PATH = REPO_ROOT / "examples" / "local_kag_subtree.example.json"
+
+LOCAL_KAG_READINESS_MANIFEST_PATH = REPO_ROOT / "manifests" / "local_kag_readiness.json"
+
 BRIDGE_SCHEMA_PATH = (
     TOS_RETRIEVAL_AXIS_PART_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"
 )

@@ -13,7 +13,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import validate_kag
-from scripts.validators import example_contracts, local_contracts
+from scripts.validators import example_contracts, local_contracts, local_kag_subtree
 from scripts.validators.examples import bridge_examples
 
 
@@ -116,6 +116,70 @@ class ValidateKagTestCase(unittest.TestCase):
                 example_contracts.validate_bridge_envelope_example()
 
         self.assertIn("memory_refs[0]", str(context.exception))
+
+    def test_local_kag_example_rejects_edge_without_local_node_target(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        edge = broken_payload["records"]["edges"][0]
+        edge["to_id"] = "node:missing"
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_contract()
+
+        self.assertIn("to_id", str(context.exception))
+
+    def test_local_kag_readiness_rejects_missing_direct_repo(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        broken_payload["repos"] = [
+            entry for entry in broken_payload["repos"] if entry["repo"] != "aoa-stats"
+        ]
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_contract()
+
+        self.assertIn("every direct OS Abyss repo", str(context.exception))
+
+    def test_local_kag_readiness_rejects_missing_os_surface(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        broken_payload["os_surfaces"] = [
+            entry for entry in broken_payload["os_surfaces"] if entry["surface_id"] != ".aoa"
+        ]
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_contract()
+
+        self.assertIn("every OS surface class", str(context.exception))
+
+    def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+
+        with patch.object(Path, "is_dir", return_value=False):
+            with patch.object(local_kag_subtree, "STRICT_OS_SURFACE_ROOTS", False):
+                local_kag_subtree._validate_os_surfaces(payload)
 
 
 if __name__ == "__main__":

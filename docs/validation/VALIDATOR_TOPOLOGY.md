@@ -42,6 +42,7 @@ implementation lives in `scripts/validators/`.
 | `scripts/validators/source_refs.py` | source reference resolution |
 | `scripts/validators/schema_surfaces.py` | JSON schema checks |
 | `scripts/validators/local_contracts.py` | local route, mechanics skeleton, questbook, antifragility, and ToS tiny-entry checks |
+| `scripts/validators/local_kag_subtree.py` | repo-local KAG subtree schema, example, readiness, and record-link checks |
 | `scripts/validators/manifest_contracts.py` | manifest contract facade |
 | `scripts/validators/manifests/technique_lift.py` | technique-lift manifest checks |
 | `scripts/validators/manifests/tos_text_chunk_map.py` | ToS text chunk map manifest checks |
