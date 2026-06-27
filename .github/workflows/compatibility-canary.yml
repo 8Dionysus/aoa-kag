@@ -18,6 +18,10 @@ jobs:
       TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
       AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+      AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
+      AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
+      AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
+      AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -27,6 +31,12 @@ jobs:
         with:
           repository: 8Dionysus/Tree-of-Sophia
           path: .deps/Tree-of-Sophia
+
+      - name: Checkout Agents-of-Abyss
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/Agents-of-Abyss
+          path: .deps/Agents-of-Abyss
 
       - name: Checkout aoa-memo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -57,6 +67,24 @@ jobs:
         with:
           repository: 8Dionysus/aoa-techniques
           path: .deps/aoa-techniques
+
+      - name: Checkout aoa-routing
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-routing
+          path: .deps/aoa-routing
+
+      - name: Checkout aoa-sdk
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-sdk
+          path: .deps/aoa-sdk
+
+      - name: Checkout aoa-skills
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-skills
+          path: .deps/aoa-skills
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
