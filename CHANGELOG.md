@@ -7,6 +7,15 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+### Summary
+
+- the current post-`v0.4.0` line activates the first repo-local KAG provider
+  foundation and keeps the published `v0.4.0` release memory aligned with the
+  reconstructed release evidence
+- the local `/kag` layer is now a source-home contract surface for portable
+  records and MCP-facing access shape, while live graph, vector, embedding,
+  index, runtime, and cache state remain outside Git
+
 ### Added
 
 - Activate the first repo-local KAG provider foundation under `kag/`, including
@@ -21,21 +30,83 @@ Tracking starts with the community-docs baseline for this repository.
 - Align the release workflow dependency pins with the merged
   `Tree-of-Sophia/kag/` and `aoa-techniques/kag/` provider homes so
   `aoa-kag` validates against the current source-owned provider surfaces.
+- Reconcile the published `v0.4.0` changelog and GitHub Release notes against
+  the actual tag range instead of the older narrow release-prep summary.
+
+### Validation
+
+- the repository release lane in `docs/validation/COMMAND_AUTHORITY.md`
+- GitHub `Repo Validation` for the landed local KAG provider and changelog
+  closeout PRs
 
 ## [0.4.0] - 2026-06-26
 
 ### Summary
 
+- `v0.4.0` closes the post-`v0.2.2` release-prep span: 31 first-parent
+  commits, 908 changed tracked paths, PRs through `#109`, 13 active mechanics
+  packages, 28 functioning parts, 10 decision records, and 60 local
+  `AGENTS.md` route cards
+- the largest changed surfaces were `mechanics/` (421 paths), `.agents/`
+  portable agent and skill exports (238), `scripts/` (110), `docs/` (48),
+  `tests/` (22), `generated/` (20), `quests/` (10), and `evals/` (6), matching
+  the intended repository-shaping release rather than an unrelated code-only
+  bump
 - this release hardens `aoa-kag` from a growing derived-substrate pilot into a
-  cleaner release-ready KAG topology with mechanics, validators, scripts,
-  tests, generation, command authority, and root-doc routes separated by owner
-  function
+  release-ready KAG topology with mechanics, validators, scripts, tests,
+  generation, command authority, design routes, local eval pressure, decision
+  rationale, and root-doc routes separated by owner function
 - the KAG layer remains bounded: generated graph-ready and retrieval-ready
   surfaces are source-linked derived read models, not source truth, proof,
   routing, memory truth, runtime state, or a full graph engine
 - release evidence now includes stronger KAG registry artifact identity,
   local-source-home and eval-route preflight, decision-lane modeling, and a
   compact public README front door
+
+### Reconciliation Basis
+
+- This dated release section was reconstructed from
+  `git log --first-parent v0.2.2..v0.4.0`,
+  `git diff --name-status v0.2.2..v0.4.0`, merged PR metadata, the tagged
+  release commit, decision records, current route cards, validation topology,
+  and the published GitHub Release rather than from changelog prose alone.
+- Future `Unreleased` entries should record stable route, owner, and
+  validation changes without live commit totals, changed-path totals, or PR
+  ranges; dated release sections own exact reconciliation.
+- The release-prep commit itself changed version, changelog, roadmap,
+  release-route, and roadmap-parity surfaces only; the release section below
+  records the accumulated landed topology it published.
+
+### Final Route Sweep
+
+- Root entry surfaces now route first reading, authority boundary, design,
+  agent-surface design, mechanics, local `/kag`, model boundary, decisions,
+  manifests, generated surfaces, schemas/examples, validators, agent
+  companions, eval pressure, and future direction to their owning local
+  surfaces.
+- `README.md`, `AGENTS.md`, `CHARTER.md`, `DESIGN.md`,
+  `DESIGN.AGENTS.md`, `ROADMAP.md`, `docs/README.md`, `docs/RELEASING.md`,
+  and validation docs now stay compact and route-oriented instead of carrying
+  detailed package inventories or duplicated command blocks.
+- Mechanics now live under `mechanics/` as repeatable KAG operation topology
+  with package route cards, parts, provenance, validation, and part-local test
+  coverage.
+- Generated outputs stay derived companions; manifests, schemas, examples,
+  builders, validators, tests, and generated-source owners now name the local
+  surface that owns their claim.
+- The local eval port under `evals/` captures KAG-local proof pressure while
+  verdict, scoring, regression, and proof doctrine remain in `aoa-evals`.
+
+### Derived-Substrate Boundary
+
+- `aoa-kag` owns derived KAG metadata, source-linked projection posture,
+  bridge and handoff surfaces, federation and regrounding seams, artifact
+  identity checks, and framework-neutral local `/kag` protocol contracts.
+- Source repositories still own authored meaning; `aoa-evals` owns proof
+  verdicts; `aoa-memo` owns durable memory truth; `aoa-routing` owns routing
+  policy; `aoa-agents` owns role meaning; `aoa-playbooks` owns scenario
+  composition; `aoa-skills` owns executable skill workflow; `aoa-techniques`
+  owns reusable practice; `Tree-of-Sophia` owns authored knowledge architecture.
 
 ### Added
 
@@ -99,23 +170,36 @@ Tracking starts with the community-docs baseline for this repository.
   memo KAG bridge routes, eval catalog path guards, AGENTS topology, roadmap
   parity, and contributor/release docs against the current OS Abyss route law.
 
+### Moved Or Retired
+
+- Move active KAG mechanics material from flat root-adjacent surfaces into
+  owner-shaped mechanics packages and functioning parts, with package-local
+  `PROVENANCE.md` and `legacy/` bridges preserving historical accounting.
+- Move the Codex Spark lane from root `Spark/` posture into `.agents/spark/`
+  so agent-session material follows the agent companion lane.
+- Retire command duplication from narrative docs; executable validation routes
+  now live in `AGENTS.md`, nearest route cards, validation docs, release docs,
+  lane manifests, and owning part `VALIDATION.md` surfaces.
+
 ### Validation
 
-- Release validation used the release lane in
-  `docs/validation/COMMAND_AUTHORITY.md`.
-- Release preflight used `docs/RELEASING.md` and the AoA release audit route
-  for `aoa-kag`.
-- The release range was rebuilt from the landed post-`v0.2.2` first-parent
-  history, not from changelog prose alone.
+- the repository release lane in `docs/validation/COMMAND_AUTHORITY.md`
+- GitHub `Repo Validation` on release PR `#109`
+- Release command authority was checked through
+  `docs/validation/COMMAND_AUTHORITY.md`, `config/validation_lanes.json`, and
+  the `docs/RELEASING.md` release route
 
 ### Notes
 
-- this is a bounded derived-substrate release over the landed post-`v0.2.2`
-  history; source repositories still own authored meaning and proof
-  repositories still own verdict posture
-- this release prep changes version and release documentation surfaces only;
-  it does not widen KAG ownership, activate a full graph engine, or alter
-  generated payload semantics
+- this dated section is the canonical `v0.4.0` release contour; it records the
+  accumulated repository-shaping work published by tag `v0.4.0`, not only the
+  final release-prep commit
+- this release does not widen KAG ownership, activate a full graph engine, or
+  turn generated/read-model payloads into source truth
+- detailed source movement remains discoverable through mechanics
+  `PROVENANCE.md`, package-local `legacy/`, decision records, validation
+  inventories, and generated-source owners; this changelog records the release
+  contour rather than a full file inventory
 
 ## [0.2.2] - 2026-04-23
 
