@@ -37,7 +37,10 @@ EXPECTED_ACTIVE_FAMILIES = {
 }
 
 EXPECTED_PROVIDER_READY_REPOS = {
+    "8Dionysus",
+    "ATM10-Agent",
     "Agents-of-Abyss",
+    "Dionysus",
     "aoa-kag",
     "aoa-agents",
     "aoa-evals",
@@ -46,6 +49,7 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "aoa-routing",
     "aoa-sdk",
     "aoa-skills",
+    "aoa-stats",
     "Tree-of-Sophia",
     "aoa-techniques",
 }
@@ -122,6 +126,10 @@ class KagHomeTests(unittest.TestCase):
         self.assertIn("Tree-of-Sophia", readme)
         self.assertIn("aoa-techniques", readme)
         self.assertIn("aoa-skills", readme)
+        self.assertIn("8Dionysus", readme)
+        self.assertIn("ATM10-Agent", readme)
+        self.assertIn("Dionysus", readme)
+        self.assertIn("aoa-stats", readme)
         self.assertIn("OS Surface Layer", readme)
         self.assertIn("connectors", readme)
         self.assertIn("Required Home", protocol)

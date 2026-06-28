@@ -106,3 +106,7 @@ The validated provider packet gives future `aoa-kag-mcp` four access planes:
 | `aoa-evals` | `kag/` | eval report index and proof bundle route |
 | `aoa-routing` | `kag/` | routing source-home manifest and cross-repo registry |
 | `aoa-sdk` | `kag/` | SDK source-home manifest and typed KAG helper route |
+| `8Dionysus` | `kag/` | public ecosystem profile and workspace memory map |
+| `Dionysus` | `kag/` | seed garden route map and registry |
+| `ATM10-Agent` | `kag/` | project-local KAG runtime and operator runbook route |
+| `aoa-stats` | `kag/` | derived KAG stats observability registry |

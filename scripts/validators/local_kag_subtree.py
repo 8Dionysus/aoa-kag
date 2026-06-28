@@ -60,7 +60,10 @@ EXPECTED_OS_SURFACE_CLASSES = {
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 REQUIRED_MCP_SHAPE = {"resource", "root"}
 EXPECTED_PROVIDER_READY_REPOS = {
+    "8Dionysus",
+    "ATM10-Agent",
     "Agents-of-Abyss",
+    "Dionysus",
     "Tree-of-Sophia",
     "aoa-agents",
     "aoa-evals",
@@ -70,6 +73,7 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "aoa-routing",
     "aoa-sdk",
     "aoa-skills",
+    "aoa-stats",
     "aoa-techniques",
 }
 

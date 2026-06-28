@@ -4,13 +4,12 @@
   "owner_repo": "aoa-kag",
   "source_ref": "manifests/local_kag_readiness.json",
   "provider_status_counts": {
-    "provider_ready": 11,
-    "runtime_consumer": 1,
-    "source_preparation": 3
+    "provider_ready": 15
   },
   "providers": [
     {
       "repo": "aoa-kag",
+      "provider_status": "provider_ready",
       "adoption_order": 0,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -28,6 +27,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "tests/test_validate_kag.py",
+          "state": "current",
+          "validator": "scripts/validate_kag.py",
+          "owner_return_route": {
+            "repo": "aoa-kag",
+            "surface": "scripts/validators/local_kag_subtree.py",
+            "route_kind": "validation"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-kag",
@@ -82,6 +94,7 @@
     },
     {
       "repo": "Tree-of-Sophia",
+      "provider_status": "provider_ready",
       "adoption_order": 1,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -99,6 +112,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "scripts/validate_local_kag_provider.py",
+          "state": "current",
+          "validator": "local KAG provider validator",
+          "owner_return_route": {
+            "repo": "Tree-of-Sophia",
+            "surface": "scripts/validate_local_kag_provider.py",
+            "route_kind": "validation"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "Tree-of-Sophia",
@@ -126,10 +152,6 @@
         {
           "route": "scripts/validate_local_kag_provider.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         },
         {
           "route": "scripts/release_check.py",
@@ -162,6 +184,7 @@
     },
     {
       "repo": "aoa-techniques",
+      "provider_status": "provider_ready",
       "adoption_order": 2,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -179,6 +202,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "scripts/validators/projection_kag.py",
+          "state": "current",
+          "validator": "scripts/validate_repo.py",
+          "owner_return_route": {
+            "repo": "aoa-techniques",
+            "surface": "scripts/validators/projection_kag.py",
+            "route_kind": "validation"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-techniques",
@@ -206,10 +242,6 @@
         {
           "route": "scripts/validate_repo.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         },
         {
           "route": "scripts/ci_gate.py --mode source-fast",
@@ -241,6 +273,7 @@
     },
     {
       "repo": "aoa-skills",
+      "provider_status": "provider_ready",
       "adoption_order": 3,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -258,6 +291,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "skills/README.md",
+          "state": "current",
+          "validator": "scripts/lanes/ci_gate.py --mode source-fast",
+          "owner_return_route": {
+            "repo": "aoa-skills",
+            "surface": "skills/README.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-skills",
@@ -286,86 +332,12 @@
           "source_class": "skill_source",
           "role": "supporting",
           "authority": "derived_readmodel"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-approval-gate-check/SKILL.md",
-          "source_class": "skill_source",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-approval-gate-check/techniques.yaml",
-          "source_class": "skill_source",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-dry-run-first/SKILL.md",
-          "source_class": "skill_source",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-dry-run-first/techniques.yaml",
-          "source_class": "skill_source",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-local-stack-bringup/SKILL.md",
-          "source_class": "skill_source",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-local-stack-bringup/techniques.yaml",
-          "source_class": "skill_source",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-safe-infra-change/SKILL.md",
-          "source_class": "skill_source",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-safe-infra-change/techniques.yaml",
-          "source_class": "skill_source",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-sanitized-share/SKILL.md",
-          "source_class": "skill_source",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-skills",
-          "path": "skills/risk/aoa-sanitized-share/techniques.yaml",
-          "source_class": "skill_source",
-          "role": "supporting",
-          "authority": "authored_source"
         }
       ],
       "validation_routes": [
         {
           "route": "scripts/lanes/ci_gate.py --mode source-fast",
           "lane": "source-fast"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -389,6 +361,7 @@
     },
     {
       "repo": "Agents-of-Abyss",
+      "provider_status": "provider_ready",
       "adoption_order": 4,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -406,6 +379,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "docs/FEDERATION_RULES.md",
+          "state": "current",
+          "validator": "scripts/release_gate/release_check.py",
+          "owner_return_route": {
+            "repo": "Agents-of-Abyss",
+            "surface": "docs/FEDERATION_RULES.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "Agents-of-Abyss",
@@ -440,10 +426,6 @@
         {
           "route": "scripts/release_gate/release_check.py",
           "lane": "release"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -466,6 +448,7 @@
     },
     {
       "repo": "aoa-agents",
+      "provider_status": "provider_ready",
       "adoption_order": 5,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -483,6 +466,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "agents/README.md",
+          "state": "current",
+          "validator": "scripts/validate_agent_source_home.py",
+          "owner_return_route": {
+            "repo": "aoa-agents",
+            "surface": "agents/README.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-agents",
@@ -517,10 +513,6 @@
         {
           "route": "scripts/validate_agent_source_home.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -542,6 +534,7 @@
     },
     {
       "repo": "aoa-playbooks",
+      "provider_status": "provider_ready",
       "adoption_order": 6,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -559,6 +552,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "playbooks/README.md",
+          "state": "current",
+          "validator": "scripts/validate_playbooks.py",
+          "owner_return_route": {
+            "repo": "aoa-playbooks",
+            "surface": "playbooks/README.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-playbooks",
@@ -586,10 +592,6 @@
         {
           "route": "scripts/validate_playbooks.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -611,6 +613,7 @@
     },
     {
       "repo": "aoa-memo",
+      "provider_status": "provider_ready",
       "adoption_order": 7,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -628,6 +631,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "memo/README.md",
+          "state": "current",
+          "validator": "scripts/ci_gate.py --mode source-fast",
+          "owner_return_route": {
+            "repo": "aoa-memo",
+            "surface": "memo/README.md",
+            "route_kind": "memory"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-memo",
@@ -655,10 +671,6 @@
         {
           "route": "scripts/ci_gate.py --mode source-fast",
           "lane": "source-fast"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -681,6 +693,7 @@
     },
     {
       "repo": "aoa-evals",
+      "provider_status": "provider_ready",
       "adoption_order": 8,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -698,6 +711,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "evals/README.md",
+          "state": "current",
+          "validator": "scripts/validate_repo.py",
+          "owner_return_route": {
+            "repo": "aoa-evals",
+            "surface": "evals/README.md",
+            "route_kind": "proof"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-evals",
@@ -725,10 +751,6 @@
         {
           "route": "scripts/validate_repo.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -751,6 +773,7 @@
     },
     {
       "repo": "aoa-routing",
+      "provider_status": "provider_ready",
       "adoption_order": 9,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -768,6 +791,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "routing/README.md",
+          "state": "current",
+          "validator": "scripts/validate_source_home.py",
+          "owner_return_route": {
+            "repo": "aoa-routing",
+            "surface": "routing/README.md",
+            "route_kind": "routing"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-routing",
@@ -802,10 +838,6 @@
         {
           "route": "scripts/validate_source_home.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -828,6 +860,7 @@
     },
     {
       "repo": "aoa-sdk",
+      "provider_status": "provider_ready",
       "adoption_order": 10,
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
@@ -845,6 +878,19 @@
         "projections": 1,
         "receipts": 1
       },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "sdk/README.md",
+          "state": "current",
+          "validator": "scripts/validate_sdk_source_home.py",
+          "owner_return_route": {
+            "repo": "aoa-sdk",
+            "surface": "sdk/README.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
       "source_surfaces": [
         {
           "repo": "aoa-sdk",
@@ -866,23 +912,12 @@
           "source_class": "sdk_source",
           "role": "supporting",
           "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-sdk",
-          "path": "src/aoa_sdk/kag/registry.py",
-          "source_class": "sdk_source",
-          "role": "supporting",
-          "authority": "authored_source"
         }
       ],
       "validation_routes": [
         {
           "route": "scripts/validate_sdk_source_home.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -902,16 +937,84 @@
         "tool",
         "root"
       ]
-    }
-  ],
-  "remaining_routes": [
+    },
     {
       "repo": "8Dionysus",
+      "provider_status": "provider_ready",
       "adoption_order": 12,
-      "provider_status": "source_preparation",
-      "candidate_source_surfaces": [
-        "README.md",
-        "docs/WORKSPACE_MEMORY_MAP.md"
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "generated/workspace_memory_map.min.json",
+          "state": "current",
+          "validator": "python scripts/validate_workspace_memory_map.py",
+          "owner_return_route": {
+            "repo": "8Dionysus",
+            "surface": "README.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "8Dionysus",
+          "path": "generated/workspace_memory_map.min.json",
+          "source_class": "route_source",
+          "role": "primary",
+          "authority": "derived_readmodel"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "README.md",
+          "source_class": "route_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "docs/WORKSPACE_MEMORY_MAP.md",
+          "source_class": "route_source",
+          "role": "supporting",
+          "authority": "derived_readmodel"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "docs/START_HERE.md",
+          "source_class": "route_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "python scripts/build_workspace_memory_map.py --check",
+          "lane": "owner-local"
+        },
+        {
+          "route": "python scripts/validate_workspace_memory_map.py",
+          "lane": "owner-local"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "abyss-stack federation mirror",
+        "aoa-kag-mcp resource"
       ],
       "owner_return_routes": [
         {
@@ -927,12 +1030,88 @@
     },
     {
       "repo": "Dionysus",
+      "provider_status": "provider_ready",
       "adoption_order": 13,
-      "provider_status": "source_preparation",
-      "candidate_source_surfaces": [
-        "README.md",
-        "seed_notes/",
-        "seed_staging/"
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "generated/seed_route_map.min.json",
+          "state": "current",
+          "validator": "python scripts/validate_seed_surfaces.py",
+          "owner_return_route": {
+            "repo": "Dionysus",
+            "surface": "README.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "Dionysus",
+          "path": "generated/seed_route_map.min.json",
+          "source_class": "route_source",
+          "role": "primary",
+          "authority": "derived_readmodel"
+        },
+        {
+          "repo": "Dionysus",
+          "path": "seed-registry.yaml",
+          "source_class": "route_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "Dionysus",
+          "path": "README.md",
+          "source_class": "route_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "Dionysus",
+          "path": "seed_notes/README.md",
+          "source_class": "route_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "Dionysus",
+          "path": "seed_staging/README.md",
+          "source_class": "route_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "python scripts/validate_seed_surfaces.py",
+          "lane": "owner-local"
+        },
+        {
+          "route": "python scripts/build_seed_route_map.py --check",
+          "lane": "owner-local"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "abyss-stack federation mirror",
+        "aoa-kag-mcp resource"
       ],
       "owner_return_routes": [
         {
@@ -948,12 +1127,84 @@
     },
     {
       "repo": "ATM10-Agent",
+      "provider_status": "provider_ready",
       "adoption_order": 14,
-      "provider_status": "runtime_consumer",
-      "candidate_source_surfaces": [
-        "README.md",
-        "docs/RUNBOOK.md",
-        "src/kag"
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "src/kag/baseline.py",
+          "state": "current",
+          "validator": "python -m pytest",
+          "owner_return_route": {
+            "repo": "ATM10-Agent",
+            "surface": "docs/RUNBOOK.md",
+            "route_kind": "runtime"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "ATM10-Agent",
+          "path": "src/kag/baseline.py",
+          "source_class": "runtime_advisory",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "ATM10-Agent",
+          "path": "src/kag/neo4j_backend.py",
+          "source_class": "runtime_advisory",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "ATM10-Agent",
+          "path": "docs/RUNBOOK.md",
+          "source_class": "runtime_advisory",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "ATM10-Agent",
+          "path": "docs/SOURCE_OF_TRUTH.md",
+          "source_class": "runtime_advisory",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "ATM10-Agent",
+          "path": "README.md",
+          "source_class": "runtime_advisory",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "python -m pytest",
+          "lane": "owner-local"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "project-local runtime",
+        "aoa-kag-mcp resource"
       ],
       "owner_return_routes": [
         {
@@ -970,11 +1221,88 @@
     },
     {
       "repo": "aoa-stats",
+      "provider_status": "provider_ready",
       "adoption_order": 15,
-      "provider_status": "source_preparation",
-      "candidate_source_surfaces": [
-        "generated/agon_kag_stats_observability_registry.min.json",
-        "src/"
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "generated/agon_kag_stats_observability_registry.min.json",
+          "state": "current",
+          "validator": "python scripts/validate_repo.py",
+          "owner_return_route": {
+            "repo": "aoa-stats",
+            "surface": "README.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "aoa-stats",
+          "path": "generated/agon_kag_stats_observability_registry.min.json",
+          "source_class": "stats_source",
+          "role": "primary",
+          "authority": "derived_readmodel"
+        },
+        {
+          "repo": "aoa-stats",
+          "path": "generated/summary_surface_catalog.min.json",
+          "source_class": "stats_source",
+          "role": "supporting",
+          "authority": "derived_readmodel"
+        },
+        {
+          "repo": "aoa-stats",
+          "path": "README.md",
+          "source_class": "stats_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-stats",
+          "path": "docs/BOUNDARIES.md",
+          "source_class": "stats_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-stats",
+          "path": "docs/ARCHITECTURE.md",
+          "source_class": "stats_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "python scripts/build_views.py --check",
+          "lane": "owner-local"
+        },
+        {
+          "route": "python scripts/validate_repo.py",
+          "lane": "owner-local"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "abyss-stack federation mirror",
+        "aoa-kag-mcp resource"
       ],
       "owner_return_routes": [
         {
@@ -985,10 +1313,12 @@
       ],
       "mcp_access_shape": [
         "resource",
+        "tool",
         "root"
       ]
     }
   ],
+  "remaining_routes": [],
   "os_surfaces": [
     {
       "surface_id": "src/abyss-stack",

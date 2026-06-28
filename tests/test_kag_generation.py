@@ -212,6 +212,25 @@ class KagGenerationTestCase(unittest.TestCase):
             },
         )
 
+    def test_local_kag_provider_map_carries_status_and_freshness_handles(self) -> None:
+        payload = kag_generation.build_local_kag_provider_map_payload()
+
+        self.assertEqual([], payload["remaining_routes"])
+        for provider in payload["providers"]:
+            with self.subTest(repo=provider["repo"]):
+                self.assertEqual("provider_ready", provider["provider_status"])
+                self.assertEqual(
+                    {"nodes", "edges", "indexes", "projections", "receipts"},
+                    set(provider["record_counts"]),
+                )
+                self.assertTrue(provider["freshness_handles"])
+                for handle in provider["freshness_handles"]:
+                    self.assertIn("receipt_ref", handle)
+                    self.assertIn("checked_ref", handle)
+                    self.assertIn("state", handle)
+                    self.assertIn("validator", handle)
+                    self.assertIn("owner_return_route", handle)
+
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         self.assert_builder_matches_generated(

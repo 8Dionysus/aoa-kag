@@ -178,7 +178,7 @@ class ValidateKagTestCase(unittest.TestCase):
         assert isinstance(payload, dict)
         broken_payload = copy.deepcopy(payload)
         for entry in broken_payload["repos"]:
-            if entry["repo"] == "aoa-skills":
+            if entry["repo"] == "8Dionysus":
                 entry["provider_status"] = "candidate"
                 break
 

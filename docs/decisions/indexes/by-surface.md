@@ -31,6 +31,7 @@
 ## generated readmodel
 
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 
 ## generated/maturity
 
@@ -45,6 +46,7 @@
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 
 ## manifests
 
@@ -55,6 +57,7 @@
 ## MCP handoff
 
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 
 ## mechanics/topology
 
@@ -98,6 +101,7 @@
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 
 ## test topology
 
@@ -121,3 +125,4 @@
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)

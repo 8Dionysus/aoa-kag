@@ -71,6 +71,42 @@ def _provider_record_counts(
     return result
 
 
+def _provider_freshness_handles(
+    repo: str, fallback_provider: dict[str, object] | None
+) -> list[dict[str, object]]:
+    root = resolve_repo_path(repo, "kag")
+    if not root.exists() and fallback_provider is not None:
+        handles = fallback_provider.get("freshness_handles")
+        if not isinstance(handles, list):
+            fail(f"{repo} fallback local KAG provider must declare freshness_handles")
+        return handles
+
+    receipts_dir = root / "receipts"
+    if not receipts_dir.is_dir():
+        fail(f"{repo} local KAG provider is missing kag/receipts/")
+    handles: list[dict[str, object]] = []
+    for path in sorted(receipts_dir.glob("*.json")):
+        receipt = read_json(path)
+        if not isinstance(receipt, dict):
+            fail(f"{repo} local KAG receipt must be a JSON object: {path.as_posix()}")
+        freshness = receipt.get("freshness")
+        validator = receipt.get("validator")
+        if not isinstance(freshness, dict) or not isinstance(validator, dict):
+            fail(f"{repo} local KAG receipt must declare freshness and validator")
+        handles.append(
+            {
+                "receipt_ref": f"kag/receipts/{path.name}",
+                "checked_ref": freshness["checked_ref"],
+                "state": freshness["state"],
+                "validator": validator["route"],
+                "owner_return_route": receipt["owner_return_route"],
+            }
+        )
+    if not handles:
+        fail(f"{repo} local KAG provider must keep freshness receipts")
+    return handles
+
+
 def build_local_kag_provider_map_payload() -> dict[str, object]:
     readiness = read_json(LOCAL_KAG_READINESS_MANIFEST_PATH)
     if not isinstance(readiness, dict):
@@ -97,11 +133,13 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
             providers.append(
                 {
                     "repo": repo,
+                    "provider_status": status,
                     "adoption_order": entry["adoption_order"],
                     "local_kag_path": "kag/",
                     "manifest_ref": "kag/manifest.json",
                     "record_class_coverage": entry["first_record_classes"],
                     "record_counts": _provider_record_counts(repo, fallback_provider),
+                    "freshness_handles": _provider_freshness_handles(repo, fallback_provider),
                     "source_surfaces": manifest["source_surfaces"],
                     "validation_routes": manifest["validation_routes"],
                     "consumer_routes": manifest["consumer_routes"],
