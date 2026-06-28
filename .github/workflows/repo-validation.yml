@@ -20,7 +20,6 @@ jobs:
       AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
       AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
-      AOA_SESSION_MEMORY_ROOT: ${{ github.workspace }}/.deps/aoa-session-memory
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
     steps:
       - name: Checkout
@@ -88,13 +87,6 @@ jobs:
           repository: 8Dionysus/aoa-sdk
           ref: a49420fc86133f78d554401c46e7d2230cdd7b1e
           path: .deps/aoa-sdk
-
-      - name: Checkout aoa-session-memory
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-session-memory
-          ref: a48fbc9a134b86cc9cadb2eec458ca0a7fd803b5
-          path: .deps/aoa-session-memory
 
       - name: Checkout aoa-skills
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

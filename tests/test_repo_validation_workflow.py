@@ -17,7 +17,6 @@ CURRENT_DEPENDENCY_PINS = {
     "aoa-techniques": "8ab16bc88e88a928d28e33384756ca426ebfa2d6",
     "aoa-routing": "986098c46ea813b0f61a2cc240c5438ce489d46d",
     "aoa-sdk": "a49420fc86133f78d554401c46e7d2230cdd7b1e",
-    "aoa-session-memory": "a48fbc9a134b86cc9cadb2eec458ca0a7fd803b5",
     "aoa-skills": "02cc977f5080aa6736cf35fd0eb4ded7b167342e",
 }
 
