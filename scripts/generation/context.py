@@ -42,6 +42,14 @@ AOA_SKILLS_ROOT = repo_root_from_env("AOA_SKILLS_ROOT", REPO_ROOT.parent / "aoa-
 TREE_OF_SOPHIA_ROOT = repo_root_from_env(
     "TREE_OF_SOPHIA_ROOT", REPO_ROOT.parent / "Tree-of-Sophia"
 )
+EIGHT_DIONYSUS_ROOT = repo_root_from_env(
+    "EIGHT_DIONYSUS_ROOT", REPO_ROOT.parent / "8Dionysus"
+)
+DIONYSUS_ROOT = repo_root_from_env("DIONYSUS_ROOT", REPO_ROOT.parent / "Dionysus")
+ATM10_AGENT_ROOT = repo_root_from_env(
+    "ATM10_AGENT_ROOT", REPO_ROOT.parent / "ATM10-Agent"
+)
+AOA_STATS_ROOT = repo_root_from_env("AOA_STATS_ROOT", REPO_ROOT.parent / "aoa-stats")
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
 LOCAL_KAG_READINESS_MANIFEST_PATH = REPO_ROOT / "manifests" / "local_kag_readiness.json"
@@ -486,7 +494,10 @@ KAG_REGISTRY_ARTIFACT_IDENTITY = {
 }
 KNOWN_REPO_ROOTS = {
     KAG_REPO: REPO_ROOT,
+    "8Dionysus": EIGHT_DIONYSUS_ROOT,
+    "ATM10-Agent": ATM10_AGENT_ROOT,
     "Agents-of-Abyss": AGENTS_OF_ABYSS_ROOT,
+    "Dionysus": DIONYSUS_ROOT,
     "aoa-agents": AOA_AGENTS_ROOT,
     "aoa-evals": AOA_EVALS_ROOT,
     "aoa-memo": AOA_MEMO_ROOT,
@@ -494,6 +505,7 @@ KNOWN_REPO_ROOTS = {
     "aoa-routing": AOA_ROUTING_ROOT,
     "aoa-sdk": AOA_SDK_ROOT,
     "aoa-skills": AOA_SKILLS_ROOT,
+    "aoa-stats": AOA_STATS_ROOT,
     "aoa-techniques": AOA_TECHNIQUES_ROOT,
     TOS_REPO: TREE_OF_SOPHIA_ROOT,
 }

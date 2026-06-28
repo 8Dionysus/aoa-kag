@@ -12,6 +12,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     env:
+      EIGHT_DIONYSUS_ROOT: ${{ github.workspace }}/.deps/8Dionysus
+      DIONYSUS_ROOT: ${{ github.workspace }}/.deps/Dionysus
+      ATM10_AGENT_ROOT: ${{ github.workspace }}/.deps/ATM10-Agent
+      AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
       AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
       AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
@@ -37,6 +41,24 @@ jobs:
         with:
           repository: 8Dionysus/Agents-of-Abyss
           path: .deps/Agents-of-Abyss
+
+      - name: Checkout 8Dionysus
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/8Dionysus
+          path: .deps/8Dionysus
+
+      - name: Checkout Dionysus
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/Dionysus
+          path: .deps/Dionysus
+
+      - name: Checkout ATM10-Agent
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/ATM10-Agent
+          path: .deps/ATM10-Agent
 
       - name: Checkout aoa-memo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -85,6 +107,12 @@ jobs:
         with:
           repository: 8Dionysus/aoa-skills
           path: .deps/aoa-skills
+
+      - name: Checkout aoa-stats
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stats
+          path: .deps/aoa-stats
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405

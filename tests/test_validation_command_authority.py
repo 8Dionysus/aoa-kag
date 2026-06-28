@@ -21,7 +21,10 @@ INLINE_EXECUTABLE_VALIDATION_COMMAND = re.compile(
     r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+status\b)[^`]+`"
 )
 CANARY_PROVIDER_ROOT_ENVS = {
+    "8Dionysus": "EIGHT_DIONYSUS_ROOT",
+    "ATM10-Agent": "ATM10_AGENT_ROOT",
     "Agents-of-Abyss": "AGENTS_OF_ABYSS_ROOT",
+    "Dionysus": "DIONYSUS_ROOT",
     "Tree-of-Sophia": "TREE_OF_SOPHIA_ROOT",
     "aoa-agents": "AOA_AGENTS_ROOT",
     "aoa-evals": "AOA_EVALS_ROOT",
@@ -30,6 +33,7 @@ CANARY_PROVIDER_ROOT_ENVS = {
     "aoa-routing": "AOA_ROUTING_ROOT",
     "aoa-sdk": "AOA_SDK_ROOT",
     "aoa-skills": "AOA_SKILLS_ROOT",
+    "aoa-stats": "AOA_STATS_ROOT",
     "aoa-techniques": "AOA_TECHNIQUES_ROOT",
 }
 

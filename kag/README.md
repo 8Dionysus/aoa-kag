@@ -72,6 +72,10 @@ The provider-ready homes are:
 | `aoa-evals` | `kag/` | `generated/eval_report_index.min.json` |
 | `aoa-routing` | `kag/` | `routing/source_home.manifest.json` |
 | `aoa-sdk` | `kag/` | `sdk/source_home.manifest.json` |
+| `8Dionysus` | `kag/` | `generated/workspace_memory_map.min.json` |
+| `Dionysus` | `kag/` | `generated/seed_route_map.min.json` |
+| `ATM10-Agent` | `kag/` | `src/kag/baseline.py` |
+| `aoa-stats` | `kag/` | `generated/agon_kag_stats_observability_registry.min.json` |
 
 All homes expose the same record classes while returning to their own source
 owners.

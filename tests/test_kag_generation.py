@@ -175,6 +175,20 @@ class KagGenerationTestCase(unittest.TestCase):
                 expected_payload,
             )
 
+    def test_local_kag_provider_map_rejects_receipt_without_checked_ref(self) -> None:
+        receipt_path = kag_generation.REPO_ROOT / "kag" / "receipts" / "validation_receipt.json"
+        broken_receipt = load_json(receipt_path)
+        assert isinstance(broken_receipt, dict)
+        freshness = broken_receipt["freshness"]
+        assert isinstance(freshness, dict)
+        freshness.pop("checked_ref")
+
+        with self.patched_read_json({receipt_path: broken_receipt}):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_local_kag_provider_map_payload()
+
+        self.assertIn("freshness.checked_ref", str(context.exception))
+
     def test_local_kag_provider_map_carries_mcp_handoff_planes(self) -> None:
         payload = kag_generation.build_local_kag_provider_map_payload()
         handoff = payload["mcp_handoff"]
@@ -211,6 +225,25 @@ class KagGenerationTestCase(unittest.TestCase):
                 "receipt": "receipts",
             },
         )
+
+    def test_local_kag_provider_map_carries_status_and_freshness_handles(self) -> None:
+        payload = kag_generation.build_local_kag_provider_map_payload()
+
+        self.assertEqual([], payload["remaining_routes"])
+        for provider in payload["providers"]:
+            with self.subTest(repo=provider["repo"]):
+                self.assertEqual("provider_ready", provider["provider_status"])
+                self.assertEqual(
+                    {"nodes", "edges", "indexes", "projections", "receipts"},
+                    set(provider["record_counts"]),
+                )
+                self.assertTrue(provider["freshness_handles"])
+                for handle in provider["freshness_handles"]:
+                    self.assertIn("receipt_ref", handle)
+                    self.assertIn("checked_ref", handle)
+                    self.assertIn("state", handle)
+                    self.assertIn("validator", handle)
+                    self.assertIn("owner_return_route", handle)
 
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
