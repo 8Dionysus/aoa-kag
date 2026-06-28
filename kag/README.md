@@ -77,6 +77,10 @@ The provider-ready homes are:
 | `Dionysus` | `kag/` | `generated/seed_route_map.min.json` |
 | `ATM10-Agent` | `kag/` | `src/kag/baseline.py` |
 | `aoa-stats` | `kag/` | `generated/agon_kag_stats_observability_registry.min.json` |
+| `aoa-4pda-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
+| `aoa-discord-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
+| `aoa-stackoverflow-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
+| `aoa-xda-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 
 All homes expose the same record classes while returning to their own source
 owners.

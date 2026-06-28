@@ -42,7 +42,9 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "Agents-of-Abyss",
     "Dionysus",
     "aoa-kag",
+    "aoa-4pda-connector",
     "aoa-agents",
+    "aoa-discord-connector",
     "aoa-evals",
     "aoa-memo",
     "aoa-playbooks",
@@ -51,8 +53,10 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "aoa-session-memory",
     "aoa-skills",
     "aoa-stats",
+    "aoa-stackoverflow-connector",
     "Tree-of-Sophia",
     "aoa-techniques",
+    "aoa-xda-connector",
 }
 
 
@@ -131,6 +135,10 @@ class KagHomeTests(unittest.TestCase):
         self.assertIn("ATM10-Agent", readme)
         self.assertIn("Dionysus", readme)
         self.assertIn("aoa-stats", readme)
+        self.assertIn("aoa-4pda-connector", readme)
+        self.assertIn("aoa-discord-connector", readme)
+        self.assertIn("aoa-stackoverflow-connector", readme)
+        self.assertIn("aoa-xda-connector", readme)
         self.assertIn("OS Surface Layer", readme)
         self.assertIn("connectors", readme)
         self.assertIn("Required Home", protocol)

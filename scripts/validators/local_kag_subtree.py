@@ -9,7 +9,9 @@ EXPECTED_DIRECT_REPOS = {
     "Agents-of-Abyss",
     "Dionysus",
     "Tree-of-Sophia",
+    "aoa-4pda-connector",
     "aoa-agents",
+    "aoa-discord-connector",
     "aoa-evals",
     "aoa-kag",
     "aoa-memo",
@@ -19,7 +21,9 @@ EXPECTED_DIRECT_REPOS = {
     "aoa-session-memory",
     "aoa-skills",
     "aoa-stats",
+    "aoa-stackoverflow-connector",
     "aoa-techniques",
+    "aoa-xda-connector",
 }
 
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
@@ -68,7 +72,9 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "Agents-of-Abyss",
     "Dionysus",
     "Tree-of-Sophia",
+    "aoa-4pda-connector",
     "aoa-agents",
+    "aoa-discord-connector",
     "aoa-evals",
     "aoa-kag",
     "aoa-memo",
@@ -78,7 +84,9 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "aoa-session-memory",
     "aoa-skills",
     "aoa-stats",
+    "aoa-stackoverflow-connector",
     "aoa-techniques",
+    "aoa-xda-connector",
 }
 
 PROVIDER_RECORD_DIRS = {

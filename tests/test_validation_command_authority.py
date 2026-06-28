@@ -36,7 +36,13 @@ CANARY_PROVIDER_ROOT_ENVS = {
     "aoa-stats": "AOA_STATS_ROOT",
     "aoa-techniques": "AOA_TECHNIQUES_ROOT",
 }
-CANARY_FALLBACK_PROVIDER_REPOS = {"aoa-session-memory"}
+CANARY_FALLBACK_PROVIDER_REPOS = {
+    "aoa-4pda-connector",
+    "aoa-discord-connector",
+    "aoa-session-memory",
+    "aoa-stackoverflow-connector",
+    "aoa-xda-connector",
+}
 
 
 def command_sequence_from_manifest(name: str) -> tuple[tuple[str, ...], ...]:
