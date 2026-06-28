@@ -1106,6 +1106,10 @@
         {
           "route": "python scripts/build_seed_route_map.py --check",
           "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag local subtree validator",
+          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
@@ -1244,7 +1248,7 @@
           "receipt_ref": "kag/receipts/validation_receipt.json",
           "checked_ref": "generated/agon_kag_stats_observability_registry.min.json",
           "state": "current",
-          "validator": "python scripts/validate_repo.py",
+          "validator": "python scripts/validate_agon_kag_stats_observability_registry.py",
           "owner_return_route": {
             "repo": "aoa-stats",
             "surface": "README.md",
@@ -1290,6 +1294,14 @@
         }
       ],
       "validation_routes": [
+        {
+          "route": "python scripts/build_agon_kag_stats_observability_registry.py --check",
+          "lane": "owner-local"
+        },
+        {
+          "route": "python scripts/validate_agon_kag_stats_observability_registry.py",
+          "lane": "owner-local"
+        },
         {
           "route": "python scripts/build_views.py --check",
           "lane": "owner-local"
