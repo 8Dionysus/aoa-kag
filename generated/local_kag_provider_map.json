@@ -85,6 +85,68 @@
           "route_kind": "validation"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "kag/",
+          "kag/source_home.manifest.json"
+        ],
+        "candidate_source_surfaces": [
+          "kag/LOCAL_SUBTREE_PROTOCOL.md",
+          "schemas/local-kag-subtree.schema.json",
+          "manifests/local_kag_readiness.json"
+        ],
+        "source_owned_exports": [
+          "generated/kag_registry.min.json"
+        ],
+        "graph_entities": [
+          "local KAG record",
+          "registry entry",
+          "composition packet"
+        ],
+        "event_surfaces": [
+          "quests/kag/"
+        ],
+        "document_surfaces": [
+          "DESIGN.md",
+          "docs/KAG_MODEL.md",
+          "kag/README.md"
+        ],
+        "validators": [
+          "scripts/validate_kag.py",
+          "scripts/ci_gate.py --mode source-fast"
+        ],
+        "release_gate": "python scripts/release_check.py",
+        "runtime_consumers": [
+          "abyss-stack Knowledge/federation",
+          "future aoa-kag-mcp"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 5,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 2,
+          "index": 1,
+          "node": 3,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 3
+        },
+        "builder_routes": [
+          {
+            "route": "local KAG provider record",
+            "surface": "kag/manifest.json",
+            "record_count": 7
+          },
+          {
+            "route": "python -m unittest tests.test_validate_kag",
+            "surface": "tests/test_validate_kag.py",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -179,6 +241,78 @@
           "route_kind": "source_export"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "ToS/",
+          "ToS/source_home.manifest.json"
+        ],
+        "candidate_source_surfaces": [
+          "ToS/derived-exports/README.md",
+          "mechanics/boundary-bridge/parts/derived-kag-seam/docs/KAG_EXPORT.md",
+          "ToS/canon/"
+        ],
+        "source_owned_exports": [
+          "ToS/derived-exports/kag_export.min.json",
+          "ToS/derived-exports/tos_corpus_index.min.json",
+          "ToS/derived-exports/philosophy_graph_projection.min.json"
+        ],
+        "graph_entities": [
+          "source node",
+          "corpus entry",
+          "philosophy atlas row",
+          "graph view"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "ToS/derived-exports/README.md",
+          "README.md",
+          "DESIGN.md"
+        ],
+        "validators": [
+          "mechanics/boundary-bridge/parts/derived-kag-seam/scripts/validate_kag_export.py",
+          "scripts/release_check.py"
+        ],
+        "release_gate": "python scripts/release_check.py",
+        "runtime_consumers": [
+          "abyss-stack Knowledge/federation",
+          "future aoa-kag-mcp"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 2,
+          "generated_from_source": 4
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 1,
+          "derived_readmodel": 1,
+          "source_owned_export": 1
+        },
+        "builder_routes": [
+          {
+            "route": "derived KAG seam generator",
+            "surface": "mechanics/boundary-bridge/parts/derived-kag-seam/scripts/generate_kag_export.py",
+            "record_count": 1
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          },
+          {
+            "route": "local KAG provider record",
+            "surface": "kag/manifest.json",
+            "record_count": 4
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -269,6 +403,76 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "techniques/"
+        ],
+        "candidate_source_surfaces": [
+          "docs/source-lift/KAG_EXPORT.md",
+          "techniques/knowledge-lift/AGENTS.md",
+          "generated/kag_export.min.json"
+        ],
+        "source_owned_exports": [
+          "generated/kag_export.min.json",
+          "generated/technique_intelligence_dag.min.json"
+        ],
+        "graph_entities": [
+          "technique",
+          "knowledge-lift shelf",
+          "relation hint",
+          "source-lift capsule"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "DESIGN.md",
+          "docs/source-lift/KAG_EXPORT.md"
+        ],
+        "validators": [
+          "repo release check",
+          "source-owned KAG export parity"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "abyss-stack Knowledge/federation",
+          "future aoa-kag-mcp"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 1,
+          "generated_from_source": 5
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 2,
+          "source_owned_export": 1
+        },
+        "builder_routes": [
+          {
+            "route": "KAG export builder",
+            "surface": "scripts/build_kag_export.py",
+            "record_count": 1
+          },
+          {
+            "route": "local KAG provider record",
+            "surface": "kag/manifest.json",
+            "record_count": 4
+          },
+          {
+            "route": "python scripts/validate_repo.py",
+            "surface": "scripts/validate_repo.py",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -430,6 +634,69 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "skills/"
+        ],
+        "candidate_source_surfaces": [
+          "skills/README.md",
+          "generated/skill_graph.json",
+          "generated/skill_bundle_index.json"
+        ],
+        "source_owned_exports": [
+          "generated/skill_graph.json",
+          "generated/skill_intelligence_registry.min.json"
+        ],
+        "graph_entities": [
+          "skill",
+          "trigger",
+          "support resource",
+          "runtime disclosure"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "DESIGN.md",
+          "skills/README.md"
+        ],
+        "validators": [
+          "repo source-fast lane"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "Codex skill installer",
+          "aoa-kag registry"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 2,
+          "generated_from_source": 4
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 11,
+          "derived_readmodel": 3
+        },
+        "builder_routes": [
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          },
+          {
+            "route": "skill catalog and graph builders",
+            "surface": "scripts/builders/build_catalog.py",
+            "record_count": 5
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -522,6 +789,68 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "docs/organ-contract/",
+          "mechanics/"
+        ],
+        "candidate_source_surfaces": [
+          "docs/FEDERATION_RULES.md",
+          "ECOSYSTEM_MAP.md",
+          "docs/organ-contract/README.md",
+          "generated/ecosystem_registry.min.json"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "organ",
+          "repository",
+          "federation rule",
+          "mechanic card"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "CHARTER.md",
+          "DESIGN.md",
+          "ECOSYSTEM_MAP.md"
+        ],
+        "validators": [
+          "repo release check"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-kag-mcp resource"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 2,
+          "generated_from_source": 4
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 3,
+          "derived_readmodel": 1
+        },
+        "builder_routes": [
+          {
+            "route": "center registry builder",
+            "surface": "generated/ecosystem_registry.min.json",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "prompt",
@@ -613,6 +942,66 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "agents/",
+          "agents/source_home.manifest.json"
+        ],
+        "candidate_source_surfaces": [
+          "agents/source_home.manifest.json",
+          "generated/agent_registry.min.json",
+          "generated/capability_pack_registry.min.json"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "agent role",
+          "capability pack",
+          "cohort"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "DESIGN.md",
+          "agents/README.md"
+        ],
+        "validators": [
+          "repo source-fast lane"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-agents runtime consumers"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 4,
+          "generated_from_source": 2
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 2,
+          "derived_readmodel": 2
+        },
+        "builder_routes": [
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 2
+          },
+          {
+            "route": "published surface builder",
+            "surface": "scripts/build_published_surfaces.py",
+            "record_count": 4
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -696,6 +1085,64 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "playbooks/",
+          "playbooks/source_home.manifest.json"
+        ],
+        "candidate_source_surfaces": [
+          "playbooks/source_home.manifest.json",
+          "generated/playbook_registry.min.json"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "playbook",
+          "campaign",
+          "trial kernel binding"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "DESIGN.md",
+          "playbooks/README.md"
+        ],
+        "validators": [
+          "repo source-fast lane"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "aoa-kag registry"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 2,
+          "derived_readmodel": 1
+        },
+        "builder_routes": [
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          },
+          {
+            "route": "playbook source-home validator",
+            "surface": "scripts/playbook_source_home.py",
+            "record_count": 5
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -779,6 +1226,66 @@
           "route_kind": "memory"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "memo/"
+        ],
+        "candidate_source_surfaces": [
+          "memo/README.md",
+          "generated/memory/memo_registry.min.json"
+        ],
+        "source_owned_exports": [
+          "generated/memory/memo_registry.min.json"
+        ],
+        "graph_entities": [
+          "memory object",
+          "memory corpus",
+          "memo registry row"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "DESIGN.md",
+          "memo/README.md"
+        ],
+        "validators": [
+          "repo source-fast lane"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-memo MCP"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 2,
+          "generated_from_source": 4
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 1,
+          "derived_readmodel": 2
+        },
+        "builder_routes": [
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          },
+          {
+            "route": "memory surface builders",
+            "surface": "scripts/memory/validate_memo.py",
+            "record_count": 5
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -863,6 +1370,66 @@
           "route_kind": "proof"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "evals/"
+        ],
+        "candidate_source_surfaces": [
+          "evals/README.md",
+          "generated/eval_report_index.min.json",
+          "reports/"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "eval suite",
+          "proof report",
+          "verdict lane"
+        ],
+        "event_surfaces": [
+          "reports/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "DESIGN.md",
+          "evals/README.md"
+        ],
+        "validators": [
+          "repo source-fast lane",
+          "release check"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-evals MCP"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 2,
+          "generated_from_source": 4
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 1,
+          "derived_readmodel": 2
+        },
+        "builder_routes": [
+          {
+            "route": "eval report index builder",
+            "surface": "scripts/generate_eval_report_index.py",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -954,6 +1521,64 @@
           "route_kind": "routing"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "routing/",
+          "routing/source_home.manifest.json"
+        ],
+        "candidate_source_surfaces": [
+          "routing/source_home.manifest.json",
+          "generated/cross_repo_registry.min.json"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "route",
+          "dispatch surface",
+          "cross repo registry row"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "routing/README.md"
+        ],
+        "validators": [
+          "repo source-fast lane"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-routing consumers"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 2,
+          "derived_readmodel": 2
+        },
+        "builder_routes": [
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          },
+          {
+            "route": "router builders",
+            "surface": "scripts/build_router.py",
+            "record_count": 5
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -1045,6 +1670,65 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "sdk/",
+          "sdk/source_home.manifest.json",
+          "src/aoa_sdk/kag"
+        ],
+        "candidate_source_surfaces": [
+          "sdk/source_home.manifest.json",
+          "src/aoa_sdk/kag"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "SDK facade",
+          "typed packet",
+          "contract helper"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "DESIGN.md",
+          "sdk/README.md"
+        ],
+        "validators": [
+          "repo release check"
+        ],
+        "release_gate": "repo-local release lane",
+        "runtime_consumers": [
+          "future aoa-kag-mcp",
+          "Python SDK users"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 4
+        },
+        "builder_routes": [
+          {
+            "route": "SDK source topology validator",
+            "surface": "scripts/validate_sdk_source_home.py",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -1159,6 +1843,71 @@
           "route_kind": "memory"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "kag/",
+          "schemas/",
+          "maps/",
+          "scripts/"
+        ],
+        "candidate_source_surfaces": [
+          "README.md",
+          "PIPELINE.md",
+          "READINESS.md",
+          "schemas/session.manifest.schema.json",
+          "maps/README.md",
+          "scripts/aoa_session_memory.py"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "session manifest",
+          "session segment",
+          "route signal",
+          "atlas route",
+          "graph packet"
+        ],
+        "event_surfaces": [
+          "hooks/",
+          "sessions/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "PIPELINE.md",
+          "READINESS.md",
+          "maps/README.md"
+        ],
+        "validators": [
+          "PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_session_memory.py",
+          "PYTHONDONTWRITEBYTECODE=1 python3 scripts/aoa_session_memory.py validate --workspace-root /tmp/aoa-session-memory-validate-workspace --aoa-root /tmp/aoa-session-memory-validate-workspace/.aoa"
+        ],
+        "release_gate": "repo-local pytest and validate lane",
+        "runtime_consumers": [
+          ".aoa runtime root",
+          "aoa-kag registry",
+          "aoa-kag-mcp resource"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 4,
+          "generated_from_source": 2
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 6
+        },
+        "builder_routes": [
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 6
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -1250,6 +1999,65 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "profile/"
+        ],
+        "candidate_source_surfaces": [
+          "README.md",
+          "docs/WORKSPACE_MEMORY_MAP.md",
+          "generated/workspace_memory_map.min.json"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "ecosystem repo",
+          "profile route",
+          "memory map row"
+        ],
+        "event_surfaces": [
+          "docs/WORKSPACE_MEMORY_MAP.md"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "docs/START_HERE.md"
+        ],
+        "validators": [
+          "python scripts/build_workspace_memory_map.py --check",
+          "python scripts/validate_workspace_memory_map.py"
+        ],
+        "release_gate": "repo-local source-fast lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-kag-mcp resource"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 1,
+          "generated_from_source": 5
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 2,
+          "derived_readmodel": 2
+        },
+        "builder_routes": [
+          {
+            "route": "python scripts/build_workspace_memory_map.py --check",
+            "surface": "scripts/build_workspace_memory_map.py",
+            "record_count": 1
+          },
+          {
+            "route": "workspace memory map builder",
+            "surface": "scripts/build_workspace_memory_map.py",
+            "record_count": 5
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -1351,6 +2159,70 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "seed_notes/",
+          "seed_staging/",
+          "seed_expansion/"
+        ],
+        "candidate_source_surfaces": [
+          "README.md",
+          "seed-registry.yaml",
+          "generated/seed_route_map.min.json",
+          "seed_notes/README.md",
+          "seed_staging/README.md"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "seed note",
+          "staging packet"
+        ],
+        "event_surfaces": [
+          "quests/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "seed_notes/README.md",
+          "seed_staging/README.md"
+        ],
+        "validators": [
+          "python scripts/validate_seed_surfaces.py",
+          "python scripts/build_seed_route_map.py --check"
+        ],
+        "release_gate": "repo-local validation lane",
+        "runtime_consumers": [
+          "future ingest pipeline",
+          "aoa-kag registry",
+          "aoa-kag-mcp resource"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 1,
+          "generated_from_source": 5
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 4,
+          "derived_readmodel": 1
+        },
+        "builder_routes": [
+          {
+            "route": "python scripts/build_seed_route_map.py --check",
+            "surface": "scripts/build_seed_route_map.py",
+            "record_count": 1
+          },
+          {
+            "route": "seed route map builder",
+            "surface": "scripts/build_seed_route_map.py",
+            "record_count": 5
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -1444,6 +2316,69 @@
           "route_kind": "runtime"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "src/kag"
+        ],
+        "candidate_source_surfaces": [
+          "README.md",
+          "docs/RUNBOOK.md",
+          "docs/SOURCE_OF_TRUTH.md",
+          "src/kag/baseline.py",
+          "src/kag/neo4j_backend.py"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "game session",
+          "retrieval result",
+          "KAG expansion row"
+        ],
+        "event_surfaces": [
+          "docs/RUNBOOK.md"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "docs/QWEN3_MODEL_STACK.md"
+        ],
+        "validators": [
+          "repo-local tests",
+          "KAG Neo4j guardrail workflow"
+        ],
+        "release_gate": "repo-local validation lane",
+        "runtime_consumers": [
+          "application runtime",
+          "Neo4j",
+          "Qdrant",
+          "aoa-kag registry",
+          "aoa-kag-mcp resource"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 2,
+          "generated_from_source": 4
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 5
+        },
+        "builder_routes": [
+          {
+            "route": "project-local KAG modules",
+            "surface": "src/kag/baseline.py",
+            "record_count": 5
+          },
+          {
+            "route": "python -m pytest",
+            "surface": "tests/",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -1550,6 +2485,69 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "src/"
+        ],
+        "candidate_source_surfaces": [
+          "generated/agon_kag_stats_observability_registry.min.json",
+          "generated/summary_surface_catalog.min.json",
+          "README.md",
+          "docs/BOUNDARIES.md"
+        ],
+        "source_owned_exports": [
+          "generated/agon_kag_stats_observability_registry.min.json",
+          "generated/summary_surface_catalog.min.json"
+        ],
+        "graph_entities": [
+          "metric registry",
+          "observability row"
+        ],
+        "event_surfaces": [
+          "systemd/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "docs/README.md"
+        ],
+        "validators": [
+          "python scripts/build_views.py --check",
+          "python scripts/validate_repo.py"
+        ],
+        "release_gate": "repo-local validation lane",
+        "runtime_consumers": [
+          "observability runtime",
+          "aoa-kag registry",
+          "aoa-kag-mcp resource"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 1,
+          "generated_from_source": 5
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 3,
+          "derived_readmodel": 2
+        },
+        "builder_routes": [
+          {
+            "route": "python scripts/build_agon_kag_stats_observability_registry.py --check",
+            "surface": "scripts/build_agon_kag_stats_observability_registry.py",
+            "record_count": 5
+          },
+          {
+            "route": "stats view builders",
+            "surface": "scripts/build_views.py",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "tool",
@@ -1655,6 +2653,70 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "kag/",
+          "connector/"
+        ],
+        "candidate_source_surfaces": [
+          "connector/README.md",
+          "connector/SOURCE_POLICY.md",
+          "connector/STORAGE_POLICY.md",
+          "BOUNDARIES.md",
+          "docs/RUNTIME_CONTRACT.md"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "connector",
+          "forum source",
+          "thread document",
+          "ingestion receipt"
+        ],
+        "event_surfaces": [
+          "evals/reports/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "BOUNDARIES.md",
+          "connector/README.md"
+        ],
+        "validators": [
+          "python scripts/validate_connector.py",
+          "PYTHONPATH=src python -m pytest -q"
+        ],
+        "release_gate": "repo-local connector validation lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-kag-mcp resource",
+          "abyss-stack connector runtime"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 6
+        },
+        "builder_routes": [
+          {
+            "route": "connector validation lane",
+            "surface": "scripts/validate_connector.py",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -1759,6 +2821,71 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "kag/",
+          "connector/"
+        ],
+        "candidate_source_surfaces": [
+          "connector/README.md",
+          "connector/SOURCE_POLICY.md",
+          "connector/STORAGE_POLICY.md",
+          "BOUNDARIES.md",
+          "docs/RUNTIME_CONTRACT.md"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "connector",
+          "server",
+          "channel",
+          "message event",
+          "ingestion receipt"
+        ],
+        "event_surfaces": [
+          "evals/reports/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "BOUNDARIES.md",
+          "connector/README.md"
+        ],
+        "validators": [
+          "python scripts/validate_connector.py",
+          "PYTHONPATH=src python -m pytest -q"
+        ],
+        "release_gate": "repo-local connector validation lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-kag-mcp resource",
+          "abyss-stack connector runtime"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 6
+        },
+        "builder_routes": [
+          {
+            "route": "connector validation lane",
+            "surface": "scripts/validate_connector.py",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -1863,6 +2990,71 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "kag/",
+          "connector/"
+        ],
+        "candidate_source_surfaces": [
+          "connector/README.md",
+          "connector/SOURCE_POLICY.md",
+          "connector/STORAGE_POLICY.md",
+          "BOUNDARIES.md",
+          "docs/RUNTIME_CONTRACT.md"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "connector",
+          "question",
+          "answer",
+          "tag",
+          "citation receipt"
+        ],
+        "event_surfaces": [
+          "evals/reports/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "BOUNDARIES.md",
+          "connector/README.md"
+        ],
+        "validators": [
+          "python scripts/validate_connector.py",
+          "PYTHONPATH=src python -m pytest -q"
+        ],
+        "release_gate": "repo-local connector validation lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-kag-mcp resource",
+          "abyss-stack connector runtime"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 6
+        },
+        "builder_routes": [
+          {
+            "route": "connector validation lane",
+            "surface": "scripts/validate_connector.py",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -1967,6 +3159,71 @@
           "route_kind": "authored_meaning"
         }
       ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "kag/",
+          "connector/"
+        ],
+        "candidate_source_surfaces": [
+          "connector/README.md",
+          "connector/SOURCE_POLICY.md",
+          "connector/STORAGE_POLICY.md",
+          "BOUNDARIES.md",
+          "docs/RUNTIME_CONTRACT.md"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "connector",
+          "device",
+          "forum thread",
+          "document",
+          "ingestion receipt"
+        ],
+        "event_surfaces": [
+          "evals/reports/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "BOUNDARIES.md",
+          "connector/README.md"
+        ],
+        "validators": [
+          "python scripts/validate_connector.py",
+          "PYTHONPATH=src python -m pytest -q"
+        ],
+        "release_gate": "repo-local connector validation lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-kag-mcp resource",
+          "abyss-stack connector runtime"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 6
+        },
+        "builder_routes": [
+          {
+            "route": "connector validation lane",
+            "surface": "scripts/validate_connector.py",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
       "mcp_access_shape": [
         "resource",
         "root"
@@ -2302,6 +3559,10 @@
         }
       },
       {
+        "uri_template": "aoa-kag://providers/{repo}/generation",
+        "source": "aoa-kag/generated/local_kag_provider_map.min.json#/providers/{repo}/generation_profile"
+      },
+      {
         "uri_template": "aoa-kag://registry/provider-map",
         "source": "aoa-kag/generated/local_kag_provider_map.min.json"
       },
@@ -2330,6 +3591,7 @@
     "tools": [
       "provider_lookup",
       "provider_status",
+      "generation_route_lookup",
       "freshness_check",
       "source_return_lookup",
       "registry_slice",
@@ -2352,5 +3614,73 @@
       "scripts/validate_kag_mcp.py"
     ],
     "runtime_state_route": "abyss-stack and .aoa runtime stores"
+  },
+  "generation_readiness": {
+    "provider_generation_record_counts": {
+      "authored_control": 50,
+      "generated_from_source": 72
+    },
+    "provider_source_authority_counts": {
+      "authored_source": 76,
+      "derived_readmodel": 19,
+      "source_owned_export": 2
+    },
+    "generated_record_repos": [
+      "8Dionysus",
+      "ATM10-Agent",
+      "Agents-of-Abyss",
+      "Dionysus",
+      "Tree-of-Sophia",
+      "aoa-4pda-connector",
+      "aoa-agents",
+      "aoa-discord-connector",
+      "aoa-evals",
+      "aoa-kag",
+      "aoa-memo",
+      "aoa-playbooks",
+      "aoa-routing",
+      "aoa-sdk",
+      "aoa-session-memory",
+      "aoa-skills",
+      "aoa-stackoverflow-connector",
+      "aoa-stats",
+      "aoa-techniques",
+      "aoa-xda-connector"
+    ],
+    "source_owned_export_repos": [
+      "Tree-of-Sophia",
+      "aoa-kag",
+      "aoa-memo",
+      "aoa-skills",
+      "aoa-stats",
+      "aoa-techniques"
+    ],
+    "os_surface_status_counts": {
+      "provider_ready": 5,
+      "runtime_consumer": 5,
+      "source_preparation": 4
+    },
+    "os_surface_ids_by_status": {
+      "provider_ready": [
+        "bundles/aoa-session-memory",
+        "connectors/aoa-4pda-connector",
+        "connectors/aoa-discord-connector",
+        "connectors/aoa-stackoverflow-connector",
+        "connectors/aoa-xda-connector"
+      ],
+      "runtime_consumer": [
+        ".aoa",
+        ".codex",
+        "abyss-stack-runtime-mirror",
+        "src/abyss-machine",
+        "src/abyss-stack"
+      ],
+      "source_preparation": [
+        ".agents",
+        "bundles",
+        "connectors",
+        "connectors/aoa-telegram-connector"
+      ]
+    }
   }
 }

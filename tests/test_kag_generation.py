@@ -207,11 +207,13 @@ class KagGenerationTestCase(unittest.TestCase):
             {
                 "aoa-kag://providers/{repo}/manifest",
                 "aoa-kag://providers/{repo}/records/{record_class}",
+                "aoa-kag://providers/{repo}/generation",
                 "aoa-kag://registry/provider-map",
                 "aoa-kag://readiness/os-surfaces",
             },
         )
         self.assertTrue(handoff["root_boundaries"])
+        self.assertIn("generation_route_lookup", handoff["tools"])
         self.assertIn("validation_status", handoff["tools"])
         self.assertIn("bounded_provider_query", handoff["prompts"])
         self.assertEqual(records_template["source"], "{repo}/kag/{record_class_directory}/")
@@ -225,6 +227,34 @@ class KagGenerationTestCase(unittest.TestCase):
                 "receipt": "receipts",
             },
         )
+
+    def test_local_kag_provider_map_carries_generation_readiness(self) -> None:
+        payload = kag_generation.build_local_kag_provider_map_payload()
+
+        readiness = payload["generation_readiness"]
+        self.assertEqual(
+            {"authored_control", "generated_from_source"},
+            set(readiness["provider_generation_record_counts"]),
+        )
+        self.assertIn("Tree-of-Sophia", readiness["generated_record_repos"])
+        self.assertIn("aoa-techniques", readiness["source_owned_export_repos"])
+        self.assertEqual(
+            {"provider_ready", "runtime_consumer", "source_preparation"},
+            set(readiness["os_surface_status_counts"]),
+        )
+
+        for provider in payload["providers"]:
+            with self.subTest(repo=provider["repo"]):
+                profile = provider["generation_profile"]
+                self.assertTrue(profile["source_home_surfaces"])
+                self.assertTrue(profile["candidate_source_surfaces"])
+                self.assertTrue(profile["graph_entities"])
+                self.assertTrue(profile["builder_routes"])
+                self.assertEqual(
+                    sum(profile["record_authoring_counts"].values()),
+                    sum(profile["record_class_counts"].values()),
+                )
+                self.assertIn("runtime_consumers", profile)
 
     def test_local_kag_provider_map_carries_status_and_freshness_handles(self) -> None:
         payload = kag_generation.build_local_kag_provider_map_payload()
