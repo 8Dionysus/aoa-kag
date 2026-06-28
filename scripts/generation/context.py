@@ -24,6 +24,16 @@ def repo_root_from_env(env_name: str, default: Path) -> Path:
     return Path(override).expanduser().resolve()
 
 
+def repo_root_from_env_candidates(env_name: str, *defaults: Path) -> Path:
+    override = os.environ.get(env_name)
+    if override:
+        return Path(override).expanduser().resolve()
+    for default in defaults:
+        if default.exists():
+            return default
+    return defaults[0]
+
+
 AOA_TECHNIQUES_ROOT = repo_root_from_env(
     "AOA_TECHNIQUES_ROOT", REPO_ROOT.parent / "aoa-techniques"
 )
@@ -50,8 +60,10 @@ ATM10_AGENT_ROOT = repo_root_from_env(
     "ATM10_AGENT_ROOT", REPO_ROOT.parent / "ATM10-Agent"
 )
 AOA_STATS_ROOT = repo_root_from_env("AOA_STATS_ROOT", REPO_ROOT.parent / "aoa-stats")
-AOA_SESSION_MEMORY_ROOT = repo_root_from_env(
-    "AOA_SESSION_MEMORY_ROOT", REPO_ROOT.parent / "bundles" / "aoa-session-memory"
+AOA_SESSION_MEMORY_ROOT = repo_root_from_env_candidates(
+    "AOA_SESSION_MEMORY_ROOT",
+    REPO_ROOT.parent / "aoa-session-memory",
+    REPO_ROOT.parent / "bundles" / "aoa-session-memory",
 )
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
