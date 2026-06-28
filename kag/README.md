@@ -72,6 +72,7 @@ The provider-ready homes are:
 | `aoa-evals` | `kag/` | `generated/eval_report_index.min.json` |
 | `aoa-routing` | `kag/` | `routing/source_home.manifest.json` |
 | `aoa-sdk` | `kag/` | `sdk/source_home.manifest.json` |
+| `aoa-session-memory` | `kag/` | `schemas/session.manifest.schema.json` |
 | `8Dionysus` | `kag/` | `generated/workspace_memory_map.min.json` |
 | `Dionysus` | `kag/` | `generated/seed_route_map.min.json` |
 | `ATM10-Agent` | `kag/` | `src/kag/baseline.py` |

@@ -24,6 +24,16 @@ def repo_root_from_env(env_name: str, default: Path) -> Path:
     return Path(override).expanduser().resolve()
 
 
+def repo_root_from_env_candidates(env_name: str, *defaults: Path) -> Path:
+    override = os.environ.get(env_name)
+    if override:
+        return Path(override).expanduser().resolve()
+    for default in defaults:
+        if default.exists():
+            return default
+    return defaults[0]
+
+
 AOA_TECHNIQUES_ROOT = repo_root_from_env(
     "AOA_TECHNIQUES_ROOT", REPO_ROOT.parent / "aoa-techniques"
 )
@@ -50,6 +60,11 @@ ATM10_AGENT_ROOT = repo_root_from_env(
     "ATM10_AGENT_ROOT", REPO_ROOT.parent / "ATM10-Agent"
 )
 AOA_STATS_ROOT = repo_root_from_env("AOA_STATS_ROOT", REPO_ROOT.parent / "aoa-stats")
+AOA_SESSION_MEMORY_ROOT = repo_root_from_env_candidates(
+    "AOA_SESSION_MEMORY_ROOT",
+    REPO_ROOT.parent / "aoa-session-memory",
+    REPO_ROOT.parent / "bundles" / "aoa-session-memory",
+)
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
 LOCAL_KAG_READINESS_MANIFEST_PATH = REPO_ROOT / "manifests" / "local_kag_readiness.json"
@@ -504,6 +519,7 @@ KNOWN_REPO_ROOTS = {
     "aoa-playbooks": AOA_PLAYBOOKS_ROOT,
     "aoa-routing": AOA_ROUTING_ROOT,
     "aoa-sdk": AOA_SDK_ROOT,
+    "aoa-session-memory": AOA_SESSION_MEMORY_ROOT,
     "aoa-skills": AOA_SKILLS_ROOT,
     "aoa-stats": AOA_STATS_ROOT,
     "aoa-techniques": AOA_TECHNIQUES_ROOT,

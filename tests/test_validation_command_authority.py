@@ -36,6 +36,7 @@ CANARY_PROVIDER_ROOT_ENVS = {
     "aoa-stats": "AOA_STATS_ROOT",
     "aoa-techniques": "AOA_TECHNIQUES_ROOT",
 }
+CANARY_FALLBACK_PROVIDER_REPOS = {"aoa-session-memory"}
 
 
 def command_sequence_from_manifest(name: str) -> tuple[tuple[str, ...], ...]:
@@ -205,7 +206,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         expected_sibling_providers = provider_ready_repos_from_manifest() - {"aoa-kag"}
-        self.assertEqual(expected_sibling_providers, set(CANARY_PROVIDER_ROOT_ENVS))
+        self.assertEqual(
+            expected_sibling_providers,
+            set(CANARY_PROVIDER_ROOT_ENVS) | CANARY_FALLBACK_PROVIDER_REPOS,
+        )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):
                 self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", canary)
