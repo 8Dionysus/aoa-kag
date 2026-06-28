@@ -93,12 +93,24 @@ def _provider_freshness_handles(
         validator = receipt.get("validator")
         if not isinstance(freshness, dict) or not isinstance(validator, dict):
             fail(f"{repo} local KAG receipt must declare freshness and validator")
+        checked_ref = require_string(
+            freshness.get("checked_ref"),
+            label=f"{repo} local KAG receipt freshness.checked_ref",
+        )
+        state = require_string(
+            freshness.get("state"),
+            label=f"{repo} local KAG receipt freshness.state",
+        )
+        validator_route = require_string(
+            validator.get("route"),
+            label=f"{repo} local KAG receipt validator.route",
+        )
         handles.append(
             {
                 "receipt_ref": f"kag/receipts/{path.name}",
-                "checked_ref": freshness["checked_ref"],
-                "state": freshness["state"],
-                "validator": validator["route"],
+                "checked_ref": checked_ref,
+                "state": state,
+                "validator": validator_route,
                 "owner_return_route": receipt["owner_return_route"],
             }
         )

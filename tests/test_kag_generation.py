@@ -175,6 +175,20 @@ class KagGenerationTestCase(unittest.TestCase):
                 expected_payload,
             )
 
+    def test_local_kag_provider_map_rejects_receipt_without_checked_ref(self) -> None:
+        receipt_path = kag_generation.REPO_ROOT / "kag" / "receipts" / "validation_receipt.json"
+        broken_receipt = load_json(receipt_path)
+        assert isinstance(broken_receipt, dict)
+        freshness = broken_receipt["freshness"]
+        assert isinstance(freshness, dict)
+        freshness.pop("checked_ref")
+
+        with self.patched_read_json({receipt_path: broken_receipt}):
+            with self.assertRaises(kag_generation.GenerationError) as context:
+                kag_generation.build_local_kag_provider_map_payload()
+
+        self.assertIn("freshness.checked_ref", str(context.exception))
+
     def test_local_kag_provider_map_carries_mcp_handoff_planes(self) -> None:
         payload = kag_generation.build_local_kag_provider_map_payload()
         handoff = payload["mcp_handoff"]

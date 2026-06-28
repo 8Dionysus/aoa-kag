@@ -135,6 +135,26 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("to_id", str(context.exception))
 
+    def test_local_kag_schema_requires_freshness_checked_ref(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        receipt = broken_payload["records"]["receipts"][0]
+        freshness = receipt["freshness"]
+        assert isinstance(freshness, dict)
+        freshness.pop("checked_ref")
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_contract()
+
+        self.assertIn("checked_ref", str(context.exception))
+
     def test_local_kag_readiness_rejects_missing_direct_repo(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)

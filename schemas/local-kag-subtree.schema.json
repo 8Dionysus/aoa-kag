@@ -93,7 +93,7 @@
     "freshness": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mode", "state"],
+      "required": ["mode", "state", "checked_ref"],
       "properties": {
         "mode": {
           "type": "string",
