@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Tree-of-Sophia
-          ref: 84372b134e3c51d3033000125361e6adbb81c122
+          ref: afd4e1ee3b75ce00b88a409350435caeebcfeca0
           path: .deps/Tree-of-Sophia
 
       - name: Checkout Agents-of-Abyss
@@ -71,7 +71,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-techniques
-          ref: 50f14c92f12062a13274fb537a6a0478c0385da4
+          ref: 8ab16bc88e88a928d28e33384756ca426ebfa2d6
           path: .deps/aoa-techniques
 
       - name: Checkout aoa-routing
@@ -92,7 +92,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-skills
-          ref: 5c36e4cf1b996cacd70b63ecc7ec5ba13fcc57b5
+          ref: 02cc977f5080aa6736cf35fd0eb4ded7b167342e
           path: .deps/aoa-skills
 
       - name: Setup Python

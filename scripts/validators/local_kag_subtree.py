@@ -28,6 +28,7 @@ STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 EXPECTED_OS_SURFACE_ROOTS = {
     ".agents": OS_ABYSS_ROOT / ".agents",
     ".aoa": OS_ABYSS_ROOT / ".aoa",
+    ".codex": OS_ABYSS_ROOT / ".codex",
     "abyss-stack-runtime-mirror": OS_ABYSS_ROOT / "abyss-stack",
     "bundles": OS_ABYSS_ROOT / "bundles",
     "bundles/aoa-session-memory": OS_ABYSS_ROOT / "bundles" / "aoa-session-memory",
@@ -44,6 +45,7 @@ EXPECTED_OS_SURFACE_ROOTS = {
 EXPECTED_OS_SURFACE_CLASSES = {
     ".agents": "organ_home",
     ".aoa": "organ_home",
+    ".codex": "organ_home",
     "abyss-stack-runtime-mirror": "runtime_mirror",
     "bundles": "collection_home",
     "bundles/aoa-session-memory": "bundle_repo",

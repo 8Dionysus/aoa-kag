@@ -388,6 +388,53 @@
       "mcp_access_shape": ["resource", "root"]
     },
     {
+      "surface_id": ".codex",
+      "surface_class": "organ_home",
+      "root": "/srv/AbyssOS/.codex",
+      "surface_role": "Codex-plane projection, MCP launcher home, agent config route, and access-plane smoke surface",
+      "source_home_surfaces": ["AGENTS.md", "config.toml", "bin/", "generated/codex/"],
+      "kag_pressure": [
+        "Codex MCP access-plane route",
+        "agent tool/resource visibility",
+        "source-owned projection handles",
+        "stdio smoke evidence for access routes"
+      ],
+      "source_owned_exports": ["generated/codex/current-srv.paths.json"],
+      "candidate_source_surfaces": [
+        "AGENTS.md",
+        "config.toml",
+        "bin/aoa-kag-mcp-server.py",
+        "generated/codex/current-srv.paths.json"
+      ],
+      "graph_entities": [
+        "Codex MCP server registration",
+        "MCP launcher",
+        "access-plane route",
+        "projection surface"
+      ],
+      "event_surfaces": [],
+      "document_surfaces": ["AGENTS.md"],
+      "validators": [
+        "python /srv/AbyssOS/8Dionysus/scripts/validate_codex_plane_regeneration.py --workspace-root /srv/AbyssOS",
+        "python /srv/AbyssOS/8Dionysus/scripts/smoke_aoa_kag_mcp.py --workspace-root /srv/AbyssOS"
+      ],
+      "runtime_consumers": [
+        "Codex MCP host",
+        "agent sessions",
+        "aoa-kag registry",
+        "aoa-kag-mcp"
+      ],
+      "owner_return_route": {
+        "repo": "8Dionysus",
+        "route_kind": "runtime",
+        "surface": ".codex/AGENTS.md"
+      },
+      "provider_status": "runtime_consumer",
+      "adoption_order": 106,
+      "first_record_classes": ["node", "index", "projection", "receipt"],
+      "mcp_access_shape": ["resource", "tool", "root"]
+    },
+    {
       "surface_id": "src/abyss-machine",
       "surface_class": "runtime_source_repo",
       "root": "/home/dionysus/src/abyss-machine",
