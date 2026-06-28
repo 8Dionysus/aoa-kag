@@ -32,6 +32,7 @@ CANARY_PROVIDER_ROOT_ENVS = {
     "aoa-playbooks": "AOA_PLAYBOOKS_ROOT",
     "aoa-routing": "AOA_ROUTING_ROOT",
     "aoa-sdk": "AOA_SDK_ROOT",
+    "aoa-session-memory": "AOA_SESSION_MEMORY_ROOT",
     "aoa-skills": "AOA_SKILLS_ROOT",
     "aoa-stats": "AOA_STATS_ROOT",
     "aoa-techniques": "AOA_TECHNIQUES_ROOT",

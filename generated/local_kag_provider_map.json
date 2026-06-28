@@ -4,7 +4,7 @@
   "owner_repo": "aoa-kag",
   "source_ref": "manifests/local_kag_readiness.json",
   "provider_status_counts": {
-    "provider_ready": 15
+    "provider_ready": 16
   },
   "providers": [
     {
@@ -1052,6 +1052,120 @@
       ]
     },
     {
+      "repo": "aoa-session-memory",
+      "provider_status": "provider_ready",
+      "adoption_order": 11,
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "kag/manifest.json",
+          "state": "current",
+          "validator": "aoa-kag:scripts/validate_kag.py",
+          "owner_return_route": {
+            "repo": "aoa-session-memory",
+            "surface": "README.md",
+            "route_kind": "memory"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "aoa-session-memory",
+          "path": "README.md",
+          "source_class": "memo_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-session-memory",
+          "path": "PIPELINE.md",
+          "source_class": "memo_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-session-memory",
+          "path": "READINESS.md",
+          "source_class": "memo_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-session-memory",
+          "path": "schemas/session.manifest.schema.json",
+          "source_class": "memo_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-session-memory",
+          "path": "maps/README.md",
+          "source_class": "memo_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-session-memory",
+          "path": "scripts/aoa_session_memory.py",
+          "source_class": "memo_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_session_memory.py",
+          "lane": "owner-local"
+        },
+        {
+          "route": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/aoa_session_memory.py validate --workspace-root /tmp/aoa-session-memory-validate-workspace --aoa-root /tmp/aoa-session-memory-validate-workspace/.aoa",
+          "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "abyss-stack federation mirror",
+        "aoa-kag-mcp resource"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-session-memory",
+          "surface": "README.md",
+          "route_kind": "memory"
+        },
+        {
+          "repo": "aoa-session-memory",
+          "surface": "PIPELINE.md",
+          "route_kind": "memory"
+        }
+      ],
+      "mcp_access_shape": [
+        "resource",
+        "tool",
+        "root"
+      ]
+    },
+    {
       "repo": "8Dionysus",
       "provider_status": "provider_ready",
       "adoption_order": 12,
@@ -1495,7 +1609,7 @@
       "surface_id": "bundles/aoa-session-memory",
       "surface_class": "bundle_repo",
       "root": "/srv/AbyssOS/bundles/aoa-session-memory",
-      "provider_status": "candidate",
+      "provider_status": "provider_ready",
       "owner_return_route": {
         "repo": "aoa-session-memory",
         "surface": "README.md",

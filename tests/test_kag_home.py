@@ -48,6 +48,7 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "aoa-playbooks",
     "aoa-routing",
     "aoa-sdk",
+    "aoa-session-memory",
     "aoa-skills",
     "aoa-stats",
     "Tree-of-Sophia",
