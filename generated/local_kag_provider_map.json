@@ -4,7 +4,7 @@
   "owner_repo": "aoa-kag",
   "source_ref": "manifests/local_kag_readiness.json",
   "provider_status_counts": {
-    "provider_ready": 16
+    "provider_ready": 20
   },
   "providers": [
     {
@@ -1555,6 +1555,422 @@
         "tool",
         "root"
       ]
+    },
+    {
+      "repo": "aoa-4pda-connector",
+      "provider_status": "provider_ready",
+      "adoption_order": 16,
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "kag/manifest.json",
+          "state": "current",
+          "validator": "aoa-kag:scripts/validate_kag.py",
+          "owner_return_route": {
+            "repo": "aoa-4pda-connector",
+            "surface": "BOUNDARIES.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "aoa-4pda-connector",
+          "path": "connector/README.md",
+          "source_class": "connector_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-4pda-connector",
+          "path": "BOUNDARIES.md",
+          "source_class": "connector_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-4pda-connector",
+          "path": "connector/SOURCE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-4pda-connector",
+          "path": "connector/STORAGE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-4pda-connector",
+          "path": "docs/RUNTIME_CONTRACT.md",
+          "source_class": "connector_source",
+          "role": "consumer_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-4pda-connector",
+          "path": "scripts/validate_connector.py",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "scripts/validate_connector.py",
+          "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "aoa-kag-mcp resource",
+        "abyss-stack connector runtime"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-4pda-connector",
+          "surface": "BOUNDARIES.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "mcp_access_shape": [
+        "resource",
+        "root"
+      ]
+    },
+    {
+      "repo": "aoa-discord-connector",
+      "provider_status": "provider_ready",
+      "adoption_order": 17,
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "kag/manifest.json",
+          "state": "current",
+          "validator": "aoa-kag:scripts/validate_kag.py",
+          "owner_return_route": {
+            "repo": "aoa-discord-connector",
+            "surface": "BOUNDARIES.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "aoa-discord-connector",
+          "path": "connector/README.md",
+          "source_class": "connector_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-discord-connector",
+          "path": "BOUNDARIES.md",
+          "source_class": "connector_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-discord-connector",
+          "path": "connector/SOURCE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-discord-connector",
+          "path": "connector/STORAGE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-discord-connector",
+          "path": "docs/RUNTIME_CONTRACT.md",
+          "source_class": "connector_source",
+          "role": "consumer_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-discord-connector",
+          "path": "scripts/validate_connector.py",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "scripts/validate_connector.py",
+          "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "aoa-kag-mcp resource",
+        "abyss-stack connector runtime"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-discord-connector",
+          "surface": "BOUNDARIES.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "mcp_access_shape": [
+        "resource",
+        "root"
+      ]
+    },
+    {
+      "repo": "aoa-stackoverflow-connector",
+      "provider_status": "provider_ready",
+      "adoption_order": 18,
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "kag/manifest.json",
+          "state": "current",
+          "validator": "aoa-kag:scripts/validate_kag.py",
+          "owner_return_route": {
+            "repo": "aoa-stackoverflow-connector",
+            "surface": "BOUNDARIES.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "aoa-stackoverflow-connector",
+          "path": "connector/README.md",
+          "source_class": "connector_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-stackoverflow-connector",
+          "path": "BOUNDARIES.md",
+          "source_class": "connector_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-stackoverflow-connector",
+          "path": "connector/SOURCE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-stackoverflow-connector",
+          "path": "connector/STORAGE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-stackoverflow-connector",
+          "path": "docs/RUNTIME_CONTRACT.md",
+          "source_class": "connector_source",
+          "role": "consumer_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-stackoverflow-connector",
+          "path": "scripts/validate_connector.py",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "scripts/validate_connector.py",
+          "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "aoa-kag-mcp resource",
+        "abyss-stack connector runtime"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-stackoverflow-connector",
+          "surface": "BOUNDARIES.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "mcp_access_shape": [
+        "resource",
+        "root"
+      ]
+    },
+    {
+      "repo": "aoa-xda-connector",
+      "provider_status": "provider_ready",
+      "adoption_order": 19,
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "kag/manifest.json",
+          "state": "current",
+          "validator": "aoa-kag:scripts/validate_kag.py",
+          "owner_return_route": {
+            "repo": "aoa-xda-connector",
+            "surface": "BOUNDARIES.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "aoa-xda-connector",
+          "path": "connector/README.md",
+          "source_class": "connector_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-xda-connector",
+          "path": "BOUNDARIES.md",
+          "source_class": "connector_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-xda-connector",
+          "path": "connector/SOURCE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-xda-connector",
+          "path": "connector/STORAGE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-xda-connector",
+          "path": "docs/RUNTIME_CONTRACT.md",
+          "source_class": "connector_source",
+          "role": "consumer_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-xda-connector",
+          "path": "scripts/validate_connector.py",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "scripts/validate_connector.py",
+          "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "aoa-kag-mcp resource",
+        "abyss-stack connector runtime"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-xda-connector",
+          "surface": "BOUNDARIES.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "mcp_access_shape": [
+        "resource",
+        "root"
+      ]
     }
   ],
   "remaining_routes": [],
@@ -1737,63 +2153,69 @@
       "surface_id": "connectors/aoa-4pda-connector",
       "surface_class": "connector_repo",
       "root": "/srv/AbyssOS/connectors/aoa-4pda-connector",
-      "provider_status": "source_preparation",
+      "provider_status": "provider_ready",
       "owner_return_route": {
         "repo": "aoa-4pda-connector",
-        "surface": "README.md",
+        "surface": "BOUNDARIES.md",
         "route_kind": "authored_meaning"
       },
       "mcp_access_shape": [
         "resource",
-        "tool",
         "root"
       ],
       "candidate_source_surfaces": [
-        "README.md",
+        "kag/manifest.json",
+        "connector/README.md",
+        "connector/SOURCE_POLICY.md",
+        "connector/STORAGE_POLICY.md",
         "BOUNDARIES.md",
-        "pyproject.toml"
+        "docs/RUNTIME_CONTRACT.md"
       ]
     },
     {
       "surface_id": "connectors/aoa-discord-connector",
       "surface_class": "connector_repo",
       "root": "/srv/AbyssOS/connectors/aoa-discord-connector",
-      "provider_status": "source_preparation",
+      "provider_status": "provider_ready",
       "owner_return_route": {
         "repo": "aoa-discord-connector",
-        "surface": "README.md",
+        "surface": "BOUNDARIES.md",
         "route_kind": "authored_meaning"
       },
       "mcp_access_shape": [
         "resource",
-        "tool",
         "root"
       ],
       "candidate_source_surfaces": [
-        "README.md",
+        "kag/manifest.json",
+        "connector/README.md",
+        "connector/SOURCE_POLICY.md",
+        "connector/STORAGE_POLICY.md",
         "BOUNDARIES.md",
-        "pyproject.toml"
+        "docs/RUNTIME_CONTRACT.md"
       ]
     },
     {
       "surface_id": "connectors/aoa-stackoverflow-connector",
       "surface_class": "connector_repo",
       "root": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector",
-      "provider_status": "source_preparation",
+      "provider_status": "provider_ready",
       "owner_return_route": {
         "repo": "aoa-stackoverflow-connector",
-        "surface": "README.md",
+        "surface": "BOUNDARIES.md",
         "route_kind": "authored_meaning"
       },
       "mcp_access_shape": [
         "resource",
-        "tool",
         "root"
       ],
       "candidate_source_surfaces": [
-        "README.md",
+        "kag/manifest.json",
+        "connector/README.md",
+        "connector/SOURCE_POLICY.md",
+        "connector/STORAGE_POLICY.md",
         "BOUNDARIES.md",
-        "pyproject.toml"
+        "docs/RUNTIME_CONTRACT.md"
       ]
     },
     {
@@ -1821,21 +2243,23 @@
       "surface_id": "connectors/aoa-xda-connector",
       "surface_class": "connector_repo",
       "root": "/srv/AbyssOS/connectors/aoa-xda-connector",
-      "provider_status": "source_preparation",
+      "provider_status": "provider_ready",
       "owner_return_route": {
         "repo": "aoa-xda-connector",
-        "surface": "README.md",
+        "surface": "BOUNDARIES.md",
         "route_kind": "authored_meaning"
       },
       "mcp_access_shape": [
         "resource",
-        "tool",
         "root"
       ],
       "candidate_source_surfaces": [
-        "README.md",
+        "kag/manifest.json",
+        "connector/README.md",
+        "connector/SOURCE_POLICY.md",
+        "connector/STORAGE_POLICY.md",
         "BOUNDARIES.md",
-        "pyproject.toml"
+        "docs/RUNTIME_CONTRACT.md"
       ]
     },
     {

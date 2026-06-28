@@ -65,6 +65,26 @@ AOA_SESSION_MEMORY_ROOT = repo_root_from_env_candidates(
     REPO_ROOT.parent / "aoa-session-memory",
     REPO_ROOT.parent / "bundles" / "aoa-session-memory",
 )
+AOA_4PDA_CONNECTOR_ROOT = repo_root_from_env_candidates(
+    "AOA_4PDA_CONNECTOR_ROOT",
+    REPO_ROOT.parent / "aoa-4pda-connector",
+    REPO_ROOT.parent / "connectors" / "aoa-4pda-connector",
+)
+AOA_DISCORD_CONNECTOR_ROOT = repo_root_from_env_candidates(
+    "AOA_DISCORD_CONNECTOR_ROOT",
+    REPO_ROOT.parent / "aoa-discord-connector",
+    REPO_ROOT.parent / "connectors" / "aoa-discord-connector",
+)
+AOA_STACKOVERFLOW_CONNECTOR_ROOT = repo_root_from_env_candidates(
+    "AOA_STACKOVERFLOW_CONNECTOR_ROOT",
+    REPO_ROOT.parent / "aoa-stackoverflow-connector",
+    REPO_ROOT.parent / "connectors" / "aoa-stackoverflow-connector",
+)
+AOA_XDA_CONNECTOR_ROOT = repo_root_from_env_candidates(
+    "AOA_XDA_CONNECTOR_ROOT",
+    REPO_ROOT.parent / "aoa-xda-connector",
+    REPO_ROOT.parent / "connectors" / "aoa-xda-connector",
+)
 
 REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "kag_registry.json"
 LOCAL_KAG_READINESS_MANIFEST_PATH = REPO_ROOT / "manifests" / "local_kag_readiness.json"
@@ -523,6 +543,10 @@ KNOWN_REPO_ROOTS = {
     "aoa-skills": AOA_SKILLS_ROOT,
     "aoa-stats": AOA_STATS_ROOT,
     "aoa-techniques": AOA_TECHNIQUES_ROOT,
+    "aoa-4pda-connector": AOA_4PDA_CONNECTOR_ROOT,
+    "aoa-discord-connector": AOA_DISCORD_CONNECTOR_ROOT,
+    "aoa-stackoverflow-connector": AOA_STACKOVERFLOW_CONNECTOR_ROOT,
+    "aoa-xda-connector": AOA_XDA_CONNECTOR_ROOT,
     TOS_REPO: TREE_OF_SOPHIA_ROOT,
 }
 COMPATIBILITY_REF_ALIASES = {

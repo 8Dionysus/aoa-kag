@@ -111,3 +111,7 @@ The validated provider packet gives future `aoa-kag-mcp` four access planes:
 | `Dionysus` | `kag/` | seed garden route map and registry |
 | `ATM10-Agent` | `kag/` | project-local KAG runtime and operator runbook route |
 | `aoa-stats` | `kag/` | derived KAG stats observability registry |
+| `aoa-4pda-connector` | `kag/` | 4PDA connector source policy and storage boundary |
+| `aoa-discord-connector` | `kag/` | Discord connector permission policy and storage boundary |
+| `aoa-stackoverflow-connector` | `kag/` | StackOverflow connector source policy and storage boundary |
+| `aoa-xda-connector` | `kag/` | XDA connector source policy and storage boundary |
