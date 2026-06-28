@@ -209,9 +209,9 @@
       "freshness_handles": [
         {
           "receipt_ref": "kag/receipts/validation_receipt.json",
-          "checked_ref": "kag/manifest.json",
+          "checked_ref": "scripts/validators/projection_kag.py",
           "state": "current",
-          "validator": "aoa-kag:scripts/validate_kag.py",
+          "validator": "scripts/validate_repo.py",
           "owner_return_route": {
             "repo": "aoa-techniques",
             "surface": "scripts/validators/projection_kag.py",
@@ -246,10 +246,6 @@
         {
           "route": "scripts/validate_repo.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         },
         {
           "route": "scripts/ci_gate.py --mode source-fast",
@@ -1577,6 +1573,28 @@
         "Configs/README.md",
         "Services/README.md",
         "Logs/README.md"
+      ]
+    },
+    {
+      "surface_id": ".codex",
+      "surface_class": "organ_home",
+      "root": "/srv/AbyssOS/.codex",
+      "provider_status": "runtime_consumer",
+      "owner_return_route": {
+        "repo": "8Dionysus",
+        "route_kind": "runtime",
+        "surface": ".codex/AGENTS.md"
+      },
+      "mcp_access_shape": [
+        "resource",
+        "tool",
+        "root"
+      ],
+      "candidate_source_surfaces": [
+        "AGENTS.md",
+        "config.toml",
+        "bin/aoa-kag-mcp-server.py",
+        "generated/codex/current-srv.paths.json"
       ]
     },
     {

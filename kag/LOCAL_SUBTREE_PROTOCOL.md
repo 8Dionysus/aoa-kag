@@ -71,7 +71,7 @@ The same matrix carries the OS surface layer used by runtime and MCP routing:
 | --- | --- |
 | `runtime_source_repo` | `abyss-stack` and `abyss-machine` source routes |
 | `runtime_mirror` | host-side runtime config/service/log surfaces |
-| `organ_home` | `.aoa` session-memory and `.agents` capability homes |
+| `organ_home` | `.aoa` session-memory, `.agents` capability, and `.codex` Codex-plane access homes |
 | `bundle_repo` | portable organ source repos such as `aoa-session-memory` |
 | `connector_repo` | external-source connector repos |
 | `collection_home` | collection roots for connector and bundle families |
