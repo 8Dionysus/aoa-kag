@@ -210,6 +210,20 @@
       "disposition": "keep"
     },
     {
+      "path": "scripts/provider_registry.py",
+      "family": "projection_helper",
+      "organ_lane": "projection/generated",
+      "owner_surface": "manifests/provider_registry.json",
+      "source_truth": ["manifests/provider_registry.json", "schemas/provider-registry.schema.json"],
+      "reads": ["provider registry manifest"],
+      "writes": [],
+      "side_effects": "importable provider coordinate loader",
+      "validation_lane": "source_fast",
+      "ci_inclusion": "covered by provider registry tests, script topology, and validate_kag",
+      "test_target": "tests/test_provider_registry.py",
+      "disposition": "keep"
+    },
+    {
       "path": "scripts/kag_generation.py",
       "family": "projection_helper",
       "organ_lane": "projection/generated",
@@ -907,6 +921,20 @@
       "validation_lane": "source_fast",
       "ci_inclusion": "covered by validator module topology tests and validate_kag lane entrypoint",
       "test_target": "tests/test_validator_module_topology.py",
+      "disposition": "keep"
+    },
+    {
+      "path": "scripts/validators/provider_registry.py",
+      "family": "source_validator",
+      "organ_lane": "source/topology",
+      "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
+      "source_truth": ["manifests/provider_registry.json", "schemas/provider-registry.schema.json", "manifests/local_kag_readiness.json"],
+      "reads": ["provider registry, local KAG readiness matrix, and workflow provider routes"],
+      "writes": [],
+      "side_effects": "importable provider registry validator",
+      "validation_lane": "source_fast",
+      "ci_inclusion": "covered by provider registry tests and validate_kag lane entrypoint",
+      "test_target": "tests/test_provider_registry.py",
       "disposition": "keep"
     },
     {

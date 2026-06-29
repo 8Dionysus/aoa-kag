@@ -6,6 +6,11 @@ import os
 import re
 from pathlib import Path
 
+try:
+    from scripts.provider_registry import configured_provider_roots
+except ImportError:  # pragma: no cover - direct script execution
+    from provider_registry import configured_provider_roots  # type: ignore
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -532,29 +537,7 @@ KAG_REGISTRY_ARTIFACT_IDENTITY = {
     ],
     "action": "ADD_RELEASE_PROVENANCE",
 }
-KNOWN_REPO_ROOTS = {
-    KAG_REPO: REPO_ROOT,
-    "8Dionysus": EIGHT_DIONYSUS_ROOT,
-    "ATM10-Agent": ATM10_AGENT_ROOT,
-    "Agents-of-Abyss": AGENTS_OF_ABYSS_ROOT,
-    "Dionysus": DIONYSUS_ROOT,
-    "aoa-agents": AOA_AGENTS_ROOT,
-    "aoa-evals": AOA_EVALS_ROOT,
-    "aoa-memo": AOA_MEMO_ROOT,
-    "aoa-playbooks": AOA_PLAYBOOKS_ROOT,
-    "aoa-routing": AOA_ROUTING_ROOT,
-    "aoa-sdk": AOA_SDK_ROOT,
-    "aoa-session-memory": AOA_SESSION_MEMORY_ROOT,
-    "aoa-skills": AOA_SKILLS_ROOT,
-    "aoa-stats": AOA_STATS_ROOT,
-    "aoa-techniques": AOA_TECHNIQUES_ROOT,
-    "aoa-4pda-connector": AOA_4PDA_CONNECTOR_ROOT,
-    "aoa-discord-connector": AOA_DISCORD_CONNECTOR_ROOT,
-    "aoa-stackoverflow-connector": AOA_STACKOVERFLOW_CONNECTOR_ROOT,
-    "aoa-telegram-connector": AOA_TELEGRAM_CONNECTOR_ROOT,
-    "aoa-xda-connector": AOA_XDA_CONNECTOR_ROOT,
-    TOS_REPO: TREE_OF_SOPHIA_ROOT,
-}
+KNOWN_REPO_ROOTS = configured_provider_roots()
 COMPATIBILITY_REF_ALIASES = {
     "aoa-evals": {
         "mechanics/audit/parts/artifact-verdict-hooks/schemas/artifact-to-verdict-hook.schema.json": (

@@ -32,6 +32,7 @@ OWNER_MODULES = {
     "scripts/validators/expected/docs_contracts.py",
     "scripts/validators/source_refs.py",
     "scripts/validators/schema_surfaces.py",
+    "scripts/validators/provider_registry.py",
     "scripts/validators/local_contracts.py",
     "scripts/validators/local_kag_subtree.py",
     "scripts/validators/repo_local_kag_index.py",

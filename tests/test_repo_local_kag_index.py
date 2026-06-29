@@ -176,6 +176,20 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertIn("README.md", paths)
         self.assertNotIn("kag/indexes/source_surface_index.json", paths)
 
+    def test_generator_excludes_canonical_self_index_with_external_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir, tempfile.TemporaryDirectory() as outdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            index = root / "kag" / "indexes" / "source_surface_index.json"
+            index.parent.mkdir(parents=True)
+            index.write_text('{"stale": true}\n', encoding="utf-8")
+
+            payload = build_index(root, output=Path(outdir) / "candidate.json")
+
+        paths = {record["identity"]["path"] for record in payload["records"]}
+        self.assertIn("README.md", paths)
+        self.assertNotIn("kag/indexes/source_surface_index.json", paths)
+
     def test_generator_uses_git_index_and_excludes_untracked_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -119,6 +119,20 @@
             "source/route-contract"
           ]
         },
+        {
+          "path": "tests/test_provider_registry.py",
+          "family": "kag/provider-registry",
+          "protects": "Provider registry schema, provider coordinate helpers, dependency pins, sealed providers, and validator route.",
+          "owner_surface": "manifests/provider_registry.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_provider_registry.py",
+          "failure_route": "Route through provider registry manifest, schema, loader, workflows, or readiness parity.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "source/route-contract",
+            "release/artifact-trust"
+          ]
+        },
     {
       "path": "tests/test_repo_validation_workflow.py",
       "family": "release/ci-lane",

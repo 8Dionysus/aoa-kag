@@ -266,6 +266,22 @@
       "covered_by": "tests/test_validator_module_topology.py"
     },
     {
+      "path": "scripts/validators/provider_registry.py",
+      "module_type": "provider_registry_contract",
+      "function": "Validate provider registry schema, provider set, root map, workflow env routes, dependency pins, and sealed providers.",
+      "inputs": [
+        "schemas/provider-registry.schema.json",
+        "manifests/provider_registry.json",
+        "manifests/local_kag_readiness.json",
+        ".github/workflows/repo-validation.yml",
+        ".github/workflows/compatibility-canary.yml"
+      ],
+      "outputs": [
+        "provider registry contract verdicts"
+      ],
+      "covered_by": "tests/test_provider_registry.py"
+    },
+    {
       "path": "scripts/validators/local_contracts.py",
       "module_type": "local_contract",
       "function": "Validate local route, mechanics skeleton, questbook, antifragility, and ToS tiny-entry contracts.",

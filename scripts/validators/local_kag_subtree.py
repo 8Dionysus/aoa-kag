@@ -3,33 +3,16 @@ from __future__ import annotations
 from .common import *
 from .schema_surfaces import validate_top_level_schema
 
-EXPECTED_DIRECT_REPOS = {
-    "8Dionysus",
-    "ATM10-Agent",
-    "Agents-of-Abyss",
-    "Dionysus",
-    "Tree-of-Sophia",
-    "aoa-4pda-connector",
-    "aoa-agents",
-    "aoa-discord-connector",
-    "aoa-evals",
-    "aoa-kag",
-    "aoa-memo",
-    "aoa-playbooks",
-    "aoa-routing",
-    "aoa-sdk",
-    "aoa-session-memory",
-    "aoa-skills",
-    "aoa-stats",
-    "aoa-stackoverflow-connector",
-    "aoa-telegram-connector",
-    "aoa-techniques",
-    "aoa-xda-connector",
-}
+try:
+    from scripts.provider_registry import configured_provider_roots
+except ImportError:  # pragma: no cover - direct script execution
+    from provider_registry import configured_provider_roots  # type: ignore
 
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
+PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
+EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS)
 
 EXPECTED_OS_SURFACE_ROOTS = {
     ".agents": OS_ABYSS_ROOT / ".agents",
@@ -67,29 +50,7 @@ EXPECTED_OS_SURFACE_CLASSES = {
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 REQUIRED_MCP_SHAPE = {"resource", "root"}
-EXPECTED_PROVIDER_READY_REPOS = {
-    "8Dionysus",
-    "ATM10-Agent",
-    "Agents-of-Abyss",
-    "Dionysus",
-    "Tree-of-Sophia",
-    "aoa-4pda-connector",
-    "aoa-agents",
-    "aoa-discord-connector",
-    "aoa-evals",
-    "aoa-kag",
-    "aoa-memo",
-    "aoa-playbooks",
-    "aoa-routing",
-    "aoa-sdk",
-    "aoa-session-memory",
-    "aoa-skills",
-    "aoa-stats",
-    "aoa-stackoverflow-connector",
-    "aoa-telegram-connector",
-    "aoa-techniques",
-    "aoa-xda-connector",
-}
+EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
 
 PROVIDER_RECORD_DIRS = {
     "nodes": "nodeRecord",
@@ -97,11 +58,6 @@ PROVIDER_RECORD_DIRS = {
     "indexes": "indexRecord",
     "projections": "projectionRecord",
     "receipts": "receiptRecord",
-}
-
-PROVIDER_REPO_ROOTS = {
-    repo: KNOWN_REPO_ROOTS[repo]
-    for repo in EXPECTED_PROVIDER_READY_REPOS
 }
 
 AUTHORITY_PHRASES = (

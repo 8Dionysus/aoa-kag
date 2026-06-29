@@ -4,6 +4,8 @@ import json
 import unittest
 from pathlib import Path
 
+from scripts.provider_registry import provider_repo_order
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 KAG_ROOT = REPO_ROOT / "kag"
@@ -36,29 +38,7 @@ EXPECTED_ACTIVE_FAMILIES = {
     "receipt_records",
 }
 
-EXPECTED_PROVIDER_READY_REPOS = {
-    "8Dionysus",
-    "ATM10-Agent",
-    "Agents-of-Abyss",
-    "Dionysus",
-    "aoa-kag",
-    "aoa-4pda-connector",
-    "aoa-agents",
-    "aoa-discord-connector",
-    "aoa-evals",
-    "aoa-memo",
-    "aoa-playbooks",
-    "aoa-routing",
-    "aoa-sdk",
-    "aoa-session-memory",
-    "aoa-skills",
-    "aoa-stats",
-    "aoa-stackoverflow-connector",
-    "aoa-telegram-connector",
-    "Tree-of-Sophia",
-    "aoa-techniques",
-    "aoa-xda-connector",
-}
+EXPECTED_PROVIDER_READY_REPOS = set(provider_repo_order())
 
 
 def load_json(relative_path: str) -> dict[str, object]:

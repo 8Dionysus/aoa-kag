@@ -17,6 +17,7 @@ from typing import Any, Iterable, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = Path("kag/indexes/source_surface_index.json")
+CANONICAL_SELF_INDEX = DEFAULT_OUTPUT
 INDEX_SCHEMA_REF = "aoa-kag:schemas/repo-local-kag-index.schema.json"
 INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-index-v1"
 GIT_INDEX_SOURCE_REF = "git-index-source-tree"
@@ -622,17 +623,18 @@ def build_index(repo_root: Path, *, output: Path | None = None) -> dict[str, Any
     repo_root = repo_root.resolve()
     name = repo_name(repo_root)
     snapshot_ref = source_snapshot_ref(repo_root)
-    output_rel = None
+    excluded_paths = {CANONICAL_SELF_INDEX}
     if output is not None:
         output_path = output if output.is_absolute() else repo_root / output
         try:
-            output_rel = output_path.resolve().relative_to(repo_root)
+            excluded_paths.add(output_path.resolve().relative_to(repo_root))
         except ValueError:
-            output_rel = output
+            if not output.is_absolute():
+                excluded_paths.add(output)
     tracked_paths = set(git_file_paths(repo_root))
     records = []
     for rel in sorted(tracked_paths):
-        if output_rel is not None and rel == output_rel:
+        if rel in excluded_paths:
             continue
         path = repo_root / rel
         if snapshot_ref == GIT_INDEX_SOURCE_REF or path.is_file():
