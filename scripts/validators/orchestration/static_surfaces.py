@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..local_contracts import *
 from ..local_kag_subtree import *
+from ..repo_local_kag_index import *
 from ..schema_surfaces import *
 
 
@@ -11,6 +12,7 @@ def validate_static_surfaces() -> None:
     validate_questbook_surface()
     validate_schema_surface()
     validate_local_kag_subtree_contract()
+    validate_repo_local_kag_index_contract()
     validate_bridge_schema_surface()
     validate_bridge_envelope_schema_surface()
     validate_counterpart_schema_surface()

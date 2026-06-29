@@ -208,14 +208,19 @@ class KagGenerationTestCase(unittest.TestCase):
                 "aoa-kag://providers/{repo}/manifest",
                 "aoa-kag://providers/{repo}/records/{record_class}",
                 "aoa-kag://providers/{repo}/generation",
+                "aoa-kag://providers/{repo}/source-index",
                 "aoa-kag://registry/provider-map",
+                "aoa-kag://coverage/repo-local-source-indexes",
                 "aoa-kag://readiness/os-surfaces",
             },
         )
         self.assertTrue(handoff["root_boundaries"])
         self.assertIn("generation_route_lookup", handoff["tools"])
+        self.assertIn("source_index_lookup", handoff["tools"])
+        self.assertIn("repo_local_coverage_status", handoff["tools"])
         self.assertIn("validation_status", handoff["tools"])
         self.assertIn("bounded_provider_query", handoff["prompts"])
+        self.assertIn("repo_source_surface_brief", handoff["prompts"])
         self.assertEqual(records_template["source"], "{repo}/kag/{record_class_directory}/")
         self.assertEqual(
             records_template["record_class_directory_map"],

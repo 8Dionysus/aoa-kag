@@ -13,6 +13,8 @@ def validate_top_level_schema(path: Path, label: str) -> None:
 
 def validate_schema_surface() -> None:
     validate_top_level_schema(SCHEMA_PATH, "registry")
+    validate_top_level_schema(REPO_LOCAL_KAG_INDEX_SCHEMA_PATH, "repo-local KAG index")
+    validate_top_level_schema(REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH, "repo-local KAG coverage")
 
 def validate_bridge_schema_surface() -> None:
     validate_top_level_schema(BRIDGE_SCHEMA_PATH, "bridge")

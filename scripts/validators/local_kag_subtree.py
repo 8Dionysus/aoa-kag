@@ -22,6 +22,7 @@ EXPECTED_DIRECT_REPOS = {
     "aoa-skills",
     "aoa-stats",
     "aoa-stackoverflow-connector",
+    "aoa-telegram-connector",
     "aoa-techniques",
     "aoa-xda-connector",
 }
@@ -85,6 +86,7 @@ EXPECTED_PROVIDER_READY_REPOS = {
     "aoa-skills",
     "aoa-stats",
     "aoa-stackoverflow-connector",
+    "aoa-telegram-connector",
     "aoa-techniques",
     "aoa-xda-connector",
 }
@@ -398,7 +400,18 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
             fail(f"{label} kag/{group_name}/ must contain JSON records")
         records: list[dict[str, object]] = []
         for path in files:
-            record = read_json(path)
+            if group_name == "indexes" and path.name == "source_surface_index.json":
+                record = read_json(path)
+                if isinstance(record, dict) and record.get("schema_version") == "aoa-repo-local-kag-index-v1":
+                    from .repo_local_kag_index import validate_repo_local_kag_index_payload
+
+                    validate_repo_local_kag_index_payload(
+                        record,
+                        label=f"{label} {path.relative_to(repo_root).as_posix()}",
+                    )
+                    continue
+            else:
+                record = read_json(path)
             _validate_payload_against_schema_def(
                 record,
                 def_name=def_name,

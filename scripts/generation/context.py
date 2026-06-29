@@ -80,6 +80,11 @@ AOA_STACKOVERFLOW_CONNECTOR_ROOT = repo_root_from_env_candidates(
     REPO_ROOT.parent / "aoa-stackoverflow-connector",
     REPO_ROOT.parent / "connectors" / "aoa-stackoverflow-connector",
 )
+AOA_TELEGRAM_CONNECTOR_ROOT = repo_root_from_env_candidates(
+    "AOA_TELEGRAM_CONNECTOR_ROOT",
+    REPO_ROOT.parent / "aoa-telegram-connector",
+    REPO_ROOT.parent / "connectors" / "aoa-telegram-connector",
+)
 AOA_XDA_CONNECTOR_ROOT = repo_root_from_env_candidates(
     "AOA_XDA_CONNECTOR_ROOT",
     REPO_ROOT.parent / "aoa-xda-connector",
@@ -546,6 +551,7 @@ KNOWN_REPO_ROOTS = {
     "aoa-4pda-connector": AOA_4PDA_CONNECTOR_ROOT,
     "aoa-discord-connector": AOA_DISCORD_CONNECTOR_ROOT,
     "aoa-stackoverflow-connector": AOA_STACKOVERFLOW_CONNECTOR_ROOT,
+    "aoa-telegram-connector": AOA_TELEGRAM_CONNECTOR_ROOT,
     "aoa-xda-connector": AOA_XDA_CONNECTOR_ROOT,
     TOS_REPO: TREE_OF_SOPHIA_ROOT,
 }

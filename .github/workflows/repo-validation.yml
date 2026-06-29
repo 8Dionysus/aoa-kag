@@ -18,9 +18,19 @@ jobs:
       AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
       AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
+      EIGHT_DIONYSUS_ROOT: ${{ github.workspace }}/.deps/8Dionysus
+      DIONYSUS_ROOT: ${{ github.workspace }}/.deps/Dionysus
+      ATM10_AGENT_ROOT: ${{ github.workspace }}/.deps/ATM10-Agent
       AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
+      AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
+      AOA_SESSION_MEMORY_ROOT: ${{ github.workspace }}/.deps/aoa-session-memory
+      AOA_4PDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-4pda-connector
+      AOA_DISCORD_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-discord-connector
+      AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
+      AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
+      AOA_XDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-xda-connector
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -29,71 +39,134 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Tree-of-Sophia
-          ref: afd4e1ee3b75ce00b88a409350435caeebcfeca0
+          ref: 592f4b82ca05dbd06de1727255a257e03b69b722
           path: .deps/Tree-of-Sophia
 
       - name: Checkout Agents-of-Abyss
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Agents-of-Abyss
-          ref: ba0722f5b2cf3764cbdaffdcd6006a6963bad0a9
+          ref: 5e7ea384179eda2e371bd6597bd96ef0a8f2e485
           path: .deps/Agents-of-Abyss
+
+      - name: Checkout 8Dionysus
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/8Dionysus
+          ref: 112637f833ab4af299f55229f2687344b194f256
+          path: .deps/8Dionysus
+
+      - name: Checkout Dionysus
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/Dionysus
+          ref: a8a394d4c2dccf0167d3b1e6a5dfa82c6db5ce8c
+          path: .deps/Dionysus
+
+      - name: Checkout ATM10-Agent
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/ATM10-Agent
+          ref: 590e53dfb9b8ac118067221245e427f52d0af84a
+          path: .deps/ATM10-Agent
 
       - name: Checkout aoa-memo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-memo
-          ref: 79951a2a056c11a30602a71fb91236e2a2ba45bc
+          ref: 19b1e267553262d8eff17e36f6822c60fe7cb133
           path: .deps/aoa-memo
 
       - name: Checkout aoa-playbooks
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-playbooks
-          ref: 24c762868fbb257852d6ce0b03dd356566e2cfd1
+          ref: 5559ac60aea644b6aeb26261f2d48741cc97dbc6
           path: .deps/aoa-playbooks
 
       - name: Checkout aoa-evals
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-evals
-          ref: 5a1c410ef8cb4b692fad43adb65d2eecb2a1f639
+          ref: 79b11474c9efa42dcf09c0fe5236f76ddca513bf
           path: .deps/aoa-evals
 
       - name: Checkout aoa-agents
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-agents
-          ref: e3703f06c05dc4dab155e3ffafff9414de22649b
+          ref: 6b9c84e380700f032d964d270a00586b75dc1b82
           path: .deps/aoa-agents
 
       - name: Checkout aoa-techniques
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-techniques
-          ref: 8ab16bc88e88a928d28e33384756ca426ebfa2d6
+          ref: 326f70bf4ae30426db54c82800ba254b2061d02f
           path: .deps/aoa-techniques
 
       - name: Checkout aoa-routing
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-routing
-          ref: 986098c46ea813b0f61a2cc240c5438ce489d46d
+          ref: e0892f750d4d738108fb246f231529933604365a
           path: .deps/aoa-routing
 
       - name: Checkout aoa-sdk
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-sdk
-          ref: a49420fc86133f78d554401c46e7d2230cdd7b1e
+          ref: fe23e661789888e862771f5857d99c8dd263fdb6
           path: .deps/aoa-sdk
 
       - name: Checkout aoa-skills
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-skills
-          ref: 02cc977f5080aa6736cf35fd0eb4ded7b167342e
+          ref: 6033851ada090f557e41da472e416ba43a580b46
           path: .deps/aoa-skills
+
+      - name: Checkout aoa-stats
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stats
+          ref: 8918dc8f77d76d3b3f2babb835b46b6f45610575
+          path: .deps/aoa-stats
+
+      - name: Checkout aoa-4pda-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-4pda-connector
+          ref: b67062779b0c0204b239e10518704dbd704c184a
+          path: .deps/aoa-4pda-connector
+
+      - name: Checkout aoa-discord-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-discord-connector
+          ref: e9e58b2f9839f6e64b8aa18a0c4f0fa535f93fc5
+          path: .deps/aoa-discord-connector
+
+      - name: Checkout aoa-stackoverflow-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stackoverflow-connector
+          ref: 7b9e52678974f1e268e2558bf928f8d2eb233049
+          path: .deps/aoa-stackoverflow-connector
+
+      - name: Checkout aoa-telegram-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-telegram-connector
+          ref: a622d0dc42ac938b3f41b77a94a4602fd92a18fe
+          path: .deps/aoa-telegram-connector
+
+      - name: Checkout aoa-xda-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-xda-connector
+          ref: edcd6981e5091cf9bdf13702d0a1ebb5550bccb8
+          path: .deps/aoa-xda-connector
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405

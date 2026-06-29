@@ -15,6 +15,13 @@ RECORD_CLASS_DIRECTORIES = {
 PROVIDER_RECORD_DIRECTORIES = tuple(RECORD_CLASS_DIRECTORIES.values())
 
 
+def _is_repo_local_source_index_payload(payload: object) -> bool:
+    return (
+        isinstance(payload, dict)
+        and payload.get("schema_version") == "aoa-repo-local-kag-index-v1"
+    )
+
+
 def _provider_record_payloads(
     repo: str,
     fallback_provider: dict[str, object] | None,
@@ -35,6 +42,8 @@ def _provider_record_payloads(
                     f"{repo} local KAG provider record must be a JSON object: "
                     f"{path.as_posix()}"
                 )
+            if _is_repo_local_source_index_payload(payload):
+                continue
             records.append(payload)
     if not records:
         fail(f"{repo} local KAG provider must contain records")
@@ -91,7 +100,12 @@ def _provider_record_counts(
         directory = root / group
         if not directory.is_dir():
             fail(f"{repo} local KAG provider is missing kag/{group}/")
-        result[group] = len(sorted(directory.glob("*.json")))
+        result[group] = 0
+        for path in sorted(directory.glob("*.json")):
+            payload = read_json(path)
+            if _is_repo_local_source_index_payload(payload):
+                continue
+            result[group] += 1
         if result[group] < 1:
             fail(f"{repo} local KAG provider kag/{group}/ must contain JSON records")
     return result
@@ -400,8 +414,16 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     ),
                 },
                 {
+                    "uri_template": "aoa-kag://providers/{repo}/source-index",
+                    "source": "{repo}/kag/indexes/source_surface_index.json",
+                },
+                {
                     "uri_template": "aoa-kag://registry/provider-map",
                     "source": "aoa-kag/generated/local_kag_provider_map.min.json",
+                },
+                {
+                    "uri_template": "aoa-kag://coverage/repo-local-source-indexes",
+                    "source": "aoa-kag/generated/repo_local_kag_coverage.min.json",
                 },
                 {
                     "uri_template": "aoa-kag://readiness/os-surfaces",
@@ -429,6 +451,8 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                 "provider_lookup",
                 "provider_status",
                 "generation_route_lookup",
+                "source_index_lookup",
+                "repo_local_coverage_status",
                 "freshness_check",
                 "source_return_lookup",
                 "registry_slice",
@@ -438,6 +462,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
             "prompts": [
                 "bounded_provider_query",
                 "source_return_summary",
+                "repo_source_surface_brief",
                 "cross_repo_relation_preview",
                 "runtime_handoff_brief",
             ],

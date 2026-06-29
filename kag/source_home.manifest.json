@@ -44,9 +44,15 @@
       "path": "kag/",
       "source_kind": "route_card_pair",
       "meaning": "Human and agent-facing entry route for the KAG source home.",
-      "source_files": ["kag/AGENTS.md", "kag/README.md"],
+      "source_files": [
+        "kag/AGENTS.md",
+        "kag/README.md"
+      ],
       "owner_surface": "kag/AGENTS.md",
-      "validators": ["scripts/validate_nested_agents.py", "tests/test_kag_home.py"]
+      "validators": [
+        "scripts/validate_nested_agents.py",
+        "tests/test_kag_home.py"
+      ]
     },
     {
       "id": "source_home_manifest",
@@ -54,9 +60,13 @@
       "path": "kag/source_home.manifest.json",
       "source_kind": "source_home_manifest",
       "meaning": "Machine-readable atlas for what kag/ owns and which stronger owners handle adjacent pressure.",
-      "source_files": ["kag/source_home.manifest.json"],
+      "source_files": [
+        "kag/source_home.manifest.json"
+      ],
       "owner_surface": "kag/AGENTS.md",
-      "validators": ["tests/test_kag_home.py"]
+      "validators": [
+        "tests/test_kag_home.py"
+      ]
     },
     {
       "id": "local_subtree_protocol",
@@ -64,9 +74,14 @@
       "path": "kag/LOCAL_SUBTREE_PROTOCOL.md",
       "source_kind": "local_kag_subtree_protocol",
       "meaning": "Shared protocol for repo-local KAG manifests, records, projections, receipts, validation, and MCP access shape.",
-      "source_files": ["kag/LOCAL_SUBTREE_PROTOCOL.md"],
+      "source_files": [
+        "kag/LOCAL_SUBTREE_PROTOCOL.md"
+      ],
       "owner_surface": "kag/AGENTS.md",
-      "validators": ["tests/test_kag_home.py", "scripts/validate_nested_agents.py"]
+      "validators": [
+        "tests/test_kag_home.py",
+        "scripts/validate_nested_agents.py"
+      ]
     },
     {
       "id": "provider_manifest",
@@ -74,9 +89,14 @@
       "path": "kag/manifest.json",
       "source_kind": "local_kag_manifest",
       "meaning": "aoa-kag local provider manifest for source refs, validation routes, storage posture, and consumers.",
-      "source_files": ["kag/manifest.json"],
+      "source_files": [
+        "kag/manifest.json"
+      ],
       "owner_surface": "kag/manifest.json",
-      "validators": ["scripts/validators/local_kag_subtree.py", "tests/test_validate_kag.py"]
+      "validators": [
+        "scripts/validators/local_kag_subtree.py",
+        "tests/test_validate_kag.py"
+      ]
     },
     {
       "id": "node_records",
@@ -84,9 +104,15 @@
       "path": "kag/nodes/",
       "source_kind": "local_kag_nodes",
       "meaning": "Source-linked KAG contract, direct-repo readiness, and OS-surface readiness nodes.",
-      "source_files": ["kag/nodes/local_subtree_contract.json", "kag/nodes/readiness_matrix.json", "kag/nodes/os_surface_layer.json"],
+      "source_files": [
+        "kag/nodes/local_subtree_contract.json",
+        "kag/nodes/readiness_matrix.json",
+        "kag/nodes/os_surface_layer.json"
+      ],
       "owner_surface": "kag/manifest.json",
-      "validators": ["scripts/validators/local_kag_subtree.py"]
+      "validators": [
+        "scripts/validators/local_kag_subtree.py"
+      ]
     },
     {
       "id": "edge_records",
@@ -94,9 +120,14 @@
       "path": "kag/edges/",
       "source_kind": "local_kag_edges",
       "meaning": "Bounded relation records between local KAG nodes.",
-      "source_files": ["kag/edges/contract_declares_readiness.json", "kag/edges/readiness_routes_os_surfaces.json"],
+      "source_files": [
+        "kag/edges/contract_declares_readiness.json",
+        "kag/edges/readiness_routes_os_surfaces.json"
+      ],
       "owner_surface": "kag/manifest.json",
-      "validators": ["scripts/validators/local_kag_subtree.py"]
+      "validators": [
+        "scripts/validators/local_kag_subtree.py"
+      ]
     },
     {
       "id": "index_records",
@@ -104,9 +135,14 @@
       "path": "kag/indexes/",
       "source_kind": "local_kag_indexes",
       "meaning": "Inventory records over local provider nodes and edges.",
-      "source_files": ["kag/indexes/provider_readiness_index.json"],
+      "source_files": [
+        "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/source_surface_index.json"
+      ],
       "owner_surface": "kag/manifest.json",
-      "validators": ["scripts/validators/local_kag_subtree.py"]
+      "validators": [
+        "scripts/validators/local_kag_subtree.py"
+      ]
     },
     {
       "id": "projection_records",
@@ -114,9 +150,13 @@
       "path": "kag/projections/",
       "source_kind": "local_kag_projections",
       "meaning": "MCP/resource-facing compact provider views.",
-      "source_files": ["kag/projections/mcp_contract_resource.json"],
+      "source_files": [
+        "kag/projections/mcp_contract_resource.json"
+      ],
       "owner_surface": "kag/manifest.json",
-      "validators": ["scripts/validators/local_kag_subtree.py"]
+      "validators": [
+        "scripts/validators/local_kag_subtree.py"
+      ]
     },
     {
       "id": "receipt_records",
@@ -124,9 +164,13 @@
       "path": "kag/receipts/",
       "source_kind": "local_kag_receipts",
       "meaning": "Validation receipt for the current provider packet.",
-      "source_files": ["kag/receipts/validation_receipt.json"],
+      "source_files": [
+        "kag/receipts/validation_receipt.json"
+      ],
       "owner_surface": "kag/manifest.json",
-      "validators": ["scripts/validators/local_kag_subtree.py"]
+      "validators": [
+        "scripts/validators/local_kag_subtree.py"
+      ]
     }
   ],
   "current_payload_routes": {
@@ -159,6 +203,7 @@
     "aoa-4pda-connector",
     "aoa-discord-connector",
     "aoa-stackoverflow-connector",
+    "aoa-telegram-connector",
     "aoa-xda-connector"
   ],
   "stronger_owner_routes": [

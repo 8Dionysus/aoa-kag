@@ -14,6 +14,8 @@
 | `scripts/run_tests.py` | unittest discovery for root and active mechanics part tests |
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
 | `scripts/validate_kag.py` | repo-wide KAG validation entrypoint |
+| `scripts/generate_repo_local_kag_index.py` | repo-local source surface index builder |
+| `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
 
 ## Lane Entries
 

@@ -26,6 +26,8 @@ def repo_root_from_env(env_name: str, default: Path) -> Path:
         return default
     return Path(override).expanduser().resolve()
 
+OS_ABYSS_ROOT = repo_root_from_env("OS_ABYSS_ROOT", REPO_ROOT.parent)
+
 TREE_OF_SOPHIA_ROOT = repo_root_from_env(
     "TREE_OF_SOPHIA_ROOT", REPO_ROOT.parent / "Tree-of-Sophia"
 )
@@ -37,6 +39,18 @@ LOCAL_KAG_SUBTREE_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-subtree.schem
 LOCAL_KAG_SUBTREE_EXAMPLE_PATH = REPO_ROOT / "examples" / "local_kag_subtree.example.json"
 
 LOCAL_KAG_READINESS_MANIFEST_PATH = REPO_ROOT / "manifests" / "local_kag_readiness.json"
+
+REPO_LOCAL_KAG_INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
+
+REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
+
+REPO_LOCAL_KAG_INDEX_EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
+
+REPO_LOCAL_KAG_INDEX_PATH = REPO_ROOT / "kag" / "indexes" / "source_surface_index.json"
+
+REPO_LOCAL_KAG_COVERAGE_PATH = REPO_ROOT / "generated" / "repo_local_kag_coverage.json"
+
+REPO_LOCAL_KAG_COVERAGE_MIN_PATH = REPO_ROOT / "generated" / "repo_local_kag_coverage.min.json"
 
 BRIDGE_SCHEMA_PATH = (
     TOS_RETRIEVAL_AXIS_PART_ROOT / "schemas" / "bridge-retrieval-surface.schema.json"

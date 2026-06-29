@@ -26,6 +26,12 @@ jobs:
       AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
+      AOA_SESSION_MEMORY_ROOT: ${{ github.workspace }}/.deps/aoa-session-memory
+      AOA_4PDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-4pda-connector
+      AOA_DISCORD_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-discord-connector
+      AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
+      AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
+      AOA_XDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-xda-connector
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -113,6 +119,36 @@ jobs:
         with:
           repository: 8Dionysus/aoa-stats
           path: .deps/aoa-stats
+
+      - name: Checkout aoa-4pda-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-4pda-connector
+          path: .deps/aoa-4pda-connector
+
+      - name: Checkout aoa-discord-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-discord-connector
+          path: .deps/aoa-discord-connector
+
+      - name: Checkout aoa-stackoverflow-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stackoverflow-connector
+          path: .deps/aoa-stackoverflow-connector
+
+      - name: Checkout aoa-telegram-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-telegram-connector
+          path: .deps/aoa-telegram-connector
+
+      - name: Checkout aoa-xda-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-xda-connector
+          path: .deps/aoa-xda-connector
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
