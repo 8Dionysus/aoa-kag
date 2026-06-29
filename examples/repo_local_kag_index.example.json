@@ -1,0 +1,297 @@
+{
+  "schema_version": "aoa-repo-local-kag-index-v1",
+  "repo": {
+    "name": "aoa-kag",
+    "owner_type": "organ",
+    "root": ".",
+    "git_ref": "example"
+  },
+  "index_identity": {
+    "local_id": "index:repo-local:source-surfaces",
+    "artifact_kind": "source_surface_index",
+    "content_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "schema_ref": "aoa-kag:schemas/repo-local-kag-index.schema.json"
+  },
+  "toolchain": {
+    "baseline_tools": [
+      "git",
+      "rg",
+      "fd",
+      "jq",
+      "python",
+      "sqlite3",
+      "sha256sum",
+      "file",
+      "stat"
+    ],
+    "capability_lanes": [
+      {
+        "lane": "code-structure",
+        "status": "planned",
+        "tools": [
+          "ctags",
+          "tree-sitter",
+          "SCIP"
+        ]
+      },
+      {
+        "lane": "material-inventory",
+        "status": "planned",
+        "tools": [
+          "Syft",
+          "SPDX",
+          "CycloneDX"
+        ]
+      },
+      {
+        "lane": "signing-attestation",
+        "status": "planned",
+        "tools": [
+          "SLSA",
+          "in-toto",
+          "Cosign",
+          "GitHub artifact attestations"
+        ]
+      },
+      {
+        "lane": "static-findings",
+        "status": "planned",
+        "tools": [
+          "Semgrep",
+          "SARIF"
+        ]
+      },
+      {
+        "lane": "document-conversion",
+        "status": "planned",
+        "tools": [
+          "Docling",
+          "MarkItDown",
+          "Unstructured"
+        ]
+      }
+    ]
+  },
+  "coverage_summary": {
+    "record_count": 2,
+    "document_count": 1,
+    "heading_count": 1,
+    "mechanics_count": 0,
+    "command_count": 1,
+    "validator_count": 1,
+    "test_count": 0,
+    "script_count": 1,
+    "schema_count": 0,
+    "generated_count": 0,
+    "unknown_count": 0
+  },
+  "records": [
+    {
+      "identity": {
+        "id": "file:readme.md",
+        "repo": "aoa-kag",
+        "path": "README.md",
+        "git_ref": "example",
+        "content_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "size_bytes": 1200,
+        "mime": "text/markdown"
+      },
+      "observed_form": "file",
+      "surface_state": "authored_source",
+      "artifact_kind": "document",
+      "document_role": "readme",
+      "code_role": "none",
+      "mechanics_role": "none",
+      "command_role": "none",
+      "abi": {
+        "artifact_class": "document",
+        "schema_version": "none",
+        "abi_epoch": "source",
+        "contract_version": "none",
+        "compatibility": "stable"
+      },
+      "signs": {
+        "digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "signature_ref": "",
+        "attestation_ref": "",
+        "verification_state": "digest-only"
+      },
+      "provenance": {
+        "observed_by": "scripts/generate_repo_local_kag_index.py",
+        "generated_by": "",
+        "validated_by": [
+          "scripts/validate_kag.py"
+        ],
+        "source_refs": [
+          {
+            "repo": "aoa-kag",
+            "path": "README.md",
+            "role": "primary",
+            "authority": "authored_source"
+          }
+        ],
+        "materials": []
+      },
+      "toolchain": {
+        "detected_tools": [
+          "git",
+          "python"
+        ],
+        "required_tools": [
+          "python"
+        ],
+        "owner_commands": []
+      },
+      "classification": {
+        "primary_kind": "document",
+        "confidence": "high"
+      },
+      "freshness": {
+        "mode": "source_snapshot",
+        "state": "current",
+        "checked_ref": "example"
+      },
+      "access": {
+        "scope": "public",
+        "secrets_risk": "none"
+      },
+      "refs": {
+        "path_ref": "README.md",
+        "line_refs": [
+          "README.md:1"
+        ],
+        "heading_refs": [
+          {
+            "level": 1,
+            "title": "aoa-kag",
+            "anchor": "aoa-kag",
+            "line": 1,
+            "ref": "README.md#aoa-kag"
+          }
+        ]
+      },
+      "owner_return_route": {
+        "surface": "README.md",
+        "route_kind": "document_owner"
+      },
+      "validator_route": {
+        "surface": "scripts/validate_kag.py",
+        "route_kind": "source_fast"
+      },
+      "consumer_route": {
+        "surface": "aoa-kag-mcp",
+        "route_kind": "resource"
+      }
+    },
+    {
+      "identity": {
+        "id": "file:scripts/validate_kag.py",
+        "repo": "aoa-kag",
+        "path": "scripts/validate_kag.py",
+        "git_ref": "example",
+        "content_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "size_bytes": 220,
+        "mime": "text/x-python"
+      },
+      "observed_form": "command",
+      "surface_state": "authored_source",
+      "artifact_kind": "validator",
+      "document_role": "none",
+      "code_role": "validator",
+      "mechanics_role": "none",
+      "command_role": "validator",
+      "abi": {
+        "artifact_class": "validator",
+        "schema_version": "none",
+        "abi_epoch": "source",
+        "contract_version": "source-fast",
+        "compatibility": "stable"
+      },
+      "signs": {
+        "digest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "signature_ref": "",
+        "attestation_ref": "",
+        "verification_state": "digest-only"
+      },
+      "provenance": {
+        "observed_by": "scripts/generate_repo_local_kag_index.py",
+        "generated_by": "",
+        "validated_by": [
+          "scripts/validate_kag.py"
+        ],
+        "source_refs": [
+          {
+            "repo": "aoa-kag",
+            "path": "scripts/validate_kag.py",
+            "role": "primary",
+            "authority": "authored_source"
+          }
+        ],
+        "materials": []
+      },
+      "toolchain": {
+        "detected_tools": [
+          "git",
+          "python"
+        ],
+        "required_tools": [
+          "python"
+        ],
+        "owner_commands": [
+          "python scripts/validate_kag.py"
+        ]
+      },
+      "classification": {
+        "primary_kind": "command",
+        "confidence": "high"
+      },
+      "freshness": {
+        "mode": "source_snapshot",
+        "state": "current",
+        "checked_ref": "example"
+      },
+      "access": {
+        "scope": "public",
+        "secrets_risk": "none"
+      },
+      "refs": {
+        "path_ref": "scripts/validate_kag.py",
+        "line_refs": [
+          "scripts/validate_kag.py:1"
+        ],
+        "heading_refs": []
+      },
+      "owner_return_route": {
+        "surface": "scripts/validate_kag.py",
+        "route_kind": "validator_owner"
+      },
+      "validator_route": {
+        "surface": "scripts/validate_kag.py",
+        "route_kind": "source_fast"
+      },
+      "consumer_route": {
+        "surface": "aoa-kag-mcp",
+        "route_kind": "resource"
+      }
+    }
+  ],
+  "registry_output": {
+    "consumer": "aoa-kag-mcp",
+    "resource_shape": [
+      "repo-local-source-surface-index",
+      "repo-local-document-records",
+      "repo-local-command-records"
+    ],
+    "stable_fields": [
+      "identity.id",
+      "identity.path",
+      "identity.content_hash",
+      "artifact_kind",
+      "document_role",
+      "mechanics_role",
+      "command_role",
+      "provenance.source_refs",
+      "refs.heading_refs"
+    ]
+  }
+}

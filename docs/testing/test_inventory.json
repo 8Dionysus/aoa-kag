@@ -119,21 +119,35 @@
             "source/route-contract"
           ]
         },
-        {
-          "path": "tests/test_repo_validation_workflow.py",
-          "family": "release/ci-lane",
-          "protects": "GitHub repo validation workflow dependency pins and generated drift posture.",
+    {
+      "path": "tests/test_repo_validation_workflow.py",
+      "family": "release/ci-lane",
+      "protects": "GitHub repo validation workflow dependency pins and generated drift posture.",
           "owner_surface": ".github/workflows/repo-validation.yml",
           "runtime_cost": "fast",
           "focused_target": "tests/test_repo_validation_workflow.py",
           "failure_route": "Route through workflow lane entrypoints, dependency pins, or release command authority.",
           "coverage_kinds": [
             "release/artifact-trust",
-            "topology/inventory"
-          ]
-        },
-        {
-          "path": "tests/test_roadmap_parity.py",
+        "topology/inventory"
+      ]
+    },
+    {
+      "path": "tests/test_repo_local_kag_index.py",
+      "family": "kag/source-surface-index",
+      "protects": "Repo-local KAG index contract, generator coverage, document headings, mechanics, commands, schemas, and OS-wide coverage statuses.",
+      "owner_surface": "schemas/repo-local-kag-index.schema.json",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_index.py",
+      "failure_route": "Route through repo-local KAG index schema, generator, validator, generated coverage, or kag/indexes/source_surface_index.json.",
+      "coverage_kinds": [
+        "topology/inventory",
+        "source/route-contract",
+        "generated/parity"
+      ]
+    },
+    {
+      "path": "tests/test_roadmap_parity.py",
           "family": "docs/root-surface",
           "protects": "Roadmap parity with current KAG direction.",
           "owner_surface": "ROADMAP.md",

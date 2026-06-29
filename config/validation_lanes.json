@@ -83,7 +83,8 @@
   },
   "drift_paths": {
     "generated": [
-      "generated"
+      "generated",
+      "kag/indexes/source_surface_index.json"
     ]
   },
   "command_sequences": {
@@ -133,6 +134,30 @@
       ],
       [
         "python",
+        "scripts/generate_repo_local_kag_coverage.py"
+      ],
+      [
+        "python",
+        "scripts/generate_repo_local_kag_index.py",
+        "--repo-root",
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json"
+      ],
+      [
+        "python",
+        "scripts/generate_repo_local_kag_coverage.py"
+      ],
+      [
+        "python",
+        "scripts/generate_repo_local_kag_index.py",
+        "--repo-root",
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json"
+      ],
+      [
+        "python",
         "scripts/validate_kag.py"
       ]
     ],
@@ -172,11 +197,36 @@
         "scripts/generate_kag.py"
       ],
       [
+        "python",
+        "scripts/generate_repo_local_kag_coverage.py"
+      ],
+      [
+        "python",
+        "scripts/generate_repo_local_kag_index.py",
+        "--repo-root",
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json"
+      ],
+      [
+        "python",
+        "scripts/generate_repo_local_kag_coverage.py"
+      ],
+      [
+        "python",
+        "scripts/generate_repo_local_kag_index.py",
+        "--repo-root",
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json"
+      ],
+      [
         "git",
         "diff",
         "--exit-code",
         "--",
-        "generated"
+        "generated",
+        "kag/indexes/source_surface_index.json"
       ]
     ]
   }

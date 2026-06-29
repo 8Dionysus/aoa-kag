@@ -75,6 +75,15 @@ contract, example packet, and OS Abyss readiness matrix.
 `scripts/kag_generation.py` is the compatibility facade for existing imports.
 The implementation modules live in `scripts/generation/`.
 
+`scripts/generate_repo_local_kag_index.py` builds the repo-local
+`kag/indexes/source_surface_index.json` from the current repository's source,
+document, mechanics, command, schema, generated, and receipt surfaces.
+
+`scripts/generate_repo_local_kag_coverage.py` builds
+`generated/repo_local_kag_coverage.json` and the minified companion from live
+OS Abyss provider roots, with committed rows carrying sealed roots in runner
+environments without a mounted source root.
+
 `scripts/run_part_local_checks.py` discovers active
 `mechanics/<package>/parts/<part>/scripts/build_*.py` and `validate_*.py`
 surfaces, runs builders with `--check`, and runs validators directly from the

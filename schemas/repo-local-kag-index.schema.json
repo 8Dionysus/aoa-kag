@@ -1,0 +1,829 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-index.schema.json",
+  "title": "AoA repo-local KAG source surface index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "index_identity",
+    "toolchain",
+    "coverage_summary",
+    "records",
+    "registry_output"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-index-v1"
+    },
+    "repo": {
+      "$ref": "#/$defs/repoIdentity"
+    },
+    "index_identity": {
+      "$ref": "#/$defs/indexIdentity"
+    },
+    "toolchain": {
+      "$ref": "#/$defs/indexToolchain"
+    },
+    "coverage_summary": {
+      "$ref": "#/$defs/coverageSummary"
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/sourceSurfaceRecord"
+      }
+    },
+    "registry_output": {
+      "$ref": "#/$defs/registryOutput"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repoName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^/][^\\n]*$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "repoIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "owner_type",
+        "root",
+        "git_ref"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/repoName"
+        },
+        "owner_type": {
+          "type": "string",
+          "enum": [
+            "center",
+            "organ",
+            "connector",
+            "bundle_provider",
+            "runtime_source",
+            "runtime_mirror",
+            "workspace",
+            "unknown"
+          ]
+        },
+        "root": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "git_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "indexIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "artifact_kind",
+        "content_digest",
+        "schema_ref"
+      ],
+      "properties": {
+        "local_id": {
+          "const": "index:repo-local:source-surfaces"
+        },
+        "artifact_kind": {
+          "const": "source_surface_index"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/repo-local-kag-index.schema.json"
+        }
+      }
+    },
+    "indexToolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline_tools",
+        "capability_lanes"
+      ],
+      "properties": {
+        "baseline_tools": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "capability_lanes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/capabilityLane"
+          }
+        }
+      }
+    },
+    "capabilityLane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane",
+        "status",
+        "tools"
+      ],
+      "properties": {
+        "lane": {
+          "type": "string",
+          "enum": [
+            "code-structure",
+            "material-inventory",
+            "signing-attestation",
+            "static-findings",
+            "document-conversion"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "baseline",
+            "available",
+            "planned"
+          ]
+        },
+        "tools": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "coverageSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_count",
+        "document_count",
+        "heading_count",
+        "mechanics_count",
+        "command_count",
+        "validator_count",
+        "test_count",
+        "script_count",
+        "schema_count",
+        "generated_count",
+        "unknown_count"
+      ],
+      "properties": {
+        "record_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "heading_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mechanics_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "command_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "validator_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "test_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "script_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "generated_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknown_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "sourceSurfaceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "observed_form",
+        "surface_state",
+        "artifact_kind",
+        "document_role",
+        "code_role",
+        "mechanics_role",
+        "command_role",
+        "abi",
+        "signs",
+        "provenance",
+        "toolchain",
+        "classification",
+        "freshness",
+        "access",
+        "refs",
+        "owner_return_route",
+        "validator_route",
+        "consumer_route"
+      ],
+      "properties": {
+        "identity": {
+          "$ref": "#/$defs/recordIdentity"
+        },
+        "observed_form": {
+          "type": "string",
+          "enum": [
+            "file",
+            "directory",
+            "package",
+            "symbol",
+            "command",
+            "generated_output",
+            "runtime_surface",
+            "external",
+            "unknown"
+          ]
+        },
+        "surface_state": {
+          "type": "string",
+          "enum": [
+            "authored_source",
+            "generated_readmodel",
+            "runtime_state",
+            "receipt",
+            "legacy",
+            "candidate",
+            "external"
+          ]
+        },
+        "artifact_kind": {
+          "type": "string",
+          "enum": [
+            "document",
+            "source_code",
+            "schema",
+            "manifest",
+            "config",
+            "script",
+            "test",
+            "validator",
+            "mechanics_surface",
+            "generated_readmodel",
+            "receipt",
+            "index",
+            "projection",
+            "package_manifest",
+            "license",
+            "security",
+            "unknown"
+          ]
+        },
+        "document_role": {
+          "type": "string",
+          "enum": [
+            "readme",
+            "agents",
+            "design",
+            "design_agents",
+            "decision",
+            "mechanics_doc",
+            "parts",
+            "provenance",
+            "roadmap",
+            "changelog",
+            "commands",
+            "report",
+            "audit",
+            "release_notes",
+            "handoff",
+            "validation_doc",
+            "testing_doc",
+            "source_policy",
+            "boundary",
+            "none",
+            "unknown_document"
+          ]
+        },
+        "code_role": {
+          "type": "string",
+          "enum": [
+            "source_module",
+            "entrypoint",
+            "builder",
+            "validator",
+            "test",
+            "schema_adjacent",
+            "none",
+            "unknown_code"
+          ]
+        },
+        "mechanics_role": {
+          "type": "string",
+          "enum": [
+            "mechanic_package",
+            "mechanic_part",
+            "part_contract",
+            "part_doc",
+            "part_schema",
+            "part_script",
+            "part_test",
+            "legacy",
+            "none"
+          ]
+        },
+        "command_role": {
+          "type": "string",
+          "enum": [
+            "script",
+            "validator",
+            "test",
+            "builder",
+            "lane_entrypoint",
+            "command_doc",
+            "none"
+          ]
+        },
+        "abi": {
+          "$ref": "#/$defs/abiPosture"
+        },
+        "signs": {
+          "$ref": "#/$defs/signPosture"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "toolchain": {
+          "$ref": "#/$defs/recordToolchain"
+        },
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "freshness": {
+          "$ref": "#/$defs/freshness"
+        },
+        "access": {
+          "$ref": "#/$defs/access"
+        },
+        "refs": {
+          "$ref": "#/$defs/refs"
+        },
+        "owner_return_route": {
+          "$ref": "#/$defs/route"
+        },
+        "validator_route": {
+          "$ref": "#/$defs/route"
+        },
+        "consumer_route": {
+          "$ref": "#/$defs/route"
+        }
+      }
+    },
+    "recordIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repo",
+        "path",
+        "git_ref",
+        "content_hash",
+        "size_bytes",
+        "mime"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_.:/#-]*$"
+        },
+        "repo": {
+          "$ref": "#/$defs/repoName"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "git_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "content_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mime": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "abiPosture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_class",
+        "schema_version",
+        "abi_epoch",
+        "contract_version",
+        "compatibility"
+      ],
+      "properties": {
+        "artifact_class": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "abi_epoch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "compatibility": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "candidate",
+            "generated",
+            "legacy",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "signPosture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "digest",
+        "signature_ref",
+        "attestation_ref",
+        "verification_state"
+      ],
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "signature_ref": {
+          "type": "string"
+        },
+        "attestation_ref": {
+          "type": "string"
+        },
+        "verification_state": {
+          "type": "string",
+          "enum": [
+            "digest-only",
+            "signed",
+            "attested",
+            "verified",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_by",
+        "generated_by",
+        "validated_by",
+        "source_refs",
+        "materials"
+      ],
+      "properties": {
+        "observed_by": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "generated_by": {
+          "type": "string"
+        },
+        "validated_by": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          }
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          }
+        }
+      }
+    },
+    "recordToolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "detected_tools",
+        "required_tools",
+        "owner_commands"
+      ],
+      "properties": {
+        "detected_tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "required_tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "owner_commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_kind",
+        "confidence"
+      ],
+      "properties": {
+        "primary_kind": {
+          "type": "string",
+          "enum": [
+            "artifact",
+            "document",
+            "entity",
+            "event",
+            "process",
+            "surface",
+            "command",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "state",
+        "checked_ref"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "source_snapshot",
+            "generated_check",
+            "validator_receipt",
+            "unknown"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "current",
+            "candidate",
+            "stale",
+            "unknown"
+          ]
+        },
+        "checked_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "secrets_risk"
+      ],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "public",
+            "private",
+            "local",
+            "runtime"
+          ]
+        },
+        "secrets_risk": {
+          "type": "string",
+          "enum": [
+            "none",
+            "review",
+            "secret-risk"
+          ]
+        }
+      }
+    },
+    "refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path_ref",
+        "line_refs",
+        "heading_refs"
+      ],
+      "properties": {
+        "path_ref": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "line_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "heading_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/headingRef"
+          }
+        }
+      }
+    },
+    "headingRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "title",
+        "anchor",
+        "line",
+        "ref"
+      ],
+      "properties": {
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "anchor": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface",
+        "route_kind"
+      ],
+      "properties": {
+        "surface": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "route_kind": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "path",
+        "role",
+        "authority"
+      ],
+      "properties": {
+        "repo": {
+          "$ref": "#/$defs/repoName"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "primary",
+            "supporting",
+            "owner_route",
+            "validator",
+            "material"
+          ]
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "authored_source",
+            "derived_readmodel",
+            "generated_receipt",
+            "runtime_route",
+            "external_standard"
+          ]
+        }
+      }
+    },
+    "registryOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consumer",
+        "resource_shape",
+        "stable_fields"
+      ],
+      "properties": {
+        "consumer": {
+          "const": "aoa-kag-mcp"
+        },
+        "resource_shape": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "stable_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

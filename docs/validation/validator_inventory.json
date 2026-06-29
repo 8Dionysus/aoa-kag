@@ -295,6 +295,22 @@
       "covered_by": "tests/test_validate_kag.py"
     },
     {
+      "path": "scripts/validators/repo_local_kag_index.py",
+      "module_type": "repo_local_kag_index_contract",
+      "function": "Validate repo-local source surface index schema, example, generated index parity, and OS-wide coverage parity.",
+      "inputs": [
+        "schemas/repo-local-kag-index.schema.json",
+        "schemas/repo-local-kag-coverage.schema.json",
+        "examples/repo_local_kag_index.example.json",
+        "kag/indexes/source_surface_index.json",
+        "generated/repo_local_kag_coverage.json"
+      ],
+      "outputs": [
+        "repo-local index and coverage contract verdicts"
+      ],
+      "covered_by": "tests/test_repo_local_kag_index.py"
+    },
+    {
       "path": "scripts/validators/manifest_contracts.py",
       "module_type": "manifest_facade",
       "function": "Import facade for source manifest contract validators.",

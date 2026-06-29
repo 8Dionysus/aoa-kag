@@ -32,6 +32,12 @@ classes when their own source surfaces are ready.
 | `projections/` | MCP/resource-facing compact views |
 | `receipts/` | validation receipts |
 
+`indexes/source_surface_index.json` is the repo-local source surface index for
+`aoa-kag`. It covers source files, Markdown documents and heading coordinates,
+mechanics, scripts, validators, tests, schemas, generated read models,
+receipts, ABI/sign posture, provenance, toolchain, owner-return routes, and
+future `aoa-kag-mcp` resource coordinates.
+
 ## Provider Role
 
 The `aoa-kag` provider packet anchors the OS Abyss local KAG contract:
@@ -80,6 +86,7 @@ The provider-ready homes are:
 | `aoa-4pda-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-discord-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-stackoverflow-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
+| `aoa-telegram-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-xda-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 
 All homes expose the same record classes while returning to their own source
@@ -90,4 +97,6 @@ owners.
 `aoa-kag` composes provider packets into registry and composition surfaces.
 `abyss-stack` consumes the portable packet for runtime mirrors. `aoa-kag-mcp`
 will expose resources, roots, selected tools, and prompts from
-`generated/local_kag_provider_map.min.json` and validated provider packets.
+`generated/local_kag_provider_map.min.json`, validated provider packets,
+`kag/indexes/source_surface_index.json`, and
+`generated/repo_local_kag_coverage.min.json`.

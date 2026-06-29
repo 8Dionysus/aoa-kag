@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-coverage.schema.json",
+  "title": "AoA repo-local KAG coverage report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_contract",
+    "root",
+    "coverage_summary",
+    "owners"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-coverage-v1"
+    },
+    "source_contract": {
+      "const": "schemas/repo-local-kag-index.schema.json"
+    },
+    "root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coverage_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_count",
+        "passed",
+        "migration_needed",
+        "missing",
+        "owner_specific"
+      ],
+      "properties": {
+        "owner_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "migration_needed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "owner_specific": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/ownerCoverage"
+      }
+    }
+  },
+  "$defs": {
+    "ownerCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "owner_type",
+        "root",
+        "kag_home",
+        "index_status",
+        "index_files",
+        "coverage"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_type": {
+          "type": "string",
+          "enum": [
+            "center",
+            "organ",
+            "connector",
+            "bundle_provider",
+            "runtime_source",
+            "runtime_mirror",
+            "workspace",
+            "unknown"
+          ]
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kag_home": {
+          "type": "string"
+        },
+        "index_status": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "migration-needed",
+            "missing",
+            "owner-specific"
+          ]
+        },
+        "index_files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "documents",
+            "mechanics",
+            "commands",
+            "validators",
+            "tests",
+            "scripts",
+            "schemas",
+            "generated"
+          ],
+          "properties": {
+            "documents": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "mechanics": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "commands": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "validators": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tests": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "scripts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "schemas": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "generated": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

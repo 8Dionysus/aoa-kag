@@ -8,16 +8,25 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
 CURRENT_DEPENDENCY_PINS = {
-    "Tree-of-Sophia": "afd4e1ee3b75ce00b88a409350435caeebcfeca0",
-    "Agents-of-Abyss": "ba0722f5b2cf3764cbdaffdcd6006a6963bad0a9",
-    "aoa-memo": "79951a2a056c11a30602a71fb91236e2a2ba45bc",
-    "aoa-playbooks": "24c762868fbb257852d6ce0b03dd356566e2cfd1",
-    "aoa-evals": "5a1c410ef8cb4b692fad43adb65d2eecb2a1f639",
-    "aoa-agents": "e3703f06c05dc4dab155e3ffafff9414de22649b",
-    "aoa-techniques": "8ab16bc88e88a928d28e33384756ca426ebfa2d6",
-    "aoa-routing": "986098c46ea813b0f61a2cc240c5438ce489d46d",
-    "aoa-sdk": "a49420fc86133f78d554401c46e7d2230cdd7b1e",
-    "aoa-skills": "02cc977f5080aa6736cf35fd0eb4ded7b167342e",
+    "8Dionysus": "112637f833ab4af299f55229f2687344b194f256",
+    "ATM10-Agent": "590e53dfb9b8ac118067221245e427f52d0af84a",
+    "Tree-of-Sophia": "592f4b82ca05dbd06de1727255a257e03b69b722",
+    "Agents-of-Abyss": "5e7ea384179eda2e371bd6597bd96ef0a8f2e485",
+    "Dionysus": "a8a394d4c2dccf0167d3b1e6a5dfa82c6db5ce8c",
+    "aoa-memo": "19b1e267553262d8eff17e36f6822c60fe7cb133",
+    "aoa-playbooks": "5559ac60aea644b6aeb26261f2d48741cc97dbc6",
+    "aoa-evals": "79b11474c9efa42dcf09c0fe5236f76ddca513bf",
+    "aoa-agents": "6b9c84e380700f032d964d270a00586b75dc1b82",
+    "aoa-techniques": "326f70bf4ae30426db54c82800ba254b2061d02f",
+    "aoa-routing": "e0892f750d4d738108fb246f231529933604365a",
+    "aoa-sdk": "fe23e661789888e862771f5857d99c8dd263fdb6",
+    "aoa-skills": "6033851ada090f557e41da472e416ba43a580b46",
+    "aoa-stats": "8918dc8f77d76d3b3f2babb835b46b6f45610575",
+    "aoa-4pda-connector": "b67062779b0c0204b239e10518704dbd704c184a",
+    "aoa-discord-connector": "e9e58b2f9839f6e64b8aa18a0c4f0fa535f93fc5",
+    "aoa-stackoverflow-connector": "7b9e52678974f1e268e2558bf928f8d2eb233049",
+    "aoa-telegram-connector": "a622d0dc42ac938b3f41b77a94a4602fd92a18fe",
+    "aoa-xda-connector": "edcd6981e5091cf9bdf13702d0a1ebb5550bccb8",
 }
 
 

@@ -55,7 +55,7 @@ and where does a stronger claim return?
 | root surfaces | public entry, charter boundary, system form, agent route law, current direction |
 | `docs/` | authored explanation of KAG model, source policy, boundaries, bridge contracts, maturity, quarantine, regrounding, and consumer posture |
 | `docs/decisions/` | durable rationale for KAG route, boundary, manifest, generated-pack, validator, and federation choices |
-| `kag/` | source-home preflight for future repo-local KAG subtrees, portable record classes, rollout stop-lines, and runtime-state exclusions |
+| `kag/` | source-home preflight for future repo-local KAG subtrees, portable record classes, repo-local source surface indexes, rollout stop-lines, and runtime-state exclusions |
 | `mechanics/` | repeatable KAG operation topology and future package routes around substrate work |
 | `manifests/` | source-authored control surfaces for what should be lifted and what outputs should exist |
 | `generated/` | derived KAG read models and compact payloads built from source surfaces |
@@ -97,6 +97,8 @@ The repository should support:
 
 - source-linked graph and retrieval projections;
 - stable KAG surface identifiers;
+- repo-local source surface indexes with document, mechanics, command,
+  provenance, ABI/sign, and owner-return coordinates;
 - manifest-driven generation;
 - schema-checked payloads and examples;
 - bounded bridge and handoff routes;

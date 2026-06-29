@@ -32,16 +32,18 @@ CANARY_PROVIDER_ROOT_ENVS = {
     "aoa-playbooks": "AOA_PLAYBOOKS_ROOT",
     "aoa-routing": "AOA_ROUTING_ROOT",
     "aoa-sdk": "AOA_SDK_ROOT",
+    "aoa-session-memory": "AOA_SESSION_MEMORY_ROOT",
     "aoa-skills": "AOA_SKILLS_ROOT",
     "aoa-stats": "AOA_STATS_ROOT",
     "aoa-techniques": "AOA_TECHNIQUES_ROOT",
+    "aoa-4pda-connector": "AOA_4PDA_CONNECTOR_ROOT",
+    "aoa-discord-connector": "AOA_DISCORD_CONNECTOR_ROOT",
+    "aoa-stackoverflow-connector": "AOA_STACKOVERFLOW_CONNECTOR_ROOT",
+    "aoa-telegram-connector": "AOA_TELEGRAM_CONNECTOR_ROOT",
+    "aoa-xda-connector": "AOA_XDA_CONNECTOR_ROOT",
 }
-CANARY_FALLBACK_PROVIDER_REPOS = {
-    "aoa-4pda-connector",
-    "aoa-discord-connector",
+SEALED_PROVIDER_REPOS = {
     "aoa-session-memory",
-    "aoa-stackoverflow-connector",
-    "aoa-xda-connector",
 }
 
 
@@ -138,6 +140,26 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown lane"):
             validation_lanes.command_sequence_for_lane("missing")
 
+    def test_generated_lanes_rebuild_source_index_after_final_coverage_refresh(self) -> None:
+        coverage_command = ("python", "scripts/generate_repo_local_kag_coverage.py")
+        index_command = (
+            "python",
+            "scripts/generate_repo_local_kag_index.py",
+            "--repo-root",
+            ".",
+            "--output",
+            "kag/indexes/source_surface_index.json",
+        )
+        for lane_name in ("generated_check", "compatibility_canary"):
+            sequence = command_sequence_from_manifest(lane_name)
+            last_coverage = max(
+                index for index, command in enumerate(sequence) if command == coverage_command
+            )
+            last_index = max(
+                index for index, command in enumerate(sequence) if command == index_command
+            )
+            self.assertLess(last_coverage, last_index)
+
     def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
         with patch.object(ci_gate, "run_sequence") as run_sequence:
             ci_gate.run_source_fast()
@@ -207,6 +229,9 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertNotIn("python scripts/generate_kag.py", canary)
 
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
+        repo_validation = (
+            REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
+        ).read_text(encoding="utf-8")
         canary = (
             REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
         ).read_text(encoding="utf-8")
@@ -214,11 +239,16 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         expected_sibling_providers = provider_ready_repos_from_manifest() - {"aoa-kag"}
         self.assertEqual(
             expected_sibling_providers,
-            set(CANARY_PROVIDER_ROOT_ENVS) | CANARY_FALLBACK_PROVIDER_REPOS,
+            set(CANARY_PROVIDER_ROOT_ENVS),
         )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):
+                self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", repo_validation)
                 self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", canary)
+                if repo in SEALED_PROVIDER_REPOS:
+                    continue
+                self.assertIn(f"repository: 8Dionysus/{repo}", repo_validation)
+                self.assertIn(f"path: .deps/{repo}", repo_validation)
                 self.assertIn(f"repository: 8Dionysus/{repo}", canary)
                 self.assertIn(f"path: .deps/{repo}", canary)
 

@@ -24,6 +24,7 @@ page.
 | Agent-facing route law | [AGENTS](AGENTS.md), then the nearest nested `AGENTS.md` |
 | KAG model, source policy, and owner boundaries | [KAG_MODEL](docs/KAG_MODEL.md), [BOUNDARIES](docs/BOUNDARIES.md), [SOURCE_POLICY](docs/SOURCE_POLICY.md) |
 | Local `/kag` source-home preflight | [kag](kag/README.md), [source_home.manifest](kag/source_home.manifest.json), [LOCAL_SUBTREE_PROTOCOL](kag/LOCAL_SUBTREE_PROTOCOL.md) |
+| Repo-local source surface index | [source_surface_index](kag/indexes/source_surface_index.json), [index schema](schemas/repo-local-kag-index.schema.json), [coverage report](generated/repo_local_kag_coverage.min.json) |
 | Repeatable KAG operation topology | [mechanics](mechanics/README.md), [mechanics topology](mechanics/topology.json) |
 | Current consumer and bridge posture | [CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md), [BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs map](docs/README.md) |
 | Manifest, generated, schema, and example surfaces | [manifests](manifests/AGENTS.md), [generated](generated/AGENTS.md), [schemas](schemas/AGENTS.md), [examples](examples/AGENTS.md) |
@@ -75,6 +76,9 @@ includes a manifest-backed KAG registry, source-owned federation export
 posture, bounded lift packs, ToS chunk and route packs, retrieval-axis packs,
 reasoning handoff, return regrounding, maturity governance, tiny-consumer
 support, counterpart review posture, and one bounded cross-source projection.
+It also carries a repo-local source surface index for documents, headings,
+mechanics, commands, schemas, generated read models, receipts, provenance,
+ABI/sign posture, and future MCP resource coordinates.
 
 That contour is not a claim that `aoa-kag` is a full graph engine. The layer
 still pauses before widening new `AOA-K-*` families while neighboring owners
