@@ -68,6 +68,56 @@ def _existing_provider_map_by_repo() -> dict[str, dict[str, object]]:
     return result
 
 
+def _repo_local_coverage_by_repo() -> dict[str, dict[str, object]]:
+    payload = read_json(REPO_LOCAL_KAG_COVERAGE_OUTPUT_PATH)
+    if not isinstance(payload, dict):
+        fail("repo-local KAG coverage report must be a JSON object")
+    owners = payload.get("owners")
+    if not isinstance(owners, list):
+        fail("repo-local KAG coverage report must declare owners")
+    result: dict[str, dict[str, object]] = {}
+    for index, owner in enumerate(owners):
+        if not isinstance(owner, dict):
+            fail(f"repo-local KAG coverage owners[{index}] must be an object")
+        repo = require_string(owner.get("repo"), label=f"coverage owners[{index}].repo")
+        if repo in result:
+            fail(f"repo-local KAG coverage must keep one row for {repo}")
+        result[repo] = owner
+    return result
+
+
+def _provider_repo_local_index_packet(
+    repo: str,
+    coverage_by_repo: dict[str, dict[str, object]],
+) -> dict[str, object]:
+    owner = coverage_by_repo.get(repo)
+    if owner is None:
+        fail(f"repo-local KAG coverage is missing provider row for {repo}")
+    status = require_string(
+        owner.get("index_status"),
+        label=f"{repo} repo-local KAG coverage index_status",
+    )
+    index_files = owner.get("index_files")
+    if not isinstance(index_files, list):
+        fail(f"{repo} repo-local KAG coverage index_files must be a list")
+    coverage = owner.get("coverage")
+    if not isinstance(coverage, dict):
+        fail(f"{repo} repo-local KAG coverage must declare coverage counts")
+    source_index_ref = (
+        "kag/indexes/source_surface_index.json"
+        if "kag/indexes/source_surface_index.json" in index_files
+        else ""
+    )
+    return {
+        "status": status,
+        "source_index_ref": source_index_ref,
+        "index_files": index_files,
+        "coverage": coverage,
+        "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
+        "coverage_owner_key": repo,
+    }
+
+
 def _provider_manifest(
     repo: str, fallback_provider: dict[str, object] | None
 ) -> dict[str, object]:
@@ -325,6 +375,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
     providers: list[dict[str, object]] = []
     remaining_routes: list[dict[str, object]] = []
     fallback_providers = _existing_provider_map_by_repo()
+    coverage_by_repo = _repo_local_coverage_by_repo()
     for entry in sorted(repos, key=lambda item: item["adoption_order"]):
         if not isinstance(entry, dict):
             fail("local KAG readiness repo entries must be objects")
@@ -349,6 +400,10 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     "manifest_ref": "kag/manifest.json",
                     "record_class_coverage": entry["first_record_classes"],
                     "record_counts": _provider_record_counts(repo, fallback_provider),
+                    "repo_local_index": _provider_repo_local_index_packet(
+                        repo,
+                        coverage_by_repo,
+                    ),
                     "freshness_handles": _provider_freshness_handles(repo, fallback_provider),
                     "source_surfaces": manifest["source_surfaces"],
                     "validation_routes": manifest["validation_routes"],
@@ -383,6 +438,14 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         for surface in sorted(surfaces, key=lambda item: item["adoption_order"])
         if isinstance(surface, dict)
     ]
+    generation_profiles_by_repo = {
+        provider["repo"]: provider["generation_profile"]
+        for provider in providers
+    }
+    repo_local_indexes_by_repo = {
+        provider["repo"]: provider["repo_local_index"]
+        for provider in providers
+    }
 
     return {
         "artifact_type": "local_kag_provider_map",
@@ -391,6 +454,8 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         "source_ref": "manifests/local_kag_readiness.json",
         "provider_status_counts": dict(sorted(status_counts.items())),
         "providers": providers,
+        "provider_generation_profiles": generation_profiles_by_repo,
+        "provider_repo_local_indexes": repo_local_indexes_by_repo,
         "remaining_routes": remaining_routes,
         "os_surfaces": os_surface_packets,
         "mcp_handoff": {
@@ -410,12 +475,30 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     "uri_template": "aoa-kag://providers/{repo}/generation",
                     "source": (
                         "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/providers/{repo}/generation_profile"
+                        "#/provider_generation_profiles/{repo}"
                     ),
                 },
                 {
                     "uri_template": "aoa-kag://providers/{repo}/source-index",
-                    "source": "{repo}/kag/indexes/source_surface_index.json",
+                    "source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/provider_repo_local_indexes/{repo}/source_index_ref"
+                    ),
+                    "fallback_source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/provider_repo_local_indexes/{repo}/index_files"
+                    ),
+                    "resolution": (
+                        "Dereference source_index_ref only when non-empty; "
+                        "owner-specific providers expose index_files instead."
+                    ),
+                },
+                {
+                    "uri_template": "aoa-kag://providers/{repo}/repo-local-index",
+                    "source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/provider_repo_local_indexes/{repo}"
+                    ),
                 },
                 {
                     "uri_template": "aoa-kag://registry/provider-map",

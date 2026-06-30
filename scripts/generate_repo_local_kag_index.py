@@ -22,6 +22,10 @@ INDEX_SCHEMA_REF = "aoa-kag:schemas/repo-local-kag-index.schema.json"
 INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-index-v1"
 GIT_INDEX_SOURCE_REF = "git-index-source-tree"
 FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
+LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
+EXTERNAL_INDEX_GENERATOR_ROUTE = f"aoa-kag:{LOCAL_INDEX_GENERATOR_ROUTE}"
+LOCAL_KAG_VALIDATOR_ROUTE = "scripts/validate_kag.py"
+EXTERNAL_KAG_VALIDATOR_ROUTE = f"aoa-kag:{LOCAL_KAG_VALIDATOR_ROUTE}"
 ZERO_DIGEST = "0" * 64
 
 BASELINE_TOOLS = (
@@ -165,6 +169,74 @@ def sha256_bytes(content: bytes) -> str:
     digest = hashlib.sha256()
     digest.update(content)
     return digest.hexdigest()
+
+
+def json_object(content: bytes) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(content.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if isinstance(payload, dict):
+        return payload
+    return None
+
+
+def declares_generated_from_source(content: bytes) -> bool:
+    payload = json_object(content)
+    if payload is None:
+        return False
+    return payload.get("generated_or_authored") == "generated_from_source"
+
+
+def generated_record_builder_surface(content: bytes) -> str:
+    payload = json_object(content)
+    if payload is None:
+        return ""
+    builder = payload.get("builder")
+    if not isinstance(builder, dict):
+        return ""
+    surface = builder.get("surface")
+    if isinstance(surface, str) and surface:
+        return surface
+    return ""
+
+
+def local_kag_manifest(repo_root: Path) -> dict[str, Any] | None:
+    manifest_path = repo_root / "kag" / "manifest.json"
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    if isinstance(payload, dict):
+        return payload
+    return None
+
+
+def manifest_validation_route(repo_root: Path, lane: str) -> str:
+    manifest = local_kag_manifest(repo_root)
+    if manifest is None:
+        return ""
+    routes = manifest.get("validation_routes")
+    if not isinstance(routes, list):
+        return ""
+    for item in routes:
+        if not isinstance(item, dict):
+            continue
+        if item.get("lane") == lane and isinstance(item.get("route"), str):
+            return item["route"]
+    return ""
+
+
+def index_generator_route(repo: str) -> str:
+    if repo == "aoa-kag":
+        return LOCAL_INDEX_GENERATOR_ROUTE
+    return EXTERNAL_INDEX_GENERATOR_ROUTE
+
+
+def kag_validator_route(repo_root: Path, repo: str, tracked_paths: set[Path]) -> str:
+    if repo == "aoa-kag" or Path(LOCAL_KAG_VALIDATOR_ROUTE) in tracked_paths:
+        return LOCAL_KAG_VALIDATOR_ROUTE
+    return manifest_validation_route(repo_root, "local-kag") or EXTERNAL_KAG_VALIDATOR_ROUTE
 
 
 def markdown_anchor(text: str) -> str:
@@ -383,8 +455,16 @@ def command_role(rel: Path, kind: str, doc_role: str) -> str:
     return "none"
 
 
-def surface_state(rel: Path, kind: str) -> str:
+def surface_state(
+    rel: Path,
+    kind: str,
+    *,
+    repo: str,
+    declared_generated: bool = False,
+) -> str:
     parts = rel.parts
+    if declared_generated:
+        return "generated_readmodel"
     if "legacy" in parts:
         return "legacy"
     if rel.name == "AGENTS.md":
@@ -440,10 +520,34 @@ def route_kind_for(kind: str, doc_role: str, command: str) -> str:
     return "source_owner"
 
 
-def owner_commands_for(rel: Path, command: str) -> list[str]:
+def repo_uses_pytest(repo_root: Path, tracked_paths: set[Path]) -> bool:
+    if Path("pyproject.toml") in tracked_paths:
+        try:
+            pyproject = (repo_root / "pyproject.toml").read_text(encoding="utf-8")
+        except FileNotFoundError:
+            pyproject = ""
+        if "[tool.pytest" in pyproject or "pytest" in pyproject:
+            return True
+    return Path("pytest.ini") in tracked_paths or Path("tox.ini") in tracked_paths
+
+
+def pytest_command_for(repo_root: Path) -> str:
+    prefix = "PYTHONPATH=src " if (repo_root / "src").is_dir() else ""
+    return f"{prefix}python -m pytest -q"
+
+
+def owner_commands_for(
+    rel: Path,
+    command: str,
+    *,
+    repo_root: Path,
+    tracked_paths: set[Path],
+) -> list[str]:
     if command == "validator":
         return [f"python {rel.as_posix()}"]
     if command == "test":
+        if repo_uses_pytest(repo_root, tracked_paths):
+            return [pytest_command_for(repo_root)]
         return [f"python -m unittest {rel.as_posix()}"]
     if rel.as_posix() == "scripts/ci_gate.py":
         return [
@@ -474,10 +578,30 @@ def part_local_generated_by_for(rel: Path, tracked_paths: set[Path]) -> str:
     return ""
 
 
-def generated_by_for(rel: Path, state: str, tracked_paths: set[Path]) -> str:
+def generated_by_for(
+    rel: Path,
+    state: str,
+    tracked_paths: set[Path],
+    content: bytes,
+    *,
+    repo_root: Path,
+) -> str:
     if state != "generated_readmodel":
         return ""
     rel_path = rel.as_posix()
+    builder_surface = generated_record_builder_surface(content)
+    if builder_surface:
+        return builder_surface
+    payload = json_object(content)
+    if (
+        isinstance(payload, dict)
+        and payload.get("generated_or_authored") == "generated_from_source"
+        and len(rel.parts) >= 2
+        and rel.parts[0] == "kag"
+    ):
+        owner_route = manifest_validation_route(repo_root, "owner-local")
+        if owner_route:
+            return owner_route
     if rel_path.startswith("generated/repo_local_kag_coverage"):
         return "scripts/generate_repo_local_kag_coverage.py"
     if is_generated_decision_index(rel):
@@ -533,17 +657,20 @@ def build_record(
     rel_path = rel.as_posix()
     content = source_bytes(repo_root, rel, path)
     digest = sha256_bytes(content)
+    declared_generated = declares_generated_from_source(content)
     kind = artifact_kind(rel)
     doc_role = document_role(rel)
     code = code_role(rel, kind)
     mech = mechanics_role(rel)
     command = command_role(rel, kind, doc_role)
-    state = surface_state(rel, kind)
+    state = surface_state(rel, kind, repo=repo, declared_generated=declared_generated)
     headings = heading_refs(content, rel_path) if doc_role != "none" else []
     line_refs = [f"{rel_path}:1"] if content else []
     authority = source_authority(state)
     provenance_source_ref = {"repo": repo, "path": rel_path, "role": "primary", "authority": authority}
-    generated_by = generated_by_for(rel, state, tracked_paths)
+    generated_by = generated_by_for(rel, state, tracked_paths, content, repo_root=repo_root)
+    observed_by = index_generator_route(repo)
+    validated_by = kag_validator_route(repo_root, repo, tracked_paths)
     required_tools = ["python"] if rel.suffix == ".py" else []
     if rel.suffix in {".json", ".yaml", ".yml"}:
         required_tools.append("jq")
@@ -572,16 +699,21 @@ def build_record(
             "verification_state": "digest-only",
         },
         "provenance": {
-            "observed_by": "scripts/generate_repo_local_kag_index.py",
+            "observed_by": observed_by,
             "generated_by": generated_by,
-            "validated_by": ["scripts/validate_kag.py"],
+            "validated_by": [validated_by],
             "source_refs": [provenance_source_ref],
             "materials": [],
         },
         "toolchain": {
             "detected_tools": ["git", "python"],
             "required_tools": sorted(set(required_tools)),
-            "owner_commands": owner_commands_for(rel, command),
+            "owner_commands": owner_commands_for(
+                rel,
+                command,
+                repo_root=repo_root,
+                tracked_paths=tracked_paths,
+            ),
         },
         "classification": {
             "primary_kind": primary_kind(kind, doc_role, command),
@@ -591,7 +723,7 @@ def build_record(
         "access": access_for(rel_path),
         "refs": {"path_ref": rel_path, "line_refs": line_refs, "heading_refs": headings},
         "owner_return_route": {"surface": rel_path, "route_kind": route_kind_for(kind, doc_role, command)},
-        "validator_route": {"surface": "scripts/validate_kag.py", "route_kind": "source_fast"},
+        "validator_route": {"surface": validated_by, "route_kind": "source_fast"},
         "consumer_route": {"surface": "aoa-kag-mcp", "route_kind": "resource"},
     }
 

@@ -2,7 +2,7 @@
   "coverage_summary": {
     "command_count": 70,
     "document_count": 415,
-    "generated_count": 42,
+    "generated_count": 45,
     "heading_count": 2436,
     "mechanics_count": 421,
     "record_count": 890,
@@ -14,7 +14,7 @@
   },
   "index_identity": {
     "artifact_kind": "source_surface_index",
-    "content_digest": "c1f250c1102f30ccaab4cc42a32f13ef157989fd190e7034db3beee89cc0b987",
+    "content_digest": "5fb4170ce809e14bc1b49fcec339f7a3c0100986d81819ebed4e085dbd41bee1",
     "local_id": "index:repo-local:source-surfaces",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-index.schema.json"
   },
@@ -27098,13 +27098,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "bb947c2e9290a27e18ad54e59744ed5d77f6741e0b49a06d8f63db9702c7e201",
+        "content_hash": "4f2cf73176a8be7591f71725c2e92c392d16fbc7584bdade2bc4d92f7db85007",
         "git_ref": "git-index-source-tree",
         "id": "file:config/validation_lanes.json:44a533a030",
         "mime": "application/json",
         "path": "config/validation_lanes.json",
         "repo": "aoa-kag",
-        "size_bytes": 6569
+        "size_bytes": 6707
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -27137,7 +27137,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "bb947c2e9290a27e18ad54e59744ed5d77f6741e0b49a06d8f63db9702c7e201",
+        "digest": "4f2cf73176a8be7591f71725c2e92c392d16fbc7584bdade2bc4d92f7db85007",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -35300,13 +35300,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "b00824ece12a916ec3b35937e4776539fb63c980a30115e4f509839863acfa89",
+        "content_hash": "f6f0031d872a3b5f312ec3397f75a3d63993c9f94e1d6db0e84834507aa07d36",
         "git_ref": "git-index-source-tree",
         "id": "file:generated/local_kag_provider_map.json:959b4a582d",
         "mime": "application/json",
         "path": "generated/local_kag_provider_map.json",
         "repo": "aoa-kag",
-        "size_bytes": 107788
+        "size_bytes": 168239
       },
       "mechanics_role": "none",
       "observed_form": "generated_output",
@@ -35339,7 +35339,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "b00824ece12a916ec3b35937e4776539fb63c980a30115e4f509839863acfa89",
+        "digest": "f6f0031d872a3b5f312ec3397f75a3d63993c9f94e1d6db0e84834507aa07d36",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -35389,13 +35389,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "fe0ea39e7e20554cbb70f103ea0989d336741dda61cdb9f7cc39a0ba87a21101",
+        "content_hash": "62f6694b14e9fbb1ba66c4351092d0b959a83a8e353b16b7d1d1169a97fd0f42",
         "git_ref": "git-index-source-tree",
         "id": "file:generated/local_kag_provider_map.min.json:4ab088bb75",
         "mime": "application/json",
         "path": "generated/local_kag_provider_map.min.json",
         "repo": "aoa-kag",
-        "size_bytes": 69106
+        "size_bytes": 109895
       },
       "mechanics_role": "none",
       "observed_form": "generated_output",
@@ -35428,7 +35428,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "fe0ea39e7e20554cbb70f103ea0989d336741dda61cdb9f7cc39a0ba87a21101",
+        "digest": "62f6694b14e9fbb1ba66c4351092d0b959a83a8e353b16b7d1d1169a97fd0f42",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -36247,7 +36247,7 @@
       "abi": {
         "abi_epoch": "source",
         "artifact_class": "index",
-        "compatibility": "stable",
+        "compatibility": "generated",
         "contract_version": "none",
         "schema_version": "aoa-local-kag-record-v1"
       },
@@ -36288,12 +36288,12 @@
         "surface": "kag/indexes/provider_readiness_index.json"
       },
       "provenance": {
-        "generated_by": "",
+        "generated_by": "kag/manifest.json",
         "materials": [],
         "observed_by": "scripts/generate_repo_local_kag_index.py",
         "source_refs": [
           {
-            "authority": "authored_source",
+            "authority": "derived_readmodel",
             "path": "kag/indexes/provider_readiness_index.json",
             "repo": "aoa-kag",
             "role": "primary"
@@ -36316,7 +36316,7 @@
         "signature_ref": "",
         "verification_state": "digest-only"
       },
-      "surface_state": "authored_source",
+      "surface_state": "generated_readmodel",
       "toolchain": {
         "detected_tools": [
           "git",
@@ -36692,7 +36692,7 @@
       "abi": {
         "abi_epoch": "source",
         "artifact_class": "projection",
-        "compatibility": "stable",
+        "compatibility": "generated",
         "contract_version": "none",
         "schema_version": "aoa-local-kag-record-v1"
       },
@@ -36733,12 +36733,12 @@
         "surface": "kag/projections/mcp_contract_resource.json"
       },
       "provenance": {
-        "generated_by": "",
+        "generated_by": "kag/manifest.json",
         "materials": [],
         "observed_by": "scripts/generate_repo_local_kag_index.py",
         "source_refs": [
           {
-            "authority": "authored_source",
+            "authority": "derived_readmodel",
             "path": "kag/projections/mcp_contract_resource.json",
             "repo": "aoa-kag",
             "role": "primary"
@@ -36761,7 +36761,7 @@
         "signature_ref": "",
         "verification_state": "digest-only"
       },
-      "surface_state": "authored_source",
+      "surface_state": "generated_readmodel",
       "toolchain": {
         "detected_tools": [
           "git",
@@ -36781,7 +36781,7 @@
       "abi": {
         "abi_epoch": "source",
         "artifact_class": "receipt",
-        "compatibility": "stable",
+        "compatibility": "generated",
         "contract_version": "none",
         "schema_version": "aoa-local-kag-record-v1"
       },
@@ -36822,12 +36822,12 @@
         "surface": "kag/receipts/validation_receipt.json"
       },
       "provenance": {
-        "generated_by": "",
+        "generated_by": "tests/test_validate_kag.py",
         "materials": [],
         "observed_by": "scripts/generate_repo_local_kag_index.py",
         "source_refs": [
           {
-            "authority": "generated_receipt",
+            "authority": "derived_readmodel",
             "path": "kag/receipts/validation_receipt.json",
             "repo": "aoa-kag",
             "role": "primary"
@@ -36850,7 +36850,7 @@
         "signature_ref": "",
         "verification_state": "digest-only"
       },
-      "surface_state": "receipt",
+      "surface_state": "generated_readmodel",
       "toolchain": {
         "detected_tools": [
           "git",
@@ -83551,13 +83551,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "2cfc604b566996d57c1c7e29b0c24fe9f6f22778680ca8142020ca221f339235",
+        "content_hash": "89ba1d09e6ad8af379447f54dc5104af2a4b04a3fb044f77bacaeac3b1bc9dbb",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generate_repo_local_kag_index.py:f202b0488e",
         "mime": "text/x-python",
         "path": "scripts/generate_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 24844
+        "size_bytes": 29027
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -83590,7 +83590,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "2cfc604b566996d57c1c7e29b0c24fe9f6f22778680ca8142020ca221f339235",
+        "digest": "89ba1d09e6ad8af379447f54dc5104af2a4b04a3fb044f77bacaeac3b1bc9dbb",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -84046,13 +84046,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "48737f4d4dd255c2f640a77f76556a8d5403e96c9f2b60cee122d3fcde4b5e8d",
+        "content_hash": "c4c44e14cbb6fde7045db97872d7c7582c8adc64e670595ec517ef08f3cb7b3f",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generation/context.py:ca8f41310f",
         "mime": "text/x-python",
         "path": "scripts/generation/context.py",
         "repo": "aoa-kag",
-        "size_bytes": 46186
+        "size_bytes": 46392
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -84085,7 +84085,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "48737f4d4dd255c2f640a77f76556a8d5403e96c9f2b60cee122d3fcde4b5e8d",
+        "digest": "c4c44e14cbb6fde7045db97872d7c7582c8adc64e670595ec517ef08f3cb7b3f",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -84491,13 +84491,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "e4d3d15a3d2ad017b9a38d4e36dbe63148321b56722c3ae493b36d2eb73f306b",
+        "content_hash": "9ae8b37a37fab8738103a90911f0253a718e2e0233e078c61d405249301fe6c9",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generation/provider_map.py:f5db4f5f2e",
         "mime": "text/x-python",
         "path": "scripts/generation/provider_map.py",
         "repo": "aoa-kag",
-        "size_bytes": 20334
+        "size_bytes": 23801
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -84530,7 +84530,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "e4d3d15a3d2ad017b9a38d4e36dbe63148321b56722c3ae493b36d2eb73f306b",
+        "digest": "9ae8b37a37fab8738103a90911f0253a718e2e0233e078c61d405249301fe6c9",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -94475,13 +94475,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "cbafd7e46fcac28f65d2bd011bfaccd1e8984a99aca6f6308e902c4ee30322af",
+        "content_hash": "9e489fc2b6afe590b76ca8cf3f2e9c062efb023886293e53918f2700b9f03e15",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_kag_generation.py:229378fe98",
         "mime": "text/x-python",
         "path": "tests/test_kag_generation.py",
         "repo": "aoa-kag",
-        "size_bytes": 19921
+        "size_bytes": 23760
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -94514,7 +94514,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "cbafd7e46fcac28f65d2bd011bfaccd1e8984a99aca6f6308e902c4ee30322af",
+        "digest": "9e489fc2b6afe590b76ca8cf3f2e9c062efb023886293e53918f2700b9f03e15",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -94930,13 +94930,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "3992249a979eb1f48db790a99bd93b1f7c6c9dd68430e0f3d2a7e080b5e83716",
+        "content_hash": "b109e84ff2431df5bf13fb374e0c8346e0dc4042df76ee6e9bc26541da8029c5",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_repo_local_kag_index.py:a02b024bdb",
         "mime": "text/x-python",
         "path": "tests/test_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 18167
+        "size_bytes": 22682
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -94969,7 +94969,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "3992249a979eb1f48db790a99bd93b1f7c6c9dd68430e0f3d2a7e080b5e83716",
+        "digest": "b109e84ff2431df5bf13fb374e0c8346e0dc4042df76ee6e9bc26541da8029c5",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -95749,13 +95749,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "45ae81586258774f5f9afff3ace56c2628ac52f92de94f2af0a892c353bb1db3",
+        "content_hash": "830cd9dea50dd244f8fa7c7f64d8f4043aeb14e0f7ccdf272d822369c1056b01",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_validation_command_authority.py:78624b39c6",
         "mime": "text/x-python",
         "path": "tests/test_validation_command_authority.py",
         "repo": "aoa-kag",
-        "size_bytes": 12468
+        "size_bytes": 12753
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -95788,7 +95788,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "45ae81586258774f5f9afff3ace56c2628ac52f92de94f2af0a892c353bb1db3",
+        "digest": "830cd9dea50dd244f8fa7c7f64d8f4043aeb14e0f7ccdf272d822369c1056b01",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
