@@ -1,4 +1,73 @@
 {
+  "classification_summary": {
+    "artifact_kind": {
+      "asset": 50,
+      "config": 116,
+      "document": 407,
+      "generated_readmodel": 42,
+      "index": 1,
+      "license": 1,
+      "manifest": 22,
+      "owner_metadata": 2,
+      "projection": 1,
+      "receipt": 1,
+      "schema": 72,
+      "script": 10,
+      "security": 1,
+      "source_code": 104,
+      "test": 47,
+      "validator": 13
+    },
+    "command_role": {
+      "builder": 6,
+      "lane_entrypoint": 3,
+      "none": 820,
+      "script": 1,
+      "test": 47,
+      "validator": 13
+    },
+    "document_role": {
+      "agents": 57,
+      "audit": 3,
+      "boundary": 1,
+      "changelog": 1,
+      "decision": 20,
+      "design": 1,
+      "design_agents": 1,
+      "mechanics_doc": 113,
+      "none": 475,
+      "parts": 13,
+      "provenance": 13,
+      "readme": 70,
+      "roadmap": 1,
+      "source_policy": 1,
+      "testing_doc": 1,
+      "unknown_document": 116,
+      "validation_doc": 3
+    },
+    "mechanics_role": {
+      "legacy": 16,
+      "mechanic_package": 55,
+      "mechanic_part": 94,
+      "none": 469,
+      "part_contract": 28,
+      "part_doc": 129,
+      "part_schema": 62,
+      "part_script": 9,
+      "part_test": 28
+    },
+    "primary_kind": {
+      "artifact": 90,
+      "command": 70,
+      "document": 415,
+      "surface": 315
+    },
+    "surface_state": {
+      "authored_source": 829,
+      "generated_readmodel": 45,
+      "legacy": 16
+    }
+  },
   "coverage_summary": {
     "command_count": 70,
     "document_count": 415,
@@ -9,12 +78,12 @@
     "schema_count": 72,
     "script_count": 10,
     "test_count": 47,
-    "unknown_count": 52,
+    "unknown_count": 0,
     "validator_count": 13
   },
   "index_identity": {
     "artifact_kind": "source_surface_index",
-    "content_digest": "4c3283e4b45e8ba1392d5c585059e62b5881717dd0462888fdb7cf6adc27616b",
+    "content_digest": "bd2768ec8e935d9d25de9e031a85f595c4c2f4d88c61d41529e442d33136690e",
     "local_id": "index:repo-local:source-surfaces",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-index.schema.json"
   },
@@ -515,8 +584,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -524,10 +593,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -602,8 +671,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -611,10 +680,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -1347,8 +1416,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -1356,10 +1425,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -1434,8 +1503,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -1443,10 +1512,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -2035,8 +2104,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -2044,10 +2113,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -2122,8 +2191,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -2131,10 +2200,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -3577,8 +3646,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -3586,10 +3655,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -3664,8 +3733,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -3673,10 +3742,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -4416,8 +4485,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -4425,10 +4494,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -4503,8 +4572,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -4512,10 +4581,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -5104,8 +5173,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -5113,10 +5182,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -5191,8 +5260,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -5200,10 +5269,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -6086,8 +6155,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -6095,10 +6164,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -6173,8 +6242,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -6182,10 +6251,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -6774,8 +6843,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -6783,10 +6852,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -6861,8 +6930,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -6870,10 +6939,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -7462,8 +7531,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -7471,10 +7540,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -7549,8 +7618,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -7558,10 +7627,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -8328,8 +8397,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -8337,10 +8406,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -8415,8 +8484,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -8424,10 +8493,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -9419,8 +9488,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -9428,10 +9497,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -9506,8 +9575,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -9515,10 +9584,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -10107,8 +10176,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -10116,10 +10185,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -10372,8 +10441,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -10381,10 +10450,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -11362,8 +11431,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -11371,10 +11440,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -11449,8 +11518,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -11458,10 +11527,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -12050,8 +12119,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -12059,10 +12128,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -12137,8 +12206,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -12146,10 +12215,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -12738,8 +12807,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -12747,10 +12816,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -12825,8 +12894,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -12834,10 +12903,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -14014,8 +14083,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -14023,10 +14092,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -14101,8 +14170,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -14110,10 +14179,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -15133,8 +15202,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -15142,10 +15211,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -15220,8 +15289,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -15229,10 +15298,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -15821,8 +15890,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -15830,10 +15899,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -15908,8 +15977,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -15917,10 +15986,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -17356,8 +17425,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -17365,10 +17434,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -17443,8 +17512,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -17452,10 +17521,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -18447,8 +18516,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -18456,10 +18525,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -18534,8 +18603,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -18543,10 +18612,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -19429,8 +19498,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -19438,10 +19507,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -19516,8 +19585,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -19525,10 +19594,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -20411,8 +20480,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -20420,10 +20489,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -20498,8 +20567,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -20507,10 +20576,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -21516,8 +21585,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -21525,10 +21594,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -21603,8 +21672,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -21612,10 +21681,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -22204,8 +22273,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -22213,10 +22282,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -22291,8 +22360,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -22300,10 +22369,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -23260,8 +23329,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -23269,10 +23338,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -23347,8 +23416,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "asset",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -23356,10 +23425,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "asset",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -24168,8 +24237,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "owner_metadata",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -24177,10 +24246,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "owner_metadata",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -24693,8 +24762,8 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "unknown",
-        "compatibility": "unknown",
+        "artifact_class": "owner_metadata",
+        "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
       },
@@ -24702,10 +24771,10 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "unknown",
+      "artifact_kind": "owner_metadata",
       "classification": {
-        "confidence": "low",
-        "primary_kind": "unknown"
+        "confidence": "high",
+        "primary_kind": "artifact"
       },
       "code_role": "none",
       "command_role": "none",
@@ -24720,13 +24789,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "a68ff19e82b13c952305616d063b7a4a37fde0a9cfd5c82e10b880efaa9e2981",
+        "content_hash": "7bf30413802ef18aa4999f0cdacb951739968222bd300d56c029c37f97f151fa",
         "git_ref": "git-index-source-tree",
         "id": "file:.gitignore:bc37d034ba",
         "mime": "application/octet-stream",
         "path": ".gitignore",
         "repo": "aoa-kag",
-        "size_bytes": 29
+        "size_bytes": 36
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -24759,7 +24828,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "a68ff19e82b13c952305616d063b7a4a37fde0a9cfd5c82e10b880efaa9e2981",
+        "digest": "7bf30413802ef18aa4999f0cdacb951739968222bd300d56c029c37f97f151fa",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -34910,13 +34979,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "9ff5a51e802de455cf23ea0d16d15798e387de7d373319b78fbc1a07a2ddcc87",
+        "content_hash": "b554c7a6cdd9187ef326617dd4b5abe7f6163aaca767099a20c4acb632e20dd5",
         "git_ref": "git-index-source-tree",
         "id": "file:examples/repo_local_kag_index.example.json:16e1ef3f73",
         "mime": "application/json",
         "path": "examples/repo_local_kag_index.example.json",
         "repo": "aoa-kag",
-        "size_bytes": 7356
+        "size_bytes": 7767
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -34949,7 +35018,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "9ff5a51e802de455cf23ea0d16d15798e387de7d373319b78fbc1a07a2ddcc87",
+        "digest": "b554c7a6cdd9187ef326617dd4b5abe7f6163aaca767099a20c4acb632e20dd5",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -82995,13 +83064,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "2bb0233d92a6b5f6bda3ecee520f3906d29b77882bf3b73454850d9806dfe0bb",
+        "content_hash": "fae0d959fd2915d18aa1951c94ec0c17e84e6e3877d7221bdca17916d3991707",
         "git_ref": "git-index-source-tree",
         "id": "file:schemas/repo-local-kag-index.schema.json:eefa132a8c",
         "mime": "application/json",
         "path": "schemas/repo-local-kag-index.schema.json",
         "repo": "aoa-kag",
-        "size_bytes": 18345
+        "size_bytes": 19598
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -83034,7 +83103,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "2bb0233d92a6b5f6bda3ecee520f3906d29b77882bf3b73454850d9806dfe0bb",
+        "digest": "fae0d959fd2915d18aa1951c94ec0c17e84e6e3877d7221bdca17916d3991707",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -83551,13 +83620,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "a1068bbe1bec75dd92cdc4bd6a5a4147f9b258aaa6a5c9bfeda51539dff555ba",
+        "content_hash": "8f581960c5281e5dcf57885e7d2c63e5009f1b689e14491143b3a9d8725a3872",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generate_repo_local_kag_index.py:f202b0488e",
         "mime": "text/x-python",
         "path": "scripts/generate_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 29102
+        "size_bytes": 32307
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -83590,7 +83659,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "a1068bbe1bec75dd92cdc4bd6a5a4147f9b258aaa6a5c9bfeda51539dff555ba",
+        "digest": "8f581960c5281e5dcf57885e7d2c63e5009f1b689e14491143b3a9d8725a3872",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -93566,13 +93635,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "8a01d5beb971cdb144b4382e97ff2343e44d5e6dd3faea3ebdb10ed43290b052",
+        "content_hash": "38f4e44246278c9674ad9e7d984cdb5f1ddeaf9ac93241a84069c1619420153b",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/validators/repo_local_kag_index.py:b1082bd336",
         "mime": "text/x-python",
         "path": "scripts/validators/repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 6655
+        "size_bytes": 6931
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -93605,7 +93674,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "8a01d5beb971cdb144b4382e97ff2343e44d5e6dd3faea3ebdb10ed43290b052",
+        "digest": "38f4e44246278c9674ad9e7d984cdb5f1ddeaf9ac93241a84069c1619420153b",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -94930,13 +94999,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "df3a20bf0d47cd50618e3cdd3a41dff946c1eed5d06531eba5044199570efba4",
+        "content_hash": "d7a9922ae174638d71d282f7cb035dcaac1e4f57e98b6c0d620bc5dc33c9a87c",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_repo_local_kag_index.py:a02b024bdb",
         "mime": "text/x-python",
         "path": "tests/test_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 40183
+        "size_bytes": 45843
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -94969,7 +95038,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "df3a20bf0d47cd50618e3cdd3a41dff946c1eed5d06531eba5044199570efba4",
+        "digest": "d7a9922ae174638d71d282f7cb035dcaac1e4f57e98b6c0d620bc5dc33c9a87c",
         "signature_ref": "",
         "verification_state": "digest-only"
       },

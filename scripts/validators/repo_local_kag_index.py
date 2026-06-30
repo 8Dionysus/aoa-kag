@@ -7,10 +7,10 @@ from .schema_surfaces import validate_top_level_schema
 
 try:
     from scripts.generate_repo_local_kag_coverage import build_provider_coverage
-    from scripts.generate_repo_local_kag_index import build_index
+    from scripts.generate_repo_local_kag_index import build_index, classification_summary
 except ImportError:  # pragma: no cover - direct script import fallback
     from generate_repo_local_kag_coverage import build_provider_coverage  # type: ignore
-    from generate_repo_local_kag_index import build_index  # type: ignore
+    from generate_repo_local_kag_index import build_index, classification_summary  # type: ignore
 
 
 def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
@@ -97,6 +97,11 @@ def validate_repo_local_kag_index_payload(payload: object, *, label: str) -> dic
         fail(f"{label} must cover documents")
     if summary.get("heading_count", 0) <= 0:
         fail(f"{label} must cover document headings")
+
+    classification = payload.get("classification_summary")
+    if classification is not None:
+        if classification != classification_summary(records):
+            fail(f"{label} classification_summary must match records")
 
     identity = payload.get("index_identity")
     if not isinstance(identity, dict):

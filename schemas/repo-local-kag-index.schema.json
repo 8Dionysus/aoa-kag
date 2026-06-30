@@ -29,6 +29,9 @@
     "coverage_summary": {
       "$ref": "#/$defs/coverageSummary"
     },
+    "classification_summary": {
+      "$ref": "#/$defs/classificationSummary"
+    },
     "records": {
       "type": "array",
       "minItems": 1,
@@ -299,22 +302,32 @@
         "artifact_kind": {
           "type": "string",
           "enum": [
+            "archive",
+            "asset",
+            "data_table",
+            "dependency_manifest",
+            "directory_marker",
             "document",
-            "source_code",
-            "schema",
-            "manifest",
-            "config",
-            "script",
-            "test",
-            "validator",
-            "mechanics_surface",
             "generated_readmodel",
-            "receipt",
             "index",
-            "projection",
-            "package_manifest",
             "license",
+            "manifest",
+            "mechanics_surface",
+            "owner_metadata",
+            "package_manifest",
+            "projection",
+            "receipt",
+            "record_log",
+            "config",
+            "schema",
             "security",
+            "service_unit",
+            "script",
+            "source_code",
+            "spreadsheet",
+            "validator",
+            "test",
+            "text_artifact",
             "unknown"
           ]
         },
@@ -621,6 +634,45 @@
             "medium",
             "low"
           ]
+        }
+      }
+    },
+    "countMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "classificationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_kind",
+        "primary_kind",
+        "surface_state",
+        "document_role",
+        "mechanics_role",
+        "command_role"
+      ],
+      "properties": {
+        "artifact_kind": {
+          "$ref": "#/$defs/countMap"
+        },
+        "primary_kind": {
+          "$ref": "#/$defs/countMap"
+        },
+        "surface_state": {
+          "$ref": "#/$defs/countMap"
+        },
+        "document_role": {
+          "$ref": "#/$defs/countMap"
+        },
+        "mechanics_role": {
+          "$ref": "#/$defs/countMap"
+        },
+        "command_role": {
+          "$ref": "#/$defs/countMap"
         }
       }
     },

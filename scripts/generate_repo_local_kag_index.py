@@ -69,6 +69,7 @@ CAPABILITY_LANES = (
 )
 
 EXCLUDED_PARTS = {
+    ".deps",
     ".git",
     ".mypy_cache",
     ".pytest_cache",
@@ -80,6 +81,15 @@ EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 SECRET_HINTS = ("secret", "token", "credential", "private-key", "password")
 LANE_ENTRYPOINTS = {"ci_gate.py", "release_check.py", "run_tests.py"}
+COMMAND_SUFFIXES = {".py", ".sh", ".ps1"}
+ASSET_SUFFIXES = {".gif", ".ico", ".jpg", ".jpeg", ".png", ".svg", ".webp"}
+ARCHIVE_SUFFIXES = {".7z", ".gz", ".tar", ".tgz", ".xz", ".zip"}
+SPREADSHEET_SUFFIXES = {".ods", ".xls", ".xlsx"}
+DATA_TABLE_SUFFIXES = {".csv", ".tsv"}
+TEXT_ARTIFACT_SUFFIXES = {".txt"}
+SERVICE_UNIT_SUFFIXES = {".path", ".service", ".socket", ".timer"}
+OWNER_METADATA_NAMES = {".gitattributes", ".gitignore", "CODEOWNERS", "AOA_WORKSPACE_ROOT"}
+DIRECTORY_MARKER_NAMES = {".gitkeep", ".keep"}
 
 
 def run_text(command: Sequence[str], cwd: Path) -> str:
@@ -348,14 +358,32 @@ def artifact_kind(rel: Path) -> str:
     suffix = rel.suffix
     if name in {"LICENSE", "COPYING"}:
         return "license"
+    if name in OWNER_METADATA_NAMES or (len(parts) >= 2 and parts[0] == ".github" and name == "CODEOWNERS"):
+        return "owner_metadata"
+    if name in DIRECTORY_MARKER_NAMES:
+        return "directory_marker"
+    if name.startswith("requirements") and suffix == ".txt":
+        return "dependency_manifest"
+    if "receipts" in parts:
+        return "receipt"
+    if suffix in ASSET_SUFFIXES:
+        return "asset"
+    if suffix in DATA_TABLE_SUFFIXES:
+        return "data_table"
+    if suffix in {".jsonl", ".ndjson"}:
+        return "record_log"
+    if suffix in SPREADSHEET_SUFFIXES:
+        return "spreadsheet"
+    if suffix in ARCHIVE_SUFFIXES:
+        return "archive"
+    if suffix in SERVICE_UNIT_SUFFIXES:
+        return "service_unit"
     if name == "SECURITY.md":
         return "security"
     if is_generated_decision_index(rel):
         return "generated_readmodel"
     if suffix == ".md":
         return "document"
-    if "receipts" in parts:
-        return "receipt"
     if "indexes" in parts:
         return "index"
     if "projections" in parts:
@@ -372,24 +400,28 @@ def artifact_kind(rel: Path) -> str:
         return "config"
     if suffix == ".py" and is_test_entrypoint(rel):
         return "test"
-    if suffix == ".py" and is_command_entrypoint(rel) and name.startswith("validate_"):
+    if is_command_entrypoint(rel) and name.startswith("validate_"):
         return "validator"
-    if suffix == ".py" and is_command_entrypoint(rel):
+    if is_command_entrypoint(rel):
         return "script"
     if "mechanics" in parts:
         return "mechanics_surface"
-    if suffix in {".py", ".js", ".ts", ".sh"}:
+    if suffix in {".py", ".js", ".ts", ".sh", ".ps1"}:
         return "source_code"
+    if suffix in TEXT_ARTIFACT_SUFFIXES:
+        return "text_artifact"
     return "unknown"
 
 
 def is_command_entrypoint(rel: Path) -> bool:
-    if rel.suffix != ".py":
+    if len(rel.parts) >= 2 and rel.parts[0] == ".codex" and rel.parts[1] == "bin":
+        return True
+    if rel.suffix not in COMMAND_SUFFIXES:
         return False
     name = rel.name
-    if name in LANE_ENTRYPOINTS:
+    if rel.suffix == ".py" and name in LANE_ENTRYPOINTS:
         return True
-    if name.startswith(("build_", "generate_", "run_", "validate_")):
+    if name.startswith(("build_", "generate_", "run_", "start_", "validate_")):
         return True
     return False
 
@@ -403,7 +435,7 @@ def is_generated_decision_index(rel: Path) -> bool:
 
 
 def code_role(rel: Path, kind: str) -> str:
-    if rel.suffix != ".py":
+    if rel.suffix not in {".py", ".js", ".ts", ".sh", ".ps1"} and kind != "script":
         return "none"
     if kind == "test":
         return "test"
@@ -467,7 +499,7 @@ def surface_state(
     parts = rel.parts
     if declared_generated:
         return "generated_readmodel"
-    if "legacy" in parts:
+    if "legacy" in parts or "archive" in parts:
         return "legacy"
     if rel.name == "AGENTS.md":
         return "authored_source"
@@ -495,7 +527,22 @@ def primary_kind(kind: str, doc_role: str, command: str) -> str:
         return "document"
     if command != "none":
         return "command"
-    if kind in {"receipt", "generated_readmodel", "index", "projection"}:
+    if kind in {
+        "archive",
+        "asset",
+        "data_table",
+        "dependency_manifest",
+        "directory_marker",
+        "generated_readmodel",
+        "index",
+        "owner_metadata",
+        "projection",
+        "receipt",
+        "record_log",
+        "service_unit",
+        "spreadsheet",
+        "text_artifact",
+    }:
         return "artifact"
     if kind == "unknown":
         return "unknown"
@@ -545,8 +592,14 @@ def owner_commands_for(
     repo_root: Path,
     tracked_paths: set[Path],
 ) -> list[str]:
+    executable = {
+        ".py": "python",
+        ".ps1": "pwsh",
+        ".sh": "bash",
+    }.get(rel.suffix)
+    command_surface = f"{executable} {rel.as_posix()}" if executable else rel.as_posix()
     if command == "validator":
-        return [f"python {rel.as_posix()}"]
+        return [command_surface]
     if command == "test":
         if repo_uses_pytest(repo_root, tracked_paths):
             return [pytest_command_for(repo_root)]
@@ -557,7 +610,7 @@ def owner_commands_for(
             "python scripts/ci_gate.py --mode generated",
         ]
     if command in {"script", "builder", "lane_entrypoint"}:
-        return [f"python {rel.as_posix()}"]
+        return [command_surface]
     return []
 
 
@@ -673,7 +726,13 @@ def build_record(
     generated_by = generated_by_for(rel, state, tracked_paths, content, repo_root=repo_root)
     observed_by = index_generator_route(repo)
     validated_by = kag_validator_route(repo_root, repo, tracked_paths)
-    required_tools = ["python"] if rel.suffix == ".py" else []
+    required_tools = []
+    if rel.suffix == ".py":
+        required_tools.append("python")
+    if command != "none" and rel.suffix == ".ps1":
+        required_tools.append("pwsh")
+    if command != "none" and rel.suffix == ".sh":
+        required_tools.append("bash")
     if rel.suffix in {".json", ".yaml", ".yml"}:
         required_tools.append("jq")
     return {
@@ -746,6 +805,31 @@ def coverage_summary(records: Sequence[dict[str, Any]]) -> dict[str, int]:
     }
 
 
+def count_values(records: Sequence[dict[str, Any]], *keys: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for record in records:
+        value: Any = record
+        for key in keys:
+            if not isinstance(value, dict):
+                value = ""
+                break
+            value = value.get(key)
+        if isinstance(value, str) and value:
+            counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def classification_summary(records: Sequence[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    return {
+        "artifact_kind": count_values(records, "artifact_kind"),
+        "primary_kind": count_values(records, "classification", "primary_kind"),
+        "surface_state": count_values(records, "surface_state"),
+        "document_role": count_values(records, "document_role"),
+        "mechanics_role": count_values(records, "mechanics_role"),
+        "command_role": count_values(records, "command_role"),
+    }
+
+
 def payload_digest(payload: dict[str, Any]) -> str:
     copy_payload = copy.deepcopy(payload)
     copy_payload["index_identity"]["content_digest"] = ZERO_DIGEST
@@ -802,6 +886,7 @@ def build_index(repo_root: Path, *, output: Path | None = None) -> dict[str, Any
             "capability_lanes": list(CAPABILITY_LANES),
         },
         "coverage_summary": coverage_summary(records),
+        "classification_summary": classification_summary(records),
         "records": records,
         "registry_output": {
             "consumer": "aoa-kag-mcp",
