@@ -45,13 +45,24 @@ def sync_checkout(entry: dict[str, object], *, repo_root: Path = REPO_ROOT) -> P
     run(("git", "fetch", "--depth", "1", "origin", pin), cwd=target)
     run(("git", "checkout", "--detach", pin), cwd=target)
     run(("git", "reset", "--hard", pin), cwd=target)
-    run(("git", "clean", "-ffd"), cwd=target)
+    run(("git", "clean", "-ffdx"), cwd=target)
     return target
 
 
 def current_head(target: Path) -> str:
     result = subprocess.run(
         ("git", "rev-parse", "HEAD"),
+        cwd=target,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def checkout_status(target: Path) -> str:
+    result = subprocess.run(
+        ("git", "status", "--porcelain"),
         cwd=target,
         check=True,
         capture_output=True,
@@ -68,6 +79,9 @@ def check_checkout(entry: dict[str, object], *, repo_root: Path = REPO_ROOT) -> 
         raise RuntimeError(f"{repo} checkout is missing: {target}")
     if current_head(target) != pin:
         raise RuntimeError(f"{repo} checkout must be pinned at {pin}")
+    status = checkout_status(target)
+    if status:
+        raise RuntimeError(f"{repo} checkout must be clean before --check")
     return target
 
 
