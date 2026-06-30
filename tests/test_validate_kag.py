@@ -319,6 +319,62 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("live connector repos", str(context.exception))
 
+    def test_local_kag_readiness_rejects_untracked_live_os_repo_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os_root = Path(tmpdir)
+            (os_root / "aoa-demo" / ".git").mkdir(parents=True)
+
+            with patch.object(local_kag_subtree, "OS_ABYSS_ROOT", os_root):
+                with patch.object(local_kag_subtree, "STRICT_OS_SURFACE_ROOTS", True):
+                    with self.assertRaises(validate_kag.ValidationError) as context:
+                        local_kag_subtree._validate_live_canonical_os_owner_surfaces(
+                            {"aoa-kag"},
+                            set(),
+                        )
+
+        self.assertIn("live canonical OS repo roots", str(context.exception))
+
+    def test_local_kag_readiness_allows_source_preparation_live_connector_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os_root = Path(tmpdir)
+            (os_root / "connectors" / "aoa-demo-connector" / ".git").mkdir(parents=True)
+
+            with patch.object(local_kag_subtree, "OS_ABYSS_ROOT", os_root):
+                with patch.object(local_kag_subtree, "STRICT_OS_SURFACE_ROOTS", True):
+                    local_kag_subtree._validate_live_canonical_os_owner_surfaces(
+                        {"aoa-kag"},
+                        {"connectors/aoa-demo-connector"},
+                    )
+
+    def test_local_kag_readiness_ignores_worktree_repo_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os_root = Path(tmpdir)
+            (os_root / ".worktrees" / "aoa-demo" / ".git").mkdir(parents=True)
+
+            with patch.object(local_kag_subtree, "OS_ABYSS_ROOT", os_root):
+                with patch.object(local_kag_subtree, "STRICT_OS_SURFACE_ROOTS", True):
+                    local_kag_subtree._validate_live_canonical_os_owner_surfaces(
+                        set(),
+                        set(),
+                    )
+
+    def test_local_kag_readiness_ignores_linked_worktree_git_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os_root = Path(tmpdir)
+            repo_root = os_root / "aoa-demo"
+            repo_root.mkdir()
+            (repo_root / ".git").write_text(
+                "gitdir: ../.worktrees/aoa-demo/.git\n",
+                encoding="utf-8",
+            )
+
+            with patch.object(local_kag_subtree, "OS_ABYSS_ROOT", os_root):
+                with patch.object(local_kag_subtree, "STRICT_OS_SURFACE_ROOTS", True):
+                    local_kag_subtree._validate_live_canonical_os_owner_surfaces(
+                        set(),
+                        set(),
+                    )
+
     def test_local_kag_readiness_rejects_missing_source_ready_provider(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)
