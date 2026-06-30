@@ -570,6 +570,42 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             self.assertEqual("git-index-source-tree", record["identity"]["git_ref"])
             self.assertEqual("git-index-source-tree", record["freshness"]["checked_ref"])
 
+    def test_generator_uses_manifest_repo_identity_in_git_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-kag-source-surface-index-worktree"
+            root.mkdir()
+            subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (root / "kag").mkdir()
+            (root / "kag" / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-local-kag-manifest-v1",
+                        "repo": "aoa-kag",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            subprocess.run(
+                ["git", "add", "README.md", "kag/manifest.json"],
+                cwd=root,
+                check=True,
+            )
+
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+            self.assertTrue(coverage_generation.source_index_matches_owner(root, payload))
+
+        self.assertEqual("aoa-kag", payload["repo"]["name"])
+        records_by_path = {
+            record["identity"]["path"]: record for record in payload["records"]
+        }
+        readme_record = records_by_path["README.md"]
+        self.assertEqual("aoa-kag", readme_record["identity"]["repo"])
+        self.assertEqual(
+            "aoa-kag",
+            readme_record["provenance"]["source_refs"][0]["repo"],
+        )
+
     def test_generator_indexes_tracked_files_deleted_from_worktree(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -23,6 +23,7 @@ try:
         normalized_json,
         owner_type_for,
         payload_digest,
+        repo_name,
         sha256_bytes,
         source_bytes,
     )
@@ -41,6 +42,7 @@ except ImportError:  # pragma: no cover - direct script execution
         normalized_json,
         owner_type_for,
         payload_digest,
+        repo_name,
         sha256_bytes,
         source_bytes,
     )
@@ -204,7 +206,7 @@ def committed_owner_rows(path: Path = SEALED_PROVIDER_COVERAGE_PATH) -> dict[str
 
 
 def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> bool:
-    repo = owner_root.name
+    repo = repo_name(owner_root)
     if payload.get("repo", {}).get("name") != repo:
         return False
     records = payload.get("records")
