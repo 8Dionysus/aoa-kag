@@ -1,8 +1,8 @@
 from __future__ import annotations
-
 from .common import *
 from .source_refs import *
 from .schema_surfaces import *
+from .provider_registry import *
 from .local_contracts import *
 from .local_kag_subtree import *
 from .manifest_contracts import *

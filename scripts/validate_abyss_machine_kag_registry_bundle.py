@@ -569,22 +569,40 @@ def _trust_gate_denies_missing_subject_store(
             blockers.update(str(item) for item in values)
     if isinstance(decision, dict) and isinstance(decision.get("blockers"), list):
         blockers.update(str(item) for item in decision["blockers"])
+    denied_missing_subject_store = bool(
+        trust_gate.get("ok") is False
+        and trust_gate.get("verdict") == "deny"
+        and isinstance(decision, dict)
+        and decision.get("model") == "fail_closed_consumer_admission"
+        and decision.get("allow") is False
+        and "required_artifact_subject_store_not_verified" in blockers
+        and isinstance(artifact_subject_store, dict)
+        and artifact_subject_store.get("required") is True
+        and artifact_subject_store.get("ok") is False
+    )
+    already_materialized_subject_store = bool(
+        trust_gate.get("ok")
+        and trust_gate.get("verdict") in {"allow", "warn"}
+        and isinstance(decision, dict)
+        and decision.get("model") == "fail_closed_consumer_admission"
+        and decision.get("allow") is True
+        and isinstance(artifact_subject_store, dict)
+        and artifact_subject_store.get("required") is True
+        and artifact_subject_store.get("ok") is True
+    )
     payload = {
         "ok": bool(
-            trust_gate.get("ok") is False
-            and trust_gate.get("verdict") == "deny"
-            and isinstance(decision, dict)
-            and decision.get("model") == "fail_closed_consumer_admission"
-            and decision.get("allow") is False
-            and "required_artifact_subject_store_not_verified" in blockers
+            (denied_missing_subject_store or already_materialized_subject_store)
             and inspected_claims.get("registry_latest", {}).get("selected_record_is_latest") is True
             and inspected_claims.get("controls", {}).get("required_controls_missing") == []
             and inspected_claims.get("source", {}).get("source_repo_matched") is True
             and inspected_claims.get("trust_root", {}).get("trust_root_mode_matched") is True
             and inspected_claims.get("verification", {}).get("ok") is True
-            and isinstance(artifact_subject_store, dict)
-            and artifact_subject_store.get("required") is True
-            and artifact_subject_store.get("ok") is False
+        ),
+        "mode": (
+            "missing_subject_store_denied"
+            if denied_missing_subject_store
+            else "subject_store_already_materialized"
         ),
         "trust_gate": trust_gate,
     }

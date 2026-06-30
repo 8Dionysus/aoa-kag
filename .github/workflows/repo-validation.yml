@@ -137,35 +137,35 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-4pda-connector
-          ref: b67062779b0c0204b239e10518704dbd704c184a
+          ref: 677adf7b5dc6e9e7ac031e813f92bb7d150d6692
           path: .deps/aoa-4pda-connector
 
       - name: Checkout aoa-discord-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-discord-connector
-          ref: e9e58b2f9839f6e64b8aa18a0c4f0fa535f93fc5
+          ref: 0fc4785c3f156d557ee180c8a2ce75a459d7fb22
           path: .deps/aoa-discord-connector
 
       - name: Checkout aoa-stackoverflow-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stackoverflow-connector
-          ref: 7b9e52678974f1e268e2558bf928f8d2eb233049
+          ref: 569592711bc57faf37cc27b832ee7f2f237945da
           path: .deps/aoa-stackoverflow-connector
 
       - name: Checkout aoa-telegram-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-telegram-connector
-          ref: a622d0dc42ac938b3f41b77a94a4602fd92a18fe
+          ref: d9f67a489df53a8441674f432286fb4bd596b451
           path: .deps/aoa-telegram-connector
 
       - name: Checkout aoa-xda-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-xda-connector
-          ref: edcd6981e5091cf9bdf13702d0a1ebb5550bccb8
+          ref: 39342d5f87470c0564c605ef6a38694e76d570b4
           path: .deps/aoa-xda-connector
 
       - name: Setup Python

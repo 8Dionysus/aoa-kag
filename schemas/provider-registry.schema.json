@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/provider-registry.schema.json",
+  "title": "AoA KAG provider registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "owner_repo",
+    "source_ref",
+    "providers"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-provider-registry-v1"
+    },
+    "owner_repo": {
+      "const": "aoa-kag"
+    },
+    "source_ref": {
+      "const": "manifests/provider_registry.json"
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/provider"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repoName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^/][^\\n]*$"
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "owner_type",
+        "root_kind",
+        "root",
+        "local_kag_path",
+        "env",
+        "github_repository",
+        "checkout_path",
+        "checkout_mode"
+      ],
+      "properties": {
+        "repo": {
+          "$ref": "#/$defs/repoName"
+        },
+        "owner_type": {
+          "type": "string",
+          "enum": [
+            "center",
+            "organ",
+            "connector",
+            "bundle_provider",
+            "runtime_source",
+            "runtime_mirror",
+            "workspace",
+            "unknown"
+          ]
+        },
+        "root_kind": {
+          "type": "string",
+          "enum": [
+            "direct",
+            "connector",
+            "bundle",
+            "self"
+          ]
+        },
+        "root": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "local_kag_path": {
+          "const": "kag"
+        },
+        "env": {
+          "type": "string"
+        },
+        "github_repository": {
+          "type": "string"
+        },
+        "checkout_path": {
+          "type": "string"
+        },
+        "checkout_mode": {
+          "type": "string",
+          "enum": [
+            "self",
+            "pinned",
+            "sealed"
+          ]
+        },
+        "pinned_ref": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "checkout_mode": {
+                "const": "pinned"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "pinned_ref"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

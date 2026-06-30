@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import ci_gate, release_check, validation_lanes
+from scripts.provider_registry import provider_ci_envs, sealed_provider_repos
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -20,31 +21,8 @@ EXECUTABLE_VALIDATION_LINE = re.compile(
 INLINE_EXECUTABLE_VALIDATION_COMMAND = re.compile(
     r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+status\b)[^`]+`"
 )
-CANARY_PROVIDER_ROOT_ENVS = {
-    "8Dionysus": "EIGHT_DIONYSUS_ROOT",
-    "ATM10-Agent": "ATM10_AGENT_ROOT",
-    "Agents-of-Abyss": "AGENTS_OF_ABYSS_ROOT",
-    "Dionysus": "DIONYSUS_ROOT",
-    "Tree-of-Sophia": "TREE_OF_SOPHIA_ROOT",
-    "aoa-agents": "AOA_AGENTS_ROOT",
-    "aoa-evals": "AOA_EVALS_ROOT",
-    "aoa-memo": "AOA_MEMO_ROOT",
-    "aoa-playbooks": "AOA_PLAYBOOKS_ROOT",
-    "aoa-routing": "AOA_ROUTING_ROOT",
-    "aoa-sdk": "AOA_SDK_ROOT",
-    "aoa-session-memory": "AOA_SESSION_MEMORY_ROOT",
-    "aoa-skills": "AOA_SKILLS_ROOT",
-    "aoa-stats": "AOA_STATS_ROOT",
-    "aoa-techniques": "AOA_TECHNIQUES_ROOT",
-    "aoa-4pda-connector": "AOA_4PDA_CONNECTOR_ROOT",
-    "aoa-discord-connector": "AOA_DISCORD_CONNECTOR_ROOT",
-    "aoa-stackoverflow-connector": "AOA_STACKOVERFLOW_CONNECTOR_ROOT",
-    "aoa-telegram-connector": "AOA_TELEGRAM_CONNECTOR_ROOT",
-    "aoa-xda-connector": "AOA_XDA_CONNECTOR_ROOT",
-}
-SEALED_PROVIDER_REPOS = {
-    "aoa-session-memory",
-}
+CANARY_PROVIDER_ROOT_ENVS = provider_ci_envs()
+SEALED_PROVIDER_REPOS = sealed_provider_repos()
 
 
 def command_sequence_from_manifest(name: str) -> tuple[tuple[str, ...], ...]:

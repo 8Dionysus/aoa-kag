@@ -27,6 +27,10 @@ try:
         source_bytes,
     )
     from scripts.generation.context import KNOWN_REPO_ROOTS
+    from scripts.provider_registry import (
+        connector_repos,
+        provider_repo_order,
+    )
 except ImportError:  # pragma: no cover - direct script execution
     from generate_repo_local_kag_index import (  # type: ignore
         EXCLUDED_PARTS,
@@ -41,6 +45,7 @@ except ImportError:  # pragma: no cover - direct script execution
         source_bytes,
     )
     from generation.context import KNOWN_REPO_ROOTS  # type: ignore
+    from provider_registry import connector_repos, provider_repo_order  # type: ignore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -51,36 +56,8 @@ SEALED_PROVIDER_COVERAGE_PATH = REPO_ROOT / "manifests" / "sealed_repo_local_kag
 OWNER_STATUS = ("passed", "migration-needed", "missing", "owner-specific")
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 SOURCE_SURFACE_INDEX_REL = Path("kag/indexes/source_surface_index.json")
-PROVIDER_REPO_ORDER = (
-    "8Dionysus",
-    "ATM10-Agent",
-    "Agents-of-Abyss",
-    "Dionysus",
-    "Tree-of-Sophia",
-    "aoa-agents",
-    "aoa-evals",
-    "aoa-kag",
-    "aoa-memo",
-    "aoa-playbooks",
-    "aoa-routing",
-    "aoa-sdk",
-    "aoa-skills",
-    "aoa-stats",
-    "aoa-techniques",
-    "aoa-session-memory",
-    "aoa-4pda-connector",
-    "aoa-discord-connector",
-    "aoa-stackoverflow-connector",
-    "aoa-telegram-connector",
-    "aoa-xda-connector",
-)
-CONNECTOR_REPOS = {
-    "aoa-4pda-connector",
-    "aoa-discord-connector",
-    "aoa-stackoverflow-connector",
-    "aoa-telegram-connector",
-    "aoa-xda-connector",
-}
+PROVIDER_REPO_ORDER = provider_repo_order()
+CONNECTOR_REPOS = connector_repos()
 
 
 def git_root(path: Path) -> Path | None:

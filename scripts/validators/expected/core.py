@@ -40,6 +40,10 @@ LOCAL_KAG_SUBTREE_EXAMPLE_PATH = REPO_ROOT / "examples" / "local_kag_subtree.exa
 
 LOCAL_KAG_READINESS_MANIFEST_PATH = REPO_ROOT / "manifests" / "local_kag_readiness.json"
 
+PROVIDER_REGISTRY_SCHEMA_PATH = REPO_ROOT / "schemas" / "provider-registry.schema.json"
+
+PROVIDER_REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "provider_registry.json"
+
 REPO_LOCAL_KAG_INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 
 REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
