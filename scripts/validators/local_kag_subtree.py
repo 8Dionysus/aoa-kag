@@ -56,6 +56,13 @@ EXPECTED_CONNECTOR_SURFACE_COUNT = sum(
     for surface_class in EXPECTED_OS_SURFACE_CLASSES.values()
     if surface_class == "connector_repo"
 )
+OS_SURFACE_PATH_LIST_KEYS = (
+    "source_home_surfaces",
+    "source_owned_exports",
+    "candidate_source_surfaces",
+    "document_surfaces",
+    "event_surfaces",
+)
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 REQUIRED_MCP_SHAPE = {"resource", "root"}
@@ -257,6 +264,56 @@ def _validate_surface_path(root: Path, relative_path: str, *, label: str) -> Non
         fail(f"{label} must point to an existing surface: {relative_path}")
 
 
+def _is_provider_home_surface(relative_path: object) -> bool:
+    if not isinstance(relative_path, str):
+        return False
+    normalized = relative_path.rstrip("/")
+    return normalized == "kag" or normalized.startswith("kag/")
+
+
+def _validate_pre_provider_surface_paths(entry: dict[str, object], *, surface_id: str) -> None:
+    status = entry.get("provider_status")
+    if status == "provider_ready":
+        return
+    for key in OS_SURFACE_PATH_LIST_KEYS:
+        values = entry.get(key)
+        if not isinstance(values, list):
+            continue
+        for relative_path in values:
+            if _is_provider_home_surface(relative_path):
+                fail(
+                    f"OS surface {surface_id} must keep provider-home paths "
+                    f"out of {status} {key}: {relative_path}"
+                )
+
+
+def _live_connector_surface_ids(connectors_root: Path) -> set[str]:
+    if not connectors_root.is_dir():
+        return set()
+    surface_ids: set[str] = set()
+    for child in connectors_root.iterdir():
+        if not child.is_dir():
+            continue
+        if not child.name.startswith("aoa-") or not child.name.endswith("-connector"):
+            continue
+        if not (child / ".git").exists():
+            continue
+        surface_ids.add(f"connectors/{child.name}")
+    return surface_ids
+
+
+def _validate_live_connector_surfaces(surface_ids: set[str]) -> None:
+    if not STRICT_OS_SURFACE_ROOTS:
+        return
+    live_connector_ids = _live_connector_surface_ids(EXPECTED_OS_SURFACE_ROOTS["connectors"])
+    missing = sorted(live_connector_ids - surface_ids)
+    if missing:
+        fail(
+            "local KAG readiness matrix must cover live connector repos: "
+            + ", ".join(missing)
+        )
+
+
 def _validate_os_surfaces(payload: dict[str, object]) -> None:
     surfaces = payload.get("os_surfaces")
     if not isinstance(surfaces, list):
@@ -266,6 +323,7 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
         fail("local KAG readiness matrix must cover every OS surface class")
     if len(surface_ids) != len(set(surface_ids)):
         fail("local KAG readiness matrix must keep one row per OS surface")
+    _validate_live_connector_surfaces({str(surface_id) for surface_id in surface_ids})
 
     adoption_order = [entry.get("adoption_order") for entry in surfaces if isinstance(entry, dict)]
     if len(adoption_order) != len(set(adoption_order)):
@@ -294,10 +352,11 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             fail(f"OS surface {surface_id} must keep owner_return_route")
         if not REQUIRED_MCP_SHAPE <= set(entry.get("mcp_access_shape", [])):
             fail(f"OS surface {surface_id} must expose resource and root MCP shapes")
+        _validate_pre_provider_surface_paths(entry, surface_id=surface_id)
 
         if not root_available:
             continue
-        for key in ("source_home_surfaces", "source_owned_exports", "candidate_source_surfaces", "document_surfaces", "event_surfaces"):
+        for key in OS_SURFACE_PATH_LIST_KEYS:
             values = entry.get(key)
             if not isinstance(values, list):
                 fail(f"OS surface {surface_id} {key} must be a list")

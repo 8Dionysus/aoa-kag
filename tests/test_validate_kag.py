@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -280,6 +281,43 @@ class ValidateKagTestCase(unittest.TestCase):
             "connector/STORAGE_POLICY.md",
             course["candidate_source_surfaces"],
         )
+
+    def test_local_kag_readiness_rejects_source_preparation_provider_home_paths(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        for entry in broken_payload["os_surfaces"]:
+            if entry["surface_id"] == "connectors/aoa-course-connector":
+                entry["candidate_source_surfaces"].append("kag/manifest.json")
+                break
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_contract()
+
+        self.assertIn("provider-home paths", str(context.exception))
+
+    def test_local_kag_readiness_rejects_untracked_live_connector_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            connectors_root = Path(tmpdir) / "connectors"
+            (connectors_root / "aoa-demo-connector" / ".git").mkdir(parents=True)
+
+            with patch.object(local_kag_subtree, "STRICT_OS_SURFACE_ROOTS", True):
+                with patch.dict(
+                    local_kag_subtree.EXPECTED_OS_SURFACE_ROOTS,
+                    {"connectors": connectors_root},
+                ):
+                    with self.assertRaises(validate_kag.ValidationError) as context:
+                        local_kag_subtree._validate_live_connector_surfaces(
+                            {"connectors"}
+                        )
+
+        self.assertIn("live connector repos", str(context.exception))
 
     def test_local_kag_readiness_rejects_missing_source_ready_provider(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
