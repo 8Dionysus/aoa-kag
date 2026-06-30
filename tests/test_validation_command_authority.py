@@ -120,6 +120,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
 
     def test_generated_lanes_rebuild_source_index_after_final_coverage_refresh(self) -> None:
         coverage_command = ("python", "scripts/generate_repo_local_kag_coverage.py")
+        generate_kag_command = ("python", "scripts/generate_kag.py")
         index_command = (
             "python",
             "scripts/generate_repo_local_kag_index.py",
@@ -133,10 +134,14 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             last_coverage = max(
                 index for index, command in enumerate(sequence) if command == coverage_command
             )
+            last_generate_kag = max(
+                index for index, command in enumerate(sequence) if command == generate_kag_command
+            )
             last_index = max(
                 index for index, command in enumerate(sequence) if command == index_command
             )
-            self.assertLess(last_coverage, last_index)
+            self.assertLess(last_coverage, last_generate_kag)
+            self.assertLess(last_generate_kag, last_index)
 
     def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
         with patch.object(ci_gate, "run_sequence") as run_sequence:

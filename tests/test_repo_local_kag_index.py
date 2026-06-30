@@ -86,6 +86,93 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             records_by_path["schemas/demo.schema.json"]["abi"]["contract_version"],
         )
 
+    def test_generator_qualifies_external_kag_routes_and_preserves_generated_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (root / "kag" / "indexes").mkdir(parents=True)
+            (root / "kag" / "projections").mkdir(parents=True)
+            (root / "kag" / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-local-kag-manifest-v1",
+                        "repo": "aoa-demo-connector",
+                        "validation_routes": [
+                            {"route": "scripts/validate_connector.py", "lane": "owner-local"},
+                            {"route": "aoa-kag:scripts/validate_kag.py", "lane": "local-kag"},
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "kag" / "indexes" / "source_inventory.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-local-kag-record-v1",
+                        "record_class": "index",
+                        "generated_or_authored": "generated_from_source",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "kag" / "projections" / "source_return.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-local-kag-record-v1",
+                        "record_class": "projection",
+                        "generated_or_authored": "generated_from_source",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "pyproject.toml").write_text(
+                "[tool.pytest.ini_options]\npythonpath = ['src']\n",
+                encoding="utf-8",
+            )
+            (root / "src" / "demo").mkdir(parents=True)
+            (root / "src" / "demo" / "__init__.py").write_text("", encoding="utf-8")
+            (root / "tests").mkdir()
+            (root / "tests" / "test_demo.py").write_text("def test_demo():\n    assert True\n", encoding="utf-8")
+
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+
+        self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
+        records_by_path = {
+            record["identity"]["path"]: record for record in payload["records"]
+        }
+        readme_record = records_by_path["README.md"]
+        self.assertEqual(
+            "aoa-kag:scripts/generate_repo_local_kag_index.py",
+            readme_record["provenance"]["observed_by"],
+        )
+        self.assertEqual(
+            ["aoa-kag:scripts/validate_kag.py"],
+            readme_record["provenance"]["validated_by"],
+        )
+        self.assertEqual(
+            "aoa-kag:scripts/validate_kag.py",
+            readme_record["validator_route"]["surface"],
+        )
+
+        inventory_record = records_by_path["kag/indexes/source_inventory.json"]
+        projection_record = records_by_path["kag/projections/source_return.json"]
+        for record in (inventory_record, projection_record):
+            self.assertEqual("generated_readmodel", record["surface_state"])
+            self.assertEqual(
+                "derived_readmodel",
+                record["provenance"]["source_refs"][0]["authority"],
+            )
+            self.assertEqual("generated", record["abi"]["compatibility"])
+            self.assertEqual(
+                "scripts/validate_connector.py",
+                record["provenance"]["generated_by"],
+            )
+        self.assertGreaterEqual(payload["coverage_summary"]["generated_count"], 2)
+        self.assertEqual(
+            ["PYTHONPATH=src python -m pytest -q"],
+            records_by_path["tests/test_demo.py"]["toolchain"]["owner_commands"],
+        )
+
     def test_aoa_kag_generated_index_covers_goal_surfaces(self) -> None:
         payload = build_index(REPO_ROOT, output=Path("kag/indexes/source_surface_index.json"))
         self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
@@ -102,8 +189,24 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         }
         self.assertEqual("security", records_by_path["SECURITY.md"]["artifact_kind"])
         self.assertEqual(
-            "authored_source",
+            "generated_readmodel",
             records_by_path["kag/indexes/provider_readiness_index.json"]["surface_state"],
+        )
+        self.assertEqual(
+            "kag/manifest.json",
+            records_by_path["kag/indexes/provider_readiness_index.json"]["provenance"][
+                "generated_by"
+            ],
+        )
+        self.assertEqual(
+            "generated_readmodel",
+            records_by_path["kag/projections/mcp_contract_resource.json"]["surface_state"],
+        )
+        self.assertEqual(
+            "kag/manifest.json",
+            records_by_path["kag/projections/mcp_contract_resource.json"]["provenance"][
+                "generated_by"
+            ],
         )
         self.assertEqual(
             "authored_source",

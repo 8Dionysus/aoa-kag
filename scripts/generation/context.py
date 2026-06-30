@@ -377,6 +377,10 @@ LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH = REPO_ROOT / "generated" / "local_kag_provid
 LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH = (
     REPO_ROOT / "generated" / "local_kag_provider_map.min.json"
 )
+REPO_LOCAL_KAG_COVERAGE_OUTPUT_PATH = REPO_ROOT / "generated" / "repo_local_kag_coverage.json"
+REPO_LOCAL_KAG_COVERAGE_MIN_OUTPUT_PATH = (
+    REPO_ROOT / "generated" / "repo_local_kag_coverage.min.json"
+)
 TECHNIQUE_LIFT_OUTPUT_PATH = (
     TECHNIQUE_LIFT_PART_ROOT / "generated" / "technique_lift_pack.json"
 )

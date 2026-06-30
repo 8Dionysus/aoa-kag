@@ -197,6 +197,21 @@ class KagGenerationTestCase(unittest.TestCase):
             for item in handoff["resource_templates"]
             if item["uri_template"] == "aoa-kag://providers/{repo}/records/{record_class}"
         )
+        generation_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"] == "aoa-kag://providers/{repo}/generation"
+        )
+        source_index_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"] == "aoa-kag://providers/{repo}/source-index"
+        )
+        repo_local_index_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"] == "aoa-kag://providers/{repo}/repo-local-index"
+        )
 
         self.assertEqual(
             handoff["service_route"],
@@ -209,6 +224,7 @@ class KagGenerationTestCase(unittest.TestCase):
                 "aoa-kag://providers/{repo}/records/{record_class}",
                 "aoa-kag://providers/{repo}/generation",
                 "aoa-kag://providers/{repo}/source-index",
+                "aoa-kag://providers/{repo}/repo-local-index",
                 "aoa-kag://registry/provider-map",
                 "aoa-kag://coverage/repo-local-source-indexes",
                 "aoa-kag://readiness/os-surfaces",
@@ -221,6 +237,30 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertIn("validation_status", handoff["tools"])
         self.assertIn("bounded_provider_query", handoff["prompts"])
         self.assertIn("repo_source_surface_brief", handoff["prompts"])
+        self.assertEqual(
+            generation_template["source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_generation_profiles/{repo}",
+        )
+        self.assertEqual(
+            repo_local_index_template["source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}",
+        )
+        self.assertEqual(
+            source_index_template["source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/source_index_ref",
+        )
+        self.assertEqual(
+            source_index_template["fallback_source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/index_files",
+        )
+        self.assertNotEqual(
+            source_index_template["source"],
+            "{repo}/kag/indexes/source_surface_index.json",
+        )
         self.assertEqual(records_template["source"], "{repo}/kag/{record_class_directory}/")
         self.assertEqual(
             records_template["record_class_directory_map"],
@@ -250,7 +290,13 @@ class KagGenerationTestCase(unittest.TestCase):
 
         for provider in payload["providers"]:
             with self.subTest(repo=provider["repo"]):
+                repo = provider["repo"]
                 profile = provider["generation_profile"]
+                self.assertEqual(profile, payload["provider_generation_profiles"][repo])
+                self.assertEqual(
+                    provider["repo_local_index"],
+                    payload["provider_repo_local_indexes"][repo],
+                )
                 self.assertTrue(profile["source_home_surfaces"])
                 self.assertTrue(profile["candidate_source_surfaces"])
                 self.assertTrue(profile["graph_entities"])
@@ -272,6 +318,7 @@ class KagGenerationTestCase(unittest.TestCase):
                     {"nodes", "edges", "indexes", "projections", "receipts"},
                     set(provider["record_counts"]),
                 )
+                self.assertIn("repo_local_index", provider)
                 self.assertTrue(provider["freshness_handles"])
                 for handle in provider["freshness_handles"]:
                     self.assertIn("receipt_ref", handle)
@@ -279,6 +326,49 @@ class KagGenerationTestCase(unittest.TestCase):
                     self.assertIn("state", handle)
                     self.assertIn("validator", handle)
                     self.assertIn("owner_return_route", handle)
+
+    def test_local_kag_provider_map_carries_repo_local_index_status(self) -> None:
+        payload = kag_generation.build_local_kag_provider_map_payload()
+        coverage = load_json(kag_generation.REPO_LOCAL_KAG_COVERAGE_OUTPUT_PATH)
+        assert isinstance(coverage, dict)
+        coverage_by_repo = {
+            owner["repo"]: owner
+            for owner in coverage["owners"]
+        }
+
+        for provider in payload["providers"]:
+            repo = provider["repo"]
+            with self.subTest(repo=repo):
+                coverage_row = coverage_by_repo[repo]
+                index_packet = provider["repo_local_index"]
+                self.assertEqual(coverage_row["index_status"], index_packet["status"])
+                self.assertEqual(coverage_row["index_files"], index_packet["index_files"])
+                self.assertEqual(coverage_row["coverage"], index_packet["coverage"])
+                self.assertEqual(
+                    "generated/repo_local_kag_coverage.min.json",
+                    index_packet["coverage_report_ref"],
+                )
+                self.assertEqual(repo, index_packet["coverage_owner_key"])
+
+        providers = {provider["repo"]: provider for provider in payload["providers"]}
+        self.assertEqual(
+            "passed",
+            providers["aoa-kag"]["repo_local_index"]["status"],
+        )
+        self.assertEqual(
+            "migration-needed",
+            providers["aoa-session-memory"]["repo_local_index"]["status"],
+        )
+        connector_statuses = {
+            repo: provider["repo_local_index"]["status"]
+            for repo, provider in providers.items()
+            if repo.endswith("-connector")
+        }
+        self.assertTrue(connector_statuses)
+        self.assertEqual(
+            {"passed"},
+            set(connector_statuses.values()),
+        )
 
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
