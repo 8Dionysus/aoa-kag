@@ -56,16 +56,23 @@
             "skill_source",
             "stats_source",
             "technique_source",
-            "tos_source"
+            "tos_source",
+            "validation_source"
           ]
         },
         "role": {
           "type": "string",
-          "enum": ["primary", "supporting", "owner_route", "consumer_route"]
+          "enum": ["primary", "supporting", "owner_route", "consumer_route", "validation_receipt"]
         },
         "authority": {
           "type": "string",
-          "enum": ["authored_source", "source_owned_export", "derived_readmodel", "runtime_route"]
+          "enum": [
+            "authored_source",
+            "source_owned_export",
+            "derived_readmodel",
+            "runtime_route",
+            "authored_control"
+          ]
         }
       }
     },

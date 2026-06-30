@@ -10,11 +10,22 @@ from typing import Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PART_LOCAL_SCRIPT_GLOB = "mechanics/*/parts/*/scripts/*.py"
+PART_LOCAL_SCRIPT_GLOBS = (
+    "mechanics/*/parts/*/scripts/build_*.py",
+    "mechanics/*/parts/*/scripts/validate_*.py",
+)
 
 
 def discovered_part_local_scripts(repo_root: Path = REPO_ROOT) -> tuple[Path, ...]:
-    return tuple(sorted(repo_root.glob(PART_LOCAL_SCRIPT_GLOB)))
+    return tuple(
+        sorted(
+            {
+                path
+                for pattern in PART_LOCAL_SCRIPT_GLOBS
+                for path in repo_root.glob(pattern)
+            }
+        )
+    )
 
 
 def check_command_for(script_path: Path, repo_root: Path = REPO_ROOT) -> tuple[str, ...]:

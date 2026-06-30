@@ -747,7 +747,11 @@ def _verify_terminal_registry_state(
     revoked_gate = artifact_bundles.trust_gate(
         registry_dir,
         artifact_class=ARTIFACT_CLASS,
-        record_id=str(release_ready.get("promoted", {}).get("record", {}).get("record_id") or ""),
+        record_id=str(
+            revoked.get("record", {}).get("record_id")
+            or revoked.get("promotion", {}).get("record_id")
+            or ""
+        ),
         consumer_intent=CONSUMER_INTENT,
         expected_source_repo=OWNER_REPO,
         expected_trust_root_mode=TRUST_ROOT_MODE,

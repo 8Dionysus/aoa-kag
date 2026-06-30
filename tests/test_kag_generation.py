@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import ast
 import copy
+import importlib
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -13,6 +15,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import kag_generation
+from generation import provider_map
 from tests.support.generation_patch import patched_generation_attribute, patched_generation_read_json
 
 
@@ -58,7 +61,13 @@ class KagGenerationTestCase(unittest.TestCase):
 
         self.assertLessEqual(len(text.splitlines()), 8)
         self.assertEqual(set(), definitions)
+        self.assertIn("from .generation import *", text)
         self.assertIn("from generation import *", text)
+
+    def test_kag_generation_facade_supports_package_import(self) -> None:
+        module = importlib.import_module("scripts.kag_generation")
+
+        self.assertIs(module.GenerationError, kag_generation.GenerationError)
 
     def test_generated_output_paths_cover_all_writer_outputs(self) -> None:
         self.assertEqual(
@@ -174,6 +183,28 @@ class KagGenerationTestCase(unittest.TestCase):
                 kag_generation.build_local_kag_provider_map_payload(),
                 expected_payload,
             )
+
+    def test_local_kag_provider_map_rejects_present_provider_missing_kag_home(self) -> None:
+        expected_payload = load_json(kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(expected_payload, dict)
+        provider = next(
+            item
+            for item in expected_payload["providers"]
+            if item["repo"] != "aoa-kag"
+        )
+        repo = provider["repo"]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            present_root = Path(tmpdir) / repo
+            present_root.mkdir()
+            roots = dict(kag_generation.KNOWN_REPO_ROOTS)
+            roots[repo] = present_root
+
+            with self.patch_generation_attribute("KNOWN_REPO_ROOTS", roots):
+                with self.assertRaises(kag_generation.GenerationError) as context:
+                    kag_generation.build_local_kag_provider_map_payload()
+
+        self.assertIn("kag/manifest.json", str(context.exception))
 
     def test_local_kag_provider_map_rejects_receipt_without_checked_ref(self) -> None:
         receipt_path = kag_generation.REPO_ROOT / "kag" / "receipts" / "validation_receipt.json"
@@ -370,8 +401,12 @@ class KagGenerationTestCase(unittest.TestCase):
             providers["aoa-kag"]["repo_local_index"]["status"],
         )
         self.assertEqual(
-            "migration-needed",
+            "owner-specific",
             providers["aoa-session-memory"]["repo_local_index"]["status"],
+        )
+        self.assertEqual(
+            "",
+            providers["aoa-session-memory"]["repo_local_index"]["source_index_ref"],
         )
         connector_statuses = {
             repo: provider["repo_local_index"]["status"]
@@ -379,9 +414,52 @@ class KagGenerationTestCase(unittest.TestCase):
             if repo.endswith("-connector")
         }
         self.assertTrue(connector_statuses)
+        self.assertLessEqual(set(connector_statuses.values()), {"passed", "owner-specific"})
+        for repo, provider in providers.items():
+            if not repo.endswith("-connector"):
+                continue
+            index_packet = provider["repo_local_index"]
+            if index_packet["status"] == "passed":
+                self.assertEqual(
+                    "kag/indexes/source_surface_index.json",
+                    index_packet["source_index_ref"],
+                )
+            else:
+                self.assertEqual("", index_packet["source_index_ref"])
+
+    def test_provider_records_ignore_corrupt_repo_local_source_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo-connector"
+            for group in provider_map.PROVIDER_RECORD_DIRECTORIES:
+                directory = root / "kag" / group
+                directory.mkdir(parents=True)
+                (directory / "demo.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "aoa-local-kag-record-v1",
+                            "record_class": group,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+            (root / "kag" / "indexes" / "source_surface_index.json").write_text(
+                "{not-json\n",
+                encoding="utf-8",
+            )
+
+            with self.patch_generation_attribute(
+                "KNOWN_REPO_ROOTS",
+                {"aoa-demo-connector": root},
+            ):
+                records = provider_map._provider_record_payloads("aoa-demo-connector", None)
+                counts = provider_map._provider_record_counts("aoa-demo-connector", None)
+
+        self.assertIsNotNone(records)
+        assert records is not None
+        self.assertEqual(len(provider_map.PROVIDER_RECORD_DIRECTORIES), len(records))
         self.assertEqual(
-            {"passed"},
-            set(connector_statuses.values()),
+            {group: 1 for group in provider_map.PROVIDER_RECORD_DIRECTORIES},
+            counts,
         )
 
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:

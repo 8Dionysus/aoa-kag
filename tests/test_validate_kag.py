@@ -155,6 +155,69 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("checked_ref", str(context.exception))
 
+    def test_local_kag_rejects_strict_checked_ref_outside_source_refs(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        receipt = broken_payload["records"]["receipts"][0]
+        freshness = receipt["freshness"]
+        assert isinstance(freshness, dict)
+        checked_ref = freshness["checked_ref"]
+        receipt["source_refs"] = [
+            source_ref
+            for source_ref in receipt["source_refs"]
+            if source_ref.get("path") != checked_ref
+        ]
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_contract()
+
+        self.assertIn("freshness.checked_ref must be listed in source_refs", str(context.exception))
+
+    def test_local_kag_allows_strict_checked_ref_via_builder_surface(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH)
+        assert isinstance(payload, dict)
+        receipt = copy.deepcopy(payload["records"]["receipts"][0])
+        builder = receipt["builder"]
+        freshness = receipt["freshness"]
+        assert isinstance(builder, dict)
+        assert isinstance(freshness, dict)
+        freshness["checked_ref"] = builder["surface"]
+        receipt["source_refs"] = [
+            source_ref
+            for source_ref in receipt["source_refs"]
+            if source_ref.get("path") != freshness["checked_ref"]
+        ]
+
+        local_kag_subtree._validate_checked_ref_is_source_linked(
+            receipt,
+            label="local KAG subtree example",
+        )
+
+    def test_local_kag_allows_strict_checked_ref_via_local_control_ref(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_SUBTREE_EXAMPLE_PATH)
+        assert isinstance(payload, dict)
+        receipt = copy.deepcopy(payload["records"]["receipts"][0])
+        freshness = receipt["freshness"]
+        assert isinstance(freshness, dict)
+        freshness["checked_ref"] = "kag/manifest.json"
+        receipt["source_refs"] = [
+            source_ref
+            for source_ref in receipt["source_refs"]
+            if source_ref.get("path") != freshness["checked_ref"]
+        ]
+
+        local_kag_subtree._validate_checked_ref_is_source_linked(
+            receipt,
+            label="local KAG subtree example",
+        )
+
     def test_local_kag_readiness_rejects_missing_direct_repo(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)
@@ -224,6 +287,17 @@ class ValidateKagTestCase(unittest.TestCase):
                     local_kag_subtree.KNOWN_REPO_ROOTS[repo],
                     local_kag_subtree.PROVIDER_REPO_ROOTS[repo],
                 )
+
+    def test_provider_home_skips_repo_local_source_surface_index_record(self) -> None:
+        original = local_kag_subtree.read_json
+
+        def read_json_without_repo_local_source_index(path: Path) -> object:
+            if Path(path).name == local_kag_subtree.REPO_LOCAL_SOURCE_INDEX_NAME:
+                raise AssertionError("provider-home validation must not read repo-local source index")
+            return original(path)
+
+        with patch.object(local_kag_subtree, "read_json", side_effect=read_json_without_repo_local_source_index):
+            local_kag_subtree._validate_provider_home("aoa-kag", REPO_ROOT)
 
     def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from generation import *
+try:
+    from generation import *
+except ImportError:
+    from .generation import *

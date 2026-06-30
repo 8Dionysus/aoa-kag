@@ -15,6 +15,17 @@ RECORD_CLASS_DIRECTORIES = {
 PROVIDER_RECORD_DIRECTORIES = tuple(RECORD_CLASS_DIRECTORIES.values())
 
 
+def _provider_root(repo: str) -> Path:
+    root = KNOWN_REPO_ROOTS.get(repo)
+    if root is None:
+        fail(f"unsupported repository '{repo}'")
+    return root
+
+
+def _provider_fallback_allowed(repo: str, fallback_provider: dict[str, object] | None) -> bool:
+    return fallback_provider is not None and not _provider_root(repo).exists()
+
+
 def _is_repo_local_source_index_payload(payload: object) -> bool:
     return (
         isinstance(payload, dict)
@@ -22,12 +33,16 @@ def _is_repo_local_source_index_payload(payload: object) -> bool:
     )
 
 
+def _is_repo_local_source_index_path(group: str, path: Path) -> bool:
+    return group == "indexes" and path.name == "source_surface_index.json"
+
+
 def _provider_record_payloads(
     repo: str,
     fallback_provider: dict[str, object] | None,
 ) -> list[dict[str, object]] | None:
     root = resolve_repo_path(repo, "kag")
-    if not root.exists() and fallback_provider is not None:
+    if not root.exists() and _provider_fallback_allowed(repo, fallback_provider):
         return None
 
     records: list[dict[str, object]] = []
@@ -36,6 +51,8 @@ def _provider_record_payloads(
         if not directory.is_dir():
             fail(f"{repo} local KAG provider is missing kag/{group}/")
         for path in sorted(directory.glob("*.json")):
+            if _is_repo_local_source_index_path(group, path):
+                continue
             payload = read_json(path)
             if not isinstance(payload, dict):
                 fail(
@@ -105,7 +122,7 @@ def _provider_repo_local_index_packet(
         fail(f"{repo} repo-local KAG coverage must declare coverage counts")
     source_index_ref = (
         "kag/indexes/source_surface_index.json"
-        if "kag/indexes/source_surface_index.json" in index_files
+        if status == "passed" and "kag/indexes/source_surface_index.json" in index_files
         else ""
     )
     return {
@@ -122,7 +139,7 @@ def _provider_manifest(
     repo: str, fallback_provider: dict[str, object] | None
 ) -> dict[str, object]:
     manifest_path = resolve_repo_path(repo, "kag/manifest.json")
-    if not manifest_path.exists() and fallback_provider is not None:
+    if not manifest_path.exists() and _provider_fallback_allowed(repo, fallback_provider):
         return fallback_provider
     payload = read_json(manifest_path)
     if not isinstance(payload, dict):
@@ -134,7 +151,7 @@ def _provider_record_counts(
     repo: str, fallback_provider: dict[str, object] | None
 ) -> dict[str, int]:
     root = resolve_repo_path(repo, "kag")
-    if not root.exists() and fallback_provider is not None:
+    if not root.exists() and _provider_fallback_allowed(repo, fallback_provider):
         counts = fallback_provider.get("record_counts")
         if not isinstance(counts, dict):
             fail(f"{repo} fallback local KAG provider must declare record_counts")
@@ -152,6 +169,8 @@ def _provider_record_counts(
             fail(f"{repo} local KAG provider is missing kag/{group}/")
         result[group] = 0
         for path in sorted(directory.glob("*.json")):
+            if _is_repo_local_source_index_path(group, path):
+                continue
             payload = read_json(path)
             if _is_repo_local_source_index_payload(payload):
                 continue
@@ -248,7 +267,7 @@ def _provider_freshness_handles(
     repo: str, fallback_provider: dict[str, object] | None
 ) -> list[dict[str, object]]:
     root = resolve_repo_path(repo, "kag")
-    if not root.exists() and fallback_provider is not None:
+    if not root.exists() and _provider_fallback_allowed(repo, fallback_provider):
         handles = fallback_provider.get("freshness_handles")
         if not isinstance(handles, list):
             fail(f"{repo} fallback local KAG provider must declare freshness_handles")

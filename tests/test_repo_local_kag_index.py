@@ -23,6 +23,56 @@ def load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def owner_specific_index_payload(repo: str = "aoa-demo-connector") -> dict[str, object]:
+    return {
+        "schema_version": "aoa-local-kag-record-v1",
+        "repo": repo,
+        "local_id": "index:demo:source-inventory",
+        "record_class": "index",
+        "source_refs": [
+            {
+                "repo": repo,
+                "path": "README.md",
+                "source_class": "connector_source",
+                "role": "primary",
+                "authority": "authored_source",
+            }
+        ],
+        "source_owner": repo,
+        "provenance_mode": "strict_source_linked",
+        "derived_method": "local provider source inventory",
+        "generated_or_authored": "generated_from_source",
+        "status": "active",
+        "owner_return_route": {
+            "repo": repo,
+            "surface": "README.md",
+            "route_kind": "authored_meaning",
+        },
+        "freshness": {
+            "mode": "source_snapshot",
+            "state": "current",
+            "checked_ref": "README.md",
+        },
+        "builder": {
+            "route": "local validation lane",
+            "surface": "scripts/validate_provider.py",
+        },
+        "validator": {
+            "route": "aoa-kag local subtree validator",
+            "lane": "local-kag",
+        },
+        "storage_posture": {
+            "git_surface": "portable_records",
+            "payload_class": "index",
+            "runtime_route": "source-repo",
+        },
+        "consumer_route": "aoa-kag provider map",
+        "index_kind": "inventory",
+        "indexed_record_classes": ["node", "edge"],
+        "source_record_ids": ["node:demo:readme"],
+    }
+
+
 class RepoLocalKagIndexTests(unittest.TestCase):
     def validate_with_schema(self, payload: object, schema_path: Path) -> None:
         schema = load_json(schema_path)
@@ -258,6 +308,10 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 records_by_path[decision_index_path]["provenance"]["generated_by"],
             )
         self.assertEqual(
+            "application/yaml",
+            records_by_path["docs/decisions/indexes/index_contract.yaml"]["identity"]["mime"],
+        )
+        self.assertEqual(
             [
                 "python scripts/ci_gate.py --mode source-fast",
                 "python scripts/ci_gate.py --mode generated",
@@ -336,7 +390,8 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             organ = root / "aoa-demo"
             connector = root / "connectors" / "aoa-demo-connector"
             bundle = root / "bundles" / "aoa-demo-bundle"
-            for owner in (organ, connector, bundle):
+            bundle_provider = root / "bundles" / "aoa-demo-bundle-provider"
+            for owner in (organ, connector, bundle, bundle_provider):
                 (owner / "kag" / "indexes").mkdir(parents=True)
                 (owner / "README.md").write_text("# Owner\n", encoding="utf-8")
             (organ / "kag" / "indexes" / "source_surface_index.json").write_text(
@@ -350,7 +405,21 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (connector / "kag" / "indexes" / "source_inventory.json").write_text(
-                json.dumps({"schema_version": "connector-source-inventory-v1"}),
+                json.dumps(owner_specific_index_payload()),
+                encoding="utf-8",
+            )
+            stale_bundle_index = build_index(
+                bundle_provider,
+                output=Path("kag/indexes/source_surface_index.json"),
+            )
+            stale_bundle_index["coverage_summary"]["document_count"] = 0
+            stale_bundle_index["index_identity"]["content_digest"] = payload_digest(stale_bundle_index)
+            (bundle_provider / "kag" / "indexes" / "source_surface_index.json").write_text(
+                json.dumps(stale_bundle_index),
+                encoding="utf-8",
+            )
+            (bundle_provider / "kag" / "indexes" / "session_memory_source_inventory.json").write_text(
+                json.dumps(owner_specific_index_payload(repo="aoa-demo-bundle-provider")),
                 encoding="utf-8",
             )
 
@@ -361,6 +430,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual("passed", statuses["aoa-demo"])
         self.assertEqual("owner-specific", statuses["aoa-demo-connector"])
         self.assertEqual("missing", statuses["aoa-demo-bundle"])
+        self.assertEqual("owner-specific", statuses["aoa-demo-bundle-provider"])
 
     def test_coverage_rejects_index_with_wrong_repo_identity(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -485,6 +555,143 @@ class RepoLocalKagIndexTests(unittest.TestCase):
 
         self.assertEqual([cached_owner], payload["owners"])
         self.assertEqual(1, payload["coverage_summary"]["passed"])
+
+    def test_provider_coverage_uses_configured_owner_identity_for_owner_specific_indexes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            checkout = root / "temporary-checkout"
+            indexes = checkout / "kag" / "indexes"
+            indexes.mkdir(parents=True)
+            (checkout / "README.md").write_text("# Connector\n", encoding="utf-8")
+            (indexes / "source_surface_index.json").write_text("{not-json\n", encoding="utf-8")
+            (indexes / "source_inventory.json").write_text(
+                json.dumps(owner_specific_index_payload()),
+                encoding="utf-8",
+            )
+
+            payload = coverage_generation.build_coverage(
+                root,
+                owner_roots=[("aoa-demo-connector", checkout)],
+            )
+
+        owner = payload["owners"][0]
+        self.assertEqual("aoa-demo-connector", owner["repo"])
+        self.assertEqual("connector", owner["owner_type"])
+        self.assertEqual("owner-specific", owner["index_status"])
+
+    def test_provider_coverage_requires_usable_owner_specific_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            checkout = root / "temporary-checkout"
+            indexes = checkout / "kag" / "indexes"
+            indexes.mkdir(parents=True)
+            (checkout / "README.md").write_text("# Connector\n", encoding="utf-8")
+            (indexes / "source_surface_index.json").write_text("{not-json\n", encoding="utf-8")
+            (indexes / "source_inventory.json").write_text("[\"not\", \"a\", \"record\"]\n", encoding="utf-8")
+
+            payload = coverage_generation.build_coverage(
+                root,
+                owner_roots=[("aoa-demo-connector", checkout)],
+            )
+
+        owner = payload["owners"][0]
+        self.assertEqual("aoa-demo-connector", owner["repo"])
+        self.assertEqual("connector", owner["owner_type"])
+        self.assertEqual("migration-needed", owner["index_status"])
+
+    def test_provider_coverage_requires_schema_valid_owner_specific_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            checkout = root / "temporary-checkout"
+            indexes = checkout / "kag" / "indexes"
+            indexes.mkdir(parents=True)
+            (checkout / "README.md").write_text("# Connector\n", encoding="utf-8")
+            (indexes / "source_surface_index.json").write_text("{not-json\n", encoding="utf-8")
+            (indexes / "source_inventory.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-local-kag-record-v1",
+                        "record_class": "index",
+                        "generated_or_authored": "generated_from_source",
+                        "builder": {
+                            "route": "local validation lane",
+                            "surface": "scripts/validate_provider.py",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            payload = coverage_generation.build_coverage(
+                root,
+                owner_roots=[("aoa-demo-connector", checkout)],
+            )
+
+        owner = payload["owners"][0]
+        self.assertEqual("aoa-demo-connector", owner["repo"])
+        self.assertEqual("connector", owner["owner_type"])
+        self.assertEqual("migration-needed", owner["index_status"])
+
+    def test_provider_coverage_requires_owner_specific_checked_ref_to_be_source_linked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            checkout = root / "temporary-checkout"
+            indexes = checkout / "kag" / "indexes"
+            indexes.mkdir(parents=True)
+            (checkout / "README.md").write_text("# Connector\n", encoding="utf-8")
+            (indexes / "source_surface_index.json").write_text("{not-json\n", encoding="utf-8")
+            owner_payload = owner_specific_index_payload()
+            owner_payload["freshness"]["checked_ref"] = "unlinked-generated-snapshot.json"
+            (indexes / "source_inventory.json").write_text(json.dumps(owner_payload), encoding="utf-8")
+
+            payload = coverage_generation.build_coverage(
+                root,
+                owner_roots=[("aoa-demo-connector", checkout)],
+            )
+
+        owner = payload["owners"][0]
+        self.assertEqual("aoa-demo-connector", owner["repo"])
+        self.assertEqual("connector", owner["owner_type"])
+        self.assertEqual("migration-needed", owner["index_status"])
+
+    def test_provider_coverage_treats_undecodable_owner_specific_index_as_migration_needed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            checkout = root / "temporary-checkout"
+            indexes = checkout / "kag" / "indexes"
+            indexes.mkdir(parents=True)
+            (checkout / "README.md").write_text("# Connector\n", encoding="utf-8")
+            (indexes / "source_surface_index.json").write_text("{not-json\n", encoding="utf-8")
+            (indexes / "source_inventory.json").write_bytes(b"\xff\xfe\x00")
+
+            payload = coverage_generation.build_coverage(
+                root,
+                owner_roots=[("aoa-demo-connector", checkout)],
+            )
+
+        owner = payload["owners"][0]
+        self.assertEqual("aoa-demo-connector", owner["repo"])
+        self.assertEqual("connector", owner["owner_type"])
+        self.assertEqual("migration-needed", owner["index_status"])
+
+    def test_provider_coverage_rejects_unusable_owner_specific_index_without_canonical_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            checkout = root / "temporary-checkout"
+            indexes = checkout / "kag" / "indexes"
+            indexes.mkdir(parents=True)
+            (checkout / "README.md").write_text("# Connector\n", encoding="utf-8")
+            (indexes / "source_inventory.json").write_text("[\"not\", \"a\", \"record\"]\n", encoding="utf-8")
+
+            payload = coverage_generation.build_coverage(
+                root,
+                owner_roots=[("aoa-demo-connector", checkout)],
+            )
+
+        owner = payload["owners"][0]
+        self.assertEqual("aoa-demo-connector", owner["repo"])
+        self.assertEqual("connector", owner["owner_type"])
+        self.assertEqual("migration-needed", owner["index_status"])
 
 
 if __name__ == "__main__":
