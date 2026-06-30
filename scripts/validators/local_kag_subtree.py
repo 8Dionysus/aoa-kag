@@ -23,6 +23,14 @@ EXPECTED_CONNECTOR_SURFACE_ROOTS = {
     "connectors/aoa-xda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-xda-connector",
 }
 
+DIRECT_OS_REPO_NAMES = {
+    "8Dionysus",
+    "ATM10-Agent",
+    "Agents-of-Abyss",
+    "Dionysus",
+    "Tree-of-Sophia",
+}
+
 EXPECTED_OS_SURFACE_ROOTS = {
     ".agents": OS_ABYSS_ROOT / ".agents",
     ".aoa": OS_ABYSS_ROOT / ".aoa",
@@ -287,6 +295,46 @@ def _validate_pre_provider_surface_paths(entry: dict[str, object], *, surface_id
                 )
 
 
+def _has_git_metadata(root: Path) -> bool:
+    return (root / ".git").is_dir()
+
+
+def _is_direct_os_repo_name(name: str) -> bool:
+    return name.startswith("aoa-") or name in DIRECT_OS_REPO_NAMES
+
+
+def _live_canonical_os_owner_refs(os_root: Path) -> dict[str, Path]:
+    refs: dict[str, Path] = {}
+    if not os_root.is_dir():
+        return refs
+
+    for child in os_root.iterdir():
+        if not child.is_dir() or child.name.startswith("."):
+            continue
+        if child.name in {"bundles", "connectors", "Services"}:
+            continue
+        if _is_direct_os_repo_name(child.name) and _has_git_metadata(child):
+            refs[f"repo:{child.name}"] = child
+
+    connectors_root = os_root / "connectors"
+    if connectors_root.is_dir():
+        for child in connectors_root.iterdir():
+            if (
+                child.is_dir()
+                and child.name.startswith("aoa-")
+                and child.name.endswith("-connector")
+                and _has_git_metadata(child)
+            ):
+                refs[f"surface:connectors/{child.name}"] = child
+
+    bundles_root = os_root / "bundles"
+    if bundles_root.is_dir():
+        for child in bundles_root.iterdir():
+            if child.is_dir() and child.name.startswith("aoa-") and _has_git_metadata(child):
+                refs[f"surface:bundles/{child.name}"] = child
+    return refs
+
+
 def _live_connector_surface_ids(connectors_root: Path) -> set[str]:
     if not connectors_root.is_dir():
         return set()
@@ -314,16 +362,51 @@ def _validate_live_connector_surfaces(surface_ids: set[str]) -> None:
         )
 
 
+def _validate_live_canonical_os_owner_surfaces(
+    repo_names: set[str],
+    surface_ids: set[str],
+) -> None:
+    if not STRICT_OS_SURFACE_ROOTS:
+        return
+
+    missing: list[str] = []
+    for owner_ref, root in sorted(_live_canonical_os_owner_refs(OS_ABYSS_ROOT).items()):
+        ref_kind, owner_id = owner_ref.split(":", 1)
+        if ref_kind == "repo":
+            if owner_id not in repo_names:
+                missing.append(f"{owner_id} ({root.as_posix()})")
+            continue
+        repo_name = owner_id.rsplit("/", 1)[-1]
+        if repo_name not in repo_names and owner_id not in surface_ids:
+            missing.append(f"{owner_id} ({root.as_posix()})")
+
+    if missing:
+        fail(
+            "local KAG readiness matrix must cover live canonical OS repo roots: "
+            + ", ".join(missing)
+        )
+
+
 def _validate_os_surfaces(payload: dict[str, object]) -> None:
     surfaces = payload.get("os_surfaces")
     if not isinstance(surfaces, list):
         fail("local KAG readiness matrix os_surfaces must be a list")
+    repos = payload.get("repos")
+    if not isinstance(repos, list):
+        fail("local KAG readiness matrix repos must be a list")
+    repo_names = {
+        str(entry.get("repo"))
+        for entry in repos
+        if isinstance(entry, dict) and entry.get("repo")
+    }
     surface_ids = [entry.get("surface_id") for entry in surfaces if isinstance(entry, dict)]
     if set(surface_ids) != set(EXPECTED_OS_SURFACE_ROOTS):
         fail("local KAG readiness matrix must cover every OS surface class")
     if len(surface_ids) != len(set(surface_ids)):
         fail("local KAG readiness matrix must keep one row per OS surface")
-    _validate_live_connector_surfaces({str(surface_id) for surface_id in surface_ids})
+    surface_id_set = {str(surface_id) for surface_id in surface_ids}
+    _validate_live_connector_surfaces(surface_id_set)
+    _validate_live_canonical_os_owner_surfaces(repo_names, surface_id_set)
 
     adoption_order = [entry.get("adoption_order") for entry in surfaces if isinstance(entry, dict)]
     if len(adoption_order) != len(set(adoption_order)):
