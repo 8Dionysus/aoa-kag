@@ -112,7 +112,24 @@ def source_snapshot_ref(repo_root: Path) -> str:
         return FILESYSTEM_SOURCE_REF
 
 
+def manifest_repo_name(repo_root: Path) -> str:
+    manifest_path = repo_root / "kag" / "manifest.json"
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return ""
+    if not isinstance(payload, dict):
+        return ""
+    repo = payload.get("repo")
+    if isinstance(repo, str) and repo.strip():
+        return repo.strip()
+    return ""
+
+
 def repo_name(repo_root: Path) -> str:
+    manifest_name = manifest_repo_name(repo_root)
+    if manifest_name:
+        return manifest_name
     try:
         top = Path(run_text(("git", "rev-parse", "--show-toplevel"), repo_root))
         return top.name
