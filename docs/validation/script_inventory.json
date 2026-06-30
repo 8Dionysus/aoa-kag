@@ -5,7 +5,7 @@
   "notes": ["This inventory describes every tracked non-pyc file under */scripts/*.", "Command authority lives in config/validation_lanes.json.", "Route cards under script directories own local script boundaries."],
   "required_fields": ["path", "family", "organ_lane", "owner_surface", "source_truth", "reads", "writes", "side_effects", "validation_lane", "ci_inclusion", "test_target", "disposition"],
   "function_groups": {
-    "command_authority_lane_runners": ["lane_executor", "lane_loader", "part_local_script_runner", "release_entrypoint", "test_runner"],
+    "command_authority_lane_runners": ["lane_executor", "lane_loader", "part_local_script_runner", "provider_checkout_tool", "release_entrypoint", "test_runner"],
     "generation_builders": ["decision_index_builder", "projection_builder", "projection_helper", "validator_generation_port"],
     "validators": ["example_validator", "example_validator_facade", "manifest_validator", "manifest_validator_facade", "projection_validator", "projection_validator_facade", "source_validator", "validator_adapter", "validator_entrypoint", "validator_expected_contracts", "validator_expected_contracts_facade", "validator_orchestration", "validator_orchestrator_facade", "validator_shared"],
     "topology_and_route_inventory": ["script_route_card"],
@@ -221,6 +221,20 @@
       "validation_lane": "source_fast",
       "ci_inclusion": "covered by provider registry tests, script topology, and validate_kag",
       "test_target": "tests/test_provider_registry.py",
+      "disposition": "keep"
+    },
+    {
+      "path": "scripts/sync_provider_checkouts.py",
+      "family": "provider_checkout_tool",
+      "organ_lane": "release/ci-lane",
+      "owner_surface": "manifests/provider_registry.json",
+      "source_truth": ["manifests/provider_registry.json", "schemas/provider-registry.schema.json"],
+      "reads": ["provider registry manifest and pinned provider git remotes"],
+      "writes": [".deps/<provider>/"],
+      "side_effects": "materializes pinned provider checkouts and can run a command with CI-equivalent provider root env",
+      "validation_lane": "release",
+      "ci_inclusion": "covered by provider checkout tests and script topology inventory",
+      "test_target": "tests/test_sync_provider_checkouts.py",
       "disposition": "keep"
     },
     {

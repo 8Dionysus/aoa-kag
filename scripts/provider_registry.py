@@ -67,6 +67,26 @@ def provider_dependency_pins(path: Path = PROVIDER_REGISTRY_PATH) -> dict[str, s
     }
 
 
+def pinned_provider_entries(path: Path = PROVIDER_REGISTRY_PATH) -> tuple[dict[str, Any], ...]:
+    return tuple(
+        entry for entry in provider_entries(path) if entry.get("checkout_mode") == "pinned"
+    )
+
+
+def provider_checkout_envs(
+    *,
+    repo_root: Path = REPO_ROOT,
+    path: Path = PROVIDER_REGISTRY_PATH,
+) -> dict[str, Path]:
+    result: dict[str, Path] = {}
+    for entry in provider_entries(path):
+        env_name = str(entry.get("env") or "")
+        checkout_path = str(entry.get("checkout_path") or "")
+        if env_name and checkout_path:
+            result[env_name] = (repo_root / checkout_path).resolve()
+    return result
+
+
 def provider_root_from_entry(entry: dict[str, Any], *, os_root: Path = DEFAULT_OS_ROOT) -> Path:
     root_kind = entry.get("root_kind")
     root = Path(str(entry["root"]))

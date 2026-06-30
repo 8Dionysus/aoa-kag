@@ -198,6 +198,19 @@
           ]
         },
         {
+          "path": "tests/test_sync_provider_checkouts.py",
+          "family": "provider-checkout/tool",
+          "protects": "Pinned provider checkout runner command shape and provider-root environment injection.",
+          "owner_surface": "scripts/sync_provider_checkouts.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_sync_provider_checkouts.py",
+          "failure_route": "Route through provider checkout script, provider registry helpers, or provider-root environment mapping.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "release/artifact-trust"
+          ]
+        },
+        {
           "path": "tests/test_test_topology.py",
           "family": "test-topology/authority",
           "protects": "Test inventory completeness, home classification, runner coverage, and command-authority split.",
