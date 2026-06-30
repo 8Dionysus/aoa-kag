@@ -241,6 +241,95 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             records_by_path["schemas/demo.schema.json"]["abi"]["contract_version"],
         )
 
+    def test_generator_classifies_common_os_artifact_surfaces(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (root / ".github").mkdir()
+            (root / ".github" / "CODEOWNERS").write_text("* @owners\n", encoding="utf-8")
+            (root / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+            (root / "requirements-dev.txt").write_text("jsonschema\n", encoding="utf-8")
+            (root / ".agents" / "skills" / "demo" / "assets").mkdir(parents=True)
+            (root / ".agents" / "skills" / "demo" / "assets" / "logo.svg").write_text(
+                "<svg />\n",
+                encoding="utf-8",
+            )
+            (root / "memo" / "local").mkdir(parents=True)
+            (root / "memo" / "local" / ".gitkeep").write_text("", encoding="utf-8")
+            (root / ".aoa" / "live_receipts").mkdir(parents=True)
+            (root / ".aoa" / "live_receipts" / "events.jsonl").write_text(
+                '{"event":"ok"}\n',
+                encoding="utf-8",
+            )
+            (root / "kag" / "receipts").mkdir(parents=True)
+            (root / "kag" / "receipts" / "validation.jsonl").write_text(
+                '{"result":"valid"}\n',
+                encoding="utf-8",
+            )
+            (root / "data").mkdir()
+            (root / "data" / "nodes.csv").write_text("id,label\n1,Demo\n", encoding="utf-8")
+            (root / "archive").mkdir()
+            (root / "archive" / "seed.zip").write_bytes(b"PK\x03\x04")
+            (root / "carriers").mkdir()
+            (root / "carriers" / "table.xlsx").write_bytes(b"xlsx")
+            (root / "systemd").mkdir()
+            (root / "systemd" / "demo.service").write_text("[Service]\n", encoding="utf-8")
+            (root / "scripts").mkdir()
+            (root / "scripts" / "start_demo.ps1").write_text("Write-Output ok\n", encoding="utf-8")
+            (root / "scripts" / "validate_demo.ps1").write_text("Write-Output ok\n", encoding="utf-8")
+            (root / ".deps" / "foreign").mkdir(parents=True)
+            (root / ".deps" / "foreign" / "README.md").write_text("# Foreign\n", encoding="utf-8")
+
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+
+        self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
+        records_by_path = {
+            record["identity"]["path"]: record for record in payload["records"]
+        }
+        expected_kinds = {
+            ".github/CODEOWNERS": "owner_metadata",
+            ".gitignore": "owner_metadata",
+            "requirements-dev.txt": "dependency_manifest",
+            ".agents/skills/demo/assets/logo.svg": "asset",
+            "memo/local/.gitkeep": "directory_marker",
+            ".aoa/live_receipts/events.jsonl": "record_log",
+            "kag/receipts/validation.jsonl": "receipt",
+            "data/nodes.csv": "data_table",
+            "archive/seed.zip": "archive",
+            "carriers/table.xlsx": "spreadsheet",
+            "systemd/demo.service": "service_unit",
+            "scripts/start_demo.ps1": "script",
+            "scripts/validate_demo.ps1": "validator",
+        }
+        for path, expected_kind in expected_kinds.items():
+            record = records_by_path[path]
+            self.assertEqual(expected_kind, record["artifact_kind"], path)
+            expected_primary = "command" if path.startswith("scripts/") else "artifact"
+            self.assertEqual(expected_primary, record["classification"]["primary_kind"], path)
+            self.assertEqual("high", record["classification"]["confidence"], path)
+        self.assertEqual("legacy", records_by_path["archive/seed.zip"]["surface_state"])
+        self.assertEqual("receipt", records_by_path["kag/receipts/validation.jsonl"]["surface_state"])
+        self.assertEqual(
+            "generated_receipt",
+            records_by_path["kag/receipts/validation.jsonl"]["provenance"]["source_refs"][0]["authority"],
+        )
+        self.assertEqual("script", records_by_path["scripts/start_demo.ps1"]["command_role"])
+        self.assertEqual("validator", records_by_path["scripts/validate_demo.ps1"]["command_role"])
+        self.assertEqual(
+            ["pwsh scripts/start_demo.ps1"],
+            records_by_path["scripts/start_demo.ps1"]["toolchain"]["owner_commands"],
+        )
+        self.assertEqual(
+            ["pwsh scripts/validate_demo.ps1"],
+            records_by_path["scripts/validate_demo.ps1"]["toolchain"]["owner_commands"],
+        )
+        self.assertIn("pwsh", records_by_path["scripts/start_demo.ps1"]["toolchain"]["required_tools"])
+        self.assertNotIn(".deps/foreign/README.md", records_by_path)
+        self.assertEqual(0, payload["coverage_summary"]["unknown_count"])
+        self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["asset"])
+        self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["receipt"])
+        self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["record_log"])
+
     def test_generator_qualifies_external_kag_routes_and_preserves_generated_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -338,10 +427,21 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertGreater(summary["validator_count"], 0)
         self.assertGreater(summary["test_count"], 0)
         self.assertGreater(summary["schema_count"], 0)
+        self.assertEqual(0, summary["unknown_count"])
+        self.assertEqual(
+            summary["record_count"],
+            sum(payload["classification_summary"]["artifact_kind"].values()),
+        )
 
         records_by_path = {
             record["identity"]["path"]: record for record in payload["records"]
         }
+        self.assertEqual("owner_metadata", records_by_path[".github/CODEOWNERS"]["artifact_kind"])
+        self.assertEqual("owner_metadata", records_by_path[".gitignore"]["artifact_kind"])
+        self.assertEqual(
+            "asset",
+            records_by_path[".agents/skills/aoa-adr-write/assets/large-logo.svg"]["artifact_kind"],
+        )
         self.assertEqual("security", records_by_path["SECURITY.md"]["artifact_kind"])
         self.assertEqual(
             "generated_readmodel",
