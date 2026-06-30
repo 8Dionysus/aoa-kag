@@ -55,9 +55,33 @@ DEFAULT_MIN_OUTPUT = REPO_ROOT / "generated" / "repo_local_kag_coverage.min.json
 SEALED_PROVIDER_COVERAGE_PATH = REPO_ROOT / "manifests" / "sealed_repo_local_kag_coverage.json"
 OWNER_STATUS = ("passed", "migration-needed", "missing", "owner-specific")
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
+LOCAL_KAG_SUBTREE_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-subtree.schema.json"
 SOURCE_SURFACE_INDEX_REL = Path("kag/indexes/source_surface_index.json")
 PROVIDER_REPO_ORDER = provider_repo_order()
 CONNECTOR_REPOS = connector_repos()
+OWNER_SPECIFIC_INDEX_NAMES = {
+    "session_memory_source_inventory.json",
+    "source_inventory.json",
+}
+OWNER_SPECIFIC_OWNER_TYPES = {
+    "bundle_provider",
+    "connector",
+}
+LOCAL_KAG_RECORD_SCHEMA_VERSION = "aoa-local-kag-record-v1"
+
+
+def local_kag_index_record_schema() -> dict[str, Any]:
+    schema = json.loads(LOCAL_KAG_SUBTREE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    if not isinstance(schema, dict):
+        raise ValueError("local KAG subtree schema must be an object")
+    wrapper = {
+        "$schema": schema.get("$schema"),
+        "$id": f"{schema.get('$id', 'local-kag-subtree')}.indexRecord.coverage.json",
+        "$defs": schema.get("$defs", {}),
+        "$ref": "#/$defs/indexRecord",
+    }
+    Draft202012Validator.check_schema(wrapper)
+    return wrapper
 
 
 def git_root(path: Path) -> Path | None:
@@ -220,7 +244,77 @@ def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> boo
     return True
 
 
-def index_status(owner_root: Path) -> tuple[str, list[str]]:
+def has_owner_specific_index(owner_name: str, owner_root: Path, relative_files: list[str]) -> bool:
+    owner_type = owner_type_for(owner_name, owner_root)
+    if owner_type not in OWNER_SPECIFIC_OWNER_TYPES:
+        return False
+    schema = local_kag_index_record_schema()
+    for relative_file in relative_files:
+        rel = Path(relative_file)
+        if rel.name not in OWNER_SPECIFIC_INDEX_NAMES:
+            continue
+        try:
+            payload = json.loads((owner_root / rel).read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
+            continue
+        if owner_specific_index_is_usable(owner_name, owner_root, payload, schema=schema):
+            return True
+    return False
+
+
+def owner_specific_index_is_usable(
+    owner_name: str,
+    owner_root: Path,
+    payload: object,
+    *,
+    schema: dict[str, Any],
+) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("schema_version") != LOCAL_KAG_RECORD_SCHEMA_VERSION:
+        return False
+    errors = list(Draft202012Validator(schema).iter_errors(payload))
+    if errors:
+        return False
+    if payload.get("repo") != owner_name or payload.get("source_owner") != owner_name:
+        return False
+    if not owner_specific_checked_ref_is_source_linked(
+        payload,
+        label=f"{owner_name} owner-specific local KAG index",
+    ):
+        return False
+    owner_return_route = payload.get("owner_return_route")
+    if not isinstance(owner_return_route, dict) or owner_return_route.get("repo") != owner_name:
+        return False
+    source_refs = payload.get("source_refs")
+    if not isinstance(source_refs, list):
+        return False
+    for source_ref in source_refs:
+        if not isinstance(source_ref, dict) or source_ref.get("repo") != owner_name:
+            return False
+        source_path = source_ref.get("path")
+        if not isinstance(source_path, str) or not (owner_root / source_path).is_file():
+            return False
+    return True
+
+
+def owner_specific_checked_ref_is_source_linked(payload: object, *, label: str) -> bool:
+    try:
+        try:
+            from scripts.validators.common import ValidationError
+            from scripts.validators.local_kag_subtree import _validate_checked_ref_is_source_linked
+        except ImportError:  # pragma: no cover - direct script execution
+            from validators.common import ValidationError  # type: ignore
+            from validators.local_kag_subtree import _validate_checked_ref_is_source_linked  # type: ignore
+
+        _validate_checked_ref_is_source_linked(payload, label=label)
+    except ValidationError:
+        return False
+    return True
+
+
+def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[str, list[str]]:
+    owner_name = owner_name or owner_root.name
     indexes = owner_root / "kag" / "indexes"
     if not indexes.is_dir():
         return "missing", []
@@ -242,11 +336,15 @@ def index_status(owner_root: Path) -> tuple[str, list[str]]:
             ):
                 return "passed", relative_files
         except json.JSONDecodeError:
+            if has_owner_specific_index(owner_name, owner_root, relative_files):
+                return "owner-specific", relative_files
             return "migration-needed", relative_files
+        if has_owner_specific_index(owner_name, owner_root, relative_files):
+            return "owner-specific", relative_files
         return "migration-needed", relative_files
-    if files:
+    if has_owner_specific_index(owner_name, owner_root, relative_files):
         return "owner-specific", relative_files
-    return "missing", relative_files
+    return "migration-needed", relative_files
 
 
 def build_coverage(
@@ -263,7 +361,7 @@ def build_coverage(
         if owner_roots is not None and not owner_root.is_dir() and cached_owner is not None:
             owners.append(copy.deepcopy(cached_owner))
             continue
-        status, files = index_status(owner_root)
+        status, files = index_status(owner_root, owner_name=name)
         display_root = canonical_owner_root(os_root, name) if owner_roots is not None else owner_root
         display_kag_home = display_root / "kag" if (owner_root / "kag").is_dir() else Path("")
         owners.append(

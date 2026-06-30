@@ -45,7 +45,7 @@ Tracking starts with the community-docs baseline for this repository.
 
 - `v0.4.0` closes the post-`v0.2.2` release-prep span: 31 first-parent
   commits, 908 changed tracked paths, PRs through `#109`, 13 active mechanics
-  packages, 28 functioning parts, 10 decision records, and 60 local
+  packages, 28 functioning parts, 9 decision records, and 57 local
   `AGENTS.md` route cards
 - the largest changed surfaces were `mechanics/` (421 paths), `.agents/`
   portable agent and skill exports (238), `scripts/` (110), `docs/` (48),
@@ -66,10 +66,10 @@ Tracking starts with the community-docs baseline for this repository.
 ### Reconciliation Basis
 
 - This dated release section was reconstructed from
-  `git log --first-parent v0.2.2..v0.4.0`,
-  `git diff --name-status v0.2.2..v0.4.0`, merged PR metadata, the tagged
-  release commit, decision records, current route cards, validation topology,
-  and the published GitHub Release rather than from changelog prose alone.
+  first-parent commit history, changed-path name-status evidence, merged PR
+  metadata, the tagged release commit, decision records, current route cards,
+  validation topology, and the published GitHub Release rather than from
+  changelog prose alone.
 - Future `Unreleased` entries should record stable route, owner, and
   validation changes without live commit totals, changed-path totals, or PR
   ranges; dated release sections own exact reconciliation.

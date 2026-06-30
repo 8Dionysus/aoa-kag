@@ -249,6 +249,30 @@ class ScriptTopologyTests(unittest.TestCase):
         for command in build_commands:
             self.assertEqual("--check", command[-1])
 
+    def test_part_local_check_runner_ignores_helper_scripts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            script_root = repo_root / "mechanics" / "agon" / "parts" / "demo" / "scripts"
+            script_root.mkdir(parents=True)
+            build_script = script_root / "build_demo.py"
+            validate_script = script_root / "validate_demo.py"
+            helper_script = script_root / "helper.py"
+            build_script.write_text("", encoding="utf-8")
+            validate_script.write_text("", encoding="utf-8")
+            helper_script.write_text("", encoding="utf-8")
+
+            discovered = run_part_local_checks.discovered_part_local_scripts(repo_root)
+            commands = run_part_local_checks.coverage_commands(repo_root)
+
+        self.assertEqual((build_script, validate_script), discovered)
+        self.assertEqual(
+            (
+                ("python", "mechanics/agon/parts/demo/scripts/build_demo.py", "--check"),
+                ("python", "mechanics/agon/parts/demo/scripts/validate_demo.py"),
+            ),
+            commands,
+        )
+
     def test_side_effect_boundaries_are_visible(self) -> None:
         for entry in inventory_entries():
             path = entry["path"]

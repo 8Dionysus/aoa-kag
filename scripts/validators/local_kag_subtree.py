@@ -51,6 +51,8 @@ EXPECTED_OS_SURFACE_CLASSES = {
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 REQUIRED_MCP_SHAPE = {"resource", "root"}
 EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
+REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
+LOCAL_KAG_CONTROL_REFS = {"kag/manifest.json"}
 
 PROVIDER_RECORD_DIRS = {
     "nodes": "nodeRecord",
@@ -309,6 +311,36 @@ def _validate_source_refs_exist(repo: str, repo_root: Path, payload: object, *, 
             fail(f"{label} source ref is missing: {repo}/{source_path}")
 
 
+def _validate_checked_ref_is_source_linked(payload: object, *, label: str) -> None:
+    if isinstance(payload, dict):
+        if payload.get("provenance_mode") == "strict_source_linked":
+            freshness = payload.get("freshness")
+            source_refs = payload.get("source_refs")
+            if isinstance(freshness, dict) and isinstance(source_refs, list):
+                checked_ref = freshness.get("checked_ref")
+                source_ref_paths = {
+                    source_ref.get("path")
+                    for source_ref in source_refs
+                    if isinstance(source_ref, dict)
+                }
+                builder = payload.get("builder")
+                builder_surface = builder.get("surface") if isinstance(builder, dict) else None
+                if isinstance(builder_surface, str):
+                    source_ref_paths.add(builder_surface)
+                source_ref_paths.update(LOCAL_KAG_CONTROL_REFS)
+                if isinstance(checked_ref, str) and checked_ref not in source_ref_paths:
+                    fail(
+                        f"{label} freshness.checked_ref must be listed in "
+                        f"source_refs, match builder.surface, or use local KAG control refs: {checked_ref}"
+                    )
+        for value in payload.values():
+            _validate_checked_ref_is_source_linked(value, label=label)
+        return
+    if isinstance(payload, list):
+        for item in payload:
+            _validate_checked_ref_is_source_linked(item, label=label)
+
+
 def _source_refs_in(payload: object):
     if isinstance(payload, dict):
         maybe_refs = payload.get("source_refs")
@@ -356,18 +388,9 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
             fail(f"{label} kag/{group_name}/ must contain JSON records")
         records: list[dict[str, object]] = []
         for path in files:
-            if group_name == "indexes" and path.name == "source_surface_index.json":
-                record = read_json(path)
-                if isinstance(record, dict) and record.get("schema_version") == "aoa-repo-local-kag-index-v1":
-                    from .repo_local_kag_index import validate_repo_local_kag_index_payload
-
-                    validate_repo_local_kag_index_payload(
-                        record,
-                        label=f"{label} {path.relative_to(repo_root).as_posix()}",
-                    )
-                    continue
-            else:
-                record = read_json(path)
+            if group_name == "indexes" and path.name == REPO_LOCAL_SOURCE_INDEX_NAME:
+                continue
+            record = read_json(path)
             _validate_payload_against_schema_def(
                 record,
                 def_name=def_name,
@@ -378,6 +401,10 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
             _validate_source_refs_exist(
                 repo,
                 repo_root,
+                record,
+                label=f"{label} {path.relative_to(repo_root).as_posix()}",
+            )
+            _validate_checked_ref_is_source_linked(
                 record,
                 label=f"{label} {path.relative_to(repo_root).as_posix()}",
             )
@@ -413,6 +440,7 @@ def validate_local_kag_subtree_contract() -> None:
             fail(f"{label} must be a JSON object")
         _validate_payload_against_local_kag_schema(payload, label=label)
         _validate_language_posture(payload, label=label)
+        _validate_checked_ref_is_source_linked(payload, label=label)
 
     assert isinstance(example, dict)
     assert isinstance(readiness, dict)

@@ -282,6 +282,8 @@ def mime_for(path: Path) -> str:
         return "text/markdown"
     if path.suffix == ".py":
         return "text/x-python"
+    if path.suffix in {".yaml", ".yml"}:
+        return "application/yaml"
     guessed, _ = mimetypes.guess_type(path.as_posix())
     return guessed or "application/octet-stream"
 

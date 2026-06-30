@@ -16,10 +16,10 @@ from scripts.provider_registry import provider_ci_envs, sealed_provider_repos
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MARKDOWN_COMMAND_BLOCK = re.compile(r"```[^\n]*\n(?P<body>.*?)(?:\n```)", re.DOTALL)
 EXECUTABLE_VALIDATION_LINE = re.compile(
-    r"(?m)^\s*(?:-\s*)?(?:python(?:\s+-m)?\s+|pytest\b|git\s+status\b|gh\s+|aoa\s+)"
+    r"(?m)^\s*(?:-\s*)?(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff)\b|gh\s+|aoa\s+)"
 )
 INLINE_EXECUTABLE_VALIDATION_COMMAND = re.compile(
-    r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+status\b)[^`]+`"
+    r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff)\b)[^`]+`"
 )
 CANARY_PROVIDER_ROOT_ENVS = provider_ci_envs()
 SEALED_PROVIDER_REPOS = sealed_provider_repos()
