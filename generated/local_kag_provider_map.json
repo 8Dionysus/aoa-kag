@@ -5740,6 +5740,7 @@
       ],
       "candidate_source_surfaces": [
         "aoa-4pda-connector/README.md",
+        "aoa-course-connector/README.md",
         "aoa-discord-connector/README.md",
         "aoa-stackoverflow-connector/README.md",
         "aoa-telegram-connector/README.md",
@@ -5860,6 +5861,30 @@
         "connector/STORAGE_POLICY.md",
         "BOUNDARIES.md",
         "docs/RUNTIME_CONTRACT.md"
+      ]
+    },
+    {
+      "surface_id": "connectors/aoa-course-connector",
+      "surface_class": "connector_repo",
+      "root": "/srv/AbyssOS/connectors/aoa-course-connector",
+      "provider_status": "source_preparation",
+      "owner_return_route": {
+        "repo": "aoa-course-connector",
+        "surface": "BOUNDARIES.md",
+        "route_kind": "authored_meaning"
+      },
+      "mcp_access_shape": [
+        "resource",
+        "root"
+      ],
+      "candidate_source_surfaces": [
+        "connector/README.md",
+        "connector/SOURCE_POLICY.md",
+        "connector/STORAGE_POLICY.md",
+        "BOUNDARIES.md",
+        "docs/RUNTIME_CONTRACT.md",
+        "docs/GRAPH_MODEL.md",
+        "docs/QUERY_MODEL.md"
       ]
     },
     {
@@ -6019,7 +6044,7 @@
     "os_surface_status_counts": {
       "provider_ready": 6,
       "runtime_consumer": 5,
-      "source_preparation": 3
+      "source_preparation": 4
     },
     "os_surface_ids_by_status": {
       "provider_ready": [
@@ -6040,7 +6065,8 @@
       "source_preparation": [
         ".agents",
         "bundles",
-        "connectors"
+        "connectors",
+        "connectors/aoa-course-connector"
       ]
     }
   }
