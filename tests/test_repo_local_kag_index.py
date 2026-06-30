@@ -276,6 +276,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             (root / "systemd" / "demo.service").write_text("[Service]\n", encoding="utf-8")
             (root / "scripts").mkdir()
             (root / "scripts" / "start_demo.ps1").write_text("Write-Output ok\n", encoding="utf-8")
+            (root / "scripts" / "sync_demo.py").write_text("print('sync')\n", encoding="utf-8")
             (root / "scripts" / "validate_demo.ps1").write_text("Write-Output ok\n", encoding="utf-8")
             (root / ".deps" / "foreign").mkdir(parents=True)
             (root / ".deps" / "foreign" / "README.md").write_text("# Foreign\n", encoding="utf-8")
@@ -299,6 +300,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             "carriers/table.xlsx": "spreadsheet",
             "systemd/demo.service": "service_unit",
             "scripts/start_demo.ps1": "script",
+            "scripts/sync_demo.py": "script",
             "scripts/validate_demo.ps1": "validator",
         }
         for path, expected_kind in expected_kinds.items():
@@ -314,10 +316,15 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             records_by_path["kag/receipts/validation.jsonl"]["provenance"]["source_refs"][0]["authority"],
         )
         self.assertEqual("script", records_by_path["scripts/start_demo.ps1"]["command_role"])
+        self.assertEqual("script", records_by_path["scripts/sync_demo.py"]["command_role"])
         self.assertEqual("validator", records_by_path["scripts/validate_demo.ps1"]["command_role"])
         self.assertEqual(
             ["pwsh scripts/start_demo.ps1"],
             records_by_path["scripts/start_demo.ps1"]["toolchain"]["owner_commands"],
+        )
+        self.assertEqual(
+            ["python scripts/sync_demo.py"],
+            records_by_path["scripts/sync_demo.py"]["toolchain"]["owner_commands"],
         )
         self.assertEqual(
             ["pwsh scripts/validate_demo.ps1"],
@@ -477,6 +484,14 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         ):
             self.assertEqual("none", records_by_path[module_path]["command_role"])
             self.assertEqual([], records_by_path[module_path]["toolchain"]["owner_commands"])
+        provider_runner = records_by_path["scripts/sync_provider_checkouts.py"]
+        self.assertEqual("script", provider_runner["artifact_kind"])
+        self.assertEqual("entrypoint", provider_runner["code_role"])
+        self.assertEqual("script", provider_runner["command_role"])
+        self.assertEqual(
+            ["python scripts/sync_provider_checkouts.py"],
+            provider_runner["toolchain"]["owner_commands"],
+        )
         coverage_record = records_by_path["generated/repo_local_kag_coverage.json"]
         self.assertEqual(
             "scripts/generate_repo_local_kag_coverage.py",

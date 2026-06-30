@@ -58,16 +58,21 @@ class ProviderRegistryTests(unittest.TestCase):
         expected_env_names = {
             entry["env"]
             for entry in entries
-            if entry.get("env") and entry.get("checkout_path")
+            if entry.get("checkout_mode") == "pinned"
+            and entry.get("env")
+            and entry.get("checkout_path")
         }
         self.assertEqual(expected_env_names, set(checkout_envs))
         for entry in entries:
+            if entry.get("checkout_mode") != "pinned":
+                continue
             env_name = entry.get("env")
             checkout_path = entry.get("checkout_path")
             if not env_name or not checkout_path:
                 continue
             with self.subTest(repo=entry["repo"]):
                 self.assertEqual((REPO_ROOT / checkout_path).resolve(), checkout_envs[env_name])
+        self.assertNotIn("AOA_SESSION_MEMORY_ROOT", checkout_envs)
 
     def test_pinned_provider_entries_match_dependency_pins(self) -> None:
         self.assertEqual(

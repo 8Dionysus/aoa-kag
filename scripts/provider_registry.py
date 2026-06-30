@@ -80,6 +80,8 @@ def provider_checkout_envs(
 ) -> dict[str, Path]:
     result: dict[str, Path] = {}
     for entry in provider_entries(path):
+        if entry.get("checkout_mode") != "pinned":
+            continue
         env_name = str(entry.get("env") or "")
         checkout_path = str(entry.get("checkout_path") or "")
         if env_name and checkout_path:

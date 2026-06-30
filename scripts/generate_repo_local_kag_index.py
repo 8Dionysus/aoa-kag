@@ -82,6 +82,8 @@ MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 SECRET_HINTS = ("secret", "token", "credential", "private-key", "password")
 LANE_ENTRYPOINTS = {"ci_gate.py", "release_check.py", "run_tests.py"}
 COMMAND_SUFFIXES = {".py", ".sh", ".ps1"}
+COMMAND_PREFIXES = ("build_", "generate_", "run_", "start_", "sync_", "validate_")
+BUILDER_PREFIXES = ("build_", "generate_")
 ASSET_SUFFIXES = {".gif", ".ico", ".jpg", ".jpeg", ".png", ".svg", ".webp"}
 ARCHIVE_SUFFIXES = {".7z", ".gz", ".tar", ".tgz", ".xz", ".zip"}
 SPREADSHEET_SUFFIXES = {".ods", ".xls", ".xlsx"}
@@ -438,7 +440,7 @@ def is_command_entrypoint(rel: Path) -> bool:
     name = rel.name
     if rel.suffix == ".py" and name in LANE_ENTRYPOINTS:
         return True
-    if name.startswith(("build_", "generate_", "run_", "start_", "validate_")):
+    if name.startswith(COMMAND_PREFIXES):
         return True
     return False
 
@@ -458,7 +460,7 @@ def code_role(rel: Path, kind: str) -> str:
         return "test"
     if kind == "validator":
         return "validator"
-    if rel.name.startswith(("build_", "generate_")):
+    if rel.name.startswith(BUILDER_PREFIXES):
         return "builder"
     if rel.name in {"ci_gate.py", "release_check.py"}:
         return "entrypoint"
@@ -497,7 +499,7 @@ def command_role(rel: Path, kind: str, doc_role: str) -> str:
         return "validator"
     if kind == "test":
         return "test"
-    if kind == "script" and rel.name.startswith(("build_", "generate_")):
+    if kind == "script" and rel.name.startswith(BUILDER_PREFIXES):
         return "builder"
     if kind == "script":
         if rel.name in {"ci_gate.py", "release_check.py", "run_tests.py"}:

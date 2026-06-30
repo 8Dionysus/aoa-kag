@@ -12,17 +12,17 @@
       "projection": 1,
       "receipt": 1,
       "schema": 72,
-      "script": 10,
+      "script": 11,
       "security": 1,
-      "source_code": 105,
+      "source_code": 104,
       "test": 48,
       "validator": 13
     },
     "command_role": {
       "builder": 6,
       "lane_entrypoint": 3,
-      "none": 821,
-      "script": 1,
+      "none": 820,
+      "script": 2,
       "test": 48,
       "validator": 13
     },
@@ -58,9 +58,9 @@
     },
     "primary_kind": {
       "artifact": 90,
-      "command": 71,
+      "command": 72,
       "document": 415,
-      "surface": 316
+      "surface": 315
     },
     "surface_state": {
       "authored_source": 831,
@@ -69,21 +69,21 @@
     }
   },
   "coverage_summary": {
-    "command_count": 71,
+    "command_count": 72,
     "document_count": 415,
     "generated_count": 45,
     "heading_count": 2436,
     "mechanics_count": 421,
     "record_count": 892,
     "schema_count": 72,
-    "script_count": 10,
+    "script_count": 11,
     "test_count": 48,
     "unknown_count": 0,
     "validator_count": 13
   },
   "index_identity": {
     "artifact_kind": "source_surface_index",
-    "content_digest": "7d3c80d2a95d63f70d1d2bc313a3a5979657b76ac6db0ba4bd7fb6ce8e957b03",
+    "content_digest": "f4f48c7b2ae6d5473b154468b1d123cbac998c05da9dadf4af1fb8767e47f3e6",
     "local_id": "index:repo-local:source-surfaces",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-index.schema.json"
   },
@@ -83620,13 +83620,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "b471f607aefa724d21c2a6a57d548ec6f247eead24e352045fb6e008ebf71c55",
+        "content_hash": "94ef0b187167bcc2964812079ab38c29d1625caa51c8300a5e7d9854db22f206",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generate_repo_local_kag_index.py:f202b0488e",
         "mime": "text/x-python",
         "path": "scripts/generate_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 32843
+        "size_bytes": 32917
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -83659,7 +83659,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "b471f607aefa724d21c2a6a57d548ec6f247eead24e352045fb6e008ebf71c55",
+        "digest": "94ef0b187167bcc2964812079ab38c29d1625caa51c8300a5e7d9854db22f206",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -85272,13 +85272,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "89cb4f166952e5e47d8b12aee8f14f1b92e555237f690c5ea1df7a5abff9af37",
+        "content_hash": "627e454aa64cca9988aba496793a21d02c2505eb7809ad090a686181ea492a9d",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/provider_registry.py:8cc558e7bd",
         "mime": "text/x-python",
         "path": "scripts/provider_registry.py",
         "repo": "aoa-kag",
-        "size_bytes": 4244
+        "size_bytes": 4316
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -85311,7 +85311,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "89cb4f166952e5e47d8b12aee8f14f1b92e555237f690c5ea1df7a5abff9af37",
+        "digest": "627e454aa64cca9988aba496793a21d02c2505eb7809ad090a686181ea492a9d",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -85607,7 +85607,7 @@
     {
       "abi": {
         "abi_epoch": "source",
-        "artifact_class": "source_code",
+        "artifact_class": "script",
         "compatibility": "stable",
         "contract_version": "none",
         "schema_version": "none"
@@ -85616,13 +85616,13 @@
         "scope": "public",
         "secrets_risk": "none"
       },
-      "artifact_kind": "source_code",
+      "artifact_kind": "script",
       "classification": {
         "confidence": "high",
-        "primary_kind": "surface"
+        "primary_kind": "command"
       },
-      "code_role": "source_module",
-      "command_role": "none",
+      "code_role": "entrypoint",
+      "command_role": "script",
       "consumer_route": {
         "route_kind": "resource",
         "surface": "aoa-kag-mcp"
@@ -85634,18 +85634,18 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "108169e35c2e26d788586cd8b6b3c0a49e02c73c31d6feb55bf49194fb43bee2",
+        "content_hash": "91e1a702eed35368af75b1f5f3717356ad8f696b4c52a3ff8ad40ce3031bd2bb",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/sync_provider_checkouts.py:a2f5f0c331",
         "mime": "text/x-python",
         "path": "scripts/sync_provider_checkouts.py",
         "repo": "aoa-kag",
-        "size_bytes": 5208
+        "size_bytes": 8412
       },
       "mechanics_role": "none",
-      "observed_form": "file",
+      "observed_form": "command",
       "owner_return_route": {
-        "route_kind": "source_owner",
+        "route_kind": "command_owner",
         "surface": "scripts/sync_provider_checkouts.py"
       },
       "provenance": {
@@ -85673,7 +85673,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "108169e35c2e26d788586cd8b6b3c0a49e02c73c31d6feb55bf49194fb43bee2",
+        "digest": "91e1a702eed35368af75b1f5f3717356ad8f696b4c52a3ff8ad40ce3031bd2bb",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -85683,7 +85683,9 @@
           "git",
           "python"
         ],
-        "owner_commands": [],
+        "owner_commands": [
+          "python scripts/sync_provider_checkouts.py"
+        ],
         "required_tools": [
           "python"
         ]
@@ -94997,13 +94999,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "f1d586fe029add3eb7d1789f1a8e8fbc2fe08fd4ab52224fa94e03f1bcfe676f",
+        "content_hash": "58ec69def2ec5964a3ed6f1dce6f40055aad98bee44d9c2302aac017f09ff083",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_provider_registry.py:6beaf7df64",
         "mime": "text/x-python",
         "path": "tests/test_provider_registry.py",
         "repo": "aoa-kag",
-        "size_bytes": 3012
+        "size_bytes": 3226
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -95036,7 +95038,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "f1d586fe029add3eb7d1789f1a8e8fbc2fe08fd4ab52224fa94e03f1bcfe676f",
+        "digest": "58ec69def2ec5964a3ed6f1dce6f40055aad98bee44d9c2302aac017f09ff083",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -95088,13 +95090,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "0817f901f370cf6b25195d758963401ae48184ba33dcdf19b61e5b8a3e827274",
+        "content_hash": "fcf4c32c8363a85f1ff10da24663e3b37be50b8c9b595ec2e49071f9a7088fca",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_repo_local_kag_index.py:a02b024bdb",
         "mime": "text/x-python",
         "path": "tests/test_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 47363
+        "size_bytes": 48203
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -95127,7 +95129,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "0817f901f370cf6b25195d758963401ae48184ba33dcdf19b61e5b8a3e827274",
+        "digest": "fcf4c32c8363a85f1ff10da24663e3b37be50b8c9b595ec2e49071f9a7088fca",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -95452,13 +95454,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "bdff698b1de982ab2b12731e5658ab80ed88eb8b50d4c43510a9db3e9d329cc9",
+        "content_hash": "7ac4be24cdc866e7a09cb86067d461736fe98eb5438abb1f5a977bcd2f678c44",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_sync_provider_checkouts.py:19d1388e37",
         "mime": "text/x-python",
         "path": "tests/test_sync_provider_checkouts.py",
         "repo": "aoa-kag",
-        "size_bytes": 3931
+        "size_bytes": 14896
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -95491,7 +95493,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "bdff698b1de982ab2b12731e5658ab80ed88eb8b50d4c43510a9db3e9d329cc9",
+        "digest": "7ac4be24cdc866e7a09cb86067d461736fe98eb5438abb1f5a977bcd2f678c44",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
