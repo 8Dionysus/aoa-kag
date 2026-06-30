@@ -68,20 +68,38 @@ OWNER_SPECIFIC_OWNER_TYPES = {
     "connector",
 }
 LOCAL_KAG_RECORD_SCHEMA_VERSION = "aoa-local-kag-record-v1"
+PROVIDER_RECORD_SCHEMA_DEFS = {
+    "nodes": "nodeRecord",
+    "edges": "edgeRecord",
+    "indexes": "indexRecord",
+    "projections": "projectionRecord",
+    "receipts": "receiptRecord",
+}
 
 
-def local_kag_index_record_schema() -> dict[str, Any]:
+def local_kag_record_schema(def_name: str, *, schema_id_suffix: str) -> dict[str, Any]:
     schema = json.loads(LOCAL_KAG_SUBTREE_SCHEMA_PATH.read_text(encoding="utf-8"))
     if not isinstance(schema, dict):
         raise ValueError("local KAG subtree schema must be an object")
     wrapper = {
         "$schema": schema.get("$schema"),
-        "$id": f"{schema.get('$id', 'local-kag-subtree')}.indexRecord.coverage.json",
+        "$id": f"{schema.get('$id', 'local-kag-subtree')}.{schema_id_suffix}.json",
         "$defs": schema.get("$defs", {}),
-        "$ref": "#/$defs/indexRecord",
+        "$ref": f"#/$defs/{def_name}",
     }
     Draft202012Validator.check_schema(wrapper)
     return wrapper
+
+
+def local_kag_index_record_schema() -> dict[str, Any]:
+    return local_kag_record_schema("indexRecord", schema_id_suffix="indexRecord.coverage")
+
+
+def local_kag_provider_record_schemas() -> dict[str, dict[str, Any]]:
+    return {
+        group_name: local_kag_record_schema(def_name, schema_id_suffix=f"{def_name}.coverage")
+        for group_name, def_name in PROVIDER_RECORD_SCHEMA_DEFS.items()
+    }
 
 
 def git_root(path: Path) -> Path | None:
@@ -295,6 +313,8 @@ def owner_specific_index_is_usable(
         source_path = source_ref.get("path")
         if not isinstance(source_path, str) or not (owner_root / source_path).is_file():
             return False
+    if not owner_specific_provider_records_are_usable(owner_name, owner_root):
+        return False
     return True
 
 
@@ -309,6 +329,60 @@ def owner_specific_checked_ref_is_source_linked(payload: object, *, label: str) 
 
         _validate_checked_ref_is_source_linked(payload, label=label)
     except ValidationError:
+        return False
+    return True
+
+
+def owner_specific_provider_records_are_usable(owner_name: str, owner_root: Path) -> bool:
+    try:
+        try:
+            from scripts.validators.common import ValidationError
+            from scripts.validators.local_kag_subtree import (
+                _validate_checked_ref_is_source_linked,
+                _validate_record_links,
+                _validate_source_refs_exist,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from validators.common import ValidationError  # type: ignore
+            from validators.local_kag_subtree import (  # type: ignore
+                _validate_checked_ref_is_source_linked,
+                _validate_record_links,
+                _validate_source_refs_exist,
+            )
+
+        groups: dict[str, list[dict[str, object]]] = {}
+        schemas = local_kag_provider_record_schemas()
+        kag_root = owner_root / "kag"
+        for group_name in PROVIDER_RECORD_SCHEMA_DEFS:
+            directory = kag_root / group_name
+            if not directory.is_dir():
+                return False
+            records: list[dict[str, object]] = []
+            for path in sorted(directory.glob("*.json")):
+                if group_name == "indexes" and path.name == SOURCE_SURFACE_INDEX_REL.name:
+                    continue
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(payload, dict):
+                    return False
+                if list(Draft202012Validator(schemas[group_name]).iter_errors(payload)):
+                    return False
+                if payload.get("repo") != owner_name or payload.get("source_owner") != owner_name:
+                    return False
+                label = f"{owner_name} owner-specific {path.relative_to(owner_root).as_posix()}"
+                _validate_source_refs_exist(owner_name, owner_root, payload, label=label)
+                _validate_checked_ref_is_source_linked(payload, label=label)
+                records.append(payload)
+            groups[group_name] = records
+        _validate_record_links({"records": groups})
+    except (
+        FileNotFoundError,
+        IsADirectoryError,
+        KeyError,
+        TypeError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+        ValidationError,
+    ):
         return False
     return True
 
