@@ -266,7 +266,8 @@ def _provider_freshness_handles(
         validator = receipt.get("validator")
         if not isinstance(freshness, dict) or not isinstance(validator, dict):
             fail(f"{repo} local KAG receipt must declare freshness and validator")
-        checked_ref = require_string(
+        checked_ref = _provider_freshness_checked_ref(
+            repo,
             freshness.get("checked_ref"),
             label=f"{repo} local KAG receipt freshness.checked_ref",
         )
@@ -290,6 +291,13 @@ def _provider_freshness_handles(
     if not handles:
         fail(f"{repo} local KAG provider must keep freshness receipts")
     return handles
+
+
+def _provider_freshness_checked_ref(repo: str, raw_ref: object, *, label: str) -> str:
+    checked_ref = ensure_repo_relative_path(raw_ref, label=label)
+    if not resolve_repo_path(repo, checked_ref).exists():
+        fail(f"{label} target is missing inside provider root: {checked_ref}")
+    return checked_ref
 
 
 def _generation_readiness_summary(
