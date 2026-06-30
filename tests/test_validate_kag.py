@@ -256,6 +256,31 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("every OS surface class", str(context.exception))
 
+    def test_local_kag_readiness_tracks_course_connector_surface(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        surfaces = {
+            entry["surface_id"]: entry
+            for entry in payload["os_surfaces"]
+        }
+        course = surfaces["connectors/aoa-course-connector"]
+
+        self.assertEqual("connector_repo", course["surface_class"])
+        self.assertEqual("source_preparation", course["provider_status"])
+        self.assertEqual(
+            "/srv/AbyssOS/connectors/aoa-course-connector",
+            course["root"],
+        )
+        self.assertIn("BOUNDARIES.md", course["candidate_source_surfaces"])
+        self.assertIn(
+            "connector/SOURCE_POLICY.md",
+            course["candidate_source_surfaces"],
+        )
+        self.assertIn(
+            "connector/STORAGE_POLICY.md",
+            course["candidate_source_surfaces"],
+        )
+
     def test_local_kag_readiness_rejects_missing_source_ready_provider(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)

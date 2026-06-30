@@ -14,6 +14,15 @@ STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS)
 
+EXPECTED_CONNECTOR_SURFACE_ROOTS = {
+    "connectors/aoa-4pda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-4pda-connector",
+    "connectors/aoa-course-connector": OS_ABYSS_ROOT / "connectors" / "aoa-course-connector",
+    "connectors/aoa-discord-connector": OS_ABYSS_ROOT / "connectors" / "aoa-discord-connector",
+    "connectors/aoa-stackoverflow-connector": OS_ABYSS_ROOT / "connectors" / "aoa-stackoverflow-connector",
+    "connectors/aoa-telegram-connector": OS_ABYSS_ROOT / "connectors" / "aoa-telegram-connector",
+    "connectors/aoa-xda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-xda-connector",
+}
+
 EXPECTED_OS_SURFACE_ROOTS = {
     ".agents": OS_ABYSS_ROOT / ".agents",
     ".aoa": OS_ABYSS_ROOT / ".aoa",
@@ -22,11 +31,7 @@ EXPECTED_OS_SURFACE_ROOTS = {
     "bundles": OS_ABYSS_ROOT / "bundles",
     "bundles/aoa-session-memory": OS_ABYSS_ROOT / "bundles" / "aoa-session-memory",
     "connectors": OS_ABYSS_ROOT / "connectors",
-    "connectors/aoa-4pda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-4pda-connector",
-    "connectors/aoa-discord-connector": OS_ABYSS_ROOT / "connectors" / "aoa-discord-connector",
-    "connectors/aoa-stackoverflow-connector": OS_ABYSS_ROOT / "connectors" / "aoa-stackoverflow-connector",
-    "connectors/aoa-telegram-connector": OS_ABYSS_ROOT / "connectors" / "aoa-telegram-connector",
-    "connectors/aoa-xda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-xda-connector",
+    **EXPECTED_CONNECTOR_SURFACE_ROOTS,
     "src/abyss-machine": HOME_SRC_ROOT / "abyss-machine",
     "src/abyss-stack": HOME_SRC_ROOT / "abyss-stack",
 }
@@ -39,14 +44,18 @@ EXPECTED_OS_SURFACE_CLASSES = {
     "bundles": "collection_home",
     "bundles/aoa-session-memory": "bundle_repo",
     "connectors": "collection_home",
-    "connectors/aoa-4pda-connector": "connector_repo",
-    "connectors/aoa-discord-connector": "connector_repo",
-    "connectors/aoa-stackoverflow-connector": "connector_repo",
-    "connectors/aoa-telegram-connector": "connector_repo",
-    "connectors/aoa-xda-connector": "connector_repo",
+    **{
+        surface_id: "connector_repo"
+        for surface_id in EXPECTED_CONNECTOR_SURFACE_ROOTS
+    },
     "src/abyss-machine": "runtime_source_repo",
     "src/abyss-stack": "runtime_source_repo",
 }
+EXPECTED_CONNECTOR_SURFACE_COUNT = sum(
+    1
+    for surface_class in EXPECTED_OS_SURFACE_CLASSES.values()
+    if surface_class == "connector_repo"
+)
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 REQUIRED_MCP_SHAPE = {"resource", "root"}
@@ -295,7 +304,7 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             for relative_path in values:
                 _validate_surface_path(expected_root, relative_path, label=f"OS surface {surface_id} {key}")
 
-    if connector_rows != 5:
+    if connector_rows != EXPECTED_CONNECTOR_SURFACE_COUNT:
         fail("local KAG readiness matrix must cover every connector repo")
 
 
