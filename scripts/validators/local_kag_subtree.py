@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from .common import *
 from .schema_surfaces import validate_top_level_schema
 
@@ -101,6 +103,11 @@ RUNTIME_STORAGE_PHRASES = (
     "embedding cache",
     "runtime search index",
 )
+
+
+def _local_kag_phase(label: str, *, progress: bool) -> None:
+    if progress:
+        print(f"[validate-kag:local-kag] {label}", file=sys.stderr, flush=True)
 
 
 def _validate_payload_against_local_kag_schema(payload: object, *, label: str) -> None:
@@ -565,7 +572,11 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
     _validate_record_links({"records": groups})
 
 
-def _validate_provider_ready_surfaces(readiness: dict[str, object]) -> None:
+def _validate_provider_ready_surfaces(
+    readiness: dict[str, object],
+    *,
+    progress: bool = False,
+) -> None:
     repos = readiness.get("repos")
     if not isinstance(repos, list):
         fail("local KAG readiness matrix repos must be a list")
@@ -575,18 +586,26 @@ def _validate_provider_ready_surfaces(readiness: dict[str, object]) -> None:
         repo = str(entry.get("repo"))
         repo_root = PROVIDER_REPO_ROOTS.get(repo, REPO_ROOT.parent / repo)
         if repo == KAG_REPO or repo_root.exists():
+            _local_kag_phase(f"provider-home {repo}", progress=progress)
             _validate_provider_home(repo, repo_root)
 
 
-def validate_local_kag_subtree_contract() -> None:
+def validate_local_kag_subtree_contract_with_progress() -> None:
+    validate_local_kag_subtree_contract(progress=True)
+
+
+def validate_local_kag_subtree_contract(*, progress: bool = False) -> None:
+    _local_kag_phase("schema", progress=progress)
     validate_top_level_schema(LOCAL_KAG_SUBTREE_SCHEMA_PATH, "local KAG subtree")
 
+    _local_kag_phase("packets", progress=progress)
     example = read_json(LOCAL_KAG_SUBTREE_EXAMPLE_PATH)
     readiness = read_json(LOCAL_KAG_READINESS_MANIFEST_PATH)
     for label, payload in (
         ("local KAG subtree example", example),
         ("local KAG readiness matrix", readiness),
     ):
+        _local_kag_phase(label.replace(" ", "-"), progress=progress)
         if not isinstance(payload, dict):
             fail(f"{label} must be a JSON object")
         _validate_payload_against_local_kag_schema(payload, label=label)
@@ -595,7 +614,11 @@ def validate_local_kag_subtree_contract() -> None:
 
     assert isinstance(example, dict)
     assert isinstance(readiness, dict)
+    _local_kag_phase("record-links", progress=progress)
     _validate_record_links(example)
+    _local_kag_phase("registry-entries", progress=progress)
     _validate_registry_entries(example)
+    _local_kag_phase("readiness-matrix", progress=progress)
     _validate_readiness_matrix(readiness)
-    _validate_provider_ready_surfaces(readiness)
+    _local_kag_phase("provider-homes", progress=progress)
+    _validate_provider_ready_surfaces(readiness, progress=progress)

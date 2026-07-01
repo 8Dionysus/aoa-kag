@@ -523,6 +523,12 @@ class ValidateKagTestCase(unittest.TestCase):
             stderr.getvalue(),
         )
 
+    def test_local_kag_progress_wrapper_enables_progress_mode(self) -> None:
+        with patch.object(local_kag_subtree, "validate_local_kag_subtree_contract") as validate:
+            local_kag_subtree.validate_local_kag_subtree_contract_with_progress()
+
+        validate.assert_called_once_with(progress=True)
+
 
 if __name__ == "__main__":
     unittest.main()
