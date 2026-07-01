@@ -23,7 +23,7 @@ STATIC_SURFACE_PHASES: tuple[tuple[str, tuple[Check, ...]], ...] = (
     ("core-schema-surface", (validate_schema_surface,)),
     ("core-provider-registry", (validate_provider_registry_contract,)),
     ("core-local-kag-subtree", (validate_local_kag_subtree_contract_with_progress,)),
-    ("core-repo-local-index", (validate_repo_local_kag_index_contract,)),
+    ("core-repo-local-index", (validate_repo_local_kag_index_contract_with_progress,)),
     (
         "schema-surfaces",
         (

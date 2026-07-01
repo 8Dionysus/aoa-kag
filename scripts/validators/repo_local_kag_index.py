@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import sys
 
 from .common import *
 from .schema_surfaces import validate_top_level_schema
@@ -11,6 +12,11 @@ try:
 except ImportError:  # pragma: no cover - direct script import fallback
     from generate_repo_local_kag_coverage import build_provider_coverage  # type: ignore
     from generate_repo_local_kag_index import build_index, classification_summary  # type: ignore
+
+
+def _repo_local_index_phase(label: str, *, progress: bool) -> None:
+    if progress:
+        print(f"[validate-kag:repo-local-index] {label}", file=sys.stderr, flush=True)
 
 
 def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
@@ -111,10 +117,14 @@ def validate_repo_local_kag_index_payload(payload: object, *, label: str) -> dic
     return payload
 
 
-def validate_repo_local_kag_index_generated_payload() -> None:
+def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -> None:
+    _repo_local_index_phase("generated-index-read", progress=progress)
     payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
+    _repo_local_index_phase("generated-index-payload", progress=progress)
     validate_repo_local_kag_index_payload(payload, label="repo-local KAG generated index")
+    _repo_local_index_phase("generated-index-rebuild", progress=progress)
     expected = build_index(REPO_ROOT, output=Path("kag/indexes/source_surface_index.json"))
+    _repo_local_index_phase("generated-index-parity", progress=progress)
     if payload != expected:
         fail("repo-local KAG generated index drifted from generator")
 
@@ -139,20 +149,33 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
     return payload
 
 
-def validate_repo_local_kag_coverage_generated_payload() -> None:
+def validate_repo_local_kag_coverage_generated_payload(*, progress: bool = False) -> None:
+    _repo_local_index_phase("coverage-read", progress=progress)
     payload = read_json(REPO_LOCAL_KAG_COVERAGE_PATH)
+    _repo_local_index_phase("coverage-payload", progress=progress)
     validate_repo_local_kag_coverage_payload(payload, label="repo-local KAG coverage")
-    expected = build_provider_coverage()
+    _repo_local_index_phase("coverage-rebuild", progress=progress)
+    expected = build_provider_coverage(progress=progress)
+    _repo_local_index_phase("coverage-parity", progress=progress)
     if payload != expected:
         fail("repo-local KAG coverage drifted from generator")
 
+    _repo_local_index_phase("coverage-min", progress=progress)
     min_payload = read_json(REPO_LOCAL_KAG_COVERAGE_MIN_PATH)
     if min_payload != payload:
         fail("repo-local KAG min coverage must match full coverage")
 
 
-def validate_repo_local_kag_index_contract() -> None:
+def validate_repo_local_kag_index_contract_with_progress() -> None:
+    validate_repo_local_kag_index_contract(progress=True)
+
+
+def validate_repo_local_kag_index_contract(*, progress: bool = False) -> None:
+    _repo_local_index_phase("schema-surfaces", progress=progress)
     validate_repo_local_kag_index_schema_surface()
+    _repo_local_index_phase("example", progress=progress)
     validate_repo_local_kag_index_example()
-    validate_repo_local_kag_index_generated_payload()
-    validate_repo_local_kag_coverage_generated_payload()
+    _repo_local_index_phase("generated-index", progress=progress)
+    validate_repo_local_kag_index_generated_payload(progress=progress)
+    _repo_local_index_phase("generated-coverage", progress=progress)
+    validate_repo_local_kag_coverage_generated_payload(progress=progress)

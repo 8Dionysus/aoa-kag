@@ -16,7 +16,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import validate_kag
-from scripts.validators import example_contracts, local_contracts, local_kag_subtree
+from scripts.validators import example_contracts, local_contracts, local_kag_subtree, repo_local_kag_index
 from scripts.validators.examples import bridge_examples
 from scripts.validators.orchestration import runner
 from scripts.validators.orchestration import static_surfaces as static_surface_runner
@@ -526,6 +526,12 @@ class ValidateKagTestCase(unittest.TestCase):
     def test_local_kag_progress_wrapper_enables_progress_mode(self) -> None:
         with patch.object(local_kag_subtree, "validate_local_kag_subtree_contract") as validate:
             local_kag_subtree.validate_local_kag_subtree_contract_with_progress()
+
+        validate.assert_called_once_with(progress=True)
+
+    def test_repo_local_index_progress_wrapper_enables_progress_mode(self) -> None:
+        with patch.object(repo_local_kag_index, "validate_repo_local_kag_index_contract") as validate:
+            repo_local_kag_index.validate_repo_local_kag_index_contract_with_progress()
 
         validate.assert_called_once_with(progress=True)
 
