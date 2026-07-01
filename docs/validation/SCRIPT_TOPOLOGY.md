@@ -43,6 +43,7 @@ The machine-readable script map is
 | `example_validator` | public example payload checks |
 | `decision_index_builder` | decision lookup index writer |
 | `artifact_bundle_validator` | release artifact bundle check |
+| `provider_checkout_tool` | pinned provider checkout materialization |
 | `skill_local_contract_tool` | exported skill companion helper |
 | `part_local_script_runner` | discovered part-local builder and validator checks |
 | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner` | lane, release, and test execution |
@@ -53,7 +54,7 @@ The machine-readable script map is
 
 | Function Group | Families |
 | --- | --- |
-| command authority / lane runners | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner`, `part_local_script_runner` |
+| command authority / lane runners | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner`, `part_local_script_runner`, `provider_checkout_tool` |
 | generation builders | `projection_builder`, `projection_helper`, `decision_index_builder`, `validator_generation_port` |
 | validators | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator` |
 | topology and route inventory | `script_route_card` |
@@ -88,6 +89,10 @@ environments without a mounted source root.
 `mechanics/<package>/parts/<part>/scripts/build_*.py` and `validate_*.py`
 surfaces, runs builders with `--check`, and runs validators directly from the
 `source-fast` lane.
+
+`scripts/sync_provider_checkouts.py` materializes pinned provider roots from
+`manifests/provider_registry.json` under `.deps/` and can run a command with the
+same provider-root environment used by repository validation.
 
 ## Generation Package
 

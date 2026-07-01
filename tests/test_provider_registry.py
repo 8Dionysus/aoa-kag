@@ -14,6 +14,8 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from scripts.provider_registry import (
+    pinned_provider_entries,
+    provider_checkout_envs,
     provider_ci_envs,
     provider_dependency_pins,
     provider_entries,
@@ -48,6 +50,38 @@ class ProviderRegistryTests(unittest.TestCase):
         self.assertEqual({"aoa-session-memory"}, sealed_provider_repos())
         self.assertNotIn("aoa-kag", provider_ci_envs())
         self.assertNotIn("aoa-session-memory", provider_dependency_pins())
+
+    def test_provider_checkout_envs_follow_registry_checkout_paths(self) -> None:
+        entries = provider_entries()
+        checkout_envs = provider_checkout_envs()
+
+        expected_env_names = {
+            entry["env"]
+            for entry in entries
+            if entry.get("checkout_mode") == "pinned"
+            and entry.get("env")
+            and entry.get("checkout_path")
+        }
+        self.assertEqual(expected_env_names, set(checkout_envs))
+        for entry in entries:
+            if entry.get("checkout_mode") != "pinned":
+                continue
+            env_name = entry.get("env")
+            checkout_path = entry.get("checkout_path")
+            if not env_name or not checkout_path:
+                continue
+            with self.subTest(repo=entry["repo"]):
+                self.assertEqual((REPO_ROOT / checkout_path).resolve(), checkout_envs[env_name])
+        self.assertNotIn("AOA_SESSION_MEMORY_ROOT", checkout_envs)
+
+    def test_pinned_provider_entries_match_dependency_pins(self) -> None:
+        self.assertEqual(
+            provider_dependency_pins(),
+            {
+                entry["repo"]: entry["pinned_ref"]
+                for entry in pinned_provider_entries()
+            },
+        )
 
     def test_provider_registry_contract_validator_passes_current_surfaces(self) -> None:
         validate_provider_registry_contract()
