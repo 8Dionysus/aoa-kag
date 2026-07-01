@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,6 +18,8 @@ if str(SCRIPTS_ROOT) not in sys.path:
 import validate_kag
 from scripts.validators import example_contracts, local_contracts, local_kag_subtree
 from scripts.validators.examples import bridge_examples
+from scripts.validators.orchestration import runner
+from scripts.validators.orchestration import static_surfaces as static_surface_runner
 
 
 def load_json(path: Path) -> object:
@@ -425,6 +429,99 @@ class ValidateKagTestCase(unittest.TestCase):
         with patch.object(Path, "is_dir", return_value=False):
             with patch.object(local_kag_subtree, "STRICT_OS_SURFACE_ROOTS", False):
                 local_kag_subtree._validate_os_surfaces(payload)
+
+    def test_validate_kag_main_reports_phase_progress_to_stderr(self) -> None:
+        calls: list[str] = []
+
+        def mark(name: str, return_value: object = None):
+            def side_effect(*_args: object, **_kwargs: object) -> object:
+                calls.append(name)
+                return copy.deepcopy(return_value)
+
+            return side_effect
+
+        stderr = io.StringIO()
+        with patch.object(
+            runner,
+            "validate_static_surfaces",
+            side_effect=mark("static-surfaces"),
+        ), patch.object(
+            runner,
+            "load_registry_context",
+            side_effect=mark("registry-context", ({}, {}, [])),
+        ), patch.object(
+            runner,
+            "validate_manifest_contracts",
+            side_effect=mark("manifest-contracts"),
+        ), patch.object(
+            runner,
+            "build_expected_payloads",
+            side_effect=mark("expected-payloads", {"expected": {}}),
+        ), patch.object(
+            runner,
+            "validate_generated_text_outputs",
+            side_effect=mark("generated-text"),
+        ), patch.object(
+            runner,
+            "validate_generated_structures",
+            side_effect=mark("generated-structures", {"surface": {}}),
+        ), patch.object(
+            runner,
+            "validate_examples",
+            side_effect=mark("examples"),
+        ), patch.object(
+            runner,
+            "print_success_status",
+            side_effect=mark("success-status"),
+        ):
+            with redirect_stderr(stderr):
+                self.assertEqual(0, runner.main())
+
+        expected = [
+            "static-surfaces",
+            "registry-context",
+            "manifest-contracts",
+            "expected-payloads",
+            "generated-text",
+            "generated-structures",
+            "examples",
+            "success-status",
+        ]
+        self.assertEqual(expected, calls)
+        self.assertEqual(
+            "".join(f"[validate-kag] {phase}\n" for phase in expected),
+            stderr.getvalue(),
+        )
+
+    def test_static_surfaces_reports_subphase_progress_to_stderr(self) -> None:
+        calls: list[str] = []
+
+        def check(name: str):
+            def side_effect() -> None:
+                calls.append(name)
+
+            return side_effect
+
+        phases = (
+            ("local-route-surfaces", (check("nested-agents"), check("mechanics"))),
+            ("core-kag-contracts", (check("provider-registry"),)),
+        )
+        stderr = io.StringIO()
+        with patch.object(static_surface_runner, "STATIC_SURFACE_PHASES", phases):
+            with redirect_stderr(stderr):
+                static_surface_runner.validate_static_surfaces()
+
+        self.assertEqual(
+            ["nested-agents", "mechanics", "provider-registry"],
+            calls,
+        )
+        self.assertEqual(
+            (
+                "[validate-kag:static] local-route-surfaces\n"
+                "[validate-kag:static] core-kag-contracts\n"
+            ),
+            stderr.getvalue(),
+        )
 
 
 if __name__ == "__main__":
