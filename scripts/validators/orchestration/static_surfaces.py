@@ -20,15 +20,10 @@ STATIC_SURFACE_PHASES: tuple[tuple[str, tuple[Check, ...]], ...] = (
             validate_questbook_surface,
         ),
     ),
-    (
-        "core-kag-contracts",
-        (
-            validate_schema_surface,
-            validate_provider_registry_contract,
-            validate_local_kag_subtree_contract,
-            validate_repo_local_kag_index_contract,
-        ),
-    ),
+    ("core-schema-surface", (validate_schema_surface,)),
+    ("core-provider-registry", (validate_provider_registry_contract,)),
+    ("core-local-kag-subtree", (validate_local_kag_subtree_contract_with_progress,)),
+    ("core-repo-local-index", (validate_repo_local_kag_index_contract,)),
     (
         "schema-surfaces",
         (

@@ -79,6 +79,10 @@ PROVIDER_RECORD_SCHEMA_DEFS = {
 }
 
 
+def coverage_progress(label: str) -> None:
+    print(f"[repo-local-kag-coverage] {label}", file=sys.stderr, flush=True)
+
+
 def local_kag_record_schema(def_name: str, *, schema_id_suffix: str) -> dict[str, Any]:
     schema = json.loads(LOCAL_KAG_SUBTREE_SCHEMA_PATH.read_text(encoding="utf-8"))
     if not isinstance(schema, dict):
@@ -427,12 +431,18 @@ def build_coverage(
     os_root: Path,
     owner_roots: Sequence[tuple[str, Path]] | None = None,
     cached_owner_rows: dict[str, dict[str, Any]] | None = None,
+    *,
+    progress: bool = False,
 ) -> dict[str, Any]:
     owners: list[dict[str, Any]] = []
-    roots = owner_roots if owner_roots is not None else [
+    roots = list(owner_roots) if owner_roots is not None else [
         (owner_root.name, owner_root) for owner_root in direct_owner_roots(os_root)
     ]
-    for name, owner_root in roots:
+    if progress:
+        coverage_progress(f"owners {len(roots)}")
+    for index, (name, owner_root) in enumerate(roots, start=1):
+        if progress:
+            coverage_progress(f"owner {index}/{len(roots)} {name}")
         cached_owner = cached_owner_rows.get(name) if cached_owner_rows is not None else None
         if owner_roots is not None and not owner_root.is_dir() and cached_owner is not None:
             owners.append(copy.deepcopy(cached_owner))
@@ -467,11 +477,16 @@ def build_coverage(
     }
 
 
-def build_provider_coverage(os_root: Path = DEFAULT_OS_ROOT) -> dict[str, Any]:
+def build_provider_coverage(
+    os_root: Path = DEFAULT_OS_ROOT,
+    *,
+    progress: bool = False,
+) -> dict[str, Any]:
     return build_coverage(
         os_root,
         owner_roots=configured_owner_roots(),
         cached_owner_rows=committed_owner_rows(),
+        progress=progress,
     )
 
 
@@ -507,9 +522,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     payload = (
-        build_coverage(Path(args.os_root).resolve())
+        build_coverage(Path(args.os_root).resolve(), progress=True)
         if args.os_root
-        else build_provider_coverage()
+        else build_provider_coverage(progress=True)
     )
     output = Path(args.output)
     min_output = Path(args.min_output)

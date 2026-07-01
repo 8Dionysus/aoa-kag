@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
@@ -779,6 +781,26 @@ class RepoLocalKagIndexTests(unittest.TestCase):
 
         owners = {owner["repo"]: owner for owner in payload["owners"]}
         self.assertEqual(1, owners["aoa-demo"]["coverage"]["documents"])
+
+    def test_coverage_progress_reports_owner_scan_to_stderr(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            organ = root / "aoa-demo"
+            organ.mkdir()
+            (organ / "README.md").write_text("# Owner\n", encoding="utf-8")
+
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                payload = coverage_generation.build_coverage(root, progress=True)
+
+        self.assertEqual(["aoa-demo"], [owner["repo"] for owner in payload["owners"]])
+        self.assertEqual(
+            (
+                "[repo-local-kag-coverage] owners 1\n"
+                "[repo-local-kag-coverage] owner 1/1 aoa-demo\n"
+            ),
+            stderr.getvalue(),
+        )
 
     def test_provider_coverage_can_carry_committed_row_for_unmounted_root(self) -> None:
         cached_owner = {
