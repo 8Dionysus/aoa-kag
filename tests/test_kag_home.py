@@ -114,18 +114,9 @@ class KagHomeTests(unittest.TestCase):
 
         self.assertIn("KAG Source Home", readme)
         self.assertIn("Current Files", readme)
-        self.assertIn("Tree-of-Sophia", readme)
-        self.assertIn("aoa-techniques", readme)
-        self.assertIn("aoa-skills", readme)
-        self.assertIn("8Dionysus", readme)
-        self.assertIn("ATM10-Agent", readme)
-        self.assertIn("Dionysus", readme)
-        self.assertIn("aoa-stats", readme)
-        self.assertIn("aoa-4pda-connector", readme)
-        self.assertIn("aoa-discord-connector", readme)
-        self.assertIn("aoa-stackoverflow-connector", readme)
-        self.assertIn("aoa-telegram-connector", readme)
-        self.assertIn("aoa-xda-connector", readme)
+        for repo in sorted(EXPECTED_PROVIDER_READY_REPOS):
+            with self.subTest(repo=repo):
+                self.assertIn(repo, readme)
         self.assertIn("OS Surface Layer", readme)
         self.assertIn("connectors", readme)
         self.assertIn("Required Home", protocol)
