@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_ROOT = REPO_ROOT / "scripts"
@@ -15,6 +16,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import kag_generation
+import generate_kag
 from generation import provider_map
 from tests.support.generation_patch import patched_generation_attribute, patched_generation_read_json
 
@@ -105,6 +107,39 @@ class KagGenerationTestCase(unittest.TestCase):
             ],
             kag_generation.GENERATED_OUTPUT_PATHS,
         )
+
+    def test_generate_kag_check_mode_does_not_write_outputs(self) -> None:
+        with patch.object(generate_kag, "check_generated_outputs", return_value=[]) as check:
+            with patch.object(generate_kag, "write_generated_outputs") as write:
+                self.assertEqual(0, generate_kag.main(["--check"]))
+
+        check.assert_called_once_with()
+        write.assert_not_called()
+
+    def test_generate_kag_check_mode_reports_drift(self) -> None:
+        drifted_path = REPO_ROOT / "generated" / "kag_registry.json"
+        with patch.object(
+            generate_kag,
+            "check_generated_outputs",
+            return_value=[drifted_path],
+        ):
+            with patch.object(generate_kag, "write_generated_outputs") as write:
+                self.assertEqual(1, generate_kag.main(["--check"]))
+
+        write.assert_not_called()
+
+    def test_generate_kag_default_mode_writes_outputs(self) -> None:
+        written_path = REPO_ROOT / "generated" / "kag_registry.json"
+        with patch.object(
+            generate_kag,
+            "write_generated_outputs",
+            return_value=[written_path],
+        ) as write:
+            with patch.object(generate_kag, "check_generated_outputs") as check:
+                self.assertEqual(0, generate_kag.main([]))
+
+        write.assert_called_once_with()
+        check.assert_not_called()
 
     def test_ordered_unique_preserves_first_seen_order(self) -> None:
         self.assertEqual(
