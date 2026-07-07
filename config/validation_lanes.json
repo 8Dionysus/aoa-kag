@@ -162,6 +162,11 @@
       ],
       [
         "python",
+        "scripts/generate_kag.py",
+        "--check"
+      ],
+      [
+        "python",
         "scripts/validate_kag.py"
       ]
     ],
@@ -227,6 +232,11 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json"
+      ],
+      [
+        "python",
+        "scripts/generate_kag.py",
+        "--check"
       ],
       [
         "git",
