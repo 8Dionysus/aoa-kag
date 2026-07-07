@@ -72,6 +72,18 @@ REQUIRED_MCP_PROMPTS = {
     "runtime_handoff_brief",
 }
 
+REQUIRED_MCP_PACKAGE_SURFACES = {
+    "AGENTS.md",
+    "DESIGN.md",
+    "README.md",
+    "pyproject.toml",
+    "src/aoa_kag_mcp/",
+    "tests/",
+    "scripts/validate_kag_mcp.py",
+}
+
+REQUIRED_MCP_RUNTIME_STATE_ROUTE = "abyss-stack and .aoa runtime stores"
+
 REQUIRED_ROOT_BOUNDARY_KINDS = {
     "provider_home",
     "source_return",
@@ -208,6 +220,15 @@ def _validate_mcp_handoff(handoff: dict[str, object], *, label: str) -> None:
     prompts = set(_string_list(handoff.get("prompts"), f"{label}.prompts"))
     if prompts != REQUIRED_MCP_PROMPTS:
         fail(f"{label}.prompts must match the provider-map handoff prompt contract")
+
+    package_surfaces = set(
+        _string_list(handoff.get("package_surfaces"), f"{label}.package_surfaces")
+    )
+    if package_surfaces != REQUIRED_MCP_PACKAGE_SURFACES:
+        fail(f"{label}.package_surfaces must match the aoa-kag MCP package contract")
+
+    if handoff.get("runtime_state_route") != REQUIRED_MCP_RUNTIME_STATE_ROUTE:
+        fail(f"{label}.runtime_state_route must match the runtime state owner route")
 
 
 def _object_value(value: object, label: str) -> dict[str, object]:

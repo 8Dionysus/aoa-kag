@@ -84,6 +84,7 @@ The provider-ready homes are:
 | `ATM10-Agent` | `kag/` | `src/kag/baseline.py` |
 | `aoa-stats` | `kag/` | `generated/agon_kag_stats_observability_registry.min.json` |
 | `aoa-4pda-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
+| `aoa-course-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-discord-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-stackoverflow-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-telegram-connector` | `kag/` | `connector/SOURCE_POLICY.md` |

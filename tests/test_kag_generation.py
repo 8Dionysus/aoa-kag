@@ -318,6 +318,22 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertIn("bounded_provider_query", handoff["prompts"])
         self.assertIn("repo_source_surface_brief", handoff["prompts"])
         self.assertEqual(
+            set(handoff["package_surfaces"]),
+            {
+                "AGENTS.md",
+                "DESIGN.md",
+                "README.md",
+                "pyproject.toml",
+                "src/aoa_kag_mcp/",
+                "tests/",
+                "scripts/validate_kag_mcp.py",
+            },
+        )
+        self.assertEqual(
+            handoff["runtime_state_route"],
+            "abyss-stack and .aoa runtime stores",
+        )
+        self.assertEqual(
             generation_template["source"],
             "aoa-kag/generated/local_kag_provider_map.min.json"
             "#/provider_generation_profiles/{repo}",

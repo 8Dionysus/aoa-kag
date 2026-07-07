@@ -435,6 +435,39 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("missing required MCP resource templates", str(context.exception))
 
+    def test_local_kag_provider_map_rejects_mcp_package_surface_drift(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        handoff = broken_payload["mcp_handoff"]
+        handoff["package_surfaces"] = [
+            surface
+            for surface in handoff["package_surfaces"]
+            if surface != "src/aoa_kag_mcp/"
+        ]
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            registry_projection.validate_local_kag_provider_map_payload(
+                broken_payload,
+                label="generated local KAG provider map",
+            )
+
+        self.assertIn("package_surfaces", str(context.exception))
+
+    def test_local_kag_provider_map_rejects_mcp_runtime_route_drift(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        broken_payload["mcp_handoff"]["runtime_state_route"] = "aoa-kag runtime"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            registry_projection.validate_local_kag_provider_map_payload(
+                broken_payload,
+                label="generated local KAG provider map",
+            )
+
+        self.assertIn("runtime_state_route", str(context.exception))
+
     def test_local_kag_provider_map_rejects_repo_local_index_mismatch(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(payload, dict)
