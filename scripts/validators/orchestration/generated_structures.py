@@ -12,6 +12,16 @@ def validate_generated_structures(
         generated_registry_payload,
         label="generated registry",
     )
+    provider_map_payload = validate_local_kag_provider_map_payload(
+        read_json(LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH),
+        label="generated local KAG provider map",
+    )
+    min_provider_map_payload = validate_local_kag_provider_map_payload(
+        read_json(LOCAL_KAG_PROVIDER_MAP_MIN_OUTPUT_PATH),
+        label="generated min local KAG provider map",
+    )
+    if min_provider_map_payload != provider_map_payload:
+        fail("generated min local KAG provider map must match full provider map")
     validate_technique_lift_pack(
         read_json(TECHNIQUE_LIFT_MIN_OUTPUT_PATH),
         generated_surfaces_by_id,

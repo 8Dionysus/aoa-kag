@@ -256,9 +256,10 @@
     {
       "path": "scripts/validators/schema_surfaces.py",
       "module_type": "schema",
-      "function": "Validate JSON schema surfaces used by KAG packs and examples.",
+      "function": "Validate JSON schema surfaces used by KAG read-models, packs, and examples.",
       "inputs": [
-        "schema files"
+        "schema files",
+        "schemas/local-kag-provider-map.schema.json"
       ],
       "outputs": [
         "schema validation verdicts"

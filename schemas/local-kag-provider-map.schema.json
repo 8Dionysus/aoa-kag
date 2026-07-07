@@ -1,0 +1,499 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/local-kag-provider-map.schema.json",
+  "title": "AoA local KAG provider map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "owner_repo",
+    "source_ref",
+    "provider_status_counts",
+    "providers",
+    "provider_generation_profiles",
+    "provider_repo_local_indexes",
+    "remaining_routes",
+    "os_surfaces",
+    "mcp_handoff",
+    "generation_readiness"
+  ],
+  "properties": {
+    "artifact_type": {"const": "local_kag_provider_map"},
+    "schema_version": {"const": "aoa-local-kag-provider-map-v1"},
+    "owner_repo": {"const": "aoa-kag"},
+    "source_ref": {"const": "manifests/local_kag_readiness.json"},
+    "provider_status_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0},
+      "minProperties": 1
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/provider"}
+    },
+    "provider_generation_profiles": {
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/repoName"},
+      "additionalProperties": {"$ref": "#/$defs/generationProfile"}
+    },
+    "provider_repo_local_indexes": {
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/repoName"},
+      "additionalProperties": {"$ref": "#/$defs/repoLocalIndex"}
+    },
+    "remaining_routes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/remainingRoute"}
+    },
+    "os_surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/osSurface"}
+    },
+    "mcp_handoff": {"$ref": "#/$defs/mcpHandoff"},
+    "generation_readiness": {"$ref": "#/$defs/generationReadiness"}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "repoName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^/][^\\n]*$"
+    },
+    "stringList": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "uniqueStringList": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonEmptyString"},
+      "uniqueItems": true
+    },
+    "recordClass": {
+      "type": "string",
+      "enum": ["node", "edge", "index", "projection", "receipt"]
+    },
+    "recordClassCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nodes", "edges", "indexes", "projections", "receipts"],
+      "properties": {
+        "nodes": {"type": "integer", "minimum": 0},
+        "edges": {"type": "integer", "minimum": 0},
+        "indexes": {"type": "integer", "minimum": 0},
+        "projections": {"type": "integer", "minimum": 0},
+        "receipts": {"type": "integer", "minimum": 0}
+      }
+    },
+    "sourceClass": {
+      "type": "string",
+      "enum": [
+        "agent_source",
+        "center_doctrine",
+        "connector_source",
+        "eval_source",
+        "generated_readmodel",
+        "kag_contract",
+        "memo_source",
+        "playbook_source",
+        "quest_source",
+        "route_source",
+        "runtime_advisory",
+        "sdk_source",
+        "skill_source",
+        "stats_source",
+        "technique_source",
+        "tos_source",
+        "validation_source"
+      ]
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "path", "source_class", "role", "authority"],
+      "properties": {
+        "repo": {"$ref": "#/$defs/repoName"},
+        "path": {"$ref": "#/$defs/relativePath"},
+        "source_class": {"$ref": "#/$defs/sourceClass"},
+        "role": {
+          "type": "string",
+          "enum": ["primary", "supporting", "owner_route", "consumer_route", "validation_receipt"]
+        },
+        "authority": {
+          "type": "string",
+          "enum": ["authored_source", "source_owned_export", "derived_readmodel", "runtime_route", "authored_control"]
+        }
+      }
+    },
+    "ownerReturnRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "surface", "route_kind"],
+      "properties": {
+        "repo": {"$ref": "#/$defs/repoName"},
+        "surface": {"$ref": "#/$defs/relativePath"},
+        "route_kind": {
+          "type": "string",
+          "enum": ["authored_meaning", "proof", "memory", "routing", "runtime", "source_export", "validation"]
+        }
+      }
+    },
+    "validationRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route", "lane"],
+      "properties": {
+        "route": {"$ref": "#/$defs/nonEmptyString"},
+        "lane": {
+          "type": "string",
+          "enum": ["local-kag", "source-fast", "generated", "release", "owner-local"]
+        }
+      }
+    },
+    "coverageCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documents",
+        "mechanics",
+        "commands",
+        "validators",
+        "tests",
+        "scripts",
+        "schemas",
+        "generated"
+      ],
+      "properties": {
+        "documents": {"type": "integer", "minimum": 0},
+        "mechanics": {"type": "integer", "minimum": 0},
+        "commands": {"type": "integer", "minimum": 0},
+        "validators": {"type": "integer", "minimum": 0},
+        "tests": {"type": "integer", "minimum": 0},
+        "scripts": {"type": "integer", "minimum": 0},
+        "schemas": {"type": "integer", "minimum": 0},
+        "generated": {"type": "integer", "minimum": 0}
+      }
+    },
+    "repoLocalIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "source_index_ref",
+        "index_files",
+        "coverage",
+        "coverage_report_ref",
+        "coverage_owner_key"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["passed", "migration-needed", "missing", "owner-specific"]
+        },
+        "source_index_ref": {"type": "string"},
+        "index_files": {"$ref": "#/$defs/uniqueStringList"},
+        "coverage": {"$ref": "#/$defs/coverageCounts"},
+        "coverage_report_ref": {"const": "generated/repo_local_kag_coverage.min.json"},
+        "coverage_owner_key": {"$ref": "#/$defs/repoName"}
+      }
+    },
+    "freshnessHandle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_ref", "checked_ref", "state", "validator", "owner_return_route"],
+      "properties": {
+        "receipt_ref": {"$ref": "#/$defs/relativePath"},
+        "checked_ref": {"$ref": "#/$defs/relativePath"},
+        "state": {
+          "type": "string",
+          "enum": ["current", "candidate", "stale", "unknown"]
+        },
+        "validator": {"$ref": "#/$defs/nonEmptyString"},
+        "owner_return_route": {"$ref": "#/$defs/ownerReturnRoute"}
+      }
+    },
+    "builderRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route", "surface", "record_count"],
+      "properties": {
+        "route": {"$ref": "#/$defs/nonEmptyString"},
+        "surface": {"$ref": "#/$defs/relativePath"},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "counterMap": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "generationProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_home_surfaces",
+        "candidate_source_surfaces",
+        "source_owned_exports",
+        "graph_entities",
+        "event_surfaces",
+        "document_surfaces",
+        "validators",
+        "release_gate",
+        "runtime_consumers",
+        "record_authoring_counts",
+        "record_class_counts",
+        "source_authority_counts",
+        "builder_routes"
+      ],
+      "properties": {
+        "source_home_surfaces": {"$ref": "#/$defs/stringList"},
+        "candidate_source_surfaces": {"$ref": "#/$defs/stringList"},
+        "source_owned_exports": {"$ref": "#/$defs/stringList"},
+        "graph_entities": {"$ref": "#/$defs/stringList"},
+        "event_surfaces": {"$ref": "#/$defs/stringList"},
+        "document_surfaces": {"$ref": "#/$defs/stringList"},
+        "validators": {"$ref": "#/$defs/stringList"},
+        "release_gate": {"$ref": "#/$defs/nonEmptyString"},
+        "runtime_consumers": {"$ref": "#/$defs/stringList"},
+        "record_authoring_counts": {"$ref": "#/$defs/counterMap"},
+        "record_class_counts": {"$ref": "#/$defs/counterMap"},
+        "source_authority_counts": {"$ref": "#/$defs/counterMap"},
+        "builder_routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/builderRoute"}
+        }
+      }
+    },
+    "mcpAccessShape": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": ["resource", "tool", "prompt", "root"]
+      },
+      "uniqueItems": true
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "provider_status",
+        "adoption_order",
+        "local_kag_path",
+        "manifest_ref",
+        "record_class_coverage",
+        "record_counts",
+        "repo_local_index",
+        "freshness_handles",
+        "source_surfaces",
+        "validation_routes",
+        "consumer_routes",
+        "owner_return_routes",
+        "generation_profile",
+        "mcp_access_shape"
+      ],
+      "properties": {
+        "repo": {"$ref": "#/$defs/repoName"},
+        "provider_status": {"const": "provider_ready"},
+        "adoption_order": {"type": "integer", "minimum": 0},
+        "local_kag_path": {"const": "kag/"},
+        "manifest_ref": {"const": "kag/manifest.json"},
+        "record_class_coverage": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {"$ref": "#/$defs/recordClass"},
+          "uniqueItems": true
+        },
+        "record_counts": {"$ref": "#/$defs/recordClassCounts"},
+        "repo_local_index": {"$ref": "#/$defs/repoLocalIndex"},
+        "freshness_handles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/freshnessHandle"}
+        },
+        "source_surfaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/sourceRef"}
+        },
+        "validation_routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/validationRoute"}
+        },
+        "consumer_routes": {"$ref": "#/$defs/stringList"},
+        "owner_return_routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/ownerReturnRoute"}
+        },
+        "generation_profile": {"$ref": "#/$defs/generationProfile"},
+        "mcp_access_shape": {"$ref": "#/$defs/mcpAccessShape"}
+      }
+    },
+    "remainingRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "adoption_order",
+        "provider_status",
+        "candidate_source_surfaces",
+        "owner_return_routes",
+        "mcp_access_shape"
+      ],
+      "properties": {
+        "repo": {"$ref": "#/$defs/repoName"},
+        "adoption_order": {"type": "integer", "minimum": 0},
+        "provider_status": {"type": "string", "minLength": 1},
+        "candidate_source_surfaces": {"$ref": "#/$defs/stringList"},
+        "owner_return_routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/ownerReturnRoute"}
+        },
+        "mcp_access_shape": {"$ref": "#/$defs/mcpAccessShape"}
+      }
+    },
+    "osSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface_id",
+        "surface_class",
+        "root",
+        "provider_status",
+        "owner_return_route",
+        "mcp_access_shape",
+        "candidate_source_surfaces"
+      ],
+      "properties": {
+        "surface_id": {"$ref": "#/$defs/nonEmptyString"},
+        "surface_class": {
+          "type": "string",
+          "enum": [
+            "organ_home",
+            "runtime_mirror",
+            "runtime_source_repo",
+            "collection_home",
+            "bundle_repo",
+            "connector_repo"
+          ]
+        },
+        "root": {"$ref": "#/$defs/nonEmptyString"},
+        "provider_status": {
+          "type": "string",
+          "enum": ["provider_ready", "runtime_consumer", "source_preparation"]
+        },
+        "owner_return_route": {"$ref": "#/$defs/ownerReturnRoute"},
+        "mcp_access_shape": {"$ref": "#/$defs/mcpAccessShape"},
+        "candidate_source_surfaces": {"$ref": "#/$defs/stringList"}
+      }
+    },
+    "recordClassDirectoryMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "edge", "index", "projection", "receipt"],
+      "properties": {
+        "node": {"const": "nodes"},
+        "edge": {"const": "edges"},
+        "index": {"const": "indexes"},
+        "projection": {"const": "projections"},
+        "receipt": {"const": "receipts"}
+      }
+    },
+    "resourceTemplate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri_template", "source"],
+      "properties": {
+        "uri_template": {"$ref": "#/$defs/nonEmptyString"},
+        "source": {"$ref": "#/$defs/nonEmptyString"},
+        "record_class_directory_map": {"$ref": "#/$defs/recordClassDirectoryMap"},
+        "fallback_source": {"$ref": "#/$defs/nonEmptyString"},
+        "resolution": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "rootBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_kind", "path_template", "purpose"],
+      "properties": {
+        "root_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "path_template": {"$ref": "#/$defs/nonEmptyString"},
+        "purpose": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "mcpHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "service_route",
+        "resource_uri_scheme",
+        "resource_templates",
+        "root_boundaries",
+        "tools",
+        "prompts",
+        "package_surfaces",
+        "runtime_state_route"
+      ],
+      "properties": {
+        "service_route": {"$ref": "#/$defs/relativePath"},
+        "resource_uri_scheme": {"$ref": "#/$defs/nonEmptyString"},
+        "resource_templates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/resourceTemplate"}
+        },
+        "root_boundaries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/rootBoundary"}
+        },
+        "tools": {"$ref": "#/$defs/stringList"},
+        "prompts": {"$ref": "#/$defs/stringList"},
+        "package_surfaces": {"$ref": "#/$defs/stringList"},
+        "runtime_state_route": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "generationReadiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_generation_record_counts",
+        "provider_source_authority_counts",
+        "generated_record_repos",
+        "source_owned_export_repos",
+        "os_surface_status_counts",
+        "os_surface_ids_by_status"
+      ],
+      "properties": {
+        "provider_generation_record_counts": {"$ref": "#/$defs/counterMap"},
+        "provider_source_authority_counts": {"$ref": "#/$defs/counterMap"},
+        "generated_record_repos": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/repoName"},
+          "uniqueItems": true
+        },
+        "source_owned_export_repos": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/repoName"},
+          "uniqueItems": true
+        },
+        "os_surface_status_counts": {"$ref": "#/$defs/counterMap"},
+        "os_surface_ids_by_status": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/uniqueStringList"}
+        }
+      }
+    }
+  }
+}

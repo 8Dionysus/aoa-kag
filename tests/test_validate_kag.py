@@ -20,6 +20,7 @@ from scripts.validators import example_contracts, local_contracts, local_kag_sub
 from scripts.validators.examples import bridge_examples
 from scripts.validators.orchestration import runner
 from scripts.validators.orchestration import static_surfaces as static_surface_runner
+from scripts.validators.projection import registry as registry_projection
 
 
 def load_json(path: Path) -> object:
@@ -398,6 +399,20 @@ class ValidateKagTestCase(unittest.TestCase):
                 local_kag_subtree.validate_local_kag_subtree_contract()
 
         self.assertIn("source-ready provider repo", str(context.exception))
+
+    def test_local_kag_provider_map_schema_rejects_invalid_repo_index_status(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        broken_payload["providers"][0]["repo_local_index"]["status"] = "ready"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            registry_projection.validate_local_kag_provider_map_payload(
+                broken_payload,
+                label="generated local KAG provider map",
+            )
+
+        self.assertIn("repo_local_index", str(context.exception))
 
     def test_local_kag_provider_roots_cover_source_ready_providers(self) -> None:
         self.assertEqual(

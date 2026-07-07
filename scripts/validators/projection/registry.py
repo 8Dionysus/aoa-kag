@@ -4,6 +4,27 @@ from ..common import *
 from ..local_contracts import *
 from ..source_refs import *
 
+
+def validate_local_kag_provider_map_payload(
+    payload: object,
+    *,
+    label: str,
+) -> dict[str, object]:
+    schema = read_json(LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH)
+    if not isinstance(schema, dict):
+        fail("local KAG provider map schema must be a JSON object")
+    Draft202012Validator.check_schema(schema)
+    errors = sorted(Draft202012Validator(schema).iter_errors(payload), key=lambda error: list(error.path))
+    if errors:
+        first = errors[0]
+        path = format_schema_path(first.path)
+        suffix = f" at {path}" if path else ""
+        fail(f"{label} does not match local KAG provider map schema{suffix}: {first.message}")
+    if not isinstance(payload, dict):
+        fail(f"{label} must be a JSON object")
+    return payload
+
+
 def validate_registry_payload(
     payload: object,
     *,

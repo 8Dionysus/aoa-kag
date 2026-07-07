@@ -44,6 +44,8 @@ PROVIDER_REGISTRY_SCHEMA_PATH = REPO_ROOT / "schemas" / "provider-registry.schem
 
 PROVIDER_REGISTRY_MANIFEST_PATH = REPO_ROOT / "manifests" / "provider_registry.json"
 
+LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-provider-map.schema.json"
+
 REPO_LOCAL_KAG_INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 
 REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
