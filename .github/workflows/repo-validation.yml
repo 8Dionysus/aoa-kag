@@ -27,6 +27,7 @@ jobs:
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
       AOA_SESSION_MEMORY_ROOT: ${{ github.workspace }}/.deps/aoa-session-memory
       AOA_4PDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-4pda-connector
+      AOA_COURSE_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-course-connector
       AOA_DISCORD_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-discord-connector
       AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
       AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
@@ -139,6 +140,13 @@ jobs:
           repository: 8Dionysus/aoa-4pda-connector
           ref: 677adf7b5dc6e9e7ac031e813f92bb7d150d6692
           path: .deps/aoa-4pda-connector
+
+      - name: Checkout aoa-course-connector
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-course-connector
+          ref: 5e6facd52dea82ac544bd3b99d310627d43a9f09
+          path: .deps/aoa-course-connector
 
       - name: Checkout aoa-discord-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

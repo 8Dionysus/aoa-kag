@@ -2,8 +2,8 @@
   "coverage_summary": {
     "migration_needed": 0,
     "missing": 0,
-    "owner_count": 21,
-    "owner_specific": 1,
+    "owner_count": 22,
+    "owner_specific": 2,
     "passed": 20
   },
   "owners": [
@@ -363,6 +363,26 @@
       "owner_type": "connector",
       "repo": "aoa-4pda-connector",
       "root": "/srv/AbyssOS/connectors/aoa-4pda-connector"
+    },
+    {
+      "coverage": {
+        "commands": 23,
+        "documents": 48,
+        "generated": 0,
+        "mechanics": 0,
+        "schemas": 25,
+        "scripts": 2,
+        "tests": 21,
+        "validators": 1
+      },
+      "index_files": [
+        "kag/indexes/source_inventory.json"
+      ],
+      "index_status": "owner-specific",
+      "kag_home": "/srv/AbyssOS/connectors/aoa-course-connector/kag",
+      "owner_type": "connector",
+      "repo": "aoa-course-connector",
+      "root": "/srv/AbyssOS/connectors/aoa-course-connector"
     },
     {
       "coverage": {
