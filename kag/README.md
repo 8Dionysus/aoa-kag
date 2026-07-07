@@ -14,7 +14,7 @@ classes when their own source surfaces are ready.
 | input | schema, example, readiness matrix, provider-ready sibling packets |
 | output | manifest, node, edge, index, projection, receipt, registry/composition inputs |
 | owner | `kag/AGENTS.md`, this README, `source_home.manifest.json`, `manifest.json` |
-| consumer route | `aoa-kag` registry/composition, `abyss-stack`, future `aoa-kag-mcp` |
+| consumer route | `aoa-kag` registry/composition, `abyss-stack`, `aoa-kag-mcp` resource |
 | owner return | `schemas/`, `examples/`, `manifests/`, `scripts/validators/`, `tests/` |
 
 ## Current Files
@@ -36,7 +36,7 @@ classes when their own source surfaces are ready.
 `aoa-kag`. It covers source files, Markdown documents and heading coordinates,
 mechanics, scripts, validators, tests, schemas, generated read models,
 receipts, ABI/sign posture, provenance, toolchain, owner-return routes, and
-future `aoa-kag-mcp` resource coordinates.
+`aoa-kag-mcp` resource coordinates.
 
 ## Provider Role
 
@@ -97,7 +97,7 @@ owners.
 
 `aoa-kag` composes provider packets into registry and composition surfaces.
 `abyss-stack` consumes the portable packet for runtime mirrors. `aoa-kag-mcp`
-will expose resources, roots, selected tools, and prompts from
+exposes resources, roots, selected tools, and prompts from
 `generated/local_kag_provider_map.min.json`, validated provider packets,
 `kag/indexes/source_surface_index.json`, and
 `generated/repo_local_kag_coverage.min.json`.
