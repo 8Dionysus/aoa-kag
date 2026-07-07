@@ -82,14 +82,14 @@ in the readiness matrix until their owner route is ready.
 
 ## MCP Access Shape
 
-The validated provider packet gives future `aoa-kag-mcp` four access planes:
+The validated provider packet gives `aoa-kag-mcp` four access planes:
 
 | Plane | Carries |
 | --- | --- |
-| resource | manifests, records, registry entries, composition packets |
+| resource | manifests, records, generation profiles, source-index handles, registry entries, coverage rows |
 | root | provider home boundaries and source-return roots |
-| tool | validation, freshness check, and source-return lookup |
-| prompt | bounded query templates over validated provider records |
+| tool | provider lookup/status, generation route lookup, source-index lookup, coverage status, freshness check, source-return lookup, registry/composition slices, validation status |
+| prompt | bounded provider query, source-return summary, repo source-surface brief, cross-repo relation preview, runtime handoff brief |
 
 ## Current Providers
 
