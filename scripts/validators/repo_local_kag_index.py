@@ -146,6 +146,43 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
     repo_names = [owner.get("repo") for owner in owners if isinstance(owner, dict)]
     if "aoa-kag" not in repo_names:
         fail(f"{label} must include aoa-kag")
+    for owner in owners:
+        if not isinstance(owner, dict):
+            continue
+        repo = owner.get("repo")
+        profile = owner.get("common_surface_profile")
+        if not isinstance(profile, dict):
+            continue
+        counts = profile.get("counts")
+        quality = profile.get("quality")
+        if not isinstance(counts, dict) or not isinstance(quality, dict):
+            fail(f"{label} owner {repo} common_surface_profile must keep counts and quality")
+        for key in (
+            "artifact_kind",
+            "primary_kind",
+            "surface_state",
+            "document_role",
+            "mechanics_role",
+            "command_role",
+        ):
+            if not isinstance(counts.get(key), dict):
+                fail(f"{label} owner {repo} common_surface_profile.counts.{key} must be a map")
+        for key in (
+            "has_kag_home",
+            "has_record_classes",
+            "has_source_index",
+            "has_owner_commands",
+            "has_generated_readmodels",
+            "has_validation_route",
+        ):
+            if not isinstance(quality.get(key), bool):
+                fail(f"{label} owner {repo} common_surface_profile.quality.{key} must be boolean")
+        unknown_count = quality.get("unknown_count")
+        if not isinstance(unknown_count, int) or unknown_count < 0:
+            fail(
+                f"{label} owner {repo} common_surface_profile.quality.unknown_count "
+                "must be a non-negative integer"
+            )
     return payload
 
 

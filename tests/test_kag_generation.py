@@ -219,6 +219,42 @@ class KagGenerationTestCase(unittest.TestCase):
                 expected_payload,
             )
 
+    def test_local_kag_provider_map_rebuilds_common_profile_from_live_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            coverage_by_repo = {
+                "aoa-demo": {
+                    "index_status": "missing",
+                    "index_files": [],
+                    "coverage": {"documents": 1},
+                }
+            }
+            fallback_provider = {
+                "repo_local_index": {
+                    "common_surface_profile": {
+                        "source": "cached_provider_row",
+                        "counts": {"artifact_kind": {"document": 99}},
+                        "quality": {"unknown_count": 99},
+                    }
+                }
+            }
+            roots = dict(kag_generation.KNOWN_REPO_ROOTS)
+            roots["aoa-demo"] = root
+
+            with self.patch_generation_attribute("KNOWN_REPO_ROOTS", roots):
+                packet = provider_map._provider_repo_local_index_packet(
+                    "aoa-demo",
+                    coverage_by_repo,
+                    fallback_provider,
+                )
+
+        profile = packet["common_surface_profile"]
+        assert isinstance(profile, dict)
+        self.assertEqual("source_tree_scan", profile["source"])
+        self.assertEqual(1, profile["counts"]["artifact_kind"]["document"])
+        self.assertEqual(0, profile["quality"]["unknown_count"])
+
     def test_local_kag_provider_map_rejects_present_provider_missing_kag_home(self) -> None:
         expected_payload = load_json(kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(expected_payload, dict)
@@ -292,6 +328,11 @@ class KagGenerationTestCase(unittest.TestCase):
             for item in handoff["resource_templates"]
             if item["uri_template"] == "aoa-kag://providers/{repo}/repo-local-index"
         )
+        common_profile_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"] == "aoa-kag://providers/{repo}/common-surface-profile"
+        )
 
         self.assertEqual(
             handoff["service_route"],
@@ -305,6 +346,7 @@ class KagGenerationTestCase(unittest.TestCase):
                 "aoa-kag://providers/{repo}/generation",
                 "aoa-kag://providers/{repo}/source-index",
                 "aoa-kag://providers/{repo}/repo-local-index",
+                "aoa-kag://providers/{repo}/common-surface-profile",
                 "aoa-kag://registry/provider-map",
                 "aoa-kag://coverage/repo-local-source-indexes",
                 "aoa-kag://readiness/os-surfaces",
@@ -342,6 +384,11 @@ class KagGenerationTestCase(unittest.TestCase):
             repo_local_index_template["source"],
             "aoa-kag/generated/local_kag_provider_map.min.json"
             "#/provider_repo_local_indexes/{repo}",
+        )
+        self.assertEqual(
+            common_profile_template["source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_common_surface_profiles/{repo}",
         )
         self.assertEqual(
             source_index_template["source"],
@@ -393,6 +440,10 @@ class KagGenerationTestCase(unittest.TestCase):
                     provider["repo_local_index"],
                     payload["provider_repo_local_indexes"][repo],
                 )
+                self.assertEqual(
+                    provider["repo_local_index"]["common_surface_profile"],
+                    payload["provider_common_surface_profiles"][repo],
+                )
                 self.assertTrue(profile["source_home_surfaces"])
                 self.assertTrue(profile["candidate_source_surfaces"])
                 self.assertTrue(profile["graph_entities"])
@@ -441,10 +492,23 @@ class KagGenerationTestCase(unittest.TestCase):
                 self.assertEqual(coverage_row["index_files"], index_packet["index_files"])
                 self.assertEqual(coverage_row["coverage"], index_packet["coverage"])
                 self.assertEqual(
+                    coverage_row["common_surface_profile"],
+                    index_packet["common_surface_profile"],
+                )
+                self.assertEqual(
                     "generated/repo_local_kag_coverage.min.json",
                     index_packet["coverage_report_ref"],
                 )
                 self.assertEqual(repo, index_packet["coverage_owner_key"])
+                common_profile = index_packet["common_surface_profile"]
+                self.assertIn(
+                    common_profile["source"],
+                    {"source_surface_index", "source_tree_scan", "cached_provider_row"},
+                )
+                self.assertIn("artifact_kind", common_profile["counts"])
+                self.assertIn("primary_kind", common_profile["counts"])
+                self.assertIn("has_kag_home", common_profile["quality"])
+                self.assertIsInstance(common_profile["quality"]["has_kag_home"], bool)
 
         providers = {provider["repo"]: provider for provider in payload["providers"]}
         self.assertEqual(

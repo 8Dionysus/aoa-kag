@@ -43,6 +43,11 @@
       "propertyNames": {"$ref": "#/$defs/repoName"},
       "additionalProperties": {"$ref": "#/$defs/repoLocalIndex"}
     },
+    "provider_common_surface_profiles": {
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/repoName"},
+      "additionalProperties": {"$ref": "#/$defs/commonSurfaceProfile"}
+    },
     "remaining_routes": {
       "type": "array",
       "items": {"$ref": "#/$defs/remainingRoute"}
@@ -199,8 +204,62 @@
         "source_index_ref": {"type": "string"},
         "index_files": {"$ref": "#/$defs/uniqueStringList"},
         "coverage": {"$ref": "#/$defs/coverageCounts"},
+        "common_surface_profile": {"$ref": "#/$defs/commonSurfaceProfile"},
         "coverage_report_ref": {"const": "generated/repo_local_kag_coverage.min.json"},
         "coverage_owner_key": {"$ref": "#/$defs/repoName"}
+      }
+    },
+    "commonSurfaceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "counts", "quality"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["source_surface_index", "source_tree_scan", "cached_provider_row"]
+        },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_kind",
+            "primary_kind",
+            "surface_state",
+            "document_role",
+            "mechanics_role",
+            "command_role"
+          ],
+          "properties": {
+            "artifact_kind": {"$ref": "#/$defs/counterMap"},
+            "primary_kind": {"$ref": "#/$defs/counterMap"},
+            "surface_state": {"$ref": "#/$defs/counterMap"},
+            "document_role": {"$ref": "#/$defs/counterMap"},
+            "mechanics_role": {"$ref": "#/$defs/counterMap"},
+            "command_role": {"$ref": "#/$defs/counterMap"}
+          }
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "unknown_count",
+            "has_kag_home",
+            "has_record_classes",
+            "has_source_index",
+            "has_owner_commands",
+            "has_generated_readmodels",
+            "has_validation_route"
+          ],
+          "properties": {
+            "unknown_count": {"type": "integer", "minimum": 0},
+            "has_kag_home": {"type": "boolean"},
+            "has_record_classes": {"type": "boolean"},
+            "has_source_index": {"type": "boolean"},
+            "has_owner_commands": {"type": "boolean"},
+            "has_generated_readmodels": {"type": "boolean"},
+            "has_validation_route": {"type": "boolean"}
+          }
+        }
       }
     },
     "freshnessHandle": {

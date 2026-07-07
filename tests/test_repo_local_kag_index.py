@@ -18,6 +18,7 @@ from scripts.generate_repo_local_kag_index import build_index, payload_digest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
+LOCAL_PROVIDER_MAP_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-provider-map.schema.json"
 EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
 
 
@@ -194,6 +195,28 @@ class RepoLocalKagIndexTests(unittest.TestCase):
     def test_example_matches_repo_local_kag_index_schema(self) -> None:
         self.validate_with_schema(load_json(EXAMPLE_PATH), INDEX_SCHEMA_PATH)
 
+    def test_v1_schemas_accept_payloads_without_common_surface_profiles(self) -> None:
+        coverage = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(coverage, dict)
+        owners = coverage["owners"]
+        assert isinstance(owners, list)
+        for owner in owners:
+            assert isinstance(owner, dict)
+            owner.pop("common_surface_profile", None)
+        self.validate_with_schema(coverage, COVERAGE_SCHEMA_PATH)
+
+        provider_map = load_json(REPO_ROOT / "generated" / "local_kag_provider_map.json")
+        assert isinstance(provider_map, dict)
+        provider_map.pop("provider_common_surface_profiles", None)
+        providers = provider_map["providers"]
+        assert isinstance(providers, list)
+        for provider in providers:
+            assert isinstance(provider, dict)
+            repo_local_index = provider["repo_local_index"]
+            assert isinstance(repo_local_index, dict)
+            repo_local_index.pop("common_surface_profile", None)
+        self.validate_with_schema(provider_map, LOCAL_PROVIDER_MAP_SCHEMA_PATH)
+
     def test_generator_indexes_documents_mechanics_commands_and_schema_posture(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -250,6 +273,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             (root / ".github").mkdir()
             (root / ".github" / "CODEOWNERS").write_text("* @owners\n", encoding="utf-8")
             (root / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+            (root / ".env.example").write_text("TOKEN=\n", encoding="utf-8")
             (root / "requirements-dev.txt").write_text("jsonschema\n", encoding="utf-8")
             (root / ".agents" / "skills" / "demo" / "assets").mkdir(parents=True)
             (root / ".agents" / "skills" / "demo" / "assets" / "logo.svg").write_text(
@@ -270,6 +294,11 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             )
             (root / "data").mkdir()
             (root / "data" / "nodes.csv").write_text("id,label\n1,Demo\n", encoding="utf-8")
+            (root / "connector" / "fixtures" / "html").mkdir(parents=True)
+            (root / "connector" / "fixtures" / "html" / "topic.html").write_text(
+                "<html><body>Demo</body></html>\n",
+                encoding="utf-8",
+            )
             (root / "archive").mkdir()
             (root / "archive" / "seed.zip").write_bytes(b"PK\x03\x04")
             (root / "carriers").mkdir()
@@ -292,12 +321,14 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         expected_kinds = {
             ".github/CODEOWNERS": "owner_metadata",
             ".gitignore": "owner_metadata",
+            ".env.example": "config",
             "requirements-dev.txt": "dependency_manifest",
             ".agents/skills/demo/assets/logo.svg": "asset",
             "memo/local/.gitkeep": "directory_marker",
             ".aoa/live_receipts/events.jsonl": "record_log",
             "kag/receipts/validation.jsonl": "receipt",
             "data/nodes.csv": "data_table",
+            "connector/fixtures/html/topic.html": "fixture",
             "archive/seed.zip": "archive",
             "carriers/table.xlsx": "spreadsheet",
             "systemd/demo.service": "service_unit",
@@ -309,6 +340,8 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             record = records_by_path[path]
             self.assertEqual(expected_kind, record["artifact_kind"], path)
             expected_primary = "command" if path.startswith("scripts/") else "artifact"
+            if expected_kind == "config":
+                expected_primary = "surface"
             self.assertEqual(expected_primary, record["classification"]["primary_kind"], path)
             self.assertEqual("high", record["classification"]["confidence"], path)
         self.assertEqual("legacy", records_by_path["archive/seed.zip"]["surface_state"])
@@ -338,6 +371,40 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["asset"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["receipt"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["record_log"])
+
+    def test_common_surface_profile_recomputes_counts_from_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (root / "scripts").mkdir()
+            (root / "scripts" / "validate_demo.py").write_text("print('ok')\n", encoding="utf-8")
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+            payload["classification_summary"] = {
+                "artifact_kind": {"document": 99},
+                "primary_kind": {"document": 99},
+                "surface_state": {"authored_source": 99},
+                "document_role": {"readme": 99},
+                "mechanics_role": {"none": 99},
+                "command_role": {"none": 99},
+            }
+            payload["coverage_summary"] = {
+                "record_count": 99,
+                "unknown_count": 99,
+                "generated_count": 99,
+                "validator_count": 0,
+            }
+            index_path = root / "kag" / "indexes" / "source_surface_index.json"
+            index_path.parent.mkdir(parents=True)
+            index_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            profile = coverage_generation.common_surface_profile(root, index_status="passed")
+
+        self.assertEqual("source_surface_index", profile["source"])
+        self.assertEqual(1, profile["counts"]["artifact_kind"]["document"])
+        self.assertEqual(1, profile["counts"]["artifact_kind"]["validator"])
+        self.assertEqual(1, profile["counts"]["command_role"]["validator"])
+        self.assertEqual(0, profile["quality"]["unknown_count"])
+        self.assertFalse(profile["quality"]["has_generated_readmodels"])
 
     def test_generator_qualifies_external_kag_routes_and_preserves_generated_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -687,6 +754,22 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual("owner-specific", statuses["aoa-demo-connector"])
         self.assertEqual("missing", statuses["aoa-demo-bundle"])
         self.assertEqual("owner-specific", statuses["aoa-demo-bundle-provider"])
+        owners = {owner["repo"]: owner for owner in payload["owners"]}
+        self.assertEqual(
+            "source_surface_index",
+            owners["aoa-demo"]["common_surface_profile"]["source"],
+        )
+        self.assertEqual(
+            "source_tree_scan",
+            owners["aoa-demo-connector"]["common_surface_profile"]["source"],
+        )
+        self.assertTrue(
+            owners["aoa-demo-connector"]["common_surface_profile"]["quality"]["has_kag_home"]
+        )
+        self.assertIn(
+            "artifact_kind",
+            owners["aoa-demo"]["common_surface_profile"]["counts"],
+        )
 
     def test_coverage_rejects_index_with_wrong_repo_identity(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -819,6 +902,26 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 "scripts": 0,
                 "schemas": 0,
                 "generated": 0,
+            },
+            "common_surface_profile": {
+                "source": "cached_provider_row",
+                "counts": {
+                    "artifact_kind": {"document": 1},
+                    "primary_kind": {"document": 1},
+                    "surface_state": {},
+                    "document_role": {},
+                    "mechanics_role": {},
+                    "command_role": {},
+                },
+                "quality": {
+                    "unknown_count": 0,
+                    "has_kag_home": True,
+                    "has_record_classes": True,
+                    "has_source_index": True,
+                    "has_owner_commands": False,
+                    "has_generated_readmodels": False,
+                    "has_validation_route": False,
+                },
             },
         }
 

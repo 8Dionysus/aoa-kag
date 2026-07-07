@@ -18,8 +18,10 @@ try:
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
         build_index,
+        classification_summary,
         coverage_summary,
         git_file_paths,
+        manifest_validation_route,
         normalized_json,
         owner_type_for,
         payload_digest,
@@ -37,8 +39,10 @@ except ImportError:  # pragma: no cover - direct script execution
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
         build_index,
+        classification_summary,
         coverage_summary,
         git_file_paths,
+        manifest_validation_route,
         normalized_json,
         owner_type_for,
         payload_digest,
@@ -69,6 +73,15 @@ OWNER_SPECIFIC_OWNER_TYPES = {
     "bundle_provider",
     "connector",
 }
+PROVIDER_RECORD_DIRS = ("nodes", "edges", "indexes", "projections", "receipts")
+COMMON_PROFILE_COUNT_KEYS = (
+    "artifact_kind",
+    "primary_kind",
+    "surface_state",
+    "document_role",
+    "mechanics_role",
+    "command_role",
+)
 LOCAL_KAG_RECORD_SCHEMA_VERSION = "aoa-local-kag-record-v1"
 PROVIDER_RECORD_SCHEMA_DEFS = {
     "nodes": "nodeRecord",
@@ -268,6 +281,133 @@ def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> boo
     return True
 
 
+def _count_map(value: object) -> dict[str, int]:
+    if not isinstance(value, dict):
+        return {}
+    result: dict[str, int] = {}
+    for key, count in value.items():
+        if isinstance(key, str) and isinstance(count, int) and count >= 0:
+            result[key] = count
+    return dict(sorted(result.items()))
+
+
+def _source_index_payload(owner_root: Path) -> dict[str, Any] | None:
+    source_index = owner_root / SOURCE_SURFACE_INDEX_REL
+    try:
+        payload = json.loads(source_index.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
+        return None
+    if isinstance(payload, dict) and payload.get("schema_version") == INDEX_SCHEMA_VERSION:
+        return payload
+    return None
+
+
+def _profile_payload(owner_root: Path, *, index_status: str) -> tuple[str, dict[str, Any]]:
+    payload = _source_index_payload(owner_root)
+    if index_status == "passed" and payload is not None:
+        return "source_surface_index", payload
+    return "source_tree_scan", build_index(owner_root, output=SOURCE_SURFACE_INDEX_REL)
+
+
+def _records_have_owner_commands(records: object) -> bool:
+    if not isinstance(records, list):
+        return False
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        toolchain = record.get("toolchain")
+        if not isinstance(toolchain, dict):
+            continue
+        owner_commands = toolchain.get("owner_commands")
+        if isinstance(owner_commands, list) and owner_commands:
+            return True
+    return False
+
+
+def _record_classes_present(owner_root: Path) -> bool:
+    kag_root = owner_root / "kag"
+    return all((kag_root / directory).is_dir() for directory in PROVIDER_RECORD_DIRS)
+
+
+def common_surface_profile(
+    owner_root: Path,
+    *,
+    index_status: str,
+) -> dict[str, Any]:
+    source, payload = _profile_payload(owner_root, index_status=index_status)
+    records = payload.get("records")
+    if not isinstance(records, list):
+        records = []
+    summary = coverage_summary(records)
+    classification = classification_summary(records)
+    counts = {
+        key: _count_map(classification.get(key))
+        for key in COMMON_PROFILE_COUNT_KEYS
+    }
+    return {
+        "source": source,
+        "counts": counts,
+        "quality": {
+            "unknown_count": int(summary.get("unknown_count", 0)),
+            "has_kag_home": (owner_root / "kag").is_dir(),
+            "has_record_classes": _record_classes_present(owner_root),
+            "has_source_index": (owner_root / SOURCE_SURFACE_INDEX_REL).is_file(),
+            "has_owner_commands": _records_have_owner_commands(records),
+            "has_generated_readmodels": int(summary.get("generated_count", 0)) > 0,
+            "has_validation_route": (
+                int(summary.get("validator_count", 0)) > 0
+                or bool(manifest_validation_route(owner_root, "local-kag"))
+            ),
+        },
+    }
+
+
+def cached_common_surface_profile(row: dict[str, Any]) -> dict[str, Any]:
+    profile = row.get("common_surface_profile")
+    if isinstance(profile, dict):
+        return copy.deepcopy(profile)
+    coverage = row.get("coverage")
+    coverage = coverage if isinstance(coverage, dict) else {}
+    return {
+        "source": "cached_provider_row",
+        "counts": {
+            "artifact_kind": {
+                "document": int(coverage.get("documents", 0)),
+                "generated_readmodel": int(coverage.get("generated", 0)),
+                "schema": int(coverage.get("schemas", 0)),
+                "script": int(coverage.get("scripts", 0)),
+                "test": int(coverage.get("tests", 0)),
+                "validator": int(coverage.get("validators", 0)),
+            },
+            "primary_kind": {
+                "command": int(coverage.get("commands", 0)),
+                "document": int(coverage.get("documents", 0)),
+            },
+            "surface_state": {
+                "generated_readmodel": int(coverage.get("generated", 0)),
+            },
+            "document_role": {},
+            "mechanics_role": {
+                "mechanic_package": int(coverage.get("mechanics", 0)),
+            },
+            "command_role": {
+                "script": int(coverage.get("scripts", 0)),
+                "test": int(coverage.get("tests", 0)),
+                "validator": int(coverage.get("validators", 0)),
+            },
+        },
+        "quality": {
+            "unknown_count": 0,
+            "has_kag_home": bool(row.get("kag_home")),
+            "has_record_classes": True,
+            "has_source_index": "kag/indexes/source_surface_index.json" in row.get("index_files", []),
+            "has_owner_commands": int(coverage.get("commands", 0)) > 0,
+            "has_generated_readmodels": int(coverage.get("generated", 0)) > 0,
+            "has_validation_route": int(coverage.get("validators", 0)) > 0,
+        },
+    }
+
+
 def has_owner_specific_index(owner_name: str, owner_root: Path, relative_files: list[str]) -> bool:
     owner_type = owner_type_for(owner_name, owner_root)
     if owner_type not in OWNER_SPECIFIC_OWNER_TYPES:
@@ -445,7 +585,9 @@ def build_coverage(
             coverage_progress(f"owner {index}/{len(roots)} {name}")
         cached_owner = cached_owner_rows.get(name) if cached_owner_rows is not None else None
         if owner_roots is not None and not owner_root.is_dir() and cached_owner is not None:
-            owners.append(copy.deepcopy(cached_owner))
+            row = copy.deepcopy(cached_owner)
+            row["common_surface_profile"] = cached_common_surface_profile(row)
+            owners.append(row)
             continue
         status, files = index_status(owner_root, owner_name=name)
         display_root = canonical_owner_root(os_root, name) if owner_roots is not None else owner_root
@@ -459,6 +601,10 @@ def build_coverage(
                 "index_status": status,
                 "index_files": files,
                 "coverage": source_counts(owner_root),
+                "common_surface_profile": common_surface_profile(
+                    owner_root,
+                    index_status=status,
+                ),
             }
         )
     summary = {status: sum(1 for owner in owners if owner["index_status"] == status) for status in OWNER_STATUS}

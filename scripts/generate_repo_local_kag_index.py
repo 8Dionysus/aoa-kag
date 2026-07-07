@@ -89,9 +89,11 @@ ARCHIVE_SUFFIXES = {".7z", ".gz", ".tar", ".tgz", ".xz", ".zip"}
 SPREADSHEET_SUFFIXES = {".ods", ".xls", ".xlsx"}
 DATA_TABLE_SUFFIXES = {".csv", ".tsv"}
 TEXT_ARTIFACT_SUFFIXES = {".txt"}
+HTML_SUFFIXES = {".htm", ".html"}
 SERVICE_UNIT_SUFFIXES = {".path", ".service", ".socket", ".timer"}
 OWNER_METADATA_NAMES = {".gitattributes", ".gitignore", "CODEOWNERS", "AOA_WORKSPACE_ROOT"}
 DIRECTORY_MARKER_NAMES = {".gitkeep", ".keep"}
+ENV_CONFIG_NAMES = {".env", ".env.example", ".env.sample", ".env.template"}
 
 
 def run_text(command: Sequence[str], cwd: Path) -> str:
@@ -381,6 +383,8 @@ def artifact_kind(rel: Path) -> str:
         return "owner_metadata"
     if name in DIRECTORY_MARKER_NAMES:
         return "directory_marker"
+    if name in ENV_CONFIG_NAMES:
+        return "config"
     if name.startswith("requirements") and suffix == ".txt":
         return "dependency_manifest"
     if "receipts" in parts:
@@ -391,6 +395,8 @@ def artifact_kind(rel: Path) -> str:
         return "data_table"
     if suffix in {".jsonl", ".ndjson"}:
         return "record_log"
+    if "fixtures" in parts and suffix in HTML_SUFFIXES:
+        return "fixture"
     if suffix in SPREADSHEET_SUFFIXES:
         return "spreadsheet"
     if suffix in ARCHIVE_SUFFIXES:
@@ -552,6 +558,7 @@ def primary_kind(kind: str, doc_role: str, command: str) -> str:
         "data_table",
         "dependency_manifest",
         "directory_marker",
+        "fixture",
         "generated_readmodel",
         "index",
         "owner_metadata",
