@@ -144,12 +144,13 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
         f"{label}.provider_repo_local_indexes",
     )
     raw_common_profile_map = payload.get("provider_common_surface_profiles")
+    has_common_profile_map = raw_common_profile_map is not None
     common_profile_map = (
         _object_map(
             raw_common_profile_map,
             f"{label}.provider_common_surface_profiles",
         )
-        if raw_common_profile_map is not None
+        if has_common_profile_map
         else {}
     )
     provider_repo_set = set(provider_repos)
@@ -157,7 +158,7 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
         fail(f"{label}.provider_generation_profiles must cover provider repos exactly")
     if set(index_map) != provider_repo_set:
         fail(f"{label}.provider_repo_local_indexes must cover provider repos exactly")
-    if common_profile_map and set(common_profile_map) != provider_repo_set:
+    if has_common_profile_map and set(common_profile_map) != provider_repo_set:
         fail(f"{label}.provider_common_surface_profiles must cover provider repos exactly")
 
     for provider in providers:
@@ -170,7 +171,7 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
             provider.get("repo_local_index"),
             f"{label}.providers[{repo}].repo_local_index",
         )
-        if common_profile_map and repo_local_index.get("common_surface_profile") != common_profile_map[repo]:
+        if has_common_profile_map and repo_local_index.get("common_surface_profile") != common_profile_map[repo]:
             fail(
                 f"{label}.providers[{repo}].repo_local_index.common_surface_profile "
                 "must match provider_common_surface_profiles"
@@ -205,10 +206,16 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
     _validate_mcp_handoff(
         _object_value(payload.get("mcp_handoff"), f"{label}.mcp_handoff"),
         label=f"{label}.mcp_handoff",
+        requires_common_surface_profile_resource=has_common_profile_map,
     )
 
 
-def _validate_mcp_handoff(handoff: dict[str, object], *, label: str) -> None:
+def _validate_mcp_handoff(
+    handoff: dict[str, object],
+    *,
+    label: str,
+    requires_common_surface_profile_resource: bool,
+) -> None:
     if handoff.get("service_route") != "abyss-stack/mcp/services/aoa-kag-mcp":
         fail(f"{label}.service_route must point to the aoa-kag MCP service route")
     if handoff.get("resource_uri_scheme") != "aoa-kag://{scope}/{identifier}":
@@ -222,7 +229,10 @@ def _validate_mcp_handoff(handoff: dict[str, object], *, label: str) -> None:
             fail(f"{label}.resource_templates must keep unique uri_template values")
         by_uri[uri_template] = template
 
-    missing_templates = sorted(set(EXPECTED_MCP_RESOURCE_TEMPLATES) - set(by_uri))
+    missing_template_set = set(EXPECTED_MCP_RESOURCE_TEMPLATES) - set(by_uri)
+    if not requires_common_surface_profile_resource:
+        missing_template_set.discard("aoa-kag://providers/{repo}/common-surface-profile")
+    missing_templates = sorted(missing_template_set)
     if missing_templates:
         fail(f"{label} missing required MCP resource templates: {', '.join(missing_templates)}")
     extra_templates = sorted(set(by_uri) - set(EXPECTED_MCP_RESOURCE_TEMPLATES))
@@ -230,6 +240,8 @@ def _validate_mcp_handoff(handoff: dict[str, object], *, label: str) -> None:
         fail(f"{label} carries unknown MCP resource templates: {', '.join(extra_templates)}")
 
     for uri_template, expected_fields in EXPECTED_MCP_RESOURCE_TEMPLATES.items():
+        if uri_template not in by_uri:
+            continue
         template = by_uri[uri_template]
         for key, expected_value in expected_fields.items():
             if template.get(key) != expected_value:

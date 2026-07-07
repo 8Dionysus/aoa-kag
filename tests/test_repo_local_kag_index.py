@@ -372,6 +372,40 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["receipt"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["record_log"])
 
+    def test_common_surface_profile_recomputes_counts_from_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (root / "scripts").mkdir()
+            (root / "scripts" / "validate_demo.py").write_text("print('ok')\n", encoding="utf-8")
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+            payload["classification_summary"] = {
+                "artifact_kind": {"document": 99},
+                "primary_kind": {"document": 99},
+                "surface_state": {"authored_source": 99},
+                "document_role": {"readme": 99},
+                "mechanics_role": {"none": 99},
+                "command_role": {"none": 99},
+            }
+            payload["coverage_summary"] = {
+                "record_count": 99,
+                "unknown_count": 99,
+                "generated_count": 99,
+                "validator_count": 0,
+            }
+            index_path = root / "kag" / "indexes" / "source_surface_index.json"
+            index_path.parent.mkdir(parents=True)
+            index_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            profile = coverage_generation.common_surface_profile(root, index_status="passed")
+
+        self.assertEqual("source_surface_index", profile["source"])
+        self.assertEqual(1, profile["counts"]["artifact_kind"]["document"])
+        self.assertEqual(1, profile["counts"]["artifact_kind"]["validator"])
+        self.assertEqual(1, profile["counts"]["command_role"]["validator"])
+        self.assertEqual(0, profile["quality"]["unknown_count"])
+        self.assertFalse(profile["quality"]["has_generated_readmodels"])
+
     def test_generator_qualifies_external_kag_routes_and_preserves_generated_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

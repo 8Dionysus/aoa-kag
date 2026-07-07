@@ -338,12 +338,8 @@ def common_surface_profile(
     records = payload.get("records")
     if not isinstance(records, list):
         records = []
-    summary = payload.get("coverage_summary")
-    if not isinstance(summary, dict):
-        summary = coverage_summary(records)
-    classification = payload.get("classification_summary")
-    if not isinstance(classification, dict):
-        classification = classification_summary(records)
+    summary = coverage_summary(records)
+    classification = classification_summary(records)
     counts = {
         key: _count_map(classification.get(key))
         for key in COMMON_PROFILE_COUNT_KEYS
