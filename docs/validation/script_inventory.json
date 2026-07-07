@@ -191,7 +191,7 @@
       "writes": ["generated/repo_local_kag_coverage.json", "generated/repo_local_kag_coverage.min.json"],
       "side_effects": "writes deterministic OS Abyss repo-local KAG coverage reports unless run with --check",
       "validation_lane": "generated",
-      "ci_inclusion": "generated lane refreshes coverage; validate_kag checks parity",
+      "ci_inclusion": "generated lane refreshes coverage, then runs --check and validate_kag parity",
       "test_target": "tests/test_repo_local_kag_index.py",
       "disposition": "keep"
     },
@@ -205,7 +205,7 @@
       "writes": ["kag/indexes/source_surface_index.json"],
       "side_effects": "writes deterministic repo-local source surface index unless run with --check",
       "validation_lane": "generated",
-      "ci_inclusion": "generated lane refreshes the aoa-kag source surface index; validate_kag checks parity",
+      "ci_inclusion": "generated lane refreshes the aoa-kag source surface index, then runs --check and validate_kag parity",
       "test_target": "tests/test_repo_local_kag_index.py",
       "disposition": "keep"
     },

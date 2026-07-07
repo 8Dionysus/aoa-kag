@@ -120,6 +120,11 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
 
     def test_generated_lanes_rebuild_source_index_after_final_coverage_refresh(self) -> None:
         coverage_command = ("python", "scripts/generate_repo_local_kag_coverage.py")
+        coverage_check_command = (
+            "python",
+            "scripts/generate_repo_local_kag_coverage.py",
+            "--check",
+        )
         generate_kag_command = ("python", "scripts/generate_kag.py")
         generate_kag_check_command = ("python", "scripts/generate_kag.py", "--check")
         index_command = (
@@ -130,6 +135,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             "--output",
             "kag/indexes/source_surface_index.json",
         )
+        index_check_command = (*index_command, "--check")
         for lane_name in ("generated_check", "compatibility_canary"):
             sequence = command_sequence_from_manifest(lane_name)
             last_coverage = max(
@@ -141,12 +147,27 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             last_index = max(
                 index for index, command in enumerate(sequence) if command == index_command
             )
+            last_coverage_check = max(
+                index
+                for index, command in enumerate(sequence)
+                if command == coverage_check_command
+            )
+            last_index_check = max(
+                index for index, command in enumerate(sequence) if command == index_check_command
+            )
             last_check = max(
-                index for index, command in enumerate(sequence) if command == generate_kag_check_command
+                index
+                for index, command in enumerate(sequence)
+                if command == generate_kag_check_command
             )
             self.assertLess(last_coverage, last_generate_kag)
             self.assertLess(last_generate_kag, last_index)
+            self.assertLess(last_index, last_coverage_check)
+            self.assertLess(last_coverage_check, last_index_check)
+            self.assertLess(last_index_check, last_check)
             self.assertLess(last_index, last_check)
+            self.assertNotIn(coverage_command, sequence[last_coverage_check + 1 :])
+            self.assertNotIn(index_command, sequence[last_index_check + 1 :])
             self.assertNotIn(generate_kag_command, sequence[last_check + 1 :])
 
     def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
