@@ -4,6 +4,80 @@ from ..common import *
 from ..local_contracts import *
 from ..source_refs import *
 
+EXPECTED_MCP_RESOURCE_TEMPLATES = {
+    "aoa-kag://providers/{repo}/manifest": {
+        "source": "{repo}/kag/manifest.json",
+    },
+    "aoa-kag://providers/{repo}/records/{record_class}": {
+        "source": "{repo}/kag/{record_class_directory}/",
+        "record_class_directory_map": {
+            "node": "nodes",
+            "edge": "edges",
+            "index": "indexes",
+            "projection": "projections",
+            "receipt": "receipts",
+        },
+    },
+    "aoa-kag://providers/{repo}/generation": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_generation_profiles/{repo}"
+        ),
+    },
+    "aoa-kag://providers/{repo}/source-index": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/source_index_ref"
+        ),
+        "fallback_source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/index_files"
+        ),
+    },
+    "aoa-kag://providers/{repo}/repo-local-index": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}"
+        ),
+    },
+    "aoa-kag://registry/provider-map": {
+        "source": "aoa-kag/generated/local_kag_provider_map.min.json",
+    },
+    "aoa-kag://coverage/repo-local-source-indexes": {
+        "source": "aoa-kag/generated/repo_local_kag_coverage.min.json",
+    },
+    "aoa-kag://readiness/os-surfaces": {
+        "source": "aoa-kag/manifests/local_kag_readiness.json",
+    },
+}
+
+REQUIRED_MCP_TOOLS = {
+    "provider_lookup",
+    "provider_status",
+    "generation_route_lookup",
+    "source_index_lookup",
+    "repo_local_coverage_status",
+    "freshness_check",
+    "source_return_lookup",
+    "registry_slice",
+    "composition_slice",
+    "validation_status",
+}
+
+REQUIRED_MCP_PROMPTS = {
+    "bounded_provider_query",
+    "source_return_summary",
+    "repo_source_surface_brief",
+    "cross_repo_relation_preview",
+    "runtime_handoff_brief",
+}
+
+REQUIRED_ROOT_BOUNDARY_KINDS = {
+    "provider_home",
+    "source_return",
+    "runtime_owner",
+}
+
 
 def validate_local_kag_provider_map_payload(
     payload: object,
@@ -22,7 +96,185 @@ def validate_local_kag_provider_map_payload(
         fail(f"{label} does not match local KAG provider map schema{suffix}: {first.message}")
     if not isinstance(payload, dict):
         fail(f"{label} must be a JSON object")
+    _validate_provider_map_semantics(payload, label=label)
     return payload
+
+
+def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) -> None:
+    providers = _object_list(payload.get("providers"), f"{label}.providers")
+    provider_repos = [str(provider.get("repo")) for provider in providers]
+    if len(provider_repos) != len(set(provider_repos)):
+        fail(f"{label}.providers must keep unique repo entries")
+
+    provider_status_counts = _string_int_map(
+        payload.get("provider_status_counts"),
+        f"{label}.provider_status_counts",
+    )
+    actual_provider_status_counts: dict[str, int] = {}
+    for provider in providers:
+        status = str(provider.get("provider_status"))
+        actual_provider_status_counts[status] = actual_provider_status_counts.get(status, 0) + 1
+    if provider_status_counts != actual_provider_status_counts:
+        fail(f"{label}.provider_status_counts must match provider rows")
+
+    profile_map = _object_map(
+        payload.get("provider_generation_profiles"),
+        f"{label}.provider_generation_profiles",
+    )
+    index_map = _object_map(
+        payload.get("provider_repo_local_indexes"),
+        f"{label}.provider_repo_local_indexes",
+    )
+    provider_repo_set = set(provider_repos)
+    if set(profile_map) != provider_repo_set:
+        fail(f"{label}.provider_generation_profiles must cover provider repos exactly")
+    if set(index_map) != provider_repo_set:
+        fail(f"{label}.provider_repo_local_indexes must cover provider repos exactly")
+
+    for provider in providers:
+        repo = str(provider["repo"])
+        if provider.get("generation_profile") != profile_map[repo]:
+            fail(f"{label}.providers[{repo}].generation_profile must match provider_generation_profiles")
+        if provider.get("repo_local_index") != index_map[repo]:
+            fail(f"{label}.providers[{repo}].repo_local_index must match provider_repo_local_indexes")
+
+    os_surfaces = _object_list(payload.get("os_surfaces"), f"{label}.os_surfaces")
+    readiness = _object_value(payload.get("generation_readiness"), f"{label}.generation_readiness")
+    os_surface_status_counts = _string_int_map(
+        readiness.get("os_surface_status_counts"),
+        f"{label}.generation_readiness.os_surface_status_counts",
+    )
+    os_surface_ids_by_status = _string_list_map(
+        readiness.get("os_surface_ids_by_status"),
+        f"{label}.generation_readiness.os_surface_ids_by_status",
+    )
+    actual_os_counts: dict[str, int] = {}
+    actual_os_ids: dict[str, list[str]] = {}
+    for surface in os_surfaces:
+        surface_id = str(surface.get("surface_id"))
+        status = str(surface.get("provider_status"))
+        actual_os_counts[status] = actual_os_counts.get(status, 0) + 1
+        actual_os_ids.setdefault(status, []).append(surface_id)
+    actual_os_ids = {
+        status: sorted(surface_ids)
+        for status, surface_ids in actual_os_ids.items()
+    }
+    if os_surface_status_counts != actual_os_counts:
+        fail(f"{label}.generation_readiness.os_surface_status_counts must match os_surfaces")
+    if os_surface_ids_by_status != actual_os_ids:
+        fail(f"{label}.generation_readiness.os_surface_ids_by_status must match os_surfaces")
+
+    _validate_mcp_handoff(
+        _object_value(payload.get("mcp_handoff"), f"{label}.mcp_handoff"),
+        label=f"{label}.mcp_handoff",
+    )
+
+
+def _validate_mcp_handoff(handoff: dict[str, object], *, label: str) -> None:
+    if handoff.get("service_route") != "abyss-stack/mcp/services/aoa-kag-mcp":
+        fail(f"{label}.service_route must point to the aoa-kag MCP service route")
+    if handoff.get("resource_uri_scheme") != "aoa-kag://{scope}/{identifier}":
+        fail(f"{label}.resource_uri_scheme must keep the aoa-kag URI scheme")
+
+    templates = _object_list(handoff.get("resource_templates"), f"{label}.resource_templates")
+    by_uri: dict[str, dict[str, object]] = {}
+    for template in templates:
+        uri_template = str(template.get("uri_template"))
+        if uri_template in by_uri:
+            fail(f"{label}.resource_templates must keep unique uri_template values")
+        by_uri[uri_template] = template
+
+    missing_templates = sorted(set(EXPECTED_MCP_RESOURCE_TEMPLATES) - set(by_uri))
+    if missing_templates:
+        fail(f"{label} missing required MCP resource templates: {', '.join(missing_templates)}")
+    extra_templates = sorted(set(by_uri) - set(EXPECTED_MCP_RESOURCE_TEMPLATES))
+    if extra_templates:
+        fail(f"{label} carries unknown MCP resource templates: {', '.join(extra_templates)}")
+
+    for uri_template, expected_fields in EXPECTED_MCP_RESOURCE_TEMPLATES.items():
+        template = by_uri[uri_template]
+        for key, expected_value in expected_fields.items():
+            if template.get(key) != expected_value:
+                fail(f"{label} template {uri_template} must keep {key}")
+
+    root_boundaries = _object_list(handoff.get("root_boundaries"), f"{label}.root_boundaries")
+    root_kinds = {str(boundary.get("root_kind")) for boundary in root_boundaries}
+    if root_kinds != REQUIRED_ROOT_BOUNDARY_KINDS:
+        fail(f"{label}.root_boundaries must cover provider_home, source_return, and runtime_owner")
+
+    tools = set(_string_list(handoff.get("tools"), f"{label}.tools"))
+    if tools != REQUIRED_MCP_TOOLS:
+        fail(f"{label}.tools must match the provider-map handoff tool contract")
+    prompts = set(_string_list(handoff.get("prompts"), f"{label}.prompts"))
+    if prompts != REQUIRED_MCP_PROMPTS:
+        fail(f"{label}.prompts must match the provider-map handoff prompt contract")
+
+
+def _object_value(value: object, label: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be a JSON object")
+    return value
+
+
+def _object_list(value: object, label: str) -> list[dict[str, object]]:
+    if not isinstance(value, list) or not value:
+        fail(f"{label} must be a non-empty list")
+    result: list[dict[str, object]] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            fail(f"{label}[{index}] must be a JSON object")
+        result.append(item)
+    return result
+
+
+def _object_map(value: object, label: str) -> dict[str, dict[str, object]]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be a JSON object")
+    result: dict[str, dict[str, object]] = {}
+    for key, item in value.items():
+        if not isinstance(key, str):
+            fail(f"{label} keys must be strings")
+        if not isinstance(item, dict):
+            fail(f"{label}.{key} must be a JSON object")
+        result[key] = item
+    return result
+
+
+def _string_list(value: object, label: str) -> list[str]:
+    if not isinstance(value, list) or not value:
+        fail(f"{label} must be a non-empty list")
+    result: list[str] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, str) or not item:
+            fail(f"{label}[{index}] must be a non-empty string")
+        result.append(item)
+    if len(result) != len(set(result)):
+        fail(f"{label} must keep unique entries")
+    return result
+
+
+def _string_int_map(value: object, label: str) -> dict[str, int]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be a JSON object")
+    result: dict[str, int] = {}
+    for key, item in value.items():
+        if not isinstance(key, str):
+            fail(f"{label} keys must be strings")
+        if not isinstance(item, int):
+            fail(f"{label}.{key} must be an integer")
+        result[key] = item
+    return result
+
+
+def _string_list_map(value: object, label: str) -> dict[str, list[str]]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be a JSON object")
+    result: dict[str, list[str]] = {}
+    for key, item in value.items():
+        if not isinstance(key, str):
+            fail(f"{label} keys must be strings")
+        result[key] = sorted(_string_list(item, f"{label}.{key}"))
+    return result
 
 
 def validate_registry_payload(

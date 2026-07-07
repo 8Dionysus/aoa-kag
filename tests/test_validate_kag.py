@@ -414,6 +414,40 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("repo_local_index", str(context.exception))
 
+    def test_local_kag_provider_map_rejects_missing_mcp_resource_template(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        handoff = broken_payload["mcp_handoff"]
+        handoff["resource_templates"] = [
+            template
+            for template in handoff["resource_templates"]
+            if template["uri_template"] != "aoa-kag://providers/{repo}/source-index"
+        ]
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            registry_projection.validate_local_kag_provider_map_payload(
+                broken_payload,
+                label="generated local KAG provider map",
+            )
+
+        self.assertIn("missing required MCP resource templates", str(context.exception))
+
+    def test_local_kag_provider_map_rejects_repo_local_index_mismatch(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        repo = broken_payload["providers"][0]["repo"]
+        broken_payload["provider_repo_local_indexes"][repo]["coverage_owner_key"] = "other"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            registry_projection.validate_local_kag_provider_map_payload(
+                broken_payload,
+                label="generated local KAG provider map",
+            )
+
+        self.assertIn("repo_local_index must match provider_repo_local_indexes", str(context.exception))
+
     def test_local_kag_provider_roots_cover_source_ready_providers(self) -> None:
         self.assertEqual(
             local_kag_subtree.EXPECTED_PROVIDER_READY_REPOS,
