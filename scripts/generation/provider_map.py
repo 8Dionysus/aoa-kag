@@ -106,6 +106,7 @@ def _repo_local_coverage_by_repo() -> dict[str, dict[str, object]]:
 def _provider_repo_local_index_packet(
     repo: str,
     coverage_by_repo: dict[str, dict[str, object]],
+    fallback_provider: dict[str, object] | None = None,
 ) -> dict[str, object]:
     owner = coverage_by_repo.get(repo)
     if owner is None:
@@ -122,21 +123,36 @@ def _provider_repo_local_index_packet(
         fail(f"{repo} repo-local KAG coverage must declare coverage counts")
     common_surface_profile = owner.get("common_surface_profile")
     if not isinstance(common_surface_profile, dict):
-        try:
+        fallback_repo_local_index = (
+            fallback_provider.get("repo_local_index")
+            if isinstance(fallback_provider, dict)
+            else None
+        )
+        fallback_common_surface_profile = (
+            fallback_repo_local_index.get("common_surface_profile")
+            if isinstance(fallback_repo_local_index, dict)
+            else None
+        )
+        if isinstance(fallback_common_surface_profile, dict):
+            common_surface_profile = fallback_common_surface_profile
+        else:
             try:
-                from scripts.generate_repo_local_kag_coverage import common_surface_profile as build_profile
-            except ImportError:  # pragma: no cover - direct script execution
-                from generate_repo_local_kag_coverage import common_surface_profile as build_profile  # type: ignore
+                try:
+                    from scripts.generate_repo_local_kag_coverage import common_surface_profile as build_profile
+                except ImportError:  # pragma: no cover - direct script execution
+                    from generate_repo_local_kag_coverage import common_surface_profile as build_profile  # type: ignore
 
-            common_surface_profile = build_profile(
-                _provider_root(repo),
-                index_status=status,
-            )
-        except Exception as exc:  # pragma: no cover - defensive generation guard
-            fail(
-                f"{repo} repo-local KAG coverage must declare common_surface_profile "
-                f"or expose a buildable provider root: {exc}"
-            )
+                common_surface_profile = build_profile(
+                    _provider_root(repo),
+                    index_status=status,
+                )
+            except Exception as exc:  # pragma: no cover - defensive generation guard
+                fail(
+                    f"{repo} repo-local KAG coverage must declare common_surface_profile "
+                    f"or expose a buildable provider root: {exc}"
+                )
+    if not isinstance(common_surface_profile, dict):
+        fail(f"{repo} repo-local KAG coverage must declare common_surface_profile")
     source_index_ref = (
         "kag/indexes/source_surface_index.json"
         if status == "passed" and "kag/indexes/source_surface_index.json" in index_files
@@ -448,6 +464,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     "repo_local_index": _provider_repo_local_index_packet(
                         repo,
                         coverage_by_repo,
+                        fallback_provider,
                     ),
                     "freshness_handles": _provider_freshness_handles(repo, fallback_provider),
                     "source_surfaces": manifest["source_surfaces"],

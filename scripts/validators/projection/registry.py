@@ -143,16 +143,21 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
         payload.get("provider_repo_local_indexes"),
         f"{label}.provider_repo_local_indexes",
     )
-    common_profile_map = _object_map(
-        payload.get("provider_common_surface_profiles"),
-        f"{label}.provider_common_surface_profiles",
+    raw_common_profile_map = payload.get("provider_common_surface_profiles")
+    common_profile_map = (
+        _object_map(
+            raw_common_profile_map,
+            f"{label}.provider_common_surface_profiles",
+        )
+        if raw_common_profile_map is not None
+        else {}
     )
     provider_repo_set = set(provider_repos)
     if set(profile_map) != provider_repo_set:
         fail(f"{label}.provider_generation_profiles must cover provider repos exactly")
     if set(index_map) != provider_repo_set:
         fail(f"{label}.provider_repo_local_indexes must cover provider repos exactly")
-    if set(common_profile_map) != provider_repo_set:
+    if common_profile_map and set(common_profile_map) != provider_repo_set:
         fail(f"{label}.provider_common_surface_profiles must cover provider repos exactly")
 
     for provider in providers:
@@ -165,7 +170,7 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
             provider.get("repo_local_index"),
             f"{label}.providers[{repo}].repo_local_index",
         )
-        if repo_local_index.get("common_surface_profile") != common_profile_map[repo]:
+        if common_profile_map and repo_local_index.get("common_surface_profile") != common_profile_map[repo]:
             fail(
                 f"{label}.providers[{repo}].repo_local_index.common_surface_profile "
                 "must match provider_common_surface_profiles"

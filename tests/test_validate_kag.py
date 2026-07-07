@@ -416,6 +416,36 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("repo_local_index", str(context.exception))
 
+    def test_local_kag_provider_map_accepts_v1_without_common_profiles(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
+        assert isinstance(payload, dict)
+        compatible_payload = copy.deepcopy(payload)
+        compatible_payload.pop("provider_common_surface_profiles", None)
+        for provider in compatible_payload["providers"]:
+            repo = provider["repo"]
+            provider["repo_local_index"].pop("common_surface_profile", None)
+            compatible_payload["provider_repo_local_indexes"][repo].pop(
+                "common_surface_profile",
+                None,
+            )
+
+        registry_projection.validate_local_kag_provider_map_payload(
+            compatible_payload,
+            label="compatible local KAG provider map",
+        )
+
+    def test_repo_local_kag_coverage_accepts_v1_without_common_profiles(self) -> None:
+        payload = load_json(repo_local_kag_index.REPO_LOCAL_KAG_COVERAGE_PATH)
+        assert isinstance(payload, dict)
+        compatible_payload = copy.deepcopy(payload)
+        for owner in compatible_payload["owners"]:
+            owner.pop("common_surface_profile", None)
+
+        repo_local_kag_index.validate_repo_local_kag_coverage_payload(
+            compatible_payload,
+            label="compatible repo-local KAG coverage",
+        )
+
     def test_local_kag_provider_map_rejects_missing_mcp_resource_template(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(payload, dict)

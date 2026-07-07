@@ -152,7 +152,7 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
         repo = owner.get("repo")
         profile = owner.get("common_surface_profile")
         if not isinstance(profile, dict):
-            fail(f"{label} owner {repo} must keep common_surface_profile")
+            continue
         counts = profile.get("counts")
         quality = profile.get("quality")
         if not isinstance(counts, dict) or not isinstance(quality, dict):
