@@ -86,6 +86,8 @@ document, mechanics, command, schema, generated, and receipt surfaces.
 OS Abyss provider roots, with committed rows carrying sealed roots in runner
 environments without a mounted source root.
 
+Both repo-local builders support `--check` for parity without writing files.
+
 `scripts/run_part_local_checks.py` discovers active
 `mechanics/<package>/parts/<part>/scripts/build_*.py` and `validate_*.py`
 surfaces, runs builders with `--check`, and runs validators directly from the
