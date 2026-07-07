@@ -40,7 +40,7 @@ implementation lives in `scripts/validators/`.
 | `scripts/validators/expected/docs_contracts.py` | markdown/date/root/snippet expectations |
 | `scripts/validators/common.py` | shared validator errors, file readers, markdown helpers, schema helpers |
 | `scripts/validators/source_refs.py` | source reference resolution |
-| `scripts/validators/schema_surfaces.py` | JSON schema checks |
+| `scripts/validators/schema_surfaces.py` | JSON schema checks, including registry, provider map, repo-local index, and coverage schemas |
 | `scripts/validators/local_contracts.py` | local route, mechanics skeleton, questbook, antifragility, and ToS tiny-entry checks |
 | `scripts/validators/local_kag_subtree.py` | repo-local KAG subtree schema, example, readiness, and record-link checks |
 | `scripts/validators/repo_local_kag_index.py` | repo-local source surface index schema, generated index parity, and OS-wide coverage checks |

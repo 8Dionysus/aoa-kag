@@ -2,9 +2,10 @@
 
 ## Purpose
 `schemas/` holds repo-wide contract surfaces. In the current topology, the
-root schema district owns the KAG registry ABI contract. Mechanic-owned
-schemas live under `mechanics/<package>/parts/<part>/schemas/` with their
-owning part.
+root schema district owns public KAG read-model contracts such as the registry,
+provider map, provider registry, local subtree, and repo-local source index.
+Mechanic-owned schemas live under `mechanics/<package>/parts/<part>/schemas/`
+with their owning part.
 
 ## Contract posture
 Treat every schema edit as a contract change.
