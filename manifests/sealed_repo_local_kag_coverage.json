@@ -11,6 +11,44 @@
         "tests": 1,
         "validators": 0
       },
+      "common_surface_profile": {
+        "counts": {
+          "artifact_kind": {
+            "document": 96,
+            "generated_readmodel": 0,
+            "schema": 7,
+            "script": 1,
+            "test": 1,
+            "validator": 0
+          },
+          "command_role": {
+            "script": 1,
+            "test": 1,
+            "validator": 0
+          },
+          "document_role": {},
+          "mechanics_role": {
+            "mechanic_package": 0
+          },
+          "primary_kind": {
+            "command": 2,
+            "document": 96
+          },
+          "surface_state": {
+            "generated_readmodel": 0
+          }
+        },
+        "quality": {
+          "has_generated_readmodels": false,
+          "has_kag_home": true,
+          "has_owner_commands": true,
+          "has_record_classes": true,
+          "has_source_index": true,
+          "has_validation_route": false,
+          "unknown_count": 0
+        },
+        "source": "cached_provider_row"
+      },
       "index_files": [
         "kag/indexes/session_memory_source_inventory.json",
         "kag/indexes/source_surface_index.json"

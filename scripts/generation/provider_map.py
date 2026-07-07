@@ -120,6 +120,23 @@ def _provider_repo_local_index_packet(
     coverage = owner.get("coverage")
     if not isinstance(coverage, dict):
         fail(f"{repo} repo-local KAG coverage must declare coverage counts")
+    common_surface_profile = owner.get("common_surface_profile")
+    if not isinstance(common_surface_profile, dict):
+        try:
+            try:
+                from scripts.generate_repo_local_kag_coverage import common_surface_profile as build_profile
+            except ImportError:  # pragma: no cover - direct script execution
+                from generate_repo_local_kag_coverage import common_surface_profile as build_profile  # type: ignore
+
+            common_surface_profile = build_profile(
+                _provider_root(repo),
+                index_status=status,
+            )
+        except Exception as exc:  # pragma: no cover - defensive generation guard
+            fail(
+                f"{repo} repo-local KAG coverage must declare common_surface_profile "
+                f"or expose a buildable provider root: {exc}"
+            )
     source_index_ref = (
         "kag/indexes/source_surface_index.json"
         if status == "passed" and "kag/indexes/source_surface_index.json" in index_files
@@ -130,6 +147,7 @@ def _provider_repo_local_index_packet(
         "source_index_ref": source_index_ref,
         "index_files": index_files,
         "coverage": coverage,
+        "common_surface_profile": common_surface_profile,
         "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
         "coverage_owner_key": repo,
     }
@@ -473,6 +491,10 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         provider["repo"]: provider["repo_local_index"]
         for provider in providers
     }
+    common_surface_profiles_by_repo = {
+        provider["repo"]: provider["repo_local_index"]["common_surface_profile"]
+        for provider in providers
+    }
 
     return {
         "artifact_type": "local_kag_provider_map",
@@ -483,6 +505,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         "providers": providers,
         "provider_generation_profiles": generation_profiles_by_repo,
         "provider_repo_local_indexes": repo_local_indexes_by_repo,
+        "provider_common_surface_profiles": common_surface_profiles_by_repo,
         "remaining_routes": remaining_routes,
         "os_surfaces": os_surface_packets,
         "mcp_handoff": {
@@ -525,6 +548,13 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     "source": (
                         "aoa-kag/generated/local_kag_provider_map.min.json"
                         "#/provider_repo_local_indexes/{repo}"
+                    ),
+                },
+                {
+                    "uri_template": "aoa-kag://providers/{repo}/common-surface-profile",
+                    "source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/provider_common_surface_profiles/{repo}"
                     ),
                 },
                 {

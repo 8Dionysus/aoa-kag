@@ -40,6 +40,12 @@ EXPECTED_MCP_RESOURCE_TEMPLATES = {
             "#/provider_repo_local_indexes/{repo}"
         ),
     },
+    "aoa-kag://providers/{repo}/common-surface-profile": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_common_surface_profiles/{repo}"
+        ),
+    },
     "aoa-kag://registry/provider-map": {
         "source": "aoa-kag/generated/local_kag_provider_map.min.json",
     },
@@ -137,11 +143,17 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
         payload.get("provider_repo_local_indexes"),
         f"{label}.provider_repo_local_indexes",
     )
+    common_profile_map = _object_map(
+        payload.get("provider_common_surface_profiles"),
+        f"{label}.provider_common_surface_profiles",
+    )
     provider_repo_set = set(provider_repos)
     if set(profile_map) != provider_repo_set:
         fail(f"{label}.provider_generation_profiles must cover provider repos exactly")
     if set(index_map) != provider_repo_set:
         fail(f"{label}.provider_repo_local_indexes must cover provider repos exactly")
+    if set(common_profile_map) != provider_repo_set:
+        fail(f"{label}.provider_common_surface_profiles must cover provider repos exactly")
 
     for provider in providers:
         repo = str(provider["repo"])
@@ -149,6 +161,15 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
             fail(f"{label}.providers[{repo}].generation_profile must match provider_generation_profiles")
         if provider.get("repo_local_index") != index_map[repo]:
             fail(f"{label}.providers[{repo}].repo_local_index must match provider_repo_local_indexes")
+        repo_local_index = _object_value(
+            provider.get("repo_local_index"),
+            f"{label}.providers[{repo}].repo_local_index",
+        )
+        if repo_local_index.get("common_surface_profile") != common_profile_map[repo]:
+            fail(
+                f"{label}.providers[{repo}].repo_local_index.common_surface_profile "
+                "must match provider_common_surface_profiles"
+            )
 
     os_surfaces = _object_list(payload.get("os_surfaces"), f"{label}.os_surfaces")
     readiness = _object_value(payload.get("generation_readiness"), f"{label}.generation_readiness")
