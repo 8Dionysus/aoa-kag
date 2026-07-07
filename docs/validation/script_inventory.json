@@ -175,9 +175,9 @@
       "source_truth": ["manifests/", "scripts/generation/", "scripts/kag_generation.py", "source-owned exports"],
       "reads": ["KAG manifests, configs, schemas, and source-owned export refs"],
       "writes": ["generated/*.json", "generated/*.min.json"],
-      "side_effects": "writes deterministic generated KAG outputs",
+      "side_effects": "writes deterministic generated KAG outputs unless run with --check",
       "validation_lane": "generated",
-      "ci_inclusion": "generated lane and release lane",
+      "ci_inclusion": "generated lane and release lane write outputs, then run --check for read-only parity",
       "test_target": "tests/test_kag_generation.py",
       "disposition": "keep"
     },

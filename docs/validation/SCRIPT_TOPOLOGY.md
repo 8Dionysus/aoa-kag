@@ -72,7 +72,8 @@ release checks, and test discovery.
 `scripts/validators/local_kag_subtree.py` checks the repo-local KAG subtree
 contract, example packet, and OS Abyss readiness matrix.
 
-`scripts/generate_kag.py` is the KAG generated-output entrypoint.
+`scripts/generate_kag.py` is the KAG generated-output entrypoint; its
+`--check` mode compares generated/read-model parity without writing files.
 `scripts/kag_generation.py` is the compatibility facade for existing imports.
 The implementation modules live in `scripts/generation/`.
 
