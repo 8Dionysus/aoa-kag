@@ -18,6 +18,7 @@ from scripts.generate_repo_local_kag_index import build_index, payload_digest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
+LOCAL_PROVIDER_MAP_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-provider-map.schema.json"
 EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
 
 
@@ -193,6 +194,28 @@ class RepoLocalKagIndexTests(unittest.TestCase):
 
     def test_example_matches_repo_local_kag_index_schema(self) -> None:
         self.validate_with_schema(load_json(EXAMPLE_PATH), INDEX_SCHEMA_PATH)
+
+    def test_v1_schemas_accept_payloads_without_common_surface_profiles(self) -> None:
+        coverage = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(coverage, dict)
+        owners = coverage["owners"]
+        assert isinstance(owners, list)
+        for owner in owners:
+            assert isinstance(owner, dict)
+            owner.pop("common_surface_profile", None)
+        self.validate_with_schema(coverage, COVERAGE_SCHEMA_PATH)
+
+        provider_map = load_json(REPO_ROOT / "generated" / "local_kag_provider_map.json")
+        assert isinstance(provider_map, dict)
+        provider_map.pop("provider_common_surface_profiles", None)
+        providers = provider_map["providers"]
+        assert isinstance(providers, list)
+        for provider in providers:
+            assert isinstance(provider, dict)
+            repo_local_index = provider["repo_local_index"]
+            assert isinstance(repo_local_index, dict)
+            repo_local_index.pop("common_surface_profile", None)
+        self.validate_with_schema(provider_map, LOCAL_PROVIDER_MAP_SCHEMA_PATH)
 
     def test_generator_indexes_documents_mechanics_commands_and_schema_posture(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
