@@ -272,11 +272,13 @@ class ValidateKagTestCase(unittest.TestCase):
         course = surfaces["connectors/aoa-course-connector"]
 
         self.assertEqual("connector_repo", course["surface_class"])
-        self.assertEqual("source_preparation", course["provider_status"])
+        self.assertEqual("provider_ready", course["provider_status"])
         self.assertEqual(
             "/srv/AbyssOS/connectors/aoa-course-connector",
             course["root"],
         )
+        self.assertIn("kag/", course["source_home_surfaces"])
+        self.assertIn("kag/manifest.json", course["candidate_source_surfaces"])
         self.assertIn("BOUNDARIES.md", course["candidate_source_surfaces"])
         self.assertIn(
             "connector/SOURCE_POLICY.md",
@@ -292,7 +294,7 @@ class ValidateKagTestCase(unittest.TestCase):
         assert isinstance(payload, dict)
         broken_payload = copy.deepcopy(payload)
         for entry in broken_payload["os_surfaces"]:
-            if entry["surface_id"] == "connectors/aoa-course-connector":
+            if entry["surface_id"] == ".agents":
                 entry["candidate_source_surfaces"].append("kag/manifest.json")
                 break
 

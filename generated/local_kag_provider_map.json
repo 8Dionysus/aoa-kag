@@ -4,7 +4,7 @@
   "owner_repo": "aoa-kag",
   "source_ref": "manifests/local_kag_readiness.json",
   "provider_status_counts": {
-    "provider_ready": 21
+    "provider_ready": 22
   },
   "providers": [
     {
@@ -3822,6 +3822,196 @@
         "tool",
         "root"
       ]
+    },
+    {
+      "repo": "aoa-course-connector",
+      "provider_status": "provider_ready",
+      "adoption_order": 21,
+      "local_kag_path": "kag/",
+      "manifest_ref": "kag/manifest.json",
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
+      "record_counts": {
+        "nodes": 2,
+        "edges": 1,
+        "indexes": 1,
+        "projections": 1,
+        "receipts": 1
+      },
+      "repo_local_index": {
+        "status": "owner-specific",
+        "source_index_ref": "",
+        "index_files": [
+          "kag/indexes/source_inventory.json"
+        ],
+        "coverage": {
+          "commands": 23,
+          "documents": 48,
+          "generated": 0,
+          "mechanics": 0,
+          "schemas": 25,
+          "scripts": 2,
+          "tests": 21,
+          "validators": 1
+        },
+        "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
+        "coverage_owner_key": "aoa-course-connector"
+      },
+      "freshness_handles": [
+        {
+          "receipt_ref": "kag/receipts/validation_receipt.json",
+          "checked_ref": "kag/manifest.json",
+          "state": "current",
+          "validator": "aoa-kag:scripts/validate_kag.py",
+          "owner_return_route": {
+            "repo": "aoa-course-connector",
+            "surface": "BOUNDARIES.md",
+            "route_kind": "authored_meaning"
+          }
+        }
+      ],
+      "source_surfaces": [
+        {
+          "repo": "aoa-course-connector",
+          "path": "connector/README.md",
+          "source_class": "connector_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-course-connector",
+          "path": "BOUNDARIES.md",
+          "source_class": "connector_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-course-connector",
+          "path": "connector/SOURCE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-course-connector",
+          "path": "connector/STORAGE_POLICY.md",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-course-connector",
+          "path": "docs/RUNTIME_CONTRACT.md",
+          "source_class": "connector_source",
+          "role": "consumer_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "aoa-course-connector",
+          "path": "scripts/validate_connector.py",
+          "source_class": "connector_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        }
+      ],
+      "validation_routes": [
+        {
+          "route": "scripts/validate_connector.py",
+          "lane": "owner-local"
+        },
+        {
+          "route": "aoa-kag:scripts/validate_kag.py",
+          "lane": "local-kag"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag registry",
+        "aoa-kag-mcp resource",
+        "abyss-stack connector runtime"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-course-connector",
+          "surface": "BOUNDARIES.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "generation_profile": {
+        "source_home_surfaces": [
+          "kag/",
+          "connector/"
+        ],
+        "candidate_source_surfaces": [
+          "connector/README.md",
+          "connector/SOURCE_POLICY.md",
+          "connector/STORAGE_POLICY.md",
+          "BOUNDARIES.md",
+          "docs/RUNTIME_CONTRACT.md",
+          "docs/GRAPH_MODEL.md",
+          "docs/QUERY_MODEL.md"
+        ],
+        "source_owned_exports": [],
+        "graph_entities": [
+          "connector",
+          "course platform",
+          "course",
+          "lesson",
+          "ingestion receipt"
+        ],
+        "event_surfaces": [
+          "evals/reports/"
+        ],
+        "document_surfaces": [
+          "README.md",
+          "BOUNDARIES.md",
+          "connector/README.md"
+        ],
+        "validators": [
+          "python scripts/validate_connector.py",
+          "PYTHONPATH=src python -m pytest -q"
+        ],
+        "release_gate": "repo-local connector validation lane",
+        "runtime_consumers": [
+          "aoa-kag registry",
+          "aoa-kag-mcp resource",
+          "abyss-stack connector runtime"
+        ],
+        "record_authoring_counts": {
+          "authored_control": 3,
+          "generated_from_source": 3
+        },
+        "record_class_counts": {
+          "edge": 1,
+          "index": 1,
+          "node": 2,
+          "projection": 1,
+          "receipt": 1
+        },
+        "source_authority_counts": {
+          "authored_source": 6
+        },
+        "builder_routes": [
+          {
+            "route": "connector validation lane",
+            "surface": "scripts/validate_connector.py",
+            "record_count": 5
+          },
+          {
+            "route": "local KAG provider authoring",
+            "surface": "kag/manifest.json",
+            "record_count": 1
+          }
+        ]
+      },
+      "mcp_access_shape": [
+        "resource",
+        "root"
+      ]
     }
   ],
   "provider_generation_profiles": {
@@ -5146,6 +5336,73 @@
           "record_count": 1
         }
       ]
+    },
+    "aoa-course-connector": {
+      "source_home_surfaces": [
+        "kag/",
+        "connector/"
+      ],
+      "candidate_source_surfaces": [
+        "connector/README.md",
+        "connector/SOURCE_POLICY.md",
+        "connector/STORAGE_POLICY.md",
+        "BOUNDARIES.md",
+        "docs/RUNTIME_CONTRACT.md",
+        "docs/GRAPH_MODEL.md",
+        "docs/QUERY_MODEL.md"
+      ],
+      "source_owned_exports": [],
+      "graph_entities": [
+        "connector",
+        "course platform",
+        "course",
+        "lesson",
+        "ingestion receipt"
+      ],
+      "event_surfaces": [
+        "evals/reports/"
+      ],
+      "document_surfaces": [
+        "README.md",
+        "BOUNDARIES.md",
+        "connector/README.md"
+      ],
+      "validators": [
+        "python scripts/validate_connector.py",
+        "PYTHONPATH=src python -m pytest -q"
+      ],
+      "release_gate": "repo-local connector validation lane",
+      "runtime_consumers": [
+        "aoa-kag registry",
+        "aoa-kag-mcp resource",
+        "abyss-stack connector runtime"
+      ],
+      "record_authoring_counts": {
+        "authored_control": 3,
+        "generated_from_source": 3
+      },
+      "record_class_counts": {
+        "edge": 1,
+        "index": 1,
+        "node": 2,
+        "projection": 1,
+        "receipt": 1
+      },
+      "source_authority_counts": {
+        "authored_source": 6
+      },
+      "builder_routes": [
+        {
+          "route": "connector validation lane",
+          "surface": "scripts/validate_connector.py",
+          "record_count": 5
+        },
+        {
+          "route": "local KAG provider authoring",
+          "surface": "kag/manifest.json",
+          "record_count": 1
+        }
+      ]
     }
   },
   "provider_repo_local_indexes": {
@@ -5568,6 +5825,25 @@
       },
       "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
       "coverage_owner_key": "aoa-telegram-connector"
+    },
+    "aoa-course-connector": {
+      "status": "owner-specific",
+      "source_index_ref": "",
+      "index_files": [
+        "kag/indexes/source_inventory.json"
+      ],
+      "coverage": {
+        "commands": 23,
+        "documents": 48,
+        "generated": 0,
+        "mechanics": 0,
+        "schemas": 25,
+        "scripts": 2,
+        "tests": 21,
+        "validators": 1
+      },
+      "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
+      "coverage_owner_key": "aoa-course-connector"
     }
   },
   "remaining_routes": [],
@@ -5867,7 +6143,7 @@
       "surface_id": "connectors/aoa-course-connector",
       "surface_class": "connector_repo",
       "root": "/srv/AbyssOS/connectors/aoa-course-connector",
-      "provider_status": "source_preparation",
+      "provider_status": "provider_ready",
       "owner_return_route": {
         "repo": "aoa-course-connector",
         "surface": "BOUNDARIES.md",
@@ -5878,6 +6154,7 @@
         "root"
       ],
       "candidate_source_surfaces": [
+        "kag/manifest.json",
         "connector/README.md",
         "connector/SOURCE_POLICY.md",
         "connector/STORAGE_POLICY.md",
@@ -6002,11 +6279,11 @@
   },
   "generation_readiness": {
     "provider_generation_record_counts": {
-      "authored_control": 54,
-      "generated_from_source": 74
+      "authored_control": 57,
+      "generated_from_source": 77
     },
     "provider_source_authority_counts": {
-      "authored_source": 82,
+      "authored_source": 88,
       "derived_readmodel": 19,
       "source_owned_export": 2
     },
@@ -6018,6 +6295,7 @@
       "Tree-of-Sophia",
       "aoa-4pda-connector",
       "aoa-agents",
+      "aoa-course-connector",
       "aoa-discord-connector",
       "aoa-evals",
       "aoa-kag",
@@ -6042,14 +6320,15 @@
       "aoa-techniques"
     ],
     "os_surface_status_counts": {
-      "provider_ready": 6,
+      "provider_ready": 7,
       "runtime_consumer": 5,
-      "source_preparation": 4
+      "source_preparation": 3
     },
     "os_surface_ids_by_status": {
       "provider_ready": [
         "bundles/aoa-session-memory",
         "connectors/aoa-4pda-connector",
+        "connectors/aoa-course-connector",
         "connectors/aoa-discord-connector",
         "connectors/aoa-stackoverflow-connector",
         "connectors/aoa-telegram-connector",
@@ -6065,8 +6344,7 @@
       "source_preparation": [
         ".agents",
         "bundles",
-        "connectors",
-        "connectors/aoa-course-connector"
+        "connectors"
       ]
     }
   }
