@@ -123,19 +123,8 @@ def _provider_repo_local_index_packet(
         fail(f"{repo} repo-local KAG coverage must declare coverage counts")
     common_surface_profile = owner.get("common_surface_profile")
     if not isinstance(common_surface_profile, dict):
-        fallback_repo_local_index = (
-            fallback_provider.get("repo_local_index")
-            if isinstance(fallback_provider, dict)
-            else None
-        )
-        fallback_common_surface_profile = (
-            fallback_repo_local_index.get("common_surface_profile")
-            if isinstance(fallback_repo_local_index, dict)
-            else None
-        )
-        if isinstance(fallback_common_surface_profile, dict):
-            common_surface_profile = fallback_common_surface_profile
-        else:
+        provider_root = _provider_root(repo)
+        if provider_root.exists():
             try:
                 try:
                     from scripts.generate_repo_local_kag_coverage import common_surface_profile as build_profile
@@ -143,7 +132,7 @@ def _provider_repo_local_index_packet(
                     from generate_repo_local_kag_coverage import common_surface_profile as build_profile  # type: ignore
 
                 common_surface_profile = build_profile(
-                    _provider_root(repo),
+                    provider_root,
                     index_status=status,
                 )
             except Exception as exc:  # pragma: no cover - defensive generation guard
@@ -151,6 +140,19 @@ def _provider_repo_local_index_packet(
                     f"{repo} repo-local KAG coverage must declare common_surface_profile "
                     f"or expose a buildable provider root: {exc}"
                 )
+        else:
+            fallback_repo_local_index = (
+                fallback_provider.get("repo_local_index")
+                if isinstance(fallback_provider, dict)
+                else None
+            )
+            fallback_common_surface_profile = (
+                fallback_repo_local_index.get("common_surface_profile")
+                if isinstance(fallback_repo_local_index, dict)
+                else None
+            )
+            if isinstance(fallback_common_surface_profile, dict):
+                common_surface_profile = fallback_common_surface_profile
     if not isinstance(common_surface_profile, dict):
         fail(f"{repo} repo-local KAG coverage must declare common_surface_profile")
     source_index_ref = (

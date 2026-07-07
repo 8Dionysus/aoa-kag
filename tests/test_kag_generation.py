@@ -219,6 +219,42 @@ class KagGenerationTestCase(unittest.TestCase):
                 expected_payload,
             )
 
+    def test_local_kag_provider_map_rebuilds_common_profile_from_live_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            coverage_by_repo = {
+                "aoa-demo": {
+                    "index_status": "missing",
+                    "index_files": [],
+                    "coverage": {"documents": 1},
+                }
+            }
+            fallback_provider = {
+                "repo_local_index": {
+                    "common_surface_profile": {
+                        "source": "cached_provider_row",
+                        "counts": {"artifact_kind": {"document": 99}},
+                        "quality": {"unknown_count": 99},
+                    }
+                }
+            }
+            roots = dict(kag_generation.KNOWN_REPO_ROOTS)
+            roots["aoa-demo"] = root
+
+            with self.patch_generation_attribute("KNOWN_REPO_ROOTS", roots):
+                packet = provider_map._provider_repo_local_index_packet(
+                    "aoa-demo",
+                    coverage_by_repo,
+                    fallback_provider,
+                )
+
+        profile = packet["common_surface_profile"]
+        assert isinstance(profile, dict)
+        self.assertEqual("source_tree_scan", profile["source"])
+        self.assertEqual(1, profile["counts"]["artifact_kind"]["document"])
+        self.assertEqual(0, profile["quality"]["unknown_count"])
+
     def test_local_kag_provider_map_rejects_present_provider_missing_kag_home(self) -> None:
         expected_payload = load_json(kag_generation.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(expected_payload, dict)

@@ -238,6 +238,14 @@ def _validate_mcp_handoff(
     extra_templates = sorted(set(by_uri) - set(EXPECTED_MCP_RESOURCE_TEMPLATES))
     if extra_templates:
         fail(f"{label} carries unknown MCP resource templates: {', '.join(extra_templates)}")
+    common_surface_profile_uri = "aoa-kag://providers/{repo}/common-surface-profile"
+    if (
+        not requires_common_surface_profile_resource
+        and common_surface_profile_uri in by_uri
+    ):
+        fail(
+            f"{label} common-surface-profile template requires provider_common_surface_profiles"
+        )
 
     for uri_template, expected_fields in EXPECTED_MCP_RESOURCE_TEMPLATES.items():
         if uri_template not in by_uri:
