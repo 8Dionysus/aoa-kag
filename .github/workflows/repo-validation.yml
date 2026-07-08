@@ -138,42 +138,42 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-4pda-connector
-          ref: c198d2a4e398b25c310de7a7c0dbb0b23dbc5621
+          ref: 75561ac4638a436701db5450e7f2a14955b7d24e
           path: .deps/aoa-4pda-connector
 
       - name: Checkout aoa-course-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-course-connector
-          ref: 7c25cc1a3cb3856022e4dcd2f4b161fab80bb2bd
+          ref: db322cd1d36d0eefa7c4796e84f918d256020ae0
           path: .deps/aoa-course-connector
 
       - name: Checkout aoa-discord-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-discord-connector
-          ref: 8ed88c4caf725ab6ba7a53a4c52957be748d15f3
+          ref: 92110f81418b3e48fd3a523c8b5f1169812c8569
           path: .deps/aoa-discord-connector
 
       - name: Checkout aoa-stackoverflow-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stackoverflow-connector
-          ref: 7e21307dab78f72f6ea8ec361441d75cd3745172
+          ref: af6d8847aaad70bd8a11cc56da9d1061c152b8de
           path: .deps/aoa-stackoverflow-connector
 
       - name: Checkout aoa-telegram-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-telegram-connector
-          ref: b07ac8cf6995d5ecf82f0afad789f39c7c40dada
+          ref: 8217c2b7fa9955f8095e540f57670bc2b4c2532e
           path: .deps/aoa-telegram-connector
 
       - name: Checkout aoa-xda-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-xda-connector
-          ref: c6fee19b2d8d70dd22a4fff67c8467fec688c03e
+          ref: 98b9c32e98110ca2032a92558fb4369714d7ff2c
           path: .deps/aoa-xda-connector
 
       - name: Setup Python
