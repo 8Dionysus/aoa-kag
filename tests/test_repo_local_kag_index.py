@@ -406,6 +406,32 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(0, profile["quality"]["unknown_count"])
         self.assertFalse(profile["quality"]["has_generated_readmodels"])
 
+    def test_common_surface_profile_scans_tree_for_malformed_source_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            index_path = root / "kag" / "indexes" / "source_surface_index.json"
+            index_path.parent.mkdir(parents=True)
+            index_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-repo-local-kag-index-v1",
+                        "repo": "malformed",
+                        "records": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            profile = coverage_generation.common_surface_profile(
+                root,
+                index_status="migration-needed",
+            )
+
+        self.assertEqual("source_tree_scan", profile["source"])
+        self.assertEqual(1, profile["counts"]["artifact_kind"]["document"])
+        self.assertEqual(0, profile["quality"]["unknown_count"])
+
     def test_generator_qualifies_external_kag_routes_and_preserves_generated_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -716,7 +742,8 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             connector = root / "connectors" / "aoa-demo-connector"
             bundle = root / "bundles" / "aoa-demo-bundle"
             bundle_provider = root / "bundles" / "aoa-demo-bundle-provider"
-            for owner in (organ, connector, bundle, bundle_provider):
+            current_bundle_provider = root / "bundles" / "aoa-demo-current-bundle-provider"
+            for owner in (organ, connector, bundle, bundle_provider, current_bundle_provider):
                 (owner / "kag" / "indexes").mkdir(parents=True)
                 (owner / "README.md").write_text("# Owner\n", encoding="utf-8")
             (organ / "kag" / "indexes" / "source_surface_index.json").write_text(
@@ -745,6 +772,21 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 repo="aoa-demo-bundle-provider",
                 index_name="session_memory_source_inventory.json",
             )
+            write_owner_specific_provider_records(
+                current_bundle_provider,
+                repo="aoa-demo-current-bundle-provider",
+                index_name="session_memory_source_inventory.json",
+            )
+            (current_bundle_provider / "kag" / "indexes" / "source_surface_index.json").write_text(
+                json.dumps(
+                    build_index(
+                        current_bundle_provider,
+                        output=Path("kag/indexes/source_surface_index.json"),
+                    ),
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
 
             payload = build_coverage(root)
 
@@ -754,10 +796,15 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual("owner-specific", statuses["aoa-demo-connector"])
         self.assertEqual("missing", statuses["aoa-demo-bundle"])
         self.assertEqual("owner-specific", statuses["aoa-demo-bundle-provider"])
+        self.assertEqual("owner-specific", statuses["aoa-demo-current-bundle-provider"])
         owners = {owner["repo"]: owner for owner in payload["owners"]}
         self.assertEqual(
             "source_surface_index",
             owners["aoa-demo"]["common_surface_profile"]["source"],
+        )
+        self.assertEqual(
+            "source_surface_index",
+            owners["aoa-demo-current-bundle-provider"]["common_surface_profile"]["source"],
         )
         self.assertEqual(
             "source_tree_scan",

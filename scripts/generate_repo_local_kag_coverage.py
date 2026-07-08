@@ -224,7 +224,8 @@ def committed_owner_rows(path: Path = SEALED_PROVIDER_COVERAGE_PATH) -> dict[str
 
 def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> bool:
     repo = repo_name(owner_root)
-    if payload.get("repo", {}).get("name") != repo:
+    repo_payload = payload.get("repo")
+    if not isinstance(repo_payload, dict) or repo_payload.get("name") != repo:
         return False
     records = payload.get("records")
     summary = payload.get("coverage_summary")
@@ -304,7 +305,7 @@ def _source_index_payload(owner_root: Path) -> dict[str, Any] | None:
 
 def _profile_payload(owner_root: Path, *, index_status: str) -> tuple[str, dict[str, Any]]:
     payload = _source_index_payload(owner_root)
-    if index_status == "passed" and payload is not None:
+    if payload is not None and (index_status == "passed" or source_index_matches_owner(owner_root, payload)):
         return "source_surface_index", payload
     return "source_tree_scan", build_index(owner_root, output=SOURCE_SURFACE_INDEX_REL)
 
@@ -554,6 +555,12 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
                 and not errors
                 and source_index_matches_owner(owner_root, payload)
             ):
+                if owner_type_for(owner_name, owner_root) == "bundle_provider" and has_owner_specific_index(
+                    owner_name,
+                    owner_root,
+                    relative_files,
+                ):
+                    return "owner-specific", relative_files
                 return "passed", relative_files
         except json.JSONDecodeError:
             if has_owner_specific_index(owner_name, owner_root, relative_files):
