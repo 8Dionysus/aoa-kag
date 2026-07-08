@@ -145,7 +145,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-course-connector
-          ref: 9ee50cdba8998fadcc37253923780cb072770ea6
+          ref: b2475cb4b95f2cdfa0f49942dec6be8b0210807c
           path: .deps/aoa-course-connector
 
       - name: Checkout aoa-discord-connector
