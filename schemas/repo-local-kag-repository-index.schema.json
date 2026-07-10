@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-repository-index.schema.json",
+  "title": "AoA repo-local KAG repository index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "index_identity",
+    "source_index",
+    "summary",
+    "entries",
+    "registry_output"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-repository-index-v1"
+    },
+    "repo": {
+      "$ref": "#/$defs/repo"
+    },
+    "index_identity": {
+      "$ref": "#/$defs/indexIdentity"
+    },
+    "source_index": {
+      "$ref": "#/$defs/sourceIndex"
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "entries": {
+      "type": "array"
+    },
+    "registry_output": {
+      "$ref": "#/$defs/registryOutput"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "index_identity": {
+            "properties": {
+              "index_kind": {
+                "const": "entity"
+              }
+            },
+            "required": ["index_kind"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/$defs/entityEntry"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "index_identity": {
+            "properties": {
+              "index_kind": {
+                "const": "artifact"
+              }
+            },
+            "required": ["index_kind"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/$defs/artifactEntry"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "index_identity": {
+            "properties": {
+              "index_kind": {
+                "const": "event"
+              }
+            },
+            "required": ["index_kind"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/$defs/eventEntry"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "owner_type", "root", "git_ref"],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "owner_type": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "root": {
+          "const": "."
+        },
+        "git_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "indexIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "index_kind",
+        "artifact_kind",
+        "content_digest",
+        "schema_ref"
+      ],
+      "properties": {
+        "local_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "index_kind": {
+          "type": "string",
+          "enum": ["entity", "artifact", "event"]
+        },
+        "artifact_kind": {
+          "type": "string",
+          "enum": [
+            "repository_entity_index",
+            "repository_artifact_index",
+            "repository_event_index"
+          ]
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/repo-local-kag-repository-index.schema.json"
+        }
+      }
+    },
+    "sourceIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "local_id", "content_digest"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "local_id": {
+          "const": "index:repo-local:source-surfaces"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry_count", "kind_counts"],
+      "properties": {
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kind_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "entityEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "entity_kind",
+        "label",
+        "source_record_id",
+        "coordinates"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "entity_kind": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "label": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source_record_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "coordinates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_kind",
+            "document_role",
+            "mechanics_role",
+            "command_role",
+            "code_role",
+            "surface_state"
+          ],
+          "properties": {
+            "artifact_kind": {"$ref": "#/$defs/nonEmptyString"},
+            "document_role": {"$ref": "#/$defs/nonEmptyString"},
+            "mechanics_role": {"$ref": "#/$defs/nonEmptyString"},
+            "command_role": {"$ref": "#/$defs/nonEmptyString"},
+            "code_role": {"$ref": "#/$defs/nonEmptyString"},
+            "surface_state": {"$ref": "#/$defs/nonEmptyString"}
+          }
+        }
+      }
+    },
+    "artifactEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "artifact_kind",
+        "surface_state",
+        "source_record_id",
+        "path",
+        "content_hash"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "artifact_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "surface_state": {"$ref": "#/$defs/nonEmptyString"},
+        "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "path": {"$ref": "#/$defs/nonEmptyString"},
+        "content_hash": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "eventEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "event_kind",
+        "event_role",
+        "observation_state",
+        "source_record_id",
+        "path",
+        "heading_ref"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "event_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "event_role": {
+          "type": "string",
+          "enum": ["declaration", "producer", "receipt"]
+        },
+        "observation_state": {
+          "type": "string",
+          "enum": ["declared", "observed"]
+        },
+        "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "path": {"$ref": "#/$defs/nonEmptyString"},
+        "heading_ref": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "object"}
+          ]
+        }
+      }
+    },
+    "registryOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer", "resource_shape", "stable_fields"],
+      "properties": {
+        "consumer": {
+          "const": "aoa-kag-mcp"
+        },
+        "resource_shape": {
+          "type": "string",
+          "enum": [
+            "repo-local-entity-index",
+            "repo-local-artifact-index",
+            "repo-local-event-index"
+          ]
+        },
+        "stable_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    }
+  }
+}

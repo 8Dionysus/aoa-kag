@@ -28,7 +28,7 @@ classes when their own source surfaces are ready.
 | `manifest.json` | `aoa-kag` local provider manifest |
 | `nodes/` | source-linked contract and readiness nodes |
 | `edges/` | local relation records |
-| `indexes/` | lightweight provider inventory |
+| `indexes/` | repository index family and optional owner-domain catalog |
 | `projections/` | MCP/resource-facing compact views |
 | `receipts/` | validation receipts |
 
@@ -37,6 +37,13 @@ classes when their own source surfaces are ready.
 mechanics, scripts, validators, tests, schemas, generated read models,
 receipts, ABI/sign posture, provenance, toolchain, owner-return routes, and
 `aoa-kag-mcp` resource coordinates.
+
+`indexes/repo_entity_index.json`, `repo_artifact_index.json`, and
+`repo_event_index.json` are compact generated projections over that source
+index. They separate logical repository identity, physical artifacts, and
+repository-observable event surfaces without duplicating owner-domain data.
+An owner with native indexes may add `domain_index_catalog.json` as a route
+catalog governed by `schemas/domain-index-catalog.schema.json`.
 
 ## Provider Role
 

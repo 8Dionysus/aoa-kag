@@ -8,10 +8,20 @@ from .schema_surfaces import validate_top_level_schema
 
 try:
     from scripts.generate_repo_local_kag_coverage import build_provider_coverage
-    from scripts.generate_repo_local_kag_index import build_index, classification_summary
+    from scripts.generate_repo_local_kag_index import (
+        REPOSITORY_INDEX_FILENAMES,
+        build_index,
+        build_repository_indexes,
+        classification_summary,
+    )
 except ImportError:  # pragma: no cover - direct script import fallback
     from generate_repo_local_kag_coverage import build_provider_coverage  # type: ignore
-    from generate_repo_local_kag_index import build_index, classification_summary  # type: ignore
+    from generate_repo_local_kag_index import (  # type: ignore
+        REPOSITORY_INDEX_FILENAMES,
+        build_index,
+        build_repository_indexes,
+        classification_summary,
+    )
 
 
 def _repo_local_index_phase(label: str, *, progress: bool) -> None:
@@ -43,6 +53,11 @@ def repo_local_kag_index_digest_without_self(payload: dict[str, object]) -> str:
 
 def validate_repo_local_kag_index_schema_surface() -> None:
     validate_top_level_schema(REPO_LOCAL_KAG_INDEX_SCHEMA_PATH, "repo-local KAG index")
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+        "repo-local KAG repository index",
+    )
+    validate_top_level_schema(DOMAIN_INDEX_CATALOG_SCHEMA_PATH, "domain index catalog")
     validate_top_level_schema(REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH, "repo-local KAG coverage")
 
 
@@ -52,6 +67,12 @@ def validate_repo_local_kag_index_example() -> None:
         payload,
         schema_path=REPO_LOCAL_KAG_INDEX_SCHEMA_PATH,
         label="repo-local KAG index example",
+    )
+    domain_catalog = read_json(DOMAIN_INDEX_CATALOG_EXAMPLE_PATH)
+    repo_local_kag_validate_payload(
+        domain_catalog,
+        schema_path=DOMAIN_INDEX_CATALOG_SCHEMA_PATH,
+        label="domain index catalog example",
     )
 
 
@@ -117,6 +138,85 @@ def validate_repo_local_kag_index_payload(payload: object, *, label: str) -> dic
     return payload
 
 
+def validate_repo_local_kag_repository_index_payload(
+    payload: object,
+    *,
+    source_payload: object,
+    label: str,
+    expected_index_kind: str | None = None,
+) -> dict[str, object]:
+    source_index = validate_repo_local_kag_index_payload(
+        source_payload,
+        label=f"{label} source index",
+    )
+    return validate_repo_local_kag_repository_index_against_source(
+        payload,
+        source_index=source_index,
+        label=label,
+        expected_index_kind=expected_index_kind,
+    )
+
+
+def validate_repo_local_kag_repository_index_against_source(
+    payload: object,
+    *,
+    source_index: dict[str, object],
+    label: str,
+    expected_index_kind: str | None = None,
+) -> dict[str, object]:
+    repo_local_kag_validate_payload(
+        payload,
+        schema_path=REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+        label=label,
+    )
+    if not isinstance(payload, dict):
+        fail(f"{label} must be a JSON object")
+
+    identity = payload.get("index_identity")
+    if not isinstance(identity, dict):
+        fail(f"{label} index_identity must be an object")
+    index_kind = identity.get("index_kind")
+    if expected_index_kind is not None and index_kind != expected_index_kind:
+        fail(f"{label} must keep index kind {expected_index_kind}")
+
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        fail(f"{label} must keep entries")
+    summary = payload.get("summary")
+    if not isinstance(summary, dict) or summary.get("entry_count") != len(entries):
+        fail(f"{label} summary must match entries")
+
+    source_identity = source_index.get("index_identity")
+    if not isinstance(source_identity, dict):
+        fail(f"{label} source index identity must be an object")
+    source_ref = payload.get("source_index")
+    if not isinstance(source_ref, dict):
+        fail(f"{label} source_index must be an object")
+    if source_ref.get("local_id") != source_identity.get("local_id"):
+        fail(f"{label} must pin the source index local id")
+    if source_ref.get("content_digest") != source_identity.get("content_digest"):
+        fail(f"{label} must pin the source index digest")
+    if payload.get("repo") != source_index.get("repo"):
+        fail(f"{label} repo identity must match the source index")
+
+    source_records = source_index.get("records")
+    if not isinstance(source_records, list):
+        fail(f"{label} source index must keep records")
+    source_ids = {
+        record["identity"]["id"]
+        for record in source_records
+        if isinstance(record, dict) and isinstance(record.get("identity"), dict)
+    }
+    if any(
+        not isinstance(entry, dict) or entry.get("source_record_id") not in source_ids
+        for entry in entries
+    ):
+        fail(f"{label} must return to current source records")
+    if identity.get("content_digest") != repo_local_kag_index_digest_without_self(payload):
+        fail(f"{label} content_digest must match stable payload digest")
+    return payload
+
+
 def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-index-read", progress=progress)
     payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
@@ -127,6 +227,20 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
     _repo_local_index_phase("generated-index-parity", progress=progress)
     if payload != expected:
         fail("repo-local KAG generated index drifted from generator")
+
+    _repo_local_index_phase("generated-repository-index-family", progress=progress)
+    expected_family = build_repository_indexes(expected)
+    for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
+        path = REPO_ROOT / "kag" / "indexes" / filename
+        family_payload = read_json(path)
+        validate_repo_local_kag_repository_index_against_source(
+            family_payload,
+            source_index=payload,
+            label=f"repo-local KAG {index_kind} index",
+            expected_index_kind=index_kind,
+        )
+        if family_payload != expected_family[index_kind]:
+            fail(f"repo-local KAG {index_kind} index drifted from generator")
 
 
 def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> dict[str, object]:

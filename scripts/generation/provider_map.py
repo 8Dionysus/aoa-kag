@@ -26,10 +26,17 @@ def _provider_fallback_allowed(repo: str, fallback_provider: dict[str, object] |
     return fallback_provider is not None and not _provider_root(repo).exists()
 
 
-def _is_repo_local_source_index_payload(payload: object) -> bool:
+REPOSITORY_META_INDEX_SCHEMA_VERSIONS = {
+    "aoa-domain-index-catalog-v1",
+    "aoa-repo-local-kag-index-v1",
+    "aoa-repo-local-kag-repository-index-v1",
+}
+
+
+def _is_repo_local_meta_index_payload(payload: object) -> bool:
     return (
         isinstance(payload, dict)
-        and payload.get("schema_version") == "aoa-repo-local-kag-index-v1"
+        and payload.get("schema_version") in REPOSITORY_META_INDEX_SCHEMA_VERSIONS
     )
 
 
@@ -59,7 +66,7 @@ def _provider_record_payloads(
                     f"{repo} local KAG provider record must be a JSON object: "
                     f"{path.as_posix()}"
                 )
-            if _is_repo_local_source_index_payload(payload):
+            if _is_repo_local_meta_index_payload(payload):
                 continue
             records.append(payload)
     if not records:
@@ -208,7 +215,7 @@ def _provider_record_counts(
             if _is_repo_local_source_index_path(group, path):
                 continue
             payload = read_json(path)
-            if _is_repo_local_source_index_payload(payload):
+            if _is_repo_local_meta_index_payload(payload):
                 continue
             result[group] += 1
         if result[group] < 1:

@@ -28,6 +28,18 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
+    def test_local_kag_schemas_share_runtime_source_vocabulary(self) -> None:
+        subtree_schema = load_json(validate_kag.LOCAL_KAG_SUBTREE_SCHEMA_PATH)
+        provider_map_schema = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH)
+        self.assertIn(
+            "runtime_source",
+            subtree_schema["$defs"]["sourceRef"]["properties"]["source_class"]["enum"],
+        )
+        self.assertIn(
+            "runtime_source",
+            provider_map_schema["$defs"]["sourceClass"]["enum"],
+        )
+
     def patched_read_json(self, target_module, overrides: dict[Path, object]):
         original = target_module.read_json
         normalized_overrides: dict[Path, object] = {}
@@ -596,16 +608,19 @@ class ValidateKagTestCase(unittest.TestCase):
                     local_kag_subtree.PROVIDER_REPO_ROOTS[repo],
                 )
 
-    def test_provider_home_skips_repo_local_source_surface_index_record(self) -> None:
+    def test_provider_home_validates_repository_indexes_against_source_index(self) -> None:
         original = local_kag_subtree.read_json
+        source_reads = 0
 
-        def read_json_without_repo_local_source_index(path: Path) -> object:
+        def read_json_with_source_count(path: Path) -> object:
+            nonlocal source_reads
             if Path(path).name == local_kag_subtree.REPO_LOCAL_SOURCE_INDEX_NAME:
-                raise AssertionError("provider-home validation must not read repo-local source index")
+                source_reads += 1
             return original(path)
 
-        with patch.object(local_kag_subtree, "read_json", side_effect=read_json_without_repo_local_source_index):
+        with patch.object(local_kag_subtree, "read_json", side_effect=read_json_with_source_count):
             local_kag_subtree._validate_provider_home("aoa-kag", REPO_ROOT)
+        self.assertEqual(1, source_reads)
 
     def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)

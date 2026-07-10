@@ -18,6 +18,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Added
 
+- Add the generated repo-local entity, artifact, and event indexes shared by
+  every provider, plus the optional owner-domain index catalog contract.
 - Activate the first repo-local KAG provider foundation under `kag/`, including
   provider records, readiness indexes, MCP-facing projection shape, validation
   receipts, and the local KAG subtree protocol.
@@ -27,6 +29,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Changed
 
+- Expand the owner-callable repo-local KAG action from source-index parity to
+  atomic source/entity/artifact/event index-family parity.
 - Align the release workflow dependency pins with the merged
   `Tree-of-Sophia/kag/` and `aoa-techniques/kag/` provider homes so
   `aoa-kag` validates against the current source-owned provider surfaces.

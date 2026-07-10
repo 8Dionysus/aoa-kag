@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/domain-index-catalog.schema.json",
+  "title": "AoA owner domain index catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "catalog_identity",
+    "source_owner",
+    "provenance_mode",
+    "entries",
+    "owner_return_route",
+    "consumer_routes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-domain-index-catalog-v1"
+    },
+    "repo": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "catalog_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_id", "schema_ref"],
+      "properties": {
+        "local_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/domain-index-catalog.schema.json"
+        }
+      }
+    },
+    "source_owner": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "provenance_mode": {
+      "const": "strict_source_linked"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    },
+    "owner_return_route": {
+      "$ref": "#/$defs/ownerReturnRoute"
+    },
+    "consumer_routes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "path", "role", "authority"],
+      "properties": {
+        "repo": {"$ref": "#/$defs/nonEmptyString"},
+        "path": {"$ref": "#/$defs/relativePath"},
+        "role": {"$ref": "#/$defs/nonEmptyString"},
+        "authority": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "ownerReturnRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "surface", "route_kind"],
+      "properties": {
+        "repo": {"$ref": "#/$defs/nonEmptyString"},
+        "surface": {"$ref": "#/$defs/relativePath"},
+        "route_kind": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "domain",
+        "index_kind",
+        "authority",
+        "materialization",
+        "path",
+        "availability",
+        "schema_ref",
+        "builder_route",
+        "validator_route",
+        "freshness_route",
+        "storage_posture",
+        "source_refs",
+        "consumer_routes"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "domain": {"$ref": "#/$defs/nonEmptyString"},
+        "index_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "authority": {
+          "type": "string",
+          "enum": ["owner_source", "owner_generated", "owner_runtime"]
+        },
+        "materialization": {
+          "type": "string",
+          "enum": ["authored", "source_generated", "runtime_generated"]
+        },
+        "path": {"$ref": "#/$defs/relativePath"},
+        "availability": {
+          "type": "string",
+          "enum": ["source_checkout", "generated_optional", "runtime_optional"]
+        },
+        "schema_ref": {
+          "type": "string"
+        },
+        "builder_route": {"$ref": "#/$defs/nonEmptyString"},
+        "validator_route": {"$ref": "#/$defs/nonEmptyString"},
+        "freshness_route": {"$ref": "#/$defs/nonEmptyString"},
+        "storage_posture": {
+          "type": "string",
+          "enum": ["git_source", "portable_generated", "runtime_store"]
+        },
+        "source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/sourceRef"}
+        },
+        "consumer_routes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    }
+  }
+}

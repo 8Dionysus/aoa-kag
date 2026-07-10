@@ -1,0 +1,46 @@
+{
+  "schema_version": "aoa-domain-index-catalog-v1",
+  "repo": "aoa-example",
+  "catalog_identity": {
+    "local_id": "catalog:aoa-example:domain-indexes",
+    "schema_ref": "aoa-kag:schemas/domain-index-catalog.schema.json"
+  },
+  "source_owner": "aoa-example",
+  "provenance_mode": "strict_source_linked",
+  "entries": [
+    {
+      "id": "domain-index:aoa-example:entity-registry",
+      "domain": "example-domain",
+      "index_kind": "entity_registry",
+      "authority": "owner_generated",
+      "materialization": "source_generated",
+      "path": "generated/entity_registry.json",
+      "availability": "generated_optional",
+      "schema_ref": "schemas/entity-registry.schema.json",
+      "builder_route": "python scripts/build_entity_registry.py",
+      "validator_route": "python scripts/validate_entity_registry.py",
+      "freshness_route": "python scripts/validate_entity_registry.py --check",
+      "storage_posture": "portable_generated",
+      "source_refs": [
+        {
+          "repo": "aoa-example",
+          "path": "README.md",
+          "role": "owner_route",
+          "authority": "authored_source"
+        }
+      ],
+      "consumer_routes": [
+        "aoa-kag-mcp"
+      ]
+    }
+  ],
+  "owner_return_route": {
+    "repo": "aoa-example",
+    "surface": "README.md",
+    "route_kind": "authored_meaning"
+  },
+  "consumer_routes": [
+    "aoa-kag registry",
+    "aoa-kag-mcp"
+  ]
+}

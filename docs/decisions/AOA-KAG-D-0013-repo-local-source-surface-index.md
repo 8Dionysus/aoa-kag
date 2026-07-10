@@ -53,6 +53,13 @@ indexes remain visible in `index_files`. A present common index with drift gives
 the owner `migration-needed`. `owner-specific` identifies a provider with a
 usable owner-domain index and an open common source-index slot.
 
+The common repository index family derives entity, artifact, and event indexes
+from the source index. Each projection pins the source index digest and returns
+to its source records. Event entries cover repository-visible declarations,
+producers, and receipts; runtime event history remains with its runtime owner.
+Native owner indexes are exposed through an optional domain index catalog
+instead of being copied into the common repository indexes.
+
 ## Options Considered
 
 - Keep only lightweight provider inventory records: preserves the existing

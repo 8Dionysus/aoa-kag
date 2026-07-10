@@ -1,22 +1,23 @@
-name: Repo-local KAG source index
-description: Check a repository-owned KAG source surface index against the aoa-kag builder.
+name: Repo-local KAG index family
+description: Check repository-owned source, entity, artifact, and event indexes against the aoa-kag builder.
 
 inputs:
   repo-root:
     description: Repository root relative to the caller workspace.
     default: .
   output:
-    description: Source surface index path relative to the repository root.
+    description: Source surface index path relative to the repository root; sibling repository indexes share its directory.
     default: kag/indexes/source_surface_index.json
 
 runs:
   using: composite
   steps:
-    - name: Check source surface index parity
+    - name: Check repo-local index family parity
       shell: bash
       working-directory: ${{ github.workspace }}
       run: >-
         python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py"
         --repo-root "${{ inputs.repo-root }}"
         --output "${{ inputs.output }}"
+        --index-family
         --check

@@ -78,7 +78,7 @@ contract, example packet, and OS Abyss readiness matrix.
 The implementation modules live in `scripts/generation/`.
 
 `scripts/generate_repo_local_kag_index.py` builds the repo-local
-`kag/indexes/source_surface_index.json` from the current repository's source,
+source/entity/artifact/event index family from the current repository's source,
 document, mechanics, command, schema, generated, and receipt surfaces.
 
 `scripts/generate_repo_local_kag_coverage.py` builds

@@ -2,7 +2,7 @@
   "classification_summary": {
     "artifact_kind": {
       "asset": 50,
-      "config": 117,
+      "config": 118,
       "document": 407,
       "generated_readmodel": 42,
       "index": 1,
@@ -11,19 +11,19 @@
       "owner_metadata": 2,
       "projection": 1,
       "receipt": 1,
-      "schema": 73,
+      "schema": 75,
       "script": 11,
       "security": 1,
       "source_code": 104,
-      "test": 48,
+      "test": 49,
       "validator": 13
     },
     "command_role": {
       "builder": 6,
       "lane_entrypoint": 3,
-      "none": 821,
+      "none": 824,
       "script": 2,
-      "test": 48,
+      "test": 49,
       "validator": 13
     },
     "document_role": {
@@ -35,7 +35,7 @@
       "design": 1,
       "design_agents": 1,
       "mechanics_doc": 113,
-      "none": 478,
+      "none": 482,
       "parts": 13,
       "provenance": 13,
       "readme": 70,
@@ -49,7 +49,7 @@
       "legacy": 16,
       "mechanic_package": 55,
       "mechanic_part": 94,
-      "none": 472,
+      "none": 476,
       "part_contract": 28,
       "part_doc": 129,
       "part_schema": 62,
@@ -58,32 +58,32 @@
     },
     "primary_kind": {
       "artifact": 90,
-      "command": 72,
+      "command": 73,
       "document": 415,
-      "surface": 316
+      "surface": 319
     },
     "surface_state": {
-      "authored_source": 832,
+      "authored_source": 836,
       "generated_readmodel": 45,
       "legacy": 16
     }
   },
   "coverage_summary": {
-    "command_count": 72,
+    "command_count": 73,
     "document_count": 415,
     "generated_count": 45,
-    "heading_count": 2436,
+    "heading_count": 2437,
     "mechanics_count": 421,
-    "record_count": 893,
-    "schema_count": 73,
+    "record_count": 897,
+    "schema_count": 75,
     "script_count": 11,
-    "test_count": 48,
+    "test_count": 49,
     "unknown_count": 0,
     "validator_count": 13
   },
   "index_identity": {
     "artifact_kind": "source_surface_index",
-    "content_digest": "98a142bd9298ad665b6f01f34e049b45039e8454e9aeb188028f289e66427a80",
+    "content_digest": "4f4ebec13b2bb4d69ff6f37bb2dc89165478083df1eb701a65f0365488f9cd0e",
     "local_id": "index:repo-local:source-surfaces",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-index.schema.json"
   },
@@ -24488,13 +24488,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "12f47c77462c5bb457228c39621102da92db98283fe3ec27add8952e27908a58",
+        "content_hash": "9c8f0c8e5e71dfbf2189908072e5eb59bb8a4f038ed326caaa4bca7166fecfc9",
         "git_ref": "git-index-source-tree",
         "id": "file:.github/actions/repo-local-kag-index/action.yml:f79aef83c9",
         "mime": "application/yaml",
         "path": ".github/actions/repo-local-kag-index/action.yml",
         "repo": "aoa-kag",
-        "size_bytes": 719
+        "size_bytes": 810
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -24527,7 +24527,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "12f47c77462c5bb457228c39621102da92db98283fe3ec27add8952e27908a58",
+        "digest": "9c8f0c8e5e71dfbf2189908072e5eb59bb8a4f038ed326caaa4bca7166fecfc9",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -25186,13 +25186,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "a95ebbcd4a19292e6d3d4f1349e6b02db7119280ca15b23349ece38a06f90624",
+        "content_hash": "0cd3bb5a69452b131c67c06959db403ab5d34d33d495f812b77ae80096c0b2a2",
         "git_ref": "git-index-source-tree",
         "id": "file:changelog.md:06572a96a5",
         "mime": "text/markdown",
         "path": "CHANGELOG.md",
         "repo": "aoa-kag",
-        "size_bytes": 19390
+        "size_bytes": 19677
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -25249,266 +25249,266 @@
           {
             "anchor": "changed",
             "level": 3,
-            "line": 28,
+            "line": 30,
             "ref": "CHANGELOG.md#changed",
             "title": "Changed"
           },
           {
             "anchor": "validation",
             "level": 3,
-            "line": 36,
+            "line": 40,
             "ref": "CHANGELOG.md#validation",
             "title": "Validation"
           },
           {
             "anchor": "040-2026-06-26",
             "level": 2,
-            "line": 42,
+            "line": 46,
             "ref": "CHANGELOG.md#040-2026-06-26",
             "title": "[0.4.0] - 2026-06-26"
           },
           {
             "anchor": "summary-1",
             "level": 3,
-            "line": 44,
+            "line": 48,
             "ref": "CHANGELOG.md#summary-1",
             "title": "Summary"
           },
           {
             "anchor": "reconciliation-basis",
             "level": 3,
-            "line": 66,
+            "line": 70,
             "ref": "CHANGELOG.md#reconciliation-basis",
             "title": "Reconciliation Basis"
           },
           {
             "anchor": "final-route-sweep",
             "level": 3,
-            "line": 80,
+            "line": 84,
             "ref": "CHANGELOG.md#final-route-sweep",
             "title": "Final Route Sweep"
           },
           {
             "anchor": "derived-substrate-boundary",
             "level": 3,
-            "line": 100,
+            "line": 104,
             "ref": "CHANGELOG.md#derived-substrate-boundary",
             "title": "Derived-Substrate Boundary"
           },
           {
             "anchor": "added-1",
             "level": 3,
-            "line": 111,
+            "line": 115,
             "ref": "CHANGELOG.md#added-1",
             "title": "Added"
           },
           {
             "anchor": "changed-1",
             "level": 3,
-            "line": 136,
+            "line": 140,
             "ref": "CHANGELOG.md#changed-1",
             "title": "Changed"
           },
           {
             "anchor": "moved-or-retired",
             "level": 3,
-            "line": 173,
+            "line": 177,
             "ref": "CHANGELOG.md#moved-or-retired",
             "title": "Moved Or Retired"
           },
           {
             "anchor": "validation-1",
             "level": 3,
-            "line": 184,
+            "line": 188,
             "ref": "CHANGELOG.md#validation-1",
             "title": "Validation"
           },
           {
             "anchor": "notes",
             "level": 3,
-            "line": 192,
+            "line": 196,
             "ref": "CHANGELOG.md#notes",
             "title": "Notes"
           },
           {
             "anchor": "022-2026-04-23",
             "level": 2,
-            "line": 204,
+            "line": 208,
             "ref": "CHANGELOG.md#022-2026-04-23",
             "title": "[0.2.2] - 2026-04-23"
           },
           {
             "anchor": "summary-2",
             "level": 3,
-            "line": 206,
+            "line": 210,
             "ref": "CHANGELOG.md#summary-2",
             "title": "Summary"
           },
           {
             "anchor": "added-2",
             "level": 3,
-            "line": 218,
+            "line": 222,
             "ref": "CHANGELOG.md#added-2",
             "title": "Added"
           },
           {
             "anchor": "changed-2",
             "level": 3,
-            "line": 228,
+            "line": 232,
             "ref": "CHANGELOG.md#changed-2",
             "title": "Changed"
           },
           {
             "anchor": "validation-2",
             "level": 3,
-            "line": 234,
+            "line": 238,
             "ref": "CHANGELOG.md#validation-2",
             "title": "Validation"
           },
           {
             "anchor": "notes-1",
             "level": 3,
-            "line": 239,
+            "line": 243,
             "ref": "CHANGELOG.md#notes-1",
             "title": "Notes"
           },
           {
             "anchor": "021-2026-04-19",
             "level": 2,
-            "line": 244,
+            "line": 248,
             "ref": "CHANGELOG.md#021-2026-04-19",
             "title": "[0.2.1] - 2026-04-19"
           },
           {
             "anchor": "summary-3",
             "level": 3,
-            "line": 246,
+            "line": 250,
             "ref": "CHANGELOG.md#summary-3",
             "title": "Summary"
           },
           {
             "anchor": "added-3",
             "level": 3,
-            "line": 255,
+            "line": 259,
             "ref": "CHANGELOG.md#added-3",
             "title": "Added"
           },
           {
             "anchor": "changed-3",
             "level": 3,
-            "line": 261,
+            "line": 265,
             "ref": "CHANGELOG.md#changed-3",
             "title": "Changed"
           },
           {
             "anchor": "validation-3",
             "level": 3,
-            "line": 267,
+            "line": 271,
             "ref": "CHANGELOG.md#validation-3",
             "title": "Validation"
           },
           {
             "anchor": "notes-2",
             "level": 3,
-            "line": 272,
+            "line": 276,
             "ref": "CHANGELOG.md#notes-2",
             "title": "Notes"
           },
           {
             "anchor": "020-2026-04-10",
             "level": 2,
-            "line": 277,
+            "line": 281,
             "ref": "CHANGELOG.md#020-2026-04-10",
             "title": "[0.2.0] - 2026-04-10"
           },
           {
             "anchor": "summary-4",
             "level": 3,
-            "line": 279,
+            "line": 283,
             "ref": "CHANGELOG.md#summary-4",
             "title": "Summary"
           },
           {
             "anchor": "validation-4",
             "level": 3,
-            "line": 285,
+            "line": 289,
             "ref": "CHANGELOG.md#validation-4",
             "title": "Validation"
           },
           {
             "anchor": "notes-3",
             "level": 3,
-            "line": 290,
+            "line": 294,
             "ref": "CHANGELOG.md#notes-3",
             "title": "Notes"
           },
           {
             "anchor": "added-4",
             "level": 3,
-            "line": 294,
+            "line": 298,
             "ref": "CHANGELOG.md#added-4",
             "title": "Added"
           },
           {
             "anchor": "changed-4",
             "level": 3,
-            "line": 302,
+            "line": 306,
             "ref": "CHANGELOG.md#changed-4",
             "title": "Changed"
           },
           {
             "anchor": "included-in-this-release",
             "level": 3,
-            "line": 309,
+            "line": 313,
             "ref": "CHANGELOG.md#included-in-this-release",
             "title": "Included in this release"
           },
           {
             "anchor": "010-2026-04-01",
             "level": 2,
-            "line": 320,
+            "line": 324,
             "ref": "CHANGELOG.md#010-2026-04-01",
             "title": "[0.1.0] - 2026-04-01"
           },
           {
             "anchor": "summary-5",
             "level": 3,
-            "line": 326,
+            "line": 330,
             "ref": "CHANGELOG.md#summary-5",
             "title": "Summary"
           },
           {
             "anchor": "added-5",
             "level": 3,
-            "line": 332,
+            "line": 336,
             "ref": "CHANGELOG.md#added-5",
             "title": "Added"
           },
           {
             "anchor": "changed-5",
             "level": 3,
-            "line": 348,
+            "line": 352,
             "ref": "CHANGELOG.md#changed-5",
             "title": "Changed"
           },
           {
             "anchor": "included-in-this-release-1",
             "level": 3,
-            "line": 359,
+            "line": 363,
             "ref": "CHANGELOG.md#included-in-this-release-1",
             "title": "Included in this release"
           },
           {
             "anchor": "validation-5",
             "level": 3,
-            "line": 365,
+            "line": 369,
             "ref": "CHANGELOG.md#validation-5",
             "title": "Validation"
           },
           {
             "anchor": "notes-4",
             "level": 3,
-            "line": 370,
+            "line": 374,
             "ref": "CHANGELOG.md#notes-4",
             "title": "Notes"
           }
@@ -25520,7 +25520,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "a95ebbcd4a19292e6d3d4f1349e6b02db7119280ca15b23349ece38a06f90624",
+        "digest": "0cd3bb5a69452b131c67c06959db403ab5d34d33d495f812b77ae80096c0b2a2",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -26270,13 +26270,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "64add2277205839fd4b263ffbb3f33489186d33fb14e2320b60ac45fd7ee2fb0",
+        "content_hash": "922ea7f4f0837235f3df7a419848fa3764f2d781af22f40fe7c75f2850cb4e12",
         "git_ref": "git-index-source-tree",
         "id": "file:design.md:3dc5dd454e",
         "mime": "text/markdown",
         "path": "DESIGN.md",
         "repo": "aoa-kag",
-        "size_bytes": 9445
+        "size_bytes": 9466
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -26457,7 +26457,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "64add2277205839fd4b263ffbb3f33489186d33fb14e2320b60ac45fd7ee2fb0",
+        "digest": "922ea7f4f0837235f3df7a419848fa3764f2d781af22f40fe7c75f2850cb4e12",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -27256,13 +27256,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "b0c415484500794b7c0aaa1d87995ad93d8e61126c753fb2a31d5752cd94b3b2",
+        "content_hash": "c20fd4e1cabfb78678bd03f355a350c4ed6771be62b086b159e032483b82b28b",
         "git_ref": "git-index-source-tree",
         "id": "file:config/validation_lanes.json:44a533a030",
         "mime": "application/json",
         "path": "config/validation_lanes.json",
         "repo": "aoa-kag",
-        "size_bytes": 7519
+        "size_bytes": 7947
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -27295,7 +27295,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "b0c415484500794b7c0aaa1d87995ad93d8e61126c753fb2a31d5752cd94b3b2",
+        "digest": "c20fd4e1cabfb78678bd03f355a350c4ed6771be62b086b159e032483b82b28b",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -30911,13 +30911,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "ffca18874e7ba82368c10286cfb7b2744e478ac248a8be10d5fe473d48e33eb0",
+        "content_hash": "c4a908d7524b3b5402a8203bba555cf3c78381c0d87ab758af1ba4d3efe79c8f",
         "git_ref": "git-index-source-tree",
         "id": "file:docs/decisions/aoa-kag-d-0013-repo-local-source-surface-index.md:1434845eb7",
         "mime": "text/markdown",
         "path": "docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md",
         "repo": "aoa-kag",
-        "size_bytes": 4934
+        "size_bytes": 5383
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -30974,35 +30974,35 @@
           {
             "anchor": "options-considered",
             "level": 2,
-            "line": 56,
+            "line": 63,
             "ref": "docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md#options-considered",
             "title": "Options Considered"
           },
           {
             "anchor": "rationale",
             "level": 2,
-            "line": 66,
+            "line": 73,
             "ref": "docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md#rationale",
             "title": "Rationale"
           },
           {
             "anchor": "consequences",
             "level": 2,
-            "line": 76,
+            "line": 83,
             "ref": "docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md#consequences",
             "title": "Consequences"
           },
           {
             "anchor": "source-surfaces",
             "level": 2,
-            "line": 89,
+            "line": 96,
             "ref": "docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md#source-surfaces",
             "title": "Source Surfaces"
           },
           {
             "anchor": "validation",
             "level": 2,
-            "line": 105,
+            "line": 112,
             "ref": "docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md#validation",
             "title": "Validation"
           }
@@ -31014,7 +31014,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "ffca18874e7ba82368c10286cfb7b2744e478ac248a8be10d5fe473d48e33eb0",
+        "digest": "c4a908d7524b3b5402a8203bba555cf3c78381c0d87ab758af1ba4d3efe79c8f",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -33456,13 +33456,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "49b3c8cf365d2c9d6f8170ca4a9293b5b49e9da39117c8e80a182671d0f5b7d5",
+        "content_hash": "c7a54def9cc5e828526d9db7379e5ce5a90895210797325cfc18d45f4f84bbd4",
         "git_ref": "git-index-source-tree",
         "id": "file:docs/testing/test_inventory.json:4bb775b510",
         "mime": "application/json",
         "path": "docs/testing/test_inventory.json",
         "repo": "aoa-kag",
-        "size_bytes": 43563
+        "size_bytes": 44266
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -33495,7 +33495,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "49b3c8cf365d2c9d6f8170ca4a9293b5b49e9da39117c8e80a182671d0f5b7d5",
+        "digest": "c7a54def9cc5e828526d9db7379e5ce5a90895210797325cfc18d45f4f84bbd4",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -33682,13 +33682,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "4736b0847e9d97c374f3b1db75d25270fedeb4cbfeca68b316a00256e1fae335",
+        "content_hash": "dcc4ec3ddaacf20c5726b7b8b5b3386af1b3ac09abe29212915bfd08b80fa516",
         "git_ref": "git-index-source-tree",
         "id": "file:docs/validation/command_authority.md:3ad361f605",
         "mime": "text/markdown",
         "path": "docs/validation/COMMAND_AUTHORITY.md",
         "repo": "aoa-kag",
-        "size_bytes": 1692
+        "size_bytes": 1713
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -33757,7 +33757,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "4736b0847e9d97c374f3b1db75d25270fedeb4cbfeca68b316a00256e1fae335",
+        "digest": "dcc4ec3ddaacf20c5726b7b8b5b3386af1b3ac09abe29212915bfd08b80fa516",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -33805,13 +33805,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "f9b98c525275d78a4a05f30d71cd413c451cddc685b47b257e4e8e2fb0c227e8",
+        "content_hash": "1dd32b3b4516aae777ef17983ef1e7235fe1f1077c2d99249ce8014a5c116af0",
         "git_ref": "git-index-source-tree",
         "id": "file:docs/validation/script_topology.md:aa8d0c7ec9",
         "mime": "text/markdown",
         "path": "docs/validation/SCRIPT_TOPOLOGY.md",
         "repo": "aoa-kag",
-        "size_bytes": 5371
+        "size_bytes": 5373
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -33901,7 +33901,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "f9b98c525275d78a4a05f30d71cd413c451cddc685b47b257e4e8e2fb0c227e8",
+        "digest": "1dd32b3b4516aae777ef17983ef1e7235fe1f1077c2d99249ce8014a5c116af0",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -34065,13 +34065,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "75c3e534b1de82ca84e1cae5b3328c34b7d0937ca366c85325fb97d07745e18e",
+        "content_hash": "a36abc42e1c5536d2d51ca31ee3d4d0f0a6e3aa36c759432ab64a30b24036e95",
         "git_ref": "git-index-source-tree",
         "id": "file:docs/validation/script_inventory.json:3e79b7425b",
         "mime": "application/json",
         "path": "docs/validation/script_inventory.json",
         "repo": "aoa-kag",
-        "size_bytes": 97521
+        "size_bytes": 97719
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -34104,7 +34104,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "75c3e534b1de82ca84e1cae5b3328c34b7d0937ca366c85325fb97d07745e18e",
+        "digest": "a36abc42e1c5536d2d51ca31ee3d4d0f0a6e3aa36c759432ab64a30b24036e95",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -34955,6 +34955,95 @@
         "artifact_class": "config",
         "compatibility": "stable",
         "contract_version": "none",
+        "schema_version": "aoa-domain-index-catalog-v1"
+      },
+      "access": {
+        "scope": "public",
+        "secrets_risk": "none"
+      },
+      "artifact_kind": "config",
+      "classification": {
+        "confidence": "high",
+        "primary_kind": "surface"
+      },
+      "code_role": "none",
+      "command_role": "none",
+      "consumer_route": {
+        "route_kind": "resource",
+        "surface": "aoa-kag-mcp"
+      },
+      "document_role": "none",
+      "freshness": {
+        "checked_ref": "git-index-source-tree",
+        "mode": "source_snapshot",
+        "state": "current"
+      },
+      "identity": {
+        "content_hash": "3114402dbc4251400bcc9b83bda42f855022f0151c053cfd2aade4132023ca0e",
+        "git_ref": "git-index-source-tree",
+        "id": "file:examples/domain_index_catalog.example.json:4638ed1823",
+        "mime": "application/json",
+        "path": "examples/domain_index_catalog.example.json",
+        "repo": "aoa-kag",
+        "size_bytes": 1407
+      },
+      "mechanics_role": "none",
+      "observed_form": "file",
+      "owner_return_route": {
+        "route_kind": "source_owner",
+        "surface": "examples/domain_index_catalog.example.json"
+      },
+      "provenance": {
+        "generated_by": "",
+        "materials": [],
+        "observed_by": "scripts/generate_repo_local_kag_index.py",
+        "source_refs": [
+          {
+            "authority": "authored_source",
+            "path": "examples/domain_index_catalog.example.json",
+            "repo": "aoa-kag",
+            "role": "primary"
+          }
+        ],
+        "validated_by": [
+          "scripts/validate_kag.py"
+        ]
+      },
+      "refs": {
+        "heading_refs": [],
+        "line_refs": [
+          "examples/domain_index_catalog.example.json:1"
+        ],
+        "path_ref": "examples/domain_index_catalog.example.json"
+      },
+      "signs": {
+        "attestation_ref": "",
+        "digest": "3114402dbc4251400bcc9b83bda42f855022f0151c053cfd2aade4132023ca0e",
+        "signature_ref": "",
+        "verification_state": "digest-only"
+      },
+      "surface_state": "authored_source",
+      "toolchain": {
+        "detected_tools": [
+          "git",
+          "python"
+        ],
+        "owner_commands": [],
+        "required_tools": [
+          "jq"
+        ]
+      },
+      "validator_route": {
+        "route_kind": "source_fast",
+        "surface": "scripts/validate_kag.py"
+      }
+    },
+    {
+      "abi": {
+        "abi_epoch": "source",
+        "artifact_class": "config",
+        "compatibility": "stable",
+        "contract_version": "none",
         "schema_version": "aoa-local-kag-subtree-v1"
       },
       "access": {
@@ -35458,13 +35547,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "1e7910277d5d5e52b4c680516c0c6f11d03ca0802c210cd5135629288ec5a6d2",
+        "content_hash": "d6357dc602e6aec27b4439ad4314af3cbc23e5d403a6c5c41b2f07ad2821a502",
         "git_ref": "git-index-source-tree",
         "id": "file:generated/local_kag_provider_map.json:959b4a582d",
         "mime": "application/json",
         "path": "generated/local_kag_provider_map.json",
         "repo": "aoa-kag",
-        "size_bytes": 306204
+        "size_bytes": 306488
       },
       "mechanics_role": "none",
       "observed_form": "generated_output",
@@ -35497,7 +35586,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "1e7910277d5d5e52b4c680516c0c6f11d03ca0802c210cd5135629288ec5a6d2",
+        "digest": "d6357dc602e6aec27b4439ad4314af3cbc23e5d403a6c5c41b2f07ad2821a502",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -35547,13 +35636,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "8b9848d6ce82efb976e5cd6bcfc43c4e7db0b5330253761980a3b0ef9d1af00b",
+        "content_hash": "3276687af2adb0487ca35447f4d94b66f93f4b7c76b51b9817f231492cf37336",
         "git_ref": "git-index-source-tree",
         "id": "file:generated/local_kag_provider_map.min.json:4ab088bb75",
         "mime": "application/json",
         "path": "generated/local_kag_provider_map.min.json",
         "repo": "aoa-kag",
-        "size_bytes": 183956
+        "size_bytes": 184180
       },
       "mechanics_role": "none",
       "observed_form": "generated_output",
@@ -35586,7 +35675,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "8b9848d6ce82efb976e5cd6bcfc43c4e7db0b5330253761980a3b0ef9d1af00b",
+        "digest": "3276687af2adb0487ca35447f4d94b66f93f4b7c76b51b9817f231492cf37336",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -35636,13 +35725,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "6c6b0f9849f514bd37a167c0a6530301e392e196d629516279522c0047b2fc30",
+        "content_hash": "ae730d4f8ded2b36b1cc51be93e9e6732402767011d95b489cecc02ef44393f4",
         "git_ref": "git-index-source-tree",
         "id": "file:generated/repo_local_kag_coverage.json:89551c6032",
         "mime": "application/json",
         "path": "generated/repo_local_kag_coverage.json",
         "repo": "aoa-kag",
-        "size_bytes": 55766
+        "size_bytes": 55905
       },
       "mechanics_role": "none",
       "observed_form": "generated_output",
@@ -35675,7 +35764,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "6c6b0f9849f514bd37a167c0a6530301e392e196d629516279522c0047b2fc30",
+        "digest": "ae730d4f8ded2b36b1cc51be93e9e6732402767011d95b489cecc02ef44393f4",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -35725,13 +35814,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "a94e8ad3cc8c4c953b85a8127c6642de84926df7c64dbcaa4b646c5ef27e4e45",
+        "content_hash": "d8bab726ae736488f19bbd3404f611c4162e965c022c33ded58558dec037eb1f",
         "git_ref": "git-index-source-tree",
         "id": "file:generated/repo_local_kag_coverage.min.json:ad1ec9c08b",
         "mime": "application/json",
         "path": "generated/repo_local_kag_coverage.min.json",
         "repo": "aoa-kag",
-        "size_bytes": 31495
+        "size_bytes": 31607
       },
       "mechanics_role": "none",
       "observed_form": "generated_output",
@@ -35764,7 +35853,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "a94e8ad3cc8c4c953b85a8127c6642de84926df7c64dbcaa4b646c5ef27e4e45",
+        "digest": "d8bab726ae736488f19bbd3404f611c4162e965c022c33ded58558dec037eb1f",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -35965,13 +36054,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "f56b1658991eced63026631d7e34e0848a267224bab6dc69a8cd73685ae065b7",
+        "content_hash": "0bcfa86b63d905d66a11eca1c8b8074b32447a59583f1a978e5f5ba90e0a2445",
         "git_ref": "git-index-source-tree",
         "id": "file:kag/local_subtree_protocol.md:d19703d2f9",
         "mime": "text/markdown",
         "path": "kag/LOCAL_SUBTREE_PROTOCOL.md",
         "repo": "aoa-kag",
-        "size_bytes": 5322
+        "size_bytes": 6300
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -36026,37 +36115,44 @@
             "title": "Record Envelope"
           },
           {
-            "anchor": "source-ownership",
+            "anchor": "repository-index-family",
             "level": 2,
             "line": 49,
+            "ref": "kag/LOCAL_SUBTREE_PROTOCOL.md#repository-index-family",
+            "title": "Repository Index Family"
+          },
+          {
+            "anchor": "source-ownership",
+            "level": 2,
+            "line": 69,
             "ref": "kag/LOCAL_SUBTREE_PROTOCOL.md#source-ownership",
             "title": "Source Ownership"
           },
           {
             "anchor": "storage-posture",
             "level": 2,
-            "line": 55,
+            "line": 75,
             "ref": "kag/LOCAL_SUBTREE_PROTOCOL.md#storage-posture",
             "title": "Storage Posture"
           },
           {
             "anchor": "registry-and-composition",
             "level": 2,
-            "line": 62,
+            "line": 82,
             "ref": "kag/LOCAL_SUBTREE_PROTOCOL.md#registry-and-composition",
             "title": "Registry And Composition"
           },
           {
             "anchor": "mcp-access-shape",
             "level": 2,
-            "line": 83,
+            "line": 103,
             "ref": "kag/LOCAL_SUBTREE_PROTOCOL.md#mcp-access-shape",
             "title": "MCP Access Shape"
           },
           {
             "anchor": "current-providers",
             "level": 2,
-            "line": 94,
+            "line": 114,
             "ref": "kag/LOCAL_SUBTREE_PROTOCOL.md#current-providers",
             "title": "Current Providers"
           }
@@ -36068,7 +36164,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "f56b1658991eced63026631d7e34e0848a267224bab6dc69a8cd73685ae065b7",
+        "digest": "0bcfa86b63d905d66a11eca1c8b8074b32447a59583f1a978e5f5ba90e0a2445",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -36116,13 +36212,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "fbad264578ca895bf9f9bb373d5db80ead894094685c22e0e7f4f937dedea4b6",
+        "content_hash": "497c17f964861acaac4751abe515b1966a5aa8f8c9115699edd5fe043735e30f",
         "git_ref": "git-index-source-tree",
         "id": "file:kag/readme.md:213631cc86",
         "mime": "text/markdown",
         "path": "kag/README.md",
         "repo": "aoa-kag",
-        "size_bytes": 4760
+        "size_bytes": 5219
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -36172,28 +36268,28 @@
           {
             "anchor": "provider-role",
             "level": 2,
-            "line": 41,
+            "line": 48,
             "ref": "kag/README.md#provider-role",
             "title": "Provider Role"
           },
           {
             "anchor": "os-surface-layer",
             "level": 2,
-            "line": 51,
+            "line": 58,
             "ref": "kag/README.md#os-surface-layer",
             "title": "OS Surface Layer"
           },
           {
             "anchor": "os-abyss-provider-pattern",
             "level": 2,
-            "line": 64,
+            "line": 71,
             "ref": "kag/README.md#os-abyss-provider-pattern",
             "title": "OS Abyss Provider Pattern"
           },
           {
             "anchor": "consumer-route",
             "level": 2,
-            "line": 96,
+            "line": 103,
             "ref": "kag/README.md#consumer-route",
             "title": "Consumer Route"
           }
@@ -36205,7 +36301,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "fbad264578ca895bf9f9bb373d5db80ead894094685c22e0e7f4f937dedea4b6",
+        "digest": "497c17f964861acaac4751abe515b1966a5aa8f8c9115699edd5fe043735e30f",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -37054,13 +37150,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "c04a9e200ff11786be550e47566dbcaac297436f02238444f3e808088b8f42f5",
+        "content_hash": "225c6a28507cc9175b64659258e89d55f5b7224e1203b690ac534ced278f372b",
         "git_ref": "git-index-source-tree",
         "id": "file:kag/source_home.manifest.json:fdad9c3e98",
         "mime": "application/json",
         "path": "kag/source_home.manifest.json",
         "repo": "aoa-kag",
-        "size_bytes": 7078
+        "size_bytes": 7217
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -37093,7 +37189,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "c04a9e200ff11786be550e47566dbcaac297436f02238444f3e808088b8f42f5",
+        "digest": "225c6a28507cc9175b64659258e89d55f5b7224e1203b690ac534ced278f372b",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -82683,6 +82779,95 @@
         "abi_epoch": "source",
         "artifact_class": "schema",
         "compatibility": "stable",
+        "contract_version": "https://aoa-kag/schemas/domain-index-catalog.schema.json",
+        "schema_version": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "access": {
+        "scope": "public",
+        "secrets_risk": "none"
+      },
+      "artifact_kind": "schema",
+      "classification": {
+        "confidence": "high",
+        "primary_kind": "surface"
+      },
+      "code_role": "none",
+      "command_role": "none",
+      "consumer_route": {
+        "route_kind": "resource",
+        "surface": "aoa-kag-mcp"
+      },
+      "document_role": "none",
+      "freshness": {
+        "checked_ref": "git-index-source-tree",
+        "mode": "source_snapshot",
+        "state": "current"
+      },
+      "identity": {
+        "content_hash": "3a32c6d593d88526044b87d2908357c6abfef4ddd4c91fd508b848abadd3b08e",
+        "git_ref": "git-index-source-tree",
+        "id": "file:schemas/domain-index-catalog.schema.json:a20f9eb99b",
+        "mime": "application/json",
+        "path": "schemas/domain-index-catalog.schema.json",
+        "repo": "aoa-kag",
+        "size_bytes": 4171
+      },
+      "mechanics_role": "none",
+      "observed_form": "file",
+      "owner_return_route": {
+        "route_kind": "schema_owner",
+        "surface": "schemas/domain-index-catalog.schema.json"
+      },
+      "provenance": {
+        "generated_by": "",
+        "materials": [],
+        "observed_by": "scripts/generate_repo_local_kag_index.py",
+        "source_refs": [
+          {
+            "authority": "authored_source",
+            "path": "schemas/domain-index-catalog.schema.json",
+            "repo": "aoa-kag",
+            "role": "primary"
+          }
+        ],
+        "validated_by": [
+          "scripts/validate_kag.py"
+        ]
+      },
+      "refs": {
+        "heading_refs": [],
+        "line_refs": [
+          "schemas/domain-index-catalog.schema.json:1"
+        ],
+        "path_ref": "schemas/domain-index-catalog.schema.json"
+      },
+      "signs": {
+        "attestation_ref": "",
+        "digest": "3a32c6d593d88526044b87d2908357c6abfef4ddd4c91fd508b848abadd3b08e",
+        "signature_ref": "",
+        "verification_state": "digest-only"
+      },
+      "surface_state": "authored_source",
+      "toolchain": {
+        "detected_tools": [
+          "git",
+          "python"
+        ],
+        "owner_commands": [],
+        "required_tools": [
+          "jq"
+        ]
+      },
+      "validator_route": {
+        "route_kind": "source_fast",
+        "surface": "scripts/validate_kag.py"
+      }
+    },
+    {
+      "abi": {
+        "abi_epoch": "source",
+        "artifact_class": "schema",
+        "compatibility": "stable",
         "contract_version": "https://aoa-kag/schemas/kag-registry.schema.json",
         "schema_version": "https://json-schema.org/draft/2020-12/schema"
       },
@@ -82797,13 +82982,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "7a1f8029994ddb09dd5c990059210c8719fcc02bd7f6a623e23216a1d9491648",
+        "content_hash": "074d96efd3a754408cef29c8985138710d7eac586907a9e69a05ef62a63b904c",
         "git_ref": "git-index-source-tree",
         "id": "file:schemas/local-kag-provider-map.schema.json:985a40fb6f",
         "mime": "application/json",
         "path": "schemas/local-kag-provider-map.schema.json",
         "repo": "aoa-kag",
-        "size_bytes": 18169
+        "size_bytes": 18195
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -82836,7 +83021,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "7a1f8029994ddb09dd5c990059210c8719fcc02bd7f6a623e23216a1d9491648",
+        "digest": "074d96efd3a754408cef29c8985138710d7eac586907a9e69a05ef62a63b904c",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -82886,13 +83071,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "8f1add345ca017bee674e09d92450de0a88fec9493c9384209c94adecacb7032",
+        "content_hash": "75dca5d700453df14a0f8f1429cb698c34d05af37eebe0b3007b90d4496016d2",
         "git_ref": "git-index-source-tree",
         "id": "file:schemas/local-kag-subtree.schema.json:139776a826",
         "mime": "application/json",
         "path": "schemas/local-kag-subtree.schema.json",
         "repo": "aoa-kag",
-        "size_bytes": 24169
+        "size_bytes": 24199
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -82925,7 +83110,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "8f1add345ca017bee674e09d92450de0a88fec9493c9384209c94adecacb7032",
+        "digest": "75dca5d700453df14a0f8f1429cb698c34d05af37eebe0b3007b90d4496016d2",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -83193,6 +83378,95 @@
       "signs": {
         "attestation_ref": "",
         "digest": "c8ee9eb9565051409ed9c36992bf8901f30c76d678fbc57b6302087648bf40d9",
+        "signature_ref": "",
+        "verification_state": "digest-only"
+      },
+      "surface_state": "authored_source",
+      "toolchain": {
+        "detected_tools": [
+          "git",
+          "python"
+        ],
+        "owner_commands": [],
+        "required_tools": [
+          "jq"
+        ]
+      },
+      "validator_route": {
+        "route_kind": "source_fast",
+        "surface": "scripts/validate_kag.py"
+      }
+    },
+    {
+      "abi": {
+        "abi_epoch": "source",
+        "artifact_class": "schema",
+        "compatibility": "stable",
+        "contract_version": "https://aoa-kag/schemas/repo-local-kag-repository-index.schema.json",
+        "schema_version": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "access": {
+        "scope": "public",
+        "secrets_risk": "none"
+      },
+      "artifact_kind": "schema",
+      "classification": {
+        "confidence": "high",
+        "primary_kind": "surface"
+      },
+      "code_role": "none",
+      "command_role": "none",
+      "consumer_route": {
+        "route_kind": "resource",
+        "surface": "aoa-kag-mcp"
+      },
+      "document_role": "none",
+      "freshness": {
+        "checked_ref": "git-index-source-tree",
+        "mode": "source_snapshot",
+        "state": "current"
+      },
+      "identity": {
+        "content_hash": "6ba26c3115caa1679ca5da269cf1fd069d324a627861ce5e39e277962c73fe31",
+        "git_ref": "git-index-source-tree",
+        "id": "file:schemas/repo-local-kag-repository-index.schema.json:0e2baf0cb3",
+        "mime": "application/json",
+        "path": "schemas/repo-local-kag-repository-index.schema.json",
+        "repo": "aoa-kag",
+        "size_bytes": 8097
+      },
+      "mechanics_role": "none",
+      "observed_form": "file",
+      "owner_return_route": {
+        "route_kind": "schema_owner",
+        "surface": "schemas/repo-local-kag-repository-index.schema.json"
+      },
+      "provenance": {
+        "generated_by": "",
+        "materials": [],
+        "observed_by": "scripts/generate_repo_local_kag_index.py",
+        "source_refs": [
+          {
+            "authority": "authored_source",
+            "path": "schemas/repo-local-kag-repository-index.schema.json",
+            "repo": "aoa-kag",
+            "role": "primary"
+          }
+        ],
+        "validated_by": [
+          "scripts/validate_kag.py"
+        ]
+      },
+      "refs": {
+        "heading_refs": [],
+        "line_refs": [
+          "schemas/repo-local-kag-repository-index.schema.json:1"
+        ],
+        "path_ref": "schemas/repo-local-kag-repository-index.schema.json"
+      },
+      "signs": {
+        "attestation_ref": "",
+        "digest": "6ba26c3115caa1679ca5da269cf1fd069d324a627861ce5e39e277962c73fe31",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -83618,13 +83892,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "7f600ca3491743d86a0023fea2073e8a7290f15fdba10748394831b7ad5e695d",
+        "content_hash": "03ba1f96d74e06e1f42054ca64358ae51a7d33c344381fa8f3b36c7bb57af2ac",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generate_repo_local_kag_coverage.py:694111269a",
         "mime": "text/x-python",
         "path": "scripts/generate_repo_local_kag_coverage.py",
         "repo": "aoa-kag",
-        "size_bytes": 22828
+        "size_bytes": 23241
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -83657,7 +83931,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "7f600ca3491743d86a0023fea2073e8a7290f15fdba10748394831b7ad5e695d",
+        "digest": "03ba1f96d74e06e1f42054ca64358ae51a7d33c344381fa8f3b36c7bb57af2ac",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -83709,13 +83983,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "693dc302c888bb078ea6587672b63efa880b88ed3d393ce4e469d7d6dc1bec5b",
+        "content_hash": "673d9273a1b4ddbc125802868ce87841c2f7351fd611f6ba6033d686d98bffce",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generate_repo_local_kag_index.py:f202b0488e",
         "mime": "text/x-python",
         "path": "scripts/generate_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 44372
+        "size_bytes": 55725
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -83748,7 +84022,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "693dc302c888bb078ea6587672b63efa880b88ed3d393ce4e469d7d6dc1bec5b",
+        "digest": "673d9273a1b4ddbc125802868ce87841c2f7351fd611f6ba6033d686d98bffce",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -84649,13 +84923,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "af30b5c14b4a3a46180bbdfe50d695c8c2fa09a1f03f6a365c07bb0d16c5e751",
+        "content_hash": "e8fec5c09479c8c8c0aadbc4fb3a9a20d9a804736fc114877b233f105c99d604",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/generation/provider_map.py:f5db4f5f2e",
         "mime": "text/x-python",
         "path": "scripts/generation/provider_map.py",
         "repo": "aoa-kag",
-        "size_bytes": 27339
+        "size_bytes": 27503
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -84688,7 +84962,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "af30b5c14b4a3a46180bbdfe50d695c8c2fa09a1f03f6a365c07bb0d16c5e751",
+        "digest": "e8fec5c09479c8c8c0aadbc4fb3a9a20d9a804736fc114877b233f105c99d604",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -88263,13 +88537,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "65a9e4d8695df53bec12cf4b4c1f088bcc77a6dc87791ab9f4a49655075942ea",
+        "content_hash": "5de98e463a0d0d854dc51df202b4211e2a4f8bffeb36edecfc6a4fba215089d9",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/validators/expected/core.py:e812a20bb8",
         "mime": "text/x-python",
         "path": "scripts/validators/expected/core.py",
         "repo": "aoa-kag",
-        "size_bytes": 11183
+        "size_bytes": 11501
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -88302,7 +88576,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "65a9e4d8695df53bec12cf4b4c1f088bcc77a6dc87791ab9f4a49655075942ea",
+        "digest": "5de98e463a0d0d854dc51df202b4211e2a4f8bffeb36edecfc6a4fba215089d9",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -89509,13 +89783,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "378c7e9600c5ab002885ce456fc1f9ad2989b6c49b7e7b5d520d2b1e1647ef76",
+        "content_hash": "b60d869a8cd29378c5d42df1c9d47a48779fa5337d86a7fa39aed90bf616e2ab",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/validators/local_kag_subtree.py:9caee1953c",
         "mime": "text/x-python",
         "path": "scripts/validators/local_kag_subtree.py",
         "repo": "aoa-kag",
-        "size_bytes": 26418
+        "size_bytes": 29430
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -89548,7 +89822,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "378c7e9600c5ab002885ce456fc1f9ad2989b6c49b7e7b5d520d2b1e1647ef76",
+        "digest": "b60d869a8cd29378c5d42df1c9d47a48779fa5337d86a7fa39aed90bf616e2ab",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -93815,13 +94089,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "5660819e0755071cc94a6e0c6fb3921b5bef80bee59aaa9bbdd4cbc7b280c4a8",
+        "content_hash": "bf558d8c0218b8aee7968b6eb7a2a759a03adc96f845cea3f236451d2eef6e53",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/validators/repo_local_kag_index.py:b1082bd336",
         "mime": "text/x-python",
         "path": "scripts/validators/repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 9765
+        "size_bytes": 14089
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -93854,7 +94128,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "5660819e0755071cc94a6e0c6fb3921b5bef80bee59aaa9bbdd4cbc7b280c4a8",
+        "digest": "bf558d8c0218b8aee7968b6eb7a2a759a03adc96f845cea3f236451d2eef6e53",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -93904,13 +94178,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "fc33ab08bd82092220aa394f32fb3a79b8c15973600d1fb2282e588ba613db9d",
+        "content_hash": "ec86ca898f13703d72e3dda6df33758aa4342e00761065fe742f4b095a0c1deb",
         "git_ref": "git-index-source-tree",
         "id": "file:scripts/validators/schema_surfaces.py:09f8026e47",
         "mime": "text/x-python",
         "path": "scripts/validators/schema_surfaces.py",
         "repo": "aoa-kag",
-        "size_bytes": 7314
+        "size_bytes": 7535
       },
       "mechanics_role": "none",
       "observed_form": "file",
@@ -93943,7 +94217,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "fc33ab08bd82092220aa394f32fb3a79b8c15973600d1fb2282e588ba613db9d",
+        "digest": "ec86ca898f13703d72e3dda6df33758aa4342e00761065fe742f4b095a0c1deb",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -95179,13 +95453,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "d6e4c9fdc380c008ee96d2c1f85a23143b8bccab859d9070a26c623a7bf7c237",
+        "content_hash": "c7395fe9849eb8ecb9bb484bd249e4f155d58a3de3f072ec80e75e2b1dcb167a",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_repo_local_kag_index.py:a02b024bdb",
         "mime": "text/x-python",
         "path": "tests/test_repo_local_kag_index.py",
         "repo": "aoa-kag",
-        "size_bytes": 64190
+        "size_bytes": 64553
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -95218,7 +95492,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "d6e4c9fdc380c008ee96d2c1f85a23143b8bccab859d9070a26c623a7bf7c237",
+        "digest": "c7395fe9849eb8ecb9bb484bd249e4f155d58a3de3f072ec80e75e2b1dcb167a",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -95230,6 +95504,97 @@
         ],
         "owner_commands": [
           "python -m unittest tests/test_repo_local_kag_index.py"
+        ],
+        "required_tools": [
+          "python"
+        ]
+      },
+      "validator_route": {
+        "route_kind": "source_fast",
+        "surface": "scripts/validate_kag.py"
+      }
+    },
+    {
+      "abi": {
+        "abi_epoch": "source",
+        "artifact_class": "test",
+        "compatibility": "stable",
+        "contract_version": "none",
+        "schema_version": "none"
+      },
+      "access": {
+        "scope": "public",
+        "secrets_risk": "none"
+      },
+      "artifact_kind": "test",
+      "classification": {
+        "confidence": "high",
+        "primary_kind": "command"
+      },
+      "code_role": "test",
+      "command_role": "test",
+      "consumer_route": {
+        "route_kind": "resource",
+        "surface": "aoa-kag-mcp"
+      },
+      "document_role": "none",
+      "freshness": {
+        "checked_ref": "git-index-source-tree",
+        "mode": "source_snapshot",
+        "state": "current"
+      },
+      "identity": {
+        "content_hash": "38b4c497566bc116a3be65eb6809c015f9ca7d383dbc2dca1e209279ff28fdf8",
+        "git_ref": "git-index-source-tree",
+        "id": "file:tests/test_repo_local_kag_repository_indexes.py:80e84614ab",
+        "mime": "text/x-python",
+        "path": "tests/test_repo_local_kag_repository_indexes.py",
+        "repo": "aoa-kag",
+        "size_bytes": 10528
+      },
+      "mechanics_role": "none",
+      "observed_form": "command",
+      "owner_return_route": {
+        "route_kind": "test_owner",
+        "surface": "tests/test_repo_local_kag_repository_indexes.py"
+      },
+      "provenance": {
+        "generated_by": "",
+        "materials": [],
+        "observed_by": "scripts/generate_repo_local_kag_index.py",
+        "source_refs": [
+          {
+            "authority": "authored_source",
+            "path": "tests/test_repo_local_kag_repository_indexes.py",
+            "repo": "aoa-kag",
+            "role": "primary"
+          }
+        ],
+        "validated_by": [
+          "scripts/validate_kag.py"
+        ]
+      },
+      "refs": {
+        "heading_refs": [],
+        "line_refs": [
+          "tests/test_repo_local_kag_repository_indexes.py:1"
+        ],
+        "path_ref": "tests/test_repo_local_kag_repository_indexes.py"
+      },
+      "signs": {
+        "attestation_ref": "",
+        "digest": "38b4c497566bc116a3be65eb6809c015f9ca7d383dbc2dca1e209279ff28fdf8",
+        "signature_ref": "",
+        "verification_state": "digest-only"
+      },
+      "surface_state": "authored_source",
+      "toolchain": {
+        "detected_tools": [
+          "git",
+          "python"
+        ],
+        "owner_commands": [
+          "python -m unittest tests/test_repo_local_kag_repository_indexes.py"
         ],
         "required_tools": [
           "python"
@@ -95907,13 +96272,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "47fa0f205098c8ef834bea7e1c85a1f727e5cb43f37148777a3132663de6f266",
+        "content_hash": "bb40eae53406cd3c6e4a33bff81c05e4fd127f461335bd8e44f9a7cabfd93597",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_validate_kag.py:12c4acfa53",
         "mime": "text/x-python",
         "path": "tests/test_validate_kag.py",
         "repo": "aoa-kag",
-        "size_bytes": 30913
+        "size_bytes": 31448
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -95946,7 +96311,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "47fa0f205098c8ef834bea7e1c85a1f727e5cb43f37148777a3132663de6f266",
+        "digest": "bb40eae53406cd3c6e4a33bff81c05e4fd127f461335bd8e44f9a7cabfd93597",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
@@ -96089,13 +96454,13 @@
         "state": "current"
       },
       "identity": {
-        "content_hash": "d4cb824f733b7ada1b3deb0cfbd10fcfb34a96d5222b73051ae510a8eb2c8d93",
+        "content_hash": "9ccef11405b1b944f2f6e3c2da979ffe9161de3fb8d4ec6ff74e2206020fdc5d",
         "git_ref": "git-index-source-tree",
         "id": "file:tests/test_validation_command_authority.py:78624b39c6",
         "mime": "text/x-python",
         "path": "tests/test_validation_command_authority.py",
         "repo": "aoa-kag",
-        "size_bytes": 14643
+        "size_bytes": 14721
       },
       "mechanics_role": "none",
       "observed_form": "command",
@@ -96128,7 +96493,7 @@
       },
       "signs": {
         "attestation_ref": "",
-        "digest": "d4cb824f733b7ada1b3deb0cfbd10fcfb34a96d5222b73051ae510a8eb2c8d93",
+        "digest": "9ccef11405b1b944f2f6e3c2da979ffe9161de3fb8d4ec6ff74e2206020fdc5d",
         "signature_ref": "",
         "verification_state": "digest-only"
       },
