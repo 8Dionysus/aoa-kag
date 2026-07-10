@@ -149,6 +149,35 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         )
         self.assertTrue(matches_owner)
 
+    def test_custom_family_outputs_remain_stable_after_staging(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            write_fixture(root)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            args = [
+                "--repo-root",
+                str(root),
+                "--output",
+                "custom/indexes/source.json",
+                "--index-family",
+            ]
+            self.assertEqual(0, main(args))
+            subprocess.run(("git", "add", "custom/indexes"), cwd=root, check=True)
+            self.assertEqual(0, main([*args, "--check"]))
+            payload = load_json(root / "custom" / "indexes" / "source.json")
+
+        indexed_paths = {record["identity"]["path"] for record in payload["records"]}
+        self.assertTrue(
+            {
+                "custom/indexes/source.json",
+                *(
+                    f"custom/indexes/{filename}"
+                    for filename in REPOSITORY_INDEX_FILENAMES.values()
+                ),
+            }.isdisjoint(indexed_paths)
+        )
+
     def test_domain_index_catalog_example_matches_schema(self) -> None:
         schema = load_json(DOMAIN_INDEX_CATALOG_SCHEMA_PATH)
         payload = load_json(DOMAIN_INDEX_CATALOG_EXAMPLE_PATH)

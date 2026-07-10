@@ -1184,18 +1184,28 @@ def payload_digest(payload: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def build_index(repo_root: Path, *, output: Path | None = None) -> dict[str, Any]:
+def build_index(
+    repo_root: Path,
+    *,
+    output: Path | None = None,
+    excluded_outputs: Sequence[Path] = (),
+) -> dict[str, Any]:
     repo_root = repo_root.resolve()
     name = repo_name(repo_root)
     snapshot_ref = source_snapshot_ref(repo_root)
     excluded_paths = {CANONICAL_SELF_INDEX, *CANONICAL_REPOSITORY_INDEX_PATHS}
-    if output is not None:
-        output_path = output if output.is_absolute() else repo_root / output
+    selected_outputs = (*excluded_outputs, *((output,) if output is not None else ()))
+    for selected_output in selected_outputs:
+        output_path = (
+            selected_output
+            if selected_output.is_absolute()
+            else repo_root / selected_output
+        )
         try:
             excluded_paths.add(output_path.resolve().relative_to(repo_root))
         except ValueError:
-            if not output.is_absolute():
-                excluded_paths.add(output)
+            if not selected_output.is_absolute():
+                excluded_paths.add(selected_output)
     tracked_paths = set(git_file_paths(repo_root))
     source_builders = source_builder_contents(repo_root, tracked_paths)
     records = []
@@ -1557,10 +1567,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     repo_root = Path(args.repo_root).resolve()
     output = Path(args.output)
-    payload = build_index(repo_root, output=output)
     output_path = repo_root / output
-    family = build_repository_indexes(payload) if args.index_family else {}
     family_paths = repository_index_output_paths(output_path)
+    payload = build_index(
+        repo_root,
+        output=output,
+        excluded_outputs=tuple(family_paths.values()) if args.index_family else (),
+    )
+    family = build_repository_indexes(payload) if args.index_family else {}
     if args.check:
         ok = check_output(output_path, payload)
         if args.index_family:
