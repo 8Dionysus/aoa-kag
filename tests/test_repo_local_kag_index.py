@@ -7,13 +7,28 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
-from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
 from scripts import generate_repo_local_kag_coverage as coverage_generation
 from scripts.generate_repo_local_kag_coverage import build_coverage
-from scripts.generate_repo_local_kag_index import build_index, mime_for, payload_digest
+from scripts.generate_repo_local_kag_index import (
+    ARCHIVE_SUFFIXES,
+    ASSET_SUFFIXES,
+    DATA_TABLE_SUFFIXES,
+    HTML_SUFFIXES,
+    PORTABLE_MIME_BY_SUFFIX,
+    PORTABLE_TEXT_BASENAMES,
+    RECORD_LOG_SUFFIXES,
+    SERVICE_UNIT_SUFFIXES,
+    SOURCE_CODE_SUFFIXES,
+    SPREADSHEET_SUFFIXES,
+    TEXT_ARTIFACT_SUFFIXES,
+    TEXT_WRAPPER_SUFFIXES,
+    build_index,
+    mime_for,
+    payload_digest,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -183,9 +198,222 @@ def write_owner_specific_provider_records(
 
 
 class RepoLocalKagIndexTests(unittest.TestCase):
-    def test_mime_detection_ignores_host_mime_database(self) -> None:
-        with patch("mimetypes.guess_type", return_value=("host/x-shell", None)):
-            self.assertEqual("application/x-sh", mime_for(Path("hook.sh")))
+    def test_mime_detection_uses_portable_explicit_mappings(self) -> None:
+        self.assertEqual("application/x-sh", mime_for(Path("hook.sh")))
+        self.assertEqual("application/x-ndjson", mime_for(Path("events.jsonl")))
+        self.assertEqual("application/x-tar", mime_for(Path("release.tar.gz")))
+        self.assertEqual("application/x-tar", mime_for(Path("release.tar.xz")))
+        self.assertEqual("application/x-tar", mime_for(Path("release.v1.tar.gz")))
+        self.assertEqual("application/gzip", mime_for(Path("release.gz")))
+        self.assertEqual("text/plain", mime_for(Path(".env.example")))
+        self.assertEqual(
+            "application/x-sh",
+            mime_for(Path("pre-push"), b"#!/usr/bin/env bash\nset -eu\n"),
+        )
+        self.assertEqual(
+            "text/x-python",
+            mime_for(Path("repo-tool"), b"#!/usr/bin/env python3\n"),
+        )
+        self.assertEqual(
+            "text/plain",
+            mime_for(Path("repo-tool"), b"#!/usr/bin/env future-runtime\n"),
+        )
+        self.assertEqual(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            mime_for(Path("table.XLSX")),
+        )
+        self.assertEqual("application/octet-stream", mime_for(Path("future.unknown")))
+        supported_artifact_suffixes = (
+            ASSET_SUFFIXES
+            | ARCHIVE_SUFFIXES
+            | SPREADSHEET_SUFFIXES
+            | DATA_TABLE_SUFFIXES
+            | RECORD_LOG_SUFFIXES
+            | TEXT_ARTIFACT_SUFFIXES
+            | TEXT_WRAPPER_SUFFIXES
+            | HTML_SUFFIXES
+            | SERVICE_UNIT_SUFFIXES
+            | SOURCE_CODE_SUFFIXES
+        )
+        self.assertLessEqual(supported_artifact_suffixes, set(PORTABLE_MIME_BY_SUFFIX))
+        for suffix in supported_artifact_suffixes:
+            with self.subTest(suffix=suffix):
+                self.assertNotEqual("application/octet-stream", mime_for(Path(f"artifact{suffix}")))
+        for name in PORTABLE_TEXT_BASENAMES:
+            with self.subTest(name=name):
+                self.assertEqual("text/plain", mime_for(Path(name)))
+
+    def test_generated_provenance_names_only_a_real_builder(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts").mkdir()
+            (root / "generated").mkdir()
+            (root / "scripts" / "build_workspace_map.py").write_text(
+                'OUTPUT = "write generated/workspace_map.min.json now"\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "build_nearby_map.py").write_text(
+                'OUTPUT = "generated/unowned.min.jsonl"\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "build_dashboard.py").write_text(
+                'INPUT = "generated/unowned.min.json"\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "build_reader_only.py").write_text(
+                'INPUT_PATH = "generated/reader-only.min.json"\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "generate_all.py").write_text(
+                'OUTPUT = "generated/consolidated.min.json"\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "build_kebab_case_index.py").write_text(
+                'PATH = "generated/kebab-case.min.json"\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "build_consumer.py").write_text(
+                'manifest = {"source_files": ["generated/upstream.min.json"]}\n'
+                "dump_json(manifest)\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "build_direct_writer.py").write_text(
+                'write_json("generated/direct.min.json", {})\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "generate_method_writer.py").write_text(
+                'from pathlib import Path\n'
+                'path = Path("generated/method-open.min.json")\n'
+                'path.open("w")\n',
+                encoding="utf-8",
+            )
+            (root / "scripts" / "build_method_reader.py").write_text(
+                'from pathlib import Path\n'
+                'path = Path("generated/method-reader.min.json")\n'
+                'path.open("r")\n',
+                encoding="utf-8",
+            )
+            (root / "generated" / "workspace_map.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "unowned.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "reader-only.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "consolidated.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "kebab-case.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "upstream.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "direct.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "method-open.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            (root / "generated" / "method-reader.min.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "init"), cwd=root, check=True, capture_output=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+
+        records = {record["identity"]["path"]: record for record in payload["records"]}
+        self.assertEqual(
+            "scripts/build_workspace_map.py",
+            records["generated/workspace_map.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "",
+            records["generated/unowned.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "",
+            records["generated/reader-only.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "scripts/generate_all.py",
+            records["generated/consolidated.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "scripts/build_kebab_case_index.py",
+            records["generated/kebab-case.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "",
+            records["generated/upstream.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "scripts/build_direct_writer.py",
+            records["generated/direct.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "scripts/generate_method_writer.py",
+            records["generated/method-open.min.json"]["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            "",
+            records["generated/method-reader.min.json"]["provenance"]["generated_by"],
+        )
+
+    def test_decision_index_provenance_requires_one_tracked_builder(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            index_path = root / "docs" / "decisions" / "indexes" / "by-number.md"
+            index_path.parent.mkdir(parents=True)
+            index_path.write_text("# By number\n", encoding="utf-8")
+            subprocess.run(("git", "init"), cwd=root, check=True, capture_output=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+            record = next(
+                item
+                for item in payload["records"]
+                if item["identity"]["path"] == index_path.relative_to(root).as_posix()
+            )
+            self.assertEqual("", record["provenance"]["generated_by"])
+
+            nested_builder = root / "scripts" / "decisions" / "generate_decision_indexes.py"
+            nested_builder.parent.mkdir(parents=True)
+            nested_builder.write_text("print('build indexes')\n", encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+            record = next(
+                item
+                for item in payload["records"]
+                if item["identity"]["path"] == index_path.relative_to(root).as_posix()
+            )
+            self.assertEqual(
+                "scripts/decisions/generate_decision_indexes.py",
+                record["provenance"]["generated_by"],
+            )
+
+            second_builder = root / "scripts" / "build_decision_indexes.py"
+            second_builder.write_text("print('other builder')\n", encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+            record = next(
+                item
+                for item in payload["records"]
+                if item["identity"]["path"] == index_path.relative_to(root).as_posix()
+            )
+            self.assertEqual("", record["provenance"]["generated_by"])
 
     def validate_with_schema(self, payload: object, schema_path: Path) -> None:
         schema = load_json(schema_path)

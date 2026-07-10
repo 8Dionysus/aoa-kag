@@ -4,13 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import copy
 import hashlib
 import json
-import mimetypes
 import re
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -23,7 +24,55 @@ INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-index-v1"
 GIT_INDEX_SOURCE_REF = "git-index-source-tree"
 FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
-PORTABLE_MIME_TYPES = mimetypes.MimeTypes(filenames=())
+PORTABLE_MIME_BY_SUFFIX = {
+    ".7z": "application/x-7z-compressed",
+    ".cfg": "text/plain",
+    ".csv": "text/csv",
+    ".example": "text/plain",
+    ".gif": "image/gif",
+    ".gz": "application/gzip",
+    ".htm": "text/html",
+    ".html": "text/html",
+    ".ico": "image/vnd.microsoft.icon",
+    ".ini": "text/plain",
+    ".js": "text/javascript",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".json": "application/json",
+    ".jsonl": "application/x-ndjson",
+    ".md": "text/markdown",
+    ".ndjson": "application/x-ndjson",
+    ".ods": "application/vnd.oasis.opendocument.spreadsheet",
+    ".path": "text/plain",
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".ps1": "text/plain",
+    ".py": "text/x-python",
+    ".service": "text/plain",
+    ".sh": "application/x-sh",
+    ".snapshot": "text/plain",
+    ".socket": "text/plain",
+    ".svg": "image/svg+xml",
+    ".tar": "application/x-tar",
+    ".tgz": "application/x-tar",
+    ".timer": "text/plain",
+    ".toml": "application/toml",
+    ".ts": "application/typescript",
+    ".tsv": "text/tab-separated-values",
+    ".txt": "text/plain",
+    ".webp": "image/webp",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".xml": "application/xml",
+    ".xz": "application/x-xz",
+    ".yaml": "application/yaml",
+    ".yml": "application/yaml",
+    ".zip": "application/zip",
+}
+PORTABLE_MIME_BY_SUFFIX_CHAIN = {
+    (".tar", ".gz"): "application/x-tar",
+    (".tar", ".xz"): "application/x-tar",
+}
 EXTERNAL_INDEX_GENERATOR_ROUTE = f"aoa-kag:{LOCAL_INDEX_GENERATOR_ROUTE}"
 LOCAL_KAG_VALIDATOR_ROUTE = "scripts/validate_kag.py"
 EXTERNAL_KAG_VALIDATOR_ROUTE = f"aoa-kag:{LOCAL_KAG_VALIDATOR_ROUTE}"
@@ -80,21 +129,36 @@ EXCLUDED_PARTS = {
 }
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+OUTPUT_REFERENCE_LITERAL = re.compile(
+    rb"\b(?:emit|emitted|export|exported|publish|published|render|rendered|"
+    rb"save|saved|write|writes|writing|wrote)\b",
+    re.IGNORECASE,
+)
 SECRET_HINTS = ("secret", "token", "credential", "private-key", "password")
 LANE_ENTRYPOINTS = {"ci_gate.py", "release_check.py", "run_tests.py"}
 COMMAND_SUFFIXES = {".py", ".sh", ".ps1"}
+SOURCE_CODE_SUFFIXES = {".js", ".ps1", ".py", ".sh", ".ts"}
 COMMAND_PREFIXES = ("build_", "generate_", "run_", "start_", "sync_", "validate_")
 BUILDER_PREFIXES = ("build_", "generate_")
+DECISION_INDEX_BUILDER_NAMES = {
+    "build_decision_indexes.py",
+    "generate_decision_indexes.py",
+}
 ASSET_SUFFIXES = {".gif", ".ico", ".jpg", ".jpeg", ".png", ".svg", ".webp"}
 ARCHIVE_SUFFIXES = {".7z", ".gz", ".tar", ".tgz", ".xz", ".zip"}
 SPREADSHEET_SUFFIXES = {".ods", ".xls", ".xlsx"}
 DATA_TABLE_SUFFIXES = {".csv", ".tsv"}
+RECORD_LOG_SUFFIXES = {".jsonl", ".ndjson"}
 TEXT_ARTIFACT_SUFFIXES = {".txt"}
+TEXT_WRAPPER_SUFFIXES = {".example", ".snapshot"}
 HTML_SUFFIXES = {".htm", ".html"}
 SERVICE_UNIT_SUFFIXES = {".path", ".service", ".socket", ".timer"}
 OWNER_METADATA_NAMES = {".gitattributes", ".gitignore", "CODEOWNERS", "AOA_WORKSPACE_ROOT"}
 DIRECTORY_MARKER_NAMES = {".gitkeep", ".keep"}
 ENV_CONFIG_NAMES = {".env", ".env.example", ".env.sample", ".env.template"}
+PORTABLE_TEXT_BASENAMES = (
+    OWNER_METADATA_NAMES | DIRECTORY_MARKER_NAMES | ENV_CONFIG_NAMES | {"LICENSE"}
+)
 
 
 def run_text(command: Sequence[str], cwd: Path) -> str:
@@ -309,15 +373,30 @@ def heading_refs(content: bytes, rel_path: str) -> list[dict[str, Any]]:
     return refs
 
 
-def mime_for(path: Path) -> str:
-    if path.suffix == ".md":
-        return "text/markdown"
-    if path.suffix == ".py":
-        return "text/x-python"
-    if path.suffix in {".yaml", ".yml"}:
-        return "application/yaml"
-    guessed, _ = PORTABLE_MIME_TYPES.guess_type(path.as_posix())
-    return guessed or "application/octet-stream"
+def mime_for(path: Path, content: bytes = b"") -> str:
+    suffix_chain = tuple(suffix.lower() for suffix in path.suffixes[-2:])
+    chain_mime = PORTABLE_MIME_BY_SUFFIX_CHAIN.get(suffix_chain)
+    if chain_mime:
+        return chain_mime
+    suffix_mime = PORTABLE_MIME_BY_SUFFIX.get(path.suffix.lower())
+    if suffix_mime:
+        return suffix_mime
+    if path.name in PORTABLE_TEXT_BASENAMES or path.name.startswith("LICENSE."):
+        return "text/plain"
+    first_line = content.partition(b"\n")[0].lower()
+    if first_line.startswith(b"#!"):
+        interpreter_tokens = set(re.split(rb"[/\s]+", first_line[2:].strip()))
+        if any(
+            re.fullmatch(rb"python(?:\d+(?:\.\d+)*)?", token)
+            for token in interpreter_tokens
+        ):
+            return "text/x-python"
+        if interpreter_tokens & {b"bash", b"dash", b"ksh", b"sh", b"zsh"}:
+            return "application/x-sh"
+        if interpreter_tokens & {b"bun", b"deno", b"node"}:
+            return "text/javascript"
+        return "text/plain"
+    return "application/octet-stream"
 
 
 def path_id(rel_path: str) -> str:
@@ -394,7 +473,7 @@ def artifact_kind(rel: Path) -> str:
         return "asset"
     if suffix in DATA_TABLE_SUFFIXES:
         return "data_table"
-    if suffix in {".jsonl", ".ndjson"}:
+    if suffix in RECORD_LOG_SUFFIXES:
         return "record_log"
     if "fixtures" in parts and suffix in HTML_SUFFIXES:
         return "fixture"
@@ -432,7 +511,7 @@ def artifact_kind(rel: Path) -> str:
         return "script"
     if "mechanics" in parts:
         return "mechanics_surface"
-    if suffix in {".py", ".js", ".ts", ".sh", ".ps1"}:
+    if suffix in SOURCE_CODE_SUFFIXES:
         return "source_code"
     if suffix in TEXT_ARTIFACT_SUFFIXES:
         return "text_artifact"
@@ -460,8 +539,21 @@ def is_generated_decision_index(rel: Path) -> bool:
     return len(rel.parts) >= 4 and rel.parts[:3] == ("docs", "decisions", "indexes")
 
 
+def decision_index_builder_for(tracked_paths: set[Path]) -> str:
+    candidates = sorted(
+        candidate
+        for candidate in tracked_paths
+        if candidate.parts
+        and candidate.parts[0] == "scripts"
+        and candidate.name in DECISION_INDEX_BUILDER_NAMES
+    )
+    if len(candidates) == 1:
+        return candidates[0].as_posix()
+    return ""
+
+
 def code_role(rel: Path, kind: str) -> str:
-    if rel.suffix not in {".py", ".js", ".ts", ".sh", ".ps1"} and kind != "script":
+    if rel.suffix not in SOURCE_CODE_SUFFIXES and kind != "script":
         return "none"
     if kind == "test":
         return "test"
@@ -660,10 +752,211 @@ def part_local_generated_by_for(rel: Path, tracked_paths: set[Path]) -> str:
     return ""
 
 
+def source_builder_contents(
+    repo_root: Path,
+    tracked_paths: set[Path],
+) -> tuple[tuple[Path, bytes], ...]:
+    builders: list[tuple[Path, bytes]] = []
+    for candidate in sorted(tracked_paths):
+        if (
+            candidate.parts
+            and candidate.parts[0] == "scripts"
+            and candidate.suffix == ".py"
+            and candidate.name.startswith(BUILDER_PREFIXES)
+        ):
+            builders.append((candidate, source_bytes(repo_root, candidate, repo_root / candidate)))
+    return tuple(builders)
+
+
+def ast_contains_reference(node: ast.AST, reference_pattern: re.Pattern[bytes]) -> bool:
+    return any(
+        isinstance(candidate, ast.Constant)
+        and isinstance(candidate.value, str)
+        and reference_pattern.search(candidate.value.encode("utf-8"))
+        for candidate in ast.walk(node)
+    )
+
+
+def ast_target_names(node: ast.AST) -> set[str]:
+    return {
+        candidate.id
+        for candidate in ast.walk(node)
+        if isinstance(candidate, ast.Name)
+    }
+
+
+def identifier_tokens(name: str) -> set[str]:
+    snake_case = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name).lower()
+    return {token for token in re.split(r"[^a-z0-9]+", snake_case) if token}
+
+
+def call_name(node: ast.Call) -> str:
+    if isinstance(node.func, ast.Attribute):
+        return node.func.attr.lower()
+    if isinstance(node.func, ast.Name):
+        return node.func.id.lower()
+    return ""
+
+
+def ast_expression_references(
+    node: ast.AST,
+    reference_pattern: re.Pattern[bytes],
+    reference_names: set[str],
+) -> bool:
+    return ast_contains_reference(node, reference_pattern) or any(
+        isinstance(candidate, ast.Name) and candidate.id in reference_names
+        for candidate in ast.walk(node)
+    )
+
+
+@lru_cache(maxsize=None)
+def parsed_builder_ast(content: bytes) -> ast.Module | None:
+    try:
+        return ast.parse(content.decode("utf-8"))
+    except (SyntaxError, UnicodeDecodeError):
+        return None
+
+
+def builder_reference_role(content: bytes, reference_pattern: re.Pattern[bytes]) -> str:
+    tree = parsed_builder_ast(content)
+    if tree is None:
+        return "unknown"
+
+    reference_names: set[str] = set()
+    output_names: set[str] = set()
+    input_names: set[str] = set()
+    for node in ast.walk(tree):
+        targets: list[ast.AST] = []
+        value: ast.AST | None = None
+        if isinstance(node, ast.Assign):
+            targets = list(node.targets)
+            value = node.value
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+            value = node.value
+        elif isinstance(node, ast.NamedExpr):
+            targets = [node.target]
+            value = node.value
+        if value is None or not ast_contains_reference(value, reference_pattern):
+            continue
+        names = set().union(*(ast_target_names(target) for target in targets))
+        reference_names.update(names)
+        for name in names:
+            tokens = identifier_tokens(name)
+            if tokens & {"dest", "destination", "generated", "out", "output", "target"}:
+                output_names.add(name)
+            if tokens & {"donor", "input", "read", "reader", "source"}:
+                input_names.add(name)
+
+    input_call_found = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            encoded = node.value.encode("utf-8")
+            if reference_pattern.search(encoded) and OUTPUT_REFERENCE_LITERAL.search(encoded):
+                return "output"
+        if not isinstance(node, ast.Call):
+            continue
+        name = call_name(node)
+        receiver = node.func.value if isinstance(node.func, ast.Attribute) else None
+        first_arg = node.args[0] if node.args else None
+        receiver_references = receiver is not None and ast_expression_references(
+            receiver,
+            reference_pattern,
+            reference_names,
+        )
+        first_arg_references = first_arg is not None and ast_expression_references(
+            first_arg,
+            reference_pattern,
+            reference_names,
+        )
+        if name.startswith("write") and (receiver_references or first_arg_references):
+            return "output"
+        if name.startswith(("emit", "export", "publish", "save")):
+            if first_arg_references:
+                return "output"
+        if name.startswith(("load", "read")) and (receiver_references or first_arg_references):
+            input_call_found = True
+        if name == "open":
+            method_call = isinstance(node.func, ast.Attribute)
+            path_references = receiver_references if method_call else first_arg_references
+            mode_arg_index = 0 if method_call else 1
+            modes: set[str] = set()
+            if len(node.args) > mode_arg_index and isinstance(
+                node.args[mode_arg_index], ast.Constant
+            ):
+                mode_value = node.args[mode_arg_index].value
+                if isinstance(mode_value, str):
+                    modes.add(mode_value)
+            modes.update(
+                keyword.value.value
+                for keyword in node.keywords
+                if keyword.arg == "mode"
+                and isinstance(keyword.value, ast.Constant)
+                and isinstance(keyword.value.value, str)
+            )
+            if path_references and any(set(mode) & {"a", "w", "x"} for mode in modes):
+                return "output"
+            if path_references and (not modes or any("r" in mode for mode in modes)):
+                input_call_found = True
+
+    if output_names:
+        return "output"
+    if input_names or input_call_found:
+        return "input"
+    return "unknown"
+
+
+def normalized_generated_stem(value: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+    for suffix in ("_catalog", "_index", "_inventory", "_manifest", "_registry"):
+        normalized = normalized.removesuffix(suffix)
+    return normalized
+
+
+def source_referencing_builder_for(
+    rel: Path,
+    builders: tuple[tuple[Path, bytes], ...],
+) -> str:
+    output_stem = rel.name
+    for suffix in reversed(rel.suffixes):
+        output_stem = output_stem[: -len(suffix)]
+        if suffix not in {".json", ".yaml", ".yml", ".md"}:
+            break
+    output_stem = output_stem.removesuffix(".min").removesuffix(".example")
+    target_ref = re.escape(rel.as_posix().encode("utf-8"))
+    reference_pattern = re.compile(
+        rb"(?<![A-Za-z0-9._/-])" + target_ref + rb"(?![A-Za-z0-9._/-])"
+    )
+    referencing = [
+        (candidate, builder_reference_role(content, reference_pattern))
+        for candidate, content in builders
+        if reference_pattern.search(content)
+    ]
+    output_matches = [candidate for candidate, role in referencing if role == "output"]
+    if len(output_matches) == 1:
+        return output_matches[0].as_posix()
+    if len(output_matches) > 1:
+        return ""
+    normalized_output_stem = normalized_generated_stem(output_stem)
+    matching = [
+        candidate
+        for candidate, role in referencing
+        if role != "input"
+        and normalized_generated_stem(
+            candidate.stem.removeprefix("build_").removeprefix("generate_")
+        )
+        == normalized_output_stem
+    ]
+    if len(matching) == 1:
+        return matching[0].as_posix()
+    return ""
+
+
 def generated_by_for(
     rel: Path,
     state: str,
     tracked_paths: set[Path],
+    source_builders: tuple[tuple[Path, bytes], ...],
     content: bytes,
     *,
     repo_root: Path,
@@ -687,12 +980,19 @@ def generated_by_for(
     if rel_path.startswith("generated/repo_local_kag_coverage"):
         return "scripts/generate_repo_local_kag_coverage.py"
     if is_generated_decision_index(rel):
-        return "scripts/generate_decision_indexes.py"
+        return decision_index_builder_for(tracked_paths)
     part_local_builder = part_local_generated_by_for(rel, tracked_paths)
     if part_local_builder:
         return part_local_builder
+    source_referencing_builder = source_referencing_builder_for(
+        rel,
+        source_builders,
+    )
+    if source_referencing_builder:
+        return source_referencing_builder
     if rel_path.startswith("generated/") or "/generated/" in rel_path:
-        return "scripts/generate_kag.py"
+        generic_builder = Path("scripts/generate_kag.py")
+        return generic_builder.as_posix() if generic_builder in tracked_paths else ""
     return ""
 
 
@@ -735,6 +1035,7 @@ def build_record(
     repo: str,
     snapshot_ref: str,
     tracked_paths: set[Path],
+    source_builders: tuple[tuple[Path, bytes], ...],
 ) -> dict[str, Any]:
     rel_path = rel.as_posix()
     content = source_bytes(repo_root, rel, path)
@@ -750,7 +1051,14 @@ def build_record(
     line_refs = [f"{rel_path}:1"] if content else []
     authority = source_authority(state)
     provenance_source_ref = {"repo": repo, "path": rel_path, "role": "primary", "authority": authority}
-    generated_by = generated_by_for(rel, state, tracked_paths, content, repo_root=repo_root)
+    generated_by = generated_by_for(
+        rel,
+        state,
+        tracked_paths,
+        source_builders,
+        content,
+        repo_root=repo_root,
+    )
     observed_by = index_generator_route(repo)
     validated_by = kag_validator_route(repo_root, repo, tracked_paths)
     required_tools = []
@@ -770,7 +1078,7 @@ def build_record(
             "git_ref": snapshot_ref,
             "content_hash": digest,
             "size_bytes": len(content),
-            "mime": mime_for(path),
+            "mime": mime_for(path, content),
         },
         "observed_form": observed_form(kind, command),
         "surface_state": state,
@@ -877,6 +1185,7 @@ def build_index(repo_root: Path, *, output: Path | None = None) -> dict[str, Any
             if not output.is_absolute():
                 excluded_paths.add(output)
     tracked_paths = set(git_file_paths(repo_root))
+    source_builders = source_builder_contents(repo_root, tracked_paths)
     records = []
     for rel in sorted(tracked_paths):
         if rel in excluded_paths:
@@ -891,6 +1200,7 @@ def build_index(repo_root: Path, *, output: Path | None = None) -> dict[str, Any
                     repo=name,
                     snapshot_ref=snapshot_ref,
                     tracked_paths=tracked_paths,
+                    source_builders=source_builders,
                 )
             )
     records.sort(key=lambda record: record["identity"]["path"])
