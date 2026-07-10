@@ -27,6 +27,7 @@ from scripts.generate_repo_local_kag_index import (
     TEXT_WRAPPER_SUFFIXES,
     build_index,
     mime_for,
+    owner_type_for,
     payload_digest,
 )
 
@@ -198,6 +199,14 @@ def write_owner_specific_provider_records(
 
 
 class RepoLocalKagIndexTests(unittest.TestCase):
+    def test_runtime_source_owner_type_is_checkout_path_independent(self) -> None:
+        for repo in ("abyss-machine", "abyss-stack"):
+            with self.subTest(repo=repo):
+                self.assertEqual(
+                    "runtime_source",
+                    owner_type_for(repo, Path("/tmp/worktrees") / repo),
+                )
+
     def test_mime_detection_uses_portable_explicit_mappings(self) -> None:
         self.assertEqual("application/x-sh", mime_for(Path("hook.sh")))
         self.assertEqual("application/x-ndjson", mime_for(Path("events.jsonl")))

@@ -226,10 +226,8 @@ def owner_type_for(name: str, repo_root: Path) -> str:
         return "connector"
     if "bundles" in parts or name == "aoa-session-memory":
         return "bundle_provider"
-    if name in {"abyss-machine", "abyss-stack"} and str(repo_root).startswith("/home/"):
+    if name in {"abyss-machine", "abyss-stack"}:
         return "runtime_source"
-    if name == "abyss-stack":
-        return "runtime_mirror"
     if name in {"8Dionysus", "Dionysus", "ATM10-Agent"}:
         return "workspace"
     if name.startswith("aoa-") or name == "Tree-of-Sophia":
