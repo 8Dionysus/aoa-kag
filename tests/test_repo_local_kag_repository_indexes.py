@@ -17,6 +17,11 @@ from scripts.generate_repo_local_kag_index import (
 )
 from scripts.generate_repo_local_kag_coverage import source_index_matches_owner
 from scripts.generation.provider_map import _is_repo_local_meta_index_payload
+from scripts.validators.common import ValidationError
+from scripts.validators.repo_local_kag_index import (
+    repo_local_kag_index_digest_without_self,
+    validate_repo_local_kag_repository_index_payload,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -192,6 +197,44 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         assert isinstance(schema, dict)
         Draft202012Validator.check_schema(schema)
         self.assertEqual([], list(Draft202012Validator(schema).iter_errors(payload)))
+
+    def test_repository_index_validation_rejects_stale_source_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            entity_index = build_repository_indexes(source_index)["entity"]
+        entity_index["source_index"]["content_digest"] = "0" * 64
+        entity_index["index_identity"]["content_digest"] = (
+            repo_local_kag_index_digest_without_self(entity_index)
+        )
+
+        with self.assertRaisesRegex(ValidationError, "source index digest"):
+            validate_repo_local_kag_repository_index_payload(
+                entity_index,
+                source_payload=source_index,
+                label="entity index",
+                expected_index_kind="entity",
+            )
+
+    def test_repository_index_validation_rejects_missing_source_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            artifact_index = build_repository_indexes(source_index)["artifact"]
+        artifact_index["entries"][0]["source_record_id"] = "file:missing"
+        artifact_index["index_identity"]["content_digest"] = (
+            repo_local_kag_index_digest_without_self(artifact_index)
+        )
+
+        with self.assertRaisesRegex(ValidationError, "current source records"):
+            validate_repo_local_kag_repository_index_payload(
+                artifact_index,
+                source_payload=source_index,
+                label="artifact index",
+                expected_index_kind="artifact",
+            )
 
     def test_repository_indexes_are_separate_from_provider_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

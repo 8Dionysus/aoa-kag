@@ -543,6 +543,7 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
     _validate_source_refs_exist(repo, repo_root, manifest, label=f"{label} manifest")
 
     groups: dict[str, list[dict[str, object]]] = {}
+    source_index_cache: dict[Path, dict[str, object]] = {}
     for group_name, def_name in PROVIDER_RECORD_DIRS.items():
         directory = kag_root / group_name
         if not directory.is_dir():
@@ -556,12 +557,38 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                 continue
             if group_name == "indexes" and path.name in REPO_LOCAL_REPOSITORY_INDEX_NAMES:
                 payload = read_json(path)
-                from .repo_local_kag_index import repo_local_kag_validate_payload
+                from .repo_local_kag_index import (
+                    validate_repo_local_kag_index_payload,
+                    validate_repo_local_kag_repository_index_against_source,
+                )
 
-                repo_local_kag_validate_payload(
+                if not isinstance(payload, dict) or not isinstance(payload.get("source_index"), dict):
+                    fail(f"{label} {path.relative_to(repo_root).as_posix()} must keep source_index")
+                source_relative = payload["source_index"].get("path")
+                if not isinstance(source_relative, str) or not source_relative:
+                    fail(f"{label} {path.relative_to(repo_root).as_posix()} must keep source_index.path")
+                source_path = (repo_root / source_relative).resolve()
+                try:
+                    source_path.relative_to(repo_root.resolve())
+                except ValueError:
+                    fail(
+                        f"{label} {path.relative_to(repo_root).as_posix()} "
+                        "source_index.path must stay inside the provider repo"
+                    )
+                source_payload = source_index_cache.get(source_path)
+                if source_payload is None:
+                    loaded_source = read_json(source_path)
+                    source_payload = validate_repo_local_kag_index_payload(
+                        loaded_source,
+                        label=f"{label} {source_relative}",
+                    )
+                    source_index_cache[source_path] = source_payload
+                expected_index_kind = path.name.removeprefix("repo_").removesuffix("_index.json")
+                validate_repo_local_kag_repository_index_against_source(
                     payload,
-                    schema_path=REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+                    source_index=source_payload,
                     label=f"{label} {path.relative_to(repo_root).as_posix()}",
+                    expected_index_kind=expected_index_kind,
                 )
                 continue
             if group_name == "indexes" and path.name == DOMAIN_INDEX_CATALOG_NAME:
