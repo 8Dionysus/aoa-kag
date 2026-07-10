@@ -16,6 +16,7 @@
 | `scripts/validate_kag.py` | repo-wide KAG validation entrypoint |
 | `scripts/generate_repo_local_kag_index.py` | repo-local source surface index builder |
 | `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
+| `.github/actions/repo-local-kag-index/action.yml` | owner-callable repo-local source index parity entrypoint |
 
 ## Lane Entries
 
