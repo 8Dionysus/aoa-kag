@@ -48,6 +48,11 @@ owner-return route, validator route, and MCP consumer route.
 The coverage report gives every discovered owner a status:
 `passed`, `migration-needed`, `missing`, or `owner-specific`.
 
+A current common source index gives the owner `passed`; additional owner-domain
+indexes remain visible in `index_files`. A present common index with drift gives
+the owner `migration-needed`. `owner-specific` identifies a provider with a
+usable owner-domain index and an open common source-index slot.
+
 ## Options Considered
 
 - Keep only lightweight provider inventory records: preserves the existing

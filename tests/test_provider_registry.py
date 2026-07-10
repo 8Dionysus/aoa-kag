@@ -20,7 +20,6 @@ from scripts.provider_registry import (
     provider_dependency_pins,
     provider_entries,
     provider_repo_order,
-    sealed_provider_repos,
 )
 from scripts.validators.provider_registry import validate_provider_registry_contract
 
@@ -47,9 +46,8 @@ class ProviderRegistryTests(unittest.TestCase):
         self.assertEqual(len(repos), len(set(repos)))
         self.assertEqual({entry["repo"] for entry in entries}, set(repos))
         self.assertIn("aoa-kag", repos)
-        self.assertEqual({"aoa-session-memory"}, sealed_provider_repos())
         self.assertNotIn("aoa-kag", provider_ci_envs())
-        self.assertNotIn("aoa-session-memory", provider_dependency_pins())
+        self.assertIn("aoa-session-memory", provider_dependency_pins())
 
     def test_provider_checkout_envs_follow_registry_checkout_paths(self) -> None:
         entries = provider_entries()
@@ -72,7 +70,10 @@ class ProviderRegistryTests(unittest.TestCase):
                 continue
             with self.subTest(repo=entry["repo"]):
                 self.assertEqual((REPO_ROOT / checkout_path).resolve(), checkout_envs[env_name])
-        self.assertNotIn("AOA_SESSION_MEMORY_ROOT", checkout_envs)
+        self.assertEqual(
+            (REPO_ROOT / ".deps" / "aoa-session-memory").resolve(),
+            checkout_envs["AOA_SESSION_MEMORY_ROOT"],
+        )
 
     def test_pinned_provider_entries_match_dependency_pins(self) -> None:
         self.assertEqual(
@@ -81,6 +82,15 @@ class ProviderRegistryTests(unittest.TestCase):
                 entry["repo"]: entry["pinned_ref"]
                 for entry in pinned_provider_entries()
             },
+        )
+
+    def test_private_provider_checkout_auth_is_explicit(self) -> None:
+        session_memory = next(
+            entry for entry in provider_entries() if entry["repo"] == "aoa-session-memory"
+        )
+        self.assertEqual(
+            "AOA_SESSION_MEMORY_DEPLOY_KEY",
+            session_memory["checkout_ssh_key_secret"],
         )
 
     def test_provider_registry_contract_validator_passes_current_surfaces(self) -> None:

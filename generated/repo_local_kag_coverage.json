@@ -3,8 +3,8 @@
     "migration_needed": 0,
     "missing": 0,
     "owner_count": 22,
-    "owner_specific": 1,
-    "passed": 21
+    "owner_specific": 0,
+    "passed": 22
   },
   "owners": [
     {
@@ -687,7 +687,7 @@
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
-            "manifest": 22,
+            "manifest": 21,
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
@@ -701,7 +701,7 @@
           "command_role": {
             "builder": 6,
             "lane_entrypoint": 3,
-            "none": 822,
+            "none": 821,
             "script": 2,
             "test": 48,
             "validator": 13
@@ -715,7 +715,7 @@
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
-            "none": 479,
+            "none": 478,
             "parts": 13,
             "provenance": 13,
             "readme": 70,
@@ -729,7 +729,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 473,
+            "none": 472,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -740,10 +740,10 @@
             "artifact": 90,
             "command": 72,
             "document": 415,
-            "surface": 317
+            "surface": 316
           },
           "surface_state": {
-            "authored_source": 833,
+            "authored_source": 832,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -1193,7 +1193,7 @@
         "counts": {
           "artifact_kind": {
             "asset": 114,
-            "config": 317,
+            "config": 318,
             "data_table": 2,
             "dependency_manifest": 1,
             "directory_marker": 4,
@@ -1216,7 +1216,7 @@
           "command_role": {
             "builder": 13,
             "lane_entrypoint": 4,
-            "none": 1755,
+            "none": 1756,
             "script": 2,
             "test": 81,
             "validator": 12
@@ -1230,7 +1230,7 @@
             "design_agents": 1,
             "handoff": 6,
             "mechanics_doc": 117,
-            "none": 818,
+            "none": 819,
             "parts": 12,
             "provenance": 12,
             "readme": 103,
@@ -1245,7 +1245,7 @@
             "legacy": 39,
             "mechanic_package": 260,
             "mechanic_part": 8,
-            "none": 1514,
+            "none": 1515,
             "part_doc": 37,
             "part_schema": 3,
             "part_script": 4,
@@ -1255,10 +1255,10 @@
             "artifact": 210,
             "command": 112,
             "document": 1049,
-            "surface": 496
+            "surface": 497
           },
           "surface_state": {
-            "authored_source": 1714,
+            "authored_source": 1715,
             "generated_readmodel": 110,
             "legacy": 39,
             "receipt": 4
@@ -1406,7 +1406,7 @@
             "security": 1,
             "source_code": 25,
             "test": 74,
-            "validator": 16
+            "validator": 17
           },
           "command_role": {
             "builder": 25,
@@ -1414,7 +1414,7 @@
             "none": 1959,
             "script": 1,
             "test": 74,
-            "validator": 16
+            "validator": 17
           },
           "document_role": {
             "agents": 94,
@@ -1425,7 +1425,7 @@
             "design_agents": 1,
             "handoff": 69,
             "mechanics_doc": 250,
-            "none": 409,
+            "none": 410,
             "parts": 13,
             "provenance": 13,
             "readme": 168,
@@ -1439,7 +1439,7 @@
             "legacy": 117,
             "mechanic_package": 141,
             "mechanic_part": 41,
-            "none": 1478,
+            "none": 1479,
             "part_doc": 261,
             "part_schema": 22,
             "part_script": 13,
@@ -1447,12 +1447,12 @@
           },
           "primary_kind": {
             "artifact": 103,
-            "command": 119,
+            "command": 120,
             "document": 1669,
             "surface": 187
           },
           "surface_state": {
-            "authored_source": 1869,
+            "authored_source": 1870,
             "generated_readmodel": 53,
             "legacy": 155,
             "receipt": 1
@@ -1470,14 +1470,14 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 146,
+        "commands": 147,
         "documents": 1669,
         "generated": 42,
         "mechanics": 600,
         "schemas": 40,
-        "scripts": 69,
+        "scripts": 70,
         "tests": 77,
-        "validators": 30
+        "validators": 31
       },
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
@@ -1493,7 +1493,7 @@
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 14,
+            "config": 15,
             "directory_marker": 52,
             "document": 96,
             "index": 1,
@@ -1506,7 +1506,7 @@
             "test": 1
           },
           "command_role": {
-            "none": 174,
+            "none": 175,
             "test": 1
           },
           "document_role": {
@@ -1514,21 +1514,21 @@
             "audit": 1,
             "design": 1,
             "design_agents": 1,
-            "none": 79,
+            "none": 80,
             "readme": 56,
             "unknown_document": 26
           },
           "mechanics_role": {
-            "none": 175
+            "none": 176
           },
           "primary_kind": {
             "artifact": 56,
             "command": 1,
             "document": 96,
-            "surface": 22
+            "surface": 23
           },
           "surface_state": {
-            "authored_source": 172,
+            "authored_source": 173,
             "generated_readmodel": 2,
             "receipt": 1
           }
@@ -1558,7 +1558,7 @@
         "kag/indexes/session_memory_source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "owner-specific",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/bundles/aoa-session-memory/kag",
       "owner_type": "bundle_provider",
       "repo": "aoa-session-memory",

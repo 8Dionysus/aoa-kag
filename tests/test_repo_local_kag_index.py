@@ -1028,8 +1028,8 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual("passed", statuses["aoa-demo"])
         self.assertEqual("owner-specific", statuses["aoa-demo-connector"])
         self.assertEqual("missing", statuses["aoa-demo-bundle"])
-        self.assertEqual("owner-specific", statuses["aoa-demo-bundle-provider"])
-        self.assertEqual("owner-specific", statuses["aoa-demo-current-bundle-provider"])
+        self.assertEqual("migration-needed", statuses["aoa-demo-bundle-provider"])
+        self.assertEqual("passed", statuses["aoa-demo-current-bundle-provider"])
         owners = {owner["repo"]: owner for owner in payload["owners"]}
         self.assertEqual(
             "source_surface_index",
@@ -1038,6 +1038,10 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(
             "source_surface_index",
             owners["aoa-demo-current-bundle-provider"]["common_surface_profile"]["source"],
+        )
+        self.assertIn(
+            "kag/indexes/session_memory_source_inventory.json",
+            owners["aoa-demo-current-bundle-provider"]["index_files"],
         )
         self.assertEqual(
             "source_tree_scan",
@@ -1165,57 +1169,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             stderr.getvalue(),
         )
 
-    def test_provider_coverage_can_carry_committed_row_for_unmounted_root(self) -> None:
-        cached_owner = {
-            "repo": "aoa-private",
-            "owner_type": "organ",
-            "root": "/srv/AbyssOS/aoa-private",
-            "kag_home": "/srv/AbyssOS/aoa-private/kag",
-            "index_status": "passed",
-            "index_files": ["kag/indexes/source_surface_index.json"],
-            "coverage": {
-                "documents": 1,
-                "mechanics": 0,
-                "commands": 0,
-                "validators": 0,
-                "tests": 0,
-                "scripts": 0,
-                "schemas": 0,
-                "generated": 0,
-            },
-            "common_surface_profile": {
-                "source": "cached_provider_row",
-                "counts": {
-                    "artifact_kind": {"document": 1},
-                    "primary_kind": {"document": 1},
-                    "surface_state": {},
-                    "document_role": {},
-                    "mechanics_role": {},
-                    "command_role": {},
-                },
-                "quality": {
-                    "unknown_count": 0,
-                    "has_kag_home": True,
-                    "has_record_classes": True,
-                    "has_source_index": True,
-                    "has_owner_commands": False,
-                    "has_generated_readmodels": False,
-                    "has_validation_route": False,
-                },
-            },
-        }
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            payload = coverage_generation.build_coverage(
-                Path(tmpdir),
-                owner_roots=[("aoa-private", Path(tmpdir) / "missing")],
-                cached_owner_rows={"aoa-private": cached_owner},
-            )
-
-        self.assertEqual([cached_owner], payload["owners"])
-        self.assertEqual(1, payload["coverage_summary"]["passed"])
-
-    def test_provider_coverage_uses_configured_owner_identity_for_owner_specific_indexes(self) -> None:
+    def test_provider_coverage_keeps_invalid_common_index_visible(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             checkout = root / "temporary-checkout"
@@ -1233,7 +1187,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         owner = payload["owners"][0]
         self.assertEqual("aoa-demo-connector", owner["repo"])
         self.assertEqual("connector", owner["owner_type"])
-        self.assertEqual("owner-specific", owner["index_status"])
+        self.assertEqual("migration-needed", owner["index_status"])
 
     def test_provider_coverage_requires_usable_owner_specific_index(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

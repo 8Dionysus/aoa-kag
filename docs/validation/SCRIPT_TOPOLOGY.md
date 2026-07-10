@@ -83,8 +83,7 @@ document, mechanics, command, schema, generated, and receipt surfaces.
 
 `scripts/generate_repo_local_kag_coverage.py` builds
 `generated/repo_local_kag_coverage.json` and the minified companion from live
-OS Abyss provider roots, with committed rows carrying sealed roots in runner
-environments without a mounted source root.
+OS Abyss provider roots materialized from the pinned provider registry.
 
 Both repo-local builders support `--check` for parity without writing files.
 

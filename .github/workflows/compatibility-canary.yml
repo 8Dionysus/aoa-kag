@@ -97,6 +97,14 @@ jobs:
           repository: 8Dionysus/aoa-techniques
           path: .deps/aoa-techniques
 
+      - name: Checkout aoa-session-memory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-session-memory
+          path: .deps/aoa-session-memory
+          ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
+          persist-credentials: false
+
       - name: Checkout aoa-routing
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:

@@ -101,13 +101,16 @@
           "type": "string",
           "enum": [
             "self",
-            "pinned",
-            "sealed"
+            "pinned"
           ]
         },
         "pinned_ref": {
           "type": "string",
           "pattern": "^[a-f0-9]{40}$"
+        },
+        "checkout_ssh_key_secret": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]+$"
         }
       },
       "allOf": [
