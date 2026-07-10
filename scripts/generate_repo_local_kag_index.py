@@ -1455,6 +1455,7 @@ def repository_index_payload(
     *,
     index_kind: str,
     entries: list[dict[str, Any]],
+    source_index_path: Path,
 ) -> dict[str, Any]:
     kind_field = f"{index_kind}_kind"
     local_id_suffix = {"entity": "entities"}.get(index_kind, f"{index_kind}s")
@@ -1481,7 +1482,7 @@ def repository_index_payload(
             "schema_ref": REPOSITORY_INDEX_SCHEMA_REF,
         },
         "source_index": {
-            "path": DEFAULT_OUTPUT.as_posix(),
+            "path": source_index_path.as_posix(),
             "local_id": source_index["index_identity"]["local_id"],
             "content_digest": source_index["index_identity"]["content_digest"],
         },
@@ -1500,7 +1501,11 @@ def repository_index_payload(
     return payload
 
 
-def build_repository_indexes(source_index: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def build_repository_indexes(
+    source_index: dict[str, Any],
+    *,
+    source_index_path: Path = DEFAULT_OUTPUT,
+) -> dict[str, dict[str, Any]]:
     records = [record for record in source_index["records"] if isinstance(record, dict)]
     repo = str(source_index["repo"]["name"])
     return {
@@ -1508,16 +1513,19 @@ def build_repository_indexes(source_index: dict[str, Any]) -> dict[str, dict[str
             source_index,
             index_kind="entity",
             entries=entity_entries(records),
+            source_index_path=source_index_path,
         ),
         "artifact": repository_index_payload(
             source_index,
             index_kind="artifact",
             entries=artifact_entries(records),
+            source_index_path=source_index_path,
         ),
         "event": repository_index_payload(
             source_index,
             index_kind="event",
             entries=event_entries(repo, records),
+            source_index_path=source_index_path,
         ),
     }
 
@@ -1574,7 +1582,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         output=output,
         excluded_outputs=tuple(family_paths.values()) if args.index_family else (),
     )
-    family = build_repository_indexes(payload) if args.index_family else {}
+    if args.index_family:
+        try:
+            source_index_path = output_path.resolve().relative_to(repo_root)
+        except ValueError as exc:
+            raise SystemExit("--index-family output must stay inside --repo-root") from exc
+        family = build_repository_indexes(
+            payload,
+            source_index_path=source_index_path,
+        )
+    else:
+        family = {}
     if args.check:
         ok = check_output(output_path, payload)
         if args.index_family:

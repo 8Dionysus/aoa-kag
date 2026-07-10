@@ -166,6 +166,10 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             subprocess.run(("git", "add", "custom/indexes"), cwd=root, check=True)
             self.assertEqual(0, main([*args, "--check"]))
             payload = load_json(root / "custom" / "indexes" / "source.json")
+            family = {
+                index_kind: load_json(root / "custom" / "indexes" / filename)
+                for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+            }
 
         indexed_paths = {record["identity"]["path"] for record in payload["records"]}
         self.assertTrue(
@@ -176,6 +180,10 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     for filename in REPOSITORY_INDEX_FILENAMES.values()
                 ),
             }.isdisjoint(indexed_paths)
+        )
+        self.assertEqual(
+            {"custom/indexes/source.json"},
+            {index["source_index"]["path"] for index in family.values()},
         )
 
     def test_domain_index_catalog_example_matches_schema(self) -> None:

@@ -116,6 +116,11 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
     },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
     "repo": {
       "type": "object",
       "additionalProperties": false,
@@ -175,7 +180,7 @@
       "required": ["path", "local_id", "content_digest"],
       "properties": {
         "path": {
-          "const": "kag/indexes/source_surface_index.json"
+          "$ref": "#/$defs/relativePath"
         },
         "local_id": {
           "const": "index:repo-local:source-surfaces"
