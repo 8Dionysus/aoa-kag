@@ -28,6 +28,18 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
+    def test_local_kag_schemas_share_runtime_source_vocabulary(self) -> None:
+        subtree_schema = load_json(validate_kag.LOCAL_KAG_SUBTREE_SCHEMA_PATH)
+        provider_map_schema = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH)
+        self.assertIn(
+            "runtime_source",
+            subtree_schema["$defs"]["sourceRef"]["properties"]["source_class"]["enum"],
+        )
+        self.assertIn(
+            "runtime_source",
+            provider_map_schema["$defs"]["sourceClass"]["enum"],
+        )
+
     def patched_read_json(self, target_module, overrides: dict[Path, object]):
         original = target_module.read_json
         normalized_overrides: dict[Path, object] = {}
