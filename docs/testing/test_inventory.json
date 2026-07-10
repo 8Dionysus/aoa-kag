@@ -161,6 +161,20 @@
       ]
     },
     {
+      "path": "tests/test_repo_local_kag_repository_indexes.py",
+      "family": "kag/repository-index-family",
+      "protects": "Repo-local entity, artifact, and event projections plus the optional owner-domain index catalog contract.",
+      "owner_surface": "schemas/repo-local-kag-repository-index.schema.json",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_repository_indexes.py",
+      "failure_route": "Route through the repo-local index-family schema, domain catalog schema, generator, or generated kag/indexes outputs.",
+      "coverage_kinds": [
+        "topology/inventory",
+        "source/route-contract",
+        "generated/parity"
+      ]
+    },
+    {
       "path": "tests/test_roadmap_parity.py",
           "family": "docs/root-surface",
           "protects": "Roadmap parity with current KAG direction.",

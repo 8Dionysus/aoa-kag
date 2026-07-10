@@ -17,7 +17,7 @@ ownership and giving runtime/MCP consumers stable return handles.
 | `manifest.json` | manifest | source refs, record classes, storage posture, validation routes |
 | `nodes/` | node | documents, entities, events, source surfaces, route surfaces |
 | `edges/` | edge | direct or declared derived relations between local nodes |
-| `indexes/` | index | inventory, lookup, and path-map records over local records |
+| `indexes/` | index | repository source/entity/artifact/event indexes and owner-specific catalogs |
 | `projections/` | projection | compact consumer views derived from local records |
 | `receipts/` | receipt | generation, validation, freshness, and regrounding evidence |
 
@@ -45,6 +45,26 @@ Every portable local KAG record carries:
 Edges add `from_id`, `to_id`, `edge_kind`, and `edge_trace`.
 Indexes and projections name their `source_record_ids`.
 Receipts name `receipt_kind`, `result`, and `fallback_route`.
+
+## Repository Index Family
+
+Every provider carries four generated indexes over its Git source tree:
+
+| Index | Carries |
+| --- | --- |
+| `source_surface_index.json` | complete source inventory and classification coordinates |
+| `repo_entity_index.json` | logical repository entities with source-record return handles |
+| `repo_artifact_index.json` | compact physical artifact identity and source-record handles |
+| `repo_event_index.json` | event declarations, producers, and receipts visible in repository source |
+
+The entity, artifact, and event indexes are projections of the source index.
+They carry its digest and do not become independent source truth. Event
+instances owned by a runtime remain in that runtime's stores.
+
+Repositories with native domain indexes may also publish
+`domain_index_catalog.json`. The catalog carries routes, authority,
+materialization, storage, and freshness coordinates while the indexed domain
+data remains with its owner.
 
 ## Source Ownership
 

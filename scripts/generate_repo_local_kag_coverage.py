@@ -16,6 +16,7 @@ try:
     from scripts.generate_repo_local_kag_index import (
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
+        REPOSITORY_INDEX_FILENAMES,
         build_index,
         classification_summary,
         coverage_summary,
@@ -37,6 +38,7 @@ except ImportError:  # pragma: no cover - direct script execution
     from generate_repo_local_kag_index import (  # type: ignore
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
+        REPOSITORY_INDEX_FILENAMES,
         build_index,
         classification_summary,
         coverage_summary,
@@ -61,6 +63,16 @@ OWNER_STATUS = ("passed", "migration-needed", "missing", "owner-specific")
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 LOCAL_KAG_SUBTREE_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-subtree.schema.json"
 SOURCE_SURFACE_INDEX_REL = Path("kag/indexes/source_surface_index.json")
+REPOSITORY_INDEX_RELS = {
+    Path("kag") / "indexes" / filename
+    for filename in REPOSITORY_INDEX_FILENAMES.values()
+}
+COMMON_GENERATED_INDEX_RELS = {SOURCE_SURFACE_INDEX_REL, *REPOSITORY_INDEX_RELS}
+META_INDEX_NAMES = {
+    SOURCE_SURFACE_INDEX_REL.name,
+    *(path.name for path in REPOSITORY_INDEX_RELS),
+    "domain_index_catalog.json",
+}
 PROVIDER_REPO_ORDER = provider_repo_order()
 CONNECTOR_REPOS = connector_repos()
 OWNER_SPECIFIC_INDEX_NAMES = {
@@ -237,7 +249,7 @@ def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> boo
     expected_paths = {
         rel.as_posix()
         for rel in git_file_paths(owner_root)
-        if rel != SOURCE_SURFACE_INDEX_REL
+        if rel not in COMMON_GENERATED_INDEX_RELS
     }
     if indexed_paths != expected_paths:
         return False
@@ -438,7 +450,7 @@ def owner_specific_provider_records_are_usable(owner_name: str, owner_root: Path
                 return False
             records: list[dict[str, object]] = []
             for path in sorted(directory.glob("*.json")):
-                if group_name == "indexes" and path.name == SOURCE_SURFACE_INDEX_REL.name:
+                if group_name == "indexes" and path.name in META_INDEX_NAMES:
                     continue
                 payload = json.loads(path.read_text(encoding="utf-8"))
                 if not isinstance(payload, dict):

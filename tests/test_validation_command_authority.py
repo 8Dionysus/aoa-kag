@@ -133,6 +133,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             ".",
             "--output",
             "kag/indexes/source_surface_index.json",
+            "--index-family",
         )
         index_check_command = (*index_command, "--check")
         for lane_name in ("generated_check", "compatibility_canary"):
@@ -252,6 +253,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("scripts/generate_repo_local_kag_index.py", action)
         self.assertIn('--repo-root "${{ inputs.repo-root }}"', action)
         self.assertIn('--output "${{ inputs.output }}"', action)
+        self.assertIn("--index-family", action)
         self.assertIn("--check", action)
         self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)
 

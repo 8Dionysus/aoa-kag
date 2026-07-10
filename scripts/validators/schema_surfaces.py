@@ -15,6 +15,11 @@ def validate_schema_surface() -> None:
     validate_top_level_schema(SCHEMA_PATH, "registry")
     validate_top_level_schema(LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH, "local KAG provider map")
     validate_top_level_schema(REPO_LOCAL_KAG_INDEX_SCHEMA_PATH, "repo-local KAG index")
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+        "repo-local KAG repository index",
+    )
+    validate_top_level_schema(DOMAIN_INDEX_CATALOG_SCHEMA_PATH, "domain index catalog")
     validate_top_level_schema(REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH, "repo-local KAG coverage")
 
 def validate_bridge_schema_surface() -> None:

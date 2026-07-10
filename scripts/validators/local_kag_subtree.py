@@ -78,6 +78,12 @@ REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 REQUIRED_MCP_SHAPE = {"resource", "root"}
 EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
+REPO_LOCAL_REPOSITORY_INDEX_NAMES = {
+    "repo_entity_index.json",
+    "repo_artifact_index.json",
+    "repo_event_index.json",
+}
+DOMAIN_INDEX_CATALOG_NAME = "domain_index_catalog.json"
 LOCAL_KAG_CONTROL_REFS = {"kag/manifest.json"}
 
 PROVIDER_RECORD_DIRS = {
@@ -547,6 +553,32 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
         records: list[dict[str, object]] = []
         for path in files:
             if group_name == "indexes" and path.name == REPO_LOCAL_SOURCE_INDEX_NAME:
+                continue
+            if group_name == "indexes" and path.name in REPO_LOCAL_REPOSITORY_INDEX_NAMES:
+                payload = read_json(path)
+                from .repo_local_kag_index import repo_local_kag_validate_payload
+
+                repo_local_kag_validate_payload(
+                    payload,
+                    schema_path=REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+                    label=f"{label} {path.relative_to(repo_root).as_posix()}",
+                )
+                continue
+            if group_name == "indexes" and path.name == DOMAIN_INDEX_CATALOG_NAME:
+                payload = read_json(path)
+                from .repo_local_kag_index import repo_local_kag_validate_payload
+
+                repo_local_kag_validate_payload(
+                    payload,
+                    schema_path=DOMAIN_INDEX_CATALOG_SCHEMA_PATH,
+                    label=f"{label} {path.relative_to(repo_root).as_posix()}",
+                )
+                _validate_source_refs_exist(
+                    repo,
+                    repo_root,
+                    payload,
+                    label=f"{label} {path.relative_to(repo_root).as_posix()}",
+                )
                 continue
             record = read_json(path)
             _validate_payload_against_schema_def(

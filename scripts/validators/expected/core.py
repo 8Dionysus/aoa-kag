@@ -48,9 +48,17 @@ LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-provider
 
 REPO_LOCAL_KAG_INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 
+REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-repository-index.schema.json"
+)
+
+DOMAIN_INDEX_CATALOG_SCHEMA_PATH = REPO_ROOT / "schemas" / "domain-index-catalog.schema.json"
+
 REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
 
 REPO_LOCAL_KAG_INDEX_EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
+
+DOMAIN_INDEX_CATALOG_EXAMPLE_PATH = REPO_ROOT / "examples" / "domain_index_catalog.example.json"
 
 REPO_LOCAL_KAG_INDEX_PATH = REPO_ROOT / "kag" / "indexes" / "source_surface_index.json"
 

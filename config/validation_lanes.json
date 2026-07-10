@@ -84,7 +84,10 @@
   "drift_paths": {
     "generated": [
       "generated",
-      "kag/indexes/source_surface_index.json"
+      "kag/indexes/source_surface_index.json",
+      "kag/indexes/repo_entity_index.json",
+      "kag/indexes/repo_artifact_index.json",
+      "kag/indexes/repo_event_index.json"
     ]
   },
   "command_sequences": {
@@ -142,7 +145,8 @@
         "--repo-root",
         ".",
         "--output",
-        "kag/indexes/source_surface_index.json"
+        "kag/indexes/source_surface_index.json",
+        "--index-family"
       ],
       [
         "python",
@@ -158,7 +162,8 @@
         "--repo-root",
         ".",
         "--output",
-        "kag/indexes/source_surface_index.json"
+        "kag/indexes/source_surface_index.json",
+        "--index-family"
       ],
       [
         "python",
@@ -172,6 +177,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
+        "--index-family",
         "--check"
       ],
       [
@@ -229,7 +235,8 @@
         "--repo-root",
         ".",
         "--output",
-        "kag/indexes/source_surface_index.json"
+        "kag/indexes/source_surface_index.json",
+        "--index-family"
       ],
       [
         "python",
@@ -245,7 +252,8 @@
         "--repo-root",
         ".",
         "--output",
-        "kag/indexes/source_surface_index.json"
+        "kag/indexes/source_surface_index.json",
+        "--index-family"
       ],
       [
         "python",
@@ -259,6 +267,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
+        "--index-family",
         "--check"
       ],
       [
@@ -272,7 +281,10 @@
         "--exit-code",
         "--",
         "generated",
-        "kag/indexes/source_surface_index.json"
+        "kag/indexes/source_surface_index.json",
+        "kag/indexes/repo_entity_index.json",
+        "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_event_index.json"
       ]
     ]
   }

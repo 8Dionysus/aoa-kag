@@ -32,23 +32,26 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_entity_index.json",
+          "kag/indexes/repo_event_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "coverage": {
-          "commands": 176,
+          "commands": 177,
           "documents": 415,
           "generated": 35,
           "mechanics": 421,
-          "schemas": 74,
+          "schemas": 76,
           "scripts": 126,
-          "tests": 50,
+          "tests": 51,
           "validators": 97
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
               "asset": 50,
-              "config": 117,
+              "config": 118,
               "document": 407,
               "generated_readmodel": 42,
               "index": 1,
@@ -57,19 +60,19 @@
               "owner_metadata": 2,
               "projection": 1,
               "receipt": 1,
-              "schema": 73,
+              "schema": 75,
               "script": 11,
               "security": 1,
               "source_code": 104,
-              "test": 48,
+              "test": 49,
               "validator": 13
             },
             "command_role": {
               "builder": 6,
               "lane_entrypoint": 3,
-              "none": 821,
+              "none": 824,
               "script": 2,
-              "test": 48,
+              "test": 49,
               "validator": 13
             },
             "document_role": {
@@ -81,7 +84,7 @@
               "design": 1,
               "design_agents": 1,
               "mechanics_doc": 113,
-              "none": 478,
+              "none": 482,
               "parts": 13,
               "provenance": 13,
               "readme": 70,
@@ -95,7 +98,7 @@
               "legacy": 16,
               "mechanic_package": 55,
               "mechanic_part": 94,
-              "none": 472,
+              "none": 476,
               "part_contract": 28,
               "part_doc": 129,
               "part_schema": 62,
@@ -104,12 +107,12 @@
             },
             "primary_kind": {
               "artifact": 90,
-              "command": 72,
+              "command": 73,
               "document": 415,
-              "surface": 316
+              "surface": 319
             },
             "surface_state": {
-              "authored_source": 832,
+              "authored_source": 836,
               "generated_readmodel": 45,
               "legacy": 16
             }
@@ -6986,23 +6989,26 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_entity_index.json",
+        "kag/indexes/repo_event_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "coverage": {
-        "commands": 176,
+        "commands": 177,
         "documents": 415,
         "generated": 35,
         "mechanics": 421,
-        "schemas": 74,
+        "schemas": 76,
         "scripts": 126,
-        "tests": 50,
+        "tests": 51,
         "validators": 97
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 117,
+            "config": 118,
             "document": 407,
             "generated_readmodel": 42,
             "index": 1,
@@ -7011,19 +7017,19 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 73,
+            "schema": 75,
             "script": 11,
             "security": 1,
             "source_code": 104,
-            "test": 48,
+            "test": 49,
             "validator": 13
           },
           "command_role": {
             "builder": 6,
             "lane_entrypoint": 3,
-            "none": 821,
+            "none": 824,
             "script": 2,
-            "test": 48,
+            "test": 49,
             "validator": 13
           },
           "document_role": {
@@ -7035,7 +7041,7 @@
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
-            "none": 478,
+            "none": 482,
             "parts": 13,
             "provenance": 13,
             "readme": 70,
@@ -7049,7 +7055,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 472,
+            "none": 476,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -7058,12 +7064,12 @@
           },
           "primary_kind": {
             "artifact": 90,
-            "command": 72,
+            "command": 73,
             "document": 415,
-            "surface": 316
+            "surface": 319
           },
           "surface_state": {
-            "authored_source": 832,
+            "authored_source": 836,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -9001,7 +9007,7 @@
       "counts": {
         "artifact_kind": {
           "asset": 50,
-          "config": 117,
+          "config": 118,
           "document": 407,
           "generated_readmodel": 42,
           "index": 1,
@@ -9010,19 +9016,19 @@
           "owner_metadata": 2,
           "projection": 1,
           "receipt": 1,
-          "schema": 73,
+          "schema": 75,
           "script": 11,
           "security": 1,
           "source_code": 104,
-          "test": 48,
+          "test": 49,
           "validator": 13
         },
         "command_role": {
           "builder": 6,
           "lane_entrypoint": 3,
-          "none": 821,
+          "none": 824,
           "script": 2,
-          "test": 48,
+          "test": 49,
           "validator": 13
         },
         "document_role": {
@@ -9034,7 +9040,7 @@
           "design": 1,
           "design_agents": 1,
           "mechanics_doc": 113,
-          "none": 478,
+          "none": 482,
           "parts": 13,
           "provenance": 13,
           "readme": 70,
@@ -9048,7 +9054,7 @@
           "legacy": 16,
           "mechanic_package": 55,
           "mechanic_part": 94,
-          "none": 472,
+          "none": 476,
           "part_contract": 28,
           "part_doc": 129,
           "part_schema": 62,
@@ -9057,12 +9063,12 @@
         },
         "primary_kind": {
           "artifact": 90,
-          "command": 72,
+          "command": 73,
           "document": 415,
-          "surface": 316
+          "surface": 319
         },
         "surface_state": {
-          "authored_source": 832,
+          "authored_source": 836,
           "generated_readmodel": 45,
           "legacy": 16
         }

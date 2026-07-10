@@ -97,8 +97,8 @@ The repository should support:
 
 - source-linked graph and retrieval projections;
 - stable KAG surface identifiers;
-- repo-local source surface indexes with document, mechanics, command,
-  provenance, ABI/sign, and owner-return coordinates;
+- repo-local source, entity, artifact, and event indexes with document,
+  mechanics, command, provenance, ABI/sign, and owner-return coordinates;
 - manifest-driven generation;
 - schema-checked payloads and examples;
 - bounded bridge and handoff routes;
