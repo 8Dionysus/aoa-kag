@@ -238,6 +238,24 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("python scripts/ci_gate.py --mode compatibility-canary", canary)
         self.assertNotIn("python scripts/generate_kag.py", canary)
 
+    def test_repo_local_index_action_routes_to_canonical_builder(self) -> None:
+        action = (
+            REPO_ROOT
+            / ".github"
+            / "actions"
+            / "repo-local-kag-index"
+            / "action.yml"
+        ).read_text(encoding="utf-8")
+        workflow = (
+            REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("scripts/generate_repo_local_kag_index.py", action)
+        self.assertIn('--repo-root "${{ inputs.repo-root }}"', action)
+        self.assertIn('--output "${{ inputs.output }}"', action)
+        self.assertIn("--check", action)
+        self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)
+
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
         repo_validation = (
             REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
