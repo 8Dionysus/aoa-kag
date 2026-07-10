@@ -38,20 +38,33 @@ FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
 PORTABLE_MIME_BY_SUFFIX = {
     ".7z": "application/x-7z-compressed",
+    ".alloy": "text/plain",
+    ".c": "text/x-c",
+    ".cc": "text/x-c++",
     ".cfg": "text/plain",
+    ".conf": "text/plain",
+    ".cpp": "text/x-c++",
+    ".css": "text/css",
     ".csv": "text/csv",
+    ".env": "text/plain",
     ".example": "text/plain",
     ".gif": "image/gif",
+    ".go": "text/x-go",
     ".gz": "application/gzip",
     ".htm": "text/html",
     ".html": "text/html",
+    ".h": "text/x-c",
+    ".hpp": "text/x-c++",
     ".ico": "image/vnd.microsoft.icon",
     ".ini": "text/plain",
     ".js": "text/javascript",
+    ".jsx": "text/jsx",
+    ".java": "text/x-java-source",
     ".jpeg": "image/jpeg",
     ".jpg": "image/jpeg",
     ".json": "application/json",
     ".jsonl": "application/x-ndjson",
+    ".kt": "text/x-kotlin",
     ".md": "text/markdown",
     ".ndjson": "application/x-ndjson",
     ".ods": "application/vnd.oasis.opendocument.spreadsheet",
@@ -59,20 +72,29 @@ PORTABLE_MIME_BY_SUFFIX = {
     ".pdf": "application/pdf",
     ".png": "image/png",
     ".ps1": "text/plain",
+    ".properties": "text/plain",
+    ".php": "application/x-httpd-php",
     ".py": "text/x-python",
+    ".rb": "text/x-ruby",
+    ".rs": "text/x-rust",
+    ".scala": "text/x-scala",
     ".service": "text/plain",
     ".sh": "application/x-sh",
     ".snapshot": "text/plain",
     ".socket": "text/plain",
     ".svg": "image/svg+xml",
+    ".svelte": "text/x-svelte",
+    ".swift": "text/x-swift",
     ".tar": "application/x-tar",
     ".tgz": "application/x-tar",
     ".timer": "text/plain",
     ".toml": "application/toml",
     ".ts": "application/typescript",
+    ".tsx": "text/tsx",
     ".tsv": "text/tab-separated-values",
     ".txt": "text/plain",
     ".webp": "image/webp",
+    ".vue": "text/x-vue",
     ".xls": "application/vnd.ms-excel",
     ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ".xml": "application/xml",
@@ -149,7 +171,33 @@ OUTPUT_REFERENCE_LITERAL = re.compile(
 SECRET_HINTS = ("secret", "token", "credential", "private-key", "password")
 LANE_ENTRYPOINTS = {"ci_gate.py", "release_check.py", "run_tests.py"}
 COMMAND_SUFFIXES = {".py", ".sh", ".ps1"}
-SOURCE_CODE_SUFFIXES = {".js", ".ps1", ".py", ".sh", ".ts"}
+SOURCE_CODE_SUFFIXES = {
+    ".c",
+    ".cc",
+    ".cpp",
+    ".css",
+    ".go",
+    ".h",
+    ".hpp",
+    ".htm",
+    ".html",
+    ".java",
+    ".js",
+    ".jsx",
+    ".kt",
+    ".php",
+    ".ps1",
+    ".py",
+    ".rb",
+    ".rs",
+    ".scala",
+    ".sh",
+    ".svelte",
+    ".swift",
+    ".ts",
+    ".tsx",
+    ".vue",
+}
 COMMAND_PREFIXES = ("build_", "generate_", "run_", "start_", "sync_", "validate_")
 BUILDER_PREFIXES = ("build_", "generate_")
 DECISION_INDEX_BUILDER_NAMES = {
@@ -168,8 +216,14 @@ SERVICE_UNIT_SUFFIXES = {".path", ".service", ".socket", ".timer"}
 OWNER_METADATA_NAMES = {".gitattributes", ".gitignore", "CODEOWNERS", "AOA_WORKSPACE_ROOT"}
 DIRECTORY_MARKER_NAMES = {".gitkeep", ".keep"}
 ENV_CONFIG_NAMES = {".env", ".env.example", ".env.sample", ".env.template"}
+BUILD_CONFIG_NAMES = {"Dockerfile", "Justfile", "Makefile", "Procfile"}
+CONFIG_SUFFIXES = {".alloy", ".cfg", ".conf", ".env", ".ini", ".properties"}
 PORTABLE_TEXT_BASENAMES = (
-    OWNER_METADATA_NAMES | DIRECTORY_MARKER_NAMES | ENV_CONFIG_NAMES | {"LICENSE"}
+    OWNER_METADATA_NAMES
+    | DIRECTORY_MARKER_NAMES
+    | ENV_CONFIG_NAMES
+    | BUILD_CONFIG_NAMES
+    | {"LICENSE"}
 )
 
 
@@ -191,6 +245,10 @@ def source_snapshot_ref(repo_root: Path) -> str:
         return GIT_INDEX_SOURCE_REF
     except (subprocess.CalledProcessError, FileNotFoundError):
         return FILESYSTEM_SOURCE_REF
+
+
+def git_file_paths(repo_root: Path) -> list[Path]:
+    return sorted(git_file_modes(repo_root))
 
 
 def manifest_repo_name(repo_root: Path) -> str:
@@ -245,18 +303,35 @@ def is_source_path(path: Path) -> bool:
     return True
 
 
-def git_file_paths(repo_root: Path) -> list[Path]:
+def git_file_modes(repo_root: Path) -> dict[Path, str]:
     try:
         raw = subprocess.run(
-            ("git", "ls-files", "-z", "--cached"),
+            ("git", "ls-files", "-s", "-z", "--cached"),
             cwd=repo_root,
             check=True,
             capture_output=True,
         ).stdout
-        paths = [Path(item.decode()) for item in raw.split(b"\0") if item]
+        entries: dict[Path, str] = {}
+        for item in raw.split(b"\0"):
+            if not item:
+                continue
+            metadata, separator, path_bytes = item.partition(b"\t")
+            if not separator:
+                continue
+            mode = metadata.split(b" ", 1)[0].decode()
+            path = Path(path_bytes.decode())
+            if is_source_path(path):
+                entries[path] = mode
+        return dict(sorted(entries.items()))
     except (subprocess.CalledProcessError, FileNotFoundError):
-        paths = [path.relative_to(repo_root) for path in repo_root.rglob("*") if path.is_file()]
-    return sorted(path for path in paths if is_source_path(path))
+        entries = {}
+        for path in repo_root.rglob("*"):
+            if not path.is_file() and not path.is_symlink():
+                continue
+            relative = path.relative_to(repo_root)
+            if is_source_path(relative):
+                entries[relative] = "120000" if path.is_symlink() else "100644"
+        return dict(sorted(entries.items()))
 
 
 def source_bytes(repo_root: Path, rel: Path, path: Path) -> bytes:
@@ -268,6 +343,8 @@ def source_bytes(repo_root: Path, rel: Path, path: Path) -> bytes:
             capture_output=True,
         ).stdout
     except (subprocess.CalledProcessError, FileNotFoundError):
+        if path.is_symlink():
+            return path.readlink().as_posix().encode("utf-8")
         return path.read_bytes()
 
 
@@ -383,7 +460,9 @@ def heading_refs(content: bytes, rel_path: str) -> list[dict[str, Any]]:
     return refs
 
 
-def mime_for(path: Path, content: bytes = b"") -> str:
+def mime_for(path: Path, content: bytes = b"", *, git_mode: str = "") -> str:
+    if git_mode == "120000":
+        return "inode/symlink"
     suffix_chain = tuple(suffix.lower() for suffix in path.suffixes[-2:])
     chain_mime = PORTABLE_MIME_BY_SUFFIX_CHAIN.get(suffix_chain)
     if chain_mime:
@@ -463,17 +542,35 @@ def document_role(rel: Path) -> str:
     return "unknown_document"
 
 
-def artifact_kind(rel: Path) -> str:
+def is_env_config_name(name: str) -> bool:
+    return name in ENV_CONFIG_NAMES or any(
+        name.endswith(suffix)
+        for suffix in (".env", ".env.example", ".env.sample", ".env.template")
+    )
+
+
+def has_shebang(content: bytes) -> bool:
+    return content.startswith(b"#!")
+
+
+def artifact_kind(rel: Path, content: bytes = b"", *, git_mode: str = "") -> str:
     parts = rel.parts
     name = rel.name
-    suffix = rel.suffix
+    suffix = rel.suffix.lower()
+    if git_mode == "120000":
+        return "symlink"
     if name in {"LICENSE", "COPYING"}:
         return "license"
     if name in OWNER_METADATA_NAMES or (len(parts) >= 2 and parts[0] == ".github" and name == "CODEOWNERS"):
         return "owner_metadata"
     if name in DIRECTORY_MARKER_NAMES:
         return "directory_marker"
-    if name in ENV_CONFIG_NAMES:
+    if (
+        is_env_config_name(name)
+        or name in BUILD_CONFIG_NAMES
+        or name.endswith(".Dockerfile")
+        or suffix in CONFIG_SUFFIXES
+    ):
         return "config"
     if name.startswith("requirements") and suffix == ".txt":
         return "dependency_manifest"
@@ -515,9 +612,9 @@ def artifact_kind(rel: Path) -> str:
         return "config"
     if suffix == ".py" and is_test_entrypoint(rel):
         return "test"
-    if is_command_entrypoint(rel) and name.startswith("validate_"):
+    if is_command_entrypoint(rel, content) and name.startswith("validate_"):
         return "validator"
-    if is_command_entrypoint(rel):
+    if is_command_entrypoint(rel, content):
         return "script"
     if "mechanics" in parts:
         return "mechanics_surface"
@@ -525,11 +622,15 @@ def artifact_kind(rel: Path) -> str:
         return "source_code"
     if suffix in TEXT_ARTIFACT_SUFFIXES:
         return "text_artifact"
+    if suffix in TEXT_WRAPPER_SUFFIXES:
+        return "text_artifact"
     return "unknown"
 
 
-def is_command_entrypoint(rel: Path) -> bool:
+def is_command_entrypoint(rel: Path, content: bytes = b"") -> bool:
     if len(rel.parts) >= 2 and rel.parts[0] == ".codex" and rel.parts[1] == "bin":
+        return True
+    if has_shebang(content):
         return True
     if rel.suffix not in COMMAND_SUFFIXES:
         return False
@@ -563,7 +664,7 @@ def decision_index_builder_for(tracked_paths: set[Path]) -> str:
 
 
 def code_role(rel: Path, kind: str) -> str:
-    if rel.suffix not in SOURCE_CODE_SUFFIXES and kind != "script":
+    if rel.suffix not in SOURCE_CODE_SUFFIXES and kind not in {"script", "validator"}:
         return "none"
     if kind == "test":
         return "test"
@@ -604,7 +705,7 @@ def mechanics_role(rel: Path) -> str:
 def command_role(rel: Path, kind: str, doc_role: str) -> str:
     if doc_role == "commands":
         return "command_doc"
-    if kind == "validator" and is_command_entrypoint(rel):
+    if kind == "validator":
         return "validator"
     if kind == "test":
         return "test"
@@ -642,7 +743,9 @@ def surface_state(
     return "authored_source"
 
 
-def observed_form(kind: str, command: str) -> str:
+def observed_form(kind: str, command: str, *, git_mode: str = "") -> str:
+    if git_mode == "120000":
+        return "symlink"
     if command != "none":
         return "command"
     if kind == "generated_readmodel":
@@ -670,6 +773,7 @@ def primary_kind(kind: str, doc_role: str, command: str) -> str:
         "record_log",
         "service_unit",
         "spreadsheet",
+        "symlink",
         "text_artifact",
     }:
         return "artifact"
@@ -1046,12 +1150,13 @@ def build_record(
     snapshot_ref: str,
     tracked_paths: set[Path],
     source_builders: tuple[tuple[Path, bytes], ...],
+    git_mode: str = "",
 ) -> dict[str, Any]:
     rel_path = rel.as_posix()
     content = source_bytes(repo_root, rel, path)
     digest = sha256_bytes(content)
     declared_generated = declares_generated_from_source(content)
-    kind = artifact_kind(rel)
+    kind = artifact_kind(rel, content, git_mode=git_mode)
     doc_role = document_role(rel)
     code = code_role(rel, kind)
     mech = mechanics_role(rel)
@@ -1072,12 +1177,20 @@ def build_record(
     observed_by = index_generator_route(repo)
     validated_by = kag_validator_route(repo_root, repo, tracked_paths)
     required_tools = []
+    mime = mime_for(path, content, git_mode=git_mode)
     if rel.suffix == ".py":
         required_tools.append("python")
     if command != "none" and rel.suffix == ".ps1":
         required_tools.append("pwsh")
     if command != "none" and rel.suffix == ".sh":
         required_tools.append("bash")
+    if command != "none" and not rel.suffix:
+        if mime == "text/x-python":
+            required_tools.append("python")
+        elif mime == "application/x-sh":
+            required_tools.append("bash")
+        elif mime == "text/javascript":
+            required_tools.append("node")
     if rel.suffix in {".json", ".yaml", ".yml"}:
         required_tools.append("jq")
     return {
@@ -1088,9 +1201,9 @@ def build_record(
             "git_ref": snapshot_ref,
             "content_hash": digest,
             "size_bytes": len(content),
-            "mime": mime_for(path, content),
+            "mime": mime,
         },
-        "observed_form": observed_form(kind, command),
+        "observed_form": observed_form(kind, command, git_mode=git_mode),
         "surface_state": state,
         "artifact_kind": kind,
         "document_role": doc_role,
@@ -1204,7 +1317,8 @@ def build_index(
         except ValueError:
             if not selected_output.is_absolute():
                 excluded_paths.add(selected_output)
-    tracked_paths = set(git_file_paths(repo_root))
+    tracked_modes = git_file_modes(repo_root)
+    tracked_paths = set(tracked_modes)
     source_builders = source_builder_contents(repo_root, tracked_paths)
     records = []
     for rel in sorted(tracked_paths):
@@ -1221,6 +1335,7 @@ def build_index(
                     snapshot_ref=snapshot_ref,
                     tracked_paths=tracked_paths,
                     source_builders=source_builders,
+                    git_mode=tracked_modes.get(rel, ""),
                 )
             )
     records.sort(key=lambda record: record["identity"]["path"])
