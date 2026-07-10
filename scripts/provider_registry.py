@@ -43,14 +43,6 @@ def connector_repos(path: Path = PROVIDER_REGISTRY_PATH) -> frozenset[str]:
     )
 
 
-def sealed_provider_repos(path: Path = PROVIDER_REGISTRY_PATH) -> frozenset[str]:
-    return frozenset(
-        str(entry["repo"])
-        for entry in provider_entries(path)
-        if entry.get("checkout_mode") == "sealed"
-    )
-
-
 def provider_ci_envs(path: Path = PROVIDER_REGISTRY_PATH) -> dict[str, str]:
     return {
         str(entry["repo"]): str(entry["env"])

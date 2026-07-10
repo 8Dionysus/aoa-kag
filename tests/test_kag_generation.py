@@ -233,7 +233,7 @@ class KagGenerationTestCase(unittest.TestCase):
             fallback_provider = {
                 "repo_local_index": {
                     "common_surface_profile": {
-                        "source": "cached_provider_row",
+                        "source": "source_surface_index",
                         "counts": {"artifact_kind": {"document": 99}},
                         "quality": {"unknown_count": 99},
                     }
@@ -503,7 +503,7 @@ class KagGenerationTestCase(unittest.TestCase):
                 common_profile = index_packet["common_surface_profile"]
                 self.assertIn(
                     common_profile["source"],
-                    {"source_surface_index", "source_tree_scan", "cached_provider_row"},
+                    {"source_surface_index", "source_tree_scan"},
                 )
                 self.assertIn("artifact_kind", common_profile["counts"])
                 self.assertIn("primary_kind", common_profile["counts"])
@@ -516,12 +516,16 @@ class KagGenerationTestCase(unittest.TestCase):
             providers["aoa-kag"]["repo_local_index"]["status"],
         )
         self.assertEqual(
-            "owner-specific",
+            "passed",
             providers["aoa-session-memory"]["repo_local_index"]["status"],
         )
         self.assertEqual(
-            "",
+            "kag/indexes/source_surface_index.json",
             providers["aoa-session-memory"]["repo_local_index"]["source_index_ref"],
+        )
+        self.assertIn(
+            "kag/indexes/session_memory_source_inventory.json",
+            providers["aoa-session-memory"]["repo_local_index"]["index_files"],
         )
         connector_statuses = {
             repo: provider["repo_local_index"]["status"]

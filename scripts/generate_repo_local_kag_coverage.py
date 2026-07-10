@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 import subprocess
 import sys
@@ -58,7 +57,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OS_ROOT = Path("/srv/AbyssOS")
 DEFAULT_OUTPUT = REPO_ROOT / "generated" / "repo_local_kag_coverage.json"
 DEFAULT_MIN_OUTPUT = REPO_ROOT / "generated" / "repo_local_kag_coverage.min.json"
-SEALED_PROVIDER_COVERAGE_PATH = REPO_ROOT / "manifests" / "sealed_repo_local_kag_coverage.json"
 OWNER_STATUS = ("passed", "migration-needed", "missing", "owner-specific")
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 LOCAL_KAG_SUBTREE_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-subtree.schema.json"
@@ -202,26 +200,6 @@ def configured_owner_roots() -> list[tuple[str, Path]]:
     return [(repo, KNOWN_REPO_ROOTS[repo].resolve()) for repo in PROVIDER_REPO_ORDER]
 
 
-def committed_owner_rows(path: Path = SEALED_PROVIDER_COVERAGE_PATH) -> dict[str, dict[str, Any]]:
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-    if not isinstance(payload, dict):
-        return {}
-    owners = payload.get("owners")
-    if not isinstance(owners, list):
-        return {}
-    rows: dict[str, dict[str, Any]] = {}
-    for owner in owners:
-        if not isinstance(owner, dict):
-            continue
-        repo = owner.get("repo")
-        if isinstance(repo, str):
-            rows[repo] = owner
-    return rows
-
-
 def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> bool:
     repo = repo_name(owner_root)
     repo_payload = payload.get("repo")
@@ -359,52 +337,6 @@ def common_surface_profile(
                 int(summary.get("validator_count", 0)) > 0
                 or bool(manifest_validation_route(owner_root, "local-kag"))
             ),
-        },
-    }
-
-
-def cached_common_surface_profile(row: dict[str, Any]) -> dict[str, Any]:
-    profile = row.get("common_surface_profile")
-    if isinstance(profile, dict):
-        return copy.deepcopy(profile)
-    coverage = row.get("coverage")
-    coverage = coverage if isinstance(coverage, dict) else {}
-    return {
-        "source": "cached_provider_row",
-        "counts": {
-            "artifact_kind": {
-                "document": int(coverage.get("documents", 0)),
-                "generated_readmodel": int(coverage.get("generated", 0)),
-                "schema": int(coverage.get("schemas", 0)),
-                "script": int(coverage.get("scripts", 0)),
-                "test": int(coverage.get("tests", 0)),
-                "validator": int(coverage.get("validators", 0)),
-            },
-            "primary_kind": {
-                "command": int(coverage.get("commands", 0)),
-                "document": int(coverage.get("documents", 0)),
-            },
-            "surface_state": {
-                "generated_readmodel": int(coverage.get("generated", 0)),
-            },
-            "document_role": {},
-            "mechanics_role": {
-                "mechanic_package": int(coverage.get("mechanics", 0)),
-            },
-            "command_role": {
-                "script": int(coverage.get("scripts", 0)),
-                "test": int(coverage.get("tests", 0)),
-                "validator": int(coverage.get("validators", 0)),
-            },
-        },
-        "quality": {
-            "unknown_count": 0,
-            "has_kag_home": bool(row.get("kag_home")),
-            "has_record_classes": True,
-            "has_source_index": "kag/indexes/source_surface_index.json" in row.get("index_files", []),
-            "has_owner_commands": int(coverage.get("commands", 0)) > 0,
-            "has_generated_readmodels": int(coverage.get("generated", 0)) > 0,
-            "has_validation_route": int(coverage.get("validators", 0)) > 0,
         },
     }
 
@@ -555,19 +487,9 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
                 and not errors
                 and source_index_matches_owner(owner_root, payload)
             ):
-                if owner_type_for(owner_name, owner_root) == "bundle_provider" and has_owner_specific_index(
-                    owner_name,
-                    owner_root,
-                    relative_files,
-                ):
-                    return "owner-specific", relative_files
                 return "passed", relative_files
-        except json.JSONDecodeError:
-            if has_owner_specific_index(owner_name, owner_root, relative_files):
-                return "owner-specific", relative_files
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return "migration-needed", relative_files
-        if has_owner_specific_index(owner_name, owner_root, relative_files):
-            return "owner-specific", relative_files
         return "migration-needed", relative_files
     if has_owner_specific_index(owner_name, owner_root, relative_files):
         return "owner-specific", relative_files
@@ -577,7 +499,6 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
 def build_coverage(
     os_root: Path,
     owner_roots: Sequence[tuple[str, Path]] | None = None,
-    cached_owner_rows: dict[str, dict[str, Any]] | None = None,
     *,
     progress: bool = False,
 ) -> dict[str, Any]:
@@ -590,12 +511,6 @@ def build_coverage(
     for index, (name, owner_root) in enumerate(roots, start=1):
         if progress:
             coverage_progress(f"owner {index}/{len(roots)} {name}")
-        cached_owner = cached_owner_rows.get(name) if cached_owner_rows is not None else None
-        if owner_roots is not None and not owner_root.is_dir() and cached_owner is not None:
-            row = copy.deepcopy(cached_owner)
-            row["common_surface_profile"] = cached_common_surface_profile(row)
-            owners.append(row)
-            continue
         status, files = index_status(owner_root, owner_name=name)
         display_root = canonical_owner_root(os_root, name) if owner_roots is not None else owner_root
         display_kag_home = display_root / "kag" if (owner_root / "kag").is_dir() else Path("")
@@ -638,7 +553,6 @@ def build_provider_coverage(
     return build_coverage(
         os_root,
         owner_roots=configured_owner_roots(),
-        cached_owner_rows=committed_owner_rows(),
         progress=progress,
     )
 

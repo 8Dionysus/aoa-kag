@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import ci_gate, release_check, validation_lanes
-from scripts.provider_registry import provider_ci_envs, sealed_provider_repos
+from scripts.provider_registry import provider_ci_envs
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +22,6 @@ INLINE_EXECUTABLE_VALIDATION_COMMAND = re.compile(
     r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff)\b)[^`]+`"
 )
 CANARY_PROVIDER_ROOT_ENVS = provider_ci_envs()
-SEALED_PROVIDER_REPOS = sealed_provider_repos()
 
 
 def command_sequence_from_manifest(name: str) -> tuple[tuple[str, ...], ...]:
@@ -273,8 +272,6 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             with self.subTest(repo=repo):
                 self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", repo_validation)
                 self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", canary)
-                if repo in SEALED_PROVIDER_REPOS:
-                    continue
                 self.assertIn(f"repository: 8Dionysus/{repo}", repo_validation)
                 self.assertIn(f"path: .deps/{repo}", repo_validation)
                 self.assertIn(f"repository: 8Dionysus/{repo}", canary)

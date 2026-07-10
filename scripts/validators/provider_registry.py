@@ -12,7 +12,6 @@ try:
         provider_dependency_pins,
         provider_entries,
         provider_repo_order,
-        sealed_provider_repos,
     )
 except ImportError:  # pragma: no cover - direct script execution
     from provider_registry import (  # type: ignore
@@ -21,7 +20,6 @@ except ImportError:  # pragma: no cover - direct script execution
         provider_dependency_pins,
         provider_entries,
         provider_repo_order,
-        sealed_provider_repos,
     )
 
 
@@ -73,8 +71,6 @@ def _validate_provider_rows() -> None:
         root = roots[repo]
         if entry["checkout_mode"] == "self" and repo != KAG_REPO:
             fail("provider registry self checkout mode is reserved for aoa-kag")
-        if entry["checkout_mode"] == "sealed" and repo != "aoa-session-memory":
-            fail("provider registry sealed checkout mode is reserved for aoa-session-memory")
         if entry["checkout_mode"] == "pinned":
             pin = str(entry.get("pinned_ref", ""))
             if not PIN_RE.match(pin):
@@ -101,7 +97,6 @@ def _validate_workflow_provider_routes() -> None:
     )
     envs = provider_ci_envs()
     pins = provider_dependency_pins()
-    sealed = sealed_provider_repos()
     for repo, env_name in envs.items():
         checkout_path = next(
             str(entry["checkout_path"])
@@ -116,9 +111,6 @@ def _validate_workflow_provider_routes() -> None:
     for repo, pin in pins.items():
         if pin not in repo_validation:
             fail(f"repo validation workflow must pin {repo} at registry ref")
-    for repo in sealed:
-        if f"repository: 8Dionysus/{repo}" in repo_validation:
-            fail(f"repo validation workflow must use sealed provider coverage for {repo}")
 
 
 def validate_provider_registry_contract() -> None:
