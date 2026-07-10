@@ -23,6 +23,7 @@ INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-index-v1"
 GIT_INDEX_SOURCE_REF = "git-index-source-tree"
 FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
+PORTABLE_MIME_TYPES = mimetypes.MimeTypes(filenames=())
 EXTERNAL_INDEX_GENERATOR_ROUTE = f"aoa-kag:{LOCAL_INDEX_GENERATOR_ROUTE}"
 LOCAL_KAG_VALIDATOR_ROUTE = "scripts/validate_kag.py"
 EXTERNAL_KAG_VALIDATOR_ROUTE = f"aoa-kag:{LOCAL_KAG_VALIDATOR_ROUTE}"
@@ -315,7 +316,7 @@ def mime_for(path: Path) -> str:
         return "text/x-python"
     if path.suffix in {".yaml", ".yml"}:
         return "application/yaml"
-    guessed, _ = mimetypes.guess_type(path.as_posix())
+    guessed, _ = PORTABLE_MIME_TYPES.guess_type(path.as_posix())
     return guessed or "application/octet-stream"
 
 
