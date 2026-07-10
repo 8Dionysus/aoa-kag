@@ -95,12 +95,13 @@ def _validate_workflow_provider_routes() -> None:
     canary = (REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml").read_text(
         encoding="utf-8"
     )
+    entries = provider_entries()
     envs = provider_ci_envs()
     pins = provider_dependency_pins()
     for repo, env_name in envs.items():
         checkout_path = next(
             str(entry["checkout_path"])
-            for entry in provider_entries()
+            for entry in entries
             if entry["repo"] == repo
         )
         expected_env = f"{env_name}: ${{{{ github.workspace }}}}/{checkout_path}"
@@ -111,6 +112,26 @@ def _validate_workflow_provider_routes() -> None:
     for repo, pin in pins.items():
         if pin not in repo_validation:
             fail(f"repo validation workflow must pin {repo} at registry ref")
+    for entry in entries:
+        secret = str(entry.get("checkout_ssh_key_secret") or "")
+        if not secret:
+            continue
+        repository = str(entry["github_repository"])
+        marker = f"repository: {repository}"
+        expected_secret = f"ssh-key: ${{{{ secrets.{secret} }}}}"
+        for workflow_name, workflow in (
+            ("repo validation", repo_validation),
+            ("compatibility canary", canary),
+        ):
+            start = workflow.find(marker)
+            if start < 0:
+                fail(f"{workflow_name} workflow must checkout {entry['repo']}")
+            end = workflow.find("\n      - name:", start)
+            block = workflow[start:] if end < 0 else workflow[start:end]
+            if expected_secret not in block:
+                fail(f"{workflow_name} workflow must authorize {entry['repo']} with {secret}")
+            if "persist-credentials: false" not in block:
+                fail(f"{workflow_name} workflow must clear credentials for {entry['repo']}")
 
 
 def validate_provider_registry_contract() -> None:

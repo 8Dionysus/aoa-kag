@@ -84,6 +84,15 @@ class ProviderRegistryTests(unittest.TestCase):
             },
         )
 
+    def test_private_provider_checkout_auth_is_explicit(self) -> None:
+        session_memory = next(
+            entry for entry in provider_entries() if entry["repo"] == "aoa-session-memory"
+        )
+        self.assertEqual(
+            "AOA_SESSION_MEMORY_DEPLOY_KEY",
+            session_memory["checkout_ssh_key_secret"],
+        )
+
     def test_provider_registry_contract_validator_passes_current_surfaces(self) -> None:
         validate_provider_registry_contract()
 
