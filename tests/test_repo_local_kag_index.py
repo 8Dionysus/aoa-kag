@@ -7,12 +7,13 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
 from scripts import generate_repo_local_kag_coverage as coverage_generation
 from scripts.generate_repo_local_kag_coverage import build_coverage
-from scripts.generate_repo_local_kag_index import build_index, payload_digest
+from scripts.generate_repo_local_kag_index import build_index, mime_for, payload_digest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -182,6 +183,10 @@ def write_owner_specific_provider_records(
 
 
 class RepoLocalKagIndexTests(unittest.TestCase):
+    def test_mime_detection_ignores_host_mime_database(self) -> None:
+        with patch("mimetypes.guess_type", return_value=("host/x-shell", None)):
+            self.assertEqual("application/x-sh", mime_for(Path("hook.sh")))
+
     def validate_with_schema(self, payload: object, schema_path: Path) -> None:
         schema = load_json(schema_path)
         assert isinstance(schema, dict)
