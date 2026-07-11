@@ -44,6 +44,7 @@
   ],
   "$defs": {
     "nonEmptyString": {"type": "string", "minLength": 1},
+    "repoName": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
     "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "stringArray": {
       "type": "array",
@@ -179,8 +180,9 @@
     "route": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["surface", "route_kind"],
+      "required": ["repo", "surface", "route_kind"],
       "properties": {
+        "repo": {"$ref": "#/$defs/repoName"},
         "surface": {"$ref": "#/$defs/nonEmptyString"},
         "route_kind": {"$ref": "#/$defs/nonEmptyString"}
       }

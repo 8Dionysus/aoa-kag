@@ -823,10 +823,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "repo",
         "surface",
         "route_kind"
       ],
       "properties": {
+        "repo": {
+          "$ref": "#/$defs/repoName"
+        },
         "surface": {
           "$ref": "#/$defs/nonEmptyString"
         },

@@ -1298,9 +1298,18 @@ def build_record(
             "line_refs": line_refs,
             "heading_refs": headings,
         },
-        "owner_return_route": {"surface": rel_path, "route_kind": route_kind_for(kind, doc_role, command)},
-        "validator_route": {"surface": validated_by, "route_kind": "source_fast"},
+        "owner_return_route": {
+            "repo": repo,
+            "surface": rel_path,
+            "route_kind": route_kind_for(kind, doc_role, command),
+        },
+        "validator_route": {
+            "repo": "aoa-kag" if validated_by.startswith("aoa-kag:") else repo,
+            "surface": validated_by,
+            "route_kind": "source_fast",
+        },
         "consumer_route": {
+            "repo": "aoa-kag",
             "surface": "scripts/query_repo_local_kag.py",
             "route_kind": "query",
         },

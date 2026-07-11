@@ -200,14 +200,17 @@
         ]
       },
       "owner_return_route": {
+        "repo": "aoa-kag",
         "surface": "README.md",
         "route_kind": "document_owner"
       },
       "validator_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/validate_kag.py",
         "route_kind": "source_fast"
       },
       "consumer_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/query_repo_local_kag.py",
         "route_kind": "query"
       }
@@ -295,14 +298,17 @@
         "heading_refs": []
       },
       "owner_return_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/validate_kag.py",
         "route_kind": "validator_owner"
       },
       "validator_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/validate_kag.py",
         "route_kind": "source_fast"
       },
       "consumer_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/query_repo_local_kag.py",
         "route_kind": "query"
       }

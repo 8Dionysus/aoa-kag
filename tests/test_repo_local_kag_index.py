@@ -824,6 +824,12 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             "aoa-kag:scripts/validate_kag.py",
             readme_record["validator_route"]["surface"],
         )
+        self.assertEqual("aoa-kag", readme_record["validator_route"]["repo"])
+        self.assertEqual("aoa-kag", readme_record["consumer_route"]["repo"])
+        self.assertEqual(
+            "aoa-demo-connector",
+            readme_record["owner_return_route"]["repo"],
+        )
 
         inventory_record = records_by_path["kag/indexes/source_inventory.json"]
         projection_record = records_by_path["kag/projections/source_return.json"]
