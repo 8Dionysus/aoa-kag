@@ -1,0 +1,62 @@
+{
+  "schema_version": "aoa-repo-local-kag-federation-v1",
+  "federation_identity": {
+    "local_id": "projection:os-abyss:repo-self-federation",
+    "content_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "owners": [
+    {
+      "repo": {
+        "name": "aoa-example",
+        "namespace": "aoa:aoa-example",
+        "owner_type": "organ",
+        "root": ".",
+        "git_ref": "git-index-source-tree"
+      },
+      "source_index_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "family_digests": {
+        "anchor": "2222222222222222222222222222222222222222222222222222222222222222",
+        "artifact": "3333333333333333333333333333333333333333333333333333333333333333",
+        "assertion": "7777777777777777777777777777777777777777777777777777777777777777",
+        "entity": "4444444444444444444444444444444444444444444444444444444444444444",
+        "event": "5555555555555555555555555555555555555555555555555555555555555555",
+        "relation": "6666666666666666666666666666666666666666666666666666666666666666"
+      },
+      "node_counts": {
+        "artifact": 1,
+        "anchor": 0,
+        "entity": 0,
+        "event": 0,
+        "assertion": 0
+      },
+      "relation_count": 0
+    }
+  ],
+  "summary": {
+    "owner_count": 1,
+    "node_count": 1,
+    "relation_count": 0,
+    "cross_repo_relation_count": 0,
+    "unresolved_reference_count": 0,
+    "relation_kind_counts": {}
+  },
+  "nodes": [
+    {
+      "id": "aoa:aoa-example:artifact:example",
+      "repo": "aoa-example",
+      "namespace": "aoa:aoa-example",
+      "node_class": "artifact",
+      "kind": "document",
+      "source_record_ids": [
+        "aoa:aoa-example:artifact:example"
+      ],
+      "anchor_ids": [
+        "aoa:aoa-example:anchor:example"
+      ],
+      "access_scope": "public"
+    }
+  ],
+  "relations": [],
+  "cross_repo_relations": [],
+  "unresolved_references": []
+}

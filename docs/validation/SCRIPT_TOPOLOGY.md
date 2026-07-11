@@ -37,6 +37,7 @@ The machine-readable script map is
 | `validator_orchestrator_facade` | validate_kag orchestration import surface |
 | `validator_orchestration` | validate_kag phase execution |
 | `projection_builder` | generated/read-model writers and generation entrypoints |
+| `projection_reader` | validated discovery, read, filter, and retrieval entrypoints |
 | `projection_validator_facade` | generated/read-model parity import surface |
 | `projection_validator` | generated/read-model parity checks |
 | `example_validator_facade` | public example validator import surface |
@@ -55,7 +56,7 @@ The machine-readable script map is
 | Function Group | Families |
 | --- | --- |
 | command authority / lane runners | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner`, `part_local_script_runner`, `provider_checkout_tool` |
-| generation builders | `projection_builder`, `projection_helper`, `decision_index_builder`, `validator_generation_port` |
+| generation and retrieval | `projection_builder`, `projection_helper`, `projection_reader`, `decision_index_builder`, `validator_generation_port` |
 | validators | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator` |
 | topology and route inventory | `script_route_card` |
 | release / artifact tooling | `artifact_bundle_validator` |
@@ -78,8 +79,19 @@ contract, example packet, and OS Abyss readiness matrix.
 The implementation modules live in `scripts/generation/`.
 
 `scripts/generate_repo_local_kag_index.py` builds the repo-local
-source/entity/artifact/event index family from the current repository's source,
-document, mechanics, command, schema, generated, and receipt surfaces.
+source/artifact/anchor/entity/event/assertion/relation index family from the current
+repository's source, document, mechanics, command, schema, generated, and
+receipt surfaces.
+
+`scripts/query_repo_local_kag.py` validates that family and exposes exact,
+BM25, graph, and hybrid retrieval. `scripts/repo_local/query.py` also provides
+addressed read, profile-aware filtering, and owner discovery for programmatic
+consumers.
+
+`scripts/build_repo_local_kag_federation.py` validates configured owner
+families and emits an owner-qualified runtime graph projection. The federation
+kernel resolves evidence-backed cross-repo references and supports multi-owner
+exact, lexical, graph, and hybrid retrieval with access isolation.
 
 `scripts/generate_repo_local_kag_coverage.py` builds
 `generated/repo_local_kag_coverage.json` and the minified companion from live

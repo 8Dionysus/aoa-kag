@@ -15,6 +15,39 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+try:
+    from scripts.repo_local.identity import (
+        artifact_identity,
+        git_lineage_paths,
+        qualified_id,
+        repository_namespace,
+    )
+    from scripts.repo_local.history import git_commit_events
+    from scripts.repo_local.indexes import (
+        anchor_entries as project_anchor_entries,
+        artifact_entries as project_artifact_entries,
+        assertion_entries as project_assertion_entries,
+        entity_entries as project_entity_entries,
+        relation_entries as project_relation_entries,
+    )
+    from scripts.repo_local.structure import extract_structure
+except ImportError:  # pragma: no cover - direct script execution
+    from repo_local.identity import (  # type: ignore
+        artifact_identity,
+        git_lineage_paths,
+        qualified_id,
+        repository_namespace,
+    )
+    from repo_local.history import git_commit_events  # type: ignore
+    from repo_local.indexes import (  # type: ignore
+        anchor_entries as project_anchor_entries,
+        artifact_entries as project_artifact_entries,
+        assertion_entries as project_assertion_entries,
+        entity_entries as project_entity_entries,
+        relation_entries as project_relation_entries,
+    )
+    from repo_local.structure import extract_structure  # type: ignore
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = Path("kag/indexes/source_surface_index.json")
@@ -22,17 +55,20 @@ CANONICAL_SELF_INDEX = DEFAULT_OUTPUT
 REPOSITORY_INDEX_FILENAMES = {
     "entity": "repo_entity_index.json",
     "artifact": "repo_artifact_index.json",
+    "anchor": "repo_anchor_index.json",
     "event": "repo_event_index.json",
+    "assertion": "repo_assertion_index.json",
+    "relation": "repo_relation_index.json",
 }
 CANONICAL_REPOSITORY_INDEX_PATHS = {
     DEFAULT_OUTPUT.parent / filename for filename in REPOSITORY_INDEX_FILENAMES.values()
 }
 INDEX_SCHEMA_REF = "aoa-kag:schemas/repo-local-kag-index.schema.json"
-INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-index-v1"
+INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-index-v2"
 REPOSITORY_INDEX_SCHEMA_REF = (
     "aoa-kag:schemas/repo-local-kag-repository-index.schema.json"
 )
-REPOSITORY_INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-repository-index-v1"
+REPOSITORY_INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-repository-index-v2"
 GIT_INDEX_SOURCE_REF = "git-index-source-tree"
 FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
@@ -303,7 +339,7 @@ def is_source_path(path: Path) -> bool:
     return True
 
 
-def git_file_modes(repo_root: Path) -> dict[Path, str]:
+def git_file_entries(repo_root: Path) -> dict[Path, dict[str, str]]:
     try:
         raw = subprocess.run(
             ("git", "ls-files", "-s", "-z", "--cached"),
@@ -311,27 +347,43 @@ def git_file_modes(repo_root: Path) -> dict[Path, str]:
             check=True,
             capture_output=True,
         ).stdout
-        entries: dict[Path, str] = {}
+        entries: dict[Path, dict[str, str]] = {}
         for item in raw.split(b"\0"):
             if not item:
                 continue
             metadata, separator, path_bytes = item.partition(b"\t")
             if not separator:
                 continue
-            mode = metadata.split(b" ", 1)[0].decode()
+            metadata_fields = metadata.split(b" ")
+            if len(metadata_fields) < 2:
+                continue
+            mode = metadata_fields[0].decode()
+            blob_id = metadata_fields[1].decode()
             path = Path(path_bytes.decode())
             if is_source_path(path):
-                entries[path] = mode
+                entries[path] = {"mode": mode, "blob_id": blob_id}
         return dict(sorted(entries.items()))
     except (subprocess.CalledProcessError, FileNotFoundError):
-        entries = {}
+        entries: dict[Path, dict[str, str]] = {}
         for path in repo_root.rglob("*"):
             if not path.is_file() and not path.is_symlink():
                 continue
             relative = path.relative_to(repo_root)
             if is_source_path(relative):
-                entries[relative] = "120000" if path.is_symlink() else "100644"
+                content = (
+                    path.readlink().as_posix().encode("utf-8")
+                    if path.is_symlink()
+                    else path.read_bytes()
+                )
+                entries[relative] = {
+                    "mode": "120000" if path.is_symlink() else "100644",
+                    "blob_id": sha256_bytes(content),
+                }
         return dict(sorted(entries.items()))
+
+
+def git_file_modes(repo_root: Path) -> dict[Path, str]:
+    return {path: entry["mode"] for path, entry in git_file_entries(repo_root).items()}
 
 
 def source_bytes(repo_root: Path, rel: Path, path: Path) -> bytes:
@@ -486,14 +538,6 @@ def mime_for(path: Path, content: bytes = b"", *, git_mode: str = "") -> str:
             return "text/javascript"
         return "text/plain"
     return "application/octet-stream"
-
-
-def path_id(rel_path: str) -> str:
-    value = rel_path.lower()
-    value = re.sub(r"[^a-z0-9_.:/#-]", "-", value)
-    value = re.sub(r"-+", "-", value).strip("-")
-    suffix = hashlib.sha256(rel_path.encode("utf-8")).hexdigest()[:10]
-    return f"file:{value}:{suffix}"
 
 
 def document_role(rel: Path) -> str:
@@ -1150,11 +1194,19 @@ def build_record(
     snapshot_ref: str,
     tracked_paths: set[Path],
     source_builders: tuple[tuple[Path, bytes], ...],
+    lineage_path: Path,
+    git_blob_id: str,
     git_mode: str = "",
 ) -> dict[str, Any]:
     rel_path = rel.as_posix()
     content = source_bytes(repo_root, rel, path)
     digest = sha256_bytes(content)
+    stable_identity = artifact_identity(
+        repo,
+        rel,
+        lineage_path=lineage_path,
+        content_hash=digest,
+    )
     declared_generated = declares_generated_from_source(content)
     kind = artifact_kind(rel, content, git_mode=git_mode)
     doc_role = document_role(rel)
@@ -1176,8 +1228,8 @@ def build_record(
     )
     observed_by = index_generator_route(repo)
     validated_by = kag_validator_route(repo_root, repo, tracked_paths)
-    required_tools = []
     mime = mime_for(path, content, git_mode=git_mode)
+    required_tools = []
     if rel.suffix == ".py":
         required_tools.append("python")
     if command != "none" and rel.suffix == ".ps1":
@@ -1195,10 +1247,11 @@ def build_record(
         required_tools.append("jq")
     return {
         "identity": {
-            "id": path_id(rel_path),
+            **stable_identity,
             "repo": repo,
             "path": rel_path,
             "git_ref": snapshot_ref,
+            "git_blob_id": git_blob_id,
             "content_hash": digest,
             "size_bytes": len(content),
             "mime": mime,
@@ -1240,10 +1293,17 @@ def build_record(
         },
         "freshness": {"mode": "source_snapshot", "state": "current", "checked_ref": snapshot_ref},
         "access": access_for(rel_path),
-        "refs": {"path_ref": rel_path, "line_refs": line_refs, "heading_refs": headings},
+        "refs": {
+            "path_ref": rel_path,
+            "line_refs": line_refs,
+            "heading_refs": headings,
+        },
         "owner_return_route": {"surface": rel_path, "route_kind": route_kind_for(kind, doc_role, command)},
         "validator_route": {"surface": validated_by, "route_kind": "source_fast"},
-        "consumer_route": {"surface": "aoa-kag-mcp", "route_kind": "resource"},
+        "consumer_route": {
+            "surface": "scripts/query_repo_local_kag.py",
+            "route_kind": "query",
+        },
     }
 
 
@@ -1300,6 +1360,7 @@ def build_index(
     *,
     output: Path | None = None,
     excluded_outputs: Sequence[Path] = (),
+    previous_index: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     repo_root = repo_root.resolve()
     name = repo_name(repo_root)
@@ -1317,15 +1378,47 @@ def build_index(
         except ValueError:
             if not selected_output.is_absolute():
                 excluded_paths.add(selected_output)
-    tracked_modes = git_file_modes(repo_root)
-    tracked_paths = set(tracked_modes)
+    tracked_entries = git_file_entries(repo_root)
+    tracked_paths = set(tracked_entries)
+    indexed_paths = tracked_paths - excluded_paths
+    lineage_paths = git_lineage_paths(repo_root, tracked_paths)
     source_builders = source_builder_contents(repo_root, tracked_paths)
+    previous_records = {
+        Path(str(record["identity"]["path"])): record
+        for record in (previous_index or {}).get("records", [])
+        if isinstance(record, dict) and isinstance(record.get("identity"), dict)
+    }
+    previous_paths = set(previous_records)
+    global_invalidation = previous_paths != indexed_paths
+    if not global_invalidation and previous_records:
+        global_inputs = {
+            path
+            for path in indexed_paths
+            if path == Path("kag/manifest.json")
+            or path.name.startswith(("build_", "generate_"))
+            or "builders" in path.parts
+        }
+        global_invalidation = any(
+            str(previous_records[path]["identity"].get("git_blob_id") or "")
+            != tracked_entries[path]["blob_id"]
+            for path in global_inputs
+            if path in previous_records
+        )
     records = []
-    for rel in sorted(tracked_paths):
-        if rel in excluded_paths:
-            continue
+    for rel in sorted(indexed_paths):
         path = repo_root / rel
         if snapshot_ref == GIT_INDEX_SOURCE_REF or path.is_file():
+            previous = previous_records.get(rel)
+            if (
+                previous is not None
+                and not global_invalidation
+                and str(previous["identity"].get("git_blob_id") or "")
+                == tracked_entries[rel]["blob_id"]
+                and str(previous["identity"].get("lineage_path") or "")
+                == lineage_paths[rel].as_posix()
+            ):
+                records.append(copy.deepcopy(previous))
+                continue
             records.append(
                 build_record(
                     path,
@@ -1335,7 +1428,9 @@ def build_index(
                     snapshot_ref=snapshot_ref,
                     tracked_paths=tracked_paths,
                     source_builders=source_builders,
-                    git_mode=tracked_modes.get(rel, ""),
+                    lineage_path=lineage_paths[rel],
+                    git_blob_id=tracked_entries[rel]["blob_id"],
+                    git_mode=tracked_entries[rel]["mode"],
                 )
             )
     records.sort(key=lambda record: record["identity"]["path"])
@@ -1343,6 +1438,7 @@ def build_index(
         "schema_version": INDEX_SCHEMA_VERSION,
         "repo": {
             "name": name,
+            "namespace": repository_namespace(name),
             "owner_type": owner_type_for(name, repo_root),
             "root": ".",
             "git_ref": snapshot_ref,
@@ -1361,7 +1457,7 @@ def build_index(
         "classification_summary": classification_summary(records),
         "records": records,
         "registry_output": {
-            "consumer": "aoa-kag-mcp",
+            "consumer": "aoa-kag",
             "resource_shape": [
                 "repo-local-source-surface-index",
                 "repo-local-document-records",
@@ -1387,76 +1483,19 @@ def build_index(
     return payload
 
 
-def entity_kind_for(record: dict[str, Any]) -> str:
-    mechanics = str(record.get("mechanics_role") or "none")
-    if mechanics == "mechanic_package":
-        return "mechanic_package"
-    if mechanics != "none":
-        return "mechanic_part"
-    command = str(record.get("command_role") or "none")
-    if command != "none":
-        return "command"
-    artifact = str(record.get("artifact_kind") or "unknown")
-    document = str(record.get("document_role") or "none")
-    if artifact == "schema":
-        return "contract"
-    if document == "decision":
-        return "decision"
-    if document == "agents":
-        return "agent_route"
-    if artifact == "manifest":
-        return "manifest"
-    if record.get("surface_state") == "generated_readmodel":
-        return "readmodel"
-    if document != "none":
-        return "document"
-    if record.get("code_role") != "none":
-        return "code"
-    if artifact == "owner_metadata":
-        return "owner_surface"
-    return "artifact"
-
-
-def entity_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    entries = []
-    for record in records:
-        identity = record["identity"]
-        source_id = str(identity["id"])
-        entries.append(
-            {
-                "id": f"entity:{source_id}",
-                "entity_kind": entity_kind_for(record),
-                "label": str(identity["path"]),
-                "source_record_id": source_id,
-                "coordinates": {
-                    "artifact_kind": str(record.get("artifact_kind") or "unknown"),
-                    "document_role": str(record.get("document_role") or "none"),
-                    "mechanics_role": str(record.get("mechanics_role") or "none"),
-                    "command_role": str(record.get("command_role") or "none"),
-                    "code_role": str(record.get("code_role") or "none"),
-                    "surface_state": str(record.get("surface_state") or "authored_source"),
-                },
-            }
-        )
-    return entries
-
-
-def artifact_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    entries = []
-    for record in records:
-        identity = record["identity"]
-        source_id = str(identity["id"])
-        entries.append(
-            {
-                "id": f"artifact:{source_id}",
-                "artifact_kind": str(record.get("artifact_kind") or "unknown"),
-                "surface_state": str(record.get("surface_state") or "authored_source"),
-                "source_record_id": source_id,
-                "path": str(identity["path"]),
-                "content_hash": str(identity["content_hash"]),
-            }
-        )
-    return entries
+def build_index_incremental(
+    repo_root: Path,
+    previous_index: dict[str, Any],
+    *,
+    output: Path | None = None,
+    excluded_outputs: Sequence[Path] = (),
+) -> dict[str, Any]:
+    return build_index(
+        repo_root,
+        output=output,
+        excluded_outputs=excluded_outputs,
+        previous_index=previous_index,
+    )
 
 
 COMMAND_EVENT_KINDS = {
@@ -1469,11 +1508,17 @@ COMMAND_EVENT_KINDS = {
 
 
 def event_entry_id(repo: str, source_id: str, event_kind: str, qualifier: str) -> str:
-    key = f"{repo}\0{source_id}\0{event_kind}\0{qualifier}".encode("utf-8")
-    return f"event:repo:{hashlib.sha256(key).hexdigest()[:20]}"
+    return qualified_id(repo, "event", f"{source_id}:{event_kind}:{qualifier}")
 
 
-def event_entries(repo: str, records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+def event_entries(
+    repo: str,
+    records: Sequence[dict[str, Any]],
+    *,
+    repo_root: Path | None = None,
+    artifacts: Sequence[dict[str, Any]] = (),
+    excluded_paths: set[str] | None = None,
+) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str]] = set()
 
@@ -1484,10 +1529,32 @@ def event_entries(repo: str, records: Sequence[dict[str, Any]]) -> list[dict[str
         event_role: str,
         observation_state: str,
         qualifier: str = "",
+        label: str = "",
         heading_ref: dict[str, Any] | None = None,
     ) -> None:
         identity = record["identity"]
         source_id = str(identity["id"])
+        refs = record.get("refs") if isinstance(record.get("refs"), dict) else {}
+        anchors = refs.get("anchor_refs") if isinstance(refs, dict) else []
+        anchor_ids = [
+            str(anchor["id"])
+            for anchor in anchors if isinstance(anchor, dict) and anchor.get("anchor_kind") == "artifact"
+        ]
+        if heading_ref is not None:
+            fragment = str(heading_ref.get("anchor") or "")
+            heading_anchor = next(
+                (
+                    anchor
+                    for anchor in anchors
+                    if isinstance(anchor, dict)
+                    and anchor.get("anchor_kind") == "markdown_heading"
+                    and isinstance(anchor.get("locator"), dict)
+                    and anchor["locator"].get("fragment") == fragment
+                ),
+                None,
+            )
+            if isinstance(heading_anchor, dict):
+                anchor_ids = [str(heading_anchor["id"])]
         key = (source_id, event_kind, qualifier)
         if key in seen:
             return
@@ -1498,9 +1565,20 @@ def event_entries(repo: str, records: Sequence[dict[str, Any]]) -> list[dict[str
                 "event_kind": event_kind,
                 "event_role": event_role,
                 "observation_state": observation_state,
-                "source_record_id": source_id,
-                "path": str(identity["path"]),
-                "heading_ref": copy.deepcopy(heading_ref),
+                "label": label or qualifier or str(identity["path"]),
+                "source_record_ids": [source_id],
+                "anchor_ids": anchor_ids,
+                "object_ids": [source_id],
+                "changes": [],
+                "occurred_at": "",
+                "actor": {"name": "source-owner", "email": ""},
+                "evidence_refs": [
+                    {"kind": "source_anchor", "ref": anchor_id}
+                    for anchor_id in anchor_ids
+                ],
+                "temporal_ref": "current",
+                "provenance_ref": "observed" if observation_state == "observed" else "declared",
+                "trust_ref": "observed" if observation_state == "observed" else "declared",
             }
         )
 
@@ -1550,9 +1628,28 @@ def event_entries(repo: str, records: Sequence[dict[str, Any]]) -> list[dict[str
                     event_role="declaration",
                     observation_state="declared",
                     qualifier=str(heading.get("anchor") or title),
+                    label=title,
                     heading_ref=heading,
                 )
-    return sorted(entries, key=lambda entry: (entry["path"], entry["event_kind"], entry["id"]))
+    if repo_root is not None:
+        current_ids = {
+            str(record["identity"]["path"]): str(record["identity"]["id"])
+            for record in records
+        }
+        artifact_anchor_ids = {
+            str(artifact["id"]): str(artifact["anchor_id"])
+            for artifact in artifacts
+        }
+        entries.extend(
+            git_commit_events(
+                repo_root,
+                repo=repo,
+                current_ids=current_ids,
+                artifact_anchor_ids=artifact_anchor_ids,
+                excluded_paths=excluded_paths,
+            )
+        )
+    return sorted(entries, key=lambda entry: (entry["event_kind"], entry["id"]))
 
 
 def entry_kind_counts(entries: Sequence[dict[str, Any]], key: str) -> dict[str, int]:
@@ -1563,6 +1660,36 @@ def entry_kind_counts(entries: Sequence[dict[str, Any]], key: str) -> dict[str, 
     return dict(sorted(counts.items()))
 
 
+def repository_index_profiles(entries: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    parsers: dict[str, dict[str, str]] = {}
+    for entry in entries:
+        parser_ref = entry.get("parser_ref")
+        if not isinstance(parser_ref, str) or "@" not in parser_ref:
+            continue
+        name, version = parser_ref.rsplit("@", 1)
+        parsers[parser_ref] = {"name": name, "version": version}
+    return {
+        "extractors": {
+            "aoa-repo-local-kag@2": {"name": "aoa-repo-local-kag", "version": "2"}
+        },
+        "parsers": dict(sorted(parsers.items())),
+        "provenance": {
+            mode: {"mode": mode, "extractor_ref": "aoa-repo-local-kag@2"}
+            for mode in ("declared", "deterministic", "inferred", "observed")
+        },
+        "temporal": {
+            "current": {"state": "current", "valid_from": "", "valid_to": ""},
+            "historical": {"state": "historical", "valid_from": "", "valid_to": ""},
+        },
+        "trust": {
+            "declared": {"class": "declared", "confidence": 0.75},
+            "deterministic": {"class": "deterministic", "confidence": 1.0},
+            "inferred": {"class": "inferred", "confidence": 0.5},
+            "observed": {"class": "observed", "confidence": 1.0},
+        },
+    }
+
+
 def repository_index_payload(
     source_index: dict[str, Any],
     *,
@@ -1571,17 +1698,80 @@ def repository_index_payload(
     source_index_path: Path,
 ) -> dict[str, Any]:
     kind_field = f"{index_kind}_kind"
-    local_id_suffix = {"entity": "entities"}.get(index_kind, f"{index_kind}s")
+    local_id_suffix = {
+        "entity": "entities",
+        "anchor": "anchors",
+        "relation": "relations",
+    }.get(index_kind, f"{index_kind}s")
     stable_fields = {
-        "entity": ["id", "entity_kind", "source_record_id", "coordinates"],
-        "artifact": ["id", "artifact_kind", "source_record_id", "path", "content_hash"],
+        "entity": [
+            "id",
+            "entity_kind",
+            "semantic_key",
+            "source_record_ids",
+            "anchor_ids",
+            "provenance_ref",
+            "temporal_ref",
+            "trust_ref",
+        ],
+        "artifact": [
+            "id",
+            "version_id",
+            "artifact_kind",
+            "anchor_id",
+            "path",
+            "content_hash",
+            "provenance_ref",
+            "temporal_ref",
+            "trust_ref",
+        ],
+        "anchor": [
+            "id",
+            "anchor_kind",
+            "source_record_id",
+            "locator",
+            "parser_ref",
+            "provenance_ref",
+            "temporal_ref",
+            "trust_ref",
+        ],
         "event": [
             "id",
             "event_kind",
             "event_role",
-            "source_record_id",
-            "path",
-            "heading_ref",
+            "source_record_ids",
+            "anchor_ids",
+            "object_ids",
+            "occurred_at",
+            "provenance_ref",
+            "temporal_ref",
+            "trust_ref",
+        ],
+        "assertion": [
+            "id",
+            "assertion_kind",
+            "subject_id",
+            "predicate",
+            "object",
+            "source_record_ids",
+            "evidence_anchor_ids",
+            "evidence_class",
+            "confidence",
+            "quality_state",
+            "provenance_ref",
+            "temporal_ref",
+            "trust_ref",
+        ],
+        "relation": [
+            "id",
+            "relation_kind",
+            "from_id",
+            "to_id",
+            "evidence_anchor_ids",
+            "evidence_class",
+            "provenance_ref",
+            "temporal_ref",
+            "trust_ref",
         ],
     }[index_kind]
     payload: dict[str, Any] = {
@@ -1603,9 +1793,10 @@ def repository_index_payload(
             "entry_count": len(entries),
             "kind_counts": entry_kind_counts(entries, kind_field),
         },
+        "profiles": repository_index_profiles(entries),
         "entries": entries,
         "registry_output": {
-            "consumer": "aoa-kag-mcp",
+            "consumer": "aoa-kag",
             "resource_shape": f"repo-local-{index_kind}-index",
             "stable_fields": stable_fields,
         },
@@ -1614,33 +1805,177 @@ def repository_index_payload(
     return payload
 
 
+def previous_structure_refs(
+    source_index: dict[str, Any],
+    previous_family: dict[str, dict[str, Any]] | None,
+) -> dict[str, dict[str, list[dict[str, Any]]]]:
+    if not previous_family or set(previous_family) != set(REPOSITORY_INDEX_FILENAMES):
+        return {}
+    if any(
+        payload.get("schema_version") != REPOSITORY_INDEX_SCHEMA_VERSION
+        or payload.get("profiles", {}).get("extractors", {}).get("aoa-repo-local-kag@2")
+        != {"name": "aoa-repo-local-kag", "version": "2"}
+        for payload in previous_family.values()
+    ):
+        return {}
+    previous_hashes = {
+        str(entry["id"]): str(entry["content_hash"])
+        for entry in previous_family["artifact"].get("entries", [])
+        if isinstance(entry, dict)
+    }
+    anchors_by_source: dict[str, list[dict[str, Any]]] = {}
+    for anchor in previous_family["anchor"].get("entries", []):
+        if isinstance(anchor, dict):
+            anchors_by_source.setdefault(str(anchor["source_record_id"]), []).append(anchor)
+
+    reusable: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for record in source_index["records"]:
+        identity = record["identity"]
+        source_id = str(identity["id"])
+        previous_anchors = anchors_by_source.get(source_id)
+        if (
+            previous_hashes.get(source_id) != str(identity["content_hash"])
+            or not previous_anchors
+        ):
+            continue
+        raw_anchors: list[dict[str, Any]] = []
+        outbound_refs: list[dict[str, Any]] = []
+        for normalized_anchor in previous_anchors:
+            raw_anchor = copy.deepcopy(normalized_anchor)
+            parser_ref = str(raw_anchor.pop("parser_ref"))
+            parser_name, parser_version = parser_ref.rsplit("@", 1)
+            raw_anchor["parser"] = {"name": parser_name, "version": parser_version}
+            raw_anchor.pop("source_record_id", None)
+            raw_anchor.pop("evidence_class", None)
+            raw_anchor.pop("provenance_ref", None)
+            raw_anchor.pop("temporal_ref", None)
+            raw_anchor.pop("trust_ref", None)
+            for reference in raw_anchor.pop("outbound_refs", []):
+                outbound_refs.append(
+                    {**copy.deepcopy(reference), "source_anchor_id": str(raw_anchor["id"])}
+                )
+            raw_anchors.append(raw_anchor)
+        reusable[source_id] = {
+            "anchor_refs": raw_anchors,
+            "outbound_refs": outbound_refs,
+        }
+    return reusable
+
+
 def build_repository_indexes(
     source_index: dict[str, Any],
     *,
     source_index_path: Path = DEFAULT_OUTPUT,
+    repo_root: Path | None = None,
+    previous_family: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    records = [record for record in source_index["records"] if isinstance(record, dict)]
+    records = [copy.deepcopy(record) for record in source_index["records"] if isinstance(record, dict)]
     repo = str(source_index["repo"]["name"])
+    reusable_structure = previous_structure_refs(source_index, previous_family)
+    for record in records:
+        identity = record["identity"]
+        source_id = str(identity["id"])
+        if source_id in reusable_structure:
+            refs = record["refs"]
+            refs.update(copy.deepcopy(reusable_structure[source_id]))
+            continue
+        rel = Path(str(identity["path"]))
+        content = b""
+        if repo_root is not None:
+            resolved_root = repo_root.resolve()
+            content = source_bytes(resolved_root, rel, resolved_root / rel)
+        structure = extract_structure(
+            repo=repo,
+            source_id=source_id,
+            path=rel.as_posix(),
+            mime=str(identity["mime"]),
+            content=content,
+        )
+        refs = record["refs"]
+        refs["anchor_refs"] = structure["anchor_refs"]
+        refs["outbound_refs"] = structure["outbound_refs"]
+    artifacts = project_artifact_entries(records)
+    anchors = project_anchor_entries(records)
+    entities = project_entity_entries(repo, records)
+    family_paths = {
+        source_index_path.as_posix(),
+        *(
+            (source_index_path.parent / filename).as_posix()
+            for filename in REPOSITORY_INDEX_FILENAMES.values()
+        ),
+    }
+    events = event_entries(
+        repo,
+        records,
+        repo_root=repo_root,
+        artifacts=artifacts,
+        excluded_paths=family_paths,
+    )
+    assertions = project_assertion_entries(
+        repo,
+        records,
+        artifacts=artifacts,
+    )
+    relations = project_relation_entries(
+        repo,
+        records,
+        artifacts=artifacts,
+        anchors=anchors,
+        entities=entities,
+    )
     return {
         "entity": repository_index_payload(
             source_index,
             index_kind="entity",
-            entries=entity_entries(records),
+            entries=entities,
             source_index_path=source_index_path,
         ),
         "artifact": repository_index_payload(
             source_index,
             index_kind="artifact",
-            entries=artifact_entries(records),
+            entries=artifacts,
+            source_index_path=source_index_path,
+        ),
+        "anchor": repository_index_payload(
+            source_index,
+            index_kind="anchor",
+            entries=anchors,
             source_index_path=source_index_path,
         ),
         "event": repository_index_payload(
             source_index,
             index_kind="event",
-            entries=event_entries(repo, records),
+            entries=events,
+            source_index_path=source_index_path,
+        ),
+        "assertion": repository_index_payload(
+            source_index,
+            index_kind="assertion",
+            entries=assertions,
+            source_index_path=source_index_path,
+        ),
+        "relation": repository_index_payload(
+            source_index,
+            index_kind="relation",
+            entries=relations,
             source_index_path=source_index_path,
         ),
     }
+
+
+def build_repository_indexes_incremental(
+    source_index: dict[str, Any],
+    previous_family: dict[str, dict[str, Any]],
+    *,
+    source_index_path: Path = DEFAULT_OUTPUT,
+    repo_root: Path | None = None,
+) -> dict[str, dict[str, Any]]:
+    return build_repository_indexes(
+        source_index,
+        source_index_path=source_index_path,
+        repo_root=repo_root,
+        previous_family=previous_family,
+    )
 
 
 def repository_index_output_paths(output_path: Path) -> dict[str, Path]:
@@ -1652,11 +1987,54 @@ def repository_index_output_paths(output_path: Path) -> dict[str, Path]:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(normalized_json(payload), encoding="utf-8")
 
 
 def normalized_json(payload: Any) -> str:
-    return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if not isinstance(payload, dict):
+        return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    collection_key = next(
+        (
+            key
+            for key in ("records", "entries")
+            if isinstance(payload.get(key), list)
+        ),
+        "",
+    )
+    if not collection_key:
+        return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+    lines = ["{"]
+    keys = sorted(payload)
+    for key_index, key in enumerate(keys):
+        trailing = "," if key_index < len(keys) - 1 else ""
+        encoded_key = json.dumps(key, ensure_ascii=False)
+        if key == collection_key:
+            lines.append(f"  {encoded_key}: [")
+            items = payload[key]
+            for item_index, item in enumerate(items):
+                item_trailing = "," if item_index < len(items) - 1 else ""
+                compact = json.dumps(
+                    item,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                lines.append(f"    {compact}{item_trailing}")
+            lines.append(f"  ]{trailing}")
+            continue
+        rendered = json.dumps(
+            payload[key],
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ).splitlines()
+        block = [f"  {encoded_key}: {rendered[0]}"]
+        block.extend(f"  {line}" for line in rendered[1:])
+        block[-1] += trailing
+        lines.extend(block)
+    lines.append("}")
+    return "\n".join(lines) + "\n"
 
 
 def check_output(path: Path, payload: Any) -> bool:
@@ -1678,7 +2056,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--index-family",
         action="store_true",
-        help="Generate or check the source, entity, artifact, and event index family.",
+        help="Generate or check the source, artifact, anchor, entity, event, assertion, and relation index family.",
+    )
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="Reuse unchanged source records from the current source index while preserving full-build parity.",
     )
     parser.add_argument("--check", action="store_true", help="Check output parity without writing.")
     return parser.parse_args(argv)
@@ -1690,10 +2073,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     output = Path(args.output)
     output_path = repo_root / output
     family_paths = repository_index_output_paths(output_path)
+    previous_index: dict[str, Any] | None = None
+    previous_family: dict[str, dict[str, Any]] | None = None
+    if args.incremental and output_path.is_file():
+        try:
+            loaded_previous = json.loads(output_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            loaded_previous = None
+        if isinstance(loaded_previous, dict):
+            previous_index = loaded_previous
+        if args.index_family and all(path.is_file() for path in family_paths.values()):
+            loaded_family: dict[str, dict[str, Any]] = {}
+            try:
+                for index_kind, path in family_paths.items():
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                    if not isinstance(payload, dict):
+                        raise ValueError(path)
+                    loaded_family[index_kind] = payload
+            except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+                loaded_family = {}
+            if set(loaded_family) == set(REPOSITORY_INDEX_FILENAMES):
+                previous_family = loaded_family
     payload = build_index(
         repo_root,
         output=output,
         excluded_outputs=tuple(family_paths.values()) if args.index_family else (),
+        previous_index=previous_index,
     )
     if args.index_family:
         try:
@@ -1703,6 +2108,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         family = build_repository_indexes(
             payload,
             source_index_path=source_index_path,
+            repo_root=repo_root,
+            previous_family=previous_family,
         )
     else:
         family = {}

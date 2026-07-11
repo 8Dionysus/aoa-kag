@@ -147,6 +147,34 @@
       ]
     },
     {
+      "path": "tests/test_repo_local_kag_federation.py",
+      "family": "kag/repository-federation",
+      "protects": "Owner-qualified repo-self federation, cross-repo reference resolution, graph traversal, deterministic projection, and access isolation.",
+      "owner_surface": "schemas/repo-local-kag-federation.schema.json",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_federation.py",
+      "failure_route": "Route through the repo-local federation schema, builder, identity, relation evidence, or provider family inputs.",
+      "coverage_kinds": [
+        "topology/inventory",
+        "source/route-contract",
+        "generated/parity"
+      ]
+    },
+    {
+      "path": "tests/test_repo_local_kag_projections.py",
+      "family": "kag/retrieval-projection",
+      "protects": "Source-verified anchor-bounded retrieval documents, deterministic federation plans, embedding profile compatibility, and vector source payloads.",
+      "owner_surface": "schemas/repo-local-kag-retrieval-plan.schema.json",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_projections.py",
+      "failure_route": "Route through the retrieval plan schema, projection builder, source digest verification, embedding profile, or canonical repo-self inputs.",
+      "coverage_kinds": [
+        "source/route-contract",
+        "generated/parity",
+        "sibling/live-dependency"
+      ]
+    },
+    {
       "path": "tests/test_repo_local_kag_index.py",
       "family": "kag/source-surface-index",
       "protects": "Repo-local KAG index contract, generator coverage, document headings, mechanics, commands, schemas, and OS-wide coverage statuses.",
@@ -163,7 +191,7 @@
     {
       "path": "tests/test_repo_local_kag_repository_indexes.py",
       "family": "kag/repository-index-family",
-      "protects": "Repo-local entity, artifact, and event projections plus the optional owner-domain index catalog contract.",
+      "protects": "Repo-local source, artifact, anchor, entity, event, assertion, and relation family plus identity, profiles, incremental parity, query, and owner-domain catalog contracts.",
       "owner_surface": "schemas/repo-local-kag-repository-index.schema.json",
       "runtime_cost": "fast",
       "focused_target": "tests/test_repo_local_kag_repository_indexes.py",

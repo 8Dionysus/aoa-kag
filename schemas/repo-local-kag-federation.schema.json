@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-federation.schema.json",
+  "title": "AoA repo-local KAG federation projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "federation_identity",
+    "owners",
+    "summary",
+    "nodes",
+    "relations",
+    "cross_repo_relations",
+    "unresolved_references"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa-repo-local-kag-federation-v1"},
+    "federation_identity": {"$ref": "#/$defs/federationIdentity"},
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/owner"}
+    },
+    "summary": {"$ref": "#/$defs/summary"},
+    "nodes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/node"}
+    },
+    "relations": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relation"}
+    },
+    "cross_repo_relations": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relation"}
+    },
+    "unresolved_references": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/unresolvedReference"}
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "stringArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "namespace", "owner_type", "root", "git_ref"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "namespace": {"type": "string", "pattern": "^aoa:[a-z0-9_.-]+$"},
+        "owner_type": {"$ref": "#/$defs/nonEmptyString"},
+        "root": {"const": "."},
+        "git_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "federationIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_id", "content_digest"],
+      "properties": {
+        "local_id": {"const": "projection:os-abyss:repo-self-federation"},
+        "content_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "source_index_digest", "family_digests", "node_counts", "relation_count"],
+      "properties": {
+        "repo": {"$ref": "#/$defs/repo"},
+        "source_index_digest": {"$ref": "#/$defs/digest"},
+        "family_digests": {
+          "type": "object",
+          "minProperties": 6,
+          "additionalProperties": {"$ref": "#/$defs/digest"}
+        },
+        "node_counts": {
+          "type": "object",
+          "required": ["artifact", "anchor", "entity", "event", "assertion"],
+          "additionalProperties": false,
+          "properties": {
+            "artifact": {"type": "integer", "minimum": 0},
+            "anchor": {"type": "integer", "minimum": 0},
+            "entity": {"type": "integer", "minimum": 0},
+            "event": {"type": "integer", "minimum": 0},
+            "assertion": {"type": "integer", "minimum": 0}
+          }
+        },
+        "relation_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_count",
+        "node_count",
+        "relation_count",
+        "cross_repo_relation_count",
+        "unresolved_reference_count",
+        "relation_kind_counts"
+      ],
+      "properties": {
+        "owner_count": {"type": "integer", "minimum": 1},
+        "node_count": {"type": "integer", "minimum": 0},
+        "relation_count": {"type": "integer", "minimum": 0},
+        "cross_repo_relation_count": {"type": "integer", "minimum": 0},
+        "unresolved_reference_count": {"type": "integer", "minimum": 0},
+        "relation_kind_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repo",
+        "namespace",
+        "node_class",
+        "kind",
+        "source_record_ids",
+        "anchor_ids",
+        "access_scope"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "repo": {"$ref": "#/$defs/nonEmptyString"},
+        "namespace": {"type": "string", "pattern": "^aoa:[a-z0-9_.-]+$"},
+        "node_class": {"type": "string", "enum": ["artifact", "anchor", "entity", "event", "assertion"]},
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "source_record_ids": {"$ref": "#/$defs/stringArray"},
+        "anchor_ids": {"$ref": "#/$defs/stringArray"},
+        "access_scope": {"type": "string", "enum": ["public", "private", "local", "runtime"]}
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "relation_kind",
+        "from_id",
+        "to_id",
+        "source_repo",
+        "target_repo",
+        "scope",
+        "evidence_anchor_ids",
+        "evidence_class",
+        "confidence",
+        "temporal_ref",
+        "provenance_ref",
+        "trust_ref"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "relation_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "from_id": {"$ref": "#/$defs/nonEmptyString"},
+        "to_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_repo": {"$ref": "#/$defs/nonEmptyString"},
+        "target_repo": {"$ref": "#/$defs/nonEmptyString"},
+        "scope": {"type": "string", "enum": ["local", "federated"]},
+        "evidence_anchor_ids": {"$ref": "#/$defs/stringArray"},
+        "evidence_class": {"type": "string", "enum": ["deterministic", "declared", "inferred"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "unresolvedReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_repo", "source_anchor_id", "target_ref", "resolution_state"],
+      "properties": {
+        "source_repo": {"$ref": "#/$defs/nonEmptyString"},
+        "source_anchor_id": {"$ref": "#/$defs/nonEmptyString"},
+        "target_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "resolution_state": {
+          "type": "string",
+          "enum": ["unresolved-qualified-id", "unresolved-root", "unresolved-path", "unresolved-fragment"]
+        }
+      }
+    }
+  }
+}

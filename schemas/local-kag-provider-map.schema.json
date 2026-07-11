@@ -193,7 +193,10 @@
         "source": {"const": "kag/indexes/source_surface_index.json"},
         "entity": {"const": "kag/indexes/repo_entity_index.json"},
         "artifact": {"const": "kag/indexes/repo_artifact_index.json"},
-        "event": {"const": "kag/indexes/repo_event_index.json"}
+        "anchor": {"const": "kag/indexes/repo_anchor_index.json"},
+        "event": {"const": "kag/indexes/repo_event_index.json"},
+        "assertion": {"const": "kag/indexes/repo_assertion_index.json"},
+        "relation": {"const": "kag/indexes/repo_relation_index.json"}
       }
     },
     "repoLocalIndex": {

@@ -10,12 +10,13 @@
     "index_identity",
     "source_index",
     "summary",
+    "profiles",
     "entries",
     "registry_output"
   ],
   "properties": {
     "schema_version": {
-      "const": "aoa-repo-local-kag-repository-index-v1"
+      "const": "aoa-repo-local-kag-repository-index-v2"
     },
     "repo": {
       "$ref": "#/$defs/repo"
@@ -28,6 +29,9 @@
     },
     "summary": {
       "$ref": "#/$defs/summary"
+    },
+    "profiles": {
+      "$ref": "#/$defs/profiles"
     },
     "entries": {
       "type": "array"
@@ -105,6 +109,63 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "index_identity": {
+            "properties": {
+              "index_kind": {"const": "anchor"}
+            },
+            "required": ["index_kind"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "entries": {
+            "items": {"$ref": "#/$defs/anchorEntry"}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "index_identity": {
+            "properties": {
+              "index_kind": {"const": "assertion"}
+            },
+            "required": ["index_kind"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "entries": {
+            "items": {"$ref": "#/$defs/assertionEntry"}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "index_identity": {
+            "properties": {
+              "index_kind": {"const": "relation"}
+            },
+            "required": ["index_kind"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "entries": {
+            "items": {"$ref": "#/$defs/relationEntry"}
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -124,10 +185,14 @@
     "repo": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "owner_type", "root", "git_ref"],
+      "required": ["name", "namespace", "owner_type", "root", "git_ref"],
       "properties": {
         "name": {
           "$ref": "#/$defs/nonEmptyString"
+        },
+        "namespace": {
+          "type": "string",
+          "pattern": "^aoa:[a-z0-9_.-]+$"
         },
         "owner_type": {
           "$ref": "#/$defs/nonEmptyString"
@@ -156,14 +221,17 @@
         },
         "index_kind": {
           "type": "string",
-          "enum": ["entity", "artifact", "event"]
+          "enum": ["entity", "artifact", "anchor", "event", "assertion", "relation"]
         },
         "artifact_kind": {
           "type": "string",
           "enum": [
             "repository_entity_index",
             "repository_artifact_index",
-            "repository_event_index"
+            "repository_anchor_index",
+            "repository_event_index",
+            "repository_assertion_index",
+            "repository_relation_index"
           ]
         },
         "content_digest": {
@@ -215,8 +283,13 @@
         "id",
         "entity_kind",
         "label",
-        "source_record_id",
-        "coordinates"
+        "semantic_key",
+        "source_record_ids",
+        "anchor_ids",
+        "source_digest",
+        "provenance_ref",
+        "temporal_ref",
+        "trust_ref"
       ],
       "properties": {
         "id": {
@@ -228,29 +301,23 @@
         "label": {
           "$ref": "#/$defs/nonEmptyString"
         },
-        "source_record_id": {
-          "$ref": "#/$defs/nonEmptyString"
+        "semantic_key": {"$ref": "#/$defs/nonEmptyString"},
+        "source_record_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
         },
-        "coordinates": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "artifact_kind",
-            "document_role",
-            "mechanics_role",
-            "command_role",
-            "code_role",
-            "surface_state"
-          ],
-          "properties": {
-            "artifact_kind": {"$ref": "#/$defs/nonEmptyString"},
-            "document_role": {"$ref": "#/$defs/nonEmptyString"},
-            "mechanics_role": {"$ref": "#/$defs/nonEmptyString"},
-            "command_role": {"$ref": "#/$defs/nonEmptyString"},
-            "code_role": {"$ref": "#/$defs/nonEmptyString"},
-            "surface_state": {"$ref": "#/$defs/nonEmptyString"}
-          }
-        }
+        "anchor_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "source_digest": {"$ref": "#/$defs/digest"},
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "artifactEntry": {
@@ -258,19 +325,73 @@
       "additionalProperties": false,
       "required": [
         "id",
+        "version_id",
         "artifact_kind",
         "surface_state",
-        "source_record_id",
+        "anchor_id",
         "path",
-        "content_hash"
+        "lineage_path",
+        "content_hash",
+        "mime",
+        "provenance_ref",
+        "temporal_ref",
+        "trust_ref"
       ],
       "properties": {
         "id": {"$ref": "#/$defs/nonEmptyString"},
+        "version_id": {"$ref": "#/$defs/nonEmptyString"},
         "artifact_kind": {"$ref": "#/$defs/nonEmptyString"},
         "surface_state": {"$ref": "#/$defs/nonEmptyString"},
-        "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "anchor_id": {"$ref": "#/$defs/nonEmptyString"},
         "path": {"$ref": "#/$defs/nonEmptyString"},
-        "content_hash": {"$ref": "#/$defs/digest"}
+        "lineage_path": {"$ref": "#/$defs/nonEmptyString"},
+        "content_hash": {"$ref": "#/$defs/digest"},
+        "mime": {"$ref": "#/$defs/nonEmptyString"},
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "anchorEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "anchor_kind",
+        "semantic_key",
+        "label",
+        "locator",
+        "symbol_kind",
+        "qualified_name",
+        "parser_ref",
+        "source_record_id",
+        "outbound_refs",
+        "evidence_class",
+        "provenance_ref",
+        "temporal_ref",
+        "trust_ref"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "anchor_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "semantic_key": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "locator": {"$ref": "#/$defs/sourceLocator"},
+        "symbol_kind": {"type": "string"},
+        "qualified_name": {"type": "string"},
+        "parser_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "outbound_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/outboundRef"}
+        },
+        "evidence_class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "inferred"]
+        },
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "eventEntry": {
@@ -281,29 +402,317 @@
         "event_kind",
         "event_role",
         "observation_state",
-        "source_record_id",
-        "path",
-        "heading_ref"
+        "label",
+        "source_record_ids",
+        "anchor_ids",
+        "object_ids",
+        "changes",
+        "occurred_at",
+        "actor",
+        "evidence_refs",
+        "temporal_ref",
+        "provenance_ref",
+        "trust_ref"
       ],
       "properties": {
         "id": {"$ref": "#/$defs/nonEmptyString"},
         "event_kind": {"$ref": "#/$defs/nonEmptyString"},
         "event_role": {
           "type": "string",
-          "enum": ["declaration", "producer", "receipt"]
+          "enum": ["declaration", "producer", "receipt", "observation"]
         },
         "observation_state": {
           "type": "string",
           "enum": ["declared", "observed"]
         },
-        "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "source_record_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "anchor_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "object_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "changes": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/changeRecord"}
+        },
+        "occurred_at": {"type": "string"},
+        "actor": {"$ref": "#/$defs/actor"},
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/evidenceRef"}
+        },
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "assertionEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "assertion_kind",
+        "subject_id",
+        "predicate",
+        "object",
+        "source_record_ids",
+        "evidence_anchor_ids",
+        "evidence_class",
+        "confidence",
+        "quality_state",
+        "temporal_ref",
+        "provenance_ref",
+        "trust_ref"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "assertion_kind": {
+          "type": "string",
+          "enum": ["classification", "role", "contract", "semantic"]
+        },
+        "subject_id": {"$ref": "#/$defs/nonEmptyString"},
+        "predicate": {"$ref": "#/$defs/nonEmptyString"},
+        "object": {"$ref": "#/$defs/assertionObject"},
+        "source_record_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "evidence_anchor_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "evidence_class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "inferred"]
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "quality_state": {
+          "type": "string",
+          "enum": ["accepted", "quarantined", "rejected"]
+        },
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "assertionObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["literal", "node", "reference"]},
+        "value": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "relationEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "relation_kind",
+        "from_id",
+        "to_id",
+        "evidence_anchor_ids",
+        "evidence_class",
+        "confidence",
+        "temporal_ref",
+        "provenance_ref",
+        "trust_ref"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "relation_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "from_id": {"$ref": "#/$defs/nonEmptyString"},
+        "to_id": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_anchor_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "evidence_class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "inferred"]
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "changeRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["change_kind", "path", "old_path", "object_id"],
+      "properties": {
+        "change_kind": {
+          "type": "string",
+          "enum": ["add", "copy", "delete", "modify", "rename", "type_change", "change"]
+        },
         "path": {"$ref": "#/$defs/nonEmptyString"},
-        "heading_ref": {
-          "oneOf": [
-            {"type": "null"},
-            {"type": "object"}
-          ]
+        "old_path": {"type": "string"},
+        "object_id": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "outboundRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relation_kind", "source_context", "target_ref", "evidence_class"],
+      "properties": {
+        "relation_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "source_context": {"$ref": "#/$defs/nonEmptyString"},
+        "target_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "inferred"]
         }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "email"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "email": {"type": "string"}
+      }
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["git_commit", "git_index", "source_anchor"]
+        },
+        "ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extractors", "parsers", "provenance", "temporal", "trust"],
+      "properties": {
+        "extractors": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/extractor"}
+        },
+        "parsers": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/extractor"}
+        },
+        "provenance": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mode", "extractor_ref"],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": ["deterministic", "declared", "observed", "inferred"]
+              },
+              "extractor_ref": {"$ref": "#/$defs/nonEmptyString"}
+            }
+          }
+        },
+        "temporal": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/temporalValidity"}
+        },
+        "trust": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/trustProfile"}
+        }
+      }
+    },
+    "extractor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "version": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "extractor", "source_digest", "anchor_ids"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "extractor": {"$ref": "#/$defs/extractor"},
+        "source_digest": {"type": "string", "pattern": "^(?:[a-f0-9]{64})?$"},
+        "anchor_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "sourceLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_line",
+        "end_line",
+        "start_column",
+        "end_column",
+        "fragment",
+        "pointer"
+      ],
+      "properties": {
+        "start_line": {"type": "integer", "minimum": 1},
+        "end_line": {"type": "integer", "minimum": 1},
+        "start_column": {"type": "integer", "minimum": 1},
+        "end_column": {"type": "integer", "minimum": 1},
+        "fragment": {"type": "string"},
+        "pointer": {"type": "string"}
+      }
+    },
+    "temporalValidity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "valid_from", "valid_to"],
+      "properties": {
+        "state": {"type": "string", "enum": ["current", "invalidated", "historical"]},
+        "valid_from": {"type": "string"},
+        "valid_to": {"type": "string"}
+      }
+    },
+    "trustProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "confidence"],
+      "properties": {
+        "class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}
       }
     },
     "registryOutput": {
@@ -312,14 +721,17 @@
       "required": ["consumer", "resource_shape", "stable_fields"],
       "properties": {
         "consumer": {
-          "const": "aoa-kag-mcp"
+          "const": "aoa-kag"
         },
         "resource_shape": {
           "type": "string",
           "enum": [
             "repo-local-entity-index",
             "repo-local-artifact-index",
-            "repo-local-event-index"
+            "repo-local-anchor-index",
+            "repo-local-event-index",
+            "repo-local-assertion-index",
+            "repo-local-relation-index"
           ]
         },
         "stable_fields": {

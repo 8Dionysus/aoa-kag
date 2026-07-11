@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-query-result.schema.json",
+  "title": "AoA repo-local KAG query result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "query", "hits"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "aoa-repo-local-kag-query-result-v1",
+        "aoa-repo-local-kag-federated-query-result-v1"
+      ]
+    },
+    "repo": {"$ref": "#/$defs/repo"},
+    "mode": {"type": "string", "enum": ["exact", "lexical", "graph", "hybrid"]},
+    "query": {"type": "string"},
+    "source_index": {"$ref": "#/$defs/sourceIndex"},
+    "federation_digest": {"$ref": "#/$defs/digest"},
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/repo"}
+    },
+    "hits": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/hit"}
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "schema_version": {"const": "aoa-repo-local-kag-query-result-v1"}
+      },
+      "required": ["repo", "source_index"]
+    },
+    {
+      "properties": {
+        "schema_version": {"const": "aoa-repo-local-kag-federated-query-result-v1"}
+      },
+      "required": ["federation_digest", "owners"]
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "stringArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "namespace", "owner_type", "root", "git_ref"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "namespace": {"type": "string", "pattern": "^aoa:[a-z0-9_.-]+$"},
+        "owner_type": {"$ref": "#/$defs/nonEmptyString"},
+        "root": {"const": "."},
+        "git_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "sourceIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_id", "content_digest", "git_ref"],
+      "properties": {
+        "local_id": {"const": "index:repo-local:source-surfaces"},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "git_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relation_ids", "anchor_ids"],
+      "properties": {
+        "relation_ids": {"$ref": "#/$defs/stringArray"},
+        "anchor_ids": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "extractor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "version": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "provenanceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "mode", "extractor_ref", "extractor"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/nonEmptyString"},
+        "mode": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "extractor_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "extractor": {"$ref": "#/$defs/extractor"}
+      }
+    },
+    "temporalProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "state", "valid_from", "valid_to"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/nonEmptyString"},
+        "state": {"type": "string", "enum": ["current", "invalidated", "historical"]},
+        "valid_from": {"type": "string"},
+        "valid_to": {"type": "string"}
+      }
+    },
+    "trustProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "class", "confidence"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/nonEmptyString"},
+        "class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "abi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_class", "schema_version", "abi_epoch", "contract_version", "compatibility"],
+      "properties": {
+        "artifact_class": {"$ref": "#/$defs/nonEmptyString"},
+        "schema_version": {"$ref": "#/$defs/nonEmptyString"},
+        "abi_epoch": {"$ref": "#/$defs/nonEmptyString"},
+        "contract_version": {"$ref": "#/$defs/nonEmptyString"},
+        "compatibility": {
+          "type": "string",
+          "enum": ["stable", "candidate", "generated", "legacy", "unknown"]
+        }
+      }
+    },
+    "signs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["digest", "signature_ref", "attestation_ref", "verification_state"],
+      "properties": {
+        "digest": {"$ref": "#/$defs/digest"},
+        "signature_ref": {"type": "string"},
+        "attestation_ref": {"type": "string"},
+        "verification_state": {
+          "type": "string",
+          "enum": ["digest-only", "signed", "attested", "verified", "unknown"]
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "state", "checked_ref"],
+      "properties": {
+        "mode": {"$ref": "#/$defs/nonEmptyString"},
+        "state": {"$ref": "#/$defs/nonEmptyString"},
+        "checked_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "secrets_risk"],
+      "properties": {
+        "scope": {"type": "string", "enum": ["public", "private", "local", "runtime"]},
+        "secrets_risk": {"type": "string", "enum": ["none", "review", "secret-risk"]}
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface", "route_kind"],
+      "properties": {
+        "surface": {"$ref": "#/$defs/nonEmptyString"},
+        "route_kind": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "sourceContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_record_id",
+        "path",
+        "version_id",
+        "content_digest",
+        "abi",
+        "signs",
+        "provenance",
+        "freshness",
+        "access",
+        "owner_return_route"
+      ],
+      "properties": {
+        "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "path": {"$ref": "#/$defs/nonEmptyString"},
+        "version_id": {"$ref": "#/$defs/nonEmptyString"},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "abi": {"$ref": "#/$defs/abi"},
+        "signs": {"$ref": "#/$defs/signs"},
+        "provenance": {"type": "object"},
+        "freshness": {"$ref": "#/$defs/freshness"},
+        "access": {"$ref": "#/$defs/access"},
+        "owner_return_route": {"$ref": "#/$defs/route"}
+      }
+    },
+    "hit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "node_class",
+        "kind",
+        "label",
+        "path",
+        "score",
+        "source_record_ids",
+        "anchor_ids",
+        "access_scope",
+        "provenance",
+        "temporal",
+        "trust",
+        "sources",
+        "record",
+        "evidence"
+      ],
+      "properties": {
+        "repo": {"$ref": "#/$defs/repo"},
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "node_class": {
+          "type": "string",
+          "enum": ["artifact", "anchor", "entity", "event", "assertion", "relation"]
+        },
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "path": {"type": "string"},
+        "score": {"type": "number", "minimum": 0},
+        "source_record_ids": {"$ref": "#/$defs/stringArray"},
+        "anchor_ids": {"$ref": "#/$defs/stringArray"},
+        "access_scope": {"type": "string", "enum": ["public", "private", "local", "runtime"]},
+        "provenance": {"$ref": "#/$defs/provenanceProfile"},
+        "temporal": {"$ref": "#/$defs/temporalProfile"},
+        "trust": {"$ref": "#/$defs/trustProfile"},
+        "sources": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/sourceContext"}
+        },
+        "record": {"type": "object", "minProperties": 1},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    }
+  }
+}

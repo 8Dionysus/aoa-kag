@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-retrieval-plan.schema.json",
+  "title": "AoA repo-local KAG retrieval projection plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "projection_identity",
+    "canonical_inputs",
+    "federation",
+    "projection_lanes",
+    "retrieval_profile",
+    "embedding_profile",
+    "summary",
+    "documents"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa-repo-local-kag-retrieval-plan-v1"},
+    "projection_identity": {"$ref": "#/$defs/projectionIdentity"},
+    "canonical_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/canonicalInput"}
+    },
+    "federation": {"$ref": "#/$defs/federation"},
+    "projection_lanes": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["exact", "lexical", "vector", "hybrid", "graph"]
+      }
+    },
+    "retrieval_profile": {"$ref": "#/$defs/retrievalProfile"},
+    "embedding_profile": {"$ref": "#/$defs/embeddingProfile"},
+    "summary": {"$ref": "#/$defs/summary"},
+    "documents": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/document"}
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "stringArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "namespace", "owner_type", "root", "git_ref"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "namespace": {"type": "string", "pattern": "^aoa:[a-z0-9_.-]+$"},
+        "owner_type": {"$ref": "#/$defs/nonEmptyString"},
+        "root": {"const": "."},
+        "git_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "projectionIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_id", "content_digest"],
+      "properties": {
+        "local_id": {"const": "projection:os-abyss:repo-self-retrieval"},
+        "content_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "canonicalInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "source_index_digest", "family_digests"],
+      "properties": {
+        "repo": {"$ref": "#/$defs/repo"},
+        "source_index_digest": {"$ref": "#/$defs/digest"},
+        "family_digests": {
+          "type": "object",
+          "minProperties": 6,
+          "additionalProperties": {"$ref": "#/$defs/digest"}
+        }
+      }
+    },
+    "federation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "federation_identity",
+        "owners",
+        "summary",
+        "nodes",
+        "relations",
+        "cross_repo_relations",
+        "unresolved_references"
+      ],
+      "properties": {
+        "schema_version": {"const": "aoa-repo-local-kag-federation-v1"},
+        "federation_identity": {
+          "type": "object",
+          "required": ["local_id", "content_digest"],
+          "properties": {
+            "local_id": {"const": "projection:os-abyss:repo-self-federation"},
+            "content_digest": {"$ref": "#/$defs/digest"}
+          }
+        },
+        "owners": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+        "summary": {"type": "object"},
+        "nodes": {"type": "array", "items": {"type": "object"}},
+        "relations": {"type": "array", "items": {"type": "object"}},
+        "cross_repo_relations": {"type": "array", "items": {"type": "object"}},
+        "unresolved_references": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "retrievalProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chunking", "max_chunk_chars", "overlap_chars", "source_verification"],
+      "properties": {
+        "chunking": {"const": "semantic-anchor-with-source-gaps-v1"},
+        "max_chunk_chars": {"type": "integer", "minimum": 256},
+        "overlap_chars": {"type": "integer", "minimum": 0},
+        "source_verification": {"const": "sha256-content-digest"}
+      }
+    },
+    "embeddingProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "model",
+        "revision",
+        "dimensions",
+        "distance",
+        "normalization",
+        "provider_contract"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "model": {"$ref": "#/$defs/nonEmptyString"},
+        "revision": {"$ref": "#/$defs/nonEmptyString"},
+        "dimensions": {"type": "integer", "minimum": 1},
+        "distance": {"type": "string", "enum": ["cosine", "dot", "euclid", "manhattan"]},
+        "normalization": {"type": "string", "enum": ["none", "l2"]},
+        "provider_contract": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_count",
+        "document_count",
+        "text_bytes",
+        "node_class_counts",
+        "access_scope_counts"
+      ],
+      "properties": {
+        "owner_count": {"type": "integer", "minimum": 1},
+        "document_count": {"type": "integer", "minimum": 0},
+        "text_bytes": {"type": "integer", "minimum": 0},
+        "node_class_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "access_scope_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_line",
+        "end_line",
+        "start_column",
+        "end_column",
+        "fragment",
+        "pointer"
+      ],
+      "properties": {
+        "start_line": {"type": "integer", "minimum": 1},
+        "end_line": {"type": "integer", "minimum": 1},
+        "start_column": {"type": "integer", "minimum": 1},
+        "end_column": {"type": "integer", "minimum": 1},
+        "fragment": {"type": "string"},
+        "pointer": {"type": "string"}
+      }
+    },
+    "abi": {
+      "type": "object",
+      "required": ["artifact_class", "schema_version", "abi_epoch", "contract_version", "compatibility"],
+      "properties": {
+        "artifact_class": {"type": "string"},
+        "schema_version": {"type": "string"},
+        "abi_epoch": {"type": "string"},
+        "contract_version": {"type": "string"},
+        "compatibility": {"type": "string"}
+      }
+    },
+    "signs": {
+      "type": "object",
+      "required": ["digest", "signature_ref", "attestation_ref", "verification_state"],
+      "properties": {
+        "digest": {"$ref": "#/$defs/digest"},
+        "signature_ref": {"type": "string"},
+        "attestation_ref": {"type": "string"},
+        "verification_state": {"type": "string"}
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "required": ["mode", "state", "checked_ref"],
+      "properties": {
+        "mode": {"type": "string"},
+        "state": {"type": "string"},
+        "checked_ref": {"type": "string"}
+      }
+    },
+    "access": {
+      "type": "object",
+      "required": ["scope", "secrets_risk"],
+      "properties": {
+        "scope": {"type": "string", "enum": ["public", "private", "local", "runtime"]},
+        "secrets_risk": {"type": "string"}
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provenance", "temporal", "trust"],
+      "properties": {
+        "provenance": {"type": "object", "minProperties": 2},
+        "temporal": {"type": "object", "minProperties": 2},
+        "trust": {"type": "object", "minProperties": 2}
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version_id",
+        "repo",
+        "namespace",
+        "node_id",
+        "node_class",
+        "kind",
+        "label",
+        "path",
+        "locator",
+        "chunk_index",
+        "text",
+        "text_digest",
+        "source_record_ids",
+        "source_version_ids",
+        "anchor_ids",
+        "document_role",
+        "surface_state",
+        "abi",
+        "signs",
+        "provenance",
+        "freshness",
+        "access",
+        "owner_return_route",
+        "provenance_ref",
+        "temporal_ref",
+        "trust_ref",
+        "profiles"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "version_id": {"$ref": "#/$defs/nonEmptyString"},
+        "repo": {"$ref": "#/$defs/nonEmptyString"},
+        "namespace": {"type": "string", "pattern": "^aoa:[a-z0-9_.-]+$"},
+        "node_id": {"$ref": "#/$defs/nonEmptyString"},
+        "node_class": {
+          "type": "string",
+          "enum": ["artifact", "anchor", "entity", "event", "assertion", "relation"]
+        },
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "path": {"$ref": "#/$defs/nonEmptyString"},
+        "locator": {"$ref": "#/$defs/locator"},
+        "chunk_index": {"type": "integer", "minimum": 0},
+        "text": {"$ref": "#/$defs/nonEmptyString"},
+        "text_digest": {"$ref": "#/$defs/digest"},
+        "source_record_ids": {"$ref": "#/$defs/stringArray"},
+        "source_version_ids": {"$ref": "#/$defs/stringArray"},
+        "anchor_ids": {"$ref": "#/$defs/stringArray"},
+        "document_role": {"type": "string"},
+        "surface_state": {"type": "string"},
+        "abi": {"$ref": "#/$defs/abi"},
+        "signs": {"$ref": "#/$defs/signs"},
+        "provenance": {"type": "object"},
+        "freshness": {"$ref": "#/$defs/freshness"},
+        "access": {"$ref": "#/$defs/access"},
+        "owner_return_route": {"type": "object"},
+        "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "profiles": {"$ref": "#/$defs/profiles"}
+      }
+    }
+  }
+}

@@ -17,7 +17,7 @@ ownership and giving runtime/MCP consumers stable return handles.
 | `manifest.json` | manifest | source refs, record classes, storage posture, validation routes |
 | `nodes/` | node | documents, entities, events, source surfaces, route surfaces |
 | `edges/` | edge | direct or declared derived relations between local nodes |
-| `indexes/` | index | repository source/entity/artifact/event indexes and owner-specific catalogs |
+| `indexes/` | index | repository source/artifact/anchor/entity/event/assertion/relation indexes and owner-specific catalogs |
 | `projections/` | projection | compact consumer views derived from local records |
 | `receipts/` | receipt | generation, validation, freshness, and regrounding evidence |
 
@@ -48,18 +48,21 @@ Receipts name `receipt_kind`, `result`, and `fallback_route`.
 
 ## Repository Index Family
 
-Every provider carries four generated indexes over its Git source tree:
+Every provider carries one generated repo-self family over its Git source tree:
 
 | Index | Carries |
 | --- | --- |
 | `source_surface_index.json` | complete source inventory and classification coordinates |
-| `repo_entity_index.json` | logical repository entities with source-record return handles |
 | `repo_artifact_index.json` | compact physical artifact identity and source-record handles |
-| `repo_event_index.json` | event declarations, producers, and receipts visible in repository source |
+| `repo_anchor_index.json` | parser-qualified artifact, section, symbol, and structured-data addresses |
+| `repo_entity_index.json` | repository, directory, document, mechanics, contract, command, and code identities |
+| `repo_event_index.json` | declared operations and observed Git lifecycle events |
+| `repo_assertion_index.json` | quality-gated evidence-bearing claims about canonical nodes and values |
+| `repo_relation_index.json` | evidence-bearing graph edges between canonical nodes |
 
-The entity, artifact, and event indexes are projections of the source index.
-They carry its digest and do not become independent source truth. Event
-instances owned by a runtime remain in that runtime's stores.
+The six normalized indexes pin the source-index digest and resolve common
+extractor, parser, provenance, temporal, and trust profiles. Runtime stores
+materialize search and graph projections from this canonical family.
 
 Repositories with native domain indexes may also publish
 `domain_index_catalog.json`. The catalog carries routes, authority,
