@@ -521,6 +521,14 @@ class KagGenerationTestCase(unittest.TestCase):
             owner["repo"]: owner
             for owner in coverage["owners"]
         }
+        self.assertEqual(
+            "/home/dionysus/src/abyss-stack",
+            coverage_by_repo["abyss-stack"]["root"],
+        )
+        self.assertEqual(
+            "/home/dionysus/src/abyss-machine",
+            coverage_by_repo["abyss-machine"]["root"],
+        )
 
         for provider in payload["providers"]:
             repo = provider["repo"]

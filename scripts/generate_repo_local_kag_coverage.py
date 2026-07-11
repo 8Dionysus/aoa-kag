@@ -33,6 +33,7 @@ try:
     from scripts.generation.context import KNOWN_REPO_ROOTS
     from scripts.provider_registry import (
         connector_repos,
+        provider_roots,
         provider_repo_order,
     )
 except ImportError:  # pragma: no cover - direct script execution
@@ -54,7 +55,11 @@ except ImportError:  # pragma: no cover - direct script execution
         source_bytes,
     )
     from generation.context import KNOWN_REPO_ROOTS  # type: ignore
-    from provider_registry import connector_repos, provider_repo_order  # type: ignore
+    from provider_registry import (  # type: ignore
+        connector_repos,
+        provider_roots,
+        provider_repo_order,
+    )
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -211,6 +216,9 @@ def source_counts(owner_root: Path) -> dict[str, int]:
 
 
 def canonical_owner_root(os_root: Path, repo: str) -> Path:
+    canonical_roots = provider_roots(os_root=os_root)
+    if repo in canonical_roots:
+        return canonical_roots[repo]
     if repo in CONNECTOR_REPOS:
         return os_root / "connectors" / repo
     if repo == "aoa-session-memory":

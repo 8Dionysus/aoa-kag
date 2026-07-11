@@ -8,6 +8,7 @@ from typing import Any, Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OS_ROOT = Path("/srv/AbyssOS")
+DEFAULT_HOME_SRC_ROOT = Path("/home/dionysus/src")
 PROVIDER_REGISTRY_PATH = REPO_ROOT / "manifests" / "provider_registry.json"
 
 
@@ -81,44 +82,73 @@ def provider_checkout_envs(
     return result
 
 
-def provider_root_from_entry(entry: dict[str, Any], *, os_root: Path = DEFAULT_OS_ROOT) -> Path:
+def provider_root_from_entry(
+    entry: dict[str, Any],
+    *,
+    os_root: Path = DEFAULT_OS_ROOT,
+    home_src_root: Path = DEFAULT_HOME_SRC_ROOT,
+) -> Path:
     root_kind = entry.get("root_kind")
     root = Path(str(entry["root"]))
     if root_kind == "self":
         return REPO_ROOT
     if root.is_absolute():
         return root
+    if root_kind == "runtime_source":
+        return home_src_root / root
     return os_root / root
 
 
 def provider_roots(
     *,
     os_root: Path = DEFAULT_OS_ROOT,
+    home_src_root: Path = DEFAULT_HOME_SRC_ROOT,
     entries: Iterable[dict[str, Any]] | None = None,
 ) -> dict[str, Path]:
     source_entries = tuple(entries) if entries is not None else provider_entries()
     return {
-        str(entry["repo"]): provider_root_from_entry(entry, os_root=os_root).resolve()
+        str(entry["repo"]): provider_root_from_entry(
+            entry,
+            os_root=os_root,
+            home_src_root=home_src_root,
+        ).resolve()
         for entry in source_entries
     }
 
 
-def provider_root_from_env(entry: dict[str, Any], *, os_root: Path = DEFAULT_OS_ROOT) -> Path:
+def provider_root_from_env(
+    entry: dict[str, Any],
+    *,
+    os_root: Path = DEFAULT_OS_ROOT,
+    home_src_root: Path = DEFAULT_HOME_SRC_ROOT,
+) -> Path:
     env_name = str(entry.get("env") or "")
     if env_name:
         override = os.environ.get(env_name)
         if override:
             return Path(override).expanduser().resolve()
-    return provider_root_from_entry(entry, os_root=os_root).resolve()
+    return provider_root_from_entry(
+        entry,
+        os_root=os_root,
+        home_src_root=home_src_root,
+    ).resolve()
 
 
 def configured_provider_roots(
     *,
     os_root: Path = DEFAULT_OS_ROOT,
+    home_src_root: Path | None = None,
     entries: Iterable[dict[str, Any]] | None = None,
 ) -> dict[str, Path]:
     source_entries = tuple(entries) if entries is not None else provider_entries()
+    configured_home_src_root = home_src_root or Path(
+        os.environ.get("AOA_HOME_SRC_ROOT", DEFAULT_HOME_SRC_ROOT.as_posix())
+    )
     return {
-        str(entry["repo"]): provider_root_from_env(entry, os_root=os_root)
+        str(entry["repo"]): provider_root_from_env(
+            entry,
+            os_root=os_root,
+            home_src_root=configured_home_src_root,
+        )
         for entry in source_entries
     }

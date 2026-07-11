@@ -11,7 +11,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from scripts import generate_repo_local_kag_coverage as coverage_generation
-from scripts.generate_repo_local_kag_coverage import build_coverage
+from scripts.generate_repo_local_kag_coverage import build_coverage, canonical_owner_root
 from scripts.generate_repo_local_kag_index import (
     ARCHIVE_SUFFIXES,
     ASSET_SUFFIXES,
@@ -219,6 +219,16 @@ def write_owner_specific_provider_records(
 
 
 class RepoLocalKagIndexTests(unittest.TestCase):
+    def test_runtime_source_coverage_uses_canonical_source_root(self) -> None:
+        self.assertEqual(
+            Path("/home/dionysus/src/abyss-stack"),
+            canonical_owner_root(Path("/workspace/os"), "abyss-stack"),
+        )
+        self.assertEqual(
+            Path("/home/dionysus/src/abyss-machine"),
+            canonical_owner_root(Path("/workspace/os"), "abyss-machine"),
+        )
+
     def test_runtime_source_owner_type_is_checkout_path_independent(self) -> None:
         for repo in ("abyss-machine", "abyss-stack"):
             with self.subTest(repo=repo):

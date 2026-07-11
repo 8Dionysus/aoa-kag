@@ -79,6 +79,7 @@
             "direct",
             "connector",
             "bundle",
+            "runtime_source",
             "self"
           ]
         },
@@ -126,6 +127,38 @@
             "required": [
               "pinned_ref"
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "owner_type": {
+                "const": "runtime_source"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "root_kind": {
+                "const": "runtime_source"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "root_kind": {
+                "const": "runtime_source"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "owner_type": {
+                "const": "runtime_source"
+              }
+            }
           }
         }
       ]
