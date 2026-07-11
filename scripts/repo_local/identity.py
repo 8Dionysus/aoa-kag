@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 import subprocess
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -43,26 +44,52 @@ def _name_status(command: Sequence[str], repo_root: Path) -> Iterable[tuple[str,
     return rows
 
 
-def _apply_name_status(
-    lineages: dict[str, str],
-    rows: Iterable[tuple[str, ...]],
-) -> None:
-    for columns in rows:
+@dataclass
+class GitLineageState:
+    active: dict[str, str] = field(default_factory=dict)
+    generations: dict[str, int] = field(default_factory=dict)
+
+    @staticmethod
+    def generation_key(path: str, generation: int) -> str:
+        return path if generation == 1 else f"{path}#generation-{generation}"
+
+    def occupy(self, path: str) -> str:
+        generation = self.generations.get(path, 0) + 1
+        self.generations[path] = generation
+        lineage = self.generation_key(path, generation)
+        self.active[path] = lineage
+        return lineage
+
+    def apply(self, columns: Sequence[str]) -> str:
         status = columns[0]
         operation = status[0]
+        path = columns[-1]
         if operation == "R" and len(columns) >= 3:
             old_path, new_path = columns[1], columns[2]
-            lineages[new_path] = lineages.pop(old_path, old_path)
-        elif operation == "C" and len(columns) >= 3:
-            lineages.setdefault(columns[2], columns[2])
-        elif operation == "D":
-            lineages.pop(columns[1], None)
-        else:
-            lineages.setdefault(columns[1], columns[1])
+            lineage = self.active.pop(old_path, old_path)
+            self.generations[new_path] = self.generations.get(new_path, 0) + 1
+            self.active[new_path] = lineage
+            return lineage
+        if operation == "C" and len(columns) >= 3:
+            return self.occupy(columns[2])
+        if operation == "A":
+            return self.occupy(path)
+        if operation == "D":
+            generation = self.generations.get(path, 1)
+            return self.active.pop(path, self.generation_key(path, generation))
+        if path not in self.active:
+            self.generations.setdefault(path, 1)
+            self.active[path] = self.generation_key(path, self.generations[path])
+        return self.active[path]
+
+
+def _apply_name_status(state: GitLineageState, rows: Iterable[tuple[str, ...]]) -> None:
+    for columns in rows:
+        state.apply(columns)
 
 
 def git_lineage_paths(repo_root: Path, tracked_paths: Iterable[Path]) -> dict[Path, Path]:
-    lineages: dict[str, str] = {}
+    state = GitLineageState()
     history = _name_status(
         (
             "git",
@@ -77,7 +104,7 @@ def git_lineage_paths(repo_root: Path, tracked_paths: Iterable[Path]) -> dict[Pa
         ),
         repo_root,
     )
-    _apply_name_status(lineages, history)
+    _apply_name_status(state, history)
     staged = _name_status(
         (
             "git",
@@ -91,9 +118,9 @@ def git_lineage_paths(repo_root: Path, tracked_paths: Iterable[Path]) -> dict[Pa
         ),
         repo_root,
     )
-    _apply_name_status(lineages, staged)
+    _apply_name_status(state, staged)
     return {
-        path: Path(lineages.get(path.as_posix(), path.as_posix()))
+        path: Path(state.active.get(path.as_posix(), path.as_posix()))
         for path in tracked_paths
     }
 

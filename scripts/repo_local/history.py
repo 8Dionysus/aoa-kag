@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Sequence
 
-from .identity import qualified_id
+from .identity import GitLineageState, qualified_id
 
 
 def _git_text(repo_root: Path, command: Sequence[str]) -> str:
@@ -24,8 +24,7 @@ def _change(
     columns: list[str],
     *,
     repo: str,
-    current_ids: dict[str, str],
-    lineage_paths: dict[str, str],
+    lineage_state: GitLineageState,
 ) -> dict[str, str]:
     status = columns[0]
     operation = status[0]
@@ -41,17 +40,8 @@ def _change(
         "R": "rename",
         "T": "type_change",
     }.get(operation, "change")
-    if operation == "R":
-        lineage_path = lineage_paths.pop(old_path, old_path)
-        lineage_paths[path] = lineage_path
-    elif operation == "C":
-        lineage_path = path
-        lineage_paths[path] = lineage_path
-    elif operation == "D":
-        lineage_path = lineage_paths.pop(path, path)
-    else:
-        lineage_path = lineage_paths.setdefault(path, path)
-    object_id = current_ids.get(path) or qualified_id(repo, "artifact", lineage_path)
+    lineage_path = lineage_state.apply(columns)
+    object_id = qualified_id(repo, "artifact", lineage_path)
     return {
         "change_kind": change_kind,
         "path": path,
@@ -85,7 +75,7 @@ def git_commit_events(
     )
     events: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
-    lineage_paths: dict[str, str] = {}
+    lineage_state = GitLineageState()
     for line in output.splitlines():
         if line.startswith("@@@"):
             if current is not None and current["changes"]:
@@ -119,8 +109,7 @@ def git_commit_events(
         change = _change(
             columns,
             repo=repo,
-            current_ids=current_ids,
-            lineage_paths=lineage_paths,
+            lineage_state=lineage_state,
         )
         if change["path"] in excluded or change["old_path"] in excluded:
             continue
@@ -154,8 +143,7 @@ def git_commit_events(
         _change(
             line.split("\t"),
             repo=repo,
-            current_ids=current_ids,
-            lineage_paths=lineage_paths,
+            lineage_state=lineage_state,
         )
         for line in staged.splitlines()
         if "\t" in line

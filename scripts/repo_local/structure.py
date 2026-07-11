@@ -69,6 +69,12 @@ def _artifact_anchor(repo: str, source_id: str) -> dict[str, Any]:
     )
 
 
+def _occurrence_key(base: str, counts: dict[str, int]) -> str:
+    occurrence = counts.get(base, 0) + 1
+    counts[base] = occurrence
+    return base if occurrence == 1 else f"{base}#occurrence-{occurrence}"
+
+
 def _markdown_structure(
     repo: str,
     source_id: str,
@@ -149,14 +155,19 @@ class _PythonVisitor(ast.NodeVisitor):
         self.anchors: list[dict[str, Any]] = []
         self.outbound: list[dict[str, Any]] = []
         self.anchor_by_scope: dict[str, str] = {}
+        self.symbol_counts: dict[str, int] = {}
 
     def _symbol(self, node: ast.AST, name: str, symbol_kind: str) -> None:
         qualified_name = ".".join((*self.scope, name))
+        semantic_key = _occurrence_key(
+            f"python:{symbol_kind}:{qualified_name}",
+            self.symbol_counts,
+        )
         anchor = _anchor(
             repo=self.repo,
             source_id=self.source_id,
             kind="python_symbol",
-            semantic_key=f"python:{symbol_kind}:{qualified_name}",
+            semantic_key=semantic_key,
             label=name,
             line=int(getattr(node, "lineno", 1)),
             end_line=int(getattr(node, "end_lineno", getattr(node, "lineno", 1))),
@@ -282,11 +293,17 @@ def _yaml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]
     anchors: list[dict[str, Any]] = []
     containers: dict[int, tuple[str, ...]] = {}
     sequence_counts: dict[tuple[tuple[str, ...], int], int] = {}
+    semantic_counts: dict[str, int] = {}
+    block_scalar_indent: int | None = None
     for line_number, line in enumerate(text.splitlines(), start=1):
         stripped = line.lstrip(" ")
+        indent = len(line) - len(stripped)
+        if block_scalar_indent is not None:
+            if not stripped or indent > block_scalar_indent:
+                continue
+            block_scalar_indent = None
         if not stripped or stripped.startswith("#"):
             continue
-        indent = len(line) - len(stripped)
         for level in tuple(containers):
             if level >= indent:
                 del containers[level]
@@ -308,6 +325,8 @@ def _yaml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]
             value = match.group("value").strip()
             path = (*(item_path or parent), key)
             containers[indent] = path if not value else (item_path or parent)
+            if re.fullmatch(r"[|>](?:[1-9][+-]?|[+-][1-9]?|[+-])?", value):
+                block_scalar_indent = indent
             label = key
         elif item_path is not None:
             path = item_path
@@ -315,12 +334,13 @@ def _yaml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]
         else:
             continue
         pointer = "/" + "/".join(_json_pointer_token(item) for item in path)
+        semantic_key = _occurrence_key(f"yaml:{pointer}", semantic_counts)
         anchors.append(
             _anchor(
                 repo=repo,
                 source_id=source_id,
                 kind="yaml_path",
-                semantic_key=f"yaml:{pointer}",
+                semantic_key=semantic_key,
                 label=label,
                 line=line_number,
                 column=indent + 1,
@@ -335,11 +355,12 @@ def _yaml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]
 def _toml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]]:
     anchors: list[dict[str, Any]] = []
     table = ""
+    semantic_counts: dict[str, int] = {}
     for line_number, line in enumerate(text.splitlines(), start=1):
         table_match = TOML_TABLE.match(line)
         if table_match:
             table = table_match.group("name").strip()
-            key = f"table:{table}"
+            key = _occurrence_key(f"table:{table}", semantic_counts)
             anchors.append(
                 _anchor(
                     repo=repo,
@@ -358,12 +379,13 @@ def _toml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]
         if key_match:
             name = key_match.group("key")
             qualified = f"{table}.{name}" if table else name
+            semantic_key = _occurrence_key(f"key:{qualified}", semantic_counts)
             anchors.append(
                 _anchor(
                     repo=repo,
                     source_id=source_id,
                     kind="toml_key",
-                    semantic_key=f"key:{qualified}",
+                    semantic_key=semantic_key,
                     label=name,
                     line=line_number,
                     end_column=max(len(line), 1),

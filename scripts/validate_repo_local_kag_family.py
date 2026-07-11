@@ -43,7 +43,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"[repo-local-kag-family] {exc}", file=sys.stderr)
         return 1
 
-    owner = source.get("owner", {}).get("repo", repo_root.name)
+    repo = source.get("repo")
+    owner = repo.get("name", repo_root.name) if isinstance(repo, dict) else repo_root.name
     counts = ", ".join(
         f"{kind}={len(payload['entries'])}" for kind, payload in family.items()
     )

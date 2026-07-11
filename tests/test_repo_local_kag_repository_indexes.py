@@ -60,7 +60,11 @@ def write_fixture(root: Path) -> None:
         "      - name: first\n"
         "        uses: owner/first@v1\n"
         "      - name: second\n"
-        "        uses: owner/second@v1\n",
+        "        uses: owner/second@v1\n"
+        "      - name: script\n"
+        "        run: |\n"
+        "          echo 'status: first'\n"
+        "          echo 'status: second'\n",
         encoding="utf-8",
     )
     (root / "README.md").write_text(
@@ -240,6 +244,45 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         )
         self.assertEqual(before_id, after_id)
 
+    def test_reintroduced_path_gets_stable_distinct_logical_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=root, check=True)
+            write_fixture(root)
+            (root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "aoa-reintroduced"}), encoding="utf-8"
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "initial"), cwd=root, check=True)
+            initial = build_index(root)
+            subprocess.run(("git", "mv", "README.md", "OVERVIEW.md"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "move overview"), cwd=root, check=True)
+            (root / "README.md").write_text("# New front door\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            staged = build_index(root)
+            subprocess.run(("git", "commit", "-qm", "restore front door"), cwd=root, check=True)
+            committed = build_index(root)
+
+        initial_id = next(
+            record["identity"]["id"]
+            for record in initial["records"]
+            if record["identity"]["path"] == "README.md"
+        )
+        staged_ids = {
+            record["identity"]["path"]: record["identity"]["id"]
+            for record in staged["records"]
+        }
+        committed_ids = {
+            record["identity"]["path"]: record["identity"]["id"]
+            for record in committed["records"]
+        }
+        self.assertEqual(initial_id, staged_ids["OVERVIEW.md"])
+        self.assertNotEqual(initial_id, staged_ids["README.md"])
+        self.assertEqual(staged_ids, committed_ids)
+        self.assertEqual(len(staged_ids.values()), len(set(staged_ids.values())))
+
     def test_incremental_source_build_matches_full_rebuild(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -363,7 +406,43 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         pointers = {entry["locator"]["pointer"] for entry in yaml_anchors}
         self.assertIn("/jobs/build/steps/0/name", pointers)
         self.assertIn("/jobs/build/steps/1/name", pointers)
+        self.assertIn("/jobs/build/steps/2/run", pointers)
+        self.assertNotIn("/jobs/build/steps/2/run/status", pointers)
         self.assertEqual(len(yaml_anchors), len({entry["id"] for entry in yaml_anchors}))
+
+    def test_redefined_python_symbols_keep_distinct_anchors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            (root / "src" / "redefined.py").write_text(
+                "def normalize(value: str) -> str:\n"
+                "    return value.strip()\n\n"
+                "def normalize(value: str) -> str:\n"
+                "    return value.lower()\n",
+                encoding="utf-8",
+            )
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+
+        source_by_id = {
+            record["identity"]["id"]: record["identity"]["path"]
+            for record in source_index["records"]
+        }
+        anchors = [
+            entry
+            for entry in family["anchor"]["entries"]
+            if source_by_id[entry["source_record_id"]] == "src/redefined.py"
+            and entry["qualified_name"] == "normalize"
+        ]
+        self.assertEqual(2, len(anchors))
+        self.assertEqual(2, len({entry["id"] for entry in anchors}))
+        self.assertEqual(
+            {
+                "python:function:normalize",
+                "python:function:normalize#occurrence-2",
+            },
+            {entry["semantic_key"] for entry in anchors},
+        )
 
     def test_event_index_separates_producers_declarations_and_receipts(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -835,7 +914,10 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 text=True,
             )
 
-        self.assertIn("[repo-local-kag-family] valid owner=", completed.stdout)
+        self.assertIn(
+            f"[repo-local-kag-family] valid owner={root.name}",
+            completed.stdout,
+        )
 
     def test_query_core_traverses_reference_with_relation_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
