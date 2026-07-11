@@ -106,9 +106,9 @@ The validated provider packet gives `aoa-kag-mcp` four access planes:
 
 | Plane | Carries |
 | --- | --- |
-| resource | manifests, records, generation profiles, source-index handles, registry entries, coverage rows |
+| resource | manifests, records, generation profiles, repository index families, domain catalogs, registry entries, coverage rows |
 | root | provider home boundaries and source-return roots |
-| tool | provider lookup/status, generation route lookup, source-index lookup, coverage status, freshness check, source-return lookup, registry/composition slices, validation status |
+| tool | provider/generation lookup, repository index and domain catalog lookup, coverage, freshness, source-return, registry/composition slices, validation |
 | prompt | bounded provider query, source-return summary, repo source-surface brief, cross-repo relation preview, runtime handoff brief |
 
 ## Current Providers
@@ -132,6 +132,10 @@ The validated provider packet gives `aoa-kag-mcp` four access planes:
 | `ATM10-Agent` | `kag/` | project-local KAG runtime and operator runbook route |
 | `aoa-stats` | `kag/` | derived KAG stats observability registry |
 | `aoa-4pda-connector` | `kag/` | 4PDA connector source policy and storage boundary |
+| `aoa-course-connector` | `kag/` | course connector boundaries and source/storage policies |
 | `aoa-discord-connector` | `kag/` | Discord connector permission policy and storage boundary |
 | `aoa-stackoverflow-connector` | `kag/` | StackOverflow connector source policy and storage boundary |
+| `aoa-telegram-connector` | `kag/` | Telegram connector permission policy and storage boundary |
 | `aoa-xda-connector` | `kag/` | XDA connector source policy and storage boundary |
+| `abyss-stack` | `kag/` | runtime source topology and MCP access planes |
+| `abyss-machine` | `kag/` | host source contracts and validation lanes |

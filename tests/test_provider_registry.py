@@ -129,6 +129,15 @@ class ProviderRegistryTests(unittest.TestCase):
     def test_provider_registry_contract_validator_passes_current_surfaces(self) -> None:
         validate_provider_registry_contract()
 
+    def test_local_subtree_protocol_lists_every_provider(self) -> None:
+        protocol = (REPO_ROOT / "kag" / "LOCAL_SUBTREE_PROTOCOL.md").read_text(
+            encoding="utf-8"
+        )
+
+        for repo in provider_repo_order():
+            with self.subTest(repo=repo):
+                self.assertIn(f"| `{repo}` |", protocol)
+
 
 if __name__ == "__main__":
     unittest.main()
