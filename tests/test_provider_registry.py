@@ -19,6 +19,7 @@ from scripts.provider_registry import (
     provider_ci_envs,
     provider_dependency_pins,
     provider_entries,
+    provider_root_from_entry,
     provider_repo_order,
 )
 from scripts.validators.provider_registry import validate_provider_registry_contract
@@ -93,8 +94,49 @@ class ProviderRegistryTests(unittest.TestCase):
             session_memory["checkout_ssh_key_secret"],
         )
 
+    def test_runtime_source_repositories_are_pinned_providers(self) -> None:
+        entries = {entry["repo"]: entry for entry in provider_entries()}
+
+        expected = {
+            "abyss-stack": ("ABYSS_STACK_ROOT", ".deps/abyss-stack"),
+            "abyss-machine": ("ABYSS_MACHINE_REPO_ROOT", ".deps/abyss-machine"),
+        }
+        for repo, (env_name, checkout_path) in expected.items():
+            with self.subTest(repo=repo):
+                entry = entries[repo]
+                self.assertEqual("runtime_source", entry["owner_type"])
+                self.assertEqual("runtime_source", entry["root_kind"])
+                self.assertEqual("pinned", entry["checkout_mode"])
+                self.assertEqual(env_name, entry["env"])
+                self.assertEqual(checkout_path, entry["checkout_path"])
+                self.assertRegex(entry["pinned_ref"], r"^[a-f0-9]{40}$")
+
+    def test_runtime_source_roots_resolve_from_home_source_root(self) -> None:
+        entry = {
+            "repo": "abyss-stack",
+            "root_kind": "runtime_source",
+            "root": "abyss-stack",
+        }
+
+        root = provider_root_from_entry(
+            entry,
+            os_root=Path("/workspace/os"),
+            home_src_root=Path("/workspace/src"),
+        )
+
+        self.assertEqual(Path("/workspace/src/abyss-stack"), root)
+
     def test_provider_registry_contract_validator_passes_current_surfaces(self) -> None:
         validate_provider_registry_contract()
+
+    def test_local_subtree_protocol_lists_every_provider(self) -> None:
+        protocol = (REPO_ROOT / "kag" / "LOCAL_SUBTREE_PROTOCOL.md").read_text(
+            encoding="utf-8"
+        )
+
+        for repo in provider_repo_order():
+            with self.subTest(repo=repo):
+                self.assertIn(f"| `{repo}` |", protocol)
 
 
 if __name__ == "__main__":

@@ -90,6 +90,8 @@ The provider-ready homes are:
 | `Dionysus` | `kag/` | `generated/seed_route_map.min.json` |
 | `ATM10-Agent` | `kag/` | `src/kag/baseline.py` |
 | `aoa-stats` | `kag/` | `generated/agon_kag_stats_observability_registry.min.json` |
+| `abyss-stack` | `kag/` | `mcp/README.md` |
+| `abyss-machine` | `kag/` | `manifests/repo_scaffold.manifest.json` |
 | `aoa-4pda-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-course-connector` | `kag/` | `connector/SOURCE_POLICY.md` |
 | `aoa-discord-connector` | `kag/` | `connector/SOURCE_POLICY.md` |

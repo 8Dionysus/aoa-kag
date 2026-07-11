@@ -125,6 +125,23 @@ def _provider_repo_local_index_packet(
     index_files = owner.get("index_files")
     if not isinstance(index_files, list):
         fail(f"{repo} repo-local KAG coverage index_files must be a list")
+    repository_index_family = owner.get("repository_index_family")
+    if not isinstance(repository_index_family, dict):
+        known_refs = {
+            "source": "kag/indexes/source_surface_index.json",
+            "entity": "kag/indexes/repo_entity_index.json",
+            "artifact": "kag/indexes/repo_artifact_index.json",
+            "event": "kag/indexes/repo_event_index.json",
+        }
+        repository_index_family = {
+            index_kind: path
+            for index_kind, path in known_refs.items()
+            if path in index_files
+        }
+    domain_index_catalog_ref = owner.get("domain_index_catalog_ref")
+    if not isinstance(domain_index_catalog_ref, str):
+        catalog_ref = "kag/indexes/domain_index_catalog.json"
+        domain_index_catalog_ref = catalog_ref if catalog_ref in index_files else ""
     coverage = owner.get("coverage")
     if not isinstance(coverage, dict):
         fail(f"{repo} repo-local KAG coverage must declare coverage counts")
@@ -171,6 +188,8 @@ def _provider_repo_local_index_packet(
         "status": status,
         "source_index_ref": source_index_ref,
         "index_files": index_files,
+        "repository_index_family": repository_index_family,
+        "domain_index_catalog_ref": domain_index_catalog_ref,
         "coverage": coverage,
         "common_surface_profile": common_surface_profile,
         "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
@@ -584,6 +603,42 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     ),
                 },
                 {
+                    "uri_template": (
+                        "aoa-kag://providers/{repo}/repository-index-family"
+                    ),
+                    "source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/provider_repo_local_indexes/{repo}/repository_index_family"
+                    ),
+                },
+                {
+                    "uri_template": (
+                        "aoa-kag://providers/{repo}/indexes/{index_kind}"
+                    ),
+                    "source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/provider_repo_local_indexes/{repo}/repository_index_family/"
+                        "{index_kind}"
+                    ),
+                    "resolution": (
+                        "Resolve source, entity, artifact, or event to the provider-local "
+                        "path and return the indexed JSON payload."
+                    ),
+                },
+                {
+                    "uri_template": (
+                        "aoa-kag://providers/{repo}/domain-index-catalog"
+                    ),
+                    "source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/provider_repo_local_indexes/{repo}/domain_index_catalog_ref"
+                    ),
+                    "resolution": (
+                        "Dereference domain_index_catalog_ref when present and return an "
+                        "empty route for providers without owner-native index families."
+                    ),
+                },
+                {
                     "uri_template": "aoa-kag://registry/provider-map",
                     "source": "aoa-kag/generated/local_kag_provider_map.min.json",
                 },
@@ -618,6 +673,9 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                 "provider_status",
                 "generation_route_lookup",
                 "source_index_lookup",
+                "repository_index_family_lookup",
+                "repository_index_lookup",
+                "domain_index_catalog_lookup",
                 "repo_local_coverage_status",
                 "freshness_check",
                 "source_return_lookup",

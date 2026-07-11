@@ -46,6 +46,24 @@ EXPECTED_MCP_RESOURCE_TEMPLATES = {
             "#/provider_common_surface_profiles/{repo}"
         ),
     },
+    "aoa-kag://providers/{repo}/repository-index-family": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/repository_index_family"
+        ),
+    },
+    "aoa-kag://providers/{repo}/indexes/{index_kind}": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/repository_index_family/{index_kind}"
+        ),
+    },
+    "aoa-kag://providers/{repo}/domain-index-catalog": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/domain_index_catalog_ref"
+        ),
+    },
     "aoa-kag://registry/provider-map": {
         "source": "aoa-kag/generated/local_kag_provider_map.min.json",
     },
@@ -62,6 +80,9 @@ REQUIRED_MCP_TOOLS = {
     "provider_status",
     "generation_route_lookup",
     "source_index_lookup",
+    "repository_index_family_lookup",
+    "repository_index_lookup",
+    "domain_index_catalog_lookup",
     "repo_local_coverage_status",
     "freshness_check",
     "source_return_lookup",

@@ -24,6 +24,16 @@ except ImportError:  # pragma: no cover - direct script import fallback
     )
 
 
+REPOSITORY_INDEX_FAMILY_REFS = {
+    "source": "kag/indexes/source_surface_index.json",
+    **{
+        index_kind: f"kag/indexes/{filename}"
+        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+    },
+}
+DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
+
+
 def _repo_local_index_phase(label: str, *, progress: bool) -> None:
     if progress:
         print(f"[validate-kag:repo-local-index] {label}", file=sys.stderr, flush=True)
@@ -264,6 +274,20 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
         if not isinstance(owner, dict):
             continue
         repo = owner.get("repo")
+        index_files = owner.get("index_files")
+        repository_index_family = owner.get("repository_index_family")
+        domain_index_catalog_ref = owner.get("domain_index_catalog_ref")
+        if not isinstance(index_files, list) or not isinstance(repository_index_family, dict):
+            fail(f"{label} owner {repo} must expose repository index family routes")
+        if any(path not in index_files for path in repository_index_family.values()):
+            fail(f"{label} owner {repo} repository index family must return to index_files")
+        if owner.get("index_status") == "passed" and repository_index_family != REPOSITORY_INDEX_FAMILY_REFS:
+            fail(f"{label} owner {repo} passed status requires the complete repository index family")
+        expected_domain_ref = (
+            DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in index_files else ""
+        )
+        if domain_index_catalog_ref != expected_domain_ref:
+            fail(f"{label} owner {repo} domain index catalog route must match index_files")
         profile = owner.get("common_surface_profile")
         if not isinstance(profile, dict):
             continue

@@ -333,6 +333,24 @@ class KagGenerationTestCase(unittest.TestCase):
             for item in handoff["resource_templates"]
             if item["uri_template"] == "aoa-kag://providers/{repo}/common-surface-profile"
         )
+        repository_family_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"]
+            == "aoa-kag://providers/{repo}/repository-index-family"
+        )
+        repository_index_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"]
+            == "aoa-kag://providers/{repo}/indexes/{index_kind}"
+        )
+        domain_catalog_template = next(
+            item
+            for item in handoff["resource_templates"]
+            if item["uri_template"]
+            == "aoa-kag://providers/{repo}/domain-index-catalog"
+        )
 
         self.assertEqual(
             handoff["service_route"],
@@ -347,6 +365,9 @@ class KagGenerationTestCase(unittest.TestCase):
                 "aoa-kag://providers/{repo}/source-index",
                 "aoa-kag://providers/{repo}/repo-local-index",
                 "aoa-kag://providers/{repo}/common-surface-profile",
+                "aoa-kag://providers/{repo}/repository-index-family",
+                "aoa-kag://providers/{repo}/indexes/{index_kind}",
+                "aoa-kag://providers/{repo}/domain-index-catalog",
                 "aoa-kag://registry/provider-map",
                 "aoa-kag://coverage/repo-local-source-indexes",
                 "aoa-kag://readiness/os-surfaces",
@@ -355,6 +376,9 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertTrue(handoff["root_boundaries"])
         self.assertIn("generation_route_lookup", handoff["tools"])
         self.assertIn("source_index_lookup", handoff["tools"])
+        self.assertIn("repository_index_family_lookup", handoff["tools"])
+        self.assertIn("repository_index_lookup", handoff["tools"])
+        self.assertIn("domain_index_catalog_lookup", handoff["tools"])
         self.assertIn("repo_local_coverage_status", handoff["tools"])
         self.assertIn("validation_status", handoff["tools"])
         self.assertIn("bounded_provider_query", handoff["prompts"])
@@ -403,6 +427,21 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertNotEqual(
             source_index_template["source"],
             "{repo}/kag/indexes/source_surface_index.json",
+        )
+        self.assertEqual(
+            repository_family_template["source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/repository_index_family",
+        )
+        self.assertEqual(
+            repository_index_template["source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/repository_index_family/{index_kind}",
+        )
+        self.assertEqual(
+            domain_catalog_template["source"],
+            "aoa-kag/generated/local_kag_provider_map.min.json"
+            "#/provider_repo_local_indexes/{repo}/domain_index_catalog_ref",
         )
         self.assertEqual(records_template["source"], "{repo}/kag/{record_class_directory}/")
         self.assertEqual(
@@ -482,6 +521,14 @@ class KagGenerationTestCase(unittest.TestCase):
             owner["repo"]: owner
             for owner in coverage["owners"]
         }
+        self.assertEqual(
+            "/home/dionysus/src/abyss-stack",
+            coverage_by_repo["abyss-stack"]["root"],
+        )
+        self.assertEqual(
+            "/home/dionysus/src/abyss-machine",
+            coverage_by_repo["abyss-machine"]["root"],
+        )
 
         for provider in payload["providers"]:
             repo = provider["repo"]
@@ -490,6 +537,14 @@ class KagGenerationTestCase(unittest.TestCase):
                 index_packet = provider["repo_local_index"]
                 self.assertEqual(coverage_row["index_status"], index_packet["status"])
                 self.assertEqual(coverage_row["index_files"], index_packet["index_files"])
+                self.assertEqual(
+                    coverage_row["repository_index_family"],
+                    index_packet["repository_index_family"],
+                )
+                self.assertEqual(
+                    coverage_row["domain_index_catalog_ref"],
+                    index_packet["domain_index_catalog_ref"],
+                )
                 self.assertEqual(coverage_row["coverage"], index_packet["coverage"])
                 self.assertEqual(
                     coverage_row["common_surface_profile"],
@@ -526,6 +581,19 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertIn(
             "kag/indexes/session_memory_source_inventory.json",
             providers["aoa-session-memory"]["repo_local_index"]["index_files"],
+        )
+        self.assertEqual(
+            "kag/indexes/domain_index_catalog.json",
+            providers["aoa-session-memory"]["repo_local_index"]["domain_index_catalog_ref"],
+        )
+        self.assertEqual(
+            {
+                "source": "kag/indexes/source_surface_index.json",
+                "entity": "kag/indexes/repo_entity_index.json",
+                "artifact": "kag/indexes/repo_artifact_index.json",
+                "event": "kag/indexes/repo_event_index.json",
+            },
+            providers["aoa-session-memory"]["repo_local_index"]["repository_index_family"],
         )
         connector_statuses = {
             repo: provider["repo_local_index"]["status"]

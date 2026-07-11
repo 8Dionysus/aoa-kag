@@ -26,6 +26,8 @@ jobs:
       AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
+      ABYSS_STACK_ROOT: ${{ github.workspace }}/.deps/abyss-stack
+      ABYSS_MACHINE_REPO_ROOT: ${{ github.workspace }}/.deps/abyss-machine
       AOA_SESSION_MEMORY_ROOT: ${{ github.workspace }}/.deps/aoa-session-memory
       AOA_4PDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-4pda-connector
       AOA_COURSE_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-course-connector
@@ -128,6 +130,18 @@ jobs:
         with:
           repository: 8Dionysus/aoa-stats
           path: .deps/aoa-stats
+
+      - name: Checkout abyss-stack
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/abyss-stack
+          path: .deps/abyss-stack
+
+      - name: Checkout abyss-machine
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/abyss-machine
+          path: .deps/abyss-machine
 
       - name: Checkout aoa-4pda-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
