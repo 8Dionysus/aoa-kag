@@ -216,6 +216,8 @@ def source_counts(owner_root: Path) -> dict[str, int]:
 
 
 def canonical_owner_root(os_root: Path, repo: str) -> Path:
+    if repo == "aoa-kag":
+        return os_root / repo
     canonical_roots = provider_roots(os_root=os_root)
     if repo in canonical_roots:
         return canonical_roots[repo]

@@ -219,6 +219,12 @@ def write_owner_specific_provider_records(
 
 
 class RepoLocalKagIndexTests(unittest.TestCase):
+    def test_self_coverage_root_is_checkout_path_independent(self) -> None:
+        self.assertEqual(
+            Path("/workspace/os/aoa-kag"),
+            canonical_owner_root(Path("/workspace/os"), "aoa-kag"),
+        )
+
     def test_runtime_source_coverage_uses_canonical_source_root(self) -> None:
         self.assertEqual(
             Path("/home/dionysus/src/abyss-stack"),
