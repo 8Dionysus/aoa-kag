@@ -26,9 +26,12 @@ from scripts.generate_repo_local_kag_index import (
     TEXT_ARTIFACT_SUFFIXES,
     TEXT_WRAPPER_SUFFIXES,
     build_index,
+    build_repository_indexes,
     mime_for,
+    normalized_json,
     owner_type_for,
     payload_digest,
+    REPOSITORY_INDEX_FILENAMES,
 )
 
 
@@ -41,6 +44,23 @@ EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
 
 def load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def write_repository_index_family(owner_root: Path) -> dict[str, object]:
+    source_path = Path("kag/indexes/source_surface_index.json")
+    source_index = build_index(owner_root, output=source_path)
+    index_root = owner_root / source_path.parent
+    index_root.mkdir(parents=True, exist_ok=True)
+    (owner_root / source_path).write_text(normalized_json(source_index), encoding="utf-8")
+    for index_kind, payload in build_repository_indexes(
+        source_index,
+        source_index_path=source_path,
+    ).items():
+        (index_root / REPOSITORY_INDEX_FILENAMES[index_kind]).write_text(
+            normalized_json(payload),
+            encoding="utf-8",
+        )
+    return source_index
 
 
 def owner_specific_index_payload(repo: str = "aoa-demo-connector") -> dict[str, object]:
@@ -1034,16 +1054,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             for owner in (organ, connector, bundle, bundle_provider, current_bundle_provider):
                 (owner / "kag" / "indexes").mkdir(parents=True)
                 (owner / "README.md").write_text("# Owner\n", encoding="utf-8")
-            (organ / "kag" / "indexes" / "source_surface_index.json").write_text(
-                json.dumps(
-                    build_index(
-                        organ,
-                        output=Path("kag/indexes/source_surface_index.json"),
-                    ),
-                    ensure_ascii=False,
-                ),
-                encoding="utf-8",
-            )
+            write_repository_index_family(organ)
             write_owner_specific_provider_records(connector)
             stale_bundle_index = build_index(
                 bundle_provider,
@@ -1065,16 +1076,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 repo="aoa-demo-current-bundle-provider",
                 index_name="session_memory_source_inventory.json",
             )
-            (current_bundle_provider / "kag" / "indexes" / "source_surface_index.json").write_text(
-                json.dumps(
-                    build_index(
-                        current_bundle_provider,
-                        output=Path("kag/indexes/source_surface_index.json"),
-                    ),
-                    ensure_ascii=False,
-                ),
-                encoding="utf-8",
-            )
+            write_repository_index_family(current_bundle_provider)
 
             payload = build_coverage(root)
 
@@ -1086,6 +1088,14 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual("migration-needed", statuses["aoa-demo-bundle-provider"])
         self.assertEqual("passed", statuses["aoa-demo-current-bundle-provider"])
         owners = {owner["repo"]: owner for owner in payload["owners"]}
+        expected_family = {
+            "source": "kag/indexes/source_surface_index.json",
+            "entity": "kag/indexes/repo_entity_index.json",
+            "artifact": "kag/indexes/repo_artifact_index.json",
+            "event": "kag/indexes/repo_event_index.json",
+        }
+        self.assertEqual(expected_family, owners["aoa-demo"]["repository_index_family"])
+        self.assertEqual("", owners["aoa-demo"]["domain_index_catalog_ref"])
         self.assertEqual(
             "source_surface_index",
             owners["aoa-demo"]["common_surface_profile"]["source"],
@@ -1099,6 +1109,10 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             owners["aoa-demo-current-bundle-provider"]["index_files"],
         )
         self.assertEqual(
+            expected_family,
+            owners["aoa-demo-current-bundle-provider"]["repository_index_family"],
+        )
+        self.assertEqual(
             "source_tree_scan",
             owners["aoa-demo-connector"]["common_surface_profile"]["source"],
         )
@@ -1108,6 +1122,29 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertIn(
             "artifact_kind",
             owners["aoa-demo"]["common_surface_profile"]["counts"],
+        )
+
+    def test_coverage_requires_complete_repository_index_family(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            organ = root / "aoa-demo"
+            organ.mkdir()
+            (organ / "README.md").write_text("# Owner\n", encoding="utf-8")
+            source_index = build_index(
+                organ,
+                output=Path("kag/indexes/source_surface_index.json"),
+            )
+            index_path = organ / "kag" / "indexes" / "source_surface_index.json"
+            index_path.parent.mkdir(parents=True)
+            index_path.write_text(normalized_json(source_index), encoding="utf-8")
+
+            coverage = build_coverage(root)
+
+        owner = coverage["owners"][0]
+        self.assertEqual("migration-needed", owner["index_status"])
+        self.assertEqual(
+            {"source": "kag/indexes/source_surface_index.json"},
+            owner["repository_index_family"],
         )
 
     def test_coverage_rejects_index_with_wrong_repo_identity(self) -> None:

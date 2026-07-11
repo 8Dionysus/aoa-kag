@@ -18,6 +18,7 @@ try:
         INDEX_SCHEMA_VERSION,
         REPOSITORY_INDEX_FILENAMES,
         build_index,
+        build_repository_indexes,
         classification_summary,
         coverage_summary,
         git_file_paths,
@@ -40,6 +41,7 @@ except ImportError:  # pragma: no cover - direct script execution
         INDEX_SCHEMA_VERSION,
         REPOSITORY_INDEX_FILENAMES,
         build_index,
+        build_repository_indexes,
         classification_summary,
         coverage_summary,
         git_file_paths,
@@ -68,6 +70,14 @@ REPOSITORY_INDEX_RELS = {
     for filename in REPOSITORY_INDEX_FILENAMES.values()
 }
 COMMON_GENERATED_INDEX_RELS = {SOURCE_SURFACE_INDEX_REL, *REPOSITORY_INDEX_RELS}
+REPOSITORY_INDEX_FAMILY_REFS = {
+    "source": SOURCE_SURFACE_INDEX_REL.as_posix(),
+    **{
+        index_kind: (Path("kag") / "indexes" / filename).as_posix()
+        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+    },
+}
+DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
 META_INDEX_NAMES = {
     SOURCE_SURFACE_INDEX_REL.name,
     *(path.name for path in REPOSITORY_INDEX_RELS),
@@ -293,6 +303,34 @@ def _source_index_payload(owner_root: Path) -> dict[str, Any] | None:
     return None
 
 
+def repository_index_family_refs(relative_files: Sequence[str]) -> dict[str, str]:
+    present = set(relative_files)
+    return {
+        index_kind: path
+        for index_kind, path in REPOSITORY_INDEX_FAMILY_REFS.items()
+        if path in present
+    }
+
+
+def repository_index_family_matches_owner(
+    owner_root: Path,
+    source_index: dict[str, Any],
+) -> bool:
+    expected = build_repository_indexes(
+        source_index,
+        source_index_path=SOURCE_SURFACE_INDEX_REL,
+    )
+    for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
+        path = owner_root / "kag" / "indexes" / filename
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
+            return False
+        if payload != expected[index_kind]:
+            return False
+    return True
+
+
 def _profile_payload(owner_root: Path, *, index_status: str) -> tuple[str, dict[str, Any]]:
     payload = _source_index_payload(owner_root)
     if payload is not None and (index_status == "passed" or source_index_matches_owner(owner_root, payload)):
@@ -499,7 +537,12 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
                 and not errors
                 and source_index_matches_owner(owner_root, payload)
             ):
-                return "passed", relative_files
+                return (
+                    "passed"
+                    if repository_index_family_matches_owner(owner_root, payload)
+                    else "migration-needed",
+                    relative_files,
+                )
         except (json.JSONDecodeError, UnicodeDecodeError):
             return "migration-needed", relative_files
         return "migration-needed", relative_files
@@ -534,6 +577,10 @@ def build_coverage(
                 "kag_home": display_kag_home.as_posix() if display_kag_home.as_posix() != "." else "",
                 "index_status": status,
                 "index_files": files,
+                "repository_index_family": repository_index_family_refs(files),
+                "domain_index_catalog_ref": (
+                    DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in files else ""
+                ),
                 "coverage": source_counts(owner_root),
                 "common_surface_profile": common_surface_profile(
                     owner_root,
