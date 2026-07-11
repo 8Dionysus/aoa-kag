@@ -551,6 +551,19 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             (root / "scripts" / "start_demo.ps1").write_text("Write-Output ok\n", encoding="utf-8")
             (root / "scripts" / "sync_demo.py").write_text("print('sync')\n", encoding="utf-8")
             (root / "scripts" / "validate_demo.ps1").write_text("Write-Output ok\n", encoding="utf-8")
+            (root / "scripts" / "aoa-tool").write_text(
+                "#!/usr/bin/env bash\nset -eu\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "validate_tool").write_text(
+                "#!/usr/bin/env python3\nraise SystemExit(0)\n",
+                encoding="utf-8",
+            )
+            (root / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+            (root / "styles.css").write_text("body { color: black; }\n", encoding="utf-8")
+            (root / "index.html").write_text("<main>Demo</main>\n", encoding="utf-8")
+            (root / "config.alloy").write_text("logging {}\n", encoding="utf-8")
+            (root / "service.env.example").write_text("PORT=1\n", encoding="utf-8")
             (root / ".deps" / "foreign").mkdir(parents=True)
             (root / ".deps" / "foreign" / "README.md").write_text("# Foreign\n", encoding="utf-8")
 
@@ -577,12 +590,19 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             "scripts/start_demo.ps1": "script",
             "scripts/sync_demo.py": "script",
             "scripts/validate_demo.ps1": "validator",
+            "scripts/aoa-tool": "script",
+            "scripts/validate_tool": "validator",
+            "Dockerfile": "config",
+            "styles.css": "source_code",
+            "index.html": "source_code",
+            "config.alloy": "config",
+            "service.env.example": "config",
         }
         for path, expected_kind in expected_kinds.items():
             record = records_by_path[path]
             self.assertEqual(expected_kind, record["artifact_kind"], path)
             expected_primary = "command" if path.startswith("scripts/") else "artifact"
-            if expected_kind == "config":
+            if expected_kind in {"config", "source_code"}:
                 expected_primary = "surface"
             self.assertEqual(expected_primary, record["classification"]["primary_kind"], path)
             self.assertEqual("high", record["classification"]["confidence"], path)
@@ -608,11 +628,37 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             records_by_path["scripts/validate_demo.ps1"]["toolchain"]["owner_commands"],
         )
         self.assertIn("pwsh", records_by_path["scripts/start_demo.ps1"]["toolchain"]["required_tools"])
+        self.assertEqual("script", records_by_path["scripts/aoa-tool"]["command_role"])
+        self.assertEqual("validator", records_by_path["scripts/validate_tool"]["command_role"])
+        self.assertEqual(["bash"], records_by_path["scripts/aoa-tool"]["toolchain"]["required_tools"])
+        self.assertEqual(
+            ["python"],
+            records_by_path["scripts/validate_tool"]["toolchain"]["required_tools"],
+        )
         self.assertNotIn(".deps/foreign/README.md", records_by_path)
         self.assertEqual(0, payload["coverage_summary"]["unknown_count"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["asset"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["receipt"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["record_log"])
+
+    def test_generator_classifies_tracked_symlinks_from_git_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (root / "README.link").symlink_to("README.md")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            payload = build_index(root)
+
+        self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
+        record = next(
+            item for item in payload["records"] if item["identity"]["path"] == "README.link"
+        )
+        self.assertEqual("symlink", record["artifact_kind"])
+        self.assertEqual("symlink", record["observed_form"])
+        self.assertEqual("inode/symlink", record["identity"]["mime"])
+        self.assertEqual("artifact", record["classification"]["primary_kind"])
 
     def test_common_surface_profile_recomputes_counts_from_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

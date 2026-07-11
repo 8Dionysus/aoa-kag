@@ -1108,28 +1108,28 @@
     },
     {
       "coordinates": {
-        "artifact_kind": "source_code",
-        "code_role": "source_module",
-        "command_role": "none",
+        "artifact_kind": "script",
+        "code_role": "entrypoint",
+        "command_role": "script",
         "document_role": "none",
         "mechanics_role": "none",
         "surface_state": "authored_source"
       },
-      "entity_kind": "code",
+      "entity_kind": "command",
       "id": "entity:file:.agents/skills/aoa-dry-run-first/scripts/dry_run_contract.py:e1480fe2d2",
       "label": ".agents/skills/aoa-dry-run-first/scripts/dry_run_contract.py",
       "source_record_id": "file:.agents/skills/aoa-dry-run-first/scripts/dry_run_contract.py:e1480fe2d2"
     },
     {
       "coordinates": {
-        "artifact_kind": "source_code",
-        "code_role": "source_module",
-        "command_role": "none",
+        "artifact_kind": "script",
+        "code_role": "entrypoint",
+        "command_role": "script",
         "document_role": "none",
         "mechanics_role": "none",
         "surface_state": "authored_source"
       },
-      "entity_kind": "code",
+      "entity_kind": "command",
       "id": "entity:file:.agents/skills/aoa-dry-run-first/scripts/preview_gap_check.py:0ea89b83a2",
       "label": ".agents/skills/aoa-dry-run-first/scripts/preview_gap_check.py",
       "source_record_id": "file:.agents/skills/aoa-dry-run-first/scripts/preview_gap_check.py:0ea89b83a2"
@@ -1360,28 +1360,28 @@
     },
     {
       "coordinates": {
-        "artifact_kind": "source_code",
-        "code_role": "source_module",
-        "command_role": "none",
+        "artifact_kind": "script",
+        "code_role": "entrypoint",
+        "command_role": "script",
         "document_role": "none",
         "mechanics_role": "none",
         "surface_state": "authored_source"
       },
-      "entity_kind": "code",
+      "entity_kind": "command",
       "id": "entity:file:.agents/skills/aoa-local-stack-bringup/scripts/bringup_contract.py:65fb7d4d41",
       "label": ".agents/skills/aoa-local-stack-bringup/scripts/bringup_contract.py",
       "source_record_id": "file:.agents/skills/aoa-local-stack-bringup/scripts/bringup_contract.py:65fb7d4d41"
     },
     {
       "coordinates": {
-        "artifact_kind": "source_code",
-        "code_role": "source_module",
-        "command_role": "none",
+        "artifact_kind": "script",
+        "code_role": "entrypoint",
+        "command_role": "script",
         "document_role": "none",
         "mechanics_role": "none",
         "surface_state": "authored_source"
       },
-      "entity_kind": "code",
+      "entity_kind": "command",
       "id": "entity:file:.agents/skills/aoa-local-stack-bringup/scripts/readiness_summary.py:b9778391e0",
       "label": ".agents/skills/aoa-local-stack-bringup/scripts/readiness_summary.py",
       "source_record_id": "file:.agents/skills/aoa-local-stack-bringup/scripts/readiness_summary.py:b9778391e0"
@@ -1836,28 +1836,28 @@
     },
     {
       "coordinates": {
-        "artifact_kind": "source_code",
-        "code_role": "source_module",
-        "command_role": "none",
+        "artifact_kind": "script",
+        "code_role": "entrypoint",
+        "command_role": "script",
         "document_role": "none",
         "mechanics_role": "none",
         "surface_state": "authored_source"
       },
-      "entity_kind": "code",
+      "entity_kind": "command",
       "id": "entity:file:.agents/skills/aoa-safe-infra-change/scripts/infra_change_contract.py:f074327882",
       "label": ".agents/skills/aoa-safe-infra-change/scripts/infra_change_contract.py",
       "source_record_id": "file:.agents/skills/aoa-safe-infra-change/scripts/infra_change_contract.py:f074327882"
     },
     {
       "coordinates": {
-        "artifact_kind": "source_code",
-        "code_role": "source_module",
-        "command_role": "none",
+        "artifact_kind": "script",
+        "code_role": "entrypoint",
+        "command_role": "script",
         "document_role": "none",
         "mechanics_role": "none",
         "surface_state": "authored_source"
       },
-      "entity_kind": "code",
+      "entity_kind": "command",
       "id": "entity:file:.agents/skills/aoa-safe-infra-change/scripts/risk_surface_scan.py:4783038b81",
       "label": ".agents/skills/aoa-safe-infra-change/scripts/risk_surface_scan.py",
       "source_record_id": "file:.agents/skills/aoa-safe-infra-change/scripts/risk_surface_scan.py:4783038b81"
@@ -10866,14 +10866,14 @@
     },
     {
       "coordinates": {
-        "artifact_kind": "source_code",
-        "code_role": "source_module",
-        "command_role": "none",
+        "artifact_kind": "script",
+        "code_role": "entrypoint",
+        "command_role": "script",
         "document_role": "none",
         "mechanics_role": "none",
         "surface_state": "authored_source"
       },
-      "entity_kind": "code",
+      "entity_kind": "command",
       "id": "entity:file:scripts/kag_generation.py:8292c54621",
       "label": "scripts/kag_generation.py",
       "source_record_id": "file:scripts/kag_generation.py:8292c54621"
@@ -12561,7 +12561,7 @@
   ],
   "index_identity": {
     "artifact_kind": "repository_entity_index",
-    "content_digest": "3489fb487b4354a3ebeff5fcce0594c958372ff416db986333cb755b42581c49",
+    "content_digest": "c6f94e9b3cf130c4d9036b730cc8621d015348a7c472040e15c987592228bc90",
     "index_kind": "entity",
     "local_id": "index:repo-local:entities",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-repository-index.schema.json"
@@ -12584,7 +12584,7 @@
   },
   "schema_version": "aoa-repo-local-kag-repository-index-v1",
   "source_index": {
-    "content_digest": "4f4ebec13b2bb4d69ff6f37bb2dc89165478083df1eb701a65f0365488f9cd0e",
+    "content_digest": "5847cb3ea7a08671c90942fc8363f1ae92a471f8ca498246b5b3b0fc629ae6aa",
     "local_id": "index:repo-local:source-surfaces",
     "path": "kag/indexes/source_surface_index.json"
   },
@@ -12593,8 +12593,8 @@
     "kind_counts": {
       "agent_route": 27,
       "artifact": 120,
-      "code": 104,
-      "command": 36,
+      "code": 97,
+      "command": 43,
       "contract": 13,
       "decision": 20,
       "document": 140,

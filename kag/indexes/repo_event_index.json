@@ -1,6 +1,60 @@
 {
   "entries": [
     {
+      "event_kind": "command_run",
+      "event_role": "producer",
+      "heading_ref": null,
+      "id": "event:repo:0a7efe33f2092287f3d5",
+      "observation_state": "declared",
+      "path": ".agents/skills/aoa-dry-run-first/scripts/dry_run_contract.py",
+      "source_record_id": "file:.agents/skills/aoa-dry-run-first/scripts/dry_run_contract.py:e1480fe2d2"
+    },
+    {
+      "event_kind": "command_run",
+      "event_role": "producer",
+      "heading_ref": null,
+      "id": "event:repo:19802ea2a06cab01e90a",
+      "observation_state": "declared",
+      "path": ".agents/skills/aoa-dry-run-first/scripts/preview_gap_check.py",
+      "source_record_id": "file:.agents/skills/aoa-dry-run-first/scripts/preview_gap_check.py:0ea89b83a2"
+    },
+    {
+      "event_kind": "command_run",
+      "event_role": "producer",
+      "heading_ref": null,
+      "id": "event:repo:2112d1e35ba177b3fadf",
+      "observation_state": "declared",
+      "path": ".agents/skills/aoa-local-stack-bringup/scripts/bringup_contract.py",
+      "source_record_id": "file:.agents/skills/aoa-local-stack-bringup/scripts/bringup_contract.py:65fb7d4d41"
+    },
+    {
+      "event_kind": "command_run",
+      "event_role": "producer",
+      "heading_ref": null,
+      "id": "event:repo:3d93a214e2b04eb73016",
+      "observation_state": "declared",
+      "path": ".agents/skills/aoa-local-stack-bringup/scripts/readiness_summary.py",
+      "source_record_id": "file:.agents/skills/aoa-local-stack-bringup/scripts/readiness_summary.py:b9778391e0"
+    },
+    {
+      "event_kind": "command_run",
+      "event_role": "producer",
+      "heading_ref": null,
+      "id": "event:repo:7debd75e45c67a06ba4f",
+      "observation_state": "declared",
+      "path": ".agents/skills/aoa-safe-infra-change/scripts/infra_change_contract.py",
+      "source_record_id": "file:.agents/skills/aoa-safe-infra-change/scripts/infra_change_contract.py:f074327882"
+    },
+    {
+      "event_kind": "command_run",
+      "event_role": "producer",
+      "heading_ref": null,
+      "id": "event:repo:f470ab492fb6dbbd2b2c",
+      "observation_state": "declared",
+      "path": ".agents/skills/aoa-safe-infra-change/scripts/risk_surface_scan.py",
+      "source_record_id": "file:.agents/skills/aoa-safe-infra-change/scripts/risk_surface_scan.py:4783038b81"
+    },
+    {
       "event_kind": "workflow_run",
       "event_role": "producer",
       "heading_ref": null,
@@ -676,6 +730,15 @@
       "source_record_id": "file:scripts/generate_repo_local_kag_index.py:f202b0488e"
     },
     {
+      "event_kind": "command_run",
+      "event_role": "producer",
+      "heading_ref": null,
+      "id": "event:repo:e9cabf2ffbccb38aa440",
+      "observation_state": "declared",
+      "path": "scripts/kag_generation.py",
+      "source_record_id": "file:scripts/kag_generation.py:8292c54621"
+    },
+    {
       "event_kind": "validation_lane_run",
       "event_role": "producer",
       "heading_ref": null,
@@ -957,7 +1020,7 @@
   ],
   "index_identity": {
     "artifact_kind": "repository_event_index",
-    "content_digest": "d9441f3ab2ffe7c965550855889b5a8f54ee6862e6cc5109ecba07d7b86da9f9",
+    "content_digest": "e726f9188e21c747e0c592f78e2d2dcf5e0d6713133b49254cb047417bc0b7e2",
     "index_kind": "event",
     "local_id": "index:repo-local:events",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-repository-index.schema.json"
@@ -982,14 +1045,14 @@
   },
   "schema_version": "aoa-repo-local-kag-repository-index-v1",
   "source_index": {
-    "content_digest": "4f4ebec13b2bb4d69ff6f37bb2dc89165478083df1eb701a65f0365488f9cd0e",
+    "content_digest": "5847cb3ea7a08671c90942fc8363f1ae92a471f8ca498246b5b3b0fc629ae6aa",
     "local_id": "index:repo-local:source-surfaces",
     "path": "kag/indexes/source_surface_index.json"
   },
   "summary": {
-    "entry_count": 102,
+    "entry_count": 109,
     "kind_counts": {
-      "command_run": 2,
+      "command_run": 9,
       "decision_record": 20,
       "generation_run": 6,
       "release_declaration": 5,
