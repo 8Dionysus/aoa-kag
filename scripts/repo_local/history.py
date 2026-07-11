@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Any, Sequence
@@ -47,6 +48,60 @@ def _change(
         "path": path,
         "old_path": old_path,
         "object_id": object_id,
+    }
+
+
+def _repository_snapshot_event(
+    *,
+    repo: str,
+    changes: list[dict[str, str]],
+    current_ids: dict[str, str],
+    artifact_anchor_ids: dict[str, str],
+) -> dict[str, Any]:
+    ordered_changes = sorted(
+        changes,
+        key=lambda item: (
+            item["path"],
+            item["old_path"],
+            item["change_kind"],
+            item["object_id"],
+        ),
+    )
+    signature = json.dumps(
+        ordered_changes,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    source_ids = sorted(
+        {
+            current_ids[item["path"]]
+            for item in ordered_changes
+            if item["path"] in current_ids
+        }
+    )
+    return {
+        "id": qualified_id(repo, "event", f"repository-snapshot:{signature}"),
+        "event_kind": "repository_snapshot_change_set",
+        "event_role": "observation",
+        "observation_state": "observed",
+        "label": "Repository source snapshot change set",
+        "source_record_ids": source_ids,
+        "anchor_ids": [
+            artifact_anchor_ids[item]
+            for item in source_ids
+            if item in artifact_anchor_ids
+        ],
+        "object_ids": [item["object_id"] for item in ordered_changes],
+        "changes": ordered_changes,
+        "occurred_at": "",
+        "actor": {"name": "repository-snapshot", "email": ""},
+        "evidence_refs": [
+            {"kind": "repository_snapshot", "ref": "source-tree-snapshot"}
+        ],
+        "temporal_ref": "current",
+        "provenance_ref": "observed",
+        "trust_ref": "observed",
     }
 
 
@@ -153,35 +208,18 @@ def git_commit_events(
         for item in staged_changes
         if item["path"] not in excluded and item["old_path"] not in excluded
     ]
-    if staged_changes:
-        signature = "|".join(
-            f"{item['change_kind']}:{item['old_path']}:{item['path']}" for item in staged_changes
-        )
-        source_ids = sorted(
-            {
-                current_ids[item["path"]]
-                for item in staged_changes
-                if item["path"] in current_ids
-            }
-        )
+    snapshot_changes: list[dict[str, str]] = staged_changes
+    if not snapshot_changes and events:
+        # The latest source change is the current snapshot until another source change appears.
+        snapshot_changes = events.pop()["changes"]
+    if snapshot_changes:
         events.append(
-            {
-                "id": qualified_id(repo, "event", f"git-index:{signature}"),
-                "event_kind": "git_index_change_set",
-                "event_role": "observation",
-                "observation_state": "observed",
-                "label": "Git index change set",
-                "source_record_ids": source_ids,
-                "anchor_ids": [artifact_anchor_ids[item] for item in source_ids if item in artifact_anchor_ids],
-                "object_ids": [item["object_id"] for item in staged_changes],
-                "changes": staged_changes,
-                "occurred_at": "",
-                "actor": {"name": "git-index", "email": ""},
-                "evidence_refs": [{"kind": "git_index", "ref": "git-index-source-tree"}],
-                "temporal_ref": "current",
-                "provenance_ref": "observed",
-                "trust_ref": "observed",
-            }
+            _repository_snapshot_event(
+                repo=repo,
+                changes=snapshot_changes,
+                current_ids=current_ids,
+                artifact_anchor_ids=artifact_anchor_ids,
+            )
         )
 
     for event in events:

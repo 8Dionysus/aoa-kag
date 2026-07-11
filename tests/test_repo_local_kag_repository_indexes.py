@@ -501,11 +501,14 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             subprocess.run(("git", "add", "new.txt"), cwd=root, check=True)
             staged_source = build_index(root)
             staged_family = build_repository_indexes(staged_source, repo_root=root)
+            subprocess.run(("git", "commit", "-qm", "staged source"), cwd=root, check=True)
+            committed_source = build_index(root)
+            committed_family = build_repository_indexes(committed_source, repo_root=root)
 
         lifecycle = next(
             event
             for event in family["event"]["entries"]
-            if event["event_kind"] == "git_commit" and event["label"] == "lifecycle"
+            if event["event_kind"] == "repository_snapshot_change_set"
         )
         self.assertEqual({"add", "delete", "modify", "rename"}, {
             change["change_kind"] for change in lifecycle["changes"]
@@ -520,12 +523,17 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(current_ids["docs/guides/run.md"], rename["object_id"])
         self.assertEqual(initial_ids["future.unknown"], delete["object_id"])
         self.assertEqual(family, repeated)
-        self.assertTrue(
-            any(
-                event["event_kind"] == "git_index_change_set"
-                for event in staged_family["event"]["entries"]
-            )
+        snapshot = next(
+            event
+            for event in staged_family["event"]["entries"]
+            if event["event_kind"] == "repository_snapshot_change_set"
         )
+        self.assertEqual(
+            [{"kind": "repository_snapshot", "ref": "source-tree-snapshot"}],
+            snapshot["evidence_refs"],
+        )
+        self.assertEqual(staged_source, committed_source)
+        self.assertEqual(staged_family, committed_family)
 
     def test_family_outputs_do_not_enter_the_source_index(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -587,19 +595,22 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             write_fixture(root)
             subprocess.run(("git", "add", "."), cwd=root, check=True)
             subprocess.run(("git", "commit", "-qm", "source"), cwd=root, check=True)
+            source_index = build_index(root)
+            before = build_repository_indexes(source_index, repo_root=root)
             self.assertEqual(0, main(["--repo-root", str(root), "--index-family"]))
             subprocess.run(("git", "add", "kag/indexes"), cwd=root, check=True)
             subprocess.run(("git", "commit", "-qm", "indexes only"), cwd=root, check=True)
 
             source_index = build_index(root)
-            family = build_repository_indexes(source_index, repo_root=root)
+            after = build_repository_indexes(source_index, repo_root=root)
 
         labels = {
             event["label"]
-            for event in family["event"]["entries"]
+            for event in after["event"]["entries"]
             if event["event_kind"] == "git_commit"
         }
-        self.assertIn("source", labels)
+        self.assertEqual(before, after)
+        self.assertNotIn("source", labels)
         self.assertNotIn("indexes only", labels)
 
     def test_custom_family_outputs_remain_stable_after_staging(self) -> None:

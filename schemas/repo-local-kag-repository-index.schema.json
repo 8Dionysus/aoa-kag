@@ -599,7 +599,7 @@
       "properties": {
         "kind": {
           "type": "string",
-          "enum": ["git_commit", "git_index", "source_anchor"]
+          "enum": ["git_commit", "repository_snapshot", "source_anchor"]
         },
         "ref": {"$ref": "#/$defs/nonEmptyString"}
       }
