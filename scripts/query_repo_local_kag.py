@@ -9,36 +9,20 @@ from pathlib import Path
 from typing import Any, Sequence
 
 try:
-    from scripts.generate_repo_local_kag_index import REPOSITORY_INDEX_FILENAMES
     from scripts.repo_local.query import RepoKagQuery
     from scripts.validators.repo_local_kag_index import (
-        validate_repo_local_kag_repository_index_family,
+        load_repo_local_kag_repository_index_family,
     )
 except ImportError:  # pragma: no cover - direct script execution
-    from generate_repo_local_kag_index import REPOSITORY_INDEX_FILENAMES  # type: ignore
     from repo_local.query import RepoKagQuery  # type: ignore
     from validators.repo_local_kag_index import (  # type: ignore
-        validate_repo_local_kag_repository_index_family,
+        load_repo_local_kag_repository_index_family,
     )
-
-
-def read_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"{path} must contain a JSON object")
-    return payload
 
 
 def load_family(repo_root: Path) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
-    index_root = repo_root / "kag" / "indexes"
-    source_index = read_json(index_root / "source_surface_index.json")
-    family = {
-        index_kind: read_json(index_root / filename)
-        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
-    }
-    validate_repo_local_kag_repository_index_family(
-        family,
-        source_payload=source_index,
+    source_index, family = load_repo_local_kag_repository_index_family(
+        repo_root,
         label=f"{repo_root.name} query family",
     )
     return source_index, family

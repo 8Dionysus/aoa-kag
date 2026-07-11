@@ -21,3 +21,20 @@ runs:
         --output "${{ inputs.output }}"
         --index-family
         --check
+    - name: Check incremental index family parity
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: >-
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py"
+        --repo-root "${{ inputs.repo-root }}"
+        --output "${{ inputs.output }}"
+        --index-family
+        --incremental
+        --check
+    - name: Validate repo-local index family contract
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: >-
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/validate_repo_local_kag_family.py"
+        --repo-root "${{ inputs.repo-root }}"
+        --source-index "${{ inputs.output }}"

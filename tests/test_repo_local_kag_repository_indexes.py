@@ -807,6 +807,36 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         Draft202012Validator(load_json(QUERY_RESULT_SCHEMA_PATH)).validate(payload)
         self.assertTrue(payload["hits"])
 
+    def test_family_validator_cli_accepts_complete_family(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            index_root = root / "kag" / "indexes"
+            index_root.mkdir(parents=True, exist_ok=True)
+            (index_root / "source_surface_index.json").write_text(
+                json.dumps(source_index), encoding="utf-8"
+            )
+            for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
+                (index_root / filename).write_text(
+                    json.dumps(family[index_kind]), encoding="utf-8"
+                )
+            completed = subprocess.run(
+                (
+                    sys.executable,
+                    str(REPO_ROOT / "scripts" / "validate_repo_local_kag_family.py"),
+                    "--repo-root",
+                    str(root),
+                ),
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertIn("[repo-local-kag-family] valid owner=", completed.stdout)
+
     def test_query_core_traverses_reference_with_relation_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

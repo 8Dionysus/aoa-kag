@@ -410,6 +410,28 @@ def validate_repo_local_kag_repository_index_family(
     return validated
 
 
+def load_repo_local_kag_repository_index_family(
+    repo_root: Path,
+    *,
+    source_index: Path = Path("kag/indexes/source_surface_index.json"),
+    label: str | None = None,
+) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
+    source_path = source_index if source_index.is_absolute() else repo_root / source_index
+    source_payload = read_json(source_path)
+    family = {
+        index_kind: read_json(source_path.parent / filename)
+        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+    }
+    validated = validate_repo_local_kag_repository_index_family(
+        family,
+        source_payload=source_payload,
+        label=label or f"{repo_root.name} repo-local KAG family",
+    )
+    if not isinstance(source_payload, dict):
+        fail(f"{label or repo_root.name} source index must be an object")
+    return source_payload, validated
+
+
 def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-index-read", progress=progress)
     payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)

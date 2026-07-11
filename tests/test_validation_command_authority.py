@@ -254,7 +254,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn('--repo-root "${{ inputs.repo-root }}"', action)
         self.assertIn('--output "${{ inputs.output }}"', action)
         self.assertIn("--index-family", action)
+        self.assertIn("--incremental", action)
         self.assertIn("--check", action)
+        self.assertIn("scripts/validate_repo_local_kag_family.py", action)
+        self.assertIn('--source-index "${{ inputs.output }}"', action)
         self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)
 
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:

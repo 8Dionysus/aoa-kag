@@ -83,6 +83,10 @@ source/artifact/anchor/entity/event/assertion/relation index family from the cur
 repository's source, document, mechanics, command, schema, generated, and
 receipt surfaces.
 
+`scripts/validate_repo_local_kag_family.py` validates any owner repository's
+complete family against the common schemas, identities, anchors, evidence, and
+relation integrity contract.
+
 `scripts/query_repo_local_kag.py` validates that family and exposes exact,
 BM25, graph, and hybrid retrieval. `scripts/repo_local/query.py` also provides
 addressed read, profile-aware filtering, and owner discovery for programmatic
@@ -97,7 +101,7 @@ exact, lexical, graph, and hybrid retrieval with access isolation.
 `generated/repo_local_kag_coverage.json` and the minified companion from live
 OS Abyss provider roots materialized from the pinned provider registry.
 
-Both repo-local builders support `--check` for parity without writing files.
+The repo-local builders support `--check` for parity without writing files.
 
 `scripts/run_part_local_checks.py` discovers active
 `mechanics/<package>/parts/<part>/scripts/build_*.py` and `validate_*.py`
