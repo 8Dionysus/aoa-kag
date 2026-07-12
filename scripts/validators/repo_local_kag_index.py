@@ -73,6 +73,10 @@ def validate_repo_local_kag_index_schema_surface() -> None:
         REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
         "repo-local KAG retrieval plan",
     )
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH,
+        "repo-local KAG retrieval bundle",
+    )
     validate_top_level_schema(DOMAIN_INDEX_CATALOG_SCHEMA_PATH, "domain index catalog")
     validate_top_level_schema(REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH, "repo-local KAG coverage")
 
@@ -107,6 +111,12 @@ def validate_repo_local_kag_index_example() -> None:
         retrieval_plan,
         schema_path=REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
         label="repo-local KAG retrieval plan example",
+    )
+    retrieval_bundle = read_json(REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_EXAMPLE_PATH)
+    repo_local_kag_validate_payload(
+        retrieval_bundle,
+        schema_path=REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH,
+        label="repo-local KAG retrieval bundle example",
     )
 
 

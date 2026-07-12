@@ -70,6 +70,11 @@ A bounded retrieval-facing surface that returns handles back to stronger source
 or owner refs without taking ranking, routing, or graph-normalization
 ownership.
 
+Runtime materializers consume a deterministic retrieval bundle. Its manifest
+binds canonical input digests to line-addressable owners, nodes, relations,
+external references, and retrieval documents with stable vector point
+identities, without placing large runtime stores in source Git.
+
 The current bounded examples are `AOA-K-0007`, the tiny-entry retrieval-axis
 pilot, and `AOA-K-0011`, the standalone route-family handles surface derived
 from `AOA-K-0010`.

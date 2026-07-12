@@ -163,11 +163,11 @@
     {
       "path": "tests/test_repo_local_kag_projections.py",
       "family": "kag/retrieval-projection",
-      "protects": "Source-verified anchor-bounded retrieval documents, deterministic federation plans, embedding profile compatibility, and vector source payloads.",
-      "owner_surface": "schemas/repo-local-kag-retrieval-plan.schema.json",
+      "protects": "Source-verified retrieval documents, deterministic federation plans, streamable bundle integrity, embedding profile compatibility, and vector source payloads.",
+      "owner_surface": "docs/KAG_MODEL.md",
       "runtime_cost": "fast",
       "focused_target": "tests/test_repo_local_kag_projections.py",
-      "failure_route": "Route through the retrieval plan schema, projection builder, source digest verification, embedding profile, or canonical repo-self inputs.",
+      "failure_route": "Route through retrieval plan or bundle schemas, projection builders, source digest verification, embedding profile, or canonical repo-self inputs.",
       "coverage_kinds": [
         "source/route-contract",
         "generated/parity",

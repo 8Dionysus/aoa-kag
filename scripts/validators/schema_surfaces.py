@@ -25,6 +25,10 @@ def validate_schema_surface() -> None:
         REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
         "repo-local KAG retrieval plan",
     )
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH,
+        "repo-local KAG retrieval bundle",
+    )
     validate_top_level_schema(DOMAIN_INDEX_CATALOG_SCHEMA_PATH, "domain index catalog")
     validate_top_level_schema(REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH, "repo-local KAG coverage")
 

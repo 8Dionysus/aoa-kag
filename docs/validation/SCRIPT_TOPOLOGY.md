@@ -97,6 +97,10 @@ families and emits an owner-qualified runtime graph projection. The federation
 kernel resolves evidence-backed cross-repo references and supports multi-owner
 exact, lexical, graph, and hybrid retrieval with access isolation.
 
+`scripts/build_repo_local_kag_retrieval_plan.py` derives source-verified
+retrieval documents and emits either a complete plan or a manifest-bound JSONL
+bundle for streaming runtime materializers.
+
 `scripts/generate_repo_local_kag_coverage.py` builds
 `generated/repo_local_kag_coverage.json` and the minified companion from live
 OS Abyss provider roots materialized from the pinned provider registry.

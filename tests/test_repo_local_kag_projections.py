@@ -9,6 +9,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from scripts.generate_repo_local_kag_index import build_index, build_repository_indexes
+from scripts.repo_local.bundle import retrieval_bundle_matches, write_retrieval_bundle
 from scripts.repo_local.projections import (
     build_federated_retrieval_plan,
     build_repo_retrieval_documents,
@@ -19,6 +20,7 @@ from tests.test_repo_local_kag_repository_indexes import write_fixture
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PLAN_SCHEMA = REPO_ROOT / "schemas" / "repo-local-kag-retrieval-plan.schema.json"
+BUNDLE_SCHEMA = REPO_ROOT / "schemas" / "repo-local-kag-retrieval-bundle.schema.json"
 EMBEDDING_PROFILE = {
     "id": "test-embedding-v1",
     "model": "test/embedding",
@@ -134,6 +136,46 @@ class RepoKagProjectionTests(unittest.TestCase):
         self.assertEqual("test-embedding-v1", points[0]["payload"]["embedding_profile_id"])
         self.assertTrue(points[0]["payload"]["source_record_ids"])
         self.assertTrue(points[0]["payload"]["anchor_ids"])
+
+    def test_retrieval_bundle_is_streamable_deterministic_and_self_verifying(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as bundle_tmp:
+            root = Path(repo_tmp)
+            write_fixture(root)
+            (root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "aoa-bundle"}), encoding="utf-8"
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+            plan = build_federated_retrieval_plan(
+                {"aoa-bundle": root},
+                {"aoa-bundle": (source, family)},
+                embedding_profile=EMBEDDING_PROFILE,
+            )
+            bundle_root = Path(bundle_tmp)
+            manifest = write_retrieval_bundle(plan, bundle_root)
+
+            schema = json.loads(BUNDLE_SCHEMA.read_text(encoding="utf-8"))
+            Draft202012Validator.check_schema(schema)
+            Draft202012Validator(schema).validate(manifest)
+            self.assertTrue(retrieval_bundle_matches(plan, bundle_root))
+            documents = [
+                json.loads(line)
+                for line in (bundle_root / "documents.jsonl").read_text(
+                    encoding="utf-8"
+                ).splitlines()
+            ]
+            self.assertEqual(plan["documents"], documents)
+            for key in ("owners", "nodes", "relations", "external_references"):
+                records = [
+                    json.loads(line)
+                    for line in (bundle_root / f"{key}.jsonl").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                ]
+                self.assertEqual(plan["federation"][key], records)
+            with (bundle_root / "documents.jsonl").open("a", encoding="utf-8") as handle:
+                handle.write("{}\n")
+            self.assertFalse(retrieval_bundle_matches(plan, bundle_root))
 
 
 if __name__ == "__main__":

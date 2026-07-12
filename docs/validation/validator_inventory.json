@@ -256,7 +256,7 @@
     {
       "path": "scripts/validators/schema_surfaces.py",
       "module_type": "schema",
-      "function": "Validate JSON schema surfaces used by KAG read-models, packs, and examples.",
+      "function": "Validate JSON schema surfaces used by KAG read-models, runtime bundles, packs, and examples.",
       "inputs": [
         "schema files",
         "schemas/local-kag-provider-map.schema.json"
@@ -321,11 +321,13 @@
         "schemas/repo-local-kag-query-result.schema.json",
         "schemas/repo-local-kag-federation.schema.json",
         "schemas/repo-local-kag-retrieval-plan.schema.json",
+        "schemas/repo-local-kag-retrieval-bundle.schema.json",
         "schemas/repo-local-kag-coverage.schema.json",
         "examples/repo_local_kag_index.example.json",
         "examples/repo_local_kag_query_result.example.json",
         "examples/repo_local_kag_federation.example.json",
         "examples/repo_local_kag_retrieval_plan.example.json",
+        "examples/repo_local_kag_retrieval_bundle.example.json",
         "kag/indexes/source_surface_index.json",
         "kag/indexes/repo_artifact_index.json",
         "kag/indexes/repo_anchor_index.json",

@@ -456,6 +456,15 @@ def _embedding_profile(profile: Mapping[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def _vector_point_id(document: Mapping[str, Any], profile_id: str) -> str:
+    return str(
+        uuid.uuid5(
+            POINT_NAMESPACE,
+            f"{document['version_id']}:{profile_id}",
+        )
+    )
+
+
 def build_federated_retrieval_plan(
     owner_roots: Mapping[str, Path],
     bundles: Mapping[str, tuple[dict[str, Any], dict[str, dict[str, Any]]]],
@@ -491,6 +500,12 @@ def build_federated_retrieval_plan(
             }
         )
     documents.sort(key=lambda item: (item["repo"], item["path"], item["id"]))
+    normalized_embedding_profile = _embedding_profile(embedding_profile)
+    for document in documents:
+        document["vector_point_id"] = _vector_point_id(
+            document,
+            str(normalized_embedding_profile["id"]),
+        )
     node_class_counts = Counter(str(item["node_class"]) for item in documents)
     access_counts = Counter(str(item["access"]["scope"]) for item in documents)
     payload: dict[str, Any] = {
@@ -508,7 +523,7 @@ def build_federated_retrieval_plan(
             "overlap_chars": overlap,
             "source_verification": "sha256-content-digest",
         },
-        "embedding_profile": _embedding_profile(embedding_profile),
+        "embedding_profile": normalized_embedding_profile,
         "summary": {
             "owner_count": len(canonical_inputs),
             "document_count": len(documents),
@@ -561,15 +576,9 @@ def materialize_vector_points(
             if len(raw_vector) != dimensions:
                 raise ValueError("embedding vector dimension mismatch")
             vector = _normalized_vector(raw_vector, str(profile["normalization"]))
-            point_id = str(
-                uuid.uuid5(
-                    POINT_NAMESPACE,
-                    f"{document['version_id']}:{profile['id']}",
-                )
-            )
             points.append(
                 {
-                    "id": point_id,
+                    "id": str(document["vector_point_id"]),
                     "vector": vector,
                     "payload": {
                         "embedding_profile_id": str(profile["id"]),

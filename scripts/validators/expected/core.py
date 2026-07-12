@@ -64,6 +64,10 @@ REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-retrieval-plan.schema.json"
 )
 
+REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-retrieval-bundle.schema.json"
+)
+
 DOMAIN_INDEX_CATALOG_SCHEMA_PATH = REPO_ROOT / "schemas" / "domain-index-catalog.schema.json"
 
 REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
@@ -80,6 +84,10 @@ REPO_LOCAL_KAG_FEDERATION_EXAMPLE_PATH = (
 
 REPO_LOCAL_KAG_RETRIEVAL_PLAN_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "repo_local_kag_retrieval_plan.example.json"
+)
+
+REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "repo_local_kag_retrieval_bundle.example.json"
 )
 
 DOMAIN_INDEX_CATALOG_EXAMPLE_PATH = REPO_ROOT / "examples" / "domain_index_catalog.example.json"
