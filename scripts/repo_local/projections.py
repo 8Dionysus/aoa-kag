@@ -233,6 +233,24 @@ def _profile(
     return profile
 
 
+def _asset_metadata_text(
+    source_index: Mapping[str, Any],
+    record: Mapping[str, Any],
+) -> str:
+    identity = record["identity"]
+    return "\n".join(
+        (
+            f"Repository asset: {source_index['repo']['name']}",
+            f"Path: {identity['path']}",
+            f"MIME type: {identity['mime']}",
+            f"Size bytes: {identity['size_bytes']}",
+            f"Content digest: sha256:{identity['content_hash']}",
+            f"Surface state: {record['surface_state']}",
+            f"Access scope: {record['access']['scope']}",
+        )
+    )
+
+
 def _retrieval_document(
     *,
     source_index: dict[str, Any],
@@ -325,11 +343,6 @@ def build_repo_retrieval_documents(
         source_id = str(identity["id"])
         artifact = artifacts[source_id]
         content = _verified_source_bytes(repo_root, record)
-        try:
-            text = content.decode("utf-8")
-        except UnicodeDecodeError:
-            continue
-        lines = text.splitlines(keepends=True)
         source_anchors = sorted(
             anchors_by_source.get(source_id, []),
             key=lambda item: (
@@ -338,6 +351,32 @@ def build_repo_retrieval_documents(
                 str(item["id"]),
             ),
         )
+        artifact_anchor_id = str(artifact["anchor_id"])
+        artifact_anchor = next(
+            anchor for anchor in source_anchors if str(anchor["id"]) == artifact_anchor_id
+        )
+        if str(artifact["artifact_kind"]) == "asset":
+            documents.append(
+                _retrieval_document(
+                    source_index=source_index,
+                    family=family,
+                    record=record,
+                    node=artifact,
+                    node_class="artifact",
+                    kind="asset",
+                    label=str(artifact["path"]),
+                    anchor_ids=[artifact_anchor_id],
+                    locator=copy.deepcopy(artifact_anchor["locator"]),
+                    chunk_index=0,
+                    text=_asset_metadata_text(source_index, record),
+                )
+            )
+            continue
+        try:
+            text = content.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        lines = text.splitlines(keepends=True)
         semantic_anchors = [
             anchor
             for anchor in source_anchors
@@ -379,10 +418,6 @@ def build_repo_retrieval_documents(
                         text=chunk,
                     )
                 )
-        artifact_anchor_id = str(artifact["anchor_id"])
-        artifact_anchor = next(
-            anchor for anchor in source_anchors if str(anchor["id"]) == artifact_anchor_id
-        )
         if semantic_anchors and str(identity["mime"]) == "application/json":
             gaps: list[tuple[int, int]] = []
         else:
@@ -518,7 +553,7 @@ def build_federated_retrieval_plan(
         "federation": federation,
         "projection_lanes": list(PROJECTION_LANES),
         "retrieval_profile": {
-            "chunking": "semantic-anchor-with-source-gaps-v1",
+            "chunking": "semantic-anchor-with-source-gaps-v2",
             "max_chunk_chars": max_chunk_chars,
             "overlap_chars": overlap,
             "source_verification": "sha256-content-digest",

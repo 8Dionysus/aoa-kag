@@ -123,7 +123,7 @@
       "additionalProperties": false,
       "required": ["chunking", "max_chunk_chars", "overlap_chars", "source_verification"],
       "properties": {
-        "chunking": {"const": "semantic-anchor-with-source-gaps-v1"},
+        "chunking": {"const": "semantic-anchor-with-source-gaps-v2"},
         "max_chunk_chars": {"type": "integer", "minimum": 256},
         "overlap_chars": {"type": "integer", "minimum": 0},
         "source_verification": {"const": "sha256-content-digest"}

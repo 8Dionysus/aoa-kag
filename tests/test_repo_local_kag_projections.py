@@ -49,6 +49,11 @@ class RepoKagProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             subprocess.run(("git", "init", "-q"), cwd=root, check=True)
             write_fixture(root)
+            (root / "assets").mkdir()
+            (root / "assets" / "diagram.svg").write_text(
+                "<svg><path d=\"M 1.234,5.678 L 9.012,3.456\"/></svg>\n",
+                encoding="utf-8",
+            )
             subprocess.run(("git", "add", "."), cwd=root, check=True)
             source = build_index(root)
             family = build_repository_indexes(source, repo_root=root)
@@ -72,6 +77,14 @@ class RepoKagProjectionTests(unittest.TestCase):
         self.assertEqual("current", usage["freshness"]["state"])
         self.assertEqual(len(documents), len({document["id"] for document in documents}))
         self.assertTrue(all(document["text_digest"] for document in documents))
+        asset = next(
+            document for document in documents if document["path"] == "assets/diagram.svg"
+        )
+        self.assertEqual("asset", asset["kind"])
+        self.assertIn("Repository asset:", asset["text"])
+        self.assertIn("MIME type: image/svg+xml", asset["text"])
+        self.assertIn("Content digest: sha256:", asset["text"])
+        self.assertNotIn("<path", asset["text"])
 
     def test_federated_retrieval_plan_is_deterministic_and_schema_valid(self) -> None:
         with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
