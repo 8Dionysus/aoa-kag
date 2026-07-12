@@ -177,6 +177,60 @@ class RepoKagProjectionTests(unittest.TestCase):
                 handle.write("{}\n")
             self.assertFalse(retrieval_bundle_matches(plan, bundle_root))
 
+    def test_retrieval_bundle_carries_cross_repo_relations(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as first_tmp,
+            tempfile.TemporaryDirectory() as second_tmp,
+            tempfile.TemporaryDirectory() as bundle_tmp,
+        ):
+            roots = {
+                "aoa-first": Path(first_tmp),
+                "aoa-second": Path(second_tmp),
+            }
+            bundles = {}
+            for repo, root in roots.items():
+                write_fixture(root)
+                (root / "kag" / "manifest.json").write_text(
+                    json.dumps({"repo": repo}), encoding="utf-8"
+                )
+            (roots["aoa-first"] / "README.md").write_text(
+                "# First\n\n"
+                "See [Second demo](https://github.com/8Dionysus/aoa-second/"
+                "blob/main/README.md#demo).\n",
+                encoding="utf-8",
+            )
+            for repo, root in roots.items():
+                source = build_index(root)
+                bundles[repo] = (
+                    source,
+                    build_repository_indexes(source, repo_root=root),
+                )
+            plan = build_federated_retrieval_plan(
+                roots,
+                bundles,
+                embedding_profile=EMBEDDING_PROFILE,
+            )
+            manifest = write_retrieval_bundle(plan, Path(bundle_tmp))
+            relations = [
+                json.loads(line)
+                for line in (Path(bundle_tmp) / "relations.jsonl").read_text(
+                    encoding="utf-8"
+                ).splitlines()
+            ]
+
+        self.assertEqual(1, len(plan["federation"]["cross_repo_relations"]))
+        self.assertEqual(
+            [
+                *plan["federation"]["relations"],
+                *plan["federation"]["cross_repo_relations"],
+            ],
+            relations,
+        )
+        self.assertEqual(
+            plan["federation"]["summary"]["relation_count"],
+            manifest["files"]["relations"]["record_count"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

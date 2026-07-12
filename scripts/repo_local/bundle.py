@@ -4,7 +4,7 @@ import copy
 import hashlib
 import json
 import os
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -83,6 +83,20 @@ def _file_metadata(
     }
 
 
+def _bundle_records(plan: Mapping[str, Any]) -> dict[str, Sequence[Mapping[str, Any]]]:
+    federation = plan["federation"]
+    return {
+        "owners": federation["owners"],
+        "nodes": federation["nodes"],
+        "relations": (
+            *federation["relations"],
+            *federation["cross_repo_relations"],
+        ),
+        "external_references": federation["external_references"],
+        "documents": plan["documents"],
+    }
+
+
 def build_retrieval_bundle_manifest(
     plan: Mapping[str, Any],
     *,
@@ -119,14 +133,7 @@ def build_retrieval_bundle_manifest(
 
 
 def _expected_file_metadata(plan: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
-    federation = plan["federation"]
-    records = {
-        "owners": federation["owners"],
-        "nodes": federation["nodes"],
-        "relations": federation["relations"],
-        "external_references": federation["external_references"],
-        "documents": plan["documents"],
-    }
+    records = _bundle_records(plan)
     metadata: dict[str, dict[str, Any]] = {}
     for key, items in records.items():
         digest, size = _digest_chunks(_document_chunks(items))
@@ -145,14 +152,7 @@ def write_retrieval_bundle(
     bundle_dir: Path,
 ) -> dict[str, Any]:
     bundle_dir = bundle_dir.resolve()
-    federation = plan["federation"]
-    records = {
-        "owners": federation["owners"],
-        "nodes": federation["nodes"],
-        "relations": federation["relations"],
-        "external_references": federation["external_references"],
-        "documents": plan["documents"],
-    }
+    records = _bundle_records(plan)
     files: dict[str, dict[str, Any]] = {}
     for key, items in records.items():
         path = f"{key}.jsonl"
