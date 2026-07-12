@@ -32,34 +32,40 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
         "coverage": {
-          "commands": 177,
-          "documents": 415,
+          "commands": 192,
+          "documents": 416,
           "generated": 35,
           "mechanics": 421,
-          "schemas": 76,
-          "scripts": 126,
-          "tests": 51,
-          "validators": 97
+          "schemas": 80,
+          "scripts": 139,
+          "tests": 53,
+          "validators": 98
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
               "asset": 50,
-              "config": 118,
-              "document": 407,
+              "config": 122,
+              "document": 408,
               "generated_readmodel": 42,
               "index": 1,
               "license": 1,
@@ -67,31 +73,31 @@
               "owner_metadata": 2,
               "projection": 1,
               "receipt": 1,
-              "schema": 75,
-              "script": 18,
+              "schema": 79,
+              "script": 21,
               "security": 1,
-              "source_code": 97,
-              "test": 49,
-              "validator": 13
+              "source_code": 106,
+              "test": 51,
+              "validator": 14
             },
             "command_role": {
-              "builder": 6,
+              "builder": 8,
               "lane_entrypoint": 3,
-              "none": 817,
-              "script": 9,
-              "test": 49,
-              "validator": 13
+              "none": 835,
+              "script": 10,
+              "test": 51,
+              "validator": 14
             },
             "document_role": {
               "agents": 57,
               "audit": 3,
               "boundary": 1,
               "changelog": 1,
-              "decision": 20,
+              "decision": 21,
               "design": 1,
               "design_agents": 1,
               "mechanics_doc": 113,
-              "none": 482,
+              "none": 505,
               "parts": 13,
               "provenance": 13,
               "readme": 70,
@@ -105,7 +111,7 @@
               "legacy": 16,
               "mechanic_package": 55,
               "mechanic_part": 94,
-              "none": 476,
+              "none": 500,
               "part_contract": 28,
               "part_doc": 129,
               "part_schema": 62,
@@ -114,12 +120,12 @@
             },
             "primary_kind": {
               "artifact": 90,
-              "command": 80,
-              "document": 415,
-              "surface": 312
+              "command": 86,
+              "document": 416,
+              "surface": 329
             },
             "surface_state": {
-              "authored_source": 836,
+              "authored_source": 860,
               "generated_readmodel": 45,
               "legacy": 16
             }
@@ -290,15 +296,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -571,15 +583,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -849,37 +867,43 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
         "coverage": {
-          "commands": 226,
-          "documents": 1049,
+          "commands": 227,
+          "documents": 1054,
           "generated": 99,
           "mechanics": 353,
-          "schemas": 62,
+          "schemas": 66,
           "scripts": 138,
-          "tests": 88,
+          "tests": 89,
           "validators": 30
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
               "asset": 114,
-              "config": 318,
+              "config": 328,
               "data_table": 2,
               "dependency_manifest": 1,
               "directory_marker": 4,
-              "document": 1041,
+              "document": 1046,
               "generated_readmodel": 84,
               "index": 1,
               "license": 1,
@@ -888,46 +912,46 @@
               "projection": 1,
               "receipt": 4,
               "record_log": 4,
-              "schema": 60,
-              "script": 67,
+              "schema": 64,
+              "script": 68,
               "security": 1,
               "source_code": 63,
-              "test": 81,
+              "test": 82,
               "validator": 12
             },
             "command_role": {
               "builder": 13,
               "lane_entrypoint": 4,
-              "none": 1708,
-              "script": 50,
-              "test": 81,
+              "none": 1727,
+              "script": 51,
+              "test": 82,
               "validator": 12
             },
             "document_role": {
               "agents": 68,
               "audit": 21,
               "changelog": 1,
-              "decision": 43,
+              "decision": 44,
               "design": 1,
               "design_agents": 1,
               "handoff": 6,
               "mechanics_doc": 117,
-              "none": 819,
+              "none": 835,
               "parts": 12,
               "provenance": 12,
-              "readme": 103,
+              "readme": 104,
               "release_notes": 4,
               "report": 5,
               "roadmap": 13,
               "testing_doc": 1,
-              "unknown_document": 638,
+              "unknown_document": 641,
               "validation_doc": 3
             },
             "mechanics_role": {
               "legacy": 39,
               "mechanic_package": 260,
               "mechanic_part": 8,
-              "none": 1515,
+              "none": 1536,
               "part_doc": 37,
               "part_schema": 3,
               "part_script": 4,
@@ -935,12 +959,12 @@
             },
             "primary_kind": {
               "artifact": 210,
-              "command": 160,
-              "document": 1049,
-              "surface": 449
+              "command": 162,
+              "document": 1054,
+              "surface": 463
             },
             "surface_state": {
-              "authored_source": 1715,
+              "authored_source": 1736,
               "generated_readmodel": 110,
               "legacy": 39,
               "receipt": 4
@@ -1190,15 +1214,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -1456,15 +1486,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -1717,15 +1753,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -1968,15 +2010,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -2229,24 +2277,30 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
         "coverage": {
           "commands": 369,
-          "documents": 1173,
+          "documents": 1174,
           "generated": 28,
-          "mechanics": 826,
-          "schemas": 126,
+          "mechanics": 827,
+          "schemas": 127,
           "scripts": 282,
           "tests": 87,
           "validators": 238
@@ -2255,10 +2309,10 @@
           "counts": {
             "artifact_kind": {
               "asset": 50,
-              "config": 367,
+              "config": 368,
               "dependency_manifest": 1,
               "directory_marker": 4,
-              "document": 1166,
+              "document": 1167,
               "generated_readmodel": 32,
               "index": 1,
               "license": 1,
@@ -2268,7 +2322,7 @@
               "projection": 1,
               "receipt": 1,
               "record_log": 1,
-              "schema": 124,
+              "schema": 125,
               "script": 39,
               "security": 1,
               "source_code": 227,
@@ -2278,7 +2332,7 @@
             "command_role": {
               "builder": 17,
               "lane_entrypoint": 2,
-              "none": 2004,
+              "none": 2007,
               "script": 20,
               "test": 86,
               "validator": 17
@@ -2287,11 +2341,11 @@
               "agents": 88,
               "audit": 3,
               "changelog": 1,
-              "decision": 250,
+              "decision": 251,
               "design": 1,
               "design_agents": 1,
               "mechanics_doc": 229,
-              "none": 973,
+              "none": 975,
               "parts": 19,
               "provenance": 19,
               "readme": 187,
@@ -2305,20 +2359,20 @@
               "legacy": 118,
               "mechanic_package": 101,
               "mechanic_part": 184,
-              "none": 1320,
+              "none": 1322,
               "part_doc": 279,
-              "part_schema": 85,
+              "part_schema": 86,
               "part_script": 28,
               "part_test": 31
             },
             "primary_kind": {
               "artifact": 87,
               "command": 142,
-              "document": 1173,
-              "surface": 744
+              "document": 1174,
+              "surface": 746
             },
             "surface_state": {
-              "authored_source": 1989,
+              "authored_source": 1992,
               "generated_readmodel": 38,
               "legacy": 118,
               "receipt": 1
@@ -2487,15 +2541,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -2745,15 +2805,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -3007,16 +3073,22 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/domain_index_catalog.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/session_memory_source_inventory.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
@@ -3033,7 +3105,7 @@
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
-              "config": 15,
+              "config": 16,
               "directory_marker": 52,
               "document": 96,
               "index": 2,
@@ -3046,7 +3118,7 @@
               "test": 1
             },
             "command_role": {
-              "none": 175,
+              "none": 176,
               "script": 1,
               "test": 1
             },
@@ -3055,21 +3127,21 @@
               "audit": 1,
               "design": 1,
               "design_agents": 1,
-              "none": 81,
+              "none": 82,
               "readme": 56,
               "unknown_document": 26
             },
             "mechanics_role": {
-              "none": 177
+              "none": 178
             },
             "primary_kind": {
               "artifact": 57,
               "command": 2,
               "document": 96,
-              "surface": 22
+              "surface": 23
             },
             "surface_state": {
-              "authored_source": 174,
+              "authored_source": 175,
               "generated_readmodel": 2,
               "receipt": 1
             }
@@ -3272,15 +3344,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -3510,15 +3588,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -3774,15 +3858,21 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -4025,35 +4115,41 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
         "coverage": {
-          "commands": 78,
-          "documents": 463,
+          "commands": 90,
+          "documents": 471,
           "generated": 35,
-          "mechanics": 499,
-          "schemas": 92,
+          "mechanics": 515,
+          "schemas": 93,
           "scripts": 42,
-          "tests": 36,
+          "tests": 48,
           "validators": 18
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
               "asset": 50,
-              "config": 159,
+              "config": 174,
               "dependency_manifest": 2,
-              "document": 455,
+              "document": 463,
               "generated_readmodel": 42,
               "index": 1,
               "license": 1,
@@ -4061,20 +4157,20 @@
               "owner_metadata": 2,
               "projection": 1,
               "receipt": 1,
-              "schema": 91,
+              "schema": 92,
               "script": 23,
               "security": 1,
               "service_unit": 2,
-              "source_code": 12,
-              "test": 36,
+              "source_code": 31,
+              "test": 48,
               "validator": 18
             },
             "command_role": {
               "builder": 10,
               "lane_entrypoint": 1,
-              "none": 837,
+              "none": 880,
               "script": 12,
-              "test": 36,
+              "test": 48,
               "validator": 18
             },
             "document_role": {
@@ -4082,35 +4178,35 @@
               "audit": 3,
               "boundary": 1,
               "changelog": 1,
-              "decision": 9,
+              "decision": 13,
               "design": 1,
-              "mechanics_doc": 179,
-              "none": 451,
+              "mechanics_doc": 182,
+              "none": 498,
               "parts": 12,
               "provenance": 12,
-              "readme": 84,
+              "readme": 85,
               "roadmap": 1,
               "unknown_document": 116
             },
             "mechanics_role": {
               "legacy": 23,
-              "mechanic_package": 54,
+              "mechanic_package": 56,
               "mechanic_part": 93,
-              "none": 415,
-              "part_contract": 42,
-              "part_doc": 184,
+              "none": 454,
+              "part_contract": 43,
+              "part_doc": 187,
               "part_schema": 58,
               "part_script": 21,
-              "part_test": 24
+              "part_test": 34
             },
             "primary_kind": {
               "artifact": 94,
-              "command": 77,
-              "document": 463,
-              "surface": 280
+              "command": 89,
+              "document": 471,
+              "surface": 315
             },
             "surface_state": {
-              "authored_source": 844,
+              "authored_source": 899,
               "generated_readmodel": 47,
               "legacy": 23
             }
@@ -4318,16 +4414,22 @@
         "status": "passed",
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_inventory.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -4580,16 +4682,22 @@
         "status": "passed",
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_inventory.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -4837,16 +4945,22 @@
         "status": "passed",
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_inventory.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -5094,16 +5208,22 @@
         "status": "passed",
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_inventory.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -5352,16 +5472,22 @@
         "status": "passed",
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_inventory.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -5610,16 +5736,22 @@
         "status": "passed",
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_inventory.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
@@ -5872,71 +6004,77 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
         "coverage": {
-          "commands": 167,
-          "documents": 526,
+          "commands": 168,
+          "documents": 527,
           "generated": 11,
-          "mechanics": 541,
+          "mechanics": 549,
           "schemas": 70,
           "scripts": 63,
-          "tests": 104,
+          "tests": 105,
           "validators": 40
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
-              "config": 180,
+              "config": 181,
               "dependency_manifest": 11,
               "directory_marker": 4,
-              "document": 517,
+              "document": 518,
               "generated_readmodel": 16,
               "index": 1,
               "license": 1,
               "manifest": 11,
-              "mechanics_surface": 8,
+              "mechanics_surface": 14,
               "owner_metadata": 3,
               "package_manifest": 1,
               "projection": 1,
               "receipt": 6,
               "schema": 70,
-              "script": 135,
+              "script": 137,
               "security": 2,
               "service_unit": 45,
               "source_code": 103,
               "symlink": 30,
-              "test": 91,
+              "test": 92,
               "text_artifact": 25,
               "validator": 18
             },
             "command_role": {
               "builder": 6,
               "lane_entrypoint": 7,
-              "none": 1035,
-              "script": 122,
-              "test": 91,
+              "none": 1043,
+              "script": 124,
+              "test": 92,
               "validator": 18
             },
             "document_role": {
               "agents": 48,
               "boundary": 11,
               "changelog": 1,
-              "decision": 82,
+              "decision": 83,
               "design": 11,
               "design_agents": 1,
               "mechanics_doc": 138,
-              "none": 753,
+              "none": 763,
               "parts": 10,
               "provenance": 10,
               "readme": 154,
@@ -5948,21 +6086,21 @@
             "mechanics_role": {
               "legacy": 136,
               "mechanic_package": 83,
-              "mechanic_part": 122,
-              "none": 738,
+              "mechanic_part": 129,
+              "none": 741,
               "part_doc": 126,
               "part_schema": 38,
               "part_script": 1,
-              "part_test": 35
+              "part_test": 36
             },
             "primary_kind": {
               "artifact": 135,
-              "command": 244,
-              "document": 526,
-              "surface": 374
+              "command": 247,
+              "document": 527,
+              "surface": 381
             },
             "surface_state": {
-              "authored_source": 1112,
+              "authored_source": 1123,
               "generated_readmodel": 22,
               "legacy": 139,
               "receipt": 6
@@ -6144,26 +6282,32 @@
         "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/provider_readiness_index.json",
+          "kag/indexes/repo_anchor_index.json",
           "kag/indexes/repo_artifact_index.json",
+          "kag/indexes/repo_assertion_index.json",
           "kag/indexes/repo_entity_index.json",
           "kag/indexes/repo_event_index.json",
+          "kag/indexes/repo_relation_index.json",
           "kag/indexes/source_surface_index.json"
         ],
         "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
           "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
           "entity": "kag/indexes/repo_entity_index.json",
           "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
           "source": "kag/indexes/source_surface_index.json"
         },
         "domain_index_catalog_ref": "",
         "coverage": {
-          "commands": 153,
+          "commands": 158,
           "documents": 190,
           "generated": 4,
           "mechanics": 74,
           "schemas": 10,
           "scripts": 20,
-          "tests": 133,
+          "tests": 138,
           "validators": 17
         },
         "common_surface_profile": {
@@ -6182,15 +6326,15 @@
               "script": 38,
               "security": 1,
               "service_unit": 59,
-              "source_code": 107,
-              "test": 132
+              "source_code": 112,
+              "test": 137
             },
             "command_role": {
               "builder": 2,
               "lane_entrypoint": 2,
-              "none": 416,
+              "none": 421,
               "script": 34,
-              "test": 132
+              "test": 137
             },
             "document_role": {
               "agents": 57,
@@ -6200,7 +6344,7 @@
               "design": 2,
               "design_agents": 2,
               "mechanics_doc": 16,
-              "none": 396,
+              "none": 406,
               "parts": 8,
               "provenance": 8,
               "readme": 48,
@@ -6212,17 +6356,17 @@
             },
             "mechanics_role": {
               "mechanic_package": 66,
-              "none": 512,
+              "none": 522,
               "part_doc": 8
             },
             "primary_kind": {
               "artifact": 66,
-              "command": 170,
+              "command": 175,
               "document": 190,
-              "surface": 160
+              "surface": 165
             },
             "surface_state": {
-              "authored_source": 579,
+              "authored_source": 589,
               "generated_readmodel": 6,
               "receipt": 1
             }
@@ -7916,34 +8060,40 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
       "coverage": {
-        "commands": 177,
-        "documents": 415,
+        "commands": 192,
+        "documents": 416,
         "generated": 35,
         "mechanics": 421,
-        "schemas": 76,
-        "scripts": 126,
-        "tests": 51,
-        "validators": 97
+        "schemas": 80,
+        "scripts": 139,
+        "tests": 53,
+        "validators": 98
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 118,
-            "document": 407,
+            "config": 122,
+            "document": 408,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -7951,31 +8101,31 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 75,
-            "script": 18,
+            "schema": 79,
+            "script": 21,
             "security": 1,
-            "source_code": 97,
-            "test": 49,
-            "validator": 13
+            "source_code": 106,
+            "test": 51,
+            "validator": 14
           },
           "command_role": {
-            "builder": 6,
+            "builder": 8,
             "lane_entrypoint": 3,
-            "none": 817,
-            "script": 9,
-            "test": 49,
-            "validator": 13
+            "none": 835,
+            "script": 10,
+            "test": 51,
+            "validator": 14
           },
           "document_role": {
             "agents": 57,
             "audit": 3,
             "boundary": 1,
             "changelog": 1,
-            "decision": 20,
+            "decision": 21,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
-            "none": 482,
+            "none": 505,
             "parts": 13,
             "provenance": 13,
             "readme": 70,
@@ -7989,7 +8139,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 476,
+            "none": 500,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -7998,12 +8148,12 @@
           },
           "primary_kind": {
             "artifact": 90,
-            "command": 80,
-            "document": 415,
-            "surface": 312
+            "command": 86,
+            "document": 416,
+            "surface": 329
           },
           "surface_state": {
-            "authored_source": 836,
+            "authored_source": 860,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -8027,15 +8177,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -8142,15 +8298,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -8257,37 +8419,43 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
       "coverage": {
-        "commands": 226,
-        "documents": 1049,
+        "commands": 227,
+        "documents": 1054,
         "generated": 99,
         "mechanics": 353,
-        "schemas": 62,
+        "schemas": 66,
         "scripts": 138,
-        "tests": 88,
+        "tests": 89,
         "validators": 30
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
             "asset": 114,
-            "config": 318,
+            "config": 328,
             "data_table": 2,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 1041,
+            "document": 1046,
             "generated_readmodel": 84,
             "index": 1,
             "license": 1,
@@ -8296,46 +8464,46 @@
             "projection": 1,
             "receipt": 4,
             "record_log": 4,
-            "schema": 60,
-            "script": 67,
+            "schema": 64,
+            "script": 68,
             "security": 1,
             "source_code": 63,
-            "test": 81,
+            "test": 82,
             "validator": 12
           },
           "command_role": {
             "builder": 13,
             "lane_entrypoint": 4,
-            "none": 1708,
-            "script": 50,
-            "test": 81,
+            "none": 1727,
+            "script": 51,
+            "test": 82,
             "validator": 12
           },
           "document_role": {
             "agents": 68,
             "audit": 21,
             "changelog": 1,
-            "decision": 43,
+            "decision": 44,
             "design": 1,
             "design_agents": 1,
             "handoff": 6,
             "mechanics_doc": 117,
-            "none": 819,
+            "none": 835,
             "parts": 12,
             "provenance": 12,
-            "readme": 103,
+            "readme": 104,
             "release_notes": 4,
             "report": 5,
             "roadmap": 13,
             "testing_doc": 1,
-            "unknown_document": 638,
+            "unknown_document": 641,
             "validation_doc": 3
           },
           "mechanics_role": {
             "legacy": 39,
             "mechanic_package": 260,
             "mechanic_part": 8,
-            "none": 1515,
+            "none": 1536,
             "part_doc": 37,
             "part_schema": 3,
             "part_script": 4,
@@ -8343,12 +8511,12 @@
           },
           "primary_kind": {
             "artifact": 210,
-            "command": 160,
-            "document": 1049,
-            "surface": 449
+            "command": 162,
+            "document": 1054,
+            "surface": 463
           },
           "surface_state": {
-            "authored_source": 1715,
+            "authored_source": 1736,
             "generated_readmodel": 110,
             "legacy": 39,
             "receipt": 4
@@ -8373,15 +8541,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -8486,15 +8660,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -8597,15 +8777,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -8707,15 +8893,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -8824,24 +9016,30 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
       "coverage": {
         "commands": 369,
-        "documents": 1173,
+        "documents": 1174,
         "generated": 28,
-        "mechanics": 826,
-        "schemas": 126,
+        "mechanics": 827,
+        "schemas": 127,
         "scripts": 282,
         "tests": 87,
         "validators": 238
@@ -8850,10 +9048,10 @@
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 367,
+            "config": 368,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 1166,
+            "document": 1167,
             "generated_readmodel": 32,
             "index": 1,
             "license": 1,
@@ -8863,7 +9061,7 @@
             "projection": 1,
             "receipt": 1,
             "record_log": 1,
-            "schema": 124,
+            "schema": 125,
             "script": 39,
             "security": 1,
             "source_code": 227,
@@ -8873,7 +9071,7 @@
           "command_role": {
             "builder": 17,
             "lane_entrypoint": 2,
-            "none": 2004,
+            "none": 2007,
             "script": 20,
             "test": 86,
             "validator": 17
@@ -8882,11 +9080,11 @@
             "agents": 88,
             "audit": 3,
             "changelog": 1,
-            "decision": 250,
+            "decision": 251,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 229,
-            "none": 973,
+            "none": 975,
             "parts": 19,
             "provenance": 19,
             "readme": 187,
@@ -8900,20 +9098,20 @@
             "legacy": 118,
             "mechanic_package": 101,
             "mechanic_part": 184,
-            "none": 1320,
+            "none": 1322,
             "part_doc": 279,
-            "part_schema": 85,
+            "part_schema": 86,
             "part_script": 28,
             "part_test": 31
           },
           "primary_kind": {
             "artifact": 87,
             "command": 142,
-            "document": 1173,
-            "surface": 744
+            "document": 1174,
+            "surface": 746
           },
           "surface_state": {
-            "authored_source": 1989,
+            "authored_source": 1992,
             "generated_readmodel": 38,
             "legacy": 118,
             "receipt": 1
@@ -8938,15 +9136,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9047,15 +9251,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9159,16 +9369,22 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/domain_index_catalog.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/session_memory_source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
@@ -9185,7 +9401,7 @@
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 15,
+            "config": 16,
             "directory_marker": 52,
             "document": 96,
             "index": 2,
@@ -9198,7 +9414,7 @@
             "test": 1
           },
           "command_role": {
-            "none": 175,
+            "none": 176,
             "script": 1,
             "test": 1
           },
@@ -9207,21 +9423,21 @@
             "audit": 1,
             "design": 1,
             "design_agents": 1,
-            "none": 81,
+            "none": 82,
             "readme": 56,
             "unknown_document": 26
           },
           "mechanics_role": {
-            "none": 177
+            "none": 178
           },
           "primary_kind": {
             "artifact": 57,
             "command": 2,
             "document": 96,
-            "surface": 22
+            "surface": 23
           },
           "surface_state": {
-            "authored_source": 174,
+            "authored_source": 175,
             "generated_readmodel": 2,
             "receipt": 1
           }
@@ -9245,15 +9461,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9334,15 +9556,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9433,15 +9661,21 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9527,35 +9761,41 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
       "coverage": {
-        "commands": 78,
-        "documents": 463,
+        "commands": 90,
+        "documents": 471,
         "generated": 35,
-        "mechanics": 499,
-        "schemas": 92,
+        "mechanics": 515,
+        "schemas": 93,
         "scripts": 42,
-        "tests": 36,
+        "tests": 48,
         "validators": 18
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 159,
+            "config": 174,
             "dependency_manifest": 2,
-            "document": 455,
+            "document": 463,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -9563,20 +9803,20 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 91,
+            "schema": 92,
             "script": 23,
             "security": 1,
             "service_unit": 2,
-            "source_code": 12,
-            "test": 36,
+            "source_code": 31,
+            "test": 48,
             "validator": 18
           },
           "command_role": {
             "builder": 10,
             "lane_entrypoint": 1,
-            "none": 837,
+            "none": 880,
             "script": 12,
-            "test": 36,
+            "test": 48,
             "validator": 18
           },
           "document_role": {
@@ -9584,35 +9824,35 @@
             "audit": 3,
             "boundary": 1,
             "changelog": 1,
-            "decision": 9,
+            "decision": 13,
             "design": 1,
-            "mechanics_doc": 179,
-            "none": 451,
+            "mechanics_doc": 182,
+            "none": 498,
             "parts": 12,
             "provenance": 12,
-            "readme": 84,
+            "readme": 85,
             "roadmap": 1,
             "unknown_document": 116
           },
           "mechanics_role": {
             "legacy": 23,
-            "mechanic_package": 54,
+            "mechanic_package": 56,
             "mechanic_part": 93,
-            "none": 415,
-            "part_contract": 42,
-            "part_doc": 184,
+            "none": 454,
+            "part_contract": 43,
+            "part_doc": 187,
             "part_schema": 58,
             "part_script": 21,
-            "part_test": 24
+            "part_test": 34
           },
           "primary_kind": {
             "artifact": 94,
-            "command": 77,
-            "document": 463,
-            "surface": 280
+            "command": 89,
+            "document": 471,
+            "surface": 315
           },
           "surface_state": {
-            "authored_source": 844,
+            "authored_source": 899,
             "generated_readmodel": 47,
             "legacy": 23
           }
@@ -9635,16 +9875,22 @@
       "status": "passed",
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9729,16 +9975,22 @@
       "status": "passed",
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9817,16 +10069,22 @@
       "status": "passed",
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9905,16 +10163,22 @@
       "status": "passed",
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -9994,16 +10258,22 @@
       "status": "passed",
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -10082,16 +10352,22 @@
       "status": "passed",
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
@@ -10173,71 +10449,77 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
       "coverage": {
-        "commands": 167,
-        "documents": 526,
+        "commands": 168,
+        "documents": 527,
         "generated": 11,
-        "mechanics": 541,
+        "mechanics": 549,
         "schemas": 70,
         "scripts": 63,
-        "tests": 104,
+        "tests": 105,
         "validators": 40
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 180,
+            "config": 181,
             "dependency_manifest": 11,
             "directory_marker": 4,
-            "document": 517,
+            "document": 518,
             "generated_readmodel": 16,
             "index": 1,
             "license": 1,
             "manifest": 11,
-            "mechanics_surface": 8,
+            "mechanics_surface": 14,
             "owner_metadata": 3,
             "package_manifest": 1,
             "projection": 1,
             "receipt": 6,
             "schema": 70,
-            "script": 135,
+            "script": 137,
             "security": 2,
             "service_unit": 45,
             "source_code": 103,
             "symlink": 30,
-            "test": 91,
+            "test": 92,
             "text_artifact": 25,
             "validator": 18
           },
           "command_role": {
             "builder": 6,
             "lane_entrypoint": 7,
-            "none": 1035,
-            "script": 122,
-            "test": 91,
+            "none": 1043,
+            "script": 124,
+            "test": 92,
             "validator": 18
           },
           "document_role": {
             "agents": 48,
             "boundary": 11,
             "changelog": 1,
-            "decision": 82,
+            "decision": 83,
             "design": 11,
             "design_agents": 1,
             "mechanics_doc": 138,
-            "none": 753,
+            "none": 763,
             "parts": 10,
             "provenance": 10,
             "readme": 154,
@@ -10249,21 +10531,21 @@
           "mechanics_role": {
             "legacy": 136,
             "mechanic_package": 83,
-            "mechanic_part": 122,
-            "none": 738,
+            "mechanic_part": 129,
+            "none": 741,
             "part_doc": 126,
             "part_schema": 38,
             "part_script": 1,
-            "part_test": 35
+            "part_test": 36
           },
           "primary_kind": {
             "artifact": 135,
-            "command": 244,
-            "document": 526,
-            "surface": 374
+            "command": 247,
+            "document": 527,
+            "surface": 381
           },
           "surface_state": {
-            "authored_source": 1112,
+            "authored_source": 1123,
             "generated_readmodel": 22,
             "legacy": 139,
             "receipt": 6
@@ -10288,26 +10570,32 @@
       "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/provider_readiness_index.json",
+        "kag/indexes/repo_anchor_index.json",
         "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_assertion_index.json",
         "kag/indexes/repo_entity_index.json",
         "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
       "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
         "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
         "entity": "kag/indexes/repo_entity_index.json",
         "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
       "domain_index_catalog_ref": "",
       "coverage": {
-        "commands": 153,
+        "commands": 158,
         "documents": 190,
         "generated": 4,
         "mechanics": 74,
         "schemas": 10,
         "scripts": 20,
-        "tests": 133,
+        "tests": 138,
         "validators": 17
       },
       "common_surface_profile": {
@@ -10326,15 +10614,15 @@
             "script": 38,
             "security": 1,
             "service_unit": 59,
-            "source_code": 107,
-            "test": 132
+            "source_code": 112,
+            "test": 137
           },
           "command_role": {
             "builder": 2,
             "lane_entrypoint": 2,
-            "none": 416,
+            "none": 421,
             "script": 34,
-            "test": 132
+            "test": 137
           },
           "document_role": {
             "agents": 57,
@@ -10344,7 +10632,7 @@
             "design": 2,
             "design_agents": 2,
             "mechanics_doc": 16,
-            "none": 396,
+            "none": 406,
             "parts": 8,
             "provenance": 8,
             "readme": 48,
@@ -10356,17 +10644,17 @@
           },
           "mechanics_role": {
             "mechanic_package": 66,
-            "none": 512,
+            "none": 522,
             "part_doc": 8
           },
           "primary_kind": {
             "artifact": 66,
-            "command": 170,
+            "command": 175,
             "document": 190,
-            "surface": 160
+            "surface": 165
           },
           "surface_state": {
-            "authored_source": 579,
+            "authored_source": 589,
             "generated_readmodel": 6,
             "receipt": 1
           }
@@ -10391,8 +10679,8 @@
       "counts": {
         "artifact_kind": {
           "asset": 50,
-          "config": 118,
-          "document": 407,
+          "config": 122,
+          "document": 408,
           "generated_readmodel": 42,
           "index": 1,
           "license": 1,
@@ -10400,31 +10688,31 @@
           "owner_metadata": 2,
           "projection": 1,
           "receipt": 1,
-          "schema": 75,
-          "script": 18,
+          "schema": 79,
+          "script": 21,
           "security": 1,
-          "source_code": 97,
-          "test": 49,
-          "validator": 13
+          "source_code": 106,
+          "test": 51,
+          "validator": 14
         },
         "command_role": {
-          "builder": 6,
+          "builder": 8,
           "lane_entrypoint": 3,
-          "none": 817,
-          "script": 9,
-          "test": 49,
-          "validator": 13
+          "none": 835,
+          "script": 10,
+          "test": 51,
+          "validator": 14
         },
         "document_role": {
           "agents": 57,
           "audit": 3,
           "boundary": 1,
           "changelog": 1,
-          "decision": 20,
+          "decision": 21,
           "design": 1,
           "design_agents": 1,
           "mechanics_doc": 113,
-          "none": 482,
+          "none": 505,
           "parts": 13,
           "provenance": 13,
           "readme": 70,
@@ -10438,7 +10726,7 @@
           "legacy": 16,
           "mechanic_package": 55,
           "mechanic_part": 94,
-          "none": 476,
+          "none": 500,
           "part_contract": 28,
           "part_doc": 129,
           "part_schema": 62,
@@ -10447,12 +10735,12 @@
         },
         "primary_kind": {
           "artifact": 90,
-          "command": 80,
-          "document": 415,
-          "surface": 312
+          "command": 86,
+          "document": 416,
+          "surface": 329
         },
         "surface_state": {
-          "authored_source": 836,
+          "authored_source": 860,
           "generated_readmodel": 45,
           "legacy": 16
         }
@@ -10642,11 +10930,11 @@
       "counts": {
         "artifact_kind": {
           "asset": 114,
-          "config": 318,
+          "config": 328,
           "data_table": 2,
           "dependency_manifest": 1,
           "directory_marker": 4,
-          "document": 1041,
+          "document": 1046,
           "generated_readmodel": 84,
           "index": 1,
           "license": 1,
@@ -10655,46 +10943,46 @@
           "projection": 1,
           "receipt": 4,
           "record_log": 4,
-          "schema": 60,
-          "script": 67,
+          "schema": 64,
+          "script": 68,
           "security": 1,
           "source_code": 63,
-          "test": 81,
+          "test": 82,
           "validator": 12
         },
         "command_role": {
           "builder": 13,
           "lane_entrypoint": 4,
-          "none": 1708,
-          "script": 50,
-          "test": 81,
+          "none": 1727,
+          "script": 51,
+          "test": 82,
           "validator": 12
         },
         "document_role": {
           "agents": 68,
           "audit": 21,
           "changelog": 1,
-          "decision": 43,
+          "decision": 44,
           "design": 1,
           "design_agents": 1,
           "handoff": 6,
           "mechanics_doc": 117,
-          "none": 819,
+          "none": 835,
           "parts": 12,
           "provenance": 12,
-          "readme": 103,
+          "readme": 104,
           "release_notes": 4,
           "report": 5,
           "roadmap": 13,
           "testing_doc": 1,
-          "unknown_document": 638,
+          "unknown_document": 641,
           "validation_doc": 3
         },
         "mechanics_role": {
           "legacy": 39,
           "mechanic_package": 260,
           "mechanic_part": 8,
-          "none": 1515,
+          "none": 1536,
           "part_doc": 37,
           "part_schema": 3,
           "part_script": 4,
@@ -10702,12 +10990,12 @@
         },
         "primary_kind": {
           "artifact": 210,
-          "command": 160,
-          "document": 1049,
-          "surface": 449
+          "command": 162,
+          "document": 1054,
+          "surface": 463
         },
         "surface_state": {
-          "authored_source": 1715,
+          "authored_source": 1736,
           "generated_readmodel": 110,
           "legacy": 39,
           "receipt": 4
@@ -11059,10 +11347,10 @@
       "counts": {
         "artifact_kind": {
           "asset": 50,
-          "config": 367,
+          "config": 368,
           "dependency_manifest": 1,
           "directory_marker": 4,
-          "document": 1166,
+          "document": 1167,
           "generated_readmodel": 32,
           "index": 1,
           "license": 1,
@@ -11072,7 +11360,7 @@
           "projection": 1,
           "receipt": 1,
           "record_log": 1,
-          "schema": 124,
+          "schema": 125,
           "script": 39,
           "security": 1,
           "source_code": 227,
@@ -11082,7 +11370,7 @@
         "command_role": {
           "builder": 17,
           "lane_entrypoint": 2,
-          "none": 2004,
+          "none": 2007,
           "script": 20,
           "test": 86,
           "validator": 17
@@ -11091,11 +11379,11 @@
           "agents": 88,
           "audit": 3,
           "changelog": 1,
-          "decision": 250,
+          "decision": 251,
           "design": 1,
           "design_agents": 1,
           "mechanics_doc": 229,
-          "none": 973,
+          "none": 975,
           "parts": 19,
           "provenance": 19,
           "readme": 187,
@@ -11109,20 +11397,20 @@
           "legacy": 118,
           "mechanic_package": 101,
           "mechanic_part": 184,
-          "none": 1320,
+          "none": 1322,
           "part_doc": 279,
-          "part_schema": 85,
+          "part_schema": 86,
           "part_script": 28,
           "part_test": 31
         },
         "primary_kind": {
           "artifact": 87,
           "command": 142,
-          "document": 1173,
-          "surface": 744
+          "document": 1174,
+          "surface": 746
         },
         "surface_state": {
-          "authored_source": 1989,
+          "authored_source": 1992,
           "generated_readmodel": 38,
           "legacy": 118,
           "receipt": 1
@@ -11303,7 +11591,7 @@
     "aoa-session-memory": {
       "counts": {
         "artifact_kind": {
-          "config": 15,
+          "config": 16,
           "directory_marker": 52,
           "document": 96,
           "index": 2,
@@ -11316,7 +11604,7 @@
           "test": 1
         },
         "command_role": {
-          "none": 175,
+          "none": 176,
           "script": 1,
           "test": 1
         },
@@ -11325,21 +11613,21 @@
           "audit": 1,
           "design": 1,
           "design_agents": 1,
-          "none": 81,
+          "none": 82,
           "readme": 56,
           "unknown_document": 26
         },
         "mechanics_role": {
-          "none": 177
+          "none": 178
         },
         "primary_kind": {
           "artifact": 57,
           "command": 2,
           "document": 96,
-          "surface": 22
+          "surface": 23
         },
         "surface_state": {
-          "authored_source": 174,
+          "authored_source": 175,
           "generated_readmodel": 2,
           "receipt": 1
         }
@@ -11551,9 +11839,9 @@
       "counts": {
         "artifact_kind": {
           "asset": 50,
-          "config": 159,
+          "config": 174,
           "dependency_manifest": 2,
-          "document": 455,
+          "document": 463,
           "generated_readmodel": 42,
           "index": 1,
           "license": 1,
@@ -11561,20 +11849,20 @@
           "owner_metadata": 2,
           "projection": 1,
           "receipt": 1,
-          "schema": 91,
+          "schema": 92,
           "script": 23,
           "security": 1,
           "service_unit": 2,
-          "source_code": 12,
-          "test": 36,
+          "source_code": 31,
+          "test": 48,
           "validator": 18
         },
         "command_role": {
           "builder": 10,
           "lane_entrypoint": 1,
-          "none": 837,
+          "none": 880,
           "script": 12,
-          "test": 36,
+          "test": 48,
           "validator": 18
         },
         "document_role": {
@@ -11582,35 +11870,35 @@
           "audit": 3,
           "boundary": 1,
           "changelog": 1,
-          "decision": 9,
+          "decision": 13,
           "design": 1,
-          "mechanics_doc": 179,
-          "none": 451,
+          "mechanics_doc": 182,
+          "none": 498,
           "parts": 12,
           "provenance": 12,
-          "readme": 84,
+          "readme": 85,
           "roadmap": 1,
           "unknown_document": 116
         },
         "mechanics_role": {
           "legacy": 23,
-          "mechanic_package": 54,
+          "mechanic_package": 56,
           "mechanic_part": 93,
-          "none": 415,
-          "part_contract": 42,
-          "part_doc": 184,
+          "none": 454,
+          "part_contract": 43,
+          "part_doc": 187,
           "part_schema": 58,
           "part_script": 21,
-          "part_test": 24
+          "part_test": 34
         },
         "primary_kind": {
           "artifact": 94,
-          "command": 77,
-          "document": 463,
-          "surface": 280
+          "command": 89,
+          "document": 471,
+          "surface": 315
         },
         "surface_state": {
-          "authored_source": 844,
+          "authored_source": 899,
           "generated_readmodel": 47,
           "legacy": 23
         }
@@ -11986,46 +12274,46 @@
     "abyss-stack": {
       "counts": {
         "artifact_kind": {
-          "config": 180,
+          "config": 181,
           "dependency_manifest": 11,
           "directory_marker": 4,
-          "document": 517,
+          "document": 518,
           "generated_readmodel": 16,
           "index": 1,
           "license": 1,
           "manifest": 11,
-          "mechanics_surface": 8,
+          "mechanics_surface": 14,
           "owner_metadata": 3,
           "package_manifest": 1,
           "projection": 1,
           "receipt": 6,
           "schema": 70,
-          "script": 135,
+          "script": 137,
           "security": 2,
           "service_unit": 45,
           "source_code": 103,
           "symlink": 30,
-          "test": 91,
+          "test": 92,
           "text_artifact": 25,
           "validator": 18
         },
         "command_role": {
           "builder": 6,
           "lane_entrypoint": 7,
-          "none": 1035,
-          "script": 122,
-          "test": 91,
+          "none": 1043,
+          "script": 124,
+          "test": 92,
           "validator": 18
         },
         "document_role": {
           "agents": 48,
           "boundary": 11,
           "changelog": 1,
-          "decision": 82,
+          "decision": 83,
           "design": 11,
           "design_agents": 1,
           "mechanics_doc": 138,
-          "none": 753,
+          "none": 763,
           "parts": 10,
           "provenance": 10,
           "readme": 154,
@@ -12037,21 +12325,21 @@
         "mechanics_role": {
           "legacy": 136,
           "mechanic_package": 83,
-          "mechanic_part": 122,
-          "none": 738,
+          "mechanic_part": 129,
+          "none": 741,
           "part_doc": 126,
           "part_schema": 38,
           "part_script": 1,
-          "part_test": 35
+          "part_test": 36
         },
         "primary_kind": {
           "artifact": 135,
-          "command": 244,
-          "document": 526,
-          "surface": 374
+          "command": 247,
+          "document": 527,
+          "surface": 381
         },
         "surface_state": {
-          "authored_source": 1112,
+          "authored_source": 1123,
           "generated_readmodel": 22,
           "legacy": 139,
           "receipt": 6
@@ -12084,15 +12372,15 @@
           "script": 38,
           "security": 1,
           "service_unit": 59,
-          "source_code": 107,
-          "test": 132
+          "source_code": 112,
+          "test": 137
         },
         "command_role": {
           "builder": 2,
           "lane_entrypoint": 2,
-          "none": 416,
+          "none": 421,
           "script": 34,
-          "test": 132
+          "test": 137
         },
         "document_role": {
           "agents": 57,
@@ -12102,7 +12390,7 @@
           "design": 2,
           "design_agents": 2,
           "mechanics_doc": 16,
-          "none": 396,
+          "none": 406,
           "parts": 8,
           "provenance": 8,
           "readme": 48,
@@ -12114,17 +12402,17 @@
         },
         "mechanics_role": {
           "mechanic_package": 66,
-          "none": 512,
+          "none": 522,
           "part_doc": 8
         },
         "primary_kind": {
           "artifact": 66,
-          "command": 170,
+          "command": 175,
           "document": 190,
-          "surface": 160
+          "surface": 165
         },
         "surface_state": {
-          "authored_source": 579,
+          "authored_source": 589,
           "generated_readmodel": 6,
           "receipt": 1
         }
