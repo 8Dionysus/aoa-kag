@@ -33,6 +33,8 @@ relations. Repository
 namespace, Git lineage, source digest, ABI/sign posture, provenance, temporal
 state, trust, freshness, access, and owner-return routes preserve each organ's
 identity through federation.
+Federation resolves source links through current and historical Git locators,
+while external web, owner, and GitHub-object references remain typed evidence.
 
 Native domain indexes remain product surfaces of their owners and appear in
 repo-self KAG through a domain-index catalog.

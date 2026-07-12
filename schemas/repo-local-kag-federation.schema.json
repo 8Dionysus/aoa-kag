@@ -12,7 +12,8 @@
     "nodes",
     "relations",
     "cross_repo_relations",
-    "unresolved_references"
+    "unresolved_references",
+    "external_references"
   ],
   "properties": {
     "schema_version": {"const": "aoa-repo-local-kag-federation-v1"},
@@ -38,6 +39,10 @@
     "unresolved_references": {
       "type": "array",
       "items": {"$ref": "#/$defs/unresolvedReference"}
+    },
+    "external_references": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/externalReference"}
     }
   },
   "$defs": {
@@ -105,6 +110,7 @@
         "relation_count",
         "cross_repo_relation_count",
         "unresolved_reference_count",
+        "external_reference_count",
         "relation_kind_counts"
       ],
       "properties": {
@@ -113,6 +119,7 @@
         "relation_count": {"type": "integer", "minimum": 0},
         "cross_repo_relation_count": {"type": "integer", "minimum": 0},
         "unresolved_reference_count": {"type": "integer", "minimum": 0},
+        "external_reference_count": {"type": "integer", "minimum": 0},
         "relation_kind_counts": {
           "type": "object",
           "additionalProperties": {"type": "integer", "minimum": 0}
@@ -188,6 +195,21 @@
         "resolution_state": {
           "type": "string",
           "enum": ["unresolved-qualified-id", "unresolved-root", "unresolved-path", "unresolved-fragment"]
+        }
+      }
+    },
+    "externalReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_repo", "source_anchor_id", "target_ref", "reference_kind"],
+      "properties": {
+        "source_repo": {"$ref": "#/$defs/nonEmptyString"},
+        "source_anchor_id": {"$ref": "#/$defs/nonEmptyString"},
+        "target_repo": {"$ref": "#/$defs/nonEmptyString"},
+        "target_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "reference_kind": {
+          "type": "string",
+          "enum": ["external-web", "external-owner", "github-object"]
         }
       }
     }

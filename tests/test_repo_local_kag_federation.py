@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -43,6 +44,7 @@ class RepoKagFederationTests(unittest.TestCase):
                 readme=(
                     "# First\n\n"
                     "See [Second demo](https://github.com/8Dionysus/aoa-second/blob/main/README.md#demo).\n"
+                    "See [Second pull request](https://github.com/8Dionysus/aoa-second/pull/7).\n"
                 ),
             )
             second = owner_bundle(second_root, "aoa-second")
@@ -66,9 +68,70 @@ class RepoKagFederationTests(unittest.TestCase):
         self.assertEqual("aoa-first", cross[0]["source_repo"])
         self.assertEqual("aoa-second", cross[0]["target_repo"])
         self.assertTrue(cross[0]["evidence_anchor_ids"])
+        self.assertEqual(0, projection["summary"]["unresolved_reference_count"])
+        self.assertEqual(1, projection["summary"]["external_reference_count"])
+        self.assertEqual(
+            "github-object",
+            projection["external_references"][0]["reference_kind"],
+        )
         node_ids = {node["id"] for node in projection["nodes"]}
         self.assertIn(cross[0]["from_id"], node_ids)
         self.assertIn(cross[0]["to_id"], node_ids)
+
+    def test_federation_resolves_historical_source_path_through_git_lineage(self) -> None:
+        with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
+            first = owner_bundle(
+                Path(first_tmp),
+                "aoa-first",
+                readme=(
+                    "# First\n\n"
+                    "See [moved guide](https://github.com/8Dionysus/aoa-second/blob/main/"
+                    "docs/guides/usage.md#usage).\n"
+                ),
+            )
+            second_root = Path(second_tmp)
+            subprocess.run(("git", "init", "-q"), cwd=second_root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=second_root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=second_root,
+                check=True,
+            )
+            write_fixture(second_root)
+            (second_root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "aoa-second"}), encoding="utf-8"
+            )
+            subprocess.run(("git", "add", "."), cwd=second_root, check=True)
+            subprocess.run(("git", "commit", "-qm", "initial"), cwd=second_root, check=True)
+            (second_root / "mechanics" / "guide").mkdir(parents=True)
+            subprocess.run(
+                (
+                    "git",
+                    "mv",
+                    "docs/guides/usage.md",
+                    "mechanics/guide/usage.md",
+                ),
+                cwd=second_root,
+                check=True,
+            )
+            subprocess.run(("git", "commit", "-qm", "move guide"), cwd=second_root, check=True)
+            second_source = build_index(second_root)
+            second_family = build_repository_indexes(second_source, repo_root=second_root)
+            federation = RepoKagFederation(
+                {
+                    "aoa-first": first,
+                    "aoa-second": (second_source, second_family),
+                }
+            )
+
+        usage_anchor = next(
+            entry
+            for entry in second_family["anchor"]["entries"]
+            if entry["anchor_kind"] == "markdown_heading" and entry["label"] == "Usage"
+        )
+        projection = federation.projection()
+        self.assertEqual([], projection["unresolved_references"])
+        self.assertEqual(usage_anchor["id"], projection["cross_repo_relations"][0]["to_id"])
 
     def test_federated_graph_query_crosses_owner_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:

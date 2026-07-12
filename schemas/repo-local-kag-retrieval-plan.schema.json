@@ -96,7 +96,8 @@
         "nodes",
         "relations",
         "cross_repo_relations",
-        "unresolved_references"
+        "unresolved_references",
+        "external_references"
       ],
       "properties": {
         "schema_version": {"const": "aoa-repo-local-kag-federation-v1"},
@@ -113,7 +114,8 @@
         "nodes": {"type": "array", "items": {"type": "object"}},
         "relations": {"type": "array", "items": {"type": "object"}},
         "cross_repo_relations": {"type": "array", "items": {"type": "object"}},
-        "unresolved_references": {"type": "array", "items": {"type": "object"}}
+        "unresolved_references": {"type": "array", "items": {"type": "object"}},
+        "external_references": {"type": "array", "items": {"type": "object"}}
       }
     },
     "retrievalProfile": {

@@ -62,7 +62,11 @@ class RepoKagFederation:
             self._register_owner(owner, source, family)
 
         self._local_relations = self._collect_local_relations()
-        self._cross_repo_relations, self._unresolved_references = self._resolve_cross_repo_refs()
+        (
+            self._cross_repo_relations,
+            self._unresolved_references,
+            self._external_references,
+        ) = self._resolve_cross_repo_refs()
         self._relations = (*self._local_relations, *self._cross_repo_relations)
         self._adjacency: dict[str, list[tuple[str, dict[str, Any]]]] = defaultdict(list)
         for relation in self._relations:
@@ -106,13 +110,22 @@ class RepoKagFederation:
                     "access_scope": access_scope,
                 }
                 if node_class == "artifact":
-                    self._artifacts_by_repo_path[(owner, str(entry["path"]))] = entry
+                    source_record = source_records[node_id]
+                    current_path = str(entry["path"])
+                    lineage_path = str(source_record["identity"]["lineage_path"])
+                    self._artifacts_by_repo_path[(owner, current_path)] = entry
+                    self._artifacts_by_repo_path.setdefault((owner, lineage_path), entry)
                 elif node_class == "anchor":
                     source_record = source_records[str(entry["source_record_id"])]
                     path = str(source_record["identity"]["path"])
+                    lineage_path = str(source_record["identity"]["lineage_path"])
                     fragment = str(entry["locator"]["fragment"])
                     if entry["anchor_kind"] == "markdown_heading" and fragment:
                         self._headings_by_repo_path_fragment[(owner, path, fragment)] = entry
+                        self._headings_by_repo_path_fragment.setdefault(
+                            (owner, lineage_path, fragment),
+                            entry,
+                        )
                 elif node_class == "entity":
                     for anchor_id in entry["anchor_ids"]:
                         self._entity_by_anchor[str(anchor_id)] = entry
@@ -181,11 +194,13 @@ class RepoKagFederation:
                 return "", "", "out-of-scope"
             target_repo = parts[1]
             tail_parts = parts[2:]
-            if tail_parts and tail_parts[0] in {"blob", "tree"}:
+            if tail_parts and tail_parts[0] not in {"blob", "tree"}:
+                return "", target_repo, "github-object"
+            if tail_parts:
                 tail_parts = tail_parts[1:]
             tail = "/".join(tail_parts)
         else:
-            return "", "", "out-of-scope"
+            return "", "", "external-web"
 
         if target_repo not in self._bundles:
             return "", target_repo, "external-owner"
@@ -223,9 +238,14 @@ class RepoKagFederation:
 
     def _resolve_cross_repo_refs(
         self,
-    ) -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, Any], ...]]:
+    ) -> tuple[
+        tuple[dict[str, Any], ...],
+        tuple[dict[str, Any], ...],
+        tuple[dict[str, Any], ...],
+    ]:
         relations: dict[str, dict[str, Any]] = {}
         unresolved: list[dict[str, Any]] = []
+        external: list[dict[str, Any]] = []
         for owner, (source, family) in sorted(self._bundles.items()):
             source_records = {
                 str(record["identity"]["id"]): record
@@ -241,7 +261,18 @@ class RepoKagFederation:
                 for reference in anchor.get("outbound_refs", []):
                     target_ref = str(reference["target_ref"])
                     target_id, target_owner, state = self._target_for_ref(owner, target_ref)
-                    if state in {"out-of-scope", "external-owner", "owner-local-absolute"}:
+                    if state in {"external-web", "external-owner", "github-object"}:
+                        external_ref = {
+                            "source_repo": owner,
+                            "source_anchor_id": str(anchor["id"]),
+                            "target_ref": target_ref,
+                            "reference_kind": state,
+                        }
+                        if target_owner:
+                            external_ref["target_repo"] = target_owner
+                        external.append(external_ref)
+                        continue
+                    if state in {"out-of-scope", "owner-local-absolute"}:
                         continue
                     if state != "resolved":
                         unresolved.append(
@@ -287,6 +318,16 @@ class RepoKagFederation:
                     ),
                 )
             ),
+            tuple(
+                sorted(
+                    external,
+                    key=lambda item: (
+                        item["source_repo"],
+                        item["source_anchor_id"],
+                        item["target_ref"],
+                    ),
+                )
+            ),
         )
 
     def _build_projection(self) -> dict[str, Any]:
@@ -321,12 +362,14 @@ class RepoKagFederation:
                 "relation_count": len(self._relations),
                 "cross_repo_relation_count": len(self._cross_repo_relations),
                 "unresolved_reference_count": len(self._unresolved_references),
+                "external_reference_count": len(self._external_references),
                 "relation_kind_counts": dict(sorted(relation_counts.items())),
             },
             "nodes": [copy.deepcopy(self._node_handles[key]) for key in sorted(self._node_handles)],
             "relations": [copy.deepcopy(item) for item in self._local_relations],
             "cross_repo_relations": [copy.deepcopy(item) for item in self._cross_repo_relations],
             "unresolved_references": [copy.deepcopy(item) for item in self._unresolved_references],
+            "external_references": [copy.deepcopy(item) for item in self._external_references],
         }
         payload["federation_identity"]["content_digest"] = _digest(payload)
         return payload
