@@ -64,6 +64,7 @@ and where does a stronger claim return?
 | `scripts/` | deterministic builders, validators, decision-index helpers, and substrate checks |
 | `tests/` | regression proof for contracts, parity, guardrails, and current routes |
 | `evals/` | KAG-local eval pressure port before central proof acceptance |
+| `stats/` | KAG-owned statistical questions, contracts, and reference packets below source and generated evidence owners |
 | `.agents/`, `.agents/spark/`, `.github/`, `config/` | companion, Spark fast-loop, platform, and configuration lanes that support KAG work without becoming substrate truth |
 
 Each class may support another. No class should silently steal another class's
@@ -198,6 +199,9 @@ repo-self family.
 [`docs/SOURCE_POLICY.md`](docs/SOURCE_POLICY.md) defines source-first posture.
 [`mechanics/README.md`](mechanics/README.md) routes repeatable KAG operation
 topology.
+[`stats/`](stats/README.md) holds KAG-owned statistical meaning and reference
+measurements while `aoa-stats` owns the shared grammar and cross-owner
+composition.
 [`docs/decisions/`](docs/decisions/README.md) preserves durable route
 rationale.
 
@@ -212,6 +216,7 @@ Agents should consult this file when a change alters:
 - source versus derived authority;
 - mechanics topology or package posture;
 - local `/kag` protocol, canonical family, or sibling adoption posture;
+- owner-local stats-port shape;
 - manifest and generated-surface posture;
 - KAG owner boundaries;
 - federation or local `/kag` protocol posture;

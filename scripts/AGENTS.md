@@ -15,6 +15,9 @@ Builder changes must preserve source ownership: manifests and source refs guide 
 
 Validator changes should catch provenance loss, source-ref drift, schema mismatch, quarantine bypass, and over-strong maturity claims.
 
+`validate_local_stats_port.py` is only the source-fast adapter to the pinned
+`aoa-stats` validator; KAG-local statistical meaning stays under `stats/`.
+
 Full validation command sequences live in `config/validation_lanes.json`.
 Use lane entrypoints instead of copying release sequences:
 
