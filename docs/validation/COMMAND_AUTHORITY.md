@@ -19,8 +19,24 @@
 | `scripts/query_repo_local_kag.py` | validated exact, lexical, graph, and hybrid repo-local retrieval |
 | `scripts/build_repo_local_kag_federation.py` | validated owner-qualified federation projection builder |
 | `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
-| `.github/actions/repo-local-kag-index/action.yml` | owner-callable full, incremental, and contract check using complete repo-scoped stable-head Git history across the full owner validation job |
+| `.github/actions/repo-local-kag-index/action.yml` | owner-callable full, incremental, and contract check using explicit repo-scoped source-lineage and event-history boundaries across the full owner validation job |
 | `.github/workflows/repo-validation.yml`, `.github/workflows/compatibility-canary.yml` | exact provider checkouts with complete Git history for repository-event parity in coverage and canary lanes |
+
+## Repo-local KAG History Boundaries
+
+The repo-local KAG action keeps source lineage and repository-event history as
+separate, explicit inputs. On a pull request, both `history-ref` and
+`event-history-ref` default to `github.event.pull_request.base.sha`; the builder
+combines that durable base history with the current repository snapshot. This
+keeps a multi-commit pull request and its squash-merged `main` snapshot on the
+same generated index family.
+
+Outside a pull request, `history-ref` defaults to `HEAD` and
+`event-history-ref` follows it unless the caller supplies either input. The
+action resolves the refs inside `repo-root` and exports the resolved repository
+name and both boundaries through repo-scoped environment variables so later
+release-audit commands reuse the same model instead of inheriting unrelated
+outer-workflow refs.
 
 ## Lane Entries
 
