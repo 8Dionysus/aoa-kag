@@ -9,7 +9,10 @@ inputs:
     description: Source surface index path relative to the repository root; sibling repository indexes share its directory.
     default: kag/indexes/source_surface_index.json
   history-ref:
-    description: Stable Git ref used for repository event history; pull requests default to the head SHA.
+    description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
+    default: ""
+  event-history-ref:
+    description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
     default: ""
 
 runs:
@@ -21,10 +24,12 @@ runs:
       working-directory: ${{ inputs.repo-root }}
       env:
         INPUT_HISTORY_REF: ${{ inputs.history-ref }}
-        PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        INPUT_EVENT_HISTORY_REF: ${{ inputs.event-history-ref }}
+        PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
       run: |
         set -euo pipefail
-        history_ref="${INPUT_HISTORY_REF:-${PULL_REQUEST_HEAD_SHA:-HEAD}}"
+        history_ref="${INPUT_HISTORY_REF:-${PULL_REQUEST_BASE_SHA:-HEAD}}"
+        event_history_ref="${INPUT_EVENT_HISTORY_REF:-${PULL_REQUEST_BASE_SHA:-$history_ref}}"
         if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
           if [[ "$history_ref" == "HEAD" ]]; then
             git fetch --no-tags --prune --unshallow origin
@@ -35,10 +40,16 @@ runs:
           git fetch --no-tags --prune origin "$history_ref"
         fi
         git cat-file -e "${history_ref}^{commit}"
+        if ! git cat-file -e "${event_history_ref}^{commit}" 2>/dev/null; then
+          git fetch --no-tags --prune origin "$event_history_ref"
+        fi
+        git cat-file -e "${event_history_ref}^{commit}"
         repo_name="$(basename "$(git rev-parse --show-toplevel)")"
         printf 'AOA_REPO_LOCAL_KAG_HISTORY_REPO=%s\n' "$repo_name" >> "$GITHUB_ENV"
         printf 'AOA_REPO_LOCAL_KAG_HISTORY_REF=%s\n' "$history_ref" >> "$GITHUB_ENV"
+        printf 'AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF=%s\n' "$event_history_ref" >> "$GITHUB_ENV"
         printf 'ref=%s\n' "$history_ref" >> "$GITHUB_OUTPUT"
+        printf 'event-ref=%s\n' "$event_history_ref" >> "$GITHUB_OUTPUT"
     - name: Check repo-local index family parity
       shell: bash
       working-directory: ${{ github.workspace }}
@@ -48,6 +59,7 @@ runs:
         --output "${{ inputs.output }}"
         --index-family
         --history-ref "${{ steps.history.outputs.ref }}"
+        --event-history-ref "${{ steps.history.outputs.event-ref }}"
         --check
     - name: Check incremental index family parity
       shell: bash
@@ -59,6 +71,7 @@ runs:
         --index-family
         --incremental
         --history-ref "${{ steps.history.outputs.ref }}"
+        --event-history-ref "${{ steps.history.outputs.event-ref }}"
         --check
     - name: Ensure repo-local validation dependencies
       shell: bash

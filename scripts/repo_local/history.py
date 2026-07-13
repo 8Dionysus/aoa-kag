@@ -58,6 +58,13 @@ def _repository_snapshot_event(
     current_ids: dict[str, str],
     artifact_anchor_ids: dict[str, str],
 ) -> dict[str, Any]:
+    changes = [
+        {
+            **item,
+            "object_id": current_ids.get(item["path"], item["object_id"]),
+        }
+        for item in changes
+    ]
     ordered_changes = sorted(
         changes,
         key=lambda item: (
@@ -185,19 +192,19 @@ def git_commit_events(
     if current is not None and current["changes"]:
         events.append(current)
 
-    staged = _git_text(
-        repo_root,
-        (
-            "git",
-            "-c",
-            "core.quotepath=false",
-            "diff",
-            "--cached",
-            "--name-status",
-            "--find-renames=50%",
-            "--",
-        ),
-    )
+    snapshot_command = [
+        "git",
+        "-c",
+        "core.quotepath=false",
+        "diff",
+        "--cached",
+        "--name-status",
+        "--find-renames=50%",
+    ]
+    if history_ref:
+        snapshot_command.append(history_ref)
+    snapshot_command.append("--")
+    staged = _git_text(repo_root, snapshot_command)
     staged_changes = [
         _change(
             line.split("\t"),

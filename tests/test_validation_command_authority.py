@@ -269,6 +269,9 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         workflow = (
             REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
         ).read_text(encoding="utf-8")
+        authority = (
+            REPO_ROOT / "docs" / "validation" / "COMMAND_AUTHORITY.md"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("scripts/generate_repo_local_kag_index.py", action)
         self.assertIn('--repo-root "${{ inputs.repo-root }}"', action)
@@ -276,12 +279,20 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("--index-family", action)
         self.assertIn("--incremental", action)
         self.assertIn("history-ref:", action)
+        self.assertIn("event-history-ref:", action)
         self.assertIn("working-directory: ${{ inputs.repo-root }}", action)
+        self.assertIn("PULL_REQUEST_BASE_SHA", action)
+        self.assertNotIn("PULL_REQUEST_HEAD_SHA", action)
         self.assertIn("--unshallow", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REPO", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REF", action)
+        self.assertIn("AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF", action)
         self.assertIn('>> "$GITHUB_ENV"', action)
         self.assertIn('--history-ref "${{ steps.history.outputs.ref }}"', action)
+        self.assertIn(
+            '--event-history-ref "${{ steps.history.outputs.event-ref }}"',
+            action,
+        )
         self.assertIn("--check", action)
         self.assertIn("scripts/validate_repo_local_kag_family.py", action)
         self.assertIn("python3 -m pip install", action)
@@ -291,6 +302,9 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         self.assertIn('--source-index "${{ inputs.output }}"', action)
         self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)
+        self.assertIn("source lineage and repository-event history", authority)
+        self.assertIn("github.event.pull_request.base.sha", authority)
+        self.assertIn("multi-commit pull request and its squash-merged", authority)
 
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
         repo_validation = (

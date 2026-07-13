@@ -113,19 +113,19 @@ def git_lineage_paths(
         repo_root,
     )
     _apply_name_status(state, history)
-    staged = _name_status(
-        (
-            "git",
-            "-c",
-            "core.quotepath=false",
-            "diff",
-            "--cached",
-            "--name-status",
-            "--find-renames=50%",
-            "--",
-        ),
-        repo_root,
-    )
+    snapshot_command = [
+        "git",
+        "-c",
+        "core.quotepath=false",
+        "diff",
+        "--cached",
+        "--name-status",
+        "--find-renames=50%",
+    ]
+    if history_ref:
+        snapshot_command.append(history_ref)
+    snapshot_command.append("--")
+    staged = _name_status(snapshot_command, repo_root)
     _apply_name_status(state, staged)
     return {
         path: Path(state.active.get(path.as_posix(), path.as_posix()))
