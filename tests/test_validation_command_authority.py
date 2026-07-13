@@ -276,6 +276,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("--index-family", action)
         self.assertIn("--incremental", action)
         self.assertIn("history-ref:", action)
+        self.assertIn("working-directory: ${{ inputs.repo-root }}", action)
         self.assertIn("--unshallow", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REPO", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REF", action)
