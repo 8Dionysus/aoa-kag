@@ -43,6 +43,7 @@ class RepoKagFederation:
         self._node_owner: dict[str, str] = {}
         self._node_handles: dict[str, dict[str, Any]] = {}
         self._artifacts_by_repo_path: dict[tuple[str, str], dict[str, Any]] = {}
+        self._directories_by_repo_path: dict[tuple[str, str], dict[str, Any]] = {}
         self._headings_by_repo_path_fragment: dict[tuple[str, str, str], dict[str, Any]] = {}
         self._root_entities: dict[str, dict[str, Any]] = {}
         self._file_entities: dict[tuple[str, str], dict[str, Any]] = {}
@@ -131,6 +132,13 @@ class RepoKagFederation:
                         self._entity_by_anchor[str(anchor_id)] = entry
                     if entry["entity_kind"] == "repository":
                         self._root_entities[owner] = entry
+                    semantic_key = str(entry["semantic_key"])
+                    if (
+                        entry["entity_kind"] in {"directory", "repository"}
+                        and semantic_key.startswith("directory:")
+                    ):
+                        directory_path = semantic_key.removeprefix("directory:")
+                        self._directories_by_repo_path[(owner, directory_path)] = entry
                     if len(entry["source_record_ids"]) == 1:
                         source_id = str(entry["source_record_ids"][0])
                         lineage_path = str(source_records[source_id]["identity"]["lineage_path"])
@@ -185,6 +193,7 @@ class RepoKagFederation:
         parsed = urlsplit(target_ref)
         if parsed.scheme not in {"http", "https", "repo"}:
             return "", "", "out-of-scope"
+        github_content_ref = False
         if parsed.scheme == "repo":
             target_repo = parsed.netloc
             tail = parsed.path.lstrip("/")
@@ -198,6 +207,7 @@ class RepoKagFederation:
                 return "", target_repo, "github-object"
             if tail_parts:
                 tail_parts = tail_parts[1:]
+                github_content_ref = True
             tail = "/".join(tail_parts)
         else:
             return "", "", "external-web"
@@ -214,17 +224,33 @@ class RepoKagFederation:
                 else ("", target_repo, "unresolved-root")
             )
 
-        target_path = ""
         tail_parts = tail.split("/")
-        for offset in range(len(tail_parts)):
+        first_path_offset = 1 if github_content_ref else 0
+        if first_path_offset >= len(tail_parts):
+            root = self._root_entities.get(target_repo)
+            return (
+                (str(root["id"]), target_repo, "resolved")
+                if root is not None
+                else ("", target_repo, "unresolved-root")
+            )
+        target_path = ""
+        target_kind = ""
+        for offset in range(first_path_offset, len(tail_parts)):
             candidate = "/".join(tail_parts[offset:])
             if (target_repo, candidate) in self._artifacts_by_repo_path:
                 target_path = candidate
+                target_kind = "artifact"
+                break
+            if (target_repo, candidate) in self._directories_by_repo_path:
+                target_path = candidate
+                target_kind = "directory"
                 break
         if not target_path:
             return "", target_repo, "unresolved-path"
         fragment = unquote(parsed.fragment)
         if fragment:
+            if target_kind != "artifact":
+                return "", target_repo, "unresolved-fragment"
             heading = self._headings_by_repo_path_fragment.get(
                 (target_repo, target_path, fragment)
             )
@@ -233,6 +259,9 @@ class RepoKagFederation:
                 if heading is not None
                 else ("", target_repo, "unresolved-fragment")
             )
+        if target_kind == "directory":
+            directory = self._directories_by_repo_path[(target_repo, target_path)]
+            return str(directory["id"]), target_repo, "resolved"
         artifact = self._artifacts_by_repo_path[(target_repo, target_path)]
         return str(artifact["anchor_id"]), target_repo, "resolved"
 

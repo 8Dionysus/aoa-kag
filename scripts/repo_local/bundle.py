@@ -97,11 +97,26 @@ def _bundle_records(plan: Mapping[str, Any]) -> dict[str, Sequence[Mapping[str, 
     }
 
 
+def _require_resolved_federation(plan: Mapping[str, Any]) -> None:
+    try:
+        unresolved_count = int(
+            plan["federation"]["summary"]["unresolved_reference_count"]
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("retrieval bundle requires a valid federation summary") from exc
+    if unresolved_count:
+        raise ValueError(
+            "retrieval bundle requires resolved federation references; "
+            f"unresolved_reference_count={unresolved_count}"
+        )
+
+
 def build_retrieval_bundle_manifest(
     plan: Mapping[str, Any],
     *,
     files: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
+    _require_resolved_federation(plan)
     federation = plan["federation"]
     payload: dict[str, Any] = {
         "schema_version": "aoa-repo-local-kag-retrieval-bundle-v1",
@@ -152,6 +167,7 @@ def write_retrieval_bundle(
     bundle_dir: Path,
 ) -> dict[str, Any]:
     bundle_dir = bundle_dir.resolve()
+    _require_resolved_federation(plan)
     records = _bundle_records(plan)
     files: dict[str, dict[str, Any]] = {}
     for key, items in records.items():
@@ -177,6 +193,10 @@ def write_retrieval_bundle(
 
 def retrieval_bundle_matches(plan: Mapping[str, Any], bundle_dir: Path) -> bool:
     bundle_dir = bundle_dir.resolve()
+    try:
+        _require_resolved_federation(plan)
+    except ValueError:
+        return False
     expected_files = _expected_file_metadata(plan)
     for metadata in expected_files.values():
         path = bundle_dir / str(metadata["path"])

@@ -9,7 +9,11 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from scripts.generate_repo_local_kag_index import build_index, build_repository_indexes
-from scripts.repo_local.bundle import retrieval_bundle_matches, write_retrieval_bundle
+from scripts.repo_local.bundle import (
+    build_retrieval_bundle_manifest,
+    retrieval_bundle_matches,
+    write_retrieval_bundle,
+)
 from scripts.repo_local.projections import (
     build_federated_retrieval_plan,
     build_repo_retrieval_documents,
@@ -243,6 +247,47 @@ class RepoKagProjectionTests(unittest.TestCase):
             plan["federation"]["summary"]["relation_count"],
             manifest["files"]["relations"]["record_count"],
         )
+
+    def test_retrieval_bundle_rejects_unresolved_federation_before_writing(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as first_tmp,
+            tempfile.TemporaryDirectory() as second_tmp,
+            tempfile.TemporaryDirectory() as bundle_tmp,
+        ):
+            roots = {
+                "aoa-first": Path(first_tmp),
+                "aoa-second": Path(second_tmp),
+            }
+            bundles = {}
+            for repo, root in roots.items():
+                write_fixture(root)
+                (root / "kag" / "manifest.json").write_text(
+                    json.dumps({"repo": repo}), encoding="utf-8"
+                )
+            (roots["aoa-first"] / "README.md").write_text(
+                "# First\n\nSee [missing](repo://aoa-second/docs/missing.md).\n",
+                encoding="utf-8",
+            )
+            for repo, root in roots.items():
+                source = build_index(root)
+                bundles[repo] = (
+                    source,
+                    build_repository_indexes(source, repo_root=root),
+                )
+            plan = build_federated_retrieval_plan(
+                roots,
+                bundles,
+                embedding_profile=EMBEDDING_PROFILE,
+            )
+            bundle_root = Path(bundle_tmp)
+
+            self.assertEqual(1, plan["federation"]["summary"]["unresolved_reference_count"])
+            with self.assertRaisesRegex(ValueError, "unresolved"):
+                build_retrieval_bundle_manifest(plan, files={})
+            with self.assertRaisesRegex(ValueError, "unresolved"):
+                write_retrieval_bundle(plan, bundle_root)
+            self.assertEqual([], list(bundle_root.iterdir()))
+            self.assertFalse(retrieval_bundle_matches(plan, bundle_root))
 
 
 if __name__ == "__main__":

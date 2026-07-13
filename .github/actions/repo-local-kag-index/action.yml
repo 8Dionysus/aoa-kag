@@ -60,6 +60,12 @@ runs:
         --incremental
         --history-ref "${{ steps.history.outputs.ref }}"
         --check
+    - name: Ensure repo-local validation dependencies
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        set -euo pipefail
+        python3 -c "import jsonschema" || python3 -m pip install --disable-pip-version-check jsonschema
     - name: Validate repo-local index family contract
       shell: bash
       working-directory: ${{ github.workspace }}

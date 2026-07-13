@@ -133,6 +133,69 @@ class RepoKagFederationTests(unittest.TestCase):
         self.assertEqual([], projection["unresolved_references"])
         self.assertEqual(usage_anchor["id"], projection["cross_repo_relations"][0]["to_id"])
 
+    def test_github_blob_ref_is_removed_before_target_path_matching(self) -> None:
+        with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
+            first = owner_bundle(
+                Path(first_tmp),
+                "aoa-first",
+                readme=(
+                    "# First\n\n"
+                    "See [usage](https://github.com/8Dionysus/aoa-second/"
+                    "blob/main/docs/guides/usage.md).\n"
+                ),
+            )
+            second_root = Path(second_tmp)
+            write_fixture(second_root)
+            (second_root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "aoa-second"}), encoding="utf-8"
+            )
+            colliding = second_root / "main" / "docs" / "guides"
+            colliding.mkdir(parents=True)
+            (colliding / "usage.md").write_text("# Wrong target\n", encoding="utf-8")
+            second_source = build_index(second_root)
+            second_family = build_repository_indexes(second_source, repo_root=second_root)
+            projection = RepoKagFederation(
+                {
+                    "aoa-first": first,
+                    "aoa-second": (second_source, second_family),
+                }
+            ).projection()
+
+        intended = next(
+            entry
+            for entry in second_family["artifact"]["entries"]
+            if entry["path"] == "docs/guides/usage.md"
+        )
+        self.assertEqual(1, len(projection["cross_repo_relations"]))
+        self.assertEqual(
+            intended["anchor_id"],
+            projection["cross_repo_relations"][0]["to_id"],
+        )
+
+    def test_federation_resolves_directory_target_to_directory_entity(self) -> None:
+        with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
+            first = owner_bundle(
+                Path(first_tmp),
+                "aoa-first",
+                readme="# First\n\nSee [docs](repo://aoa-second/docs).\n",
+            )
+            second = owner_bundle(Path(second_tmp), "aoa-second")
+            projection = RepoKagFederation(
+                {"aoa-first": first, "aoa-second": second}
+            ).projection()
+
+        docs_entity = next(
+            entry
+            for entry in second[1]["entity"]["entries"]
+            if entry["semantic_key"] == "directory:docs"
+        )
+        self.assertEqual([], projection["unresolved_references"])
+        self.assertEqual(1, len(projection["cross_repo_relations"]))
+        self.assertEqual(
+            docs_entity["id"],
+            projection["cross_repo_relations"][0]["to_id"],
+        )
+
     def test_federated_graph_query_crosses_owner_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
             first = owner_bundle(
