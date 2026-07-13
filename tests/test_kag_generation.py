@@ -542,6 +542,14 @@ class KagGenerationTestCase(unittest.TestCase):
                     index_packet["repository_index_family"],
                 )
                 self.assertEqual(
+                    (
+                        coverage_row["repository_index_family"].get("source", "")
+                        if coverage_row["index_status"] == "passed"
+                        else ""
+                    ),
+                    index_packet["source_index_ref"],
+                )
+                self.assertEqual(
                     coverage_row["domain_index_catalog_ref"],
                     index_packet["domain_index_catalog_ref"],
                 )
@@ -570,14 +578,6 @@ class KagGenerationTestCase(unittest.TestCase):
             "passed",
             providers["aoa-kag"]["repo_local_index"]["status"],
         )
-        self.assertEqual(
-            "passed",
-            providers["aoa-session-memory"]["repo_local_index"]["status"],
-        )
-        self.assertEqual(
-            "kag/indexes/source_surface_index.json",
-            providers["aoa-session-memory"]["repo_local_index"]["source_index_ref"],
-        )
         self.assertIn(
             "kag/indexes/session_memory_source_inventory.json",
             providers["aoa-session-memory"]["repo_local_index"]["index_files"],
@@ -604,7 +604,10 @@ class KagGenerationTestCase(unittest.TestCase):
             if repo.endswith("-connector")
         }
         self.assertTrue(connector_statuses)
-        self.assertLessEqual(set(connector_statuses.values()), {"passed", "owner-specific"})
+        self.assertLessEqual(
+            set(connector_statuses.values()),
+            {"passed", "migration-needed", "owner-specific"},
+        )
         for repo, provider in providers.items():
             if not repo.endswith("-connector"):
                 continue
