@@ -46,7 +46,11 @@ def load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def write_repository_index_family(owner_root: Path) -> dict[str, object]:
+def write_repository_index_family(
+    owner_root: Path,
+    *,
+    history_ref: str | None = None,
+) -> dict[str, object]:
     source_path = Path("kag/indexes/source_surface_index.json")
     source_index = build_index(owner_root, output=source_path)
     index_root = owner_root / source_path.parent
@@ -56,6 +60,8 @@ def write_repository_index_family(owner_root: Path) -> dict[str, object]:
         source_index,
         source_index_path=source_path,
         repo_root=owner_root,
+        history_ref=history_ref,
+        event_history_ref=history_ref,
     ).items():
         (index_root / REPOSITORY_INDEX_FILENAMES[index_kind]).write_text(
             normalized_json(payload),
@@ -1172,6 +1178,50 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             {"source": "kag/indexes/source_surface_index.json"},
             owner["repository_index_family"],
         )
+
+    def test_coverage_recovers_landed_snapshot_history_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo"
+            root.mkdir()
+            subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "Base"], cwd=root, check=True, capture_output=True)
+            base = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(["git", "switch", "-c", "feature"], cwd=root, check=True, capture_output=True)
+            (root / "SOURCE.md").write_text("# Source\n", encoding="utf-8")
+            subprocess.run(["git", "add", "SOURCE.md"], cwd=root, check=True)
+            write_repository_index_family(root, history_ref=base)
+            subprocess.run(["git", "add", "kag"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "Feature"], cwd=root, check=True, capture_output=True)
+            tree = subprocess.run(
+                ["git", "rev-parse", "HEAD^{tree}"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            squash = subprocess.run(
+                ["git", "commit-tree", tree, "-p", base],
+                cwd=root,
+                input="Landed feature\n",
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(["git", "switch", "--detach", squash], cwd=root, check=True, capture_output=True)
+
+            status, _ = coverage_generation.index_status(root)
+
+        self.assertEqual("passed", status)
 
     def test_coverage_rejects_index_with_wrong_repo_identity(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

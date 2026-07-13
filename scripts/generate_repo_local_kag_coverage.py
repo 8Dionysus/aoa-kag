@@ -322,14 +322,50 @@ def repository_index_family_refs(relative_files: Sequence[str]) -> dict[str, str
     }
 
 
+def repository_event_history_ref(owner_root: Path) -> str | None:
+    event_index = owner_root / "kag" / "indexes" / REPOSITORY_INDEX_FILENAMES["event"]
+    try:
+        payload = json.loads(event_index.read_text(encoding="utf-8"))
+        entries = payload.get("entries")
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
+        return None
+    if not isinstance(entries, list):
+        return None
+    published_refs = {
+        str(evidence["ref"])
+        for entry in entries
+        if isinstance(entry, dict) and entry.get("event_kind") == "git_commit"
+        for evidence in entry.get("evidence_refs", [])
+        if isinstance(evidence, dict)
+        and evidence.get("kind") == "git_commit"
+        and isinstance(evidence.get("ref"), str)
+    }
+    if not published_refs:
+        return None
+    try:
+        ancestry = subprocess.run(
+            ("git", "rev-list", "--first-parent", "HEAD"),
+            cwd=owner_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    return next((ref for ref in ancestry if ref in published_refs), None)
+
+
 def repository_index_family_matches_owner(
     owner_root: Path,
     source_index: dict[str, Any],
 ) -> bool:
+    history_ref = repository_event_history_ref(owner_root)
     expected = build_repository_indexes(
         source_index,
         source_index_path=SOURCE_SURFACE_INDEX_REL,
         repo_root=owner_root,
+        history_ref=history_ref,
+        event_history_ref=history_ref,
     )
     for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
         path = owner_root / "kag" / "indexes" / filename

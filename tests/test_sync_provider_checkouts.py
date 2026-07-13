@@ -198,8 +198,9 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
             }
 
             with patch.object(sync_provider_checkouts, "checkout_path", return_value=target):
-                with patch.object(sync_provider_checkouts, "run") as run:
-                    sync_provider_checkouts.sync_checkout(entry, repo_root=Path(temp_dir))
+                with patch.object(sync_provider_checkouts, "is_shallow_checkout", return_value=False):
+                    with patch.object(sync_provider_checkouts, "run") as run:
+                        sync_provider_checkouts.sync_checkout(entry, repo_root=Path(temp_dir))
 
             self.assertIn(call(("git", "clean", "-ffdx"), cwd=target), run.call_args_list)
             self.assertLess(
@@ -216,7 +217,7 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
                     )
                 ),
                 run.call_args_list.index(
-                    call(("git", "fetch", "--depth", "1", "origin", "abc123"), cwd=target)
+                    call(("git", "fetch", "--no-tags", "origin", "abc123"), cwd=target)
                 ),
             )
             self.assertLess(
@@ -229,6 +230,44 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
                 call(("git", "checkout", "--force", "--detach", "abc123"), cwd=target),
                 run.call_args_list,
             )
+
+    def test_sync_checkout_unshallows_existing_provider(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / ".deps" / "aoa-demo"
+            (target / ".git").mkdir(parents=True)
+            entry = {
+                "repo": "aoa-demo",
+                "github_repository": "8Dionysus/aoa-demo",
+                "checkout_path": ".deps/aoa-demo",
+                "pinned_ref": "abc123",
+            }
+
+            with patch.object(sync_provider_checkouts, "checkout_path", return_value=target):
+                with patch.object(sync_provider_checkouts, "is_shallow_checkout", return_value=True):
+                    with patch.object(sync_provider_checkouts, "run") as run:
+                        sync_provider_checkouts.sync_checkout(entry, repo_root=Path(temp_dir))
+
+        self.assertIn(
+            call(("git", "fetch", "--no-tags", "--prune", "--unshallow", "origin"), cwd=target),
+            run.call_args_list,
+        )
+
+    def test_check_checkout_rejects_shallow_provider_history(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / ".deps" / "aoa-demo"
+            (target / ".git").mkdir(parents=True)
+            entry = {
+                "repo": "aoa-demo",
+                "checkout_path": ".deps/aoa-demo",
+                "pinned_ref": "abc123",
+            }
+
+            with patch.object(sync_provider_checkouts, "checkout_path", return_value=target):
+                with patch.object(sync_provider_checkouts, "current_head", return_value="abc123"):
+                    with patch.object(sync_provider_checkouts, "checkout_status", return_value=""):
+                        with patch.object(sync_provider_checkouts, "is_shallow_checkout", return_value=True):
+                            with self.assertRaisesRegex(RuntimeError, "complete Git history"):
+                                sync_provider_checkouts.check_checkout(entry, repo_root=Path(temp_dir))
 
     def test_checkout_path_stays_under_deps(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

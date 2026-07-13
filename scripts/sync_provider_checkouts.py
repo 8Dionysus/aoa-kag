@@ -68,6 +68,17 @@ def github_url(entry: dict[str, object]) -> str:
     return f"https://github.com/{entry['github_repository']}.git"
 
 
+def is_shallow_checkout(target: Path) -> bool:
+    result = subprocess.run(
+        ("git", "rev-parse", "--is-shallow-repository"),
+        cwd=target,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip() == "true"
+
+
 def sync_checkout(entry: dict[str, object], *, repo_root: Path = REPO_ROOT) -> Path:
     target = checkout_path(entry, repo_root=repo_root)
     pin = str(entry["pinned_ref"])
@@ -80,7 +91,9 @@ def sync_checkout(entry: dict[str, object], *, repo_root: Path = REPO_ROOT) -> P
     run(("git", "remote", "set-url", "origin", github_url(entry)), cwd=target)
     run(("git", "reset", "--hard"), cwd=target)
     run(("git", "clean", "-ffdx"), cwd=target)
-    run(("git", "fetch", "--depth", "1", "origin", pin), cwd=target)
+    if is_shallow_checkout(target):
+        run(("git", "fetch", "--no-tags", "--prune", "--unshallow", "origin"), cwd=target)
+    run(("git", "fetch", "--no-tags", "origin", pin), cwd=target)
     run(("git", "checkout", "--force", "--detach", pin), cwd=target)
     run(("git", "reset", "--hard", pin), cwd=target)
     run(("git", "clean", "-ffdx"), cwd=target)
@@ -120,6 +133,8 @@ def check_checkout(entry: dict[str, object], *, repo_root: Path = REPO_ROOT) -> 
     status = checkout_status(target)
     if status:
         raise RuntimeError(f"{repo} checkout must be clean before --check")
+    if is_shallow_checkout(target):
+        raise RuntimeError(f"{repo} checkout must keep complete Git history")
     return target
 
 
