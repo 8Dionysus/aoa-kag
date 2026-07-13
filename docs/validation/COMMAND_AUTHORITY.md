@@ -20,6 +20,7 @@
 | `scripts/build_repo_local_kag_federation.py` | validated owner-qualified federation projection builder |
 | `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
 | `.github/actions/repo-local-kag-index/action.yml` | owner-callable full, incremental, and contract check using complete repo-scoped stable-head Git history across the full owner validation job |
+| `.github/workflows/repo-validation.yml`, `.github/workflows/compatibility-canary.yml` | exact provider checkouts with complete Git history for repository-event parity in coverage and canary lanes |
 
 ## Lane Entries
 

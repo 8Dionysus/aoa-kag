@@ -279,6 +279,14 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             expected_sibling_providers,
             set(CANARY_PROVIDER_ROOT_ENVS),
         )
+        self.assertEqual(
+            len(expected_sibling_providers),
+            repo_validation.count("fetch-depth: 0"),
+        )
+        self.assertEqual(
+            len(expected_sibling_providers),
+            canary.count("fetch-depth: 0"),
+        )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):
                 self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", repo_validation)
