@@ -1,10 +1,10 @@
 {
   "coverage_summary": {
-    "migration_needed": 23,
+    "migration_needed": 0,
     "missing": 0,
     "owner_count": 24,
     "owner_specific": 0,
-    "passed": 1
+    "passed": 24
   },
   "owners": [
     {
@@ -88,7 +88,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/8Dionysus/kag",
       "owner_type": "workspace",
       "repo": "8Dionysus",
@@ -189,7 +189,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/ATM10-Agent/kag",
       "owner_type": "workspace",
       "repo": "ATM10-Agent",
@@ -309,7 +309,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/Agents-of-Abyss/kag",
       "owner_type": "center",
       "repo": "Agents-of-Abyss",
@@ -415,7 +415,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/Dionysus/kag",
       "owner_type": "workspace",
       "repo": "Dionysus",
@@ -537,7 +537,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/Tree-of-Sophia/kag",
       "owner_type": "organ",
       "repo": "Tree-of-Sophia",
@@ -655,7 +655,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-agents/kag",
       "owner_type": "organ",
       "repo": "aoa-agents",
@@ -675,10 +675,10 @@
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 368,
+            "config": 370,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 1167,
+            "document": 1169,
             "generated_readmodel": 32,
             "index": 1,
             "license": 1,
@@ -692,29 +692,29 @@
             "script": 39,
             "security": 1,
             "source_code": 227,
-            "test": 86,
-            "validator": 17
+            "test": 87,
+            "validator": 18
           },
           "command_role": {
             "builder": 17,
             "lane_entrypoint": 2,
-            "none": 2007,
+            "none": 2011,
             "script": 20,
-            "test": 86,
-            "validator": 17
+            "test": 87,
+            "validator": 18
           },
           "document_role": {
-            "agents": 88,
+            "agents": 89,
             "audit": 3,
             "changelog": 1,
             "decision": 251,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 229,
-            "none": 975,
+            "none": 979,
             "parts": 19,
             "provenance": 19,
-            "readme": 187,
+            "readme": 188,
             "report": 2,
             "roadmap": 1,
             "testing_doc": 1,
@@ -725,20 +725,20 @@
             "legacy": 118,
             "mechanic_package": 101,
             "mechanic_part": 184,
-            "none": 1322,
+            "none": 1327,
             "part_doc": 279,
             "part_schema": 86,
             "part_script": 28,
-            "part_test": 31
+            "part_test": 32
           },
           "primary_kind": {
             "artifact": 87,
-            "command": 142,
-            "document": 1174,
-            "surface": 746
+            "command": 144,
+            "document": 1176,
+            "surface": 748
           },
           "surface_state": {
-            "authored_source": 1992,
+            "authored_source": 1998,
             "generated_readmodel": 38,
             "legacy": 118,
             "receipt": 1
@@ -756,14 +756,14 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 369,
-        "documents": 1174,
+        "commands": 371,
+        "documents": 1176,
         "generated": 28,
-        "mechanics": 827,
+        "mechanics": 828,
         "schemas": 127,
-        "scripts": 282,
-        "tests": 87,
-        "validators": 238
+        "scripts": 283,
+        "tests": 88,
+        "validators": 239
       },
       "domain_index_catalog_ref": "",
       "index_files": [
@@ -776,7 +776,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-evals/kag",
       "owner_type": "organ",
       "repo": "aoa-evals",
@@ -914,10 +914,10 @@
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 259,
+            "config": 261,
             "dependency_manifest": 1,
             "directory_marker": 12,
-            "document": 1027,
+            "document": 1029,
             "generated_readmodel": 47,
             "index": 1,
             "license": 1,
@@ -932,18 +932,18 @@
             "security": 1,
             "source_code": 67,
             "test": 87,
-            "validator": 34
+            "validator": 35
           },
           "command_role": {
             "builder": 29,
             "lane_entrypoint": 3,
-            "none": 1622,
+            "none": 1626,
             "script": 8,
             "test": 87,
-            "validator": 34
+            "validator": 35
           },
           "document_role": {
-            "agents": 117,
+            "agents": 118,
             "audit": 8,
             "boundary": 1,
             "changelog": 1,
@@ -952,10 +952,10 @@
             "design_agents": 1,
             "handoff": 7,
             "mechanics_doc": 432,
-            "none": 748,
+            "none": 751,
             "parts": 15,
             "provenance": 15,
-            "readme": 160,
+            "readme": 161,
             "release_notes": 4,
             "roadmap": 16,
             "testing_doc": 1,
@@ -966,7 +966,7 @@
             "legacy": 243,
             "mechanic_package": 300,
             "mechanic_part": 125,
-            "none": 770,
+            "none": 775,
             "part_contract": 54,
             "part_doc": 138,
             "part_schema": 71,
@@ -975,12 +975,12 @@
           },
           "primary_kind": {
             "artifact": 113,
-            "command": 161,
-            "document": 1035,
-            "surface": 474
+            "command": 162,
+            "document": 1037,
+            "surface": 476
           },
           "surface_state": {
-            "authored_source": 1484,
+            "authored_source": 1489,
             "generated_readmodel": 51,
             "legacy": 243,
             "receipt": 5
@@ -998,14 +998,14 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 247,
-        "documents": 1035,
+        "commands": 248,
+        "documents": 1037,
         "generated": 46,
         "mechanics": 1013,
         "schemas": 116,
-        "scripts": 154,
+        "scripts": 155,
         "tests": 93,
-        "validators": 78
+        "validators": 79
       },
       "domain_index_catalog_ref": "",
       "index_files": [
@@ -1018,7 +1018,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-memo/kag",
       "owner_type": "organ",
       "repo": "aoa-memo",
@@ -1135,7 +1135,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-playbooks/kag",
       "owner_type": "organ",
       "repo": "aoa-playbooks",
@@ -1251,7 +1251,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-routing/kag",
       "owner_type": "organ",
       "repo": "aoa-routing",
@@ -1370,7 +1370,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-sdk/kag",
       "owner_type": "organ",
       "repo": "aoa-sdk",
@@ -1390,11 +1390,11 @@
         "counts": {
           "artifact_kind": {
             "asset": 114,
-            "config": 328,
+            "config": 362,
             "data_table": 2,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 1046,
+            "document": 1048,
             "generated_readmodel": 84,
             "index": 1,
             "license": 1,
@@ -1403,7 +1403,7 @@
             "projection": 1,
             "receipt": 4,
             "record_log": 4,
-            "schema": 64,
+            "schema": 66,
             "script": 68,
             "security": 1,
             "source_code": 63,
@@ -1413,7 +1413,7 @@
           "command_role": {
             "builder": 13,
             "lane_entrypoint": 4,
-            "none": 1727,
+            "none": 1765,
             "script": 51,
             "test": 82,
             "validator": 12
@@ -1427,7 +1427,7 @@
             "design_agents": 1,
             "handoff": 6,
             "mechanics_doc": 117,
-            "none": 835,
+            "none": 871,
             "parts": 12,
             "provenance": 12,
             "readme": 104,
@@ -1435,14 +1435,14 @@
             "report": 5,
             "roadmap": 13,
             "testing_doc": 1,
-            "unknown_document": 641,
+            "unknown_document": 643,
             "validation_doc": 3
           },
           "mechanics_role": {
             "legacy": 39,
             "mechanic_package": 260,
             "mechanic_part": 8,
-            "none": 1536,
+            "none": 1574,
             "part_doc": 37,
             "part_schema": 3,
             "part_script": 4,
@@ -1451,11 +1451,11 @@
           "primary_kind": {
             "artifact": 210,
             "command": 162,
-            "document": 1054,
-            "surface": 463
+            "document": 1056,
+            "surface": 499
           },
           "surface_state": {
-            "authored_source": 1736,
+            "authored_source": 1774,
             "generated_readmodel": 110,
             "legacy": 39,
             "receipt": 4
@@ -1474,10 +1474,10 @@
       },
       "coverage": {
         "commands": 227,
-        "documents": 1054,
+        "documents": 1056,
         "generated": 99,
         "mechanics": 353,
-        "schemas": 66,
+        "schemas": 68,
         "scripts": 138,
         "tests": 89,
         "validators": 30
@@ -1493,7 +1493,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-skills/kag",
       "owner_type": "organ",
       "repo": "aoa-skills",
@@ -1609,7 +1609,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-stats/kag",
       "owner_type": "organ",
       "repo": "aoa-stats",
@@ -1731,7 +1731,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-techniques/kag",
       "owner_type": "organ",
       "repo": "aoa-techniques",
@@ -1750,7 +1750,7 @@
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 181,
+            "config": 182,
             "dependency_manifest": 11,
             "directory_marker": 4,
             "document": 518,
@@ -1758,13 +1758,13 @@
             "index": 1,
             "license": 1,
             "manifest": 11,
-            "mechanics_surface": 14,
+            "mechanics_surface": 15,
             "owner_metadata": 3,
             "package_manifest": 1,
             "projection": 1,
             "receipt": 6,
             "schema": 70,
-            "script": 137,
+            "script": 139,
             "security": 2,
             "service_unit": 45,
             "source_code": 103,
@@ -1776,8 +1776,8 @@
           "command_role": {
             "builder": 6,
             "lane_entrypoint": 7,
-            "none": 1043,
-            "script": 124,
+            "none": 1045,
+            "script": 126,
             "test": 92,
             "validator": 18
           },
@@ -1789,7 +1789,7 @@
             "design": 11,
             "design_agents": 1,
             "mechanics_doc": 138,
-            "none": 763,
+            "none": 767,
             "parts": 10,
             "provenance": 10,
             "readme": 154,
@@ -1801,8 +1801,8 @@
           "mechanics_role": {
             "legacy": 136,
             "mechanic_package": 83,
-            "mechanic_part": 129,
-            "none": 741,
+            "mechanic_part": 132,
+            "none": 742,
             "part_doc": 126,
             "part_schema": 38,
             "part_script": 1,
@@ -1810,12 +1810,12 @@
           },
           "primary_kind": {
             "artifact": 135,
-            "command": 247,
+            "command": 249,
             "document": 527,
-            "surface": 381
+            "surface": 383
           },
           "surface_state": {
-            "authored_source": 1123,
+            "authored_source": 1127,
             "generated_readmodel": 22,
             "legacy": 139,
             "receipt": 6
@@ -1836,7 +1836,7 @@
         "commands": 168,
         "documents": 527,
         "generated": 11,
-        "mechanics": 549,
+        "mechanics": 552,
         "schemas": 70,
         "scripts": 63,
         "tests": 105,
@@ -1853,7 +1853,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/home/dionysus/src/abyss-stack/kag",
       "owner_type": "runtime_source",
       "repo": "abyss-stack",
@@ -1873,7 +1873,7 @@
         "counts": {
           "artifact_kind": {
             "config": 31,
-            "document": 189,
+            "document": 190,
             "generated_readmodel": 2,
             "index": 1,
             "license": 1,
@@ -1885,25 +1885,25 @@
             "script": 38,
             "security": 1,
             "service_unit": 59,
-            "source_code": 112,
-            "test": 137
+            "source_code": 114,
+            "test": 141
           },
           "command_role": {
             "builder": 2,
             "lane_entrypoint": 2,
-            "none": 421,
+            "none": 424,
             "script": 34,
-            "test": 137
+            "test": 141
           },
           "document_role": {
             "agents": 57,
             "boundary": 1,
             "changelog": 2,
-            "decision": 21,
+            "decision": 22,
             "design": 2,
             "design_agents": 2,
             "mechanics_doc": 16,
-            "none": 406,
+            "none": 412,
             "parts": 8,
             "provenance": 8,
             "readme": 48,
@@ -1915,17 +1915,17 @@
           },
           "mechanics_role": {
             "mechanic_package": 66,
-            "none": 522,
+            "none": 529,
             "part_doc": 8
           },
           "primary_kind": {
             "artifact": 66,
-            "command": 175,
-            "document": 190,
-            "surface": 165
+            "command": 179,
+            "document": 191,
+            "surface": 167
           },
           "surface_state": {
-            "authored_source": 589,
+            "authored_source": 596,
             "generated_readmodel": 6,
             "receipt": 1
           }
@@ -1942,13 +1942,13 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 158,
-        "documents": 190,
+        "commands": 162,
+        "documents": 191,
         "generated": 4,
         "mechanics": 74,
         "schemas": 10,
         "scripts": 20,
-        "tests": 138,
+        "tests": 142,
         "validators": 17
       },
       "domain_index_catalog_ref": "",
@@ -1962,7 +1962,7 @@
         "kag/indexes/repo_relation_index.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/home/dionysus/src/abyss-machine/kag",
       "owner_type": "runtime_source",
       "repo": "abyss-machine",
@@ -2055,7 +2055,7 @@
         "kag/indexes/session_memory_source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/bundles/aoa-session-memory/kag",
       "owner_type": "bundle_provider",
       "repo": "aoa-session-memory",
@@ -2156,7 +2156,7 @@
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-4pda-connector/kag",
       "owner_type": "connector",
       "repo": "aoa-4pda-connector",
@@ -2253,7 +2253,7 @@
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-course-connector/kag",
       "owner_type": "connector",
       "repo": "aoa-course-connector",
@@ -2348,7 +2348,7 @@
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-discord-connector/kag",
       "owner_type": "connector",
       "repo": "aoa-discord-connector",
@@ -2443,7 +2443,7 @@
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector/kag",
       "owner_type": "connector",
       "repo": "aoa-stackoverflow-connector",
@@ -2538,7 +2538,7 @@
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-telegram-connector/kag",
       "owner_type": "connector",
       "repo": "aoa-telegram-connector",
@@ -2634,7 +2634,7 @@
         "kag/indexes/source_inventory.json",
         "kag/indexes/source_surface_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-xda-connector/kag",
       "owner_type": "connector",
       "repo": "aoa-xda-connector",
