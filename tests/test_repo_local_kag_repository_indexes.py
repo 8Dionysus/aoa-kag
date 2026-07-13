@@ -129,18 +129,22 @@ def write_fixture(root: Path) -> None:
 
 class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
     def test_environment_history_ref_is_scoped_to_its_owner(self) -> None:
-        with mock.patch.dict(
-            "os.environ",
-            {
-                "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "another-owner",
-                "AOA_REPO_LOCAL_KAG_HISTORY_REF": "stable-head",
-            },
+        with mock.patch(
+            "scripts.generate_repo_local_kag_index.local_default_history_ref",
+            return_value=None,
         ):
-            self.assertIsNone(effective_history_ref(REPO_ROOT))
-            self.assertEqual(
-                "explicit-head",
-                effective_history_ref(REPO_ROOT, "explicit-head"),
-            )
+            with mock.patch.dict(
+                "os.environ",
+                {
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "another-owner",
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REF": "stable-head",
+                },
+            ):
+                self.assertIsNone(effective_history_ref(REPO_ROOT))
+                self.assertEqual(
+                    "explicit-head",
+                    effective_history_ref(REPO_ROOT, "explicit-head"),
+                )
 
     def test_environment_event_history_ref_is_scoped_to_its_owner(self) -> None:
         with mock.patch.dict(

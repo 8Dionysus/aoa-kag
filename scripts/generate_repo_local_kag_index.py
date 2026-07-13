@@ -328,7 +328,7 @@ def effective_history_ref(repo_root: Path, history_ref: str | None = None) -> st
     env_repo = os.environ.get(HISTORY_REPO_ENV, "").strip()
     if env_ref and env_repo == repo_name(repo_root):
         return env_ref
-    return None
+    return local_default_history_ref(repo_root)
 
 
 def effective_event_history_ref(
@@ -2152,8 +2152,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     output = Path(args.output)
     output_path = repo_root / output
     history_ref = effective_history_ref(repo_root, args.history_ref)
-    if history_ref is None:
-        history_ref = local_default_history_ref(repo_root)
     event_history_ref = effective_event_history_ref(
         repo_root,
         args.event_history_ref,
