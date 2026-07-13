@@ -367,6 +367,7 @@ def repository_index_family_matches_owner(
         history_ref=history_ref,
         event_history_ref=history_ref,
     )
+    actual: dict[str, dict[str, Any]] = {}
     for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
         path = owner_root / "kag" / "indexes" / filename
         try:
@@ -375,6 +376,26 @@ def repository_index_family_matches_owner(
             return False
         if payload != expected[index_kind]:
             return False
+        actual[index_kind] = payload
+    try:
+        try:
+            from scripts.validators.common import ValidationError
+            from scripts.validators.repo_local_kag_index import (
+                validate_repo_local_kag_repository_index_family,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from validators.common import ValidationError  # type: ignore
+            from validators.repo_local_kag_index import (  # type: ignore
+                validate_repo_local_kag_repository_index_family,
+            )
+
+        validate_repo_local_kag_repository_index_family(
+            actual,
+            source_payload=source_index,
+            label=f"{owner_root.name} coverage family",
+        )
+    except ValidationError:
+        return False
     return True
 
 

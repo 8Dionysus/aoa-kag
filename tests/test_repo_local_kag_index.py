@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
@@ -1178,6 +1179,51 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             {"source": "kag/indexes/source_surface_index.json"},
             owner["repository_index_family"],
         )
+
+    def test_coverage_rejects_reproducible_family_with_dangling_event_object(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo"
+            (root / "scripts").mkdir(parents=True)
+            (root / ".github" / "workflows").mkdir(parents=True)
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            (root / "scripts" / "run.py").write_text(
+                "print('run')\n",
+                encoding="utf-8",
+            )
+            (root / ".github" / "workflows" / "validate.yml").write_text(
+                "name: Validate\n",
+                encoding="utf-8",
+            )
+            source_index = write_repository_index_family(root)
+            family = {
+                index_kind: load_json(
+                    root / "kag" / "indexes" / filename
+                )
+                for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+            }
+            event = family["event"]
+            event["entries"][0]["object_ids"] = [
+                "aoa:aoa-demo:artifact:dangling"
+            ]
+            event["index_identity"]["content_digest"] = payload_digest(event)
+            (root / "kag" / "indexes" / REPOSITORY_INDEX_FILENAMES["event"]).write_text(
+                normalized_json(event),
+                encoding="utf-8",
+            )
+
+            with patch.object(
+                coverage_generation,
+                "build_repository_indexes",
+                return_value=family,
+            ):
+                self.assertFalse(
+                    coverage_generation.repository_index_family_matches_owner(
+                        root,
+                        source_index,
+                    )
+                )
 
     def test_coverage_recovers_landed_snapshot_history_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
