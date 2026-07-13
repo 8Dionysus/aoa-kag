@@ -27,10 +27,13 @@ NODE_CLASSES = ("artifact", "anchor", "entity", "event", "assertion")
 
 
 def _digest(payload: dict[str, Any]) -> str:
-    material = copy.deepcopy(payload)
-    material["federation_identity"]["content_digest"] = ZERO_DIGEST
-    encoded = json.dumps(material, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    if payload["federation_identity"]["content_digest"] != ZERO_DIGEST:
+        raise ValueError("federation content digest must be zero while hashing")
+    digest = hashlib.sha256()
+    encoder = json.JSONEncoder(sort_keys=True, separators=(",", ":"))
+    for chunk in encoder.iterencode(payload):
+        digest.update(chunk.encode("utf-8"))
+    return digest.hexdigest()
 
 
 def git_ref_names(repo_root: Path) -> tuple[str, ...]:

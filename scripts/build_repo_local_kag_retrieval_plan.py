@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import filecmp
 import json
+import os
 import sys
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 try:
     from scripts.build_repo_local_kag_federation import load_owner_bundle, read_json
@@ -62,6 +64,38 @@ def _embedding_profile(path: Path) -> dict[str, Any]:
     return profile
 
 
+def _write_or_compare_json(
+    path: Path,
+    payload: Mapping[str, Any],
+    *,
+    pretty: bool,
+    check: bool,
+) -> bool:
+    if check and not path.is_file():
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    try:
+        with temporary.open("w", encoding="utf-8") as handle:
+            json.dump(
+                payload,
+                handle,
+                ensure_ascii=False,
+                indent=2 if pretty else None,
+                sort_keys=True,
+                separators=None if pretty else (",", ":"),
+            )
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        if check:
+            return filecmp.cmp(path, temporary, shallow=False)
+        os.replace(temporary, path)
+        return True
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     roots = configured_provider_roots(
@@ -105,21 +139,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.output != "-":
         output = Path(args.output).resolve()
-        rendered = json.dumps(
+        matched = _write_or_compare_json(
+            output,
             plan,
-            ensure_ascii=False,
-            indent=2 if args.pretty else None,
-            sort_keys=True,
-            separators=None if args.pretty else (",", ":"),
-        ) + "\n"
-        if args.check and (
-            not output.is_file() or output.read_text(encoding="utf-8") != rendered
-        ):
+            pretty=args.pretty,
+            check=args.check,
+        )
+        if args.check and not matched:
             print(f"[repo-local-kag-retrieval-plan] drift in {output}", file=sys.stderr)
             failed = True
         elif not args.check:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(rendered, encoding="utf-8")
             print(f"[repo-local-kag-retrieval-plan] wrote {output}")
     if args.bundle_dir is not None:
         bundle_dir = args.bundle_dir.resolve()
