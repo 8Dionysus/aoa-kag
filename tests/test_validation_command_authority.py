@@ -279,6 +279,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("event-history-ref:", action)
         self.assertIn("working-directory: ${{ inputs.repo-root }}", action)
         self.assertIn("PULL_REQUEST_BASE_SHA", action)
+        self.assertNotIn("PULL_REQUEST_HEAD_SHA", action)
         self.assertIn("--unshallow", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REPO", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REF", action)

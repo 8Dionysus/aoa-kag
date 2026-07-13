@@ -9,7 +9,7 @@ inputs:
     description: Source surface index path relative to the repository root; sibling repository indexes share its directory.
     default: kag/indexes/source_surface_index.json
   history-ref:
-    description: Stable Git ref used for source lineage; pull requests default to the head SHA.
+    description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
     default: ""
   event-history-ref:
     description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
@@ -26,10 +26,9 @@ runs:
         INPUT_HISTORY_REF: ${{ inputs.history-ref }}
         INPUT_EVENT_HISTORY_REF: ${{ inputs.event-history-ref }}
         PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         set -euo pipefail
-        history_ref="${INPUT_HISTORY_REF:-${PULL_REQUEST_HEAD_SHA:-HEAD}}"
+        history_ref="${INPUT_HISTORY_REF:-${PULL_REQUEST_BASE_SHA:-HEAD}}"
         event_history_ref="${INPUT_EVENT_HISTORY_REF:-${PULL_REQUEST_BASE_SHA:-$history_ref}}"
         if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
           if [[ "$history_ref" == "HEAD" ]]; then

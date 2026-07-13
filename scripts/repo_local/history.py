@@ -58,6 +58,13 @@ def _repository_snapshot_event(
     current_ids: dict[str, str],
     artifact_anchor_ids: dict[str, str],
 ) -> dict[str, Any]:
+    changes = [
+        {
+            **item,
+            "object_id": current_ids.get(item["path"], item["object_id"]),
+        }
+        for item in changes
+    ]
     ordered_changes = sorted(
         changes,
         key=lambda item: (

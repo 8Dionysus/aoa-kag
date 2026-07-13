@@ -785,13 +785,19 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 readme.read_text(encoding="utf-8") + "\nFeature one.\n",
                 encoding="utf-8",
             )
-            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            reused = root / "reused.txt"
+            reused.write_text("generation one\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md", "reused.txt"), cwd=root, check=True)
             subprocess.run(("git", "commit", "-qm", "feature one"), cwd=root, check=True)
+            reused.unlink()
+            subprocess.run(("git", "add", "-A"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "remove reused path"), cwd=root, check=True)
             readme.write_text(
                 readme.read_text(encoding="utf-8") + "Feature two.\n",
                 encoding="utf-8",
             )
-            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            reused.write_text("generation two\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md", "reused.txt"), cwd=root, check=True)
             subprocess.run(("git", "commit", "-qm", "feature two"), cwd=root, check=True)
             feature_sha = subprocess.run(
                 ("git", "rev-parse", "HEAD"),
@@ -800,11 +806,11 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             ).stdout.strip()
-            feature_source = build_index(root, history_ref=feature_sha)
+            feature_source = build_index(root, history_ref=base_sha)
             feature_family = build_repository_indexes(
                 feature_source,
                 repo_root=root,
-                history_ref=feature_sha,
+                history_ref=base_sha,
                 event_history_ref=base_sha,
             )
 
@@ -827,6 +833,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
 
         self.assertEqual(feature_source, squash_source)
         self.assertEqual(feature_family, squash_family)
+        feature_artifact_ids = {
+            entry["id"] for entry in feature_family["artifact"]["entries"]
+        }
+        snapshot = next(
+            event
+            for event in feature_family["event"]["entries"]
+            if event["event_kind"] == "repository_snapshot_change_set"
+        )
+        self.assertTrue(set(snapshot["object_ids"]).issubset(feature_artifact_ids))
 
     def test_relation_index_resolves_local_directory_reference(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
