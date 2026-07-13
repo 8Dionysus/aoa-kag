@@ -48,6 +48,7 @@ runs:
         repo_name="$(basename "$(git rev-parse --show-toplevel)")"
         printf 'AOA_REPO_LOCAL_KAG_HISTORY_REPO=%s\n' "$repo_name" >> "$GITHUB_ENV"
         printf 'AOA_REPO_LOCAL_KAG_HISTORY_REF=%s\n' "$history_ref" >> "$GITHUB_ENV"
+        printf 'AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF=%s\n' "$event_history_ref" >> "$GITHUB_ENV"
         printf 'ref=%s\n' "$history_ref" >> "$GITHUB_OUTPUT"
         printf 'event-ref=%s\n' "$event_history_ref" >> "$GITHUB_OUTPUT"
     - name: Check repo-local index family parity

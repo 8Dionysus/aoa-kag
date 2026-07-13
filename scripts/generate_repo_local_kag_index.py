@@ -74,6 +74,7 @@ GIT_INDEX_SOURCE_REF = "git-index-source-tree"
 FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
 HISTORY_REPO_ENV = "AOA_REPO_LOCAL_KAG_HISTORY_REPO"
 HISTORY_REF_ENV = "AOA_REPO_LOCAL_KAG_HISTORY_REF"
+EVENT_HISTORY_REF_ENV = "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
 REPO_LOCAL_GENERATOR_HELPER_PATHS = {
     Path("scripts/repo_local/history.py"),
@@ -329,6 +330,21 @@ def effective_history_ref(repo_root: Path, history_ref: str | None = None) -> st
     if env_ref and env_repo == repo_name(repo_root):
         return env_ref
     return None
+
+
+def effective_event_history_ref(
+    repo_root: Path,
+    event_history_ref: str | None = None,
+    *,
+    fallback: str | None = None,
+) -> str | None:
+    if event_history_ref:
+        return event_history_ref
+    env_ref = os.environ.get(EVENT_HISTORY_REF_ENV, "").strip()
+    env_repo = os.environ.get(HISTORY_REPO_ENV, "").strip()
+    if env_ref and env_repo == repo_name(repo_root):
+        return env_ref
+    return fallback
 
 
 def owner_type_for(name: str, repo_root: Path) -> str:
@@ -1916,8 +1932,14 @@ def build_repository_indexes(
     event_history_ref: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     if repo_root is not None:
-        history_ref = effective_history_ref(repo_root.resolve(), history_ref)
-    effective_event_history_ref = (
+        resolved_root = repo_root.resolve()
+        history_ref = effective_history_ref(resolved_root, history_ref)
+        event_history_ref = effective_event_history_ref(
+            resolved_root,
+            event_history_ref,
+            fallback=history_ref,
+        )
+    effective_event_ref = (
         event_history_ref if event_history_ref is not None else history_ref
     )
     records = [copy.deepcopy(record) for record in source_index["records"] if isinstance(record, dict)]
@@ -1962,7 +1984,7 @@ def build_repository_indexes(
         artifacts=artifacts,
         excluded_paths=family_paths,
         history_ref=history_ref,
-        event_history_ref=effective_event_history_ref,
+        event_history_ref=effective_event_ref,
     )
     assertions = project_assertion_entries(
         repo,

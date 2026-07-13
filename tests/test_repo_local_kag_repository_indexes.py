@@ -17,6 +17,7 @@ from scripts.generate_repo_local_kag_index import (
     build_index_incremental,
     build_repository_indexes,
     build_repository_indexes_incremental,
+    effective_event_history_ref,
     effective_history_ref,
     main,
     payload_digest,
@@ -138,6 +139,39 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             self.assertEqual(
                 "explicit-head",
                 effective_history_ref(REPO_ROOT, "explicit-head"),
+            )
+
+    def test_environment_event_history_ref_is_scoped_to_its_owner(self) -> None:
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "aoa-kag",
+                "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF": "stable-base",
+            },
+        ):
+            self.assertEqual(
+                "stable-base",
+                effective_event_history_ref(REPO_ROOT, fallback="stable-head"),
+            )
+            self.assertEqual(
+                "explicit-base",
+                effective_event_history_ref(
+                    REPO_ROOT,
+                    "explicit-base",
+                    fallback="stable-head",
+                ),
+            )
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "another-owner",
+                "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF": "foreign-base",
+            },
+        ):
+            self.assertEqual(
+                "stable-head",
+                effective_event_history_ref(REPO_ROOT, fallback="stable-head"),
             )
 
     def test_repository_index_family_matches_schema(self) -> None:

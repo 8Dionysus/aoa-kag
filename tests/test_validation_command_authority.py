@@ -282,6 +282,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("--unshallow", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REPO", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REF", action)
+        self.assertIn("AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF", action)
         self.assertIn('>> "$GITHUB_ENV"', action)
         self.assertIn('--history-ref "${{ steps.history.outputs.ref }}"', action)
         self.assertIn(
