@@ -10,7 +10,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
 
-from .federation import RepoKagFederation
+from .federation import RepoKagFederation, github_ref_names_by_repo
 from .identity import qualified_id
 
 
@@ -510,7 +510,10 @@ def build_federated_retrieval_plan(
 ) -> dict[str, Any]:
     if set(owner_roots) != set(bundles):
         raise ValueError("owner roots and bundle owners must match")
-    federation = RepoKagFederation(bundles).projection()
+    federation = RepoKagFederation(
+        bundles,
+        github_refs_by_repo=github_ref_names_by_repo(owner_roots),
+    ).projection()
     documents: list[dict[str, Any]] = []
     canonical_inputs: list[dict[str, Any]] = []
     for owner in sorted(bundles):

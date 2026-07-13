@@ -559,7 +559,10 @@ def relation_entries(
                     target_id = (
                         heading_by_path_fragment.get((target_path, fragment), "")
                         if fragment
-                        else artifact_anchor_by_path.get(target_path, "")
+                        else (
+                            artifact_anchor_by_path.get(target_path, "")
+                            or str(directory_entities.get(target_path, {}).get("id") or "")
+                        )
                     )
             evidence_anchor_id = str(anchor["id"])
             if not target_id or evidence_anchor_id not in anchor_by_id:

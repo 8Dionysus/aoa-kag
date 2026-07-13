@@ -3,7 +3,9 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import subprocess
 from collections import Counter, defaultdict, deque
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 from urllib.parse import unquote, urlsplit
 
@@ -31,10 +33,55 @@ def _digest(payload: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def git_ref_names(repo_root: Path) -> tuple[str, ...]:
+    try:
+        output = subprocess.run(
+            (
+                "git",
+                "for-each-ref",
+                "--format=%(refname)",
+                "refs/heads",
+                "refs/remotes",
+                "refs/tags",
+            ),
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return ()
+    names: set[str] = set()
+    for ref in output.splitlines():
+        if ref.startswith("refs/heads/"):
+            name = ref.removeprefix("refs/heads/")
+        elif ref.startswith("refs/tags/"):
+            name = ref.removeprefix("refs/tags/")
+        elif ref.startswith("refs/remotes/"):
+            remote_ref = ref.removeprefix("refs/remotes/")
+            _, separator, name = remote_ref.partition("/")
+            if not separator or name == "HEAD":
+                continue
+        else:
+            continue
+        if name:
+            names.add(name)
+    return tuple(sorted(names))
+
+
+def github_ref_names_by_repo(owner_roots: Mapping[str, Path]) -> dict[str, tuple[str, ...]]:
+    return {
+        owner: git_ref_names(Path(repo_root))
+        for owner, repo_root in sorted(owner_roots.items())
+    }
+
+
 class RepoKagFederation:
     def __init__(
         self,
         bundles: Mapping[str, tuple[dict[str, Any], dict[str, dict[str, Any]]]],
+        *,
+        github_refs_by_repo: Mapping[str, Sequence[str]] | None = None,
     ) -> None:
         if not bundles:
             raise ValueError("federation requires at least one owner bundle")
@@ -48,6 +95,21 @@ class RepoKagFederation:
         self._root_entities: dict[str, dict[str, Any]] = {}
         self._file_entities: dict[tuple[str, str], dict[str, Any]] = {}
         self._entity_by_anchor: dict[str, dict[str, Any]] = {}
+        unknown_ref_owners = set(github_refs_by_repo or ()) - set(bundles)
+        if unknown_ref_owners:
+            raise ValueError(
+                "GitHub refs declare unknown federation owners: "
+                + ", ".join(sorted(unknown_ref_owners))
+            )
+        self._github_refs_by_repo = {
+            owner: tuple(
+                sorted(
+                    {str(ref) for ref in refs if str(ref)},
+                    key=lambda ref: (-len(ref.split("/")), -len(ref), ref),
+                )
+            )
+            for owner, refs in (github_refs_by_repo or {}).items()
+        }
 
         for owner, (source, family) in sorted(bundles.items()):
             repo = str(source.get("repo", {}).get("name") or "")
@@ -226,6 +288,12 @@ class RepoKagFederation:
 
         tail_parts = tail.split("/")
         first_path_offset = 1 if github_content_ref else 0
+        if github_content_ref:
+            for git_ref in self._github_refs_by_repo.get(target_repo, ()):
+                ref_parts = git_ref.split("/")
+                if tail_parts[: len(ref_parts)] == ref_parts:
+                    first_path_offset = len(ref_parts)
+                    break
         if first_path_offset >= len(tail_parts):
             root = self._root_entities.get(target_repo)
             return (

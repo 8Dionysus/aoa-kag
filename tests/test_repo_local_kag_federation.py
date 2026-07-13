@@ -13,7 +13,7 @@ from scripts.generate_repo_local_kag_index import (
     build_repository_indexes,
     payload_digest,
 )
-from scripts.repo_local.federation import RepoKagFederation
+from scripts.repo_local.federation import RepoKagFederation, git_ref_names
 from tests.test_repo_local_kag_repository_indexes import write_fixture
 
 
@@ -34,6 +34,28 @@ def owner_bundle(root: Path, repo: str, *, readme: str | None = None) -> tuple[d
 
 
 class RepoKagFederationTests(unittest.TestCase):
+    def test_git_ref_names_preserve_slash_delimited_branch_names(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "initial"), cwd=root, check=True)
+            subprocess.run(("git", "branch", "feature/x"), cwd=root, check=True)
+            subprocess.run(("git", "tag", "v1"), cwd=root, check=True)
+
+            refs = git_ref_names(root)
+
+        self.assertIn("main", refs)
+        self.assertIn("feature/x", refs)
+        self.assertIn("v1", refs)
+
     def test_federation_resolves_cross_repo_reference_with_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
             first_root = Path(first_tmp)
@@ -141,7 +163,7 @@ class RepoKagFederationTests(unittest.TestCase):
                 readme=(
                     "# First\n\n"
                     "See [usage](https://github.com/8Dionysus/aoa-second/"
-                    "blob/main/docs/guides/usage.md).\n"
+                    "blob/feature/x/docs/guides/usage.md).\n"
                 ),
             )
             second_root = Path(second_tmp)
@@ -149,7 +171,7 @@ class RepoKagFederationTests(unittest.TestCase):
             (second_root / "kag" / "manifest.json").write_text(
                 json.dumps({"repo": "aoa-second"}), encoding="utf-8"
             )
-            colliding = second_root / "main" / "docs" / "guides"
+            colliding = second_root / "x" / "docs" / "guides"
             colliding.mkdir(parents=True)
             (colliding / "usage.md").write_text("# Wrong target\n", encoding="utf-8")
             second_source = build_index(second_root)
@@ -158,7 +180,8 @@ class RepoKagFederationTests(unittest.TestCase):
                 {
                     "aoa-first": first,
                     "aoa-second": (second_source, second_family),
-                }
+                },
+                github_refs_by_repo={"aoa-second": ("feature/x",)},
             ).projection()
 
         intended = next(

@@ -12,11 +12,11 @@ from typing import Any, Sequence
 try:
     from scripts.generate_repo_local_kag_index import REPOSITORY_INDEX_FILENAMES
     from scripts.provider_registry import configured_provider_roots
-    from scripts.repo_local.federation import RepoKagFederation
+    from scripts.repo_local.federation import RepoKagFederation, github_ref_names_by_repo
 except ImportError:  # pragma: no cover - direct script execution
     from generate_repo_local_kag_index import REPOSITORY_INDEX_FILENAMES  # type: ignore
     from provider_registry import configured_provider_roots  # type: ignore
-    from repo_local.federation import RepoKagFederation  # type: ignore
+    from repo_local.federation import RepoKagFederation, github_ref_names_by_repo  # type: ignore
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -63,7 +63,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         repo: load_owner_bundle(roots[repo])
         for repo in sorted(selected)
     }
-    projection = RepoKagFederation(bundles).projection()
+    selected_roots = {repo: roots[repo] for repo in sorted(selected)}
+    projection = RepoKagFederation(
+        bundles,
+        github_refs_by_repo=github_ref_names_by_repo(selected_roots),
+    ).projection()
     rendered = json.dumps(
         projection,
         ensure_ascii=False,

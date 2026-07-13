@@ -699,6 +699,39 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(git_commit_refs(feature_family), git_commit_refs(merge_family))
         self.assertNotIn(merge_sha, git_commit_refs(merge_family))
 
+    def test_relation_index_resolves_local_directory_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            (root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "aoa-directory-links"}), encoding="utf-8"
+            )
+            (root / "README.md").write_text(
+                "# Demo\n\nSee [docs](docs).\n",
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        docs_entity = next(
+            entry
+            for entry in family["entity"]["entries"]
+            if entry["semantic_key"] == "directory:docs"
+        )
+        readme_entity = next(
+            entry
+            for entry in family["entity"]["entries"]
+            if entry["semantic_key"] == "README.md"
+        )
+        self.assertTrue(
+            any(
+                relation["relation_kind"] == "references"
+                and relation["from_id"] == readme_entity["id"]
+                and relation["to_id"] == docs_entity["id"]
+                for relation in family["relation"]["entries"]
+            )
+        )
+
     def test_custom_family_outputs_remain_stable_after_staging(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
