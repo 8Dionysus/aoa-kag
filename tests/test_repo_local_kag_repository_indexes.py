@@ -692,6 +692,54 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(staged_source, committed_source)
         self.assertEqual(staged_family, committed_family)
 
+    def test_event_history_preserves_lineage_when_a_path_is_reused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            reused = root / "reused.txt"
+            reused.write_text("first\n", encoding="utf-8")
+            subprocess.run(("git", "add", "reused.txt"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "initial generation"), cwd=root, check=True)
+            reused.unlink()
+            subprocess.run(("git", "add", "-A"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "delete generation"), cwd=root, check=True)
+            reused.write_text("second\n", encoding="utf-8")
+            subprocess.run(("git", "add", "reused.txt"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "second generation"), cwd=root, check=True)
+
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+
+        current_id = next(
+            record["identity"]["id"]
+            for record in source_index["records"]
+            if record["identity"]["path"] == "reused.txt"
+        )
+        initial = next(
+            event for event in family["event"]["entries"] if event["label"] == "initial generation"
+        )
+        deleted = next(
+            event for event in family["event"]["entries"] if event["label"] == "delete generation"
+        )
+        snapshot = next(
+            event
+            for event in family["event"]["entries"]
+            if event["event_kind"] == "repository_snapshot_change_set"
+        )
+        initial_id = initial["changes"][0]["object_id"]
+        self.assertNotEqual(initial_id, current_id)
+        self.assertEqual(initial_id, deleted["changes"][0]["object_id"])
+        self.assertEqual(current_id, snapshot["changes"][0]["object_id"])
+        self.assertEqual([], initial["object_ids"])
+        self.assertEqual([], deleted["object_ids"])
+        self.assertEqual([current_id], snapshot["object_ids"])
+
     def test_family_outputs_do_not_enter_the_source_index(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

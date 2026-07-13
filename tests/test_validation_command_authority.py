@@ -281,12 +281,13 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("history-ref:", action)
         self.assertIn("event-history-ref:", action)
         self.assertIn("working-directory: ${{ inputs.repo-root }}", action)
-        self.assertIn("PULL_REQUEST_BASE_SHA", action)
-        self.assertIn("CURRENT_REF_NAME", action)
-        self.assertIn("DEFAULT_BRANCH", action)
+        self.assertIn("git ls-remote --symref origin HEAD", action)
+        self.assertIn('default_branch="$(', action)
         self.assertIn('git merge-base HEAD "$default_ref"', action)
-        self.assertIn("refs/remotes/origin/$DEFAULT_BRANCH", action)
+        self.assertIn("refs/remotes/origin/$default_branch", action)
         self.assertNotIn("PULL_REQUEST_HEAD_SHA", action)
+        self.assertNotIn("github.event.repository.default_branch", action)
+        self.assertNotIn("github.event.pull_request.base.sha", action)
         self.assertIn("--unshallow", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REPO", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REF", action)
@@ -307,8 +308,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn('--source-index "${{ inputs.output }}"', action)
         self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)
         self.assertIn("source lineage and repository-event history", authority)
-        self.assertIn("github.event.pull_request.base.sha", authority)
-        self.assertIn("multi-commit pull request and its squash-merged", authority)
+        self.assertIn("target `repo-root`", authority)
+        self.assertIn("multi-commit branch and its squash-merged", authority)
 
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
         repo_validation = (

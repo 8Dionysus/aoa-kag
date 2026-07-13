@@ -179,7 +179,6 @@ def git_commit_events(
         )
         if change["path"] in excluded or change["old_path"] in excluded:
             continue
-        change["object_id"] = current_ids.get(change["path"], change["object_id"])
         current["changes"].append(change)
         object_id = change["object_id"]
         if object_id in current_object_ids:

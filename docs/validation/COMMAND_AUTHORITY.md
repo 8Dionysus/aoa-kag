@@ -25,17 +25,15 @@
 ## Repo-local KAG History Boundaries
 
 The repo-local KAG action keeps source lineage and repository-event history as
-separate, explicit inputs. On a pull request, both `history-ref` and
-`event-history-ref` default to `github.event.pull_request.base.sha`; the builder
-combines that durable base history with the current repository snapshot. This
-keeps a multi-commit pull request and its squash-merged `main` snapshot on the
-same generated index family.
+separate, explicit inputs. It resolves the `origin` default branch inside the
+target `repo-root` and uses its merge base with `HEAD`; on the default branch
+that boundary is `HEAD`. The builder combines this durable history with the
+current repository snapshot, keeping a multi-commit branch and its squash-merged
+default-branch snapshot on the same generated index family.
 
-On the default branch, `history-ref` resolves to `HEAD`. A feature-branch push
-resolves both history boundaries to its merge base with the repository default
-branch. Explicit caller inputs keep precedence. The action resolves the refs
-inside `repo-root` and exports the resolved repository name and both boundaries
-through repo-scoped environment variables so later release-audit commands
+Explicit caller inputs keep precedence. The action exports the resolved
+repository name and both boundaries through repo-scoped environment variables
+so later release-audit commands
 reuse the same model.
 
 ## Lane Entries
