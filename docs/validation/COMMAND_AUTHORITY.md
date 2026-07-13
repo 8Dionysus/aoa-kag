@@ -31,12 +31,12 @@ combines that durable base history with the current repository snapshot. This
 keeps a multi-commit pull request and its squash-merged `main` snapshot on the
 same generated index family.
 
-Outside a pull request, `history-ref` defaults to `HEAD` and
-`event-history-ref` follows it unless the caller supplies either input. The
-action resolves the refs inside `repo-root` and exports the resolved repository
-name and both boundaries through repo-scoped environment variables so later
-release-audit commands reuse the same model instead of inheriting unrelated
-outer-workflow refs.
+On the default branch, `history-ref` resolves to `HEAD`. A feature-branch push
+resolves both history boundaries to its merge base with the repository default
+branch. Explicit caller inputs keep precedence. The action resolves the refs
+inside `repo-root` and exports the resolved repository name and both boundaries
+through repo-scoped environment variables so later release-audit commands
+reuse the same model.
 
 ## Lane Entries
 
