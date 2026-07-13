@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
 from jsonschema import Draft202012Validator
@@ -612,6 +613,70 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(before, after)
         self.assertNotIn("source", labels)
         self.assertNotIn("indexes only", labels)
+
+    def test_event_index_history_ref_ignores_synthetic_merge_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=root, check=True)
+            write_fixture(root)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            subprocess.run(("git", "checkout", "-qb", "feature"), cwd=root, check=True)
+            readme = root / "README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8") + "\nFeature.\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "feature"), cwd=root, check=True)
+            feature_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            source_index = build_index(root, history_ref=feature_sha)
+            feature_family = build_repository_indexes(
+                source_index,
+                repo_root=root,
+                history_ref=feature_sha,
+            )
+
+            subprocess.run(("git", "checkout", "-q", "main"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "merge", "--no-ff", "feature", "-m", "synthetic pull request merge"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+            merge_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            merge_source_index = build_index(root, history_ref=feature_sha)
+            merge_family = build_repository_indexes(
+                merge_source_index,
+                repo_root=root,
+                history_ref=feature_sha,
+            )
+
+        def git_commit_refs(family: dict[str, dict[str, Any]]) -> set[str]:
+            return {
+                str(ref["ref"])
+                for event in family["event"]["entries"]
+                for ref in event["evidence_refs"]
+                if ref["kind"] == "git_commit"
+            }
+
+        self.assertEqual(feature_family, merge_family)
+        self.assertEqual(git_commit_refs(feature_family), git_commit_refs(merge_family))
+        self.assertNotIn(merge_sha, git_commit_refs(merge_family))
 
     def test_custom_family_outputs_remain_stable_after_staging(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

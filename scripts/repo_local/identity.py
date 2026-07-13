@@ -88,20 +88,28 @@ def _apply_name_status(state: GitLineageState, rows: Iterable[tuple[str, ...]]) 
         state.apply(columns)
 
 
-def git_lineage_paths(repo_root: Path, tracked_paths: Iterable[Path]) -> dict[Path, Path]:
+def git_lineage_paths(
+    repo_root: Path,
+    tracked_paths: Iterable[Path],
+    *,
+    history_ref: str | None = None,
+) -> dict[Path, Path]:
     state = GitLineageState()
+    history_command = [
+        "git",
+        "-c",
+        "core.quotepath=false",
+        "log",
+        "--reverse",
+        "--format=commit:%H",
+        "--name-status",
+        "--find-renames=50%",
+    ]
+    if history_ref:
+        history_command.append(history_ref)
+    history_command.append("--")
     history = _name_status(
-        (
-            "git",
-            "-c",
-            "core.quotepath=false",
-            "log",
-            "--reverse",
-            "--format=commit:%H",
-            "--name-status",
-            "--find-renames=50%",
-            "--",
-        ),
+        history_command,
         repo_root,
     )
     _apply_name_status(state, history)

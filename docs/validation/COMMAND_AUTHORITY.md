@@ -19,7 +19,7 @@
 | `scripts/query_repo_local_kag.py` | validated exact, lexical, graph, and hybrid repo-local retrieval |
 | `scripts/build_repo_local_kag_federation.py` | validated owner-qualified federation projection builder |
 | `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
-| `.github/actions/repo-local-kag-index/action.yml` | owner-callable full, incremental, and contract check for a repo-local index family |
+| `.github/actions/repo-local-kag-index/action.yml` | owner-callable full, incremental, and contract check using complete stable-head Git history for a repo-local index family |
 
 ## Lane Entries
 

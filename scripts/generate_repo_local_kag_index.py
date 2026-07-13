@@ -1370,6 +1370,7 @@ def build_index(
     output: Path | None = None,
     excluded_outputs: Sequence[Path] = (),
     previous_index: dict[str, Any] | None = None,
+    history_ref: str | None = None,
 ) -> dict[str, Any]:
     repo_root = repo_root.resolve()
     name = repo_name(repo_root)
@@ -1390,7 +1391,11 @@ def build_index(
     tracked_entries = git_file_entries(repo_root)
     tracked_paths = set(tracked_entries)
     indexed_paths = tracked_paths - excluded_paths
-    lineage_paths = git_lineage_paths(repo_root, tracked_paths)
+    lineage_paths = git_lineage_paths(
+        repo_root,
+        tracked_paths,
+        history_ref=history_ref,
+    )
     source_builders = source_builder_contents(repo_root, tracked_paths)
     previous_records = {
         Path(str(record["identity"]["path"])): record
@@ -1498,12 +1503,14 @@ def build_index_incremental(
     *,
     output: Path | None = None,
     excluded_outputs: Sequence[Path] = (),
+    history_ref: str | None = None,
 ) -> dict[str, Any]:
     return build_index(
         repo_root,
         output=output,
         excluded_outputs=excluded_outputs,
         previous_index=previous_index,
+        history_ref=history_ref,
     )
 
 
@@ -1527,6 +1534,7 @@ def event_entries(
     repo_root: Path | None = None,
     artifacts: Sequence[dict[str, Any]] = (),
     excluded_paths: set[str] | None = None,
+    history_ref: str | None = None,
 ) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str]] = set()
@@ -1656,6 +1664,7 @@ def event_entries(
                 current_ids=current_ids,
                 artifact_anchor_ids=artifact_anchor_ids,
                 excluded_paths=excluded_paths,
+                history_ref=history_ref,
             )
         )
     return sorted(entries, key=lambda entry: (entry["event_kind"], entry["id"]))
@@ -1877,6 +1886,7 @@ def build_repository_indexes(
     source_index_path: Path = DEFAULT_OUTPUT,
     repo_root: Path | None = None,
     previous_family: dict[str, dict[str, Any]] | None = None,
+    history_ref: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     records = [copy.deepcopy(record) for record in source_index["records"] if isinstance(record, dict)]
     repo = str(source_index["repo"]["name"])
@@ -1919,6 +1929,7 @@ def build_repository_indexes(
         repo_root=repo_root,
         artifacts=artifacts,
         excluded_paths=family_paths,
+        history_ref=history_ref,
     )
     assertions = project_assertion_entries(
         repo,
@@ -1978,12 +1989,14 @@ def build_repository_indexes_incremental(
     *,
     source_index_path: Path = DEFAULT_OUTPUT,
     repo_root: Path | None = None,
+    history_ref: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     return build_repository_indexes(
         source_index,
         source_index_path=source_index_path,
         repo_root=repo_root,
         previous_family=previous_family,
+        history_ref=history_ref,
     )
 
 
@@ -2072,6 +2085,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Reuse unchanged source records from the current source index while preserving full-build parity.",
     )
+    parser.add_argument(
+        "--history-ref",
+        help="Git ref whose durable history should back repository event records.",
+    )
     parser.add_argument("--check", action="store_true", help="Check output parity without writing.")
     return parser.parse_args(argv)
 
@@ -2108,6 +2125,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         output=output,
         excluded_outputs=tuple(family_paths.values()) if args.index_family else (),
         previous_index=previous_index,
+        history_ref=args.history_ref,
     )
     if args.index_family:
         try:
@@ -2119,6 +2137,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             source_index_path=source_index_path,
             repo_root=repo_root,
             previous_family=previous_family,
+            history_ref=args.history_ref,
         )
     else:
         family = {}

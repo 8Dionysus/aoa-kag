@@ -112,21 +112,25 @@ def git_commit_events(
     current_ids: dict[str, str],
     artifact_anchor_ids: dict[str, str],
     excluded_paths: set[str] | None = None,
+    history_ref: str | None = None,
 ) -> list[dict[str, Any]]:
     excluded = excluded_paths or set()
+    history_command = [
+        "git",
+        "-c",
+        "core.quotepath=false",
+        "log",
+        "--reverse",
+        "--format=@@@%H%x09%aI%x09%an%x09%ae%x09%s",
+        "--name-status",
+        "--find-renames=50%",
+    ]
+    if history_ref:
+        history_command.append(history_ref)
+    history_command.append("--")
     output = _git_text(
         repo_root,
-        (
-            "git",
-            "-c",
-            "core.quotepath=false",
-            "log",
-            "--reverse",
-            "--format=@@@%H%x09%aI%x09%an%x09%ae%x09%s",
-            "--name-status",
-            "--find-renames=50%",
-            "--",
-        ),
+        history_command,
     )
     events: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
