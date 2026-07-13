@@ -24,7 +24,7 @@ It should give them a navigable route mesh:
   validation posture, and closeout;
 - local cards for durable districts such as `docs/`, `docs/decisions/`,
   `kag/`, `mechanics/`, `manifests/`, `generated/`, `schemas/`, `examples/`,
-  `scripts/`, `tests/`, `config/`, `evals/`, `.agents/`,
+  `scripts/`, `tests/`, `config/`, `evals/`, `stats/`, `.agents/`,
   `.agents/spark/`, and `.github/`;
 - source surfaces that keep KAG model, source policy, manifests, schemas,
   builders, and tests stronger than route prose;
@@ -136,6 +136,13 @@ KAG-local proof pressure before central proof adoption.
 
 Neither is a substitute for changing the active source surface when active
 meaning has changed.
+
+### Local stats cards
+
+`stats/AGENTS.md` routes KAG-owned statistical questions and reference
+measurements. It keeps the port below source manifests, schemas, builders, and
+generated coverage evidence, and below the shared grammar owned by
+`aoa-stats`.
 
 ## Design as Operation
 
@@ -269,6 +276,8 @@ design surface names what validation should prove:
 - schema and example contracts stay aligned;
 - decision indexes are current when decision metadata moves;
 - KAG-local eval intake does not claim central proof verdicts;
+- KAG-local statistical packets remain derived from named owner evidence and
+  do not become source, proof, or runtime truth;
 - local `/kag` protocol pressure routes through `kag/` and remains behind its
   sibling rollout stop-line until schemas, examples, and validation exist.
 

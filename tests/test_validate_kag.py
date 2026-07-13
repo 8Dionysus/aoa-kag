@@ -529,6 +529,27 @@ class ValidateKagTestCase(unittest.TestCase):
             label="compatible repo-local KAG coverage",
         )
 
+    def test_repo_local_kag_coverage_drift_reports_first_difference(self) -> None:
+        payload = load_json(repo_local_kag_index.REPO_LOCAL_KAG_COVERAGE_PATH)
+        assert isinstance(payload, dict)
+        expected = copy.deepcopy(payload)
+        expected["owners"][0]["coverage"]["documents"] += 1
+
+        with patch.object(
+            repo_local_kag_index,
+            "build_provider_coverage",
+            return_value=expected,
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                repo_local_kag_index.validate_repo_local_kag_coverage_generated_payload()
+
+        self.assertIn(
+            "$.owners[0].coverage.documents",
+            str(context.exception),
+        )
+        self.assertIn("actual=", str(context.exception))
+        self.assertIn("expected=", str(context.exception))
+
     def test_local_kag_provider_map_rejects_missing_mcp_resource_template(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(payload, dict)

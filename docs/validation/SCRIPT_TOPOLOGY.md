@@ -70,6 +70,9 @@ release checks, and test discovery.
 `scripts/validate_kag.py` is the entrypoint. The implementation map lives in
 `docs/validation/validator_inventory.json`.
 
+`scripts/validate_local_stats_port.py` delegates the KAG-local `stats/` port
+to the pinned `aoa-stats` contract owner and does not reimplement its grammar.
+
 `scripts/validators/local_kag_subtree.py` checks the repo-local KAG subtree
 contract, example packet, and OS Abyss readiness matrix.
 

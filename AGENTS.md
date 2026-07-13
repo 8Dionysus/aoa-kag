@@ -120,7 +120,8 @@ This repository owns:
 It does not own:
 
 - authored technique, skill, eval, memo, role, playbook, routing, center,
-  runtime, stats, or Tree of Sophia meaning;
+  runtime, cross-owner statistical grammar or composition, or Tree of Sophia
+  meaning;
 - framework-specific application code that belongs downstream;
 - source-replacing world-model sprawl;
 - live graph, vector, embedding, index, runtime, or cache state.
@@ -162,6 +163,7 @@ competing root card.
 | `agent-surface-design` | AGENTS shape, local-card placement, route modes, validation posture, or closeout changes | `DESIGN.AGENTS.md` |
 | `mechanic-change` | repeatable KAG operation topology, mechanics root contract, or future package posture changes | `mechanics/README.md` |
 | `local-kag-source-home` | `kag/` source-home preflight, local `/kag` protocol shape, repo-local subtree contract, sibling rollout stop-line, or portable graph/index record posture changes | `kag/README.md` |
+| `local-stats` | a KAG-owned statistical question, measurement contract, or reference packet changes | `stats/AGENTS.md` -> `stats/README.md` -> `stats/port.manifest.json` |
 | `model-boundary` | KAG model, ownership, source policy, bridge contract, or non-identity boundary changes | `docs/KAG_MODEL.md` |
 | `decision-rationale` | durable route rationale or decision metadata changes | `docs/decisions/README.md` |
 | `manifest-change` | source-authored lift controls, donor refs, output refs, or pack activation posture change | `manifests/AGENTS.md` |
@@ -254,6 +256,8 @@ Update only the ones that moved; otherwise say no update was needed.
   `kag/LOCAL_SUBTREE_PROTOCOL.md` when `kag/` source-home posture, local `/kag`
   protocol posture, portable record classes, runtime-state exclusion, or
   sibling rollout stop-lines changed.
+- `stats/` when the KAG-owned statistical question, evidence route,
+  measurement contract, or exported reference packet changes.
 - `ROADMAP.md` when current direction, stop-rules, owner wait states, or future
   contour changed.
 - `docs/decisions/` when future agents need rationale for a route, owner split,

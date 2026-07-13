@@ -39,6 +39,52 @@ def _repo_local_index_phase(label: str, *, progress: bool) -> None:
         print(f"[validate-kag:repo-local-index] {label}", file=sys.stderr, flush=True)
 
 
+def _first_payload_difference(
+    actual: object,
+    expected: object,
+    *,
+    path: str = "$",
+) -> tuple[str, object, object] | None:
+    if type(actual) is not type(expected):
+        return path, actual, expected
+    if isinstance(actual, dict) and isinstance(expected, dict):
+        for key in sorted(actual.keys() | expected.keys()):
+            child_path = f"{path}.{key}"
+            if key not in actual:
+                return child_path, "<missing>", expected[key]
+            if key not in expected:
+                return child_path, actual[key], "<missing>"
+            difference = _first_payload_difference(actual[key], expected[key], path=child_path)
+            if difference is not None:
+                return difference
+        return None
+    if isinstance(actual, list) and isinstance(expected, list):
+        for index, (actual_item, expected_item) in enumerate(zip(actual, expected)):
+            difference = _first_payload_difference(
+                actual_item,
+                expected_item,
+                path=f"{path}[{index}]",
+            )
+            if difference is not None:
+                return difference
+        if len(actual) != len(expected):
+            index = min(len(actual), len(expected))
+            return (
+                f"{path}[{index}]",
+                actual[index] if index < len(actual) else "<missing>",
+                expected[index] if index < len(expected) else "<missing>",
+            )
+        return None
+    if actual != expected:
+        return path, actual, expected
+    return None
+
+
+def _payload_value_summary(value: object) -> str:
+    rendered = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return rendered if len(rendered) <= 240 else f"{rendered[:237]}..."
+
+
 def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
     schema = read_json(schema_path)
     if not isinstance(schema, dict):
@@ -590,7 +636,15 @@ def validate_repo_local_kag_coverage_generated_payload(*, progress: bool = False
     expected = build_provider_coverage(progress=progress)
     _repo_local_index_phase("coverage-parity", progress=progress)
     if payload != expected:
-        fail("repo-local KAG coverage drifted from generator")
+        difference = _first_payload_difference(payload, expected)
+        if difference is None:  # pragma: no cover - guarded by payload inequality
+            fail("repo-local KAG coverage drifted from generator")
+        path, actual_value, expected_value = difference
+        fail(
+            "repo-local KAG coverage drifted from generator at "
+            f"{path}: actual={_payload_value_summary(actual_value)} "
+            f"expected={_payload_value_summary(expected_value)}"
+        )
 
     _repo_local_index_phase("coverage-min", progress=progress)
     min_payload = read_json(REPO_LOCAL_KAG_COVERAGE_MIN_PATH)

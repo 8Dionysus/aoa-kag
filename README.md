@@ -25,6 +25,7 @@ page.
 | KAG model, source policy, and owner boundaries | [KAG_MODEL](docs/KAG_MODEL.md), [BOUNDARIES](docs/BOUNDARIES.md), [SOURCE_POLICY](docs/SOURCE_POLICY.md) |
 | Local `/kag` source-home preflight | [kag](kag/README.md), [source_home.manifest](kag/source_home.manifest.json), [LOCAL_SUBTREE_PROTOCOL](kag/LOCAL_SUBTREE_PROTOCOL.md) |
 | Repo-local knowledge kernel | [kag indexes](kag/README.md), [source schema](schemas/repo-local-kag-index.schema.json), [repository schema](schemas/repo-local-kag-repository-index.schema.json), [coverage report](generated/repo_local_kag_coverage.min.json) |
+| KAG-owned statistical questions and reference measurements | [stats](stats/README.md) |
 | Repeatable KAG operation topology | [mechanics](mechanics/README.md), [mechanics topology](mechanics/topology.json) |
 | Current consumer and bridge posture | [CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md), [BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs map](docs/README.md) |
 | Manifest, generated, schema, and example surfaces | [manifests](manifests/AGENTS.md), [generated](generated/AGENTS.md), [schemas](schemas/AGENTS.md), [examples](examples/AGENTS.md) |
@@ -108,6 +109,7 @@ that inventory.
 | [schemas](schemas/AGENTS.md) and [examples](examples/AGENTS.md) | machine-checkable payload contracts and public-safe examples |
 | [scripts](scripts/AGENTS.md) and [tests](tests/AGENTS.md) | builders, validators, decision-index helpers, and regression surfaces |
 | [evals](evals/README.md) | KAG-local proof pressure before central `aoa-evals` adoption |
+| [stats](stats/README.md) | owner-local statistical questions, measurement contracts, and evidence-linked reference packets |
 | [quests](quests/README.md) | durable KAG obligations and source quest records |
 | [.agents](.agents/AGENTS.md), [.github](.github/AGENTS.md), and [config](config/AGENTS.md) | companion agent lanes, GitHub platform support, and repo-local configuration |
 

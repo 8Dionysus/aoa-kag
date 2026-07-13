@@ -1,0 +1,109 @@
+{
+  "schema_version": "aoa_stats_local_port_v1",
+  "contract_version": "1.0.0",
+  "owner_repo": "aoa-kag",
+  "status": "active",
+  "owner_boundary_ref": "CHARTER.md",
+  "central_contract_refs": [
+    "aoa-stats:stats/measurement-contract/measurement-contract.schema.json",
+    "aoa-stats:stats/measurement-contract/measurement-packet.schema.json"
+  ],
+  "evidence_posture": {
+    "live_state": "reference_only",
+    "privacy": "public",
+    "raw_content_allowed": false
+  },
+  "questions": [
+    {
+      "id": "question:repo-self-family-pass-ratio",
+      "question": "What fraction of inventoried owner repositories pass the complete canonical repo-self index-family coverage check at this source revision?",
+      "consumer_refs": [
+        "stats/README.md",
+        "kag/README.md"
+      ]
+    }
+  ],
+  "measurements": [
+    {
+      "schema_version": "aoa_stats_measurement_contract_v1",
+      "measurement_id": "aoa-kag/repo-self-family-pass-ratio",
+      "contract_version": "1.0.0",
+      "owner_repo": "aoa-kag",
+      "question_ref": "question:repo-self-family-pass-ratio",
+      "semantic_class": "statistic",
+      "statistic": "ratio",
+      "object_kind": "repo-self-family-coverage",
+      "unit": {
+        "symbol": "1",
+        "quantity": "proportion"
+      },
+      "population": {
+        "subject": "owner repositories inventoried by the repo-local KAG coverage read model",
+        "definition": "one owner row in generated/repo_local_kag_coverage.min.json",
+        "inclusion_rule": "the owner appears in the coverage read model and is classified by the complete canonical repo-self family check",
+        "exclusion_rule": "repositories outside the coverage read model and partial provider-readiness declarations",
+        "sampling": "census"
+      },
+      "window": {
+        "temporality": "instant",
+        "clock": "owner_defined"
+      },
+      "dimensions": {
+        "allowed": [],
+        "prohibited": [
+          "repo",
+          "root"
+        ]
+      },
+      "aggregation": {
+        "operator": "none",
+        "across": []
+      },
+      "missingness": {
+        "states": [
+          "missing",
+          "unknown",
+          "stale"
+        ],
+        "zero_is_observation": true
+      },
+      "uncertainty": {
+        "required": false,
+        "methods": [
+          "not_applicable"
+        ]
+      },
+      "provenance": {
+        "evidence_refs_required": true,
+        "source_revision_required": true
+      },
+      "lifecycle": {
+        "status": "active",
+        "compatible_with": []
+      },
+      "privacy": {
+        "classification": "public",
+        "raw_content_allowed": false,
+        "sensitive_dimensions_allowed": false
+      },
+      "live_state": {
+        "capability": "reference_only"
+      },
+      "authority_ceiling": "Counts only complete canonical repo-self index-family pass classifications in the named coverage read model; it does not establish source meaning, knowledge or retrieval quality, proof strength, or runtime readiness."
+    }
+  ],
+  "exports": [
+    {
+      "measurement_id": "aoa-kag/repo-self-family-pass-ratio",
+      "posture": "reference",
+      "packet_refs": [
+        "stats/packets/repo-self-family-pass-ratio.reference.json"
+      ],
+      "evidence_refs": [
+        "generated/repo_local_kag_coverage.min.json",
+        "schemas/repo-local-kag-index.schema.json",
+        "manifests/local_kag_readiness.json"
+      ]
+    }
+  ]
+}

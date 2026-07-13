@@ -18,6 +18,10 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Added
 
+- Add the owner-local `stats/` port with a source-backed repo-self family pass
+  ratio contract and reference packet; KAG source and generated evidence keep
+  their authority while `aoa-stats` owns the shared statistical grammar and
+  cross-owner composition plus the validator delegated to by the release lane.
 - Add the v2 repo-self source, artifact, anchor, entity, event, assertion, and relation
   index family with repository/directory topology, parser-qualified addresses,
   observed Git lifecycle events, evidence assertions, and optional owner-domain
@@ -34,6 +38,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Changed
 
+- Report the first divergent payload path and values when repo-local KAG
+  coverage no longer matches its generator.
 - Expand the owner-callable repo-local KAG action to atomic
   source/artifact/anchor/entity/event/assertion/relation family parity.
 - Stabilize artifact identity across Git renames and deletes, persist outbound
