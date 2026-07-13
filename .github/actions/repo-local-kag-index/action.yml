@@ -18,7 +18,7 @@ runs:
     - name: Prepare stable repository history
       id: history
       shell: bash
-      working-directory: ${{ github.workspace }}
+      working-directory: ${{ inputs.repo-root }}
       env:
         INPUT_HISTORY_REF: ${{ inputs.history-ref }}
         PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -35,7 +35,7 @@ runs:
           git fetch --no-tags --prune origin "$history_ref"
         fi
         git cat-file -e "${history_ref}^{commit}"
-        repo_name="$(basename "$(git -C "${{ inputs.repo-root }}" rev-parse --show-toplevel)")"
+        repo_name="$(basename "$(git rev-parse --show-toplevel)")"
         printf 'AOA_REPO_LOCAL_KAG_HISTORY_REPO=%s\n' "$repo_name" >> "$GITHUB_ENV"
         printf 'AOA_REPO_LOCAL_KAG_HISTORY_REF=%s\n' "$history_ref" >> "$GITHUB_ENV"
         printf 'ref=%s\n' "$history_ref" >> "$GITHUB_OUTPUT"
