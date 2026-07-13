@@ -346,6 +346,20 @@ def effective_event_history_ref(
     return fallback
 
 
+def local_default_history_ref(repo_root: Path) -> str | None:
+    try:
+        default_ref = run_text(
+            ("git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"),
+            repo_root,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        default_ref = "refs/remotes/origin/main"
+    try:
+        return run_text(("git", "merge-base", "HEAD", default_ref), repo_root)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
 def owner_type_for(name: str, repo_root: Path) -> str:
     parts = set(repo_root.parts)
     if name == "Agents-of-Abyss":
@@ -2137,6 +2151,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     repo_root = Path(args.repo_root).resolve()
     output = Path(args.output)
     output_path = repo_root / output
+    history_ref = effective_history_ref(repo_root, args.history_ref)
+    if history_ref is None:
+        history_ref = local_default_history_ref(repo_root)
+    event_history_ref = effective_event_history_ref(
+        repo_root,
+        args.event_history_ref,
+        fallback=history_ref,
+    )
     family_paths = repository_index_output_paths(output_path)
     previous_index: dict[str, Any] | None = None
     previous_family: dict[str, dict[str, Any]] | None = None
@@ -2164,7 +2186,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         output=output,
         excluded_outputs=tuple(family_paths.values()) if args.index_family else (),
         previous_index=previous_index,
-        history_ref=args.history_ref,
+        history_ref=history_ref,
     )
     if args.index_family:
         try:
@@ -2176,8 +2198,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             source_index_path=source_index_path,
             repo_root=repo_root,
             previous_family=previous_family,
-            history_ref=args.history_ref,
-            event_history_ref=args.event_history_ref,
+            history_ref=history_ref,
+            event_history_ref=event_history_ref,
         )
     else:
         family = {}
