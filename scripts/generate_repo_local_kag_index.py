@@ -8,6 +8,7 @@ import ast
 import copy
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -71,6 +72,8 @@ REPOSITORY_INDEX_SCHEMA_REF = (
 REPOSITORY_INDEX_SCHEMA_VERSION = "aoa-repo-local-kag-repository-index-v2"
 GIT_INDEX_SOURCE_REF = "git-index-source-tree"
 FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
+HISTORY_REPO_ENV = "AOA_REPO_LOCAL_KAG_HISTORY_REPO"
+HISTORY_REF_ENV = "AOA_REPO_LOCAL_KAG_HISTORY_REF"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
 PORTABLE_MIME_BY_SUFFIX = {
     ".7z": "application/x-7z-compressed",
@@ -310,6 +313,16 @@ def repo_name(repo_root: Path) -> str:
         return top.name
     except (subprocess.CalledProcessError, FileNotFoundError):
         return repo_root.name
+
+
+def effective_history_ref(repo_root: Path, history_ref: str | None = None) -> str | None:
+    if history_ref:
+        return history_ref
+    env_ref = os.environ.get(HISTORY_REF_ENV, "").strip()
+    env_repo = os.environ.get(HISTORY_REPO_ENV, "").strip()
+    if env_ref and env_repo == repo_name(repo_root):
+        return env_ref
+    return None
 
 
 def owner_type_for(name: str, repo_root: Path) -> str:
@@ -1373,6 +1386,7 @@ def build_index(
     history_ref: str | None = None,
 ) -> dict[str, Any]:
     repo_root = repo_root.resolve()
+    history_ref = effective_history_ref(repo_root, history_ref)
     name = repo_name(repo_root)
     snapshot_ref = source_snapshot_ref(repo_root)
     excluded_paths = {CANONICAL_SELF_INDEX, *CANONICAL_REPOSITORY_INDEX_PATHS}
@@ -1888,6 +1902,8 @@ def build_repository_indexes(
     previous_family: dict[str, dict[str, Any]] | None = None,
     history_ref: str | None = None,
 ) -> dict[str, dict[str, Any]]:
+    if repo_root is not None:
+        history_ref = effective_history_ref(repo_root.resolve(), history_ref)
     records = [copy.deepcopy(record) for record in source_index["records"] if isinstance(record, dict)]
     repo = str(source_index["repo"]["name"])
     reusable_structure = previous_structure_refs(source_index, previous_family)

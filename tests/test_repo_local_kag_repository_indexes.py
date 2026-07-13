@@ -17,6 +17,7 @@ from scripts.generate_repo_local_kag_index import (
     build_index_incremental,
     build_repository_indexes,
     build_repository_indexes_incremental,
+    effective_history_ref,
     main,
     payload_digest,
 )
@@ -125,6 +126,20 @@ def write_fixture(root: Path) -> None:
 
 
 class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
+    def test_environment_history_ref_is_scoped_to_its_owner(self) -> None:
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "another-owner",
+                "AOA_REPO_LOCAL_KAG_HISTORY_REF": "stable-head",
+            },
+        ):
+            self.assertIsNone(effective_history_ref(REPO_ROOT))
+            self.assertEqual(
+                "explicit-head",
+                effective_history_ref(REPO_ROOT, "explicit-head"),
+            )
+
     def test_repository_index_family_matches_schema(self) -> None:
         schema = load_json(REPOSITORY_INDEX_SCHEMA_PATH)
         assert isinstance(schema, dict)
@@ -659,12 +674,18 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             ).stdout.strip()
-            merge_source_index = build_index(root, history_ref=feature_sha)
-            merge_family = build_repository_indexes(
-                merge_source_index,
-                repo_root=root,
-                history_ref=feature_sha,
-            )
+            with mock.patch.dict(
+                "os.environ",
+                {
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REPO": root.name,
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REF": feature_sha,
+                },
+            ):
+                merge_source_index = build_index(root)
+                merge_family = build_repository_indexes(
+                    merge_source_index,
+                    repo_root=root,
+                )
 
         def git_commit_refs(family: dict[str, dict[str, Any]]) -> set[str]:
             return {
