@@ -68,22 +68,26 @@ class RepoKagProjectionTests(unittest.TestCase):
                         check=False,
                     )
                 )
-                self.assertTrue(
-                    _write_or_compare_json(
-                        output,
-                        payload,
-                        pretty=False,
-                        check=True,
+                output.parent.chmod(0o555)
+                try:
+                    self.assertTrue(
+                        _write_or_compare_json(
+                            output,
+                            payload,
+                            pretty=False,
+                            check=True,
+                        )
                     )
-                )
-                self.assertFalse(
-                    _write_or_compare_json(
-                        output,
-                        {**payload, "version": 2},
-                        pretty=False,
-                        check=True,
+                    self.assertFalse(
+                        _write_or_compare_json(
+                            output,
+                            {**payload, "version": 2},
+                            pretty=False,
+                            check=True,
+                        )
                     )
-                )
+                finally:
+                    output.parent.chmod(0o755)
             self.assertEqual([], list(output.parent.glob(".*.tmp-*")))
 
     def test_retrieval_documents_are_anchor_bounded_and_source_verified(self) -> None:

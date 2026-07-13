@@ -8,6 +8,7 @@ import filecmp
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -73,8 +74,16 @@ def _write_or_compare_json(
 ) -> bool:
     if check and not path.is_file():
         return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    if check:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix="aoa-kag-retrieval-plan-",
+            suffix=".json",
+        )
+        os.close(descriptor)
+        temporary = Path(temporary_name)
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
     try:
         with temporary.open("w", encoding="utf-8") as handle:
             json.dump(
