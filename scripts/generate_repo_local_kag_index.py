@@ -1556,6 +1556,7 @@ def event_entries(
     artifacts: Sequence[dict[str, Any]] = (),
     excluded_paths: set[str] | None = None,
     history_ref: str | None = None,
+    event_history_ref: str | None = None,
 ) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str]] = set()
@@ -1685,7 +1686,11 @@ def event_entries(
                 current_ids=current_ids,
                 artifact_anchor_ids=artifact_anchor_ids,
                 excluded_paths=excluded_paths,
-                history_ref=history_ref,
+                history_ref=(
+                    event_history_ref
+                    if event_history_ref is not None
+                    else history_ref
+                ),
             )
         )
     return sorted(entries, key=lambda entry: (entry["event_kind"], entry["id"]))
@@ -1908,9 +1913,13 @@ def build_repository_indexes(
     repo_root: Path | None = None,
     previous_family: dict[str, dict[str, Any]] | None = None,
     history_ref: str | None = None,
+    event_history_ref: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     if repo_root is not None:
         history_ref = effective_history_ref(repo_root.resolve(), history_ref)
+    effective_event_history_ref = (
+        event_history_ref if event_history_ref is not None else history_ref
+    )
     records = [copy.deepcopy(record) for record in source_index["records"] if isinstance(record, dict)]
     repo = str(source_index["repo"]["name"])
     reusable_structure = previous_structure_refs(source_index, previous_family)
@@ -1953,6 +1962,7 @@ def build_repository_indexes(
         artifacts=artifacts,
         excluded_paths=family_paths,
         history_ref=history_ref,
+        event_history_ref=effective_event_history_ref,
     )
     assertions = project_assertion_entries(
         repo,
@@ -2013,6 +2023,7 @@ def build_repository_indexes_incremental(
     source_index_path: Path = DEFAULT_OUTPUT,
     repo_root: Path | None = None,
     history_ref: str | None = None,
+    event_history_ref: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     return build_repository_indexes(
         source_index,
@@ -2020,6 +2031,7 @@ def build_repository_indexes_incremental(
         repo_root=repo_root,
         previous_family=previous_family,
         history_ref=history_ref,
+        event_history_ref=event_history_ref,
     )
 
 
@@ -2110,7 +2122,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--history-ref",
-        help="Git ref whose durable history should back repository event records.",
+        help="Git ref whose lineage should back current source records.",
+    )
+    parser.add_argument(
+        "--event-history-ref",
+        help="Git ref whose history precedes the current repository snapshot.",
     )
     parser.add_argument("--check", action="store_true", help="Check output parity without writing.")
     return parser.parse_args(argv)
@@ -2161,6 +2177,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             repo_root=repo_root,
             previous_family=previous_family,
             history_ref=args.history_ref,
+            event_history_ref=args.event_history_ref,
         )
     else:
         family = {}

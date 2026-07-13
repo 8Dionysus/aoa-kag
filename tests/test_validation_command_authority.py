@@ -276,12 +276,18 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("--index-family", action)
         self.assertIn("--incremental", action)
         self.assertIn("history-ref:", action)
+        self.assertIn("event-history-ref:", action)
         self.assertIn("working-directory: ${{ inputs.repo-root }}", action)
+        self.assertIn("PULL_REQUEST_BASE_SHA", action)
         self.assertIn("--unshallow", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REPO", action)
         self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REF", action)
         self.assertIn('>> "$GITHUB_ENV"', action)
         self.assertIn('--history-ref "${{ steps.history.outputs.ref }}"', action)
+        self.assertIn(
+            '--event-history-ref "${{ steps.history.outputs.event-ref }}"',
+            action,
+        )
         self.assertIn("--check", action)
         self.assertIn("scripts/validate_repo_local_kag_family.py", action)
         self.assertIn("python3 -m pip install", action)
