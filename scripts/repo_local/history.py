@@ -58,6 +58,7 @@ def _repository_snapshot_event(
     current_ids: dict[str, str],
     artifact_anchor_ids: dict[str, str],
 ) -> dict[str, Any]:
+    current_object_ids = set(current_ids.values())
     changes = [
         {
             **item,
@@ -80,13 +81,11 @@ def _repository_snapshot_event(
         sort_keys=True,
         separators=(",", ":"),
     )
-    source_ids = sorted(
-        {
-            current_ids[item["path"]]
-            for item in ordered_changes
-            if item["path"] in current_ids
-        }
-    )
+    source_ids = sorted({
+        item["object_id"]
+        for item in ordered_changes
+        if item["object_id"] in current_object_ids
+    })
     return {
         "id": qualified_id(repo, "event", f"repository-snapshot:{signature}"),
         "event_kind": "repository_snapshot_change_set",
@@ -99,7 +98,7 @@ def _repository_snapshot_event(
             for item in source_ids
             if item in artifact_anchor_ids
         ],
-        "object_ids": [item["object_id"] for item in ordered_changes],
+        "object_ids": source_ids,
         "changes": ordered_changes,
         "occurred_at": "",
         "actor": {"name": "repository-snapshot", "email": ""},
@@ -122,6 +121,7 @@ def git_commit_events(
     history_ref: str | None = None,
 ) -> list[dict[str, Any]]:
     excluded = excluded_paths or set()
+    current_object_ids = set(current_ids.values())
     history_command = [
         "git",
         "-c",
@@ -179,14 +179,13 @@ def git_commit_events(
         )
         if change["path"] in excluded or change["old_path"] in excluded:
             continue
+        change["object_id"] = current_ids.get(change["path"], change["object_id"])
         current["changes"].append(change)
         object_id = change["object_id"]
-        current["object_ids"].append(object_id)
-        path = change["path"]
-        source_id = current_ids.get(path)
-        if source_id:
-            current["source_record_ids"].append(source_id)
-            anchor_id = artifact_anchor_ids.get(source_id)
+        if object_id in current_object_ids:
+            current["object_ids"].append(object_id)
+            current["source_record_ids"].append(object_id)
+            anchor_id = artifact_anchor_ids.get(object_id)
             if anchor_id:
                 current["anchor_ids"].append(anchor_id)
     if current is not None and current["changes"]:

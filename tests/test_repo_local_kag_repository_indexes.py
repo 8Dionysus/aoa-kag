@@ -489,6 +489,75 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertNotIn("/jobs/build/steps/2/run/status", pointers)
         self.assertEqual(len(yaml_anchors), len({entry["id"] for entry in yaml_anchors}))
 
+    def test_source_heading_refs_share_the_canonical_markdown_parser(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            (root / "README.md").write_text(
+                "# Visible\n\n```bash\n# shell comment\n```\n\n## Visible child\n",
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        record = next(
+            entry for entry in source["records"] if entry["identity"]["path"] == "README.md"
+        )
+        source_id = record["identity"]["id"]
+        advertised = {
+            heading["anchor"] for heading in record["refs"]["heading_refs"]
+        }
+        indexed = {
+            anchor["locator"]["fragment"]
+            for anchor in family["anchor"]["entries"]
+            if anchor["source_record_id"] == source_id
+            and anchor["anchor_kind"] == "markdown_heading"
+        }
+        self.assertEqual({"visible", "visible-child"}, advertised)
+        self.assertEqual(advertised, indexed)
+
+    def test_attribute_calls_do_not_resolve_to_unrelated_methods(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            (root / "src" / "demo.py").write_text(
+                "def render() -> str:\n"
+                "    helper()\n"
+                "    return '\\n'.join(['ok'])\n\n"
+                "def helper() -> None:\n"
+                "    pass\n",
+                encoding="utf-8",
+            )
+            (root / "src" / "other.py").write_text(
+                "class FakeThread:\n"
+                "    def join(self) -> None:\n"
+                "        pass\n",
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        entities = {entry["semantic_key"]: entry for entry in family["entity"]["entries"]}
+        calls = [
+            relation
+            for relation in family["relation"]["entries"]
+            if relation["relation_kind"] == "calls"
+        ]
+        self.assertTrue(
+            any(
+                relation["from_id"] == entities["python:function:render"]["id"]
+                and relation["to_id"] == entities["python:function:helper"]["id"]
+                for relation in calls
+            )
+        )
+        self.assertFalse(
+            any(
+                relation["from_id"] == entities["python:function:render"]["id"]
+                and relation["to_id"] == entities["python:method:FakeThread.join"]["id"]
+                for relation in calls
+            )
+        )
+
     def test_redefined_python_symbols_keep_distinct_anchors(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -601,6 +670,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(initial_ids["docs/guides/usage.md"], rename["object_id"])
         self.assertEqual(current_ids["docs/guides/run.md"], rename["object_id"])
         self.assertEqual(initial_ids["future.unknown"], delete["object_id"])
+        artifact_ids = {entry["id"] for entry in family["artifact"]["entries"]}
+        self.assertIn(rename["object_id"], lifecycle["object_ids"])
+        self.assertNotIn(delete["object_id"], lifecycle["object_ids"])
+        self.assertTrue(
+            all(
+                set(event["object_ids"]).issubset(artifact_ids)
+                for event in family["event"]["entries"]
+            )
+        )
         self.assertEqual(family, repeated)
         snapshot = next(
             event
@@ -981,6 +1059,51 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(ValidationError, "relation endpoints"):
+            validate_repo_local_kag_repository_index_family(
+                family,
+                source_payload=source_index,
+                label="repository family",
+            )
+
+    def test_family_validation_rejects_dangling_event_object(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+        family["event"]["entries"][0]["object_ids"] = [
+            "aoa:missing:artifact:missing:0000"
+        ]
+        family["event"]["index_identity"]["content_digest"] = (
+            repo_local_kag_index_digest_without_self(family["event"])
+        )
+
+        with self.assertRaisesRegex(ValidationError, "event object ids"):
+            validate_repo_local_kag_repository_index_family(
+                family,
+                source_payload=source_index,
+                label="repository family",
+            )
+
+    def test_family_validation_rejects_heading_ref_without_anchor(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+        family["anchor"]["entries"] = [
+            entry
+            for entry in family["anchor"]["entries"]
+            if entry["anchor_kind"] != "markdown_heading"
+        ]
+        family["anchor"]["summary"]["entry_count"] = len(
+            family["anchor"]["entries"]
+        )
+        family["anchor"]["index_identity"]["content_digest"] = (
+            repo_local_kag_index_digest_without_self(family["anchor"])
+        )
+
+        with self.assertRaisesRegex(ValidationError, "source heading refs"):
             validate_repo_local_kag_repository_index_family(
                 family,
                 source_payload=source_index,

@@ -75,15 +75,8 @@ def _occurrence_key(base: str, counts: dict[str, int]) -> str:
     return base if occurrence == 1 else f"{base}#occurrence-{occurrence}"
 
 
-def _markdown_structure(
-    repo: str,
-    source_id: str,
-    text: str,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    anchors: list[dict[str, Any]] = []
-    outbound: list[dict[str, Any]] = []
-    heading_counts: dict[str, int] = {}
-    current_context = "$artifact"
+def _visible_markdown_lines(text: str) -> list[tuple[int, str]]:
+    visible: list[tuple[int, str]] = []
     fenced = False
     fence_marker = ""
     for line_number, line in enumerate(text.splitlines(), start=1):
@@ -96,30 +89,67 @@ def _markdown_structure(
             elif marker == fence_marker:
                 fenced = False
             continue
-        if fenced:
+        if not fenced:
+            visible.append((line_number, line))
+    return visible
+
+
+def markdown_headings(text: str) -> list[dict[str, int | str]]:
+    headings: list[dict[str, int | str]] = []
+    counts: dict[str, int] = {}
+    for line_number, line in _visible_markdown_lines(text):
+        match = ATX_HEADING.match(line)
+        if not match:
             continue
-        heading = ATX_HEADING.match(line)
+        title = match.group(2).strip()
+        base = re.sub(
+            r"-+",
+            "-",
+            re.sub(r"[^\w\s-]", "", title.lower()).replace(" ", "-"),
+        ).strip("-")
+        if not base:
+            continue
+        occurrence = counts.get(base, 0)
+        counts[base] = occurrence + 1
+        headings.append(
+            {
+                "level": len(match.group(1)),
+                "title": title,
+                "fragment": base if occurrence == 0 else f"{base}-{occurrence}",
+                "line": line_number,
+                "end_column": max(len(line), 1),
+            }
+        )
+    return headings
+
+
+def _markdown_structure(
+    repo: str,
+    source_id: str,
+    text: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    anchors: list[dict[str, Any]] = []
+    outbound: list[dict[str, Any]] = []
+    headings_by_line = {int(item["line"]): item for item in markdown_headings(text)}
+    current_context = "$artifact"
+    for line_number, line in _visible_markdown_lines(text):
+        heading = headings_by_line.get(line_number)
         if heading:
-            title = heading.group(2).strip()
-            base = re.sub(r"-+", "-", re.sub(r"[^\w\s-]", "", title.lower()).replace(" ", "-")).strip("-")
-            if base:
-                occurrence = heading_counts.get(base, 0)
-                heading_counts[base] = occurrence + 1
-                fragment = base if occurrence == 0 else f"{base}-{occurrence}"
-                current_context = f"heading:{fragment}"
-                anchors.append(
-                    _anchor(
-                        repo=repo,
-                        source_id=source_id,
-                        kind="markdown_heading",
-                        semantic_key=current_context,
-                        label=title,
-                        line=line_number,
-                        end_column=max(len(line), 1),
-                        fragment=fragment,
-                        parser="aoa-markdown",
-                    )
+            fragment = str(heading["fragment"])
+            current_context = f"heading:{fragment}"
+            anchors.append(
+                _anchor(
+                    repo=repo,
+                    source_id=source_id,
+                    kind="markdown_heading",
+                    semantic_key=current_context,
+                    label=str(heading["title"]),
+                    line=line_number,
+                    end_column=int(heading["end_column"]),
+                    fragment=fragment,
+                    parser="aoa-markdown",
                 )
+            )
         for occurrence, match in enumerate(MARKDOWN_LINK.finditer(line)):
             label, target = match.group(1).strip(), match.group(2).strip()
             semantic_key = f"link:{line_number}:{match.start() + 1}:{occurrence}:{target}"
@@ -221,7 +251,7 @@ def _python_name(node: ast.AST) -> str:
         return node.id
     if isinstance(node, ast.Attribute):
         prefix = _python_name(node.value)
-        return f"{prefix}.{node.attr}" if prefix else node.attr
+        return f"{prefix}.{node.attr}" if prefix else ""
     return ""
 
 

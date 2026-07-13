@@ -353,6 +353,25 @@ def validate_repo_local_kag_repository_index_family(
         fail(f"{label} artifact ids must exactly cover current source records")
 
     anchor_ids = ids_by_kind["anchor"]
+    advertised_headings = {
+        (str(record["identity"]["id"]), str(heading["anchor"]))
+        for record in source_records
+        if isinstance(record, dict)
+        and isinstance(record.get("identity"), dict)
+        for heading in record.get("refs", {}).get("heading_refs", [])
+        if isinstance(heading, dict) and heading.get("anchor")
+    }
+    indexed_headings = {
+        (str(entry["source_record_id"]), str(entry["locator"]["fragment"]))
+        for entry in entries["anchor"]
+        if isinstance(entry, dict)
+        and entry.get("anchor_kind") == "markdown_heading"
+        and isinstance(entry.get("locator"), dict)
+        and entry["locator"].get("fragment")
+    }
+    if advertised_headings != indexed_headings:
+        fail(f"{label} source heading refs must exactly match markdown anchors")
+
     for kind in ("artifact", "entity", "event", "assertion"):
         for entry in entries[kind]:
             if not isinstance(entry, dict):
@@ -379,6 +398,28 @@ def validate_repo_local_kag_repository_index_family(
                 source_id not in source_ids for source_id in source_record_ids
             ):
                 fail(f"{label} {kind} entries must return to current source records")
+
+    for event in entries["event"]:
+        if not isinstance(event, dict):
+            continue
+        object_ids = event.get("object_ids")
+        if not isinstance(object_ids, list) or any(
+            object_id not in ids_by_kind["artifact"] for object_id in object_ids
+        ):
+            fail(f"{label} event object ids must resolve to current artifacts")
+        if event.get("event_kind") not in {"git_commit", "repository_snapshot_change_set"}:
+            continue
+        changes = event.get("changes")
+        if not isinstance(changes, list):
+            fail(f"{label} repository history events must publish changes")
+        resolvable_changes = {
+            str(change["object_id"])
+            for change in changes
+            if isinstance(change, dict)
+            and change.get("object_id") in ids_by_kind["artifact"]
+        }
+        if set(object_ids) != resolvable_changes:
+            fail(f"{label} repository history object ids must cover resolvable changes")
 
     node_ids = set().union(
         ids_by_kind["artifact"],
