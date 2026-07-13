@@ -2,9 +2,9 @@
 
 `kag/` is the source home and local provider home for `aoa-kag`.
 
-It defines the shared repo-local KAG contract and carries the first active
-provider packet for that contract. Sibling repositories use the same record
-classes when their own source surfaces are ready.
+It defines the shared repo-local KAG contract and carries the `aoa-kag`
+repo-self provider packet. OS Abyss repositories publish the same common family
+with owner-specific catalogs where their domain requires them.
 
 ## Operating Card
 
@@ -32,18 +32,18 @@ classes when their own source surfaces are ready.
 | `projections/` | MCP/resource-facing compact views |
 | `receipts/` | validation receipts |
 
-`indexes/source_surface_index.json` is the repo-local source surface index for
-`aoa-kag`. It covers source files, Markdown documents and heading coordinates,
-mechanics, scripts, validators, tests, schemas, generated read models,
-receipts, ABI/sign posture, provenance, toolchain, owner-return routes, and
-`aoa-kag-mcp` resource coordinates.
+The common family under `indexes/` separates source classification, physical
+artifacts, internal anchors, logical entities, repository events,
+quality-gated assertions, and evidence-bearing relations. Owner-qualified
+identities, Git lineage,
+ABI/signs, provenance, freshness, access, temporal state, and trust remain
+resolvable through the family.
 
-`indexes/repo_entity_index.json`, `repo_artifact_index.json`, and
-`repo_event_index.json` are compact generated projections over that source
-index. They separate logical repository identity, physical artifacts, and
-repository-observable event surfaces without duplicating owner-domain data.
-An owner with native indexes may add `domain_index_catalog.json` as a route
-catalog governed by `schemas/domain-index-catalog.schema.json`.
+`scripts/query_repo_local_kag.py` exposes validated exact, lexical, graph, and
+hybrid retrieval. The programmatic query kernel also provides discovery,
+addressed read, and profile-aware filtering. An owner with native indexes adds
+`domain_index_catalog.json` as a route catalog governed by
+`schemas/domain-index-catalog.schema.json`.
 
 ## Provider Role
 
@@ -104,9 +104,9 @@ owners.
 
 ## Consumer Route
 
-`aoa-kag` composes provider packets into registry and composition surfaces.
-`abyss-stack` consumes the portable packet for runtime mirrors. `aoa-kag-mcp`
-exposes resources, roots, selected tools, and prompts from
+`aoa-kag` composes provider packets into registry and federation inputs.
+`abyss-stack` materializes runtime search and graph projections. `aoa-kag-mcp`
+will expose resources, roots, selected tools, and prompts from
 `generated/local_kag_provider_map.min.json`, validated provider packets,
-`kag/indexes/source_surface_index.json`, and
+the repo-self index families, and
 `generated/repo_local_kag_coverage.min.json`.

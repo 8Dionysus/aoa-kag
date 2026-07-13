@@ -81,7 +81,10 @@ REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
 REPO_LOCAL_REPOSITORY_INDEX_NAMES = {
     "repo_entity_index.json",
     "repo_artifact_index.json",
+    "repo_anchor_index.json",
     "repo_event_index.json",
+    "repo_assertion_index.json",
+    "repo_relation_index.json",
 }
 DOMAIN_INDEX_CATALOG_NAME = "domain_index_catalog.json"
 LOCAL_KAG_CONTROL_REFS = {"kag/manifest.json"}

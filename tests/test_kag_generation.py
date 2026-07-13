@@ -591,7 +591,10 @@ class KagGenerationTestCase(unittest.TestCase):
                 "source": "kag/indexes/source_surface_index.json",
                 "entity": "kag/indexes/repo_entity_index.json",
                 "artifact": "kag/indexes/repo_artifact_index.json",
+                "anchor": "kag/indexes/repo_anchor_index.json",
                 "event": "kag/indexes/repo_event_index.json",
+                "assertion": "kag/indexes/repo_assertion_index.json",
+                "relation": "kag/indexes/repo_relation_index.json",
             },
             providers["aoa-session-memory"]["repo_local_index"]["repository_index_family"],
         )

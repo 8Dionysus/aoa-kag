@@ -1,5 +1,5 @@
 name: Repo-local KAG index family
-description: Check repository-owned source, entity, artifact, and event indexes against the aoa-kag builder.
+description: Check repository-owned source, artifact, anchor, entity, event, assertion, and relation indexes against the aoa-kag builder.
 
 inputs:
   repo-root:
@@ -8,10 +8,37 @@ inputs:
   output:
     description: Source surface index path relative to the repository root; sibling repository indexes share its directory.
     default: kag/indexes/source_surface_index.json
+  history-ref:
+    description: Stable Git ref used for repository event history; pull requests default to the head SHA.
+    default: ""
 
 runs:
   using: composite
   steps:
+    - name: Prepare stable repository history
+      id: history
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        INPUT_HISTORY_REF: ${{ inputs.history-ref }}
+        PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        set -euo pipefail
+        history_ref="${INPUT_HISTORY_REF:-${PULL_REQUEST_HEAD_SHA:-HEAD}}"
+        if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
+          if [[ "$history_ref" == "HEAD" ]]; then
+            git fetch --no-tags --prune --unshallow origin
+          else
+            git fetch --no-tags --prune --unshallow origin "$history_ref"
+          fi
+        elif ! git cat-file -e "${history_ref}^{commit}" 2>/dev/null; then
+          git fetch --no-tags --prune origin "$history_ref"
+        fi
+        git cat-file -e "${history_ref}^{commit}"
+        repo_name="$(basename "$(git -C "${{ inputs.repo-root }}" rev-parse --show-toplevel)")"
+        printf 'AOA_REPO_LOCAL_KAG_HISTORY_REPO=%s\n' "$repo_name" >> "$GITHUB_ENV"
+        printf 'AOA_REPO_LOCAL_KAG_HISTORY_REF=%s\n' "$history_ref" >> "$GITHUB_ENV"
+        printf 'ref=%s\n' "$history_ref" >> "$GITHUB_OUTPUT"
     - name: Check repo-local index family parity
       shell: bash
       working-directory: ${{ github.workspace }}
@@ -20,4 +47,29 @@ runs:
         --repo-root "${{ inputs.repo-root }}"
         --output "${{ inputs.output }}"
         --index-family
+        --history-ref "${{ steps.history.outputs.ref }}"
         --check
+    - name: Check incremental index family parity
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: >-
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py"
+        --repo-root "${{ inputs.repo-root }}"
+        --output "${{ inputs.output }}"
+        --index-family
+        --incremental
+        --history-ref "${{ steps.history.outputs.ref }}"
+        --check
+    - name: Ensure repo-local validation dependencies
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        set -euo pipefail
+        python3 -c "import jsonschema" || python3 -m pip install --disable-pip-version-check jsonschema
+    - name: Validate repo-local index family contract
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: >-
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/validate_repo_local_kag_family.py"
+        --repo-root "${{ inputs.repo-root }}"
+        --source-index "${{ inputs.output }}"

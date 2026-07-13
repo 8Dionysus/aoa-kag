@@ -1,0 +1,90 @@
+{
+  "schema_version": "aoa-repo-local-kag-retrieval-bundle-v1",
+  "bundle_identity": {
+    "local_id": "bundle:os-abyss:repo-self-retrieval",
+    "content_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "projection_identity": {
+    "local_id": "projection:os-abyss:repo-self-retrieval",
+    "content_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "federation_identity": {
+    "local_id": "projection:os-abyss:repo-self-federation",
+    "content_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "canonical_inputs": [
+    {
+      "repo": {"name": "aoa-kag", "namespace": "aoa:aoa-kag"},
+      "source_index_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  ],
+  "projection_lanes": ["exact", "lexical", "vector", "hybrid", "graph"],
+  "retrieval_profile": {
+    "chunking": "semantic-anchor-with-source-gaps-v2",
+    "max_chunk_chars": 1800,
+    "overlap_chars": 180,
+    "source_verification": "sha256-content-digest"
+  },
+  "embedding_profile": {
+    "id": "qwen3-embedding-0.6b-v1",
+    "model": "Qwen/Qwen3-Embedding-0.6B",
+    "revision": "sha256:model-revision",
+    "dimensions": 1024,
+    "distance": "cosine",
+    "normalization": "l2",
+    "provider_contract": "abyss-stack-embedding-port-v1"
+  },
+  "summary": {
+    "owner_count": 1,
+    "document_count": 1,
+    "text_bytes": 42,
+    "node_class_counts": {"anchor": 1},
+    "access_scope_counts": {"public": 1}
+  },
+  "federation_summary": {
+    "owner_count": 1,
+    "node_count": 1,
+    "relation_count": 0,
+    "cross_repo_relation_count": 0,
+    "external_reference_count": 0,
+    "unresolved_reference_count": 0,
+    "relation_kind_counts": {}
+  },
+  "files": {
+    "owners": {
+      "path": "owners.jsonl",
+      "media_type": "application/x-ndjson",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "bytes": 256,
+      "record_count": 1
+    },
+    "nodes": {
+      "path": "nodes.jsonl",
+      "media_type": "application/x-ndjson",
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "bytes": 512,
+      "record_count": 1
+    },
+    "relations": {
+      "path": "relations.jsonl",
+      "media_type": "application/x-ndjson",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "bytes": 0,
+      "record_count": 0
+    },
+    "external_references": {
+      "path": "external_references.jsonl",
+      "media_type": "application/x-ndjson",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "bytes": 0,
+      "record_count": 0
+    },
+    "documents": {
+      "path": "documents.jsonl",
+      "media_type": "application/x-ndjson",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "bytes": 1024,
+      "record_count": 1
+    }
+  }
+}

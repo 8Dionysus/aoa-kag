@@ -44,66 +44,77 @@ jobs:
         with:
           repository: 8Dionysus/Tree-of-Sophia
           path: .deps/Tree-of-Sophia
+          fetch-depth: 0
 
       - name: Checkout Agents-of-Abyss
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Agents-of-Abyss
           path: .deps/Agents-of-Abyss
+          fetch-depth: 0
 
       - name: Checkout 8Dionysus
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/8Dionysus
           path: .deps/8Dionysus
+          fetch-depth: 0
 
       - name: Checkout Dionysus
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Dionysus
           path: .deps/Dionysus
+          fetch-depth: 0
 
       - name: Checkout ATM10-Agent
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/ATM10-Agent
           path: .deps/ATM10-Agent
+          fetch-depth: 0
 
       - name: Checkout aoa-memo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-memo
           path: .deps/aoa-memo
+          fetch-depth: 0
 
       - name: Checkout aoa-playbooks
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-playbooks
           path: .deps/aoa-playbooks
+          fetch-depth: 0
 
       - name: Checkout aoa-evals
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-evals
           path: .deps/aoa-evals
+          fetch-depth: 0
 
       - name: Checkout aoa-agents
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-agents
           path: .deps/aoa-agents
+          fetch-depth: 0
 
       - name: Checkout aoa-techniques
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-techniques
           path: .deps/aoa-techniques
+          fetch-depth: 0
 
       - name: Checkout aoa-session-memory
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-session-memory
           path: .deps/aoa-session-memory
+          fetch-depth: 0
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
           persist-credentials: false
 
@@ -112,72 +123,84 @@ jobs:
         with:
           repository: 8Dionysus/aoa-routing
           path: .deps/aoa-routing
+          fetch-depth: 0
 
       - name: Checkout aoa-sdk
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-sdk
           path: .deps/aoa-sdk
+          fetch-depth: 0
 
       - name: Checkout aoa-skills
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-skills
           path: .deps/aoa-skills
+          fetch-depth: 0
 
       - name: Checkout aoa-stats
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stats
           path: .deps/aoa-stats
+          fetch-depth: 0
 
       - name: Checkout abyss-stack
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/abyss-stack
           path: .deps/abyss-stack
+          fetch-depth: 0
 
       - name: Checkout abyss-machine
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/abyss-machine
           path: .deps/abyss-machine
+          fetch-depth: 0
 
       - name: Checkout aoa-4pda-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-4pda-connector
           path: .deps/aoa-4pda-connector
+          fetch-depth: 0
 
       - name: Checkout aoa-course-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-course-connector
           path: .deps/aoa-course-connector
+          fetch-depth: 0
 
       - name: Checkout aoa-discord-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-discord-connector
           path: .deps/aoa-discord-connector
+          fetch-depth: 0
 
       - name: Checkout aoa-stackoverflow-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stackoverflow-connector
           path: .deps/aoa-stackoverflow-connector
+          fetch-depth: 0
 
       - name: Checkout aoa-telegram-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-telegram-connector
           path: .deps/aoa-telegram-connector
+          fetch-depth: 0
 
       - name: Checkout aoa-xda-connector
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-xda-connector
           path: .deps/aoa-xda-connector
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405

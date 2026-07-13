@@ -1,0 +1,101 @@
+{
+  "schema_version": "aoa-repo-local-kag-query-result-v1",
+  "repo": {
+    "name": "aoa-example",
+    "namespace": "aoa:aoa-example",
+    "owner_type": "organ",
+    "root": ".",
+    "git_ref": "git-index-source-tree"
+  },
+  "mode": "exact",
+  "query": "README.md",
+  "source_index": {
+    "local_id": "index:repo-local:source-surfaces",
+    "content_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "git_ref": "git-index-source-tree"
+  },
+  "hits": [
+    {
+      "id": "aoa:aoa-example:artifact:example",
+      "node_class": "artifact",
+      "kind": "document",
+      "label": "README.md",
+      "path": "README.md",
+      "score": 1.0,
+      "source_record_ids": [
+        "aoa:aoa-example:artifact:example"
+      ],
+      "anchor_ids": [
+        "aoa:aoa-example:anchor:readme"
+      ],
+      "access_scope": "public",
+      "provenance": {
+        "mode": "deterministic",
+        "extractor_ref": "aoa-repo-local-kag@2",
+        "ref": "deterministic",
+        "extractor": {
+          "name": "aoa-repo-local-kag",
+          "version": "2"
+        }
+      },
+      "temporal": {
+        "state": "current",
+        "valid_from": "",
+        "valid_to": "",
+        "ref": "current"
+      },
+      "trust": {
+        "class": "deterministic",
+        "confidence": 1.0,
+        "ref": "deterministic"
+      },
+      "sources": [
+        {
+          "source_record_id": "aoa:aoa-example:artifact:example",
+          "path": "README.md",
+          "version_id": "aoa:aoa-example:artifact-version:example",
+          "content_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "abi": {
+            "artifact_class": "document",
+            "schema_version": "none",
+            "abi_epoch": "source",
+            "contract_version": "none",
+            "compatibility": "stable"
+          },
+          "signs": {
+            "digest": "1111111111111111111111111111111111111111111111111111111111111111",
+            "signature_ref": "",
+            "attestation_ref": "",
+            "verification_state": "digest-only"
+          },
+          "provenance": {
+            "observed_by": "scripts/generate_repo_local_kag_index.py"
+          },
+          "freshness": {
+            "mode": "source_snapshot",
+            "state": "current",
+            "checked_ref": "git-index-source-tree"
+          },
+          "access": {
+            "scope": "public",
+            "secrets_risk": "none"
+          },
+          "owner_return_route": {
+            "repo": "aoa-example",
+            "surface": "README.md",
+            "route_kind": "document_owner"
+          }
+        }
+      ],
+      "record": {
+        "id": "aoa:aoa-example:artifact:example"
+      },
+      "evidence": {
+        "relation_ids": [],
+        "anchor_ids": [
+          "aoa:aoa-example:anchor:readme"
+        ]
+      }
+    }
+  ]
+}

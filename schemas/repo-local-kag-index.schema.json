@@ -15,7 +15,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "aoa-repo-local-kag-index-v1"
+      "const": "aoa-repo-local-kag-index-v2"
     },
     "repo": {
       "$ref": "#/$defs/repoIdentity"
@@ -66,6 +66,7 @@
       "additionalProperties": false,
       "required": [
         "name",
+        "namespace",
         "owner_type",
         "root",
         "git_ref"
@@ -73,6 +74,10 @@
       "properties": {
         "name": {
           "$ref": "#/$defs/repoName"
+        },
+        "namespace": {
+          "type": "string",
+          "pattern": "^aoa:[a-z0-9_.-]+$"
         },
         "owner_type": {
           "type": "string",
@@ -439,9 +444,13 @@
       "additionalProperties": false,
       "required": [
         "id",
+        "logical_id",
+        "version_id",
+        "lineage_path",
         "repo",
         "path",
         "git_ref",
+        "git_blob_id",
         "content_hash",
         "size_bytes",
         "mime"
@@ -451,6 +460,17 @@
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9_.:/#-]*$"
         },
+        "logical_id": {
+          "type": "string",
+          "pattern": "^aoa:[a-z0-9_.:/#-]+$"
+        },
+        "version_id": {
+          "type": "string",
+          "pattern": "^aoa:[a-z0-9_.:/#-]+$"
+        },
+        "lineage_path": {
+          "$ref": "#/$defs/relativePath"
+        },
         "repo": {
           "$ref": "#/$defs/repoName"
         },
@@ -458,6 +478,9 @@
           "$ref": "#/$defs/relativePath"
         },
         "git_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "git_blob_id": {
           "$ref": "#/$defs/nonEmptyString"
         },
         "content_hash": {
@@ -800,10 +823,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "repo",
         "surface",
         "route_kind"
       ],
       "properties": {
+        "repo": {
+          "$ref": "#/$defs/repoName"
+        },
         "surface": {
           "$ref": "#/$defs/nonEmptyString"
         },
@@ -860,7 +887,7 @@
       ],
       "properties": {
         "consumer": {
-          "const": "aoa-kag-mcp"
+          "const": "aoa-kag"
         },
         "resource_shape": {
           "type": "array",

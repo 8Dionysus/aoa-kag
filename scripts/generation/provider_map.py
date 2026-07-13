@@ -29,7 +29,9 @@ def _provider_fallback_allowed(repo: str, fallback_provider: dict[str, object] |
 REPOSITORY_META_INDEX_SCHEMA_VERSIONS = {
     "aoa-domain-index-catalog-v1",
     "aoa-repo-local-kag-index-v1",
+    "aoa-repo-local-kag-index-v2",
     "aoa-repo-local-kag-repository-index-v1",
+    "aoa-repo-local-kag-repository-index-v2",
 }
 
 
@@ -131,7 +133,10 @@ def _provider_repo_local_index_packet(
             "source": "kag/indexes/source_surface_index.json",
             "entity": "kag/indexes/repo_entity_index.json",
             "artifact": "kag/indexes/repo_artifact_index.json",
+            "anchor": "kag/indexes/repo_anchor_index.json",
             "event": "kag/indexes/repo_event_index.json",
+            "assertion": "kag/indexes/repo_assertion_index.json",
+            "relation": "kag/indexes/repo_relation_index.json",
         }
         repository_index_family = {
             index_kind: path

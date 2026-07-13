@@ -1,7 +1,8 @@
 {
-  "schema_version": "aoa-repo-local-kag-index-v1",
+  "schema_version": "aoa-repo-local-kag-index-v2",
   "repo": {
     "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
     "owner_type": "organ",
     "root": ".",
     "git_ref": "example"
@@ -112,10 +113,14 @@
   "records": [
     {
       "identity": {
-        "id": "file:readme.md",
+        "id": "aoa:aoa-kag:artifact:readme.md:1111111111111111",
+        "logical_id": "aoa:aoa-kag:artifact:readme.md:1111111111111111",
+        "version_id": "aoa:aoa-kag:artifact-version:readme.md:1111111111111111",
+        "lineage_path": "README.md",
         "repo": "aoa-kag",
         "path": "README.md",
         "git_ref": "example",
+        "git_blob_id": "1111111111111111111111111111111111111111",
         "content_hash": "1111111111111111111111111111111111111111111111111111111111111111",
         "size_bytes": 1200,
         "mime": "text/markdown"
@@ -195,24 +200,31 @@
         ]
       },
       "owner_return_route": {
+        "repo": "aoa-kag",
         "surface": "README.md",
         "route_kind": "document_owner"
       },
       "validator_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/validate_kag.py",
         "route_kind": "source_fast"
       },
       "consumer_route": {
-        "surface": "aoa-kag-mcp",
-        "route_kind": "resource"
+        "repo": "aoa-kag",
+        "surface": "scripts/query_repo_local_kag.py",
+        "route_kind": "query"
       }
     },
     {
       "identity": {
-        "id": "file:scripts/validate_kag.py",
+        "id": "aoa:aoa-kag:artifact:scripts/validate_kag.py:2222222222222222",
+        "logical_id": "aoa:aoa-kag:artifact:scripts/validate_kag.py:2222222222222222",
+        "version_id": "aoa:aoa-kag:artifact-version:scripts/validate_kag.py:2222222222222222",
+        "lineage_path": "scripts/validate_kag.py",
         "repo": "aoa-kag",
         "path": "scripts/validate_kag.py",
         "git_ref": "example",
+        "git_blob_id": "2222222222222222222222222222222222222222",
         "content_hash": "2222222222222222222222222222222222222222222222222222222222222222",
         "size_bytes": 220,
         "mime": "text/x-python"
@@ -286,21 +298,24 @@
         "heading_refs": []
       },
       "owner_return_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/validate_kag.py",
         "route_kind": "validator_owner"
       },
       "validator_route": {
+        "repo": "aoa-kag",
         "surface": "scripts/validate_kag.py",
         "route_kind": "source_fast"
       },
       "consumer_route": {
-        "surface": "aoa-kag-mcp",
-        "route_kind": "resource"
+        "repo": "aoa-kag",
+        "surface": "scripts/query_repo_local_kag.py",
+        "route_kind": "query"
       }
     }
   ],
   "registry_output": {
-    "consumer": "aoa-kag-mcp",
+    "consumer": "aoa-kag",
     "resource_shape": [
       "repo-local-source-surface-index",
       "repo-local-document-records",
@@ -308,6 +323,8 @@
     ],
     "stable_fields": [
       "identity.id",
+      "identity.logical_id",
+      "identity.version_id",
       "identity.path",
       "identity.content_hash",
       "artifact_kind",

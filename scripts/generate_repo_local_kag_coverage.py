@@ -329,6 +329,7 @@ def repository_index_family_matches_owner(
     expected = build_repository_indexes(
         source_index,
         source_index_path=SOURCE_SURFACE_INDEX_REL,
+        repo_root=owner_root,
     )
     for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
         path = owner_root / "kag" / "indexes" / filename

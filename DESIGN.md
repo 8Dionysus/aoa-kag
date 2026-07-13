@@ -55,7 +55,7 @@ and where does a stronger claim return?
 | root surfaces | public entry, charter boundary, system form, agent route law, current direction |
 | `docs/` | authored explanation of KAG model, source policy, boundaries, bridge contracts, maturity, quarantine, regrounding, and consumer posture |
 | `docs/decisions/` | durable rationale for KAG route, boundary, manifest, generated-pack, validator, and federation choices |
-| `kag/` | source-home preflight for future repo-local KAG subtrees, portable record classes, repo-local source surface indexes, rollout stop-lines, and runtime-state exclusions |
+| `kag/` | active repo-local KAG protocol, canonical repo-self index family, owner packet, and runtime projection routes |
 | `mechanics/` | repeatable KAG operation topology and future package routes around substrate work |
 | `manifests/` | source-authored control surfaces for what should be lifted and what outputs should exist |
 | `generated/` | derived KAG read models and compact payloads built from source surfaces |
@@ -97,16 +97,15 @@ The repository should support:
 
 - source-linked graph and retrieval projections;
 - stable KAG surface identifiers;
-- repo-local source, entity, artifact, and event indexes with document,
-  mechanics, command, provenance, ABI/sign, and owner-return coordinates;
+- repo-local source, artifact, anchor, entity, event, assertion, and relation indexes with
+  owner-qualified identity, Git lineage, provenance, temporal, trust,
+  ABI/sign, access, and owner-return coordinates;
 - manifest-driven generation;
 - schema-checked payloads and examples;
 - bounded bridge and handoff routes;
 - maturity and owner-wait stop-rules;
-- a repo-local `/kag` subtree protocol rooted in the `kag/` source-home
-  preflight, without
-  template-copying it into sibling repositories before schemas, examples, and
-  validation exist;
+- an active repo-local `/kag` subtree protocol with owner-generated canonical
+  records, common validation, owner extensions, and federation inputs;
 - downstream `aoa-kag-mcp` and `aoa-kag-skills` layers that remain downstream
   of core substrate contracts.
 
@@ -146,12 +145,11 @@ downstream. They should not define the core KAG ontology too early.
 KAG may support these layers. It does not own their doctrine, verdicts,
 objects, dispatch, identities, or live state.
 
-### 7. Federation before warehouse
+### 7. Owner-local federation
 
-The `kag/` source-home preflight should let future repositories own their local
-indexes, graph nodes, graph edges, and projections through a shared protocol.
-`aoa-kag` should define and compose the protocol, not absorb every mutable
-graph artifact.
+Each repository owns its canonical repo-self records through the shared
+protocol. `aoa-kag` composes qualified owner subgraphs, and runtime owners
+materialize mutable graph and search stores.
 
 ### 8. Agent guidance is route law
 
@@ -175,17 +173,15 @@ risk.
 - a consumer can return to stronger owner refs;
 - a future contributor can find why a route exists.
 
-## Bad Design Smells Like
+## Design Signals
 
-- root inflation;
-- generated files cited as source truth;
-- vague repository-level provenance;
-- graph claims without bounded source refs;
-- retrieval packs becoming routing policy;
-- KAG surfaces becoming proof, memory, role, playbook, or runtime doctrine;
-- framework adapters defining substrate ontology;
-- sibling `/kag` directory plans scattered across current docs instead of kept
-  behind the explicit `kag/` protocol stop-line.
+- compact root routes;
+- generated records linked to source owners;
+- record-level provenance, trust, and temporal state;
+- assertions and graph edges backed by source anchors;
+- retrieval results carrying owner-return evidence;
+- qualified owner boundaries through federation;
+- framework adapters consuming a stable canonical kernel.
 
 ## Relationship to Other Root Surfaces
 
@@ -195,8 +191,8 @@ risk.
 [`DESIGN.AGENTS.md`](DESIGN.AGENTS.md) holds the design form of the
 agent-facing route mesh.
 [`ROADMAP.md`](ROADMAP.md) names current direction.
-[`kag/`](kag/README.md) holds the local-subtree source-home and protocol
-preflight.
+[`kag/`](kag/README.md) holds the active local-subtree protocol and canonical
+repo-self family.
 [`docs/KAG_MODEL.md`](docs/KAG_MODEL.md) defines the conceptual KAG model.
 [`docs/BOUNDARIES.md`](docs/BOUNDARIES.md) names owner boundaries.
 [`docs/SOURCE_POLICY.md`](docs/SOURCE_POLICY.md) defines source-first posture.
@@ -215,7 +211,7 @@ Agents should consult this file when a change alters:
 - root surfaces;
 - source versus derived authority;
 - mechanics topology or package posture;
-- local `/kag` protocol posture or sibling local-subtree rollout stop-lines;
+- local `/kag` protocol, canonical family, or sibling adoption posture;
 - manifest and generated-surface posture;
 - KAG owner boundaries;
 - federation or local `/kag` protocol posture;

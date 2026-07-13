@@ -170,6 +170,26 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             self.assertNotIn(index_command, sequence[last_index_check + 1 :])
             self.assertNotIn(generate_kag_command, sequence[last_check + 1 :])
 
+    def test_generated_drift_paths_cover_the_complete_repository_index_family(self) -> None:
+        drift_paths = set(drift_paths_from_manifest("generated"))
+        self.assertTrue(
+            {
+                "kag/indexes/source_surface_index.json",
+                "kag/indexes/repo_entity_index.json",
+                "kag/indexes/repo_artifact_index.json",
+                "kag/indexes/repo_anchor_index.json",
+                "kag/indexes/repo_event_index.json",
+                "kag/indexes/repo_assertion_index.json",
+                "kag/indexes/repo_relation_index.json",
+            }.issubset(drift_paths)
+        )
+        canary_diff = next(
+            command
+            for command in command_sequence_from_manifest("compatibility_canary")
+            if command[:3] == ("git", "diff", "--exit-code")
+        )
+        self.assertIn("kag/indexes/repo_assertion_index.json", canary_diff)
+
     def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
         with patch.object(ci_gate, "run_sequence") as run_sequence:
             ci_gate.run_source_fast()
@@ -254,7 +274,21 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn('--repo-root "${{ inputs.repo-root }}"', action)
         self.assertIn('--output "${{ inputs.output }}"', action)
         self.assertIn("--index-family", action)
+        self.assertIn("--incremental", action)
+        self.assertIn("history-ref:", action)
+        self.assertIn("--unshallow", action)
+        self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REPO", action)
+        self.assertIn("AOA_REPO_LOCAL_KAG_HISTORY_REF", action)
+        self.assertIn('>> "$GITHUB_ENV"', action)
+        self.assertIn('--history-ref "${{ steps.history.outputs.ref }}"', action)
         self.assertIn("--check", action)
+        self.assertIn("scripts/validate_repo_local_kag_family.py", action)
+        self.assertIn("python3 -m pip install", action)
+        self.assertLess(
+            action.index("python3 -m pip install"),
+            action.index("scripts/validate_repo_local_kag_family.py"),
+        )
+        self.assertIn('--source-index "${{ inputs.output }}"', action)
         self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)
 
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
@@ -269,6 +303,14 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertEqual(
             expected_sibling_providers,
             set(CANARY_PROVIDER_ROOT_ENVS),
+        )
+        self.assertEqual(
+            len(expected_sibling_providers),
+            repo_validation.count("fetch-depth: 0"),
+        )
+        self.assertEqual(
+            len(expected_sibling_providers),
+            canary.count("fetch-depth: 0"),
         )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):

@@ -24,6 +24,21 @@ Within `aoa-kag`, a KAG surface should mean a derived knowledge-ready structure 
 
 The first useful distinction is between KAG surface archetypes such as:
 
+### Repository self-knowledge kernel
+
+Every OS Abyss repository publishes a canonical repo-self family from its own
+`/kag`. The family distinguishes tracked artifacts, internal anchors, logical
+entities, repository events, quality-gated assertions, and evidence-bearing
+relations. Repository
+namespace, Git lineage, source digest, ABI/sign posture, provenance, temporal
+state, trust, freshness, access, and owner-return routes preserve each organ's
+identity through federation.
+Federation resolves source links through current and historical Git locators,
+while external web, owner, and GitHub-object references remain typed evidence.
+
+Native domain indexes remain product surfaces of their owners and appear in
+repo-self KAG through a domain-index catalog.
+
 ### Metadata spine projection
 
 A bounded projection of source metadata that supports lookup, identity, and routing without replacing authored meaning.
@@ -55,6 +70,11 @@ A bounded retrieval-facing surface that returns handles back to stronger source
 or owner refs without taking ranking, routing, or graph-normalization
 ownership.
 
+Runtime materializers consume a deterministic retrieval bundle. Its manifest
+binds canonical input digests to line-addressable owners, nodes, relations,
+external references, and retrieval documents with stable vector point
+identities, without placing large runtime stores in source Git.
+
 The current bounded examples are `AOA-K-0007`, the tiny-entry retrieval-axis
 pilot, and `AOA-K-0011`, the standalone route-family handles surface derived
 from `AOA-K-0010`.
@@ -70,15 +90,12 @@ This kind of view remains:
 - source-linked
 - explicitly non-identity
 
-## What a KAG surface must not do
+## Owner routing
 
-A KAG surface should not silently become:
-- the authored source
-- proof
-- routing logic
-- memory truth
-
-A KAG surface may support all of those layers, but does not replace them.
+Authored meaning returns to its source repository. Proof routes to `aoa-evals`,
+routing policy to `aoa-routing`, durable memory meaning to `aoa-memo`, session
+history to `aoa-session-memory`, and runtime materialization to `abyss-stack`.
+KAG records preserve the handles needed for each return.
 
 ## KAG posture
 

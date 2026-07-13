@@ -55,6 +55,7 @@ def write_repository_index_family(owner_root: Path) -> dict[str, object]:
     for index_kind, payload in build_repository_indexes(
         source_index,
         source_index_path=source_path,
+        repo_root=owner_root,
     ).items():
         (index_root / REPOSITORY_INDEX_FILENAMES[index_kind]).write_text(
             normalized_json(payload),
@@ -823,6 +824,12 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             "aoa-kag:scripts/validate_kag.py",
             readme_record["validator_route"]["surface"],
         )
+        self.assertEqual("aoa-kag", readme_record["validator_route"]["repo"])
+        self.assertEqual("aoa-kag", readme_record["consumer_route"]["repo"])
+        self.assertEqual(
+            "aoa-demo-connector",
+            readme_record["owner_return_route"]["repo"],
+        )
 
         inventory_record = records_by_path["kag/indexes/source_inventory.json"]
         projection_record = records_by_path["kag/projections/source_return.json"]
@@ -1108,7 +1115,10 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             "source": "kag/indexes/source_surface_index.json",
             "entity": "kag/indexes/repo_entity_index.json",
             "artifact": "kag/indexes/repo_artifact_index.json",
+            "anchor": "kag/indexes/repo_anchor_index.json",
             "event": "kag/indexes/repo_event_index.json",
+            "assertion": "kag/indexes/repo_assertion_index.json",
+            "relation": "kag/indexes/repo_relation_index.json",
         }
         self.assertEqual(expected_family, owners["aoa-demo"]["repository_index_family"])
         self.assertEqual("", owners["aoa-demo"]["domain_index_catalog_ref"])

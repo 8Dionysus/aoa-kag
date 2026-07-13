@@ -256,7 +256,7 @@
     {
       "path": "scripts/validators/schema_surfaces.py",
       "module_type": "schema",
-      "function": "Validate JSON schema surfaces used by KAG read-models, packs, and examples.",
+      "function": "Validate JSON schema surfaces used by KAG read-models, runtime bundles, packs, and examples.",
       "inputs": [
         "schema files",
         "schemas/local-kag-provider-map.schema.json"
@@ -314,12 +314,27 @@
     {
       "path": "scripts/validators/repo_local_kag_index.py",
       "module_type": "repo_local_kag_index_contract",
-      "function": "Validate repo-local source surface index schema, example, generated index parity, and OS-wide coverage parity.",
+      "function": "Validate repo-local source and repository index schemas, query and retrieval projection contracts, complete family integrity, examples, generated parity, and OS-wide coverage parity.",
       "inputs": [
         "schemas/repo-local-kag-index.schema.json",
+        "schemas/repo-local-kag-repository-index.schema.json",
+        "schemas/repo-local-kag-query-result.schema.json",
+        "schemas/repo-local-kag-federation.schema.json",
+        "schemas/repo-local-kag-retrieval-plan.schema.json",
+        "schemas/repo-local-kag-retrieval-bundle.schema.json",
         "schemas/repo-local-kag-coverage.schema.json",
         "examples/repo_local_kag_index.example.json",
+        "examples/repo_local_kag_query_result.example.json",
+        "examples/repo_local_kag_federation.example.json",
+        "examples/repo_local_kag_retrieval_plan.example.json",
+        "examples/repo_local_kag_retrieval_bundle.example.json",
         "kag/indexes/source_surface_index.json",
+        "kag/indexes/repo_artifact_index.json",
+        "kag/indexes/repo_anchor_index.json",
+        "kag/indexes/repo_entity_index.json",
+        "kag/indexes/repo_event_index.json",
+        "kag/indexes/repo_assertion_index.json",
+        "kag/indexes/repo_relation_index.json",
         "generated/repo_local_kag_coverage.json"
       ],
       "outputs": [
