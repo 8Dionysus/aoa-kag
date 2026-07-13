@@ -742,6 +742,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 {
                     "AOA_REPO_LOCAL_KAG_HISTORY_REPO": root.name,
                     "AOA_REPO_LOCAL_KAG_HISTORY_REF": feature_sha,
+                    "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF": feature_sha,
                 },
             ):
                 merge_source_index = build_index(root)
