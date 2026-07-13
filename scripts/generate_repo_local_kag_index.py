@@ -31,7 +31,7 @@ try:
         entity_entries as project_entity_entries,
         relation_entries as project_relation_entries,
     )
-    from scripts.repo_local.structure import extract_structure
+    from scripts.repo_local.structure import extract_structure, markdown_headings
 except ImportError:  # pragma: no cover - direct script execution
     from repo_local.identity import (  # type: ignore
         artifact_identity,
@@ -47,7 +47,7 @@ except ImportError:  # pragma: no cover - direct script execution
         entity_entries as project_entity_entries,
         relation_entries as project_relation_entries,
     )
-    from repo_local.structure import extract_structure  # type: ignore
+    from repo_local.structure import extract_structure, markdown_headings  # type: ignore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -208,7 +208,6 @@ EXCLUDED_PARTS = {
     "htmlcov",
 }
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
-MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 OUTPUT_REFERENCE_LITERAL = re.compile(
     rb"\b(?:emit|emitted|export|exported|publish|published|render|rendered|"
     rb"save|saved|write|writes|writing|wrote)\b",
@@ -509,42 +508,21 @@ def kag_validator_route(repo_root: Path, repo: str, tracked_paths: set[Path]) ->
     return manifest_validation_route(repo_root, "local-kag") or EXTERNAL_KAG_VALIDATOR_ROUTE
 
 
-def markdown_anchor(text: str) -> str:
-    anchor = text.strip().lower()
-    anchor = re.sub(r"[^\w\s-]", "", anchor)
-    anchor = re.sub(r"\s+", "-", anchor)
-    anchor = re.sub(r"-+", "-", anchor)
-    return anchor.strip("-")
-
-
 def heading_refs(content: bytes, rel_path: str) -> list[dict[str, Any]]:
-    refs: list[dict[str, Any]] = []
-    seen: dict[str, int] = {}
     try:
-        lines = content.decode("utf-8").splitlines()
+        headings = markdown_headings(content.decode("utf-8"))
     except UnicodeDecodeError:
-        return refs
-    for line_number, line in enumerate(lines, start=1):
-        match = MARKDOWN_HEADING.match(line)
-        if not match:
-            continue
-        title = match.group(2).strip()
-        base = markdown_anchor(title)
-        if not base:
-            continue
-        suffix = seen.get(base, 0)
-        seen[base] = suffix + 1
-        anchor = base if suffix == 0 else f"{base}-{suffix}"
-        refs.append(
-            {
-                "level": len(match.group(1)),
-                "title": title,
-                "anchor": anchor,
-                "line": line_number,
-                "ref": f"{rel_path}#{anchor}",
-            }
-        )
-    return refs
+        return []
+    return [
+        {
+            "level": int(heading["level"]),
+            "title": str(heading["title"]),
+            "anchor": str(heading["fragment"]),
+            "line": int(heading["line"]),
+            "ref": f"{rel_path}#{heading['fragment']}",
+        }
+        for heading in headings
+    ]
 
 
 def mime_for(path: Path, content: bytes = b"", *, git_mode: str = "") -> str:

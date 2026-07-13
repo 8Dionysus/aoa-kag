@@ -25,18 +25,27 @@ runs:
       env:
         INPUT_HISTORY_REF: ${{ inputs.history-ref }}
         INPUT_EVENT_HISTORY_REF: ${{ inputs.event-history-ref }}
-        PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
       run: |
         set -euo pipefail
-        history_ref="${INPUT_HISTORY_REF:-${PULL_REQUEST_BASE_SHA:-HEAD}}"
-        event_history_ref="${INPUT_EVENT_HISTORY_REF:-${PULL_REQUEST_BASE_SHA:-$history_ref}}"
         if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
-          if [[ "$history_ref" == "HEAD" ]]; then
-            git fetch --no-tags --prune --unshallow origin
-          else
-            git fetch --no-tags --prune --unshallow origin "$history_ref"
-          fi
-        elif ! git cat-file -e "${history_ref}^{commit}" 2>/dev/null; then
+          git fetch --no-tags --prune --unshallow origin
+        fi
+        if [[ -n "$INPUT_HISTORY_REF" ]]; then
+          history_ref="$INPUT_HISTORY_REF"
+        else
+          default_branch="$(
+            git ls-remote --symref origin HEAD |
+              sed -n 's#^ref: refs/heads/\([^[:space:]]*\)[[:space:]]*HEAD$#\1#p' |
+              head -n 1
+          )"
+          test -n "$default_branch"
+          default_ref="refs/remotes/origin/$default_branch"
+          git fetch --no-tags --prune origin \
+            "+refs/heads/$default_branch:$default_ref"
+          history_ref="$(git merge-base HEAD "$default_ref")"
+        fi
+        event_history_ref="${INPUT_EVENT_HISTORY_REF:-$history_ref}"
+        if ! git cat-file -e "${history_ref}^{commit}" 2>/dev/null; then
           git fetch --no-tags --prune origin "$history_ref"
         fi
         git cat-file -e "${history_ref}^{commit}"

@@ -457,7 +457,6 @@ def relation_entries(
             key = entity["semantic_key"].split(":", 2)[-1]
             qualified_name = key.rsplit(":", 1)[-1]
             python_entities_by_name.setdefault(qualified_name, []).append(entity)
-            python_entities_by_name.setdefault(qualified_name.rsplit(".", 1)[-1], []).append(entity)
 
     for anchor in anchors:
         source_id = anchor["source_record_id"]
