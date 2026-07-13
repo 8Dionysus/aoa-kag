@@ -219,6 +219,35 @@ class RepoKagFederationTests(unittest.TestCase):
             projection["cross_repo_relations"][0]["to_id"],
         )
 
+    def test_repo_ref_does_not_fall_back_to_a_shorter_path_suffix(self) -> None:
+        with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
+            first = owner_bundle(
+                Path(first_tmp),
+                "aoa-first",
+                readme="# First\n\nSee [missing](repo://aoa-second/docs/missing.md).\n",
+            )
+            second_root = Path(second_tmp)
+            write_fixture(second_root)
+            (second_root / "missing.md").write_text("# Wrong target\n", encoding="utf-8")
+            (second_root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "aoa-second"}), encoding="utf-8"
+            )
+            second_source = build_index(second_root)
+            second_family = build_repository_indexes(second_source, repo_root=second_root)
+            projection = RepoKagFederation(
+                {
+                    "aoa-first": first,
+                    "aoa-second": (second_source, second_family),
+                }
+            ).projection()
+
+        self.assertEqual([], projection["cross_repo_relations"])
+        self.assertEqual(1, len(projection["unresolved_references"]))
+        self.assertEqual(
+            "unresolved-path",
+            projection["unresolved_references"][0]["resolution_state"],
+        )
+
     def test_federated_graph_query_crosses_owner_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
             first = owner_bundle(

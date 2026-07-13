@@ -303,7 +303,12 @@ class RepoKagFederation:
             )
         target_path = ""
         target_kind = ""
-        for offset in range(first_path_offset, len(tail_parts)):
+        candidate_offsets = (
+            (0,)
+            if parsed.scheme == "repo"
+            else range(first_path_offset, len(tail_parts))
+        )
+        for offset in candidate_offsets:
             candidate = "/".join(tail_parts[offset:])
             if (target_repo, candidate) in self._artifacts_by_repo_path:
                 target_path = candidate

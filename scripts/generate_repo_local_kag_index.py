@@ -75,6 +75,12 @@ FILESYSTEM_SOURCE_REF = "filesystem-source-tree"
 HISTORY_REPO_ENV = "AOA_REPO_LOCAL_KAG_HISTORY_REPO"
 HISTORY_REF_ENV = "AOA_REPO_LOCAL_KAG_HISTORY_REF"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
+REPO_LOCAL_GENERATOR_HELPER_PATHS = {
+    Path("scripts/repo_local/history.py"),
+    Path("scripts/repo_local/identity.py"),
+    Path("scripts/repo_local/indexes.py"),
+    Path("scripts/repo_local/structure.py"),
+}
 PORTABLE_MIME_BY_SUFFIX = {
     ".7z": "application/x-7z-compressed",
     ".alloy": "text/plain",
@@ -1423,6 +1429,7 @@ def build_index(
             path
             for path in indexed_paths
             if path == Path("kag/manifest.json")
+            or path in REPO_LOCAL_GENERATOR_HELPER_PATHS
             or path.name.startswith(("build_", "generate_"))
             or "builders" in path.parts
         }

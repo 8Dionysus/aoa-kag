@@ -328,6 +328,35 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(full, incremental)
         self.assertEqual(1, build_record_spy.call_count)
 
+    def test_incremental_source_build_invalidates_for_generator_helper_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=root, check=True)
+            write_fixture(root)
+            helper = root / "scripts" / "repo_local" / "identity.py"
+            helper.parent.mkdir(parents=True)
+            helper.write_text("IDENTITY_VERSION = 1\n", encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "initial"), cwd=root, check=True)
+            previous = build_index(root)
+            helper.write_text("IDENTITY_VERSION = 2\n", encoding="utf-8")
+            subprocess.run(("git", "add", helper.relative_to(root).as_posix()), cwd=root, check=True)
+
+            with mock.patch(
+                "scripts.generate_repo_local_kag_index.build_record",
+                wraps=__import__(
+                    "scripts.generate_repo_local_kag_index",
+                    fromlist=["build_record"],
+                ).build_record,
+            ) as build_record_spy:
+                incremental = build_index_incremental(root, previous)
+            full = build_index(root)
+
+        self.assertEqual(full, incremental)
+        self.assertEqual(len(full["records"]), build_record_spy.call_count)
+
     def test_incremental_family_build_matches_full_rebuild(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
