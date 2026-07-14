@@ -46,9 +46,9 @@ class RoadmapParityTestCase(unittest.TestCase):
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-        self.assertIn("Current release: `v0.4.0`", readme)
-        self.assertIn("## [0.4.0]", changelog)
-        self.assertIn("`v0.4.0`", roadmap)
+        self.assertIn("Current release: `v0.5.0`", readme)
+        self.assertIn("## [0.5.0]", changelog)
+        self.assertIn("`v0.5.0`", roadmap)
         self.assertIn("release contour", roadmap)
         self.assertIn("Roadmap drift", roadmap)
         self.assertIn("source repositories remain authoritative", roadmap)

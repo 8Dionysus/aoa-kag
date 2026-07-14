@@ -5,7 +5,7 @@ AoA KAG layer.
 
 ## Current phase
 
-`aoa-kag` has moved beyond bootstrap into `v0.4.0` derived-substrate release
+`aoa-kag` has moved beyond bootstrap into `v0.5.0` derived-substrate release
 hardening.
 The current goal is not to build a giant graph engine.
 The goal is to keep clear what the KAG layer is for, what it owns, and what it must not silently absorb.
@@ -28,8 +28,19 @@ It now also carries one retrieval-outage honesty example family for projection-h
 
 ### Current release contour
 
-For `v0.4.0`, the release contour is the current derived substrate portfolio,
+For `v0.5.0`, the release contour is the current derived substrate portfolio,
 not a claim that KAG is a full graph engine or a source-authoritative layer:
+
+- canonical repository self-knowledge and federation:
+  `kag/indexes/source_surface_index.json`,
+  `kag/indexes/repo_entity_index.json`,
+  `kag/indexes/repo_artifact_index.json`,
+  `kag/indexes/repo_anchor_index.json`,
+  `kag/indexes/repo_event_index.json`,
+  `kag/indexes/repo_assertion_index.json`,
+  `kag/indexes/repo_relation_index.json`,
+  `generated/local_kag_provider_map.min.json`, and
+  `generated/repo_local_kag_coverage.min.json`
 
 - registry and source-owned federation export posture:
   `generated/kag_registry.min.json`,
