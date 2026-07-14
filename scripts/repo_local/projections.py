@@ -38,15 +38,17 @@ def _sha256(content: bytes) -> str:
 
 
 def _canonical_digest(payload: dict[str, Any], identity_key: str) -> str:
-    material = copy.deepcopy(payload)
-    material[identity_key]["content_digest"] = ZERO_DIGEST
-    encoded = json.dumps(
-        material,
+    if payload[identity_key]["content_digest"] != ZERO_DIGEST:
+        raise ValueError(f"{identity_key} content digest must be zero while hashing")
+    digest = hashlib.sha256()
+    encoder = json.JSONEncoder(
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
-    ).encode("utf-8")
-    return _sha256(encoded)
+    )
+    for chunk in encoder.iterencode(payload):
+        digest.update(chunk.encode("utf-8"))
+    return digest.hexdigest()
 
 
 def _verified_source_bytes(repo_root: Path, record: dict[str, Any]) -> bytes:

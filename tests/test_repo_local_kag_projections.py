@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import copy
+import hashlib
 import json
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
+from scripts.build_repo_local_kag_retrieval_plan import _write_or_compare_json
 from scripts.generate_repo_local_kag_index import build_index, build_repository_indexes
 from scripts.repo_local.bundle import (
     build_retrieval_bundle_manifest,
@@ -48,6 +52,44 @@ class DeterministicEmbeddingPort:
 
 
 class RepoKagProjectionTests(unittest.TestCase):
+    def test_retrieval_plan_file_write_and_check_stream_json(self) -> None:
+        payload = {"owners": ["aoa-first", "aoa-second"], "version": 1}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "plan.json"
+            with patch(
+                "scripts.build_repo_local_kag_retrieval_plan.json.dumps",
+                side_effect=AssertionError("monolithic serialization"),
+            ):
+                self.assertTrue(
+                    _write_or_compare_json(
+                        output,
+                        payload,
+                        pretty=False,
+                        check=False,
+                    )
+                )
+                output.parent.chmod(0o555)
+                try:
+                    self.assertTrue(
+                        _write_or_compare_json(
+                            output,
+                            payload,
+                            pretty=False,
+                            check=True,
+                        )
+                    )
+                    self.assertFalse(
+                        _write_or_compare_json(
+                            output,
+                            {**payload, "version": 2},
+                            pretty=False,
+                            check=True,
+                        )
+                    )
+                finally:
+                    output.parent.chmod(0o755)
+            self.assertEqual([], list(output.parent.glob(".*.tmp-*")))
+
     def test_retrieval_documents_are_anchor_bounded_and_source_verified(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -122,6 +164,20 @@ class RepoKagProjectionTests(unittest.TestCase):
         Draft202012Validator.check_schema(schema)
         Draft202012Validator(schema).validate(plan)
         self.assertEqual(plan, repeated)
+        digest_material = copy.deepcopy(plan)
+        digest_material["projection_identity"]["content_digest"] = "0" * 64
+        expected_digest = hashlib.sha256(
+            json.dumps(
+                digest_material,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        self.assertEqual(
+            expected_digest,
+            plan["projection_identity"]["content_digest"],
+        )
         self.assertEqual(2, plan["summary"]["owner_count"])
         self.assertEqual(
             plan["summary"]["document_count"],

@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
@@ -46,7 +47,11 @@ def load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def write_repository_index_family(owner_root: Path) -> dict[str, object]:
+def write_repository_index_family(
+    owner_root: Path,
+    *,
+    history_ref: str | None = None,
+) -> dict[str, object]:
     source_path = Path("kag/indexes/source_surface_index.json")
     source_index = build_index(owner_root, output=source_path)
     index_root = owner_root / source_path.parent
@@ -56,6 +61,8 @@ def write_repository_index_family(owner_root: Path) -> dict[str, object]:
         source_index,
         source_index_path=source_path,
         repo_root=owner_root,
+        history_ref=history_ref,
+        event_history_ref=history_ref,
     ).items():
         (index_root / REPOSITORY_INDEX_FILENAMES[index_kind]).write_text(
             normalized_json(payload),
@@ -1172,6 +1179,144 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             {"source": "kag/indexes/source_surface_index.json"},
             owner["repository_index_family"],
         )
+
+    def test_coverage_rejects_reproducible_family_with_dangling_event_object(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo"
+            (root / "scripts").mkdir(parents=True)
+            (root / ".github" / "workflows").mkdir(parents=True)
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            (root / "scripts" / "run.py").write_text(
+                "print('run')\n",
+                encoding="utf-8",
+            )
+            (root / ".github" / "workflows" / "validate.yml").write_text(
+                "name: Validate\n",
+                encoding="utf-8",
+            )
+            source_index = write_repository_index_family(root)
+            family = {
+                index_kind: load_json(
+                    root / "kag" / "indexes" / filename
+                )
+                for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+            }
+            event = family["event"]
+            event["entries"][0]["object_ids"] = [
+                "aoa:aoa-demo:artifact:dangling"
+            ]
+            event["index_identity"]["content_digest"] = payload_digest(event)
+            (root / "kag" / "indexes" / REPOSITORY_INDEX_FILENAMES["event"]).write_text(
+                normalized_json(event),
+                encoding="utf-8",
+            )
+
+            with patch.object(
+                coverage_generation,
+                "build_repository_indexes",
+                return_value=family,
+            ):
+                self.assertFalse(
+                    coverage_generation.repository_index_family_matches_owner(
+                        root,
+                        source_index,
+                    )
+                )
+
+    def test_coverage_recovers_landed_snapshot_history_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo"
+            root.mkdir()
+            subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "Base"], cwd=root, check=True, capture_output=True)
+            base = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(["git", "switch", "-c", "feature"], cwd=root, check=True, capture_output=True)
+            (root / "SOURCE.md").write_text("# Source\n", encoding="utf-8")
+            subprocess.run(["git", "add", "SOURCE.md"], cwd=root, check=True)
+            write_repository_index_family(root, history_ref=base)
+            subprocess.run(["git", "add", "kag"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "Feature"], cwd=root, check=True, capture_output=True)
+            tree = subprocess.run(
+                ["git", "rev-parse", "HEAD^{tree}"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            squash = subprocess.run(
+                ["git", "commit-tree", tree, "-p", base],
+                cwd=root,
+                input="Landed feature\n",
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(["git", "switch", "--detach", squash], cwd=root, check=True, capture_output=True)
+
+            status, _ = coverage_generation.index_status(root)
+
+        self.assertEqual("passed", status)
+
+    def test_coverage_recovers_history_boundary_from_second_merge_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo"
+            root.mkdir()
+
+            def git(*args: str) -> str:
+                return subprocess.run(
+                    ("git", *args),
+                    cwd=root,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+
+            git("init", "-b", "main")
+            git("config", "user.name", "Test")
+            git("config", "user.email", "test@example.com")
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            git("add", "README.md")
+            git("commit", "-m", "Base")
+            base = git("rev-parse", "HEAD")
+            git("update-ref", "refs/remotes/origin/main", base)
+            git(
+                "symbolic-ref",
+                "refs/remotes/origin/HEAD",
+                "refs/remotes/origin/main",
+            )
+            git("switch", "-c", "feature")
+            (root / "FEATURE.md").write_text("# Feature\n", encoding="utf-8")
+            git("add", "FEATURE.md")
+            git("commit", "-m", "Feature")
+            git("switch", "main")
+            (root / "MAIN.md").write_text("# Main\n", encoding="utf-8")
+            git("add", "MAIN.md")
+            git("commit", "-m", "Main")
+            main_tip = git("rev-parse", "HEAD")
+            git("update-ref", "refs/remotes/origin/main", main_tip)
+            git("switch", "feature")
+            git("merge", "--no-ff", "main", "-m", "Merge main")
+            write_repository_index_family(root, history_ref=main_tip)
+
+            self.assertEqual(
+                main_tip,
+                coverage_generation.repository_event_history_ref(root),
+            )
+            status, _ = coverage_generation.index_status(root)
+
+        self.assertEqual("passed", status)
 
     def test_coverage_rejects_index_with_wrong_repo_identity(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

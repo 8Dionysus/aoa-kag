@@ -322,15 +322,52 @@ def repository_index_family_refs(relative_files: Sequence[str]) -> dict[str, str
     }
 
 
+def repository_event_history_ref(owner_root: Path) -> str | None:
+    event_index = owner_root / "kag" / "indexes" / REPOSITORY_INDEX_FILENAMES["event"]
+    try:
+        payload = json.loads(event_index.read_text(encoding="utf-8"))
+        entries = payload.get("entries")
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
+        return None
+    if not isinstance(entries, list):
+        return None
+    published_refs = {
+        str(evidence["ref"])
+        for entry in entries
+        if isinstance(entry, dict) and entry.get("event_kind") == "git_commit"
+        for evidence in entry.get("evidence_refs", [])
+        if isinstance(evidence, dict)
+        and evidence.get("kind") == "git_commit"
+        and isinstance(evidence.get("ref"), str)
+    }
+    if not published_refs:
+        return None
+    try:
+        ancestry = subprocess.run(
+            ("git", "rev-list", "--topo-order", "HEAD"),
+            cwd=owner_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    return next((ref for ref in ancestry if ref in published_refs), None)
+
+
 def repository_index_family_matches_owner(
     owner_root: Path,
     source_index: dict[str, Any],
 ) -> bool:
+    history_ref = repository_event_history_ref(owner_root)
     expected = build_repository_indexes(
         source_index,
         source_index_path=SOURCE_SURFACE_INDEX_REL,
         repo_root=owner_root,
+        history_ref=history_ref,
+        event_history_ref=history_ref,
     )
+    actual: dict[str, dict[str, Any]] = {}
     for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
         path = owner_root / "kag" / "indexes" / filename
         try:
@@ -339,6 +376,26 @@ def repository_index_family_matches_owner(
             return False
         if payload != expected[index_kind]:
             return False
+        actual[index_kind] = payload
+    try:
+        try:
+            from scripts.validators.common import ValidationError
+            from scripts.validators.repo_local_kag_index import (
+                validate_repo_local_kag_repository_index_family,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from validators.common import ValidationError  # type: ignore
+            from validators.repo_local_kag_index import (  # type: ignore
+                validate_repo_local_kag_repository_index_family,
+            )
+
+        validate_repo_local_kag_repository_index_family(
+            actual,
+            source_payload=source_index,
+            label=f"{owner_root.name} coverage family",
+        )
+    except ValidationError:
+        return False
     return True
 
 

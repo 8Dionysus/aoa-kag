@@ -19,6 +19,7 @@ from scripts.generate_repo_local_kag_index import (
     build_repository_indexes_incremental,
     effective_event_history_ref,
     effective_history_ref,
+    local_default_history_ref,
     main,
     payload_digest,
 )
@@ -128,18 +129,22 @@ def write_fixture(root: Path) -> None:
 
 class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
     def test_environment_history_ref_is_scoped_to_its_owner(self) -> None:
-        with mock.patch.dict(
-            "os.environ",
-            {
-                "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "another-owner",
-                "AOA_REPO_LOCAL_KAG_HISTORY_REF": "stable-head",
-            },
+        with mock.patch(
+            "scripts.generate_repo_local_kag_index.local_default_history_ref",
+            return_value=None,
         ):
-            self.assertIsNone(effective_history_ref(REPO_ROOT))
-            self.assertEqual(
-                "explicit-head",
-                effective_history_ref(REPO_ROOT, "explicit-head"),
-            )
+            with mock.patch.dict(
+                "os.environ",
+                {
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "another-owner",
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REF": "stable-head",
+                },
+            ):
+                self.assertIsNone(effective_history_ref(REPO_ROOT))
+                self.assertEqual(
+                    "explicit-head",
+                    effective_history_ref(REPO_ROOT, "explicit-head"),
+                )
 
     def test_environment_event_history_ref_is_scoped_to_its_owner(self) -> None:
         with mock.patch.dict(
@@ -172,6 +177,77 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             self.assertEqual(
                 "stable-head",
                 effective_event_history_ref(REPO_ROOT, fallback="stable-head"),
+            )
+
+    def test_cli_uses_local_default_branch_history_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            write_fixture(root)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            base_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(
+                ("git", "update-ref", "refs/remotes/origin/main", base_sha),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "symbolic-ref",
+                    "refs/remotes/origin/HEAD",
+                    "refs/remotes/origin/main",
+                ),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "checkout", "-qb", "feature"), cwd=root, check=True)
+            readme = root / "README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8") + "\nFeature one.\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "feature one"), cwd=root, check=True)
+            usage = root / "docs" / "guides" / "usage.md"
+            usage.write_text(
+                usage.read_text(encoding="utf-8") + "\nFeature two.\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", "docs/guides/usage.md"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "feature two"), cwd=root, check=True)
+
+            self.assertEqual(base_sha, local_default_history_ref(root))
+            self.assertEqual(
+                0,
+                main(
+                    [
+                        "--repo-root",
+                        str(root),
+                        "--index-family",
+                        "--history-ref",
+                        base_sha,
+                        "--event-history-ref",
+                        base_sha,
+                    ]
+                ),
+            )
+            self.assertEqual(
+                0,
+                main(["--repo-root", str(root), "--index-family", "--check"]),
             )
 
     def test_repository_index_family_matches_schema(self) -> None:
