@@ -452,42 +452,19 @@ class ValidateKagTestCase(unittest.TestCase):
             label="compatible local KAG provider map",
         )
 
-    def test_local_kag_provider_map_accepts_v1_without_common_profile_resource(self) -> None:
-        payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
-        assert isinstance(payload, dict)
-        compatible_payload = copy.deepcopy(payload)
-        compatible_payload.pop("provider_common_surface_profiles", None)
-        for provider in compatible_payload["providers"]:
-            repo = provider["repo"]
-            provider["repo_local_index"].pop("common_surface_profile", None)
-            compatible_payload["provider_repo_local_indexes"][repo].pop(
-                "common_surface_profile",
-                None,
-            )
-        handoff = compatible_payload["mcp_handoff"]
-        handoff["resource_templates"] = [
-            template
-            for template in handoff["resource_templates"]
-            if template["uri_template"] != "aoa-kag://providers/{repo}/common-surface-profile"
-        ]
-
-        registry_projection.validate_local_kag_provider_map_payload(
-            compatible_payload,
-            label="compatible local KAG provider map",
-        )
-
-    def test_local_kag_provider_map_rejects_common_profile_resource_without_profiles(self) -> None:
+    def test_local_kag_provider_map_rejects_retired_mcp_resource_template(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(payload, dict)
         broken_payload = copy.deepcopy(payload)
-        broken_payload.pop("provider_common_surface_profiles", None)
-        for provider in broken_payload["providers"]:
-            repo = provider["repo"]
-            provider["repo_local_index"].pop("common_surface_profile", None)
-            broken_payload["provider_repo_local_indexes"][repo].pop(
-                "common_surface_profile",
-                None,
-            )
+        broken_payload["mcp_handoff"]["resource_templates"].append(
+            {
+                "uri_template": "aoa-kag://providers/{repo}/common-surface-profile",
+                "source": (
+                    "aoa-kag/generated/local_kag_provider_map.min.json"
+                    "#/provider_common_surface_profiles/{repo}"
+                ),
+            }
+        )
 
         with self.assertRaises(validate_kag.ValidationError) as context:
             registry_projection.validate_local_kag_provider_map_payload(
@@ -496,7 +473,7 @@ class ValidateKagTestCase(unittest.TestCase):
             )
 
         self.assertIn(
-            "common-surface-profile template requires provider_common_surface_profiles",
+            "unknown MCP resource templates",
             str(context.exception),
         )
 
@@ -558,7 +535,7 @@ class ValidateKagTestCase(unittest.TestCase):
         handoff["resource_templates"] = [
             template
             for template in handoff["resource_templates"]
-            if template["uri_template"] != "aoa-kag://providers/{repo}/source-index"
+            if template["uri_template"] != "aoa-kag://records/{qualified_id}"
         ]
 
         with self.assertRaises(validate_kag.ValidationError) as context:

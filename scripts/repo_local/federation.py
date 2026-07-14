@@ -164,6 +164,9 @@ class RepoKagFederation:
                 anchor_ids = self._entry_anchor_ids(node_class, entry)
                 access_scope = self._queries[owner].source_access(source_ids)
                 kind = str(entry[f"{node_class}_kind"])
+                projection_handle = self._queries[owner].projection_handle(node_id)
+                if projection_handle is None:
+                    raise ValueError(f"missing projection handle for {node_id}")
                 self._node_owner[node_id] = owner
                 self._node_handles[node_id] = {
                     "id": node_id,
@@ -174,6 +177,7 @@ class RepoKagFederation:
                     "source_record_ids": list(source_ids),
                     "anchor_ids": list(anchor_ids),
                     "access_scope": access_scope,
+                    **projection_handle,
                 }
                 if node_class == "artifact":
                     source_record = source_records[node_id]
@@ -229,6 +233,13 @@ class RepoKagFederation:
             return tuple(str(item) for item in entry["evidence_anchor_ids"])
         return tuple(str(item) for item in entry["anchor_ids"])
 
+    @staticmethod
+    def _combined_access(*scopes: str) -> str:
+        for scope in ("private", "local", "runtime", "public"):
+            if scope in scopes:
+                return scope
+        return "public"
+
     def _collect_local_relations(self) -> tuple[dict[str, Any], ...]:
         relations: list[dict[str, Any]] = []
         seen: set[str] = set()
@@ -239,9 +250,20 @@ class RepoKagFederation:
                     raise ValueError(f"federation relation id collision: {relation_id}")
                 seen.add(relation_id)
                 target_owner = self._node_owner[str(entry["to_id"])]
+                projection_handle = self._queries[owner].projection_handle(relation_id)
+                if projection_handle is None:
+                    raise ValueError(f"missing projection handle for {relation_id}")
+                projection_handle.pop("anchor_ids", None)
+                projection_handle["access_scope"] = self._combined_access(
+                    str(projection_handle["access_scope"]),
+                    str(self._node_handles[str(entry["from_id"])]["access_scope"]),
+                    str(self._node_handles[str(entry["to_id"])]["access_scope"]),
+                )
                 relations.append(
                     {
                         **copy.deepcopy(entry),
+                        **projection_handle,
+                        "record_form": "canonical_record",
                         "source_repo": owner,
                         "target_repo": target_owner,
                         "scope": "local",
@@ -409,7 +431,33 @@ class RepoKagFederation:
                         "temporal_ref": "current",
                         "provenance_ref": "deterministic",
                         "trust_ref": "deterministic",
+                        "record_form": "federated_projection",
                     }
+                    anchor_handle = self._queries[owner].projection_handle(str(anchor["id"]))
+                    if anchor_handle is None:
+                        raise ValueError(f"missing projection handle for {anchor['id']}")
+                    relation.update(
+                        {
+                            "label": f"{relation_kind}: {from_id} -> {target_id}",
+                            "path": anchor_handle["path"],
+                            "search_text": (
+                                f"{relation_kind} {from_id} {target_id} "
+                                f"{target_ref} {anchor_handle['search_text']}"
+                            ),
+                            "source_record_ids": anchor_handle["source_record_ids"],
+                            "access_scope": anchor_handle["access_scope"],
+                            "document_role": anchor_handle["document_role"],
+                            "surface_state": anchor_handle["surface_state"],
+                        }
+                    )
+                    for field in ("abi", "signs", "owner_return_route"):
+                        if field in anchor_handle:
+                            relation[field] = copy.deepcopy(anchor_handle[field])
+                    relation["access_scope"] = self._combined_access(
+                        str(relation["access_scope"]),
+                        str(self._node_handles[from_id]["access_scope"]),
+                        str(self._node_handles[target_id]["access_scope"]),
+                    )
                     relations[relation_id] = relation
         return (
             tuple(sorted(relations.values(), key=lambda item: item["id"])),

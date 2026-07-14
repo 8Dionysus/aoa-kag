@@ -7,9 +7,16 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
-### Summary
+### Added
 
-- No post-`v0.5.0` changes are recorded yet.
+- Add the five-operation KAG MCP contract, nine qualified resource shapes,
+  capability and result schemas, provenance-rich examples, bounded pagination,
+  and explicit canonical degradation fields.
+
+### Changed
+
+- Replace provisional per-provider MCP hints with one generated executable
+  handoff for `discover`, `search`, `read`, `traverse`, and `explain`.
 
 ## [0.5.0] - 2026-07-13
 

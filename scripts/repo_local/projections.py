@@ -12,6 +12,7 @@ from typing import Any, Mapping, Protocol, Sequence
 
 from .federation import RepoKagFederation, github_ref_names_by_repo
 from .identity import qualified_id
+from .query import retrieval_document_role
 
 
 ZERO_DIGEST = "0" * 64
@@ -302,7 +303,7 @@ def _retrieval_document(
         "source_record_ids": [source_id],
         "source_version_ids": [str(identity["version_id"])],
         "anchor_ids": sorted(set(str(item) for item in anchor_ids)),
-        "document_role": str(record["document_role"]),
+        "document_role": retrieval_document_role(record),
         "surface_state": str(record["surface_state"]),
         "abi": copy.deepcopy(record["abi"]),
         "signs": copy.deepcopy(record["signs"]),
@@ -637,6 +638,8 @@ def materialize_vector_points(
                         "source_record_ids": copy.deepcopy(document["source_record_ids"]),
                         "source_version_ids": copy.deepcopy(document["source_version_ids"]),
                         "anchor_ids": copy.deepcopy(document["anchor_ids"]),
+                        "document_role": str(document["document_role"]),
+                        "surface_state": str(document["surface_state"]),
                         "access": copy.deepcopy(document["access"]),
                         "abi": copy.deepcopy(document["abi"]),
                         "signs": copy.deepcopy(document["signs"]),

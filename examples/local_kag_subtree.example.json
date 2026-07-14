@@ -21,7 +21,13 @@
         "authority": "authored_source"
       }
     ],
-    "record_classes": ["node", "edge", "index", "projection", "receipt"],
+    "record_classes": [
+      "node",
+      "edge",
+      "index",
+      "projection",
+      "receipt"
+    ],
     "storage_posture": {
       "git_surface": "portable_records",
       "payload_class": "manifest",
@@ -33,7 +39,11 @@
         "lane": "local-kag"
       }
     ],
-    "consumer_routes": ["aoa-kag registry", "abyss-stack federation mirror", "aoa-kag-mcp resource"],
+    "consumer_routes": [
+      "aoa-kag registry",
+      "abyss-stack federation mirror",
+      "aoa-kag-mcp resource"
+    ],
     "owner_return_routes": [
       {
         "repo": "aoa-techniques",
@@ -239,8 +249,15 @@
         },
         "consumer_route": "aoa-kag registry",
         "index_kind": "inventory",
-        "indexed_record_classes": ["node", "edge"],
-        "source_record_ids": ["node:technique:kag-export", "node:technique:aoa-t-0043", "edge:technique-kag-export:returns-to-bundle"]
+        "indexed_record_classes": [
+          "node",
+          "edge"
+        ],
+        "source_record_ids": [
+          "node:technique:kag-export",
+          "node:technique:aoa-t-0043",
+          "edge:technique-kag-export:returns-to-bundle"
+        ]
       }
     ],
     "projections": [
@@ -295,7 +312,11 @@
         },
         "consumer_route": "aoa-kag-mcp resource",
         "projection_kind": "mcp_packet",
-        "source_record_ids": ["node:technique:kag-export", "node:technique:aoa-t-0043", "index:technique:kag-source-surfaces"],
+        "source_record_ids": [
+          "node:technique:kag-export",
+          "node:technique:aoa-t-0043",
+          "index:technique:kag-source-surfaces"
+        ],
         "consumer_shape": "resource exposes technique export handles and source bundle return refs"
       }
     ],
@@ -362,13 +383,18 @@
       "provider_status": "provider_ready",
       "local_kag_path": "kag/",
       "manifest_ref": "kag/manifest.json",
-      "record_class_coverage": ["node", "edge", "index", "projection", "receipt"],
+      "record_class_coverage": [
+        "node",
+        "edge",
+        "index",
+        "projection",
+        "receipt"
+      ],
       "validation_route": {
         "route": "aoa-kag local subtree validator",
         "lane": "local-kag"
       },
       "runtime_consumer_route": "abyss-stack federation mirror",
-      "mcp_access_shape": ["resource", "tool", "root"],
       "owner_return_route": {
         "repo": "aoa-techniques",
         "surface": "docs/source-lift/KAG_EXPORT.md",
@@ -379,9 +405,14 @@
   ],
   "composition": {
     "composition_id": "composition:technique-tos-source-owned-exports",
-    "source_repos": ["aoa-techniques", "Tree-of-Sophia"],
-    "record_ids": ["node:technique:kag-export", "projection:mcp:technique-source-return"],
-    "runtime_route": "abyss-stack Knowledge/federation advisory mirror",
-    "mcp_access_shape": ["resource", "tool", "prompt", "root"]
+    "source_repos": [
+      "aoa-techniques",
+      "Tree-of-Sophia"
+    ],
+    "record_ids": [
+      "node:technique:kag-export",
+      "projection:mcp:technique-source-return"
+    ],
+    "runtime_route": "abyss-stack Knowledge/federation advisory mirror"
   }
 }

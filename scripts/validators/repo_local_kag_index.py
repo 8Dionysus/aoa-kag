@@ -114,6 +114,8 @@ def validate_repo_local_kag_index_schema_surface() -> None:
         "repo-local KAG repository index",
     )
     validate_top_level_schema(REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH, "repo-local KAG query result")
+    validate_top_level_schema(KAG_MCP_CAPABILITIES_SCHEMA_PATH, "KAG MCP capabilities")
+    validate_top_level_schema(KAG_MCP_RESULT_SCHEMA_PATH, "KAG MCP result")
     validate_top_level_schema(REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH, "repo-local KAG federation")
     validate_top_level_schema(
         REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
@@ -145,6 +147,18 @@ def validate_repo_local_kag_index_example() -> None:
         query_result,
         schema_path=REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH,
         label="repo-local KAG query result example",
+    )
+    mcp_capabilities = read_json(KAG_MCP_CAPABILITIES_EXAMPLE_PATH)
+    repo_local_kag_validate_payload(
+        mcp_capabilities,
+        schema_path=KAG_MCP_CAPABILITIES_SCHEMA_PATH,
+        label="KAG MCP capabilities example",
+    )
+    mcp_result = read_json(KAG_MCP_RESULT_EXAMPLE_PATH)
+    repo_local_kag_validate_payload(
+        mcp_result,
+        schema_path=KAG_MCP_RESULT_SCHEMA_PATH,
+        label="KAG MCP result example",
     )
     federation = read_json(REPO_LOCAL_KAG_FEDERATION_EXAMPLE_PATH)
     repo_local_kag_validate_payload(

@@ -20,6 +20,8 @@ def validate_schema_surface() -> None:
         "repo-local KAG repository index",
     )
     validate_top_level_schema(REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH, "repo-local KAG query result")
+    validate_top_level_schema(KAG_MCP_CAPABILITIES_SCHEMA_PATH, "KAG MCP capabilities")
+    validate_top_level_schema(KAG_MCP_RESULT_SCHEMA_PATH, "KAG MCP result")
     validate_top_level_schema(REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH, "repo-local KAG federation")
     validate_top_level_schema(
         REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,

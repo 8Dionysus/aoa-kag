@@ -308,81 +308,44 @@ class KagGenerationTestCase(unittest.TestCase):
     def test_local_kag_provider_map_carries_mcp_handoff_planes(self) -> None:
         payload = kag_generation.build_local_kag_provider_map_payload()
         handoff = payload["mcp_handoff"]
-        records_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"] == "aoa-kag://providers/{repo}/records/{record_class}"
-        )
-        generation_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"] == "aoa-kag://providers/{repo}/generation"
-        )
-        source_index_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"] == "aoa-kag://providers/{repo}/source-index"
-        )
-        repo_local_index_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"] == "aoa-kag://providers/{repo}/repo-local-index"
-        )
-        common_profile_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"] == "aoa-kag://providers/{repo}/common-surface-profile"
-        )
-        repository_family_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"]
-            == "aoa-kag://providers/{repo}/repository-index-family"
-        )
-        repository_index_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"]
-            == "aoa-kag://providers/{repo}/indexes/{index_kind}"
-        )
-        domain_catalog_template = next(
-            item
-            for item in handoff["resource_templates"]
-            if item["uri_template"]
-            == "aoa-kag://providers/{repo}/domain-index-catalog"
-        )
+        templates = {
+            item["uri_template"]: item for item in handoff["resource_templates"]
+        }
 
         self.assertEqual(
             handoff["service_route"],
             "abyss-stack/mcp/services/aoa-kag-mcp",
         )
         self.assertEqual(
-            {item["uri_template"] for item in handoff["resource_templates"]},
+            handoff["resource_uri_scheme"],
+            "aoa-kag://{resource_class}/{identifier}",
+        )
+        self.assertEqual(
+            set(templates),
             {
-                "aoa-kag://providers/{repo}/manifest",
-                "aoa-kag://providers/{repo}/records/{record_class}",
-                "aoa-kag://providers/{repo}/generation",
-                "aoa-kag://providers/{repo}/source-index",
-                "aoa-kag://providers/{repo}/repo-local-index",
-                "aoa-kag://providers/{repo}/common-surface-profile",
-                "aoa-kag://providers/{repo}/repository-index-family",
-                "aoa-kag://providers/{repo}/indexes/{index_kind}",
-                "aoa-kag://providers/{repo}/domain-index-catalog",
-                "aoa-kag://registry/provider-map",
-                "aoa-kag://coverage/repo-local-source-indexes",
-                "aoa-kag://readiness/os-surfaces",
+                "aoa-kag://capabilities",
+                "aoa-kag://owners/{repo}/manifest",
+                "aoa-kag://records/{qualified_id}",
+                "aoa-kag://documents/{document_id}",
+                "aoa-kag://anchors/{anchor_id}",
+                "aoa-kag://sources/{repo}/{document_id}",
+                "aoa-kag://evidence/{trace_id}",
+                "aoa-kag://schemas/{name}",
+                "aoa-kag://projections/{digest}",
             },
         )
         self.assertTrue(handoff["root_boundaries"])
-        self.assertIn("generation_route_lookup", handoff["tools"])
-        self.assertIn("source_index_lookup", handoff["tools"])
-        self.assertIn("repository_index_family_lookup", handoff["tools"])
-        self.assertIn("repository_index_lookup", handoff["tools"])
-        self.assertIn("domain_index_catalog_lookup", handoff["tools"])
-        self.assertIn("repo_local_coverage_status", handoff["tools"])
-        self.assertIn("validation_status", handoff["tools"])
-        self.assertIn("bounded_provider_query", handoff["prompts"])
-        self.assertIn("repo_source_surface_brief", handoff["prompts"])
+        self.assertEqual(
+            handoff["tools"],
+            [
+                "kag_discover",
+                "kag_search",
+                "kag_read",
+                "kag_traverse",
+                "kag_explain",
+            ],
+        )
+        self.assertEqual(handoff["prompts"], [])
         self.assertEqual(
             set(handoff["package_surfaces"]),
             {
@@ -397,62 +360,27 @@ class KagGenerationTestCase(unittest.TestCase):
         )
         self.assertEqual(
             handoff["runtime_state_route"],
-            "abyss-stack and .aoa runtime stores",
+            "abyss-stack/mechanics/federation-seams/parts/kag-seam",
         )
         self.assertEqual(
-            generation_template["source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_generation_profiles/{repo}",
+            templates["aoa-kag://owners/{repo}/manifest"]["source"],
+            "{repo}/kag/manifest.json",
         )
         self.assertEqual(
-            repo_local_index_template["source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}",
+            templates["aoa-kag://records/{qualified_id}"]["source"],
+            "{repo}/kag/indexes/repo_{record_class}_index.json",
         )
         self.assertEqual(
-            common_profile_template["source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_common_surface_profiles/{repo}",
+            templates["aoa-kag://documents/{document_id}"]["source"],
+            "abyss-stack/Knowledge/kag/repo-self/exact/repo-self.sqlite3",
         )
         self.assertEqual(
-            source_index_template["source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/source_index_ref",
+            templates["aoa-kag://schemas/{name}"]["source"],
+            "aoa-kag/schemas/{name}.schema.json",
         )
         self.assertEqual(
-            source_index_template["fallback_source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/index_files",
-        )
-        self.assertNotEqual(
-            source_index_template["source"],
-            "{repo}/kag/indexes/source_surface_index.json",
-        )
-        self.assertEqual(
-            repository_family_template["source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/repository_index_family",
-        )
-        self.assertEqual(
-            repository_index_template["source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/repository_index_family/{index_kind}",
-        )
-        self.assertEqual(
-            domain_catalog_template["source"],
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/domain_index_catalog_ref",
-        )
-        self.assertEqual(records_template["source"], "{repo}/kag/{record_class_directory}/")
-        self.assertEqual(
-            records_template["record_class_directory_map"],
-            {
-                "node": "nodes",
-                "edge": "edges",
-                "index": "indexes",
-                "projection": "projections",
-                "receipt": "receipts",
-            },
+            templates["aoa-kag://projections/{digest}"]["source"],
+            "abyss-stack/Knowledge/kag/repo-self/current.json",
         )
 
     def test_local_kag_provider_map_carries_generation_readiness(self) -> None:

@@ -107,8 +107,8 @@ The repository should support:
 - maturity and owner-wait stop-rules;
 - an active repo-local `/kag` subtree protocol with owner-generated canonical
   records, common validation, owner extensions, and federation inputs;
-- downstream `aoa-kag-mcp` and `aoa-kag-skills` layers that remain downstream
-  of core substrate contracts.
+- the downstream `aoa-kag-mcp` application adapter and future
+  `aoa-kag-skills` layer, both subordinate to core substrate contracts.
 
 The substrate grows well when every new surface makes source ownership,
 provenance, validation, consumer return, or federation posture clearer than

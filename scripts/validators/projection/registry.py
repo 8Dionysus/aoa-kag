@@ -5,99 +5,46 @@ from ..local_contracts import *
 from ..source_refs import *
 
 EXPECTED_MCP_RESOURCE_TEMPLATES = {
-    "aoa-kag://providers/{repo}/manifest": {
+    "aoa-kag://capabilities": {
+        "source": (
+            "aoa-kag/generated/local_kag_provider_map.min.json#/mcp_handoff"
+        ),
+    },
+    "aoa-kag://owners/{repo}/manifest": {
         "source": "{repo}/kag/manifest.json",
     },
-    "aoa-kag://providers/{repo}/records/{record_class}": {
-        "source": "{repo}/kag/{record_class_directory}/",
-        "record_class_directory_map": {
-            "node": "nodes",
-            "edge": "edges",
-            "index": "indexes",
-            "projection": "projections",
-            "receipt": "receipts",
-        },
+    "aoa-kag://records/{qualified_id}": {
+        "source": "{repo}/kag/indexes/repo_{record_class}_index.json",
     },
-    "aoa-kag://providers/{repo}/generation": {
-        "source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_generation_profiles/{repo}"
-        ),
+    "aoa-kag://documents/{document_id}": {
+        "source": "abyss-stack/Knowledge/kag/repo-self/exact/repo-self.sqlite3",
     },
-    "aoa-kag://providers/{repo}/source-index": {
-        "source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/source_index_ref"
-        ),
-        "fallback_source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/index_files"
-        ),
+    "aoa-kag://anchors/{anchor_id}": {
+        "source": "{repo}/kag/indexes/repo_anchor_index.json",
     },
-    "aoa-kag://providers/{repo}/repo-local-index": {
-        "source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}"
-        ),
+    "aoa-kag://sources/{repo}/{document_id}": {
+        "source": "{repo}/{owner_return_route.surface}",
     },
-    "aoa-kag://providers/{repo}/common-surface-profile": {
-        "source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_common_surface_profiles/{repo}"
-        ),
+    "aoa-kag://evidence/{trace_id}": {
+        "source": "abyss-stack runtime trace cache",
     },
-    "aoa-kag://providers/{repo}/repository-index-family": {
-        "source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/repository_index_family"
-        ),
+    "aoa-kag://schemas/{name}": {
+        "source": "aoa-kag/schemas/{name}.schema.json",
     },
-    "aoa-kag://providers/{repo}/indexes/{index_kind}": {
-        "source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/repository_index_family/{index_kind}"
-        ),
-    },
-    "aoa-kag://providers/{repo}/domain-index-catalog": {
-        "source": (
-            "aoa-kag/generated/local_kag_provider_map.min.json"
-            "#/provider_repo_local_indexes/{repo}/domain_index_catalog_ref"
-        ),
-    },
-    "aoa-kag://registry/provider-map": {
-        "source": "aoa-kag/generated/local_kag_provider_map.min.json",
-    },
-    "aoa-kag://coverage/repo-local-source-indexes": {
-        "source": "aoa-kag/generated/repo_local_kag_coverage.min.json",
-    },
-    "aoa-kag://readiness/os-surfaces": {
-        "source": "aoa-kag/manifests/local_kag_readiness.json",
+    "aoa-kag://projections/{digest}": {
+        "source": "abyss-stack/Knowledge/kag/repo-self/current.json",
     },
 }
 
 REQUIRED_MCP_TOOLS = {
-    "provider_lookup",
-    "provider_status",
-    "generation_route_lookup",
-    "source_index_lookup",
-    "repository_index_family_lookup",
-    "repository_index_lookup",
-    "domain_index_catalog_lookup",
-    "repo_local_coverage_status",
-    "freshness_check",
-    "source_return_lookup",
-    "registry_slice",
-    "composition_slice",
-    "validation_status",
+    "kag_discover",
+    "kag_search",
+    "kag_read",
+    "kag_traverse",
+    "kag_explain",
 }
 
-REQUIRED_MCP_PROMPTS = {
-    "bounded_provider_query",
-    "source_return_summary",
-    "repo_source_surface_brief",
-    "cross_repo_relation_preview",
-    "runtime_handoff_brief",
-}
+REQUIRED_MCP_PROMPTS: set[str] = set()
 
 REQUIRED_MCP_PACKAGE_SURFACES = {
     "AGENTS.md",
@@ -109,7 +56,9 @@ REQUIRED_MCP_PACKAGE_SURFACES = {
     "scripts/validate_kag_mcp.py",
 }
 
-REQUIRED_MCP_RUNTIME_STATE_ROUTE = "abyss-stack and .aoa runtime stores"
+REQUIRED_MCP_RUNTIME_STATE_ROUTE = (
+    "abyss-stack/mechanics/federation-seams/parts/kag-seam"
+)
 
 REQUIRED_ROOT_BOUNDARY_KINDS = {
     "provider_home",
@@ -227,7 +176,6 @@ def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) 
     _validate_mcp_handoff(
         _object_value(payload.get("mcp_handoff"), f"{label}.mcp_handoff"),
         label=f"{label}.mcp_handoff",
-        requires_common_surface_profile_resource=has_common_profile_map,
     )
 
 
@@ -235,11 +183,10 @@ def _validate_mcp_handoff(
     handoff: dict[str, object],
     *,
     label: str,
-    requires_common_surface_profile_resource: bool,
 ) -> None:
     if handoff.get("service_route") != "abyss-stack/mcp/services/aoa-kag-mcp":
         fail(f"{label}.service_route must point to the aoa-kag MCP service route")
-    if handoff.get("resource_uri_scheme") != "aoa-kag://{scope}/{identifier}":
+    if handoff.get("resource_uri_scheme") != "aoa-kag://{resource_class}/{identifier}":
         fail(f"{label}.resource_uri_scheme must keep the aoa-kag URI scheme")
 
     templates = _object_list(handoff.get("resource_templates"), f"{label}.resource_templates")
@@ -250,24 +197,12 @@ def _validate_mcp_handoff(
             fail(f"{label}.resource_templates must keep unique uri_template values")
         by_uri[uri_template] = template
 
-    missing_template_set = set(EXPECTED_MCP_RESOURCE_TEMPLATES) - set(by_uri)
-    if not requires_common_surface_profile_resource:
-        missing_template_set.discard("aoa-kag://providers/{repo}/common-surface-profile")
-    missing_templates = sorted(missing_template_set)
+    missing_templates = sorted(set(EXPECTED_MCP_RESOURCE_TEMPLATES) - set(by_uri))
     if missing_templates:
         fail(f"{label} missing required MCP resource templates: {', '.join(missing_templates)}")
     extra_templates = sorted(set(by_uri) - set(EXPECTED_MCP_RESOURCE_TEMPLATES))
     if extra_templates:
         fail(f"{label} carries unknown MCP resource templates: {', '.join(extra_templates)}")
-    common_surface_profile_uri = "aoa-kag://providers/{repo}/common-surface-profile"
-    if (
-        not requires_common_surface_profile_resource
-        and common_surface_profile_uri in by_uri
-    ):
-        fail(
-            f"{label} common-surface-profile template requires provider_common_surface_profiles"
-        )
-
     for uri_template, expected_fields in EXPECTED_MCP_RESOURCE_TEMPLATES.items():
         if uri_template not in by_uri:
             continue
@@ -284,7 +219,13 @@ def _validate_mcp_handoff(
     tools = set(_string_list(handoff.get("tools"), f"{label}.tools"))
     if tools != REQUIRED_MCP_TOOLS:
         fail(f"{label}.tools must match the provider-map handoff tool contract")
-    prompts = set(_string_list(handoff.get("prompts"), f"{label}.prompts"))
+    prompts = set(
+        _string_list(
+            handoff.get("prompts"),
+            f"{label}.prompts",
+            allow_empty=True,
+        )
+    )
     if prompts != REQUIRED_MCP_PROMPTS:
         fail(f"{label}.prompts must match the provider-map handoff prompt contract")
 
@@ -328,9 +269,15 @@ def _object_map(value: object, label: str) -> dict[str, dict[str, object]]:
     return result
 
 
-def _string_list(value: object, label: str) -> list[str]:
-    if not isinstance(value, list) or not value:
-        fail(f"{label} must be a non-empty list")
+def _string_list(
+    value: object,
+    label: str,
+    *,
+    allow_empty: bool = False,
+) -> list[str]:
+    if not isinstance(value, list) or (not value and not allow_empty):
+        qualifier = "a list" if allow_empty else "a non-empty list"
+        fail(f"{label} must be {qualifier}")
     result: list[str] = []
     for index, item in enumerate(value):
         if not isinstance(item, str) or not item:

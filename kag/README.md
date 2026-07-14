@@ -14,7 +14,7 @@ with owner-specific catalogs where their domain requires them.
 | input | schema, example, readiness matrix, provider-ready sibling packets |
 | output | manifest, node, edge, index, projection, receipt, registry/composition inputs |
 | owner | `kag/AGENTS.md`, this README, `source_home.manifest.json`, `manifest.json` |
-| consumer route | `aoa-kag` registry/composition, `abyss-stack`, `aoa-kag-mcp` resource |
+| consumer route | `aoa-kag` federation, `abyss-stack` runtime projections, `aoa-kag-mcp` |
 | owner return | `schemas/`, `examples/`, `manifests/`, `scripts/validators/`, `tests/` |
 
 ## Current Files
@@ -104,9 +104,13 @@ owners.
 
 ## Consumer Route
 
-`aoa-kag` composes provider packets into registry and federation inputs.
+`aoa-kag` composes provider packets into a verified federation bundle.
 `abyss-stack` materializes runtime search and graph projections. `aoa-kag-mcp`
-will expose resources, roots, selected tools, and prompts from
-`generated/local_kag_provider_map.min.json`, validated provider packets,
-the repo-self index families, and
-`generated/repo_local_kag_coverage.min.json`.
+serves the shared `discover`, `search`, `read`, `traverse`, and `explain`
+contract from canonical owner records and those runtime projections.
+
+`generated/local_kag_provider_map.min.json#/mcp_handoff` is the machine route
+for the five tools, nine `aoa-kag://` resource shapes, owner boundaries, and
+runtime owner. The result and capability envelopes live in
+`schemas/kag-mcp-result.schema.json` and
+`schemas/kag-mcp-capabilities.schema.json`.
