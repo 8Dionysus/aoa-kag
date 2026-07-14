@@ -9,53 +9,151 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Summary
 
-- the current post-`v0.4.0` line activates the first repo-local KAG provider
-  foundation and keeps the published `v0.4.0` release memory aligned with the
-  reconstructed release evidence
-- the local `/kag` layer is now a source-home contract surface for portable
-  records and MCP-facing access shape, while live graph, vector, embedding,
-  index, runtime, and cache state remain outside Git
+- No post-`v0.5.0` changes are recorded yet.
+
+## [0.5.0] - 2026-07-13
+
+### Summary
+
+- `v0.5.0` reconciles every one of the 57 first-parent commits after
+  `v0.4.0`: 132 changed tracked paths and a net `+63,528/-708` lines. Only 6
+  of those 57 commits touched `CHANGELOG.md`, so this section is reconstructed
+  from Git history and the landed owner surfaces rather than inherited from
+  the former `Unreleased` prose.
+- The release turns the initial local `/kag` provider foundation into a
+  canonical repository self-knowledge kernel: source, artifact, anchor,
+  entity, event, assertion, and relation indexes; deterministic lookup and
+  retrieval; provider manifests; provenance; trust/freshness context; and
+  owner-return routes.
+- Provider discovery, readiness, generation profiles, pinned source refs,
+  coverage and federation now span 24 OS Abyss owners with all 24 passing the
+  committed repo-local family contract.
+- The KAG layer remains derived and source-first. Runtime graph/vector/cache
+  state stays with runtime owners, proof stays with `aoa-evals`, and authored
+  meaning stays with each source repository.
+
+### Reconciliation Basis
+
+- The exact range is `v0.4.0..346a469`, following first-parent `main` history
+  through merged PR `#166`; the stale pre-squash feature history was not used
+  as release authority.
+- Evidence includes ordered commit history, name-status and line statistics,
+  merged PR subjects, five new KAG decisions (`AOA-KAG-D-0010` through
+  `AOA-KAG-D-0014`), schemas, examples, manifests, generated provider and
+  coverage read-models, the seven-index family, builders, validators, tests,
+  workflow gates, and the owner-local stats packet.
+- Changed-path concentration matches the release contour: `scripts/` 39
+  paths, `kag/` 20, `docs/` 18, `tests/` 14, `schemas/` 12, `examples/` 7,
+  `generated/` 5, `stats/` 4, `.github/` 3, and 9 additional root or owner
+  surfaces.
 
 ### Added
 
-- Add the owner-local `stats/` port with a source-backed repo-self family pass
-  ratio contract and reference packet; KAG source and generated evidence keep
-  their authority while `aoa-stats` owns the shared statistical grammar and
-  cross-owner composition plus the validator delegated to by the release lane.
-- Add the v2 repo-self source, artifact, anchor, entity, event, assertion, and relation
-  index family with repository/directory topology, parser-qualified addresses,
-  observed Git lifecycle events, evidence assertions, and optional owner-domain
-  index catalogs.
-- Add deterministic discovery, addressed read, profile-aware filter, exact,
-  BM25, graph, and hybrid query surfaces with owner, ABI/sign, provenance,
-  freshness, access, trust, and evidence contexts.
-- Activate the first repo-local KAG provider foundation under `kag/`, including
-  provider records, readiness indexes, MCP-facing projection shape, validation
-  receipts, and the local KAG subtree protocol.
-- Add the local KAG subtree schema, example packet, readiness matrix, validator
-  coverage, and `AOA-KAG-D-0010` decision record for the provider activation
-  line.
+- Add the repo-local `/kag` provider protocol, source-home records, readiness
+  matrix, provider registry, source-index contract, schema/example family,
+  generated provider map, OS-wide coverage report, and MCP handoff routes.
+- Add the v2 repository self-knowledge family for artifacts, structural
+  anchors, entities, Git events, evidence assertions, relations, source
+  coordinates, optional domain catalogs, and owner-qualified identities.
+- Add deterministic exact, addressed-read, BM25, graph, hybrid, profile-aware
+  and federated query/retrieval plans and bundles without promoting their
+  outputs over source authority.
+- Add provider checkout synchronization, no-write parity, coverage generation,
+  repository-family validation, the reusable GitHub action, and compatibility
+  canary coverage for owner repositories.
+- Add the KAG-owned `stats/` port and its source-backed repo-self family pass
+  ratio reference packet while delegating shared statistical grammar and
+  composition to `aoa-stats`.
 
 ### Changed
 
-- Report the first divergent payload path and values when repo-local KAG
-  coverage no longer matches its generator.
-- Expand the owner-callable repo-local KAG action to atomic
-  source/artifact/anchor/entity/event/assertion/relation family parity.
-- Stabilize artifact identity across Git renames and deletes, persist outbound
-  reference declarations, and make incremental source and structural
-  regeneration exactly equivalent to a full rebuild.
-- Align the release workflow dependency pins with the merged
-  `Tree-of-Sophia/kag/` and `aoa-techniques/kag/` provider homes so
-  `aoa-kag` validates against the current source-owned provider surfaces.
-- Reconcile the published `v0.4.0` changelog and GitHub Release notes against
-  the actual tag range instead of the older narrow release-prep summary.
+- Harden Git history extraction across squash merges, renames, deletions and
+  incremental regeneration so a full rebuild and incremental rebuild converge
+  on the same identity and relation set.
+- Make MIME and metadata classification deterministic and portable; keep
+  session-memory and bundle providers owner-specific where their contract
+  requires it.
+- Pin and refresh provider commits across repositories and connectors, expose
+  generation routes and source-index state, and reject missing, stale or
+  incorrectly linked owner records.
+- Expand `Repo Validation` and compatibility checks to execute the owner
+  action in the owner checkout and prove committed family parity.
+
+### Complete First-Parent Commit Inventory (57/57)
+
+1. `cab4757` — Activate local KAG provider foundation (#110)
+2. `cbf42fa` — Complete v0.4.0 changelog coverage (#111)
+3. `85b50d4` — Refactor changelog release memory (#112)
+4. `4419454` — Prepare KAG provider map for MCP handoff (#113)
+5. `d5a9ea8` — Complete OS KAG provider map
+6. `19d7ab3` — Track Codex plane in KAG readiness
+7. `3309eae` — Register aoa-session-memory KAG provider
+8. `0b5906a` — Register connector KAG providers (#117)
+9. `6f27d79` — Add KAG generation readiness map
+10. `8f6f41f` — Prepare repo-local KAG source index contract (#119)
+11. `2f13d75` — Prepare OS KAG provider registry foundation (#120)
+12. `2049334` — Expose repo-local KAG index status to providers (#121)
+13. `c6ffb65` — Validate provider freshness checked refs (#122)
+14. `66d5b95` — Classify bundle KAG indexes as owner specific (#123)
+15. `63dbf1e` — Validate owner-specific provider record links (#124)
+16. `fe2aeb4` — Track course connector KAG surface
+17. `a6a847f` — Guard local KAG readiness coverage
+18. `2090ac2` — Guard canonical KAG owner root coverage
+19. `bda1cca` — Classify repo-local KAG source surfaces
+20. `7f8d926` — Stabilize repo-local KAG source surfaces (#129)
+21. `809f430` — Add pinned provider checkout runner
+22. `5debaf1` — Add validate_kag phase progress
+23. `a61e55f` — Add KAG validation progress signals
+24. `33d3116` — Expose repo-local KAG index progress
+25. `4c53c07` — Add no-write check mode for KAG generation
+26. `16a52a6` — Add generated KAG no-write parity lane
+27. `3d9f34e` — Add repo-local KAG builder parity checks (#136)
+28. `ec0d626` — Add schema contract for local KAG provider map (#137)
+29. `38d3848` — Validate KAG MCP handoff semantics (#138)
+30. `0e9d016` — Register course connector KAG provider (#139)
+31. `244ea20` — Harden KAG MCP handoff contract
+32. `d439d03` — Align KAG MCP consumer routes (#141)
+33. `beca158` — Extend repo-local KAG source surface coverage (#142)
+34. `699e6e0` — Pin connector KAG provider commits (#143)
+35. `19da86b` — Keep session-memory KAG adapter owner-specific (#144)
+36. `2c1126a` — Pin course connector KAG source index (#145)
+37. `977427b` — Pin course connector KAG index refresh (#146)
+38. `6b85ec2` — Pin course connector KAG index refresh (#147)
+39. `b3d5f45` — Pin course connector KAG index refresh (#148)
+40. `66be753` — Pin course connector KAG index refresh (#149)
+41. `ffd53d4` — Pin course connector KAG source index refresh (#150)
+42. `0640e34` — Pin course connector KAG source index refresh (#151)
+43. `f312cfd` — Pin course connector KAG source index refresh (#152)
+44. `68891c2` — Add repo-local KAG index parity action (#153)
+45. `7625cee` — Refresh connector KAG provider readmodels (#154)
+46. `d3b1f08` — Make repo-local KAG MIME detection deterministic (#155)
+47. `34dded9` — Make source index metadata portable and provenance-safe (#156)
+48. `04bf703` — Complete OS-wide repo-local KAG coverage (#157)
+49. `717288f` — Add repo-local KAG index family (#158)
+50. `a8045bd` — Classify runtime source artifacts (#159)
+51. `cbeb71a` — Integrate repository KAG index families (#160)
+52. `6bb1f57` — Build canonical repository self-knowledge and federation (#161)
+53. `b53d680` — Run repo-local KAG action in owner checkout (#163)
+54. `474ba0e` — Stabilize KAG history across squash merges (#162)
+55. `da9f50a` — Harden repo-self KAG history and evidence resolution (#164)
+56. `a7719ae` — Add the owner-local stats port (#165)
+57. `346a469` — Federate repository-local KAG across OS Abyss (#166)
 
 ### Validation
 
-- the repository release lane in `docs/validation/COMMAND_AUTHORITY.md`
-- GitHub `Repo Validation` for the landed local KAG provider and changelog
-  closeout PRs
+- repository-owned `release` lane from `config/validation_lanes.json`
+- full and incremental repo-local KAG family fixed-point checks
+- GitHub `Repo Validation` on the release branch and landed `main`
+- strict federation preflight, publication dry-run, and strict postpublish
+
+### Notes
+
+- This release publishes the accumulated repository self-knowledge and
+  federation contour; it does not turn the generated index family into source
+  truth or the Git repository into a live graph runtime.
+- No new decision record is needed for release preparation itself. The durable
+  protocol and kernel decisions already landed in `AOA-KAG-D-0010` through
+  `AOA-KAG-D-0014` and are included in the reconciled range.
 
 ## [0.4.0] - 2026-06-26
 
