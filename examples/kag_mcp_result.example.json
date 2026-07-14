@@ -1,0 +1,59 @@
+{
+  "schema_version": "aoa-kag-mcp-result-v1",
+  "operation": "search",
+  "status": "ok",
+  "trace_id": "123e4567-e89b-42d3-a456-426614174000",
+  "query": {"query": "README.md", "strategy": "exact", "limit": 1},
+  "route": {
+    "requested_strategy": "exact",
+    "used_strategy": "exact",
+    "adapters": [{"adapter": "sqlite-exact", "latency_ms": 1.0}],
+    "degradation": []
+  },
+  "projection": {
+    "digest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "bundle_digest": "3333333333333333333333333333333333333333333333333333333333333333",
+    "federation_digest": "4444444444444444444444444444444444444444444444444444444444444444",
+    "updated_at": "2026-07-13T00:00:00+00:00",
+    "targets": {}
+  },
+  "page": {"limit": 1, "offset": 0, "count": 1, "next_cursor": null},
+  "results": [
+    {
+      "qualified_id": "aoa:aoa-kag:artifact:example",
+      "owner": {"repo": "aoa-kag", "namespace": "aoa:aoa-kag"},
+      "record_class": "artifact",
+      "kind": "document",
+      "label": "README.md",
+      "path": "README.md",
+      "document_role": "orientation",
+      "surface_state": "authored_source",
+      "locator": {"start_line": 1, "end_line": 10},
+      "source_record_ids": ["aoa:aoa-kag:artifact:example"],
+      "source_anchors": ["aoa:aoa-kag:anchor:example"],
+      "provenance": {"ref": "deterministic"},
+      "trust": {"ref": "deterministic", "confidence": 1.0},
+      "temporal": {"ref": "current"},
+      "freshness": {
+        "state": "current",
+        "runtime_source_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "canonical_source_digest": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "abi": {"compatibility": "stable"},
+      "signs": {"verification_state": "digest-only"},
+      "access": {"scope": "public"},
+      "strategy": "exact",
+      "score": {"total": 1.0, "lexical_rank": null, "semantic": null, "hybrid": {}},
+      "projection_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+      "resources": {
+        "record": "aoa-kag://records/aoa%3Aaoa-kag%3Aartifact%3Aexample",
+        "projection": "aoa-kag://projections/2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "detail": "compact"
+    }
+  ],
+  "resources": {
+    "evidence": "aoa-kag://evidence/123e4567-e89b-42d3-a456-426614174000",
+    "projection": "aoa-kag://projections/2222222222222222222222222222222222222222222222222222222222222222"
+  }
+}

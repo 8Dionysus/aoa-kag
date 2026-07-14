@@ -75,7 +75,6 @@ OS_SURFACE_PATH_LIST_KEYS = (
 )
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
-REQUIRED_MCP_SHAPE = {"resource", "root"}
 EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
 REPO_LOCAL_REPOSITORY_INDEX_NAMES = {
@@ -230,9 +229,6 @@ def _validate_registry_entries(packet: dict[str, object]) -> None:
             coverage = set(entry.get("record_class_coverage", []))
             if coverage != REQUIRED_RECORD_CLASSES:
                 fail(f"provider-ready entry {entry.get('repo')} must cover every local KAG record class")
-        access_shape = set(entry.get("mcp_access_shape", []))
-        if not REQUIRED_MCP_SHAPE <= access_shape:
-            fail(f"registry entry {entry.get('repo')} must expose resource and root MCP shapes")
 
 
 def _validate_readiness_matrix(payload: dict[str, object]) -> None:
@@ -258,8 +254,6 @@ def _validate_readiness_matrix(payload: dict[str, object]) -> None:
             ready_repos.add(str(repo))
             if set(entry.get("first_record_classes", [])) != REQUIRED_RECORD_CLASSES:
                 fail(f"provider-ready repo {repo} must name every first record class")
-            if not REQUIRED_MCP_SHAPE <= set(entry.get("mcp_access_shape", [])):
-                fail(f"provider-ready repo {repo} must expose resource and root MCP shapes")
         if not entry.get("candidate_source_surfaces"):
             fail(f"local KAG readiness row {repo} must keep candidate_source_surfaces")
         if not entry.get("owner_return_routes"):
@@ -449,8 +443,6 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             fail(f"OS surface {surface_id} must keep candidate_source_surfaces")
         if not entry.get("owner_return_route"):
             fail(f"OS surface {surface_id} must keep owner_return_route")
-        if not REQUIRED_MCP_SHAPE <= set(entry.get("mcp_access_shape", [])):
-            fail(f"OS surface {surface_id} must expose resource and root MCP shapes")
         _validate_pre_provider_surface_paths(entry, surface_id=surface_id)
 
         if not root_available:

@@ -350,15 +350,6 @@
         }
       }
     },
-    "mcpAccessShape": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "enum": ["resource", "tool", "prompt", "root"]
-      },
-      "uniqueItems": true
-    },
     "provider": {
       "type": "object",
       "additionalProperties": false,
@@ -376,8 +367,7 @@
         "validation_routes",
         "consumer_routes",
         "owner_return_routes",
-        "generation_profile",
-        "mcp_access_shape"
+        "generation_profile"
       ],
       "properties": {
         "repo": {"$ref": "#/$defs/repoName"},
@@ -415,8 +405,7 @@
           "minItems": 1,
           "items": {"$ref": "#/$defs/ownerReturnRoute"}
         },
-        "generation_profile": {"$ref": "#/$defs/generationProfile"},
-        "mcp_access_shape": {"$ref": "#/$defs/mcpAccessShape"}
+        "generation_profile": {"$ref": "#/$defs/generationProfile"}
       }
     },
     "remainingRoute": {
@@ -427,8 +416,7 @@
         "adoption_order",
         "provider_status",
         "candidate_source_surfaces",
-        "owner_return_routes",
-        "mcp_access_shape"
+        "owner_return_routes"
       ],
       "properties": {
         "repo": {"$ref": "#/$defs/repoName"},
@@ -439,8 +427,7 @@
           "type": "array",
           "minItems": 1,
           "items": {"$ref": "#/$defs/ownerReturnRoute"}
-        },
-        "mcp_access_shape": {"$ref": "#/$defs/mcpAccessShape"}
+        }
       }
     },
     "osSurface": {
@@ -452,7 +439,6 @@
         "root",
         "provider_status",
         "owner_return_route",
-        "mcp_access_shape",
         "candidate_source_surfaces"
       ],
       "properties": {
@@ -474,7 +460,6 @@
           "enum": ["provider_ready", "runtime_consumer", "source_preparation"]
         },
         "owner_return_route": {"$ref": "#/$defs/ownerReturnRoute"},
-        "mcp_access_shape": {"$ref": "#/$defs/mcpAccessShape"},
         "candidate_source_surfaces": {"$ref": "#/$defs/stringList"}
       }
     },

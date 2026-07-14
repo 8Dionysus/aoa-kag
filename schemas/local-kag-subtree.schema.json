@@ -458,7 +458,6 @@
         "record_class_coverage",
         "validation_route",
         "runtime_consumer_route",
-        "mcp_access_shape",
         "owner_return_route",
         "adoption_order"
       ],
@@ -476,14 +475,6 @@
         },
         "validation_route": {"$ref": "#/$defs/validatorRoute"},
         "runtime_consumer_route": {"$ref": "#/$defs/nonEmptyString"},
-        "mcp_access_shape": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "enum": ["resource", "tool", "prompt", "root"]
-          }
-        },
         "owner_return_route": {"$ref": "#/$defs/ownerReturnRoute"},
         "adoption_order": {"type": "integer", "minimum": 0}
       }
@@ -543,7 +534,7 @@
         "composition": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["composition_id", "source_repos", "record_ids", "runtime_route", "mcp_access_shape"],
+          "required": ["composition_id", "source_repos", "record_ids", "runtime_route"],
           "properties": {
             "composition_id": {"$ref": "#/$defs/nonEmptyString"},
             "source_repos": {
@@ -556,12 +547,7 @@
               "minItems": 1,
               "items": {"$ref": "#/$defs/nonEmptyString"}
             },
-            "runtime_route": {"$ref": "#/$defs/nonEmptyString"},
-            "mcp_access_shape": {
-              "type": "array",
-              "minItems": 1,
-              "items": {"type": "string", "enum": ["resource", "tool", "prompt", "root"]}
-            }
+            "runtime_route": {"$ref": "#/$defs/nonEmptyString"}
           }
         }
       }
@@ -586,8 +572,7 @@
         "owner_return_routes",
         "provider_status",
         "adoption_order",
-        "first_record_classes",
-        "mcp_access_shape"
+        "first_record_classes"
       ],
       "properties": {
         "repo": {"$ref": "#/$defs/repoName"},
@@ -634,10 +619,6 @@
         "first_record_classes": {
           "type": "array",
           "items": {"type": "string", "enum": ["node", "edge", "index", "projection", "receipt"]}
-        },
-        "mcp_access_shape": {
-          "type": "array",
-          "items": {"type": "string", "enum": ["resource", "tool", "prompt", "root"]}
         }
       }
     },
@@ -661,8 +642,7 @@
         "owner_return_route",
         "provider_status",
         "adoption_order",
-        "first_record_classes",
-        "mcp_access_shape"
+        "first_record_classes"
       ],
       "properties": {
         "surface_id": {"$ref": "#/$defs/nonEmptyString"},
@@ -700,10 +680,6 @@
         "first_record_classes": {
           "type": "array",
           "items": {"type": "string", "enum": ["node", "edge", "index", "projection", "receipt"]}
-        },
-        "mcp_access_shape": {
-          "type": "array",
-          "items": {"type": "string", "enum": ["resource", "tool", "prompt", "root"]}
         }
       }
     },

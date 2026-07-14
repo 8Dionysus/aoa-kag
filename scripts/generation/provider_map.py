@@ -505,7 +505,6 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     "consumer_routes": manifest["consumer_routes"],
                     "owner_return_routes": manifest["owner_return_routes"],
                     "generation_profile": generation_profile,
-                    "mcp_access_shape": entry["mcp_access_shape"],
                 }
             )
         else:
@@ -516,7 +515,6 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                     "provider_status": status,
                     "candidate_source_surfaces": entry["candidate_source_surfaces"],
                     "owner_return_routes": entry["owner_return_routes"],
-                    "mcp_access_shape": entry["mcp_access_shape"],
                 }
             )
 
@@ -527,7 +525,6 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
             "root": surface["root"],
             "provider_status": surface["provider_status"],
             "owner_return_route": surface["owner_return_route"],
-            "mcp_access_shape": surface["mcp_access_shape"],
             "candidate_source_surfaces": surface["candidate_source_surfaces"],
         }
         for surface in sorted(surfaces, key=lambda item: item["adoption_order"])
@@ -560,100 +557,53 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         "os_surfaces": os_surface_packets,
         "mcp_handoff": {
             "service_route": "abyss-stack/mcp/services/aoa-kag-mcp",
-            "resource_uri_scheme": "aoa-kag://{scope}/{identifier}",
+            "resource_uri_scheme": "aoa-kag://{resource_class}/{identifier}",
             "resource_templates": [
                 {
-                    "uri_template": "aoa-kag://providers/{repo}/manifest",
+                    "uri_template": "aoa-kag://capabilities",
+                    "source": (
+                        "aoa-kag/generated/local_kag_provider_map.min.json"
+                        "#/mcp_handoff"
+                    ),
+                },
+                {
+                    "uri_template": "aoa-kag://owners/{repo}/manifest",
                     "source": "{repo}/kag/manifest.json",
                 },
                 {
-                    "uri_template": "aoa-kag://providers/{repo}/records/{record_class}",
-                    "source": "{repo}/kag/{record_class_directory}/",
-                    "record_class_directory_map": RECORD_CLASS_DIRECTORIES,
+                    "uri_template": "aoa-kag://records/{qualified_id}",
+                    "source": "{repo}/kag/indexes/repo_{record_class}_index.json",
+                    "resolution": "Resolve the owner-qualified ID through canonical or runtime projections.",
                 },
                 {
-                    "uri_template": "aoa-kag://providers/{repo}/generation",
-                    "source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_generation_profiles/{repo}"
-                    ),
+                    "uri_template": "aoa-kag://documents/{document_id}",
+                    "source": "abyss-stack/Knowledge/kag/repo-self/exact/repo-self.sqlite3",
+                    "resolution": "Read one projection-bound retrieval document by stable document ID.",
                 },
                 {
-                    "uri_template": "aoa-kag://providers/{repo}/source-index",
-                    "source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_repo_local_indexes/{repo}/source_index_ref"
-                    ),
-                    "fallback_source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_repo_local_indexes/{repo}/index_files"
-                    ),
-                    "resolution": (
-                        "Dereference source_index_ref only when non-empty; "
-                        "owner-specific providers expose index_files instead."
-                    ),
+                    "uri_template": "aoa-kag://anchors/{anchor_id}",
+                    "source": "{repo}/kag/indexes/repo_anchor_index.json",
+                    "resolution": "Resolve an owner-qualified source anchor and its retrieval documents.",
                 },
                 {
-                    "uri_template": "aoa-kag://providers/{repo}/repo-local-index",
-                    "source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_repo_local_indexes/{repo}"
-                    ),
+                    "uri_template": "aoa-kag://sources/{repo}/{document_id}",
+                    "source": "{repo}/{owner_return_route.surface}",
+                    "resolution": "Return the indexed source text and explicit owner-return coordinates.",
                 },
                 {
-                    "uri_template": "aoa-kag://providers/{repo}/common-surface-profile",
-                    "source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_common_surface_profiles/{repo}"
-                    ),
+                    "uri_template": "aoa-kag://evidence/{trace_id}",
+                    "source": "abyss-stack runtime trace cache",
+                    "resolution": "Read the bounded route and evidence packet produced by one MCP operation.",
                 },
                 {
-                    "uri_template": (
-                        "aoa-kag://providers/{repo}/repository-index-family"
-                    ),
-                    "source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_repo_local_indexes/{repo}/repository_index_family"
-                    ),
+                    "uri_template": "aoa-kag://schemas/{name}",
+                    "source": "aoa-kag/schemas/{name}.schema.json",
+                    "resolution": "Read an aoa-kag-owned public contract schema.",
                 },
                 {
-                    "uri_template": (
-                        "aoa-kag://providers/{repo}/indexes/{index_kind}"
-                    ),
-                    "source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_repo_local_indexes/{repo}/repository_index_family/"
-                        "{index_kind}"
-                    ),
-                    "resolution": (
-                        "Resolve source, entity, artifact, or event to the provider-local "
-                        "path and return the indexed JSON payload."
-                    ),
-                },
-                {
-                    "uri_template": (
-                        "aoa-kag://providers/{repo}/domain-index-catalog"
-                    ),
-                    "source": (
-                        "aoa-kag/generated/local_kag_provider_map.min.json"
-                        "#/provider_repo_local_indexes/{repo}/domain_index_catalog_ref"
-                    ),
-                    "resolution": (
-                        "Dereference domain_index_catalog_ref when present and return an "
-                        "empty route for providers without owner-native index families."
-                    ),
-                },
-                {
-                    "uri_template": "aoa-kag://registry/provider-map",
-                    "source": "aoa-kag/generated/local_kag_provider_map.min.json",
-                },
-                {
-                    "uri_template": "aoa-kag://coverage/repo-local-source-indexes",
-                    "source": "aoa-kag/generated/repo_local_kag_coverage.min.json",
-                },
-                {
-                    "uri_template": "aoa-kag://readiness/os-surfaces",
-                    "source": "aoa-kag/manifests/local_kag_readiness.json",
+                    "uri_template": "aoa-kag://projections/{digest}",
+                    "source": "abyss-stack/Knowledge/kag/repo-self/current.json",
+                    "resolution": "Read the runtime state bound to the requested projection digest.",
                 },
             ],
             "root_boundaries": [
@@ -674,27 +624,13 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                 },
             ],
             "tools": [
-                "provider_lookup",
-                "provider_status",
-                "generation_route_lookup",
-                "source_index_lookup",
-                "repository_index_family_lookup",
-                "repository_index_lookup",
-                "domain_index_catalog_lookup",
-                "repo_local_coverage_status",
-                "freshness_check",
-                "source_return_lookup",
-                "registry_slice",
-                "composition_slice",
-                "validation_status",
+                "kag_discover",
+                "kag_search",
+                "kag_read",
+                "kag_traverse",
+                "kag_explain",
             ],
-            "prompts": [
-                "bounded_provider_query",
-                "source_return_summary",
-                "repo_source_surface_brief",
-                "cross_repo_relation_preview",
-                "runtime_handoff_brief",
-            ],
+            "prompts": [],
             "package_surfaces": [
                 "AGENTS.md",
                 "DESIGN.md",
@@ -704,7 +640,9 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                 "tests/",
                 "scripts/validate_kag_mcp.py",
             ],
-            "runtime_state_route": "abyss-stack and .aoa runtime stores",
+            "runtime_state_route": (
+                "abyss-stack/mechanics/federation-seams/parts/kag-seam"
+            ),
         },
         "generation_readiness": _generation_readiness_summary(
             providers,

@@ -10,6 +10,10 @@
 - Guard families: source-owned authority, provider readiness, source-return route, generated parity, MCP handoff, runtime-state boundary
 - Posture: accepted
 
+The provider-map ownership and generation decision remains active.
+`AOA-KAG-D-0015` replaces its provisional resource/root/tool/prompt interface
+shape with the executable five-tool retrieval ABI.
+
 ## Context
 
 AOA-KAG-D-0010 activated the local KAG provider contract with `aoa-kag`,

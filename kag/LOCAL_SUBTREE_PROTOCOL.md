@@ -86,7 +86,7 @@ return to the owning source.
 
 `manifests/local_kag_readiness.json` records every direct OS Abyss repository,
 its current provider status, first record classes, validation route, adoption
-order, and MCP access shape.
+order, and owner-return coordinates.
 
 The same matrix carries the OS surface layer used by runtime and MCP routing:
 
@@ -105,14 +105,20 @@ in the readiness matrix until their owner route is ready.
 
 ## MCP Access Shape
 
-The validated provider packet gives `aoa-kag-mcp` four access planes:
+The generated handoff gives `aoa-kag-mcp` one compact agent protocol:
 
-| Plane | Carries |
+| Surface | Carries |
 | --- | --- |
-| resource | manifests, records, generation profiles, repository index families, domain catalogs, registry entries, coverage rows |
-| root | provider home boundaries and source-return roots |
-| tool | provider/generation lookup, repository index and domain catalog lookup, coverage, freshness, source-return, registry/composition slices, validation |
-| prompt | bounded provider query, source-return summary, repo source-surface brief, cross-repo relation preview, runtime handoff brief |
+| `kag_discover` | owners, classes, kinds, strategies, freshness, projections, access, and bounds |
+| `kag_search` | exact, lexical, semantic, hybrid, graph, and automatic retrieval with filters and pagination |
+| `kag_read` | addressed owner manifests, canonical records, documents, anchors, sources, schemas, traces, and projections |
+| `kag_traverse` | bounded owner-qualified relation paths and traversal evidence |
+| `kag_explain` | route, adapter, degradation, projection, and evidence explanation for a trace |
+
+`mcp_handoff.resource_templates` owns the nine `aoa-kag://` shapes.
+`mcp_handoff.root_boundaries` carries containment and owner-return metadata for
+the runtime adapter. MCP Roots remain a client capability rather than a
+repo-provider declaration.
 
 ## Current Providers
 

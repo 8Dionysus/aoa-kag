@@ -56,6 +56,12 @@ REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-query-result.schema.json"
 )
 
+KAG_MCP_CAPABILITIES_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-mcp-capabilities.schema.json"
+)
+
+KAG_MCP_RESULT_SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-mcp-result.schema.json"
+
 REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-federation.schema.json"
 )
@@ -77,6 +83,12 @@ REPO_LOCAL_KAG_INDEX_EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_ind
 REPO_LOCAL_KAG_QUERY_RESULT_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "repo_local_kag_query_result.example.json"
 )
+
+KAG_MCP_CAPABILITIES_EXAMPLE_PATH = (
+    REPO_ROOT / "examples" / "kag_mcp_capabilities.example.json"
+)
+
+KAG_MCP_RESULT_EXAMPLE_PATH = REPO_ROOT / "examples" / "kag_mcp_result.example.json"
 
 REPO_LOCAL_KAG_FEDERATION_EXAMPLE_PATH = (
     REPO_ROOT / "examples" / "repo_local_kag_federation.example.json"

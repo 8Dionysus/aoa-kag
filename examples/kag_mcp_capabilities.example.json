@@ -1,0 +1,47 @@
+{
+  "schema_version": "aoa-kag-mcp-capabilities-v1",
+  "owners": [
+    {
+      "repo": "aoa-kag",
+      "namespace": "aoa:aoa-kag",
+      "owner_type": "organ",
+      "record_counts": {"artifact": 1},
+      "relation_count": 0,
+      "runtime_source_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "freshness": {
+        "state": "current",
+        "runtime_source_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "canonical_source_digest": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "manifest_uri": "aoa-kag://owners/aoa-kag/manifest"
+    }
+  ],
+  "record_classes": ["artifact"],
+  "strategies": [
+    {"name": "auto", "available": true, "record_classes": ["artifact"]},
+    {"name": "exact", "available": true, "record_classes": ["artifact"]},
+    {"name": "lexical", "available": true, "record_classes": ["artifact"]},
+    {"name": "semantic", "available": true, "record_classes": ["artifact"]},
+    {"name": "hybrid", "available": true, "record_classes": ["artifact"]},
+    {"name": "graph", "available": true, "record_classes": ["artifact"]}
+  ],
+  "detail_levels": ["compact", "summary", "full"],
+  "access_scopes": ["public"],
+  "limits": {"page_size": 10, "traversal_depth": 4, "full_text_chars": 4096},
+  "resource_templates": [
+    "aoa-kag://owners/{repo}/manifest",
+    "aoa-kag://records/{qualified_id}"
+  ],
+  "projection": {
+    "digest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "bundle_digest": "3333333333333333333333333333333333333333333333333333333333333333",
+    "federation_digest": "4444444444444444444444444444444444444444444444444444444444444444",
+    "updated_at": "2026-07-13T00:00:00+00:00",
+    "targets": {
+      "exact": {"state": "current", "completed_at": "2026-07-13T00:00:00+00:00"},
+      "vector": {"state": "current", "completed_at": "2026-07-13T00:00:00+00:00"},
+      "graph": {"state": "current", "completed_at": "2026-07-13T00:00:00+00:00"},
+      "retrieval_eval": {"state": "passed", "completed_at": "2026-07-13T00:00:00+00:00"}
+    }
+  }
+}

@@ -15,6 +15,18 @@ def tokenize(value: str) -> tuple[str, ...]:
     return tuple(token.casefold() for token in TOKEN.findall(value) if len(token) > 1)
 
 
+def retrieval_document_role(record: dict[str, Any]) -> str:
+    path = str(record["identity"]["path"])
+    folded_parts = {part.casefold() for part in path.replace("\\", "/").split("/")}
+    name = path.rsplit("/", 1)[-1].casefold()
+    if folded_parts.intersection({"fixtures", "fixture", "testdata", "golden"}) or any(
+        marker in name
+        for marker in ("retrieval-eval.", "retrieval_eval.", ".fixture.", "_fixture.")
+    ):
+        return "evaluation_fixture"
+    return str(record.get("document_role") or "none")
+
+
 @dataclass(frozen=True)
 class _Node:
     id: str
@@ -66,6 +78,73 @@ class RepoKagQuery:
 
     def source_access(self, source_ids: Sequence[str]) -> str:
         return self._source_access(source_ids)
+
+    def _source_dimension(
+        self,
+        source_ids: Sequence[str],
+        field: str,
+        *,
+        fallback: str,
+    ) -> str:
+        values: set[str] = set()
+        for source_id in source_ids:
+            record = self._source_records.get(source_id)
+            if record is None:
+                continue
+            value = (
+                retrieval_document_role(record)
+                if field == "document_role"
+                else str(record.get(field) or fallback)
+            )
+            values.add(value)
+        if field == "document_role" and "evaluation_fixture" in values:
+            return "evaluation_fixture"
+        if len(values) == 1:
+            return next(iter(values))
+        return "mixed" if values else fallback
+
+    def projection_handle(self, record_id: str) -> dict[str, Any] | None:
+        node = self._nodes.get(record_id)
+        if node is None:
+            return None
+        event_without_sources = node.node_class == "event" and not node.source_record_ids
+        handle = {
+            "record_form": "projection_handle",
+            "label": node.label,
+            "path": node.path,
+            "search_text": node.text,
+            "source_record_ids": list(node.source_record_ids),
+            "anchor_ids": list(node.anchor_ids),
+            "access_scope": node.access_scope,
+            "document_role": self._source_dimension(
+                node.source_record_ids,
+                "document_role",
+                fallback="repository_event" if event_without_sources else "none",
+            ),
+            "surface_state": self._source_dimension(
+                node.source_record_ids,
+                "surface_state",
+                fallback="observed_history" if event_without_sources else "authored_source",
+            ),
+            "provenance_ref": node.provenance_ref,
+            "temporal_ref": node.temporal_ref,
+            "trust_ref": node.trust_ref,
+        }
+        primary_source = next(
+            (
+                self._source_records[source_id]
+                for source_id in node.source_record_ids
+                if source_id in self._source_records
+            ),
+            None,
+        )
+        if primary_source is not None:
+            handle["abi"] = copy.deepcopy(primary_source["abi"])
+            handle["signs"] = copy.deepcopy(primary_source["signs"])
+            handle["owner_return_route"] = copy.deepcopy(
+                primary_source["owner_return_route"]
+            )
+        return handle
 
     def _build_nodes(self) -> dict[str, _Node]:
         nodes: dict[str, _Node] = {}
@@ -243,6 +322,10 @@ class RepoKagQuery:
                     "path": str(identity["path"]),
                     "version_id": str(identity["version_id"]),
                     "content_digest": str(identity["content_hash"]),
+                    "document_role": str(record.get("document_role") or "none"),
+                    "surface_state": str(
+                        record.get("surface_state") or "authored_source"
+                    ),
                     "abi": copy.deepcopy(record["abi"]),
                     "signs": copy.deepcopy(record["signs"]),
                     "provenance": copy.deepcopy(record["provenance"]),
