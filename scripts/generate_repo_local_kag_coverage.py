@@ -344,7 +344,7 @@ def repository_event_history_ref(owner_root: Path) -> str | None:
         return None
     try:
         ancestry = subprocess.run(
-            ("git", "rev-list", "--first-parent", "HEAD"),
+            ("git", "rev-list", "--topo-order", "HEAD"),
             cwd=owner_root,
             check=True,
             capture_output=True,

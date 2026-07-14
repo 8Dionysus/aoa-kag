@@ -1269,6 +1269,55 @@ class RepoLocalKagIndexTests(unittest.TestCase):
 
         self.assertEqual("passed", status)
 
+    def test_coverage_recovers_history_boundary_from_second_merge_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo"
+            root.mkdir()
+
+            def git(*args: str) -> str:
+                return subprocess.run(
+                    ("git", *args),
+                    cwd=root,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+
+            git("init", "-b", "main")
+            git("config", "user.name", "Test")
+            git("config", "user.email", "test@example.com")
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            git("add", "README.md")
+            git("commit", "-m", "Base")
+            base = git("rev-parse", "HEAD")
+            git("update-ref", "refs/remotes/origin/main", base)
+            git(
+                "symbolic-ref",
+                "refs/remotes/origin/HEAD",
+                "refs/remotes/origin/main",
+            )
+            git("switch", "-c", "feature")
+            (root / "FEATURE.md").write_text("# Feature\n", encoding="utf-8")
+            git("add", "FEATURE.md")
+            git("commit", "-m", "Feature")
+            git("switch", "main")
+            (root / "MAIN.md").write_text("# Main\n", encoding="utf-8")
+            git("add", "MAIN.md")
+            git("commit", "-m", "Main")
+            main_tip = git("rev-parse", "HEAD")
+            git("update-ref", "refs/remotes/origin/main", main_tip)
+            git("switch", "feature")
+            git("merge", "--no-ff", "main", "-m", "Merge main")
+            write_repository_index_family(root, history_ref=main_tip)
+
+            self.assertEqual(
+                main_tip,
+                coverage_generation.repository_event_history_ref(root),
+            )
+            status, _ = coverage_generation.index_status(root)
+
+        self.assertEqual("passed", status)
+
     def test_coverage_rejects_index_with_wrong_repo_identity(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
