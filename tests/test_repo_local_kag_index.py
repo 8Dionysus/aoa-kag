@@ -736,6 +736,28 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 root,
                 output=Path("kag/indexes/source_surface_index.json"),
             )
+            previous_payload = json.loads(json.dumps(payload))
+            previous_projection = next(
+                record
+                for record in previous_payload["records"]
+                if record["identity"]["path"]
+                == ".agents/skills/aoa-owner/SKILL.md"
+            )
+            previous_projection["surface_state"] = "authored_source"
+            previous_projection["observed_form"] = "file"
+            previous_projection["provenance"]["source_refs"][0]["path"] = (
+                ".agents/skills/aoa-owner/SKILL.md"
+            )
+            previous_projection["provenance"]["materials"] = []
+            previous_projection["provenance"]["generated_by"] = ""
+            previous_projection["owner_return_route"]["surface"] = (
+                ".agents/skills/aoa-owner/SKILL.md"
+            )
+            incremental_payload = build_index(
+                root,
+                output=Path("kag/indexes/source_surface_index.json"),
+                previous_index=previous_payload,
+            )
             family = build_repository_indexes(
                 payload,
                 source_index_path=Path("kag/indexes/source_surface_index.json"),
@@ -796,6 +818,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 "generated_projection"
             ],
         )
+        self.assertEqual(payload, incremental_payload)
         relation_entries = family["relation"]["entries"]
         self.assertTrue(
             any(

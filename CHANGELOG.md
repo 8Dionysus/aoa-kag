@@ -17,6 +17,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 - Replace provisional per-provider MCP hints with one generated executable
   handoff for `discover`, `search`, `read`, `traverse`, and `explain`.
+- Rebuild manifest-declared owner skill projections during incremental indexing
+  so a pre-migration `authored_source` record cannot survive by blob reuse.
 
 ## [0.5.0] - 2026-07-13
 
