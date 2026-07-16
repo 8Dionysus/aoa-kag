@@ -653,6 +653,10 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual("legacy", records_by_path["archive/seed.zip"]["surface_state"])
         self.assertEqual("receipt", records_by_path["kag/receipts/validation.jsonl"]["surface_state"])
         self.assertEqual(
+            "authored_source",
+            records_by_path[".agents/skills/demo/assets/logo.svg"]["surface_state"],
+        )
+        self.assertEqual(
             "generated_receipt",
             records_by_path["kag/receipts/validation.jsonl"]["provenance"]["source_refs"][0]["authority"],
         )
@@ -684,6 +688,157 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["asset"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["receipt"])
         self.assertEqual(1, payload["classification_summary"]["artifact_kind"]["record_log"])
+
+    def test_generator_distinguishes_owner_skill_source_from_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-owner"
+            source = root / "skills" / "aoa-owner" / "SKILL.md"
+            projection = root / ".agents" / "skills" / "aoa-owner" / "SKILL.md"
+            source.parent.mkdir(parents=True)
+            projection.parent.mkdir(parents=True)
+            skill_text = "---\nname: aoa-owner\ndescription: Owner task.\n---\n# Owner\n"
+            source.write_text(skill_text, encoding="utf-8")
+            projection.write_text(skill_text, encoding="utf-8")
+            (root / "skills" / "port.manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa_skill_home_port_v1",
+                        "contract_ref": "aoa-skills:schemas/skill-home-port.schema.json",
+                        "owner_repo": "aoa-owner",
+                        "owner_ref": "AGENTS.md",
+                        "bundles": [
+                            {
+                                "name": "aoa-owner",
+                                "path": "skills/aoa-owner",
+                                "version": "0.1.0",
+                                "lifecycle": "admitted",
+                                "visibility": "advertised",
+                                "admission_ref": "docs/decisions/OWNER-D-0001.md",
+                            }
+                        ],
+                        "projection": {
+                            "runtime": "codex",
+                            "scope": "repo",
+                            "root": ".agents/skills",
+                            "mode": "generated-copy",
+                            "skills": ["aoa-owner"],
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            payload = build_index(
+                root,
+                output=Path("kag/indexes/source_surface_index.json"),
+            )
+            family = build_repository_indexes(
+                payload,
+                source_index_path=Path("kag/indexes/source_surface_index.json"),
+                repo_root=root,
+            )
+
+        self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
+        records_by_path = {
+            record["identity"]["path"]: record for record in payload["records"]
+        }
+        source_record = records_by_path["skills/aoa-owner/SKILL.md"]
+        projection_record = records_by_path[".agents/skills/aoa-owner/SKILL.md"]
+        self.assertEqual("authored_source", source_record["surface_state"])
+        self.assertEqual("generated_projection", projection_record["surface_state"])
+        self.assertEqual("generated_output", projection_record["observed_form"])
+        self.assertEqual("generated", projection_record["abi"]["compatibility"])
+        self.assertEqual(
+            [
+                {
+                    "repo": "aoa-owner",
+                    "path": "skills/aoa-owner/SKILL.md",
+                    "role": "primary",
+                    "authority": "authored_source",
+                }
+            ],
+            projection_record["provenance"]["source_refs"],
+        )
+        self.assertEqual(
+            [
+                {
+                    "repo": "aoa-owner",
+                    "path": "skills/port.manifest.json",
+                    "role": "material",
+                    "authority": "authored_source",
+                }
+            ],
+            projection_record["provenance"]["materials"],
+        )
+        self.assertEqual(
+            "aoa-skills:scripts/build_home_skill_projection.py",
+            projection_record["provenance"]["generated_by"],
+        )
+        self.assertIn(
+            "aoa-skills:scripts/validate_home_skill_port.py",
+            projection_record["provenance"]["validated_by"],
+        )
+        self.assertEqual(
+            {
+                "repo": "aoa-owner",
+                "surface": "skills/aoa-owner/SKILL.md",
+                "route_kind": "document_owner",
+            },
+            projection_record["owner_return_route"],
+        )
+        self.assertEqual(
+            1,
+            payload["classification_summary"]["surface_state"][
+                "generated_projection"
+            ],
+        )
+        relation_entries = family["relation"]["entries"]
+        self.assertTrue(
+            any(
+                relation["relation_kind"] == "derives_from"
+                and relation["from_id"] == projection_record["identity"]["id"]
+                and relation["to_id"] == source_record["identity"]["id"]
+                for relation in relation_entries
+            )
+        )
+
+    def test_generator_rejects_divergent_owner_skill_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-owner"
+            source = root / "skills" / "aoa-owner" / "SKILL.md"
+            projection = root / ".agents" / "skills" / "aoa-owner" / "SKILL.md"
+            source.parent.mkdir(parents=True)
+            projection.parent.mkdir(parents=True)
+            source.write_text("# canonical\n", encoding="utf-8")
+            projection.write_text("# drifted\n", encoding="utf-8")
+            (root / "skills" / "port.manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa_skill_home_port_v1",
+                        "bundles": [
+                            {"name": "aoa-owner", "path": "skills/aoa-owner"}
+                        ],
+                        "projection": {
+                            "root": ".agents/skills",
+                            "mode": "generated-copy",
+                            "skills": ["aoa-owner"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "does not match canonical source skills/aoa-owner/SKILL.md",
+            ):
+                build_index(root)
 
     def test_generator_classifies_tracked_symlinks_from_git_mode(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

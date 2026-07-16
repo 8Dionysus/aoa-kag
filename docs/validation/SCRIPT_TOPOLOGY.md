@@ -84,7 +84,9 @@ The implementation modules live in `scripts/generation/`.
 `scripts/generate_repo_local_kag_index.py` builds the repo-local
 source/artifact/anchor/entity/event/assertion/relation index family from the current
 repository's source, document, mechanics, command, schema, generated, and
-receipt surfaces.
+receipt surfaces. When an owner publishes the common skill-home manifest, the
+builder also preserves canonical skill source versus generated host projection
+provenance instead of inferring authority from `.agents/skills/` placement.
 
 `scripts/validate_repo_local_kag_family.py` validates any owner repository's
 complete family against the common schemas, identities, anchors, evidence, and

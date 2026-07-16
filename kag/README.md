@@ -39,6 +39,11 @@ identities, Git lineage,
 ABI/signs, provenance, freshness, access, temporal state, and trust remain
 resolvable through the family.
 
+The family distinguishes a canonical owner skill under `skills/` from a
+manifest-declared generated copy under `.agents/skills/`. Both physical files
+remain addressable, while the projection returns to its owner source through
+provenance and a typed `derives_from` relation.
+
 `scripts/query_repo_local_kag.py` exposes validated exact, lexical, graph, and
 hybrid retrieval. The programmatic query kernel also provides discovery,
 addressed read, and profile-aware filtering. An owner with native indexes adds

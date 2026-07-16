@@ -20,6 +20,14 @@ That does not make it the authored source of meaning.
 
 Authored source meaning still belongs to the originating repository or corpus.
 
+## Rule 2a: a host projection is not a second source
+
+When an owner contract declares an exact runtime or agent-facing projection,
+KAG may index the physical copy but must return provenance and authority to the
+canonical owner file. A path such as `.agents/skills/` is not sufficient
+evidence by itself; the owner manifest and deterministic parity establish the
+relationship.
+
 ## Rule 3: KAG is not proof
 
 A graph-ready or retrieval-ready surface may support reasoning.

@@ -157,6 +157,14 @@ EXTERNAL_INDEX_GENERATOR_ROUTE = f"aoa-kag:{LOCAL_INDEX_GENERATOR_ROUTE}"
 LOCAL_KAG_VALIDATOR_ROUTE = "scripts/validate_kag.py"
 EXTERNAL_KAG_VALIDATOR_ROUTE = f"aoa-kag:{LOCAL_KAG_VALIDATOR_ROUTE}"
 ZERO_DIGEST = "0" * 64
+HOME_SKILL_PORT_MANIFEST = Path("skills/port.manifest.json")
+HOME_SKILL_PORT_SCHEMA_VERSION = "aoa_skill_home_port_v1"
+HOME_SKILL_PROJECTION_BUILDER_ROUTE = (
+    "aoa-skills:scripts/build_home_skill_projection.py"
+)
+HOME_SKILL_PROJECTION_VALIDATOR_ROUTE = (
+    "aoa-skills:scripts/validate_home_skill_port.py"
+)
 
 BASELINE_TOOLS = (
     "git",
@@ -462,6 +470,113 @@ def json_object(content: bytes) -> dict[str, Any] | None:
     if isinstance(payload, dict):
         return payload
     return None
+
+
+def manifest_relative_path(value: Any, *, field: str) -> Path:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ValueError(f"{field} must be a non-empty POSIX relative path")
+    candidate = Path(value)
+    if candidate.is_absolute() or ".." in candidate.parts or candidate.as_posix() == ".":
+        raise ValueError(f"{field} must stay inside the owner repository")
+    return candidate
+
+
+def home_skill_projection_sources(
+    repo_root: Path,
+    tracked_entries: dict[Path, dict[str, str]],
+) -> dict[Path, dict[str, Path]]:
+    """Resolve exact generated skill copies to their canonical owner sources."""
+
+    if HOME_SKILL_PORT_MANIFEST not in tracked_entries:
+        return {}
+    payload = json_object(
+        source_bytes(
+            repo_root,
+            HOME_SKILL_PORT_MANIFEST,
+            repo_root / HOME_SKILL_PORT_MANIFEST,
+        )
+    )
+    if payload is None:
+        raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} must be a JSON object")
+    if payload.get("schema_version") != HOME_SKILL_PORT_SCHEMA_VERSION:
+        return {}
+
+    projection = payload.get("projection")
+    bundles = payload.get("bundles")
+    if not isinstance(projection, dict) or not isinstance(bundles, list):
+        raise ValueError(
+            f"{HOME_SKILL_PORT_MANIFEST} must declare bundles and projection"
+        )
+    if projection.get("mode") != "generated-copy":
+        raise ValueError(
+            f"{HOME_SKILL_PORT_MANIFEST} v1 projection mode must be generated-copy"
+        )
+    projection_root = manifest_relative_path(
+        projection.get("root"),
+        field="skills/port.manifest.json projection.root",
+    )
+    projected_names = projection.get("skills")
+    if not isinstance(projected_names, list) or not all(
+        isinstance(name, str) and name for name in projected_names
+    ):
+        raise ValueError(
+            f"{HOME_SKILL_PORT_MANIFEST} projection.skills must name bundles"
+        )
+
+    source_roots: dict[str, Path] = {}
+    for bundle in bundles:
+        if not isinstance(bundle, dict):
+            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} bundles must be objects")
+        name = bundle.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} bundle name is invalid")
+        if name in source_roots:
+            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} repeats bundle {name}")
+        source_roots[name] = manifest_relative_path(
+            bundle.get("path"),
+            field=f"skills/port.manifest.json bundle {name} path",
+        )
+    if set(projected_names) != set(source_roots):
+        raise ValueError(
+            f"{HOME_SKILL_PORT_MANIFEST} bundle and projection names must match"
+        )
+
+    resolved: dict[Path, dict[str, Path]] = {}
+    for rel, projection_entry in tracked_entries.items():
+        try:
+            within_projection = rel.relative_to(projection_root)
+        except ValueError:
+            continue
+        if len(within_projection.parts) < 2:
+            raise ValueError(
+                f"declared skill projection file is outside a bundle: {rel.as_posix()}"
+            )
+        bundle_name = within_projection.parts[0]
+        source_root = source_roots.get(bundle_name)
+        if source_root is None:
+            raise ValueError(
+                f"undeclared skill projection bundle: {bundle_name}"
+            )
+        source_rel = source_root.joinpath(*within_projection.parts[1:])
+        source_entry = tracked_entries.get(source_rel)
+        if source_entry is None:
+            raise ValueError(
+                f"skill projection {rel.as_posix()} has no canonical source "
+                f"{source_rel.as_posix()}"
+            )
+        if (
+            projection_entry["blob_id"] != source_entry["blob_id"]
+            or projection_entry["mode"] != source_entry["mode"]
+        ):
+            raise ValueError(
+                f"skill projection {rel.as_posix()} does not match canonical source "
+                f"{source_rel.as_posix()}"
+            )
+        resolved[rel] = {
+            "source": source_rel,
+            "manifest": HOME_SKILL_PORT_MANIFEST,
+        }
+    return resolved
 
 
 def declares_generated_from_source(content: bytes) -> bool:
@@ -795,8 +910,11 @@ def surface_state(
     *,
     repo: str,
     declared_generated: bool = False,
+    generated_projection: bool = False,
 ) -> str:
     parts = rel.parts
+    if generated_projection:
+        return "generated_projection"
     if declared_generated:
         return "generated_readmodel"
     if "legacy" in parts or "archive" in parts:
@@ -814,12 +932,21 @@ def surface_state(
     return "authored_source"
 
 
-def observed_form(kind: str, command: str, *, git_mode: str = "") -> str:
+def observed_form(
+    kind: str,
+    command: str,
+    *,
+    state: str = "",
+    git_mode: str = "",
+) -> str:
     if git_mode == "120000":
         return "symlink"
     if command != "none":
         return "command"
-    if kind == "generated_readmodel":
+    if kind == "generated_readmodel" or state in {
+        "generated_projection",
+        "generated_readmodel",
+    }:
         return "generated_output"
     return "file"
 
@@ -854,7 +981,7 @@ def primary_kind(kind: str, doc_role: str, command: str) -> str:
 
 
 def source_authority(state: str) -> str:
-    if state == "generated_readmodel":
+    if state in {"generated_projection", "generated_readmodel"}:
         return "derived_readmodel"
     if state == "receipt":
         return "generated_receipt"
@@ -1146,6 +1273,8 @@ def generated_by_for(
     *,
     repo_root: Path,
 ) -> str:
+    if state == "generated_projection":
+        return HOME_SKILL_PROJECTION_BUILDER_ROUTE
     if state != "generated_readmodel":
         return ""
     rel_path = rel.as_posix()
@@ -1192,7 +1321,11 @@ def abi_for(content: bytes, rel: Path, kind: str, state: str) -> dict[str, str]:
                 contract_version = str(payload.get("$id") or payload.get("contract_version") or "none")
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass
-    compatibility = "generated" if state == "generated_readmodel" else "stable"
+    compatibility = (
+        "generated"
+        if state in {"generated_projection", "generated_readmodel"}
+        else "stable"
+    )
     if state == "legacy":
         compatibility = "legacy"
     if kind == "unknown":
@@ -1224,6 +1357,7 @@ def build_record(
     lineage_path: Path,
     git_blob_id: str,
     git_mode: str = "",
+    skill_projection: dict[str, Path] | None = None,
 ) -> dict[str, Any]:
     rel_path = rel.as_posix()
     content = source_bytes(repo_root, rel, path)
@@ -1240,11 +1374,35 @@ def build_record(
     code = code_role(rel, kind)
     mech = mechanics_role(rel)
     command = command_role(rel, kind, doc_role)
-    state = surface_state(rel, kind, repo=repo, declared_generated=declared_generated)
+    state = surface_state(
+        rel,
+        kind,
+        repo=repo,
+        declared_generated=declared_generated,
+        generated_projection=skill_projection is not None,
+    )
     headings = heading_refs(content, rel_path) if doc_role != "none" else []
     line_refs = [f"{rel_path}:1"] if content else []
-    authority = source_authority(state)
-    provenance_source_ref = {"repo": repo, "path": rel_path, "role": "primary", "authority": authority}
+    source_rel = skill_projection["source"] if skill_projection else rel
+    authority = "authored_source" if skill_projection else source_authority(state)
+    provenance_source_ref = {
+        "repo": repo,
+        "path": source_rel.as_posix(),
+        "role": "primary",
+        "authority": authority,
+    }
+    provenance_materials = (
+        [
+            {
+                "repo": repo,
+                "path": skill_projection["manifest"].as_posix(),
+                "role": "material",
+                "authority": "authored_source",
+            }
+        ]
+        if skill_projection
+        else []
+    )
     generated_by = generated_by_for(
         rel,
         state,
@@ -1255,6 +1413,9 @@ def build_record(
     )
     observed_by = index_generator_route(repo)
     validated_by = kag_validator_route(repo_root, repo, tracked_paths)
+    provenance_validators = [validated_by]
+    if skill_projection:
+        provenance_validators.append(HOME_SKILL_PROJECTION_VALIDATOR_ROUTE)
     mime = mime_for(path, content, git_mode=git_mode)
     required_tools = []
     if rel.suffix == ".py":
@@ -1283,7 +1444,12 @@ def build_record(
             "size_bytes": len(content),
             "mime": mime,
         },
-        "observed_form": observed_form(kind, command, git_mode=git_mode),
+        "observed_form": observed_form(
+            kind,
+            command,
+            state=state,
+            git_mode=git_mode,
+        ),
         "surface_state": state,
         "artifact_kind": kind,
         "document_role": doc_role,
@@ -1300,9 +1466,9 @@ def build_record(
         "provenance": {
             "observed_by": observed_by,
             "generated_by": generated_by,
-            "validated_by": [validated_by],
+            "validated_by": provenance_validators,
             "source_refs": [provenance_source_ref],
-            "materials": [],
+            "materials": provenance_materials,
         },
         "toolchain": {
             "detected_tools": ["git", "python"],
@@ -1327,7 +1493,7 @@ def build_record(
         },
         "owner_return_route": {
             "repo": repo,
-            "surface": rel_path,
+            "surface": source_rel.as_posix(),
             "route_kind": route_kind_for(kind, doc_role, command),
         },
         "validator_route": {
@@ -1418,6 +1584,7 @@ def build_index(
                 excluded_paths.add(selected_output)
     tracked_entries = git_file_entries(repo_root)
     tracked_paths = set(tracked_entries)
+    skill_projections = home_skill_projection_sources(repo_root, tracked_entries)
     indexed_paths = tracked_paths - excluded_paths
     lineage_paths = git_lineage_paths(
         repo_root,
@@ -1437,6 +1604,7 @@ def build_index(
             path
             for path in indexed_paths
             if path == Path("kag/manifest.json")
+            or path == HOME_SKILL_PORT_MANIFEST
             or path in REPO_LOCAL_GENERATOR_HELPER_PATHS
             or path.name.startswith(("build_", "generate_"))
             or "builders" in path.parts
@@ -1474,6 +1642,7 @@ def build_index(
                     lineage_path=lineage_paths[rel],
                     git_blob_id=tracked_entries[rel]["blob_id"],
                     git_mode=tracked_entries[rel]["mode"],
+                    skill_projection=skill_projections.get(rel),
                 )
             )
     records.sort(key=lambda record: record["identity"]["path"])
@@ -1512,6 +1681,7 @@ def build_index(
                 "identity.path",
                 "identity.content_hash",
                 "artifact_kind",
+                "surface_state",
                 "document_role",
                 "mechanics_role",
                 "command_role",

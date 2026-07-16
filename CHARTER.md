@@ -51,7 +51,8 @@ Neighboring AoA repositories and ToS sources still own their own meaning.
 
 Examples:
 - `aoa-techniques` owns practice meaning
-- `aoa-skills` owns execution meaning
+- `aoa-skills` owns shared portable procedure meaning and common skill-port
+  grammar; each repository owns its admitted local procedure meaning
 - `aoa-evals` owns proof meaning
 - `aoa-memo` owns memory meaning
 - `Tree-of-Sophia` owns authored knowledge-architecture content
