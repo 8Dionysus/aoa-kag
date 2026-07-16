@@ -86,7 +86,9 @@ source/artifact/anchor/entity/event/assertion/relation index family from the cur
 repository's source, document, mechanics, command, schema, generated, and
 receipt surfaces. When an owner publishes the common skill-home manifest, the
 builder also preserves canonical skill source versus generated host projection
-provenance instead of inferring authority from `.agents/skills/` placement.
+provenance instead of inferring authority from `.agents/skills/` placement, and
+rebuilds declared projections during incremental migration so old authority
+claims cannot survive an unchanged copied blob.
 
 `scripts/validate_repo_local_kag_family.py` validates any owner repository's
 complete family against the common schemas, identities, anchors, evidence, and

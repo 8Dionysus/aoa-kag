@@ -14,7 +14,7 @@ import subprocess
 import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Sequence
 
 try:
     from scripts.repo_local.identity import (
@@ -1623,6 +1623,11 @@ def build_index(
             if (
                 previous is not None
                 and not global_invalidation
+                # Projection meaning comes from the owner manifest and KAG
+                # classifier, not only from the copied file blob. Rebuild the
+                # small declared projection set so an incremental migration
+                # cannot preserve older authored-source provenance.
+                and rel not in skill_projections
                 and str(previous["identity"].get("git_blob_id") or "")
                 == tracked_entries[rel]["blob_id"]
                 and str(previous["identity"].get("lineage_path") or "")
