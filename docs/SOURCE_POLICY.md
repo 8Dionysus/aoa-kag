@@ -8,7 +8,8 @@ All KAG surfaces in this repository should remain derived from authoritative ups
 
 Examples of authoritative sources include:
 - `aoa-techniques` markdown bundles
-- `aoa-skills` markdown bundles and manifests
+- shared `aoa-skills` bundles and manifests, plus admitted repository-local
+  skill sources named by their owner manifests
 - `aoa-evals` markdown bundles and manifests
 - `aoa-memo` memory-layer sources
 - `aoa-playbooks` playbook bundles and scenario-layer sources
@@ -18,6 +19,10 @@ Examples of authoritative sources include:
 
 A KAG surface may normalize, lift, or project the source.
 It should not quietly become a hand-authored replacement for the source.
+
+An exact host copy remains derived even when it is tracked in Git. Classify it
+from an explicit owner projection contract and preserve its canonical source
+ref; do not infer authority from the copy's path or byte readability.
 
 ## Provenance rule
 

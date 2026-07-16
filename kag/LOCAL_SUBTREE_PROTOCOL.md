@@ -75,6 +75,13 @@ Source repositories keep authored meaning. Local KAG records carry reviewable
 handles back to those sources. `aoa-kag` owns the shared schema, registry,
 composition, and validation contract.
 
+For an admitted owner skill, `skills/port.manifest.json` identifies the
+canonical `skills/<name>/` source and exact repo-scoped generated projection.
+The source index records the copy as `generated_projection`, names the manifest
+as provenance material, returns to the canonical file, and emits a
+`derives_from` relation. Without the explicit contract, KAG does not guess a
+projection merely from `.agents/skills/` placement.
+
 ## Storage Posture
 
 Git carries compact, portable, reviewable provider records and read models.

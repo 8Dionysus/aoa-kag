@@ -152,6 +152,11 @@ Each repository owns its canonical repo-self records through the shared
 protocol. `aoa-kag` composes qualified owner subgraphs, and runtime owners
 materialize mutable graph and search stores.
 
+A tracked host projection remains addressable as a physical artifact, but an
+owner manifest may mark it as derived. In that case provenance, typed
+relations, and owner return lead back to the canonical owner source; directory
+placement alone never grants or removes source authority.
+
 ### 8. Agent guidance is route law
 
 Agent-facing cards should tell an agent where it is, what owns the claim, what

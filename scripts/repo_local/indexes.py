@@ -539,6 +539,35 @@ def relation_entries(
         str(record["identity"]["id"]): record
         for record in records
     }
+    artifact_by_path = {
+        str(artifact["path"]): artifact
+        for artifact in artifacts
+    }
+    for source_id, record in records_by_source_id.items():
+        provenance = record.get("provenance")
+        source_refs = (
+            provenance.get("source_refs")
+            if isinstance(provenance, dict)
+            else []
+        )
+        projection_artifact = artifact_by_source[source_id]
+        for source_ref in source_refs if isinstance(source_refs, list) else []:
+            if not isinstance(source_ref, dict):
+                continue
+            if source_ref.get("repo") != repo:
+                continue
+            source_path = str(source_ref.get("path") or "")
+            source_artifact = artifact_by_path.get(source_path)
+            if source_artifact is None or source_artifact["id"] == projection_artifact["id"]:
+                continue
+            relation = _relation(
+                repo,
+                relation_kind="derives_from",
+                from_id=projection_artifact["id"],
+                to_id=source_artifact["id"],
+                evidence_anchor_ids=[projection_artifact["anchor_id"]],
+            )
+            relations[relation["id"]] = relation
     for anchor in anchors:
         source_id = str(anchor["source_record_id"])
         identity = records_by_source_id[source_id]["identity"]

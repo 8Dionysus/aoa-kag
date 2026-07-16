@@ -56,9 +56,10 @@ pressure as source truth.
 
 Keep proof doctrine in `aoa-evals`, memory truth in `aoa-memo`, routing in
 `aoa-routing`, role meaning in `aoa-agents`, scenario composition in
-`aoa-playbooks`, skill execution in `aoa-skills`, reusable practice in
-`aoa-techniques`, and authored knowledge-architecture content in
-`Tree-of-Sophia`.
+`aoa-playbooks`, shared portable skill procedures and home-port grammar in
+`aoa-skills`, admitted repository-local skill procedures in their owner
+repositories, reusable practice in `aoa-techniques`, and authored
+knowledge-architecture content in `Tree-of-Sophia`.
 
 ## Validation
 
