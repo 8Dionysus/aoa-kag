@@ -1,12 +1,12 @@
-name: Repo-local KAG index family
-description: Check repository-owned source, artifact, anchor, entity, event, assertion, and relation indexes against the aoa-kag builder.
+name: Repo-local KAG portable family
+description: Check the content-addressed portable corpus, its budgets, and the deterministic seven-file compatibility view.
 
 inputs:
   repo-root:
     description: Repository root relative to the caller workspace.
     default: .
   output:
-    description: Source surface index path relative to the repository root; sibling repository indexes share its directory.
+    description: Logical v2 source-index path used by the compatibility view.
     default: kag/indexes/source_surface_index.json
   history-ref:
     description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
@@ -66,9 +66,10 @@ runs:
         python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py"
         --repo-root "${{ inputs.repo-root }}"
         --output "${{ inputs.output }}"
-        --index-family
+        --portable-family
         --history-ref "${{ steps.history.outputs.ref }}"
         --event-history-ref "${{ steps.history.outputs.event-ref }}"
+        --budget-base-ref "${{ steps.history.outputs.ref }}"
         --check
     - name: Check incremental index family parity
       shell: bash
@@ -77,10 +78,11 @@ runs:
         python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py"
         --repo-root "${{ inputs.repo-root }}"
         --output "${{ inputs.output }}"
-        --index-family
+        --portable-family
         --incremental
         --history-ref "${{ steps.history.outputs.ref }}"
         --event-history-ref "${{ steps.history.outputs.event-ref }}"
+        --budget-base-ref "${{ steps.history.outputs.ref }}"
         --check
     - name: Ensure repo-local validation dependencies
       shell: bash
@@ -95,3 +97,14 @@ runs:
         python3 "$GITHUB_ACTION_PATH/../../../scripts/validate_repo_local_kag_family.py"
         --repo-root "${{ inputs.repo-root }}"
         --source-index "${{ inputs.output }}"
+    - name: Assemble deterministic compatibility view
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        set -euo pipefail
+        output_dir="$RUNNER_TEMP/repo-local-kag-family-v2"
+        rm -rf "$output_dir"
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/assemble_repo_local_kag_family.py" \
+          --repo-root "${{ inputs.repo-root }}" \
+          --output-dir "$output_dir"
+        test "$(find "$output_dir" -maxdepth 1 -type f | wc -l)" -eq 7

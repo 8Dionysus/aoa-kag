@@ -15,7 +15,8 @@
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
 | `scripts/validate_kag.py` | repo-wide KAG validation entrypoint |
 | `scripts/validate_local_stats_port.py` | owner-local stats port adapter to the pinned `aoa-stats` validator |
-| `scripts/generate_repo_local_kag_index.py` | repo-local source/artifact/anchor/entity/event/assertion/relation index-family builder |
+| `scripts/generate_repo_local_kag_index.py` | repo-local portable family builder, shard/budget gate, and logical source/artifact/anchor/entity/event/assertion/relation family builder |
+| `scripts/assemble_repo_local_kag_family.py` | exact seven-file v2 compatibility assembler from the portable family |
 | `scripts/validate_repo_local_kag_family.py` | schema and integrity validator for a repository-owned index family |
 | `scripts/query_repo_local_kag.py` | validated exact, lexical, graph, and hybrid repo-local retrieval |
 | `scripts/build_repo_local_kag_federation.py` | validated owner-qualified federation projection builder |
@@ -31,6 +32,11 @@ target `repo-root` and uses its merge base with `HEAD`; on the default branch
 that boundary is `HEAD`. The builder combines this durable history with the
 current repository snapshot, keeping a multi-commit branch and its squash-merged
 default-branch snapshot on the same generated index family.
+
+The action checks both full and incremental portable-family parity, the
+changed-generated-bytes budget against that history boundary, the explicit
+receipt route for an exceedance, the family validator, and deterministic v2
+compatibility assembly.
 
 Explicit caller inputs keep precedence. The action exports the resolved
 repository name and both boundaries through repo-scoped environment variables

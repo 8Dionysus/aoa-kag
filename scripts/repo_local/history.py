@@ -8,6 +8,17 @@ from typing import Any, Sequence
 from .identity import GitLineageState, qualified_id
 
 
+def _path_is_excluded(path: str, excluded: set[str]) -> bool:
+    return any(
+        path == candidate
+        or (
+            candidate.endswith("/")
+            and path.startswith(candidate)
+        )
+        for candidate in excluded
+    )
+
+
 def _git_text(repo_root: Path, command: Sequence[str]) -> str:
     try:
         return subprocess.run(
@@ -177,7 +188,10 @@ def git_commit_events(
             repo=repo,
             lineage_state=lineage_state,
         )
-        if change["path"] in excluded or change["old_path"] in excluded:
+        if _path_is_excluded(
+            change["path"],
+            excluded,
+        ) or _path_is_excluded(change["old_path"], excluded):
             continue
         current["changes"].append(change)
         object_id = change["object_id"]
@@ -215,7 +229,8 @@ def git_commit_events(
     staged_changes = [
         item
         for item in staged_changes
-        if item["path"] not in excluded and item["old_path"] not in excluded
+        if not _path_is_excluded(item["path"], excluded)
+        and not _path_is_excluded(item["old_path"], excluded)
     ]
     snapshot_changes: list[dict[str, str]] = staged_changes
     if not snapshot_changes and events:

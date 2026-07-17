@@ -9,7 +9,8 @@
     "docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md",
     "docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md",
     "docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md",
-    "docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md"
+    "docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md",
+    "docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md"
   ],
   "branches": [
     {
@@ -135,20 +136,15 @@
       "branch": "provider_packet",
       "path": "kag/indexes/",
       "source_kind": "local_kag_indexes",
-      "meaning": "Canonical repo-self source, artifact, anchor, entity, event, assertion, and relation indexes.",
+      "meaning": "Content-addressed portable source, structure, and history corpus with deterministic source, artifact, anchor, entity, event, assertion, and relation compatibility views.",
       "source_files": [
         "kag/indexes/provider_readiness_index.json",
-        "kag/indexes/source_surface_index.json",
-        "kag/indexes/repo_artifact_index.json",
-        "kag/indexes/repo_anchor_index.json",
-        "kag/indexes/repo_entity_index.json",
-        "kag/indexes/repo_event_index.json",
-        "kag/indexes/repo_assertion_index.json",
-        "kag/indexes/repo_relation_index.json"
+        "kag/indexes/index_family.manifest.json"
       ],
       "owner_surface": "kag/manifest.json",
       "validators": [
-        "scripts/validators/local_kag_subtree.py"
+        "scripts/validators/local_kag_subtree.py",
+        "scripts/validate_repo_local_kag_family.py"
       ]
     },
     {

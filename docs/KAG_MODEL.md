@@ -36,6 +36,13 @@ identity through federation.
 Federation resolves source links through current and historical Git locators,
 while external web, owner, and GitHub-object references remain typed evidence.
 
+The tracked physical form is a content-addressed portable corpus of source,
+structure, and repository-history records under
+`kag/indexes/index_family.manifest.json` and bounded JSONL shards. Artifact,
+entity, assertion, and relation indexes are deterministic logical views.
+Consumers may assemble the exact seven-file v2 compatibility family on demand;
+the monolithic compatibility files are not the Git unit of change.
+
 Native domain indexes remain product surfaces of their owners and appear in
 repo-self KAG through a domain-index catalog.
 
@@ -145,3 +152,8 @@ for the compact contract.
 ## Compact principle
 
 The KAG layer should make knowledge lift explicit without pretending the ecosystem is already a finished graph civilization.
+
+Compactness is executable: portable families keep bounded record and shard
+sizes, owner-local tracked-byte baselines, an OS-wide aggregate budget, and a
+default generated-delta budget whose exceedance needs an explicit owner
+receipt.

@@ -52,6 +52,10 @@ REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-repository-index.schema.json"
 )
 
+REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-family-manifest.schema.json"
+)
+
 REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-query-result.schema.json"
 )
@@ -105,6 +109,10 @@ REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_EXAMPLE_PATH = (
 DOMAIN_INDEX_CATALOG_EXAMPLE_PATH = REPO_ROOT / "examples" / "domain_index_catalog.example.json"
 
 REPO_LOCAL_KAG_INDEX_PATH = REPO_ROOT / "kag" / "indexes" / "source_surface_index.json"
+
+REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH = (
+    REPO_ROOT / "kag" / "indexes" / "index_family.manifest.json"
+)
 
 REPO_LOCAL_KAG_COVERAGE_PATH = REPO_ROOT / "generated" / "repo_local_kag_coverage.json"
 

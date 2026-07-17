@@ -7,6 +7,7 @@ import argparse
 import json
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -22,6 +23,7 @@ try:
         classification_summary,
         coverage_summary,
         git_file_paths,
+        is_portable_family_control_path,
         manifest_validation_route,
         normalized_json,
         owner_type_for,
@@ -31,6 +33,12 @@ try:
         source_bytes,
     )
     from scripts.generation.context import KNOWN_REPO_ROOTS
+    from scripts.repo_local.portable_family import (
+        MANIFEST_RELATIVE_PATH,
+        OS_AGGREGATE_TRACKED_BYTES_MAX,
+        load_portable_family,
+        receipt_path_for,
+    )
     from scripts.provider_registry import (
         connector_repos,
         provider_roots,
@@ -46,6 +54,7 @@ except ImportError:  # pragma: no cover - direct script execution
         classification_summary,
         coverage_summary,
         git_file_paths,
+        is_portable_family_control_path,
         manifest_validation_route,
         normalized_json,
         owner_type_for,
@@ -55,6 +64,12 @@ except ImportError:  # pragma: no cover - direct script execution
         source_bytes,
     )
     from generation.context import KNOWN_REPO_ROOTS  # type: ignore
+    from repo_local.portable_family import (  # type: ignore
+        MANIFEST_RELATIVE_PATH,
+        OS_AGGREGATE_TRACKED_BYTES_MAX,
+        load_portable_family,
+        receipt_path_for,
+    )
     from provider_registry import (  # type: ignore
         connector_repos,
         provider_roots,
@@ -270,6 +285,7 @@ def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> boo
         rel.as_posix()
         for rel in git_file_paths(owner_root)
         if rel not in COMMON_GENERATED_INDEX_RELS
+        and not is_portable_family_control_path(rel)
     }
     if indexed_paths != expected_paths:
         return False
@@ -307,14 +323,94 @@ def _source_index_payload(owner_root: Path) -> dict[str, Any] | None:
     try:
         payload = json.loads(source_index.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
-        return None
+        payload = None
     if isinstance(payload, dict) and payload.get("schema_version") == INDEX_SCHEMA_VERSION:
         return payload
+    portable = _portable_bundle(owner_root)
+    if portable is not None:
+        return portable[0]
     return None
 
 
-def repository_index_family_refs(relative_files: Sequence[str]) -> dict[str, str]:
+def portable_family_profile(
+    owner_root: Path,
+    *,
+    owner_name: str,
+    status: str,
+) -> tuple[str, dict[str, Any]]:
+    portable = _portable_bundle(owner_root)
+    if portable is not None:
+        manifest = portable[2]
+        tracked_bytes = manifest["summary"]["tracked_bytes"]
+        tracked_bytes_max = manifest["budgets"]["tracked_bytes_max"]
+        receipted = tracked_bytes > tracked_bytes_max
+        self_manifest = (
+            owner_name == "aoa-kag"
+            and owner_root.resolve() == REPO_ROOT.resolve()
+        )
+        return (
+            "v3-portable-shards",
+            {
+                "manifest_ref": MANIFEST_RELATIVE_PATH.as_posix(),
+                "content_digest": (
+                    ""
+                    if self_manifest
+                    else manifest["family_identity"]["content_digest"]
+                ),
+                "digest_state": (
+                    "self-manifest"
+                    if self_manifest
+                    else "published"
+                ),
+                "tracked_bytes": tracked_bytes,
+                "tracked_bytes_max": tracked_bytes_max,
+                "shards": manifest["summary"]["shards"],
+                "budget_state": "receipted" if receipted else "passed",
+                "receipt_ref": (
+                    receipt_path_for(manifest).as_posix()
+                    if receipted and not self_manifest
+                    else ""
+                ),
+            },
+        )
+    if status == "passed":
+        return (
+            "v2-monoliths",
+            {
+                "manifest_ref": "",
+                "content_digest": "",
+                "digest_state": "not-applicable",
+                "tracked_bytes": 0,
+                "tracked_bytes_max": 0,
+                "shards": 0,
+                "budget_state": "not-applicable",
+                "receipt_ref": "",
+            },
+        )
+    return (
+        "none",
+        {
+            "manifest_ref": "",
+            "content_digest": "",
+            "digest_state": "not-applicable",
+            "tracked_bytes": 0,
+            "tracked_bytes_max": 0,
+            "shards": 0,
+            "budget_state": "not-applicable",
+            "receipt_ref": "",
+        },
+    )
+
+
+def repository_index_family_refs(
+    relative_files: Sequence[str],
+    *,
+    status: str,
+    storage: str,
+) -> dict[str, str]:
     present = set(relative_files)
+    if status == "passed" and storage == "v3-portable-shards":
+        return dict(REPOSITORY_INDEX_FAMILY_REFS)
     return {
         index_kind: path
         for index_kind, path in REPOSITORY_INDEX_FAMILY_REFS.items()
@@ -322,13 +418,44 @@ def repository_index_family_refs(relative_files: Sequence[str]) -> dict[str, str
     }
 
 
-def repository_event_history_ref(owner_root: Path) -> str | None:
-    event_index = owner_root / "kag" / "indexes" / REPOSITORY_INDEX_FILENAMES["event"]
-    try:
-        payload = json.loads(event_index.read_text(encoding="utf-8"))
-        entries = payload.get("entries")
-    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
+@lru_cache(maxsize=None)
+def _portable_bundle(
+    owner_root: Path,
+) -> tuple[
+    dict[str, Any],
+    dict[str, dict[str, Any]],
+    dict[str, Any],
+] | None:
+    manifest = owner_root / MANIFEST_RELATIVE_PATH
+    if not manifest.is_file():
         return None
+    try:
+        return load_portable_family(owner_root)
+    except (ValueError, FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
+def repository_event_history_ref(owner_root: Path) -> str | None:
+    portable = _portable_bundle(owner_root)
+    if portable is not None:
+        entries = portable[1]["event"].get("entries")
+    else:
+        event_index = (
+            owner_root
+            / "kag"
+            / "indexes"
+            / REPOSITORY_INDEX_FILENAMES["event"]
+        )
+        try:
+            payload = json.loads(event_index.read_text(encoding="utf-8"))
+            entries = payload.get("entries")
+        except (
+            FileNotFoundError,
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+            IsADirectoryError,
+        ):
+            return None
     if not isinstance(entries, list):
         return None
     published_refs = {
@@ -367,16 +494,26 @@ def repository_index_family_matches_owner(
         history_ref=history_ref,
         event_history_ref=history_ref,
     )
-    actual: dict[str, dict[str, Any]] = {}
-    for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
-        path = owner_root / "kag" / "indexes" / filename
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError):
+    portable = _portable_bundle(owner_root)
+    if portable is not None:
+        actual = portable[1]
+    else:
+        actual = {}
+        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
+            path = owner_root / "kag" / "indexes" / filename
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (
+                FileNotFoundError,
+                json.JSONDecodeError,
+                UnicodeDecodeError,
+                IsADirectoryError,
+            ):
+                return False
+            actual[index_kind] = payload
+    for index_kind in REPOSITORY_INDEX_FILENAMES:
+        if actual[index_kind] != expected[index_kind]:
             return False
-        if payload != expected[index_kind]:
-            return False
-        actual[index_kind] = payload
     try:
         try:
             from scripts.validators.common import ValidationError
@@ -448,7 +585,7 @@ def common_surface_profile(
             "unknown_count": int(summary.get("unknown_count", 0)),
             "has_kag_home": (owner_root / "kag").is_dir(),
             "has_record_classes": _record_classes_present(owner_root),
-            "has_source_index": (owner_root / SOURCE_SURFACE_INDEX_REL).is_file(),
+            "has_source_index": source == "source_surface_index",
             "has_owner_commands": _records_have_owner_commands(records),
             "has_generated_readmodels": int(summary.get("generated_count", 0)) > 0,
             "has_validation_route": (
@@ -593,6 +730,23 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
     if not files:
         return "missing", []
     relative_files = [path.relative_to(owner_root).as_posix() for path in files]
+    portable = _portable_bundle(owner_root)
+    if portable is not None:
+        payload = portable[0]
+        schema = json.loads(INDEX_SCHEMA_PATH.read_text(encoding="utf-8"))
+        errors = list(Draft202012Validator(schema).iter_errors(payload))
+        if (
+            payload.get("schema_version") == INDEX_SCHEMA_VERSION
+            and not errors
+            and source_index_matches_owner(owner_root, payload)
+        ):
+            return (
+                "passed"
+                if repository_index_family_matches_owner(owner_root, payload)
+                else "migration-needed",
+                relative_files,
+            )
+        return "migration-needed", relative_files
     source_index = indexes / "source_surface_index.json"
     if source_index.is_file():
         try:
@@ -635,6 +789,11 @@ def build_coverage(
         if progress:
             coverage_progress(f"owner {index}/{len(roots)} {name}")
         status, files = index_status(owner_root, owner_name=name)
+        family_storage, portable_family = portable_family_profile(
+            owner_root,
+            owner_name=name,
+            status=status,
+        )
         display_root = canonical_owner_root(os_root, name) if owner_roots is not None else owner_root
         display_kag_home = display_root / "kag" if (owner_root / "kag").is_dir() else Path("")
         owners.append(
@@ -645,7 +804,13 @@ def build_coverage(
                 "kag_home": display_kag_home.as_posix() if display_kag_home.as_posix() != "." else "",
                 "index_status": status,
                 "index_files": files,
-                "repository_index_family": repository_index_family_refs(files),
+                "family_storage": family_storage,
+                "portable_family": portable_family,
+                "repository_index_family": repository_index_family_refs(
+                    files,
+                    status=status,
+                    storage=family_storage,
+                ),
                 "domain_index_catalog_ref": (
                     DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in files else ""
                 ),
@@ -657,6 +822,24 @@ def build_coverage(
             }
         )
     summary = {status: sum(1 for owner in owners if owner["index_status"] == status) for status in OWNER_STATUS}
+    portable_owners = [
+        owner
+        for owner in owners
+        if owner["family_storage"] == "v3-portable-shards"
+    ]
+    portable_tracked_bytes = sum(
+        owner["portable_family"]["tracked_bytes"]
+        for owner in portable_owners
+    )
+    aggregate_budget_state = (
+        "exceeded"
+        if portable_tracked_bytes > OS_AGGREGATE_TRACKED_BYTES_MAX
+        else (
+            "passed"
+            if len(portable_owners) == len(owners)
+            else "partial"
+        )
+    )
     return {
         "schema_version": "aoa-repo-local-kag-coverage-v1",
         "source_contract": "schemas/repo-local-kag-index.schema.json",
@@ -667,6 +850,10 @@ def build_coverage(
             "migration_needed": summary["migration-needed"],
             "missing": summary["missing"],
             "owner_specific": summary["owner-specific"],
+            "portable_v3": len(portable_owners),
+            "portable_tracked_bytes": portable_tracked_bytes,
+            "os_aggregate_tracked_bytes_max": OS_AGGREGATE_TRACKED_BYTES_MAX,
+            "aggregate_budget_state": aggregate_budget_state,
         },
         "owners": owners,
     }

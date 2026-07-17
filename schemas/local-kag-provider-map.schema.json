@@ -199,6 +199,63 @@
         "relation": {"const": "kag/indexes/repo_relation_index.json"}
       }
     },
+    "portableFamily": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_ref",
+        "content_digest",
+        "digest_state",
+        "tracked_bytes",
+        "tracked_bytes_max",
+        "shards",
+        "budget_state",
+        "receipt_ref"
+      ],
+      "properties": {
+        "manifest_ref": {
+          "enum": [
+            "",
+            "kag/indexes/index_family.manifest.json"
+          ]
+        },
+        "content_digest": {
+          "type": "string",
+          "pattern": "^(|[a-f0-9]{64})$"
+        },
+        "digest_state": {
+          "enum": [
+            "published",
+            "self-manifest",
+            "not-applicable"
+          ]
+        },
+        "tracked_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracked_bytes_max": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50331648
+        },
+        "shards": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "budget_state": {
+          "enum": [
+            "passed",
+            "receipted",
+            "not-applicable"
+          ]
+        },
+        "receipt_ref": {
+          "type": "string",
+          "pattern": "^(|kag/receipts/index_family_budget/[a-f0-9]{64}\\.json)$"
+        }
+      }
+    },
     "repoLocalIndex": {
       "type": "object",
       "additionalProperties": false,
@@ -219,6 +276,16 @@
         },
         "source_index_ref": {"type": "string"},
         "index_files": {"$ref": "#/$defs/uniqueStringList"},
+        "family_storage": {
+          "enum": [
+            "v2-monoliths",
+            "v3-portable-shards",
+            "none"
+          ]
+        },
+        "portable_family": {
+          "$ref": "#/$defs/portableFamily"
+        },
         "repository_index_family": {"$ref": "#/$defs/repositoryIndexFamily"},
         "domain_index_catalog_ref": {
           "type": "string",

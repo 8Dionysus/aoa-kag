@@ -133,7 +133,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             ".",
             "--output",
             "kag/indexes/source_surface_index.json",
-            "--index-family",
+            "--portable-family",
         )
         index_check_command = (*index_command, "--check")
         for lane_name in ("generated_check", "compatibility_canary"):
@@ -170,17 +170,12 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             self.assertNotIn(index_command, sequence[last_index_check + 1 :])
             self.assertNotIn(generate_kag_command, sequence[last_check + 1 :])
 
-    def test_generated_drift_paths_cover_the_complete_repository_index_family(self) -> None:
+    def test_generated_drift_paths_cover_the_portable_repository_family(self) -> None:
         drift_paths = set(drift_paths_from_manifest("generated"))
         self.assertTrue(
             {
-                "kag/indexes/source_surface_index.json",
-                "kag/indexes/repo_entity_index.json",
-                "kag/indexes/repo_artifact_index.json",
-                "kag/indexes/repo_anchor_index.json",
-                "kag/indexes/repo_event_index.json",
-                "kag/indexes/repo_assertion_index.json",
-                "kag/indexes/repo_relation_index.json",
+                "kag/indexes/index_family.manifest.json",
+                "kag/indexes/shards",
             }.issubset(drift_paths)
         )
         canary_diff = next(
@@ -188,7 +183,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             for command in command_sequence_from_manifest("compatibility_canary")
             if command[:3] == ("git", "diff", "--exit-code")
         )
-        self.assertIn("kag/indexes/repo_assertion_index.json", canary_diff)
+        self.assertIn("kag/indexes/index_family.manifest.json", canary_diff)
+        self.assertIn("kag/indexes/shards", canary_diff)
 
     def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
         with patch.object(ci_gate, "run_sequence") as run_sequence:
@@ -276,7 +272,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("scripts/generate_repo_local_kag_index.py", action)
         self.assertIn('--repo-root "${{ inputs.repo-root }}"', action)
         self.assertIn('--output "${{ inputs.output }}"', action)
-        self.assertIn("--index-family", action)
+        self.assertIn("--portable-family", action)
+        self.assertIn("--budget-base-ref", action)
         self.assertIn("--incremental", action)
         self.assertIn("history-ref:", action)
         self.assertIn("event-history-ref:", action)
@@ -300,6 +297,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         self.assertIn("--check", action)
         self.assertIn("scripts/validate_repo_local_kag_family.py", action)
+        self.assertIn("scripts/assemble_repo_local_kag_family.py", action)
         self.assertIn("python3 -m pip install", action)
         self.assertLess(
             action.index("python3 -m pip install"),

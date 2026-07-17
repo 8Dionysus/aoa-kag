@@ -84,13 +84,8 @@
   "drift_paths": {
     "generated": [
       "generated",
-      "kag/indexes/source_surface_index.json",
-      "kag/indexes/repo_entity_index.json",
-      "kag/indexes/repo_artifact_index.json",
-      "kag/indexes/repo_anchor_index.json",
-      "kag/indexes/repo_event_index.json",
-      "kag/indexes/repo_assertion_index.json",
-      "kag/indexes/repo_relation_index.json"
+      "kag/indexes/index_family.manifest.json",
+      "kag/indexes/shards"
     ]
   },
   "command_sequences": {
@@ -153,7 +148,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
-        "--index-family"
+        "--portable-family"
       ],
       [
         "python",
@@ -170,7 +165,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
-        "--index-family"
+        "--portable-family"
       ],
       [
         "python",
@@ -184,7 +179,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
-        "--index-family",
+        "--portable-family",
         "--check"
       ],
       [
@@ -243,7 +238,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
-        "--index-family"
+        "--portable-family"
       ],
       [
         "python",
@@ -260,7 +255,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
-        "--index-family"
+        "--portable-family"
       ],
       [
         "python",
@@ -274,7 +269,7 @@
         ".",
         "--output",
         "kag/indexes/source_surface_index.json",
-        "--index-family",
+        "--portable-family",
         "--check"
       ],
       [
@@ -288,13 +283,8 @@
         "--exit-code",
         "--",
         "generated",
-        "kag/indexes/source_surface_index.json",
-        "kag/indexes/repo_entity_index.json",
-        "kag/indexes/repo_artifact_index.json",
-        "kag/indexes/repo_anchor_index.json",
-        "kag/indexes/repo_event_index.json",
-        "kag/indexes/repo_assertion_index.json",
-        "kag/indexes/repo_relation_index.json"
+        "kag/indexes/index_family.manifest.json",
+        "kag/indexes/shards"
       ]
     ]
   }

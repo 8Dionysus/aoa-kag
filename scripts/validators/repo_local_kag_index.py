@@ -113,6 +113,10 @@ def validate_repo_local_kag_index_schema_surface() -> None:
         REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
         "repo-local KAG repository index",
     )
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+        "repo-local KAG portable family manifest",
+    )
     validate_top_level_schema(REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH, "repo-local KAG query result")
     validate_top_level_schema(KAG_MCP_CAPABILITIES_SCHEMA_PATH, "KAG MCP capabilities")
     validate_top_level_schema(KAG_MCP_RESULT_SCHEMA_PATH, "KAG MCP result")
@@ -528,11 +532,25 @@ def load_repo_local_kag_repository_index_family(
     label: str | None = None,
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
     source_path = source_index if source_index.is_absolute() else repo_root / source_index
-    source_payload = read_json(source_path)
-    family = {
-        index_kind: read_json(source_path.parent / filename)
-        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
-    }
+    portable_manifest_path = source_path.parent / "index_family.manifest.json"
+    if not source_path.is_file() and portable_manifest_path.is_file():
+        try:
+            from scripts.repo_local.portable_family import load_portable_family
+        except ImportError:  # pragma: no cover - direct script import fallback
+            from repo_local.portable_family import load_portable_family  # type: ignore
+        try:
+            source_payload, family, _ = load_portable_family(
+                repo_root,
+                manifest_path=portable_manifest_path.relative_to(repo_root),
+            )
+        except ValueError as exc:
+            fail(str(exc))
+    else:
+        source_payload = read_json(source_path)
+        family = {
+            index_kind: read_json(source_path.parent / filename)
+            for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+        }
     validated = validate_repo_local_kag_repository_index_family(
         family,
         source_payload=source_payload,
@@ -545,7 +563,39 @@ def load_repo_local_kag_repository_index_family(
 
 def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-index-read", progress=progress)
-    payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
+    portable_manifest: dict[str, object] | None = None
+    if REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH.is_file():
+        try:
+            from scripts.repo_local.portable_family import (
+                build_portable_family,
+                check_portable_output,
+                load_portable_family,
+            )
+        except ImportError:  # pragma: no cover
+            from repo_local.portable_family import (  # type: ignore
+                build_portable_family,
+                check_portable_output,
+                load_portable_family,
+            )
+        try:
+            payload, actual_family, portable_manifest = load_portable_family(
+                REPO_ROOT
+            )
+        except ValueError as exc:
+            fail(str(exc))
+        repo_local_kag_validate_payload(
+            portable_manifest,
+            schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+            label="repo-local KAG portable family manifest",
+        )
+    else:
+        payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
+        actual_family = {
+            index_kind: read_json(
+                REPO_ROOT / "kag" / "indexes" / filename
+            )
+            for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+        }
     _repo_local_index_phase("generated-index-payload", progress=progress)
     validate_repo_local_kag_index_payload(payload, label="repo-local KAG generated index")
     _repo_local_index_phase("generated-index-rebuild", progress=progress)
@@ -556,18 +606,29 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
 
     _repo_local_index_phase("generated-repository-index-family", progress=progress)
     expected_family = build_repository_indexes(expected, repo_root=REPO_ROOT)
-    actual_family: dict[str, object] = {}
-    for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
-        path = REPO_ROOT / "kag" / "indexes" / filename
-        family_payload = read_json(path)
-        actual_family[index_kind] = family_payload
-        if family_payload != expected_family[index_kind]:
+    for index_kind in REPOSITORY_INDEX_FILENAMES:
+        if actual_family[index_kind] != expected_family[index_kind]:
             fail(f"repo-local KAG {index_kind} index drifted from generator")
     validate_repo_local_kag_repository_index_family(
         actual_family,
         source_payload=payload,
         label="repo-local KAG repository family",
     )
+    if portable_manifest is not None:
+        try:
+            expected_manifest, expected_shards = build_portable_family(
+                expected,
+                expected_family,
+                previous_manifest=portable_manifest,
+            )
+        except ValueError as exc:
+            fail(str(exc))
+        if not check_portable_output(
+            REPO_ROOT,
+            expected_manifest,
+            expected_shards,
+        ):
+            fail("repo-local KAG portable family drifted from generator")
 
 
 def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> dict[str, object]:
@@ -593,13 +654,94 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
         repo = owner.get("repo")
         index_files = owner.get("index_files")
         repository_index_family = owner.get("repository_index_family")
+        family_storage = owner.get("family_storage")
+        portable_family = owner.get("portable_family")
         domain_index_catalog_ref = owner.get("domain_index_catalog_ref")
-        if not isinstance(index_files, list) or not isinstance(repository_index_family, dict):
+        if (
+            not isinstance(index_files, list)
+            or not isinstance(repository_index_family, dict)
+            or not isinstance(portable_family, dict)
+        ):
             fail(f"{label} owner {repo} must expose repository index family routes")
-        if any(path not in index_files for path in repository_index_family.values()):
+        if (
+            family_storage != "v3-portable-shards"
+            and any(
+                path not in index_files
+                for path in repository_index_family.values()
+            )
+        ):
             fail(f"{label} owner {repo} repository index family must return to index_files")
         if owner.get("index_status") == "passed" and repository_index_family != REPOSITORY_INDEX_FAMILY_REFS:
             fail(f"{label} owner {repo} passed status requires the complete repository index family")
+        if family_storage == "v3-portable-shards":
+            tracked_bytes = portable_family.get("tracked_bytes", 0)
+            tracked_bytes_max = portable_family.get(
+                "tracked_bytes_max",
+                -1,
+            )
+            content_digest = portable_family.get("content_digest")
+            digest_state = portable_family.get("digest_state")
+            self_manifest = (
+                repo == "aoa-kag"
+                and digest_state == "self-manifest"
+                and content_digest == ""
+            )
+            expected_receipt = (
+                "kag/receipts/index_family_budget/"
+                f"{content_digest}.json"
+            )
+            if (
+                portable_family.get("manifest_ref")
+                != "kag/indexes/index_family.manifest.json"
+                or portable_family["manifest_ref"] not in index_files
+                or (
+                    not self_manifest
+                    and (
+                        not content_digest
+                        or digest_state != "published"
+                    )
+                )
+                or tracked_bytes <= 0
+                or portable_family.get("shards", 0) <= 0
+                or (
+                    tracked_bytes <= tracked_bytes_max
+                    and (
+                        portable_family.get("budget_state") != "passed"
+                        or portable_family.get("receipt_ref") != ""
+                    )
+                )
+                or (
+                    tracked_bytes > tracked_bytes_max
+                    and (
+                        portable_family.get("budget_state") != "receipted"
+                        or (
+                            self_manifest
+                            and portable_family.get("receipt_ref") != ""
+                        )
+                        or (
+                            not self_manifest
+                            and portable_family.get("receipt_ref")
+                            != expected_receipt
+                        )
+                    )
+                )
+            ):
+                fail(
+                    f"{label} owner {repo} portable family coordinates are invalid"
+                )
+        elif portable_family != {
+            "manifest_ref": "",
+            "content_digest": "",
+            "digest_state": "not-applicable",
+            "tracked_bytes": 0,
+            "tracked_bytes_max": 0,
+            "shards": 0,
+            "budget_state": "not-applicable",
+            "receipt_ref": "",
+        }:
+            fail(
+                f"{label} owner {repo} non-portable family must keep empty portable coordinates"
+            )
         expected_domain_ref = (
             DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in index_files else ""
         )
@@ -638,6 +780,25 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
                 f"{label} owner {repo} common_surface_profile.quality.unknown_count "
                 "must be a non-negative integer"
             )
+    summary = payload.get("coverage_summary")
+    if not isinstance(summary, dict):
+        fail(f"{label} coverage_summary must be an object")
+    portable_owners = [
+        owner
+        for owner in owners
+        if isinstance(owner, dict)
+        and owner.get("family_storage") == "v3-portable-shards"
+    ]
+    portable_bytes = sum(
+        int(owner["portable_family"]["tracked_bytes"])
+        for owner in portable_owners
+    )
+    if (
+        summary.get("portable_v3") != len(portable_owners)
+        or summary.get("portable_tracked_bytes") != portable_bytes
+        or summary.get("aggregate_budget_state") == "exceeded"
+    ):
+        fail(f"{label} portable aggregate budget summary is invalid")
     return payload
 
 

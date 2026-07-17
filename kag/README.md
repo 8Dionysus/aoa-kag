@@ -32,12 +32,18 @@ with owner-specific catalogs where their domain requires them.
 | `projections/` | MCP/resource-facing compact views |
 | `receipts/` | validation receipts |
 
-The common family under `indexes/` separates source classification, physical
+The common logical family under `indexes/` separates source classification, physical
 artifacts, internal anchors, logical entities, repository events,
 quality-gated assertions, and evidence-bearing relations. Owner-qualified
 identities, Git lineage,
 ABI/signs, provenance, freshness, access, temporal state, and trust remain
 resolvable through the family.
+
+Git tracks that family as `index_family.manifest.json` and bounded
+content-addressed JSONL shards. Source, structure, outbound declarations, and
+repository history are the portable corpus; artifact, entity, assertion, and
+relation files are deterministic compatibility views assembled on demand.
+Tracked bytes and generated change amplification are blocking budgets.
 
 The family distinguishes a canonical owner skill under `skills/` from a
 manifest-declared generated copy under `.agents/skills/`. Both physical files
@@ -49,6 +55,10 @@ hybrid retrieval. The programmatic query kernel also provides discovery,
 addressed read, and profile-aware filtering. An owner with native indexes adds
 `domain_index_catalog.json` as a route catalog governed by
 `schemas/domain-index-catalog.schema.json`.
+
+`scripts/assemble_repo_local_kag_family.py` reconstructs the exact seven-file
+v2 view for compatibility consumers without restoring those monoliths as
+tracked source-repository artifacts.
 
 ## Provider Role
 

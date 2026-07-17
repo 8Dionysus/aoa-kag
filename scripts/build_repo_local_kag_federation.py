@@ -10,13 +10,17 @@ from pathlib import Path
 from typing import Any, Sequence
 
 try:
-    from scripts.generate_repo_local_kag_index import REPOSITORY_INDEX_FILENAMES
     from scripts.provider_registry import configured_provider_roots
     from scripts.repo_local.federation import RepoKagFederation, github_ref_names_by_repo
+    from scripts.validators.repo_local_kag_index import (
+        load_repo_local_kag_repository_index_family,
+    )
 except ImportError:  # pragma: no cover - direct script execution
-    from generate_repo_local_kag_index import REPOSITORY_INDEX_FILENAMES  # type: ignore
     from provider_registry import configured_provider_roots  # type: ignore
     from repo_local.federation import RepoKagFederation, github_ref_names_by_repo  # type: ignore
+    from validators.repo_local_kag_index import (  # type: ignore
+        load_repo_local_kag_repository_index_family,
+    )
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -27,12 +31,10 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def load_owner_bundle(repo_root: Path) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
-    index_root = repo_root / "kag" / "indexes"
-    source = read_json(index_root / "source_surface_index.json")
-    family = {
-        kind: read_json(index_root / filename)
-        for kind, filename in REPOSITORY_INDEX_FILENAMES.items()
-    }
+    source, family = load_repo_local_kag_repository_index_family(
+        repo_root,
+        label=f"{repo_root.name} federation family",
+    )
     return source, family
 
 

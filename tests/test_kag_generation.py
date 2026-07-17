@@ -368,7 +368,11 @@ class KagGenerationTestCase(unittest.TestCase):
         )
         self.assertEqual(
             templates["aoa-kag://records/{qualified_id}"]["source"],
-            "{repo}/kag/indexes/repo_{record_class}_index.json",
+            "{repo}/kag/indexes/index_family.manifest.json",
+        )
+        self.assertEqual(
+            templates["aoa-kag://anchors/{anchor_id}"]["source"],
+            "{repo}/kag/indexes/index_family.manifest.json",
         )
         self.assertEqual(
             templates["aoa-kag://documents/{document_id}"]["source"],

@@ -32,6 +32,7 @@ REPOSITORY_META_INDEX_SCHEMA_VERSIONS = {
     "aoa-repo-local-kag-index-v2",
     "aoa-repo-local-kag-repository-index-v1",
     "aoa-repo-local-kag-repository-index-v2",
+    "aoa-repo-local-kag-family-manifest-v3",
 }
 
 
@@ -151,6 +152,31 @@ def _provider_repo_local_index_packet(
     if not isinstance(coverage, dict):
         fail(f"{repo} repo-local KAG coverage must declare coverage counts")
     common_surface_profile = owner.get("common_surface_profile")
+    family_storage = owner.get("family_storage")
+    portable_family = owner.get("portable_family")
+    if family_storage is None and portable_family is None:
+        family_storage = (
+            "v2-monoliths"
+            if status == "passed" and len(repository_index_family) == 7
+            else "none"
+        )
+        portable_family = {
+            "manifest_ref": "",
+            "content_digest": "",
+            "digest_state": "not-applicable",
+            "tracked_bytes": 0,
+            "tracked_bytes_max": 0,
+            "shards": 0,
+            "budget_state": "not-applicable",
+            "receipt_ref": "",
+        }
+    elif not isinstance(family_storage, str) or not isinstance(
+        portable_family,
+        dict,
+    ):
+        fail(
+            f"{repo} repo-local KAG coverage must declare family storage coordinates"
+        )
     if not isinstance(common_surface_profile, dict):
         provider_root = _provider_root(repo)
         if provider_root.exists():
@@ -186,13 +212,15 @@ def _provider_repo_local_index_packet(
         fail(f"{repo} repo-local KAG coverage must declare common_surface_profile")
     source_index_ref = (
         "kag/indexes/source_surface_index.json"
-        if status == "passed" and "kag/indexes/source_surface_index.json" in index_files
+        if status == "passed"
         else ""
     )
     return {
         "status": status,
         "source_index_ref": source_index_ref,
         "index_files": index_files,
+        "family_storage": family_storage,
+        "portable_family": portable_family,
         "repository_index_family": repository_index_family,
         "domain_index_catalog_ref": domain_index_catalog_ref,
         "coverage": coverage,
@@ -572,7 +600,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                 },
                 {
                     "uri_template": "aoa-kag://records/{qualified_id}",
-                    "source": "{repo}/kag/indexes/repo_{record_class}_index.json",
+                    "source": "{repo}/kag/indexes/index_family.manifest.json",
                     "resolution": "Resolve the owner-qualified ID through canonical or runtime projections.",
                 },
                 {
@@ -582,7 +610,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
                 },
                 {
                     "uri_template": "aoa-kag://anchors/{anchor_id}",
-                    "source": "{repo}/kag/indexes/repo_anchor_index.json",
+                    "source": "{repo}/kag/indexes/index_family.manifest.json",
                     "resolution": "Resolve an owner-qualified source anchor and its retrieval documents.",
                 },
                 {

@@ -26,6 +26,15 @@ from scripts.generate_repo_local_kag_index import (
 from scripts.generate_repo_local_kag_coverage import source_index_matches_owner
 from scripts.generation.provider_map import _is_repo_local_meta_index_payload
 from scripts.repo_local.query import RepoKagQuery
+from scripts.repo_local.portable_family import (
+    HARD_MAX_SHARD_BYTES,
+    MANIFEST_RELATIVE_PATH,
+    PortableFamilyError,
+    build_portable_family,
+    load_portable_family,
+    validate_changed_generated_budget,
+    write_portable_output,
+)
 from scripts.validators.common import ValidationError
 from scripts.validators.repo_local_kag_index import (
     repo_local_kag_index_digest_without_self,
@@ -41,6 +50,9 @@ REPOSITORY_INDEX_SCHEMA_PATH = (
 QUERY_RESULT_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-query-result.schema.json"
 DOMAIN_INDEX_CATALOG_SCHEMA_PATH = REPO_ROOT / "schemas" / "domain-index-catalog.schema.json"
 DOMAIN_INDEX_CATALOG_EXAMPLE_PATH = REPO_ROOT / "examples" / "domain_index_catalog.example.json"
+FAMILY_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-family-manifest.schema.json"
+)
 
 
 def load_json(path: Path) -> object:
@@ -128,6 +140,186 @@ def write_fixture(root: Path) -> None:
 
 
 class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
+    def test_portable_family_round_trips_exact_v2_compatibility_view(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            manifest, shards = build_portable_family(source_index, family)
+            write_portable_output(root, manifest, shards)
+
+            rebuilt_source, rebuilt_family, rebuilt_manifest = (
+                load_portable_family(root)
+            )
+
+        Draft202012Validator(load_json(FAMILY_MANIFEST_SCHEMA_PATH)).validate(
+            manifest
+        )
+        self.assertEqual(source_index, rebuilt_source)
+        self.assertEqual(family, rebuilt_family)
+        self.assertEqual(manifest, rebuilt_manifest)
+        self.assertTrue(shards)
+        self.assertTrue(
+            all(len(content) <= HARD_MAX_SHARD_BYTES for content in shards.values())
+        )
+        self.assertEqual(
+            MANIFEST_RELATIVE_PATH.as_posix(),
+            "kag/indexes/index_family.manifest.json",
+        )
+
+    def test_portable_family_preserves_ranges_and_localizes_small_change(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            first_source = build_index(root)
+            first_family = build_repository_indexes(
+                first_source,
+                repo_root=root,
+            )
+            first_manifest, first_shards = build_portable_family(
+                first_source,
+                first_family,
+            )
+            write_portable_output(root, first_manifest, first_shards)
+
+            (root / "docs" / "guides" / "small.md").write_text(
+                "# Small\n",
+                encoding="utf-8",
+            )
+            second_source = build_index(root)
+            second_family = build_repository_indexes(
+                second_source,
+                repo_root=root,
+            )
+            second_manifest, second_shards = build_portable_family(
+                second_source,
+                second_family,
+                previous_manifest=first_manifest,
+            )
+
+        first_ranges = first_manifest["partitioning"]["ranges"]
+        second_ranges = second_manifest["partitioning"]["ranges"]
+        for kind, ranges in first_ranges.items():
+            self.assertTrue(
+                all(
+                    any(
+                        candidate == prefix
+                        or candidate.startswith(prefix)
+                        for candidate in second_ranges[kind]
+                    )
+                    for prefix in ranges
+                )
+            )
+        changed = {
+            path
+            for path in set(first_shards) | set(second_shards)
+            if first_shards.get(path) != second_shards.get(path)
+        }
+        self.assertLess(len(changed), len(second_shards))
+        self.assertLess(
+            sum(
+                max(
+                    len(first_shards.get(path, b"")),
+                    len(second_shards.get(path, b"")),
+                )
+                for path in changed
+            ),
+            second_manifest["budgets"]["changed_generated_bytes_max"],
+        )
+
+    def test_portable_family_cannot_raise_standing_budget_with_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.name", "KAG Test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "source"),
+                cwd=root,
+                check=True,
+            )
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            manifest, shards = build_portable_family(source_index, family)
+            write_portable_output(root, manifest, shards)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "portable base"),
+                cwd=root,
+                check=True,
+            )
+
+            raised = json.loads(json.dumps(manifest))
+            raised["budgets"]["tracked_bytes_max"] += 1024 * 1024
+            raised_manifest, raised_shards = build_portable_family(
+                source_index,
+                family,
+                previous_manifest=raised,
+            )
+            write_portable_output(root, raised_manifest, raised_shards)
+
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "cannot be raised",
+            ):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=raised_manifest,
+                )
+
+    def test_portable_family_paths_do_not_amplify_repository_event_delta(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.name", "KAG Test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "source"),
+                cwd=root,
+                check=True,
+            )
+            source_index = build_index(root)
+            family = build_repository_indexes(
+                source_index,
+                repo_root=root,
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+            )
+            manifest, shards = build_portable_family(source_index, family)
+            write_portable_output(root, manifest, shards)
+            subprocess.run(("git", "add", "kag"), cwd=root, check=True)
+
+            rebuilt = build_repository_indexes(
+                source_index,
+                repo_root=root,
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+            )
+
+        self.assertEqual(family["event"], rebuilt["event"])
+
     def test_environment_history_ref_is_scoped_to_its_owner(self) -> None:
         with mock.patch(
             "scripts.generate_repo_local_kag_index.local_default_history_ref",
@@ -1168,6 +1360,11 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
 
         for payload in family.values():
             self.assertTrue(_is_repo_local_meta_index_payload(payload))
+        self.assertTrue(
+            _is_repo_local_meta_index_payload(
+                {"schema_version": "aoa-repo-local-kag-family-manifest-v3"}
+            )
+        )
         self.assertTrue(_is_repo_local_meta_index_payload(load_json(DOMAIN_INDEX_CATALOG_EXAMPLE_PATH)))
         self.assertFalse(_is_repo_local_meta_index_payload({"record_class": "index"}))
 
