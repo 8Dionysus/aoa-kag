@@ -84,9 +84,10 @@ class KagHomeTests(unittest.TestCase):
         self.assertEqual(EXPECTED_ACTIVE_FAMILIES, {family["id"] for family in families})
         families_by_id = {family["id"]: family for family in families}
         self.assertIn(
-            "kag/indexes/source_surface_index.json",
+            "kag/indexes/index_family.manifest.json",
             families_by_id["index_records"]["source_files"],
         )
+        self.assertTrue((REPO_ROOT / "kag" / "indexes" / "shards").is_dir())
         for family in families:
             with self.subTest(family=family["id"]):
                 self.assertIn("owner_surface", family)

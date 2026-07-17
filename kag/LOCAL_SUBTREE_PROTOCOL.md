@@ -48,7 +48,7 @@ Receipts name `receipt_kind`, `result`, and `fallback_route`.
 
 ## Repository Index Family
 
-Every provider carries one generated repo-self family over its Git source tree:
+Every provider exposes one logical repo-self family over its Git source tree:
 
 | Index | Carries |
 | --- | --- |
@@ -63,6 +63,17 @@ Every provider carries one generated repo-self family over its Git source tree:
 The six normalized indexes pin the source-index digest and resolve common
 extractor, parser, provenance, temporal, and trust profiles. Runtime stores
 materialize search and graph projections from this canonical family.
+
+The canonical tracked representation is
+`indexes/index_family.manifest.json` plus bounded JSONL shards under
+`indexes/shards/`. The portable corpus stores source, structure, outbound
+reference, and repository-history material once. The seven rows above are
+deterministic compatibility views and may be assembled exactly on demand.
+
+Partition keys use adaptive SHA-256 prefixes. Existing ranges split but never
+merge automatically. The target shard size is 128 KiB, the hard limit is
+192 KiB, and portable records are limited to 128 KiB with bounded list chunks
+for oversized anchors and events.
 
 Repositories with native domain indexes may also publish
 `domain_index_catalog.json`. The catalog carries routes, authority,
@@ -88,6 +99,11 @@ Git carries compact, portable, reviewable provider records and read models.
 Runtime serving state routes to `abyss-stack` or `.aoa` stores. Provider
 records carry enough metadata for a runtime consumer to check freshness and
 return to the owning source.
+
+Each portable family enforces an owner tracked-byte baseline and a 1 MiB
+default changed-generated-bytes budget. OS-wide coverage enforces the aggregate
+ceiling after migration. A deliberate exceedance requires a digest-bound owner
+receipt; raising cost silently is invalid.
 
 ## Registry And Composition
 

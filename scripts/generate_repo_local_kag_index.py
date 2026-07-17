@@ -53,6 +53,11 @@ except ImportError:  # pragma: no cover - direct script execution
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = Path("kag/indexes/source_surface_index.json")
 CANONICAL_SELF_INDEX = DEFAULT_OUTPUT
+PORTABLE_FAMILY_MANIFEST = Path("kag/indexes/index_family.manifest.json")
+PORTABLE_FAMILY_SHARD_ROOT = Path("kag/indexes/shards")
+PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT = Path(
+    "kag/receipts/index_family_budget"
+)
 REPOSITORY_INDEX_FILENAMES = {
     "entity": "repo_entity_index.json",
     "artifact": "repo_artifact_index.json",
@@ -393,6 +398,14 @@ def is_source_path(path: Path) -> bool:
     if path.name.endswith("~"):
         return False
     return True
+
+
+def is_portable_family_control_path(path: Path) -> bool:
+    return (
+        path == PORTABLE_FAMILY_MANIFEST
+        or PORTABLE_FAMILY_SHARD_ROOT in (path, *path.parents)
+        or PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT in (path, *path.parents)
+    )
 
 
 def git_file_entries(repo_root: Path) -> dict[Path, dict[str, str]]:
@@ -1585,7 +1598,11 @@ def build_index(
     tracked_entries = git_file_entries(repo_root)
     tracked_paths = set(tracked_entries)
     skill_projections = home_skill_projection_sources(repo_root, tracked_entries)
-    indexed_paths = tracked_paths - excluded_paths
+    indexed_paths = {
+        path
+        for path in tracked_paths - excluded_paths
+        if not is_portable_family_control_path(path)
+    }
     lineage_paths = git_lineage_paths(
         repo_root,
         tracked_paths,
@@ -2139,6 +2156,9 @@ def build_repository_indexes(
     entities = project_entity_entries(repo, records)
     family_paths = {
         source_index_path.as_posix(),
+        PORTABLE_FAMILY_MANIFEST.as_posix(),
+        PORTABLE_FAMILY_SHARD_ROOT.as_posix() + "/",
+        PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT.as_posix() + "/",
         *(
             (source_index_path.parent / filename).as_posix()
             for filename in REPOSITORY_INDEX_FILENAMES.values()
@@ -2305,6 +2325,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Generate or check the source, artifact, anchor, entity, event, assertion, and relation index family.",
     )
     parser.add_argument(
+        "--portable-family",
+        action="store_true",
+        help=(
+            "Generate or check the content-addressed portable v3 record corpus "
+            "and its deterministic v2 compatibility contract."
+        ),
+    )
+    parser.add_argument(
+        "--keep-v2",
+        action="store_true",
+        help="Keep legacy v2 monoliths while writing a portable family.",
+    )
+    parser.add_argument(
         "--incremental",
         action="store_true",
         help="Reuse unchanged source records from the current source index while preserving full-build parity.",
@@ -2317,12 +2350,40 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--event-history-ref",
         help="Git ref whose history precedes the current repository snapshot.",
     )
+    parser.add_argument(
+        "--budget-base-ref",
+        help="Git ref used to enforce the changed-generated-bytes budget.",
+    )
+    parser.add_argument(
+        "--write-budget-receipt",
+        action="store_true",
+        help="Write an explicit receipt for a generated-delta budget exceedance.",
+    )
+    parser.add_argument(
+        "--budget-reason",
+        default="",
+        help="Owner reason recorded by --write-budget-receipt.",
+    )
     parser.add_argument("--check", action="store_true", help="Check output parity without writing.")
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
+    if args.index_family and args.portable_family:
+        raise SystemExit("--index-family and --portable-family are mutually exclusive")
+    if args.keep_v2 and not args.portable_family:
+        raise SystemExit("--keep-v2 requires --portable-family")
+    if args.write_budget_receipt and (
+        not args.portable_family
+        or args.check
+        or not args.budget_base_ref
+        or not args.budget_reason.strip()
+    ):
+        raise SystemExit(
+            "--write-budget-receipt requires a write-mode --portable-family run "
+            "with --budget-base-ref and --budget-reason"
+        )
     repo_root = Path(args.repo_root).resolve()
     output = Path(args.output)
     output_path = repo_root / output
@@ -2335,14 +2396,40 @@ def main(argv: Sequence[str] | None = None) -> int:
     family_paths = repository_index_output_paths(output_path)
     previous_index: dict[str, Any] | None = None
     previous_family: dict[str, dict[str, Any]] | None = None
-    if args.incremental and output_path.is_file():
+    previous_manifest: dict[str, Any] | None = None
+    portable_manifest_path = repo_root / PORTABLE_FAMILY_MANIFEST
+    if args.portable_family and portable_manifest_path.is_file():
+        try:
+            loaded_manifest = json.loads(
+                portable_manifest_path.read_text(encoding="utf-8")
+            )
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            loaded_manifest = None
+        if not isinstance(loaded_manifest, dict):
+            raise SystemExit(
+                f"invalid portable family manifest: {portable_manifest_path}"
+            )
+        previous_manifest = loaded_manifest
+    if args.incremental and args.portable_family and previous_manifest is not None:
+        try:
+            from scripts.repo_local.portable_family import load_portable_family
+        except ImportError:  # pragma: no cover - direct script execution
+            from repo_local.portable_family import load_portable_family  # type: ignore
+        try:
+            previous_index, previous_family, _ = load_portable_family(repo_root)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+    elif args.incremental and output_path.is_file():
         try:
             loaded_previous = json.loads(output_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             loaded_previous = None
         if isinstance(loaded_previous, dict):
             previous_index = loaded_previous
-        if args.index_family and all(path.is_file() for path in family_paths.values()):
+        if (
+            (args.index_family or args.portable_family)
+            and all(path.is_file() for path in family_paths.values())
+        ):
             loaded_family: dict[str, dict[str, Any]] = {}
             try:
                 for index_kind, path in family_paths.items():
@@ -2357,11 +2444,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     payload = build_index(
         repo_root,
         output=output,
-        excluded_outputs=tuple(family_paths.values()) if args.index_family else (),
+        excluded_outputs=(
+            tuple(family_paths.values())
+            if args.index_family or args.portable_family
+            else ()
+        ),
         previous_index=previous_index,
         history_ref=history_ref,
     )
-    if args.index_family:
+    if args.index_family or args.portable_family:
         try:
             source_index_path = output_path.resolve().relative_to(repo_root)
         except ValueError as exc:
@@ -2376,6 +2467,109 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     else:
         family = {}
+    if args.portable_family:
+        try:
+            from scripts.repo_local.portable_family import (
+                PortableFamilyError,
+                build_budget_receipt,
+                build_portable_family,
+                check_portable_output,
+                validate_changed_generated_budget,
+                write_budget_receipt,
+                write_portable_output,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from repo_local.portable_family import (  # type: ignore
+                PortableFamilyError,
+                build_budget_receipt,
+                build_portable_family,
+                check_portable_output,
+                validate_changed_generated_budget,
+                write_budget_receipt,
+                write_portable_output,
+            )
+        try:
+            portable_manifest, portable_shards = build_portable_family(
+                payload,
+                family,
+                previous_manifest=previous_manifest,
+            )
+        except PortableFamilyError as exc:
+            print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+            return 1
+        if args.check:
+            ok = check_portable_output(
+                repo_root,
+                portable_manifest,
+                portable_shards,
+                require_legacy_absent=not args.keep_v2,
+            )
+            if not ok:
+                print(
+                    "[repo-local-kag-index] portable family drifted",
+                    file=sys.stderr,
+                )
+            if args.budget_base_ref:
+                try:
+                    changed_bytes, changed_files, receipted = (
+                        validate_changed_generated_budget(
+                            repo_root,
+                            base_ref=args.budget_base_ref,
+                            manifest=portable_manifest,
+                        )
+                    )
+                except (PortableFamilyError, subprocess.CalledProcessError) as exc:
+                    print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                    return 1
+                receipt_label = " receipt=accepted" if receipted else ""
+                print(
+                    "[repo-local-kag-index] generated delta "
+                    f"bytes={changed_bytes} files={changed_files}{receipt_label}"
+                )
+            return 0 if ok else 1
+        write_portable_output(
+            repo_root,
+            portable_manifest,
+            portable_shards,
+            remove_legacy=not args.keep_v2,
+        )
+        if args.write_budget_receipt:
+            try:
+                receipt_path, receipt = build_budget_receipt(
+                    repo_root,
+                    base_ref=args.budget_base_ref,
+                    manifest=portable_manifest,
+                    reason=args.budget_reason,
+                )
+            except (PortableFamilyError, subprocess.CalledProcessError) as exc:
+                print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                return 1
+            write_budget_receipt(repo_root, receipt_path, receipt)
+            print(f"[repo-local-kag-index] wrote {repo_root / receipt_path}")
+        if args.budget_base_ref:
+            try:
+                changed_bytes, changed_files, receipted = (
+                    validate_changed_generated_budget(
+                        repo_root,
+                        base_ref=args.budget_base_ref,
+                        manifest=portable_manifest,
+                    )
+                )
+            except (PortableFamilyError, subprocess.CalledProcessError) as exc:
+                print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                return 1
+            receipt_label = " receipt=accepted" if receipted else ""
+            print(
+                "[repo-local-kag-index] generated delta "
+                f"bytes={changed_bytes} files={changed_files}{receipt_label}"
+            )
+        print(
+            "[repo-local-kag-index] wrote portable family "
+            f"{portable_manifest_path} "
+            f"shards={portable_manifest['summary']['shards']} "
+            f"bytes={portable_manifest['summary']['tracked_bytes']}"
+        )
+        return 0
     if args.check:
         ok = check_output(output_path, payload)
         if args.index_family:

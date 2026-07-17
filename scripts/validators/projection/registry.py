@@ -14,13 +14,13 @@ EXPECTED_MCP_RESOURCE_TEMPLATES = {
         "source": "{repo}/kag/manifest.json",
     },
     "aoa-kag://records/{qualified_id}": {
-        "source": "{repo}/kag/indexes/repo_{record_class}_index.json",
+        "source": "{repo}/kag/indexes/index_family.manifest.json",
     },
     "aoa-kag://documents/{document_id}": {
         "source": "abyss-stack/Knowledge/kag/repo-self/exact/repo-self.sqlite3",
     },
     "aoa-kag://anchors/{anchor_id}": {
-        "source": "{repo}/kag/indexes/repo_anchor_index.json",
+        "source": "{repo}/kag/indexes/index_family.manifest.json",
     },
     "aoa-kag://sources/{repo}/{document_id}": {
         "source": "{repo}/{owner_return_route.surface}",

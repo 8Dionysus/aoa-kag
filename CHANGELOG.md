@@ -12,6 +12,10 @@ Tracking starts with the community-docs baseline for this repository.
 - Add the five-operation KAG MCP contract, nine qualified resource shapes,
   capability and result schemas, provenance-rich examples, bounded pagination,
   and explicit canonical degradation fields.
+- Add the v3 portable family manifest, adaptive content-addressed shards,
+  exact v2 compatibility assembler, dual reader, owner-local tracked-byte
+  baseline, OS aggregate ceiling, 1 MiB generated-delta budget, and
+  digest-bound exceedance receipts.
 
 ### Changed
 
@@ -19,6 +23,9 @@ Tracking starts with the community-docs baseline for this repository.
   handoff for `discover`, `search`, `read`, `traverse`, and `explain`.
 - Rebuild manifest-declared owner skill projections during incremental indexing
   so a pre-migration `authored_source` record cannot survive by blob reuse.
+- Replace seven tracked whole-corpus repo-self monoliths with one portable
+  source/structure/history corpus while preserving logical family digests,
+  query semantics, federation inputs, and the five-tool MCP ABI.
 
 ## [0.5.0] - 2026-07-13
 

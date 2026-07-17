@@ -101,6 +101,9 @@ The repository should support:
 - repo-local source, artifact, anchor, entity, event, assertion, and relation indexes with
   owner-qualified identity, Git lineage, provenance, temporal, trust,
   ABI/sign, access, and owner-return coordinates;
+- a content-addressed source/structure/history corpus whose bounded shards
+  reconstruct those logical indexes exactly without making seven monoliths
+  the Git unit of change;
 - manifest-driven generation;
 - schema-checked payloads and examples;
 - bounded bridge and handoff routes;
@@ -168,6 +171,13 @@ source truth by repetition.
 Every meaningful change should have a local check, generated parity when
 derived outputs move, and a closeout that names skipped checks and remaining
 risk.
+
+### 10. Change cost follows source change
+
+Derived repository knowledge must have an executable physical budget. Stable
+split-only shards, tracked-byte ceilings, generated-delta limits, and explicit
+exceedance receipts keep review and delivery cost approximately proportional
+to the authored material that changed.
 
 ## Good Design Feels Like
 

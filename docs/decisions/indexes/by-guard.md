@@ -44,6 +44,14 @@
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 
+## compatibility parity
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## content identity
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
 ## derived-substrate boundary
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
@@ -51,6 +59,10 @@
 ## document coverage
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
+
+## explicit exceedance receipt
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## extensible kind
 
@@ -86,6 +98,10 @@
 ## generated projection
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+
+## generated-delta budget
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## generated-output parity
 
@@ -154,6 +170,10 @@
 ## no-root-Spark
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
+
+## offline portability
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## owner namespace
 
@@ -224,6 +244,10 @@
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 
+## shard locality
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
 ## sibling rollout stop-line
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
@@ -231,6 +255,10 @@
 ## source coverage
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
+
+## source ownership
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## source return
 
@@ -266,6 +294,10 @@
 ## Spark done-or-handoff
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
+
+## tracked-byte budget
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## validator modules
 

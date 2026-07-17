@@ -81,18 +81,23 @@ contract, example packet, and OS Abyss readiness matrix.
 `scripts/kag_generation.py` is the compatibility facade for existing imports.
 The implementation modules live in `scripts/generation/`.
 
-`scripts/generate_repo_local_kag_index.py` builds the repo-local
-source/artifact/anchor/entity/event/assertion/relation index family from the current
-repository's source, document, mechanics, command, schema, generated, and
-receipt surfaces. When an owner publishes the common skill-home manifest, the
+`scripts/generate_repo_local_kag_index.py` builds the content-addressed
+source/structure/history corpus and deterministic
+source/artifact/anchor/entity/event/assertion/relation compatibility family
+from the current repository's source, document, mechanics, command, schema,
+generated, and receipt surfaces. It also enforces shard, tracked-byte, and
+generated-delta budgets. When an owner publishes the common skill-home manifest, the
 builder also preserves canonical skill source versus generated host projection
 provenance instead of inferring authority from `.agents/skills/` placement, and
 rebuilds declared projections during incremental migration so old authority
 claims cannot survive an unchanged copied blob.
 
 `scripts/validate_repo_local_kag_family.py` validates any owner repository's
-complete family against the common schemas, identities, anchors, evidence, and
-relation integrity contract.
+portable or legacy family against the common schemas, identities, anchors,
+evidence, budgets, compatibility digests, and relation integrity contract.
+
+`scripts/assemble_repo_local_kag_family.py` reconstructs the exact seven-file
+v2 compatibility view in a caller-selected artifact directory.
 
 `scripts/query_repo_local_kag.py` validates that family and exposes exact,
 BM25, graph, and hybrid retrieval. `scripts/repo_local/query.py` also provides

@@ -32,13 +32,9 @@ For `v0.5.0`, the release contour is the current derived substrate portfolio,
 not a claim that KAG is a full graph engine or a source-authoritative layer:
 
 - canonical repository self-knowledge and federation:
-  `kag/indexes/source_surface_index.json`,
-  `kag/indexes/repo_entity_index.json`,
-  `kag/indexes/repo_artifact_index.json`,
-  `kag/indexes/repo_anchor_index.json`,
-  `kag/indexes/repo_event_index.json`,
-  `kag/indexes/repo_assertion_index.json`,
-  `kag/indexes/repo_relation_index.json`,
+  `kag/indexes/index_family.manifest.json`,
+  bounded `kag/indexes/shards/`,
+  the deterministic seven-file v2 compatibility view,
   `generated/local_kag_provider_map.min.json`, and
   `generated/repo_local_kag_coverage.min.json`
 
@@ -131,6 +127,8 @@ Goals:
 Across all phases:
 - keep source repositories authoritative
 - keep KAG surfaces derived and reviewable
+- keep portable family size and generated change amplification inside
+  executable budgets
 - keep provenance visible where possible
 - do not confuse graph readiness with proof or routing
 - when ownership clarity weakens, reground before widening a derived answer

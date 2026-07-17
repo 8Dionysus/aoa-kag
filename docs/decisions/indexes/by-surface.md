@@ -6,6 +6,10 @@
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 
+## compatibility view
+
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
 ## docs route
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
@@ -31,6 +35,7 @@
 ## federation input
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## generated projection
 
@@ -43,6 +48,7 @@
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## generated/maturity
 
@@ -62,6 +68,7 @@
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## manifests
 
@@ -112,6 +119,7 @@
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 
 ## schemas
 
@@ -161,3 +169,4 @@
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)

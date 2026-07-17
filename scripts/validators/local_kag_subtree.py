@@ -77,6 +77,7 @@ OS_SURFACE_PATH_LIST_KEYS = (
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
+REPO_LOCAL_FAMILY_MANIFEST_NAME = "index_family.manifest.json"
 REPO_LOCAL_REPOSITORY_INDEX_NAMES = {
     "repo_entity_index.json",
     "repo_artifact_index.json",
@@ -549,6 +550,29 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
         records: list[dict[str, object]] = []
         for path in files:
             if group_name == "indexes" and path.name == REPO_LOCAL_SOURCE_INDEX_NAME:
+                continue
+            if (
+                group_name == "indexes"
+                and path.name == REPO_LOCAL_FAMILY_MANIFEST_NAME
+            ):
+                payload = read_json(path)
+                from .repo_local_kag_index import (
+                    load_repo_local_kag_repository_index_family,
+                    repo_local_kag_validate_payload,
+                )
+
+                repo_local_kag_validate_payload(
+                    payload,
+                    schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+                    label=f"{label} {path.relative_to(repo_root).as_posix()}",
+                )
+                load_repo_local_kag_repository_index_family(
+                    repo_root=repo_root,
+                    source_index=Path(
+                        "kag/indexes/source_surface_index.json"
+                    ),
+                    label=f"{label} portable repository family",
+                )
                 continue
             if group_name == "indexes" and path.name in REPO_LOCAL_REPOSITORY_INDEX_NAMES:
                 payload = read_json(path)
