@@ -795,8 +795,9 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
     )
     if (
         summary.get("portable_v3") != len(portable_owners)
+        or len(portable_owners) != len(owners)
         or summary.get("portable_tracked_bytes") != portable_bytes
-        or summary.get("aggregate_budget_state") == "exceeded"
+        or summary.get("aggregate_budget_state") != "passed"
     ):
         fail(f"{label} portable aggregate budget summary is invalid")
     return payload

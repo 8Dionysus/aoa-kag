@@ -301,6 +301,24 @@ class ValidateKagTestCase(unittest.TestCase):
             course["candidate_source_surfaces"],
         )
 
+    def test_local_kag_readiness_keeps_agents_companion_only_boundary(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        surfaces = {
+            entry["surface_id"]: entry
+            for entry in payload["os_surfaces"]
+        }
+        agents = surfaces[".agents"]
+
+        self.assertEqual(["AGENTS.md"], agents["source_home_surfaces"])
+        self.assertEqual(["AGENTS.md"], agents["candidate_source_surfaces"])
+        self.assertEqual([], agents["source_owned_exports"])
+        self.assertNotIn(
+            "Codex plugin discovery",
+            agents["runtime_consumers"],
+        )
+        self.assertIn("no shared plugin marketplace", agents["surface_role"])
+
     def test_local_kag_readiness_rejects_source_preparation_provider_home_paths(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)
@@ -504,6 +522,23 @@ class ValidateKagTestCase(unittest.TestCase):
         repo_local_kag_index.validate_repo_local_kag_coverage_payload(
             compatible_payload,
             label="compatible repo-local KAG coverage",
+        )
+
+    def test_repo_local_kag_coverage_rejects_partial_portable_rollout(self) -> None:
+        payload = load_json(repo_local_kag_index.REPO_LOCAL_KAG_COVERAGE_PATH)
+        assert isinstance(payload, dict)
+        partial_payload = copy.deepcopy(payload)
+        partial_payload["coverage_summary"]["aggregate_budget_state"] = "partial"
+
+        with self.assertRaises(validate_kag.ValidationError) as context:
+            repo_local_kag_index.validate_repo_local_kag_coverage_payload(
+                partial_payload,
+                label="partial repo-local KAG coverage",
+            )
+
+        self.assertIn(
+            "portable aggregate budget summary is invalid",
+            str(context.exception),
         )
 
     def test_repo_local_kag_coverage_drift_reports_first_difference(self) -> None:
