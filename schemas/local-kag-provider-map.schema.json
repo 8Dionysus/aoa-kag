@@ -146,7 +146,7 @@
         "surface": {"$ref": "#/$defs/relativePath"},
         "route_kind": {
           "type": "string",
-          "enum": ["authored_meaning", "proof", "memory", "routing", "runtime", "source_export", "validation"]
+          "enum": ["authored_meaning", "proof", "memory", "routing", "runtime", "source_export", "validation", "skill_owner", "procedure_owner"]
         }
       }
     },
@@ -158,7 +158,7 @@
         "route": {"$ref": "#/$defs/nonEmptyString"},
         "lane": {
           "type": "string",
-          "enum": ["local-kag", "source-fast", "generated", "release", "owner-local"]
+          "enum": ["local-kag", "source-fast", "generated", "release", "owner-local", "owner-home"]
         }
       }
     },

@@ -1897,36 +1897,31 @@
       "surface_id": ".agents",
       "surface_class": "organ_home",
       "root": "/srv/AbyssOS/.agents",
-      "surface_role": "local agent/plugin marketplace route for reusable agent capabilities",
+      "surface_role": "agent-facing companion guidance for the public workspace entrypoint; no shared plugin marketplace",
       "source_home_surfaces": [
-        "AGENTS.md",
-        "plugins/marketplace.json"
+        "AGENTS.md"
       ],
       "kag_pressure": [
-        "agent/plugin capability nodes",
-        "skill/plugin discovery handles"
+        "agent-facing companion guidance",
+        "workspace owner-return handle"
       ],
-      "source_owned_exports": [
-        "plugins/marketplace.json"
-      ],
+      "source_owned_exports": [],
       "candidate_source_surfaces": [
-        "AGENTS.md",
-        "plugins/marketplace.json"
+        "AGENTS.md"
       ],
       "graph_entities": [
-        "agent plugin",
-        "marketplace entry",
-        "capability surface"
+        "agent companion surface",
+        "workspace guidance"
       ],
       "event_surfaces": [],
       "document_surfaces": [
         "AGENTS.md"
       ],
       "validators": [
-        "marketplace JSON parse"
+        "8Dionysus: python scripts/validate_nested_agents.py"
       ],
       "runtime_consumers": [
-        "Codex plugin discovery",
+        "agent sessions",
         "aoa-kag registry"
       ],
       "owner_return_route": {

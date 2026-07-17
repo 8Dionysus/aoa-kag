@@ -93,7 +93,9 @@
             "routing",
             "runtime",
             "source_export",
-            "validation"
+            "validation",
+            "skill_owner",
+            "procedure_owner"
           ]
         }
       }
@@ -131,7 +133,7 @@
         "route": {"$ref": "#/$defs/nonEmptyString"},
         "lane": {
           "type": "string",
-          "enum": ["local-kag", "source-fast", "generated", "release", "owner-local"]
+          "enum": ["local-kag", "source-fast", "generated", "release", "owner-local", "owner-home"]
         }
       }
     },
