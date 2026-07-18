@@ -658,6 +658,12 @@ def validate_pack_index(
             raise TieredFamilyError(
                 "pack object key must be the canonical portable digest path"
             )
+        declared_bytes = descriptor.get("bytes")
+        declared_objects = descriptor.get("objects")
+        if type(declared_bytes) is not int or declared_bytes <= 0:
+            raise TieredFamilyError("pack descriptor byte count is invalid")
+        if type(declared_objects) is not int or declared_objects <= 0:
+            raise TieredFamilyError("pack descriptor object count is invalid")
     pack_by_digest = {
         item.get("pack_digest"): item
         for item in packs
@@ -665,11 +671,23 @@ def validate_pack_index(
     }
     if len(pack_by_digest) != len(packs):
         raise TieredFamilyError("pack digests must be unique")
-    if summary.get("packs") != len(packs) or summary.get("objects") != len(entries):
+    if (
+        type(summary.get("packs")) is not int
+        or type(summary.get("objects")) is not int
+        or summary.get("packs") != len(packs)
+        or summary.get("objects") != len(entries)
+    ):
         raise TieredFamilyError("pack index summary does not match")
-    if summary.get("bytes") != sum(int(item.get("bytes", -1)) for item in packs):
+    if (
+        type(summary.get("bytes")) is not int
+        or summary.get("bytes")
+        != sum(int(item.get("bytes", -1)) for item in packs)
+    ):
         raise TieredFamilyError("pack index byte total does not match")
+    if pack_bytes is not None and set(pack_bytes) != set(pack_by_digest):
+        raise TieredFamilyError("pack byte set does not match pack index")
     object_digests: set[str] = set()
+    entry_count_by_pack: dict[str, int] = {}
     for entry in entries:
         if not isinstance(entry, Mapping):
             raise TieredFamilyError("pack entry must be an object")
@@ -680,11 +698,27 @@ def validate_pack_index(
         pack_digest = entry.get("pack_digest")
         if pack_digest not in pack_by_digest:
             raise TieredFamilyError("pack entry references an unknown pack")
+        entry_count_by_pack[str(pack_digest)] = (
+            entry_count_by_pack.get(str(pack_digest), 0) + 1
+        )
         if pack_bytes is not None:
             content = pack_bytes.get(str(pack_digest))
             if content is None or _sha256_uri(content) != pack_digest:
                 raise TieredFamilyError("pack bytes are missing or corrupt")
             extract_pack_object(content, entry)
+    for pack_digest, descriptor in pack_by_digest.items():
+        if entry_count_by_pack.get(str(pack_digest), 0) != descriptor.get(
+            "objects"
+        ):
+            raise TieredFamilyError(
+                "pack descriptor object count does not match entries"
+            )
+        if pack_bytes is not None:
+            content = pack_bytes[str(pack_digest)]
+            if len(content) != descriptor.get("bytes"):
+                raise TieredFamilyError(
+                    "pack declared byte count does not match content"
+                )
 
 
 def _owner_hot_baseline(git_hot_bytes: int) -> int:
@@ -1024,26 +1058,17 @@ def _validate_distribution_measurements(
         )
 
 
-def build_owner_release(
+def _owner_release_objects(
     corpus_manifest: Mapping[str, Any],
-    distribution_manifest: Mapping[str, Any],
     hot_profile: Mapping[str, Any],
-    locator_manifest: Mapping[str, Any],
     pack_index: Mapping[str, Any],
-) -> dict[str, Any]:
-    validate_distribution_manifest(
-        distribution_manifest,
-        corpus_manifest=corpus_manifest,
-        hot_profile=hot_profile,
-        locator_manifest=locator_manifest,
-        pack_index=pack_index,
-    )
+) -> list[dict[str, Any]]:
     pack_entry_by_object = {
         item["object_digest"]: item
         for item in pack_index["entries"]
     }
     hot_kinds = hot_profile["selection"]["include_record_kinds"]
-    objects = []
+    objects: list[dict[str, Any]] = []
     for descriptor in corpus_manifest["objects"]:
         digest = descriptor["content_digest"]
         placement = "git_hot" if _is_hot_kind(descriptor["kind"], hot_kinds) else "artifact_cold"
@@ -1059,6 +1084,50 @@ def build_owner_release(
                 for key in ("pack_digest", "offset", "length")
             }
         objects.append(item)
+    return objects
+
+
+def owner_release_measurements(
+    distribution_manifest: Mapping[str, Any],
+) -> dict[str, int]:
+    summary = distribution_manifest.get("summary")
+    if not isinstance(summary, Mapping):
+        raise TieredFamilyError("distribution summary is missing")
+    field_map = {
+        "git_hot_bytes": "git_hot_bytes",
+        "corpus_total_bytes": "corpus_total_bytes",
+        "artifact_unique_bytes": "artifact_cold_bytes",
+    }
+    measurements: dict[str, int] = {}
+    for release_field, summary_field in field_map.items():
+        value = summary.get(summary_field)
+        if type(value) is not int or value < 0:
+            raise TieredFamilyError(
+                f"distribution summary {summary_field} is invalid"
+            )
+        measurements[release_field] = value
+    return measurements
+
+
+def build_owner_release(
+    corpus_manifest: Mapping[str, Any],
+    distribution_manifest: Mapping[str, Any],
+    hot_profile: Mapping[str, Any],
+    locator_manifest: Mapping[str, Any],
+    pack_index: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_distribution_manifest(
+        distribution_manifest,
+        corpus_manifest=corpus_manifest,
+        hot_profile=hot_profile,
+        locator_manifest=locator_manifest,
+        pack_index=pack_index,
+    )
+    objects = _owner_release_objects(
+        corpus_manifest,
+        hot_profile,
+        pack_index,
+    )
     release: dict[str, Any] = {
         "schema_version": OWNER_RELEASE_SCHEMA_VERSION,
         "repo": copy.deepcopy(corpus_manifest["repo"]),
@@ -1088,17 +1157,9 @@ def build_owner_release(
         "objects": objects,
         "packs": copy.deepcopy(pack_index["packs"]),
         "compatibility": copy.deepcopy(corpus_manifest["compatibility"]),
-        "measurements": {
-            "git_hot_bytes": distribution_manifest["summary"][
-                "git_hot_bytes"
-            ],
-            "corpus_total_bytes": distribution_manifest["summary"][
-                "corpus_total_bytes"
-            ],
-            "artifact_unique_bytes": distribution_manifest["summary"][
-                "artifact_cold_bytes"
-            ],
-        },
+        "measurements": owner_release_measurements(
+            distribution_manifest
+        ),
         "provenance": {
             "builder": "aoa-kag:scripts/repo_local/tiered_family.py",
             "decision_ref": DECISION_REF,
@@ -1289,6 +1350,58 @@ def validate_owner_release(release: Mapping[str, Any]) -> None:
         raise TieredFamilyError("owner release digest does not match")
     if signature.get("subject_digest") != expected:
         raise TieredFamilyError("owner release signature targets the wrong digest")
+
+
+def validate_release_distribution_binding(
+    release: Mapping[str, Any],
+    distribution: Mapping[str, Any],
+) -> None:
+    validate_owner_release(release)
+    validate_distribution_manifest(distribution)
+    identity = release.get("release_identity")
+    release_repo = release.get("repo")
+    distribution_identity = distribution.get("distribution_identity")
+    distribution_repo = distribution.get("repo")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (
+            identity,
+            release_repo,
+            distribution_identity,
+            distribution_repo,
+        )
+    ):
+        raise TieredFamilyError(
+            "release or distribution identity is missing"
+        )
+    if (
+        identity.get("distribution_digest")
+        != distribution_identity.get("content_digest")
+    ):
+        raise TieredFamilyError(
+            "owner release distribution identity does not match"
+        )
+    if (
+        identity.get("corpus_digest")
+        != distribution_identity.get("corpus_digest")
+    ):
+        raise TieredFamilyError(
+            "owner release corpus identity does not match distribution"
+        )
+    if release_repo.get("name") != distribution_repo.get("name"):
+        raise TieredFamilyError(
+            "owner release owner does not match distribution"
+        )
+    measurements = release.get("measurements")
+    expected_measurements = owner_release_measurements(distribution)
+    if (
+        not isinstance(measurements, Mapping)
+        or canonical_json_bytes(measurements)
+        != canonical_json_bytes(expected_measurements)
+    ):
+        raise TieredFamilyError(
+            "owner release measurements do not match distribution"
+        )
 
 
 def build_tiered_family(
@@ -1765,7 +1878,7 @@ def _validate_release_manifest_set(
     locators: Mapping[str, Any],
     pack_index: Mapping[str, Any],
 ) -> None:
-    validate_owner_release(release)
+    validate_release_distribution_binding(release, distribution)
     owner = _repo_name(corpus)
     release_repo = release.get("repo")
     release_source = release.get("source")
@@ -1806,6 +1919,40 @@ def _validate_release_manifest_set(
     for field, value in expected_manifest_digests.items():
         if manifests.get(field) != value:
             raise TieredFamilyError(f"owner release {field} does not match")
+    expected_objects = _owner_release_objects(
+        corpus,
+        hot_profile,
+        pack_index,
+    )
+    release_objects = release.get("objects")
+    if (
+        not isinstance(release_objects, list)
+        or canonical_json_bytes(release_objects)
+        != canonical_json_bytes(expected_objects)
+    ):
+        raise TieredFamilyError(
+            "owner release objects do not match corpus and pack index"
+        )
+    release_packs = release.get("packs")
+    expected_packs = pack_index.get("packs")
+    if (
+        not isinstance(release_packs, list)
+        or canonical_json_bytes(release_packs)
+        != canonical_json_bytes(expected_packs)
+    ):
+        raise TieredFamilyError(
+            "owner release packs do not match pack index"
+        )
+    if canonical_json_bytes(release.get("epochs")) != canonical_json_bytes(
+        corpus.get("epochs")
+    ):
+        raise TieredFamilyError("owner release epochs do not match corpus")
+    if canonical_json_bytes(
+        release.get("compatibility")
+    ) != canonical_json_bytes(corpus.get("compatibility")):
+        raise TieredFamilyError(
+            "owner release compatibility does not match corpus"
+        )
 
 
 def export_portable_bundle(

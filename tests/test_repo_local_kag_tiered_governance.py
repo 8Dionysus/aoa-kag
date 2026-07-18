@@ -18,6 +18,7 @@ from scripts.repo_local.tiered_family import (
     TieredFamilyError,
     attach_owner_release_signature,
     build_tiered_family,
+    owner_release_digest,
     prepare_owner_release_lifecycle,
     validate_owner_release,
 )
@@ -98,6 +99,17 @@ def sign_composition(digest: str) -> dict[str, str]:
         "key_id": "abyss-machine:test-public-kag",
         "signature_ref": f"abyss-machine:attestations/{digest}",
         "verification_state": "verified",
+    }
+
+
+def distributions_by_digest(
+    builds: list[TieredFamilyBuild],
+) -> dict[str, dict[str, object]]:
+    return {
+        build.distribution_manifest["distribution_identity"][
+            "content_digest"
+        ]: build.distribution_manifest
+        for build in builds
     }
 
 
@@ -206,6 +218,7 @@ class TieredKagGovernanceTests(unittest.TestCase):
             releases = [promote(build) for build in builds]
             composition = build_os_composition(
                 releases,
+                distributions_by_digest=distributions_by_digest(builds),
                 signer=sign_composition,
                 unresolved_references={
                     "state": "measured",
@@ -240,6 +253,9 @@ class TieredKagGovernanceTests(unittest.TestCase):
                 composition,
                 [replacement],
                 all_releases_by_digest=by_digest,
+                all_distributions_by_digest=distributions_by_digest(
+                    [*builds, replacement_build]
+                ),
                 signer=sign_composition,
                 unresolved_references={
                     "state": "measured",
@@ -268,7 +284,7 @@ class TieredKagGovernanceTests(unittest.TestCase):
         self.assertEqual(1, len(changed))
         self.assertEqual("owner-00", changed[0]["owner"])
         self.assertEqual(
-            "owner-release-manifests-only",
+            "owner-release-and-distribution-manifests-only",
             updated["provenance"]["source_scan"],
         )
 
@@ -280,6 +296,7 @@ class TieredKagGovernanceTests(unittest.TestCase):
                 for index in range(24)
             ]
             releases = [promote(build) for build in builds]
+            distributions = distributions_by_digest(builds)
             releases[7] = copy.deepcopy(builds[7].owner_release)
 
             with self.assertRaisesRegex(
@@ -288,6 +305,7 @@ class TieredKagGovernanceTests(unittest.TestCase):
             ):
                 build_os_composition(
                     releases,
+                    distributions_by_digest=distributions,
                     signer=sign_composition,
                 )
 
@@ -310,21 +328,55 @@ class TieredKagGovernanceTests(unittest.TestCase):
                     ):
                         build_os_composition(
                             releases,
+                            distributions_by_digest=distributions,
                             signer=sign_composition,
                         )
+
+    def test_composition_rejects_signed_underreported_measurements(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            builds = [
+                build_owner(
+                    base / f"owner-{index:02d}",
+                    f"owner-{index:02d}",
+                )
+                for index in range(24)
+            ]
+            releases = [promote(build) for build in builds]
+            tampered = copy.deepcopy(releases[0])
+            tampered["measurements"]["git_hot_bytes"] = 1
+            digest = owner_release_digest(tampered)
+            tampered["release_identity"]["content_digest"] = digest
+            tampered["signature"]["subject_digest"] = digest
+            tampered["signature"][
+                "signature_ref"
+            ] = f"abyss-machine:attestations/{digest}"
+            validate_owner_release(tampered)
+            releases[0] = tampered
+
+            with self.assertRaisesRegex(
+                TieredFamilyError,
+                "measurements do not match distribution",
+            ):
+                build_os_composition(
+                    releases,
+                    distributions_by_digest=distributions_by_digest(
+                        builds
+                    ),
+                    signer=sign_composition,
+                )
 
     def test_composition_rejects_none_signing_algorithm(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             base = Path(tmpdir)
-            releases = [
-                promote(
-                    build_owner(
-                        base / f"owner-{index:02d}",
-                        f"owner-{index:02d}",
-                    )
+            builds = [
+                build_owner(
+                    base / f"owner-{index:02d}",
+                    f"owner-{index:02d}",
                 )
                 for index in range(24)
             ]
+            releases = [promote(build) for build in builds]
 
             def unsigned_signer(digest: str) -> dict[str, str]:
                 return {
@@ -340,6 +392,9 @@ class TieredKagGovernanceTests(unittest.TestCase):
             ):
                 build_os_composition(
                     releases,
+                    distributions_by_digest=distributions_by_digest(
+                        builds
+                    ),
                     signer=unsigned_signer,
                 )
 

@@ -152,7 +152,7 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
             base = Path(tmpdir)
             root = base / "owner"
             build_committed_v3_owner(root, "owner-demo")
-            evidence, release = prove_owner_release(
+            evidence, release, distribution = prove_owner_release(
                 OwnerSource(owner="owner-demo", root=root),
                 output_root=base / "evidence",
                 shared_cas=base / "cas",
@@ -171,6 +171,10 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
         self.assertEqual(
             "verified",
             release["signature"]["verification_state"],
+        )
+        self.assertEqual(
+            evidence["distribution_digest"],
+            distribution["distribution_identity"]["content_digest"],
         )
 
     def test_externalization_preparation_removes_only_cold_current_tree(

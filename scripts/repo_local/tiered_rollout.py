@@ -716,7 +716,7 @@ def prove_owner_release(
     shadow_mode: bool,
     lifecycle_state: str,
     trust: MachineTrustAdapter,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     source_commit = exact_git_head(source.root)
     source_ref = "commit:" + source_commit
     input_schema, build = load_owner_build(
@@ -918,7 +918,7 @@ def prove_owner_release(
         "trust": trust_result,
         "bundle_digest": bundle["bundle_identity"]["content_digest"],
     }
-    return evidence, signed_release
+    return evidence, signed_release, build.distribution_manifest
 
 
 def prepare_owner_externalization(
@@ -1060,6 +1060,7 @@ def prepare_owner_externalization(
 def build_signed_composition(
     releases: Sequence[Mapping[str, Any]],
     *,
+    distributions_by_digest: Mapping[str, Mapping[str, Any]],
     output_root: Path,
     aoa_kag_source_ref: str,
     lifecycle_state: str,
@@ -1068,6 +1069,7 @@ def build_signed_composition(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     candidate = build_os_composition_candidate(
         releases,
+        distributions_by_digest=distributions_by_digest,
         unresolved_references=unresolved_references,
     )
     export_root = output_root / "composition"

@@ -135,8 +135,9 @@ trust state are committed.
 distribution-fast, incremental-federation, or full-24-owner validation from
 changed paths. Its cache identity is owner, source snapshot, builder digest,
 schema epoch, and canonicalization epoch. The incremental federation lane
-executes release-manifest-only composition replacement and affected relation,
-projection, and tiered-delivery tests without checking out 24 owner trees.
+executes release/distribution-manifest-only composition replacement and
+affected relation, projection, and tiered-delivery tests without checking out
+24 owner trees.
 
 `scripts/query_repo_local_kag.py` validates that family and exposes exact,
 BM25, graph, and hybrid retrieval. A v4 result also exposes corpus and

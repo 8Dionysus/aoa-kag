@@ -107,6 +107,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     owner_evidence = []
     releases = []
+    distributions_by_digest = {}
     try:
         for index, owner in enumerate(owners, start=1):
             root = roots[owner]
@@ -158,7 +159,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"[tiered-rollout] owner {index}/24 {owner}",
                 file=sys.stderr,
             )
-            evidence, release = prove_owner_release(
+            evidence, release, distribution = prove_owner_release(
                 source,
                 output_root=output_root,
                 shared_cas=artifact_root,
@@ -168,6 +169,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             owner_evidence.append(evidence)
             releases.append(release)
+            distributions_by_digest[
+                distribution["distribution_identity"]["content_digest"]
+            ] = distribution
         aoa_kag_head = "commit:" + (
             subprocess.run(
                 ("git", "rev-parse", "HEAD"),
@@ -180,6 +184,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         composition, composition_proof = build_signed_composition(
             releases,
+            distributions_by_digest=distributions_by_digest,
             output_root=output_root,
             aoa_kag_source_ref=aoa_kag_head,
             lifecycle_state=args.lifecycle_state,

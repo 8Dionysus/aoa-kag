@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
@@ -46,6 +48,7 @@ from scripts.repo_local.tiered_family import (
     write_tiered_artifact,
     write_tiered_git_surface,
 )
+from scripts.validators import repo_local_kag_index as repo_local_kag_validator
 from tests.test_repo_local_kag_repository_indexes import write_fixture
 
 
@@ -314,6 +317,28 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                 ):
                     validate_pack_index(tampered)
 
+    def test_pack_index_binds_declared_sizes_to_actual_pack_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            _, _, build = build_fixture_family(
+                root,
+                max_pack_bytes=8 * 1024,
+            )
+
+        tampered = copy.deepcopy(build.pack_index)
+        tampered["packs"][0]["bytes"] -= 1
+        tampered["summary"]["bytes"] -= 1
+        tampered["pack_index_identity"]["content_digest"] = (
+            _identity_digest(tampered, "pack_index_identity")
+        )
+
+        with self.assertRaisesRegex(
+            TieredFamilyError,
+            "declared byte count does not match content",
+        ):
+            validate_pack_index(tampered, build.pack_bytes)
+
     def test_distribution_validation_recomputes_corpus_measurements(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -370,6 +395,24 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             self.assertTrue(rows)
             self.assertEqual("hot_only", state["state"])
             self.assertFalse(state["complete"])
+            with (
+                patch.object(
+                    repo_local_kag_validator,
+                    "REPO_ROOT",
+                    root,
+                ),
+                patch.object(
+                    repo_local_kag_validator,
+                    "REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH",
+                    root / "kag/indexes/index_family.manifest.json",
+                ),
+                patch.dict(
+                    os.environ,
+                    {"KAG_ARTIFACT_ROOT": ""},
+                    clear=False,
+                ),
+            ):
+                repo_local_kag_validator.validate_repo_local_kag_index_generated_payload()
             with self.assertRaises(TieredFamilyUnavailable) as caught:
                 load_tiered_family(
                     root,
@@ -456,6 +499,49 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                 "source snapshot does not match corpus",
             ):
                 validate_tiered_artifact_release(root, artifact)
+
+    def test_release_validation_binds_objects_and_packs_to_manifests(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            artifact = base / "artifact"
+            root.mkdir()
+            write_fixture(root)
+            _, _, build = build_fixture_family(root, shadow_mode=False)
+            write_tiered_git_surface(root, build, externalize=True)
+            write_tiered_artifact(artifact, build)
+            distribution_digest = build.distribution_manifest[
+                "distribution_identity"
+            ]["content_digest"].removeprefix("sha256:")
+            release_path = (
+                artifact
+                / "releases"
+                / build.distribution_manifest["repo"]["name"]
+                / distribution_digest
+                / OWNER_RELEASE_ARTIFACT_PATH
+            )
+            original = json.loads(release_path.read_text(encoding="utf-8"))
+
+            for field in ("objects", "packs"):
+                with self.subTest(field=field):
+                    release = copy.deepcopy(original)
+                    release[field] = release[field][1:]
+                    release_digest = owner_release_digest(release)
+                    release["release_identity"][
+                        "content_digest"
+                    ] = release_digest
+                    release["signature"][
+                        "subject_digest"
+                    ] = release_digest
+                    release_path.write_text(
+                        json.dumps(release, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+                    with self.assertRaisesRegex(
+                        TieredFamilyError,
+                        f"owner release {field} do not match",
+                    ):
+                        validate_tiered_artifact_release(root, artifact)
 
     def test_portable_bundle_supports_offline_full_read_and_deduplicated_import(
         self,

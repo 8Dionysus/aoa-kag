@@ -14,6 +14,7 @@ from .tiered_family import (
     TieredFamilyError,
     canonical_json_bytes,
     validate_owner_release,
+    validate_release_distribution_binding,
 )
 
 
@@ -128,6 +129,7 @@ CompositionSigner = Callable[[str], Mapping[str, Any]]
 def build_os_composition_candidate(
     releases: Sequence[Mapping[str, Any]],
     *,
+    distributions_by_digest: Mapping[str, Mapping[str, Any]],
     unresolved_references: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build an unsigned composition for the abyss-machine signing boundary.
@@ -159,6 +161,16 @@ def build_os_composition_candidate(
                 f"OS composition release is not verified: {owner}"
             )
         identity = release["release_identity"]
+        distribution_digest = identity["distribution_digest"]
+        distribution = distributions_by_digest.get(
+            str(distribution_digest)
+        )
+        if distribution is None:
+            raise TieredFamilyError(
+                "OS composition distribution is unavailable by digest: "
+                f"{owner}"
+            )
+        validate_release_distribution_binding(release, distribution)
         source = release.get("source")
         repo = release["repo"]
         if not isinstance(source, Mapping):
@@ -173,13 +185,9 @@ def build_os_composition_candidate(
             raise TieredFamilyError(
                 f"OS composition release measurements are missing: {owner}"
             )
-        git_hot_bytes += int(measurements.get("git_hot_bytes", 0))
-        corpus_total_bytes += int(
-            measurements.get("corpus_total_bytes", 0)
-        )
-        artifact_unique_bytes += int(
-            measurements.get("artifact_unique_bytes", 0)
-        )
+        git_hot_bytes += measurements["git_hot_bytes"]
+        corpus_total_bytes += measurements["corpus_total_bytes"]
+        artifact_unique_bytes += measurements["artifact_unique_bytes"]
         release_digest = _release_digest(release)
         membership.append(owner)
         owner_entries.append(
@@ -229,7 +237,9 @@ def build_os_composition_candidate(
             "builder_owner": "aoa-kag",
             "trust_owner": "abyss-machine",
             "decision_ref": DECISION_REF,
-            "source_scan": "owner-release-manifests-only",
+            "source_scan": (
+                "owner-release-and-distribution-manifests-only"
+            ),
         },
         "signature": {
             "algorithm": "none",
@@ -248,11 +258,13 @@ def build_os_composition_candidate(
 def build_os_composition(
     releases: Sequence[Mapping[str, Any]],
     *,
+    distributions_by_digest: Mapping[str, Mapping[str, Any]],
     signer: CompositionSigner,
     unresolved_references: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = build_os_composition_candidate(
         releases,
+        distributions_by_digest=distributions_by_digest,
         unresolved_references=unresolved_references,
     )
     digest = payload["composition_identity"]["content_digest"]
@@ -346,6 +358,7 @@ def update_os_composition(
     changed_releases: Sequence[Mapping[str, Any]],
     *,
     all_releases_by_digest: Mapping[str, Mapping[str, Any]],
+    all_distributions_by_digest: Mapping[str, Mapping[str, Any]],
     signer: CompositionSigner,
     unresolved_references: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -379,6 +392,7 @@ def update_os_composition(
         )
     return build_os_composition(
         releases,
+        distributions_by_digest=all_distributions_by_digest,
         signer=signer,
         unresolved_references=unresolved_references,
     )

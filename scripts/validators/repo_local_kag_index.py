@@ -617,6 +617,8 @@ def load_repo_local_kag_repository_index_family(
 
 def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-index-read", progress=progress)
+    payload: dict[str, object] | None = None
+    actual_family: dict[str, dict[str, object]] | None = None
     portable_manifest: dict[str, object] | None = None
     tiered_context: dict[str, object] | None = None
     if REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH.is_file():
@@ -644,13 +646,6 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
             if artifact_root_value
             else None
         )
-        try:
-            payload, actual_family, portable_manifest = load_portable_family(
-                REPO_ROOT,
-                artifact_root=artifact_root,
-            )
-        except ValueError as exc:
-            fail(str(exc))
         if is_tiered:
             try:
                 from scripts.repo_local.tiered_family import (
@@ -660,6 +655,8 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
                     build_tiered_family,
                     check_tiered_artifact,
                     check_tiered_git_surface,
+                    load_tiered_manifests,
+                    load_tiered_rows,
                 )
             except ImportError:  # pragma: no cover
                 from repo_local.tiered_family import (  # type: ignore
@@ -669,10 +666,60 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
                     build_tiered_family,
                     check_tiered_artifact,
                     check_tiered_git_surface,
+                    load_tiered_manifests,
+                    load_tiered_rows,
                 )
-            corpus_manifest = read_json(REPO_ROOT / CORPUS_MANIFEST_RELATIVE_PATH)
-            hot_profile = read_json(REPO_ROOT / HOT_PROFILE_RELATIVE_PATH)
-            locator_manifest = read_json(REPO_ROOT / LOCATOR_MANIFEST_RELATIVE_PATH)
+            placement = raw_manifest.get("placement")
+            externalized_without_artifact = (
+                isinstance(placement, dict)
+                and placement.get("state") == "externalized"
+                and artifact_root is None
+            )
+            try:
+                if externalized_without_artifact:
+                    (
+                        portable_manifest,
+                        corpus_manifest,
+                        hot_profile,
+                        locator_manifest,
+                        _,
+                    ) = load_tiered_manifests(REPO_ROOT)
+                    _, delivery_state = load_tiered_rows(
+                        REPO_ROOT,
+                        artifact_root=None,
+                        allow_shadow_git=False,
+                        allow_hot_only=True,
+                    )
+                    if (
+                        portable_manifest["summary"][
+                            "artifact_cold_objects"
+                        ]
+                        and delivery_state.get("state") != "hot_only"
+                    ):
+                        fail(
+                            "externalized KAG validation must remain "
+                            "explicitly hot_only without an artifact root"
+                        )
+                else:
+                    (
+                        payload,
+                        actual_family,
+                        portable_manifest,
+                    ) = load_portable_family(
+                        REPO_ROOT,
+                        artifact_root=artifact_root,
+                    )
+                    corpus_manifest = read_json(
+                        REPO_ROOT / CORPUS_MANIFEST_RELATIVE_PATH
+                    )
+                    hot_profile = read_json(
+                        REPO_ROOT / HOT_PROFILE_RELATIVE_PATH
+                    )
+                    locator_manifest = read_json(
+                        REPO_ROOT / LOCATOR_MANIFEST_RELATIVE_PATH
+                    )
+            except ValueError as exc:
+                fail(str(exc))
             for contract, schema_path, label in (
                 (
                     portable_manifest,
@@ -708,8 +755,18 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
                 "corpus_manifest": corpus_manifest,
                 "hot_profile": hot_profile,
                 "locator_manifest": locator_manifest,
+                "manifest_only": externalized_without_artifact,
             }
         else:
+            try:
+                payload, actual_family, portable_manifest = (
+                    load_portable_family(
+                        REPO_ROOT,
+                        artifact_root=artifact_root,
+                    )
+                )
+            except ValueError as exc:
+                fail(str(exc))
             repo_local_kag_validate_payload(
                 portable_manifest,
                 schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
@@ -723,24 +780,44 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
             )
             for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
         }
-    _repo_local_index_phase("generated-index-payload", progress=progress)
-    validate_repo_local_kag_index_payload(payload, label="repo-local KAG generated index")
     _repo_local_index_phase("generated-index-rebuild", progress=progress)
     expected = build_index(REPO_ROOT, output=Path("kag/indexes/source_surface_index.json"))
-    _repo_local_index_phase("generated-index-parity", progress=progress)
-    if payload != expected:
-        fail("repo-local KAG generated index drifted from generator")
-
     _repo_local_index_phase("generated-repository-index-family", progress=progress)
     expected_family = build_repository_indexes(expected, repo_root=REPO_ROOT)
-    for index_kind in REPOSITORY_INDEX_FILENAMES:
-        if actual_family[index_kind] != expected_family[index_kind]:
-            fail(f"repo-local KAG {index_kind} index drifted from generator")
-    validate_repo_local_kag_repository_index_family(
-        actual_family,
-        source_payload=payload,
-        label="repo-local KAG repository family",
-    )
+    if payload is None:
+        _repo_local_index_phase(
+            "generated-index-manifest-only",
+            progress=progress,
+        )
+        validate_repo_local_kag_index_payload(
+            expected,
+            label="repo-local KAG rebuilt index",
+        )
+        validate_repo_local_kag_repository_index_family(
+            expected_family,
+            source_payload=expected,
+            label="repo-local KAG rebuilt repository family",
+        )
+    else:
+        assert actual_family is not None
+        _repo_local_index_phase("generated-index-payload", progress=progress)
+        validate_repo_local_kag_index_payload(
+            payload,
+            label="repo-local KAG generated index",
+        )
+        _repo_local_index_phase("generated-index-parity", progress=progress)
+        if payload != expected:
+            fail("repo-local KAG generated index drifted from generator")
+        for index_kind in REPOSITORY_INDEX_FILENAMES:
+            if actual_family[index_kind] != expected_family[index_kind]:
+                fail(
+                    f"repo-local KAG {index_kind} index drifted from generator"
+                )
+        validate_repo_local_kag_repository_index_family(
+            actual_family,
+            source_payload=payload,
+            label="repo-local KAG repository family",
+        )
     if tiered_context is not None:
         corpus_manifest = tiered_context["corpus_manifest"]
         hot_profile = tiered_context["hot_profile"]
