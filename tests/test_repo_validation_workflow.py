@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
+import textwrap
 import unittest
 
 from scripts.provider_registry import provider_dependency_pins
@@ -50,6 +52,25 @@ class RepoValidationWorkflowTests(unittest.TestCase):
             'if [ "$RELEASE_AUDIT_RESULT" != "success" ]',
             workflow_text,
         )
+
+    def test_required_summary_shell_is_syntactically_valid(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        summary = workflow_text.split("  required_summary:\n", 1)[1]
+        run_block = summary.split("        run: |\n", 1)[1]
+        script_lines = []
+        for line in run_block.splitlines():
+            if line and not line.startswith("          "):
+                break
+            script_lines.append(line[10:] if line else "")
+        result = subprocess.run(
+            ("bash", "-n"),
+            input=textwrap.dedent("\n".join(script_lines)) + "\n",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
 
     def test_release_check_validates_committed_outputs_before_regeneration(self) -> None:
         release_check_text = RELEASE_CHECK_PATH.read_text(encoding="utf-8")

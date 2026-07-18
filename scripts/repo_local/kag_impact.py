@@ -136,7 +136,10 @@ def _path_classes(path: str) -> set[str]:
             or path.startswith("policies/")
             or path.startswith("manifests/")
         )
-    ) or any(
+    ) or path in {
+        "scripts/repo_local/tiered_governance.py",
+        "scripts/repo_local/tiered_rollout.py",
+    } or any(
         token in path
         for token in (
             "trust-root",

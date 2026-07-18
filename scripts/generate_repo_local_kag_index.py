@@ -2461,6 +2461,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     previous_family: dict[str, dict[str, Any]] | None = None
     previous_manifest: dict[str, Any] | None = None
     previous_tiered_migration: dict[str, Any] | None = None
+    previous_tiered_shadow = False
     portable_manifest_path = repo_root / PORTABLE_FAMILY_MANIFEST
     if (args.portable_family or args.tiered_family) and portable_manifest_path.is_file():
         try:
@@ -2478,6 +2479,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.tiered_family and loaded_manifest.get("schema_version") == (
             "aoa-repo-local-kag-distribution-manifest-v1"
         ):
+            previous_tiered_shadow = (
+                loaded_manifest.get("placement", {}).get("state")
+                == "shadow"
+            )
             corpus_path = repo_root / "kag/indexes/corpus.manifest.json"
             try:
                 previous_corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
@@ -2504,13 +2509,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         except ImportError:  # pragma: no cover - direct script execution
             from repo_local.portable_family import load_portable_family  # type: ignore
         try:
-            previous_index, previous_family, _ = load_portable_family(
-                repo_root,
-                artifact_root=(
+            previous_artifact_root = (
+                None
+                if (
+                    args.tiered_family
+                    and previous_tiered_shadow
+                    and args.check
+                    and args.materialize_artifact_on_check
+                )
+                else (
                     Path(args.artifact_root).resolve()
                     if args.artifact_root
                     else None
-                ),
+                )
+            )
+            previous_index, previous_family, _ = load_portable_family(
+                repo_root,
+                artifact_root=previous_artifact_root,
             )
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc

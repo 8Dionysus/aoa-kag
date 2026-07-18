@@ -415,11 +415,20 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
                 check_result = build_release_main(
                     ["--repo-root", str(root), "--check"]
                 )
+                incremental_check_result = build_release_main(
+                    [
+                        "--repo-root",
+                        str(root),
+                        "--check",
+                        "--incremental",
+                    ]
+                )
 
             remaining = list(transient_parent.iterdir())
 
         self.assertEqual(0, write_result)
         self.assertEqual(0, check_result)
+        self.assertEqual(0, incremental_check_result)
         self.assertEqual([], remaining)
 
 

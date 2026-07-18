@@ -507,6 +507,14 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             ["scripts/repo_local/tiered_family.py"],
             owner="aoa-kag",
         )
+        rollout = classify_impact(
+            ["scripts/repo_local/tiered_rollout.py"],
+            owner="aoa-kag",
+        )
+        governance = classify_impact(
+            ["scripts/repo_local/tiered_governance.py"],
+            owner="aoa-kag",
+        )
 
         self.assertEqual("owner-local-fast", owner.required_validation_lane)
         self.assertEqual(
@@ -518,6 +526,15 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             central.required_validation_lane,
         )
         self.assertIn("builder changed", central.full_fanout_reason)
+        for classified in (rollout, governance):
+            self.assertEqual(
+                "full-24-owner-audit",
+                classified.required_validation_lane,
+            )
+            self.assertIn(
+                "artifact trust",
+                classified.full_fanout_reason,
+            )
         self.assertEqual(
             immutable_owner_cache_key(
                 owner="demo",
