@@ -452,6 +452,11 @@ class MachineTrustAdapter:
         self.registry_root = registry_root.resolve()
         self.subject_store_root = subject_store_root.resolve()
         self.env = dict(os.environ if env is None else env)
+        # The provider registry uses ABYSS_MACHINE_REPO_ROOT to select the
+        # abyss-machine KAG owner checkout.  Do not leak that provider override
+        # into the host trust subprocess: artifact policy and CLI code must
+        # resolve from the exact machine trust owner passed to this adapter.
+        self.env["ABYSS_MACHINE_REPO_ROOT"] = str(self.machine_root)
         pythonpath = str(self.machine_root / "src")
         existing = self.env.get("PYTHONPATH", "")
         self.env["PYTHONPATH"] = (

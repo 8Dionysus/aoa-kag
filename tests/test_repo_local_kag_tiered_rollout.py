@@ -19,6 +19,7 @@ from scripts.repo_local.portable_family import (
 )
 from scripts.repo_local.tiered_rollout import (
     CANARY_OWNERS,
+    MachineTrustAdapter,
     OwnerSource,
     TieredRolloutError,
     build_rollout_evidence,
@@ -117,6 +118,33 @@ def build_committed_v3_owner(root: Path, owner: str) -> None:
 
 
 class RepoLocalKagTieredRolloutTests(unittest.TestCase):
+    def test_machine_trust_adapter_isolates_provider_root_override(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            machine_root = base / "machine-trust-owner"
+            adapter = MachineTrustAdapter(
+                machine_root,
+                registry_root=base / "registry",
+                subject_store_root=base / "subjects",
+                env={
+                    "ABYSS_MACHINE_REPO_ROOT": str(
+                        base / "pinned-kag-provider"
+                    ),
+                    "PYTHONPATH": "existing-pythonpath",
+                },
+            )
+
+        self.assertEqual(
+            str(machine_root.resolve()),
+            adapter.env["ABYSS_MACHINE_REPO_ROOT"],
+        )
+        self.assertEqual(
+            f"{machine_root.resolve() / 'src'}:existing-pythonpath",
+            adapter.env["PYTHONPATH"],
+        )
+
     def test_one_owner_shadow_proof_is_exact_offline_and_fail_closed(
         self,
     ) -> None:

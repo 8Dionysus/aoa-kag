@@ -38,6 +38,12 @@ inner family identity, admits each outer bundle through the host-managed trust
 plane, proves offline and failure scenarios, signs the 24-owner composition,
 and writes one schema-checked evidence packet outside Git.
 
+The provider checkout override for the `abyss-machine` KAG owner is resolved
+before trust execution. Trust subprocesses then bind
+`ABYSS_MACHINE_REPO_ROOT` back to the exact machine trust owner root supplied
+to the orchestrator, so a pinned source-provider checkout cannot silently
+downgrade artifact policy or signing behavior.
+
 ## Prepare Externalization
 
 Use `scripts/prepare_repo_local_kag_externalization.py` only against explicit
