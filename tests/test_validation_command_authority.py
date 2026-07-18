@@ -114,6 +114,17 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             ),
             validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,
         )
+        self.assertEqual(
+            (
+                "git",
+                "ls-files",
+                "--others",
+                "--exclude-standard",
+                "--",
+                *validation_lanes.GENERATED_DRIFT_PATHS,
+            ),
+            validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND,
+        )
 
     def test_validation_lanes_api_resolves_lane_ids_to_command_sequences(self) -> None:
         self.assertEqual(
@@ -226,7 +237,17 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             run_sequence.assert_called_once_with(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
 
         with patch.object(ci_gate, "run_sequence") as run_sequence:
-            with patch.object(ci_gate, "capture_command_output", return_value="stable") as capture:
+            with patch.object(
+                ci_gate,
+                "capture_command_output",
+                side_effect=(
+                    "stable",
+                    "stable",
+                    "stable",
+                    "stable",
+                    "",
+                ),
+            ) as capture:
                 ci_gate.run_generated()
             run_sequence.assert_called_once_with(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
             self.assertEqual(
@@ -235,6 +256,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                     (validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,),
                     (validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,),
                     (validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,),
+                    (validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND,),
                 ],
                 [call.args for call in capture.call_args_list],
             )
@@ -271,6 +293,23 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                     with self.assertRaises(subprocess.CalledProcessError):
                         ci_gate.run_generated()
 
+    def test_generated_lane_fails_when_required_output_is_untracked(self) -> None:
+        with patch.object(ci_gate, "run_sequence"):
+            with patch.object(
+                ci_gate,
+                "capture_command_output",
+                side_effect=(
+                    "stable",
+                    "stable",
+                    "stable",
+                    "stable",
+                    "kag/indexes/shards/anchor/00-1f.json\n",
+                ),
+            ):
+                with redirect_stderr(StringIO()):
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        ci_gate.run_generated()
+
     def test_generated_lane_scopes_and_restores_coverage_packet(self) -> None:
         observed: list[str] = []
 
@@ -287,7 +326,13 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         ), patch.object(
             ci_gate,
             "capture_command_output",
-            return_value="stable",
+            side_effect=(
+                "stable",
+                "stable",
+                "stable",
+                "stable",
+                "",
+            ),
         ):
             ci_gate.run_generated()
             self.assertEqual("caller-owned-packet", os.environ[ci_gate.COVERAGE_PACKET_ENV])

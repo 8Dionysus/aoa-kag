@@ -85,15 +85,36 @@ def _release_digest(release: Mapping[str, Any]) -> str:
     return digest
 
 
+def _signature_verified(
+    signature: object,
+    *,
+    require_key_id: bool = False,
+) -> bool:
+    if not isinstance(signature, Mapping):
+        return False
+    algorithm = signature.get("algorithm")
+    signature_ref = signature.get("signature_ref")
+    if (
+        not isinstance(algorithm, str)
+        or algorithm.strip().lower()
+        not in {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
+        or not isinstance(signature_ref, str)
+        or not signature_ref.strip()
+        or signature.get("verification_state") != "verified"
+    ):
+        return False
+    if require_key_id:
+        key_id = signature.get("key_id")
+        if not isinstance(key_id, str) or not key_id.strip():
+            return False
+    return True
+
+
 def _release_verified(release: Mapping[str, Any]) -> bool:
     signature = release.get("signature")
     lifecycle = release.get("lifecycle")
     return (
-        isinstance(signature, Mapping)
-        and signature.get("algorithm")
-        in {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
-        and bool(str(signature.get("signature_ref") or "").strip())
-        and signature.get("verification_state") == "verified"
+        _signature_verified(signature)
         and isinstance(lifecycle, Mapping)
         and lifecycle.get("state")
         in {"manually-verified", "release-ready", "published"}
@@ -247,9 +268,9 @@ def build_os_composition(
             raise TieredFamilyError(
                 f"composition signer did not return {field}"
             )
-    if signature["verification_state"] != "verified":
+    if not _signature_verified(signature, require_key_id=True):
         raise TieredFamilyError(
-            "composition signer must return verified state"
+            "composition signer must return a real verified signature"
         )
     payload["signature"] = {
         **signature,
@@ -313,7 +334,7 @@ def validate_os_composition(payload: Mapping[str, Any]) -> None:
         raise TieredFamilyError("OS composition Git-hot target is exceeded")
     if (
         signature.get("subject_digest") != identity["content_digest"]
-        or signature.get("verification_state") != "verified"
+        or not _signature_verified(signature, require_key_id=True)
     ):
         raise TieredFamilyError(
             "OS composition signature is not verified for its digest"

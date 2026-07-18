@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import subprocess
 import textwrap
@@ -29,24 +28,22 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         self.assertIn("github.event_name != 'pull_request'", workflow_text)
         self.assertIn('cron: "31 7 * * 1"', workflow_text)
 
-    def test_generated_drift_gate_checks_untracked_files(self) -> None:
+    def test_generated_drift_gate_uses_lane_authority_for_untracked_files(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
-        manifest = json.loads(
-            (
-                REPO_ROOT / "config" / "validation_lanes.json"
-            ).read_text(encoding="utf-8")
+        ci_gate_text = (REPO_ROOT / "scripts" / "ci_gate.py").read_text(
+            encoding="utf-8"
         )
-        generated_step = workflow_text.split(
-            "      - name: Check generated outputs are committed\n",
-            1,
-        )[1].split("\n  required_summary:", 1)[0]
 
+        self.assertIn("python scripts/release_check.py", workflow_text)
         self.assertIn(
-            "git status --porcelain=v1 --untracked-files=all --",
-            generated_step,
+            "validation_lanes.GENERATED_DRIFT_STATUS_COMMAND",
+            ci_gate_text,
         )
-        for path in manifest["drift_paths"]["generated"]:
-            self.assertIn(path, generated_step)
+        self.assertIn(
+            "validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND",
+            ci_gate_text,
+        )
+        self.assertNotIn("Check generated outputs are committed", workflow_text)
         self.assertNotIn("git diff --exit-code -- generated", workflow_text)
 
     def test_required_summary_preserves_branch_protection_context(self) -> None:

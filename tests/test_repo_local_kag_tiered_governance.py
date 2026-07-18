@@ -313,6 +313,36 @@ class TieredKagGovernanceTests(unittest.TestCase):
                             signer=sign_composition,
                         )
 
+    def test_composition_rejects_none_signing_algorithm(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            releases = [
+                promote(
+                    build_owner(
+                        base / f"owner-{index:02d}",
+                        f"owner-{index:02d}",
+                    )
+                )
+                for index in range(24)
+            ]
+
+            def unsigned_signer(digest: str) -> dict[str, str]:
+                return {
+                    "algorithm": "none",
+                    "key_id": "abyss-machine:test-public-kag",
+                    "signature_ref": f"abyss-machine:attestations/{digest}",
+                    "verification_state": "verified",
+                }
+
+            with self.assertRaisesRegex(
+                TieredFamilyError,
+                "real verified signature",
+            ):
+                build_os_composition(
+                    releases,
+                    signer=unsigned_signer,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
