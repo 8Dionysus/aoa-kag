@@ -865,6 +865,99 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             ):
                 build_index(root)
 
+    def test_generator_indexes_os_user_exposed_owner_skill_without_repo_projection(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-owner"
+            source = root / "skills" / "aoa-owner" / "SKILL.md"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "---\nname: aoa-owner\ndescription: Owner task.\n---\n# Owner\n",
+                encoding="utf-8",
+            )
+            (root / "skills" / "port.manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa_skill_home_port_v2",
+                        "contract_ref": "aoa-skills:schemas/skill-home-port.schema.json",
+                        "owner_repo": "aoa-owner",
+                        "owner_ref": "AGENTS.md",
+                        "bundles": [
+                            {
+                                "name": "aoa-owner",
+                                "path": "skills/aoa-owner",
+                                "version": "0.2.0",
+                                "lifecycle": "admitted",
+                                "visibility": "advertised",
+                                "admission_ref": "docs/decisions/OWNER-D-0002.md",
+                            }
+                        ],
+                        "exposure": {
+                            "runtime": "codex",
+                            "scope": "user",
+                            "profile": "os-user-default",
+                            "mode": "profile-selected",
+                            "skills": ["aoa-owner"],
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            payload = build_index(root)
+
+        self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
+        records_by_path = {
+            record["identity"]["path"]: record for record in payload["records"]
+        }
+        source_record = records_by_path["skills/aoa-owner/SKILL.md"]
+        self.assertEqual("authored_source", source_record["surface_state"])
+        self.assertEqual("skill", source_record["document_role"])
+        self.assertNotIn(".agents/skills/aoa-owner/SKILL.md", records_by_path)
+
+    def test_generator_rejects_os_user_exposed_same_name_repo_projection(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-owner"
+            source = root / "skills" / "aoa-owner" / "SKILL.md"
+            projection = root / ".agents" / "skills" / "aoa-owner" / "SKILL.md"
+            source.parent.mkdir(parents=True)
+            projection.parent.mkdir(parents=True)
+            source.write_text("# canonical\n", encoding="utf-8")
+            projection.write_text("# duplicate\n", encoding="utf-8")
+            (root / "skills" / "port.manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa_skill_home_port_v2",
+                        "bundles": [
+                            {"name": "aoa-owner", "path": "skills/aoa-owner"}
+                        ],
+                        "exposure": {
+                            "runtime": "codex",
+                            "scope": "user",
+                            "profile": "os-user-default",
+                            "mode": "profile-selected",
+                            "skills": ["aoa-owner"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "OS user-exposed skill aoa-owner has a same-name repo projection",
+            ):
+                build_index(root)
+
     def test_generator_classifies_tracked_symlinks_from_git_mode(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1058,9 +1151,26 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         }
         self.assertEqual("owner_metadata", records_by_path[".github/CODEOWNERS"]["artifact_kind"])
         self.assertEqual("owner_metadata", records_by_path[".gitignore"]["artifact_kind"])
+        skill_record = records_by_path["skills/aoa-kag/SKILL.md"]
+        self.assertEqual("document", skill_record["artifact_kind"])
+        self.assertEqual("skill", skill_record["document_role"])
+        self.assertEqual("authored_source", skill_record["surface_state"])
         self.assertEqual(
-            "asset",
-            records_by_path[".agents/skills/aoa-adr-write/assets/large-logo.svg"]["artifact_kind"],
+            {
+                "repo": "aoa-kag",
+                "surface": "skills/aoa-kag/SKILL.md",
+                "route_kind": "document_owner",
+            },
+            skill_record["owner_return_route"],
+        )
+        skill_manifest_record = records_by_path["skills/port.manifest.json"]
+        self.assertEqual("config", skill_manifest_record["artifact_kind"])
+        self.assertEqual(
+            "aoa_skill_home_port_v2",
+            skill_manifest_record["abi"]["schema_version"],
+        )
+        self.assertFalse(
+            any(path.startswith(".agents/skills/") for path in records_by_path)
         )
         self.assertEqual("security", records_by_path["SECURITY.md"]["artifact_kind"])
         self.assertEqual(

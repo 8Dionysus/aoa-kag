@@ -54,10 +54,12 @@ aggregate hot bytes, and generated change amplification are blocking budgets.
 The current target is at most 70 percent aggregate utilization; a normal owner
 receipt cannot raise the aggregate ceiling.
 
-The family distinguishes a canonical owner skill under `skills/` from a
-manifest-declared generated copy under `.agents/skills/`. Both physical files
-remain addressable, while the projection returns to its owner source through
-provenance and a typed `derives_from` relation.
+The family supports both home-port generations. A v1 manifest distinguishes a
+canonical owner skill under `skills/` from its exact declared repository copy
+under `.agents/skills/`; both files remain addressable and a typed
+`derives_from` relation returns to the owner. A v2 manifest declares selection
+through the OS user profile and forbids a same-name repository copy, so the
+canonical owner skill is the only repo-local source record.
 
 `scripts/query_repo_local_kag.py` exposes validated exact, lexical, graph, and
 hybrid retrieval. The programmatic query kernel also provides discovery,

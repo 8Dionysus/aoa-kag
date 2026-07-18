@@ -65,6 +65,7 @@ and where does a stronger claim return?
 | `tests/` | regression proof for contracts, parity, guardrails, and current routes |
 | `evals/` | KAG-local eval pressure port before central proof acceptance |
 | `stats/` | KAG-owned statistical questions, contracts, and reference packets below source and generated evidence owners |
+| `skills/` | admitted repository-specific callable KAG procedure and its OS user exposure contract |
 | `.agents/`, `.agents/spark/`, `.github/`, `config/` | companion, Spark fast-loop, platform, and configuration lanes that support KAG work without becoming substrate truth |
 
 Each class may support another. No class should silently steal another class's
@@ -110,8 +111,9 @@ The repository should support:
 - maturity and owner-wait stop-rules;
 - an active repo-local `/kag` subtree protocol with owner-generated canonical
   records, common validation, owner extensions, and federation inputs;
-- the downstream `aoa-kag-mcp` application adapter and future
-  `aoa-kag-skills` layer, both subordinate to core substrate contracts.
+- the downstream `aoa-kag-mcp` application adapter and the repository-owned
+  `aoa-kag` skill, both subordinate to core substrate contracts and owner
+  source return.
 
 The substrate grows well when every new surface makes source ownership,
 provenance, validation, consumer return, or federation posture clearer than

@@ -14,9 +14,17 @@
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 
+## callable KAG procedure
+
+- [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+
 ## capability discovery
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+
+## capability retrieval
+
+- [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 
 ## Codex Spark fast-loop lane
 
@@ -28,11 +36,11 @@
 
 ## content-addressed cold shards
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## corpus identity
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## decision lane
 
@@ -53,7 +61,7 @@
 
 ## distribution identity
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## document records
 
@@ -97,7 +105,7 @@
 
 ## Git-hot bootstrap
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## KAG-only pressure
 
@@ -146,7 +154,7 @@
 
 ## offline recovery
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## OS Abyss coverage report
 
@@ -154,7 +162,7 @@
 
 ## OS composition
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## OS surface readiness
 
@@ -170,7 +178,7 @@
 
 ## owner-family release
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## owner-qualified identity
 
@@ -264,6 +272,10 @@
 
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
 
+## source return
+
+- [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+
 ## source-home preflight
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
@@ -291,7 +303,11 @@
 
 ## transport packs
 
-- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
+
+## user-profile exposure
+
+- [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 
 ## v2 compatibility assembly
 

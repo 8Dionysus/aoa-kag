@@ -28,7 +28,7 @@ DECISION_REF = (
 )
 TIERED_DECISION_REF = (
     "aoa-kag:docs/decisions/"
-    "AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md"
+    "AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md"
 )
 TIERED_DISTRIBUTION_SCHEMA_VERSION = (
     "aoa-repo-local-kag-distribution-manifest-v1"

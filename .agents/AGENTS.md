@@ -7,8 +7,8 @@ This card applies to `.agents/` and all descendants unless a nearer
 
 ## Role
 
-`.agents/` holds agent-facing companion lanes for `aoa-kag`: repo-local skills,
-Codex Spark guidance, handoff prompts, and model-facing support surfaces.
+`.agents/` holds non-skill agent-facing companion lanes for `aoa-kag`: Codex Spark guidance,
+handoff prompts, and model-facing support surfaces.
 
 It helps agents operate inside the KAG derived-substrate repository. It does
 not author KAG model meaning, source-owner truth, generated payload truth,
@@ -22,13 +22,14 @@ card before changing prompt-like or agent-facing material.
 For Codex Spark work, read `.agents/spark/AGENTS.md`; use
 `.agents/spark/SWARM.md` only when a Spark swarm is explicitly requested.
 
-For exported skill material, read `.agents/skills/AGENTS.md` and the target
-`SKILL.md`.
+For the repository-owned callable KAG procedure, leave this lane and read
+`skills/AGENTS.md`, `skills/README.md`, and `skills/port.manifest.json`.
 
 ## Boundaries
 
 - Keep maintained agent lanes under `.agents/<lane>/`.
-- Keep exported skill guidance under `.agents/skills/`.
+- Keep canonical owner skills under `skills/`; do not recreate a same-name
+  repo projection for an OS user-exposed bundle.
 - Do not restore root `Spark/` as an active lane.
 - Do not encode private memory, hidden authority, local-only host assumptions,
   secrets, or unreviewable autonomy here.

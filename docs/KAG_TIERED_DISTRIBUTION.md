@@ -2,7 +2,7 @@
 
 This document is the public architecture contract for portable KAG family
 storage. Durable rationale lives in
-[`AOA-KAG-D-0018`](decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md).
+[`AOA-KAG-D-0019`](decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md).
 
 ## Invariant
 

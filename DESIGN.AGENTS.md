@@ -24,7 +24,7 @@ It should give them a navigable route mesh:
   validation posture, and closeout;
 - local cards for durable districts such as `docs/`, `docs/decisions/`,
   `kag/`, `mechanics/`, `manifests/`, `generated/`, `schemas/`, `examples/`,
-  `scripts/`, `tests/`, `config/`, `evals/`, `stats/`, `.agents/`,
+  `scripts/`, `tests/`, `config/`, `evals/`, `stats/`, `skills/`, `.agents/`,
   `.agents/spark/`, and `.github/`;
 - source surfaces that keep KAG model, source policy, manifests, schemas,
   builders, and tests stronger than route prose;
@@ -53,7 +53,7 @@ A healthy `aoa-kag` agent-facing layer has:
 - local `AGENTS.md` cards in durable editable districts;
 - explicit owner boundaries for docs, decisions, local KAG protocol, manifests,
   generated outputs, mechanics, schemas, examples, scripts, tests, config, eval
-  intake, companion lanes, and GitHub surfaces;
+  intake, statistics, owner skills, companion lanes, and GitHub surfaces;
 - named validation routes near the work;
 - negative boundaries that prevent source-authority drift;
 - generated companions that help navigation without becoming source truth;
@@ -114,6 +114,16 @@ local-subtree source-home preflight. They should name active source families,
 future record classes, runtime-state exclusions, rollout stop-lines, and sibling
 handoff rules without becoming generated payload authority or sibling
 repository templates.
+
+### Skill owner cards
+
+`skills/AGENTS.md`, `skills/README.md`, and `skills/port.manifest.json` route
+the canonical repository-owned callable procedure. They keep the procedure,
+its conditional references, admission decision, and OS user exposure visible
+without duplicating the bundle under `.agents/skills/`.
+
+The skill home owns agent procedure, not KAG source meaning, MCP runtime,
+proof, memory, routing, roles, playbooks, statistics, or raw session trials.
 
 ### Generated cards
 
@@ -293,6 +303,7 @@ model, owner boundaries, and source-first posture.
 `docs/decisions/` preserves durable KAG route rationale.
 `kag/` holds the local-subtree protocol preflight.
 `mechanics/` routes repeatable KAG operation topology.
+`skills/` owns the admitted repository-specific callable KAG procedure.
 `manifests/` owns source-authored lift controls.
 `generated/` remains derived.
 `scripts/` and `tests/` keep builders and guards checkable.
@@ -330,6 +341,8 @@ move:
 - affected nested `AGENTS.md` cards;
 - `.agents/AGENTS.md` and `.agents/spark/AGENTS.md` when agent-lane placement
   or Spark fast-loop posture moved;
+- `skills/AGENTS.md`, `skills/README.md`, and `skills/port.manifest.json` when
+  owner-skill admission or exposure moved;
 - `kag/` protocol cards when local-subtree posture moved;
 - `README.md` or docs maps;
 - `DESIGN.md`;

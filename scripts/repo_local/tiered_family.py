@@ -75,7 +75,7 @@ DEFAULT_PACK_BYTES_MAX = 8 * 1024 * 1024
 OS_GIT_HOT_TARGET_BYTES = 234_881_024
 DECISION_REF = (
     "aoa-kag:docs/decisions/"
-    "AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md"
+    "AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md"
 )
 
 COMPLETE_STATES = {"complete", "git_hot_complete"}
