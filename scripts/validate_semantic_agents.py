@@ -37,13 +37,13 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
         ),
     ),
     AgentsDocSpec(
-        Path('.agents/skills/AGENTS.md'),
+        Path('skills/AGENTS.md'),
         (
-            'KAG-layer maintenance',
-            'derived structures',
-            'Source repositories keep authored meaning',
-            'public-safe',
-            'validate_kag.py',
+            'canonical `aoa-kag/skills/` owner home',
+            'one `aoa-kag` front door',
+            'raw prompts, traces, task-local DAGs',
+            'Do not require `aoa-techniques` at runtime',
+            'shared home-port check',
         ),
     ),
     AgentsDocSpec(

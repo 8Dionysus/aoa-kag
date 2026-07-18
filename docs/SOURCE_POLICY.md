@@ -20,9 +20,12 @@ Examples of authoritative sources include:
 A KAG surface may normalize, lift, or project the source.
 It should not quietly become a hand-authored replacement for the source.
 
-An exact host copy remains derived even when it is tracked in Git. Classify it
-from an explicit owner projection contract and preserve its canonical source
-ref; do not infer authority from the copy's path or byte readability.
+An exact v1 repository copy remains derived even when it is tracked in Git.
+Classify it from an explicit owner projection contract and preserve its
+canonical source ref; do not infer authority from the copy's path or byte
+readability. A v2 OS user exposure keeps the owner source canonical and uses a
+profile selection outside the repository instead of creating a same-name
+repository copy.
 
 ## Provenance rule
 

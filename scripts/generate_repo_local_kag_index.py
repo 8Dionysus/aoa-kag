@@ -163,7 +163,8 @@ LOCAL_KAG_VALIDATOR_ROUTE = "scripts/validate_kag.py"
 EXTERNAL_KAG_VALIDATOR_ROUTE = f"aoa-kag:{LOCAL_KAG_VALIDATOR_ROUTE}"
 ZERO_DIGEST = "0" * 64
 HOME_SKILL_PORT_MANIFEST = Path("skills/port.manifest.json")
-HOME_SKILL_PORT_SCHEMA_VERSION = "aoa_skill_home_port_v1"
+HOME_SKILL_PORT_SCHEMA_VERSION_V1 = "aoa_skill_home_port_v1"
+HOME_SKILL_PORT_SCHEMA_VERSION_V2 = "aoa_skill_home_port_v2"
 HOME_SKILL_PROJECTION_BUILDER_ROUTE = (
     "aoa-skills:scripts/build_home_skill_projection.py"
 )
@@ -498,7 +499,7 @@ def home_skill_projection_sources(
     repo_root: Path,
     tracked_entries: dict[Path, dict[str, str]],
 ) -> dict[Path, dict[str, Path]]:
-    """Resolve exact generated skill copies to their canonical owner sources."""
+    """Validate owner skill exposure and resolve v1 copies to owner sources."""
 
     if HOME_SKILL_PORT_MANIFEST not in tracked_entries:
         return {}
@@ -511,14 +512,83 @@ def home_skill_projection_sources(
     )
     if payload is None:
         raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} must be a JSON object")
-    if payload.get("schema_version") != HOME_SKILL_PORT_SCHEMA_VERSION:
+    schema_version = payload.get("schema_version")
+    if schema_version not in {
+        HOME_SKILL_PORT_SCHEMA_VERSION_V1,
+        HOME_SKILL_PORT_SCHEMA_VERSION_V2,
+    }:
+        return {}
+
+    bundles = payload.get("bundles")
+    if not isinstance(bundles, list):
+        raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} must declare bundles")
+    source_roots: dict[str, Path] = {}
+    for bundle in bundles:
+        if not isinstance(bundle, dict):
+            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} bundles must be objects")
+        name = bundle.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} bundle name is invalid")
+        if name in source_roots:
+            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} repeats bundle {name}")
+        source_roots[name] = manifest_relative_path(
+            bundle.get("path"),
+            field=f"skills/port.manifest.json bundle {name} path",
+        )
+
+    if schema_version == HOME_SKILL_PORT_SCHEMA_VERSION_V2:
+        exposure = payload.get("exposure")
+        if not isinstance(exposure, dict):
+            raise ValueError(
+                f"{HOME_SKILL_PORT_MANIFEST} v2 must declare exposure"
+            )
+        expected_exposure = {
+            "runtime": "codex",
+            "scope": "user",
+            "profile": "os-user-default",
+            "mode": "profile-selected",
+        }
+        for field, expected in expected_exposure.items():
+            if exposure.get(field) != expected:
+                raise ValueError(
+                    f"{HOME_SKILL_PORT_MANIFEST} exposure.{field} "
+                    f"must equal {expected!r}"
+                )
+        exposed_names = exposure.get("skills")
+        if not isinstance(exposed_names, list) or not all(
+            isinstance(name, str) and name for name in exposed_names
+        ):
+            raise ValueError(
+                f"{HOME_SKILL_PORT_MANIFEST} exposure.skills must name bundles"
+            )
+        if exposed_names != list(source_roots):
+            raise ValueError(
+                f"{HOME_SKILL_PORT_MANIFEST} bundle and exposure names must match"
+            )
+        for name, source_root in source_roots.items():
+            skill_source = source_root / "SKILL.md"
+            if skill_source not in tracked_entries:
+                raise ValueError(
+                    f"declared owner skill {name} has no canonical source "
+                    f"{skill_source.as_posix()}"
+                )
+            repo_projection_root = Path(".agents/skills") / name
+            duplicate_paths = sorted(
+                rel.as_posix()
+                for rel in tracked_entries
+                if rel == repo_projection_root or repo_projection_root in rel.parents
+            )
+            if duplicate_paths:
+                raise ValueError(
+                    f"OS user-exposed skill {name} has a same-name repo projection: "
+                    + ", ".join(duplicate_paths)
+                )
         return {}
 
     projection = payload.get("projection")
-    bundles = payload.get("bundles")
-    if not isinstance(projection, dict) or not isinstance(bundles, list):
+    if not isinstance(projection, dict):
         raise ValueError(
-            f"{HOME_SKILL_PORT_MANIFEST} must declare bundles and projection"
+            f"{HOME_SKILL_PORT_MANIFEST} v1 must declare projection"
         )
     if projection.get("mode") != "generated-copy":
         raise ValueError(
@@ -534,20 +604,6 @@ def home_skill_projection_sources(
     ):
         raise ValueError(
             f"{HOME_SKILL_PORT_MANIFEST} projection.skills must name bundles"
-        )
-
-    source_roots: dict[str, Path] = {}
-    for bundle in bundles:
-        if not isinstance(bundle, dict):
-            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} bundles must be objects")
-        name = bundle.get("name")
-        if not isinstance(name, str) or not name:
-            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} bundle name is invalid")
-        if name in source_roots:
-            raise ValueError(f"{HOME_SKILL_PORT_MANIFEST} repeats bundle {name}")
-        source_roots[name] = manifest_relative_path(
-            bundle.get("path"),
-            field=f"skills/port.manifest.json bundle {name} path",
         )
     if set(projected_names) != set(source_roots):
         raise ValueError(
@@ -700,6 +756,8 @@ def document_role(rel: Path) -> str:
     parts = rel.parts
     if rel.suffix != ".md":
         return "none"
+    if name == "SKILL.md" and len(parts) >= 3 and parts[0] == "skills":
+        return "skill"
     if name == "README.md":
         return "readme"
     if name == "AGENTS.md":

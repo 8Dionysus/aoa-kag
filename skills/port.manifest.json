@@ -1,0 +1,25 @@
+{
+  "schema_version": "aoa_skill_home_port_v2",
+  "contract_ref": "aoa-skills:schemas/skill-home-port.schema.json",
+  "owner_repo": "aoa-kag",
+  "owner_ref": "AGENTS.md",
+  "bundles": [
+    {
+      "name": "aoa-kag",
+      "path": "skills/aoa-kag",
+      "version": "0.2.0",
+      "lifecycle": "admitted",
+      "visibility": "advertised",
+      "admission_ref": "docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md"
+    }
+  ],
+  "exposure": {
+    "runtime": "codex",
+    "scope": "user",
+    "profile": "os-user-default",
+    "mode": "profile-selected",
+    "skills": [
+      "aoa-kag"
+    ]
+  }
+}
