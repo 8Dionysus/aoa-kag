@@ -123,6 +123,8 @@ then block further exceptions.
 The deterministic impact classifier selects owner-local, distribution-only,
 incremental-federation, or full-24-owner lanes. Ordinary owner changes build
 and validate one owner, exact compatibility views, and the artifact delta.
+Incremental federation changes run release-manifest-only composition and
+affected relation/projection checks without a 24-owner source checkout.
 Shared schema, canonicalization, partitioning, federation, MCP loader, trust
 root, access, or owner-membership changes trigger full fan-out. Weekly,
 release, recovery, rollback, revocation, and topology-review audits also run

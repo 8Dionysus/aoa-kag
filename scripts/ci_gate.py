@@ -100,6 +100,10 @@ def run_generated() -> None:
             )
 
 
+def run_incremental_federation() -> None:
+    run_sequence(validation_lanes.INCREMENTAL_FEDERATION_COMMAND_SEQUENCE)
+
+
 def run_release() -> None:
     run_command(("python", "scripts/release_check.py"))
 
@@ -130,6 +134,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         choices=(
             "source-fast",
             "generated",
+            "incremental-federation",
             "release",
             "compatibility-canary",
             "advisory",
@@ -146,6 +151,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             run_source_fast()
         elif args.mode == "generated":
             run_generated()
+        elif args.mode == "incremental-federation":
+            run_incremental_federation()
         elif args.mode == "release":
             run_release()
         elif args.mode == "compatibility-canary":

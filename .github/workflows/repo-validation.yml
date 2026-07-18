@@ -38,6 +38,32 @@ jobs:
         id: kag
         uses: ./.github/actions/repo-local-kag-index
 
+  incremental_federation:
+    name: Incremental Federation Gate
+    needs: owner_fast
+    if: >-
+      always() &&
+      github.event_name == 'pull_request' &&
+      needs.owner_fast.result == 'success' &&
+      needs.owner_fast.outputs.validation-lane == 'incremental-federation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+
+      - name: Install federation-gate dependencies
+        run: python -m pip install PyYAML jsonschema
+
+      - name: Check incremental federation semantics
+        run: python scripts/ci_gate.py --mode incremental-federation
+
   release_audit:
     name: Full 24-owner Release Audit
     needs: owner_fast
@@ -287,6 +313,7 @@ jobs:
     name: Repo Validation
     needs:
       - owner_fast
+      - incremental_federation
       - release_audit
     if: always()
     runs-on: ubuntu-latest
@@ -295,6 +322,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           OWNER_FAST_RESULT: ${{ needs.owner_fast.result }}
+          INCREMENTAL_FEDERATION_RESULT: ${{ needs.incremental_federation.result }}
           RELEASE_AUDIT_RESULT: ${{ needs.release_audit.result }}
           VALIDATION_LANE: ${{ needs.owner_fast.outputs.validation-lane }}
         run: |
@@ -302,13 +330,37 @@ jobs:
             echo "owner-fast gate did not succeed: $OWNER_FAST_RESULT"
             exit 1
           fi
-          if [ "$EVENT_NAME" != "pull_request" ] ||
-             [ "$VALIDATION_LANE" = "full-24-owner-audit" ]; then
+          if [ "$EVENT_NAME" != "pull_request" ]; then
             if [ "$RELEASE_AUDIT_RESULT" != "success" ]; then
               echo "required full audit did not succeed: $RELEASE_AUDIT_RESULT"
               exit 1
             fi
-          elif [ "$RELEASE_AUDIT_RESULT" != "skipped" ]; then
-            echo "owner-fast PR produced unexpected audit result: $RELEASE_AUDIT_RESULT"
-            exit 1
+            if [ "$INCREMENTAL_FEDERATION_RESULT" != "skipped" ]; then
+              echo "non-PR run produced unexpected incremental result: $INCREMENTAL_FEDERATION_RESULT"
+              exit 1
+            fi
+          elif [ "$VALIDATION_LANE" = "full-24-owner-audit" ]; then
+            if [ "$RELEASE_AUDIT_RESULT" != "success" ]; then
+              echo "required full audit did not succeed: $RELEASE_AUDIT_RESULT"
+              exit 1
+            fi
+            if [ "$INCREMENTAL_FEDERATION_RESULT" != "skipped" ]; then
+              echo "full-audit PR produced unexpected incremental result: $INCREMENTAL_FEDERATION_RESULT"
+              exit 1
+            fi
+          elif [ "$VALIDATION_LANE" = "incremental-federation" ]; then
+            if [ "$INCREMENTAL_FEDERATION_RESULT" != "success" ]; then
+              echo "required incremental federation gate did not succeed: $INCREMENTAL_FEDERATION_RESULT"
+              exit 1
+            fi
+            if [ "$RELEASE_AUDIT_RESULT" != "skipped" ]; then
+              echo "incremental federation PR produced unexpected full-audit result: $RELEASE_AUDIT_RESULT"
+              exit 1
+            fi
+          else
+            if [ "$INCREMENTAL_FEDERATION_RESULT" != "skipped" ] ||
+               [ "$RELEASE_AUDIT_RESULT" != "skipped" ]; then
+              echo "owner-fast PR produced unexpected fanout results: incremental=$INCREMENTAL_FEDERATION_RESULT full=$RELEASE_AUDIT_RESULT"
+              exit 1
+            fi
           fi

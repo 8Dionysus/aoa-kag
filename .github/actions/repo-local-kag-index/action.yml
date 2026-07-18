@@ -9,7 +9,7 @@ inputs:
     description: Logical v2 source-index path used by the compatibility view.
     default: kag/indexes/source_surface_index.json
   history-ref:
-    description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
+    description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA and default-branch runs use the checked-out commit's first parent.
     default: ""
   event-history-ref:
     description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
@@ -53,7 +53,14 @@ runs:
           default_ref="refs/remotes/origin/$default_branch"
           git fetch --no-tags --prune origin \
             "+refs/heads/$default_branch:$default_ref"
+          head_ref="$(git rev-parse HEAD)"
           history_ref="$(git merge-base HEAD "$default_ref")"
+          if [[ "$history_ref" == "$head_ref" ]]; then
+            if ! history_ref="$(git rev-parse "${head_ref}^1")"; then
+              echo "default-branch KAG validation requires a first-parent history boundary" >&2
+              exit 1
+            fi
+          fi
         fi
         event_history_ref="${INPUT_EVENT_HISTORY_REF:-$history_ref}"
         if ! git cat-file -e "${history_ref}^{commit}" 2>/dev/null; then

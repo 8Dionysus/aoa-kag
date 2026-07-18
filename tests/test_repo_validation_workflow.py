@@ -20,6 +20,10 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         self.assertIn("owner_fast:", workflow_text)
         self.assertIn("id: kag", workflow_text)
         self.assertIn("validation-lane: ${{ steps.kag.outputs.validation-lane }}", workflow_text)
+        self.assertIn("incremental_federation:", workflow_text)
+        self.assertIn("name: Incremental Federation Gate", workflow_text)
+        self.assertIn("python scripts/ci_gate.py --mode incremental-federation", workflow_text)
+        self.assertIn("needs.owner_fast.outputs.validation-lane == 'incremental-federation'", workflow_text)
         self.assertIn("needs.owner_fast.outputs.validation-lane == 'full-24-owner-audit'", workflow_text)
         self.assertIn("github.event_name != 'pull_request'", workflow_text)
         self.assertIn('cron: "31 7 * * 1"', workflow_text)
@@ -37,6 +41,10 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         self.assertIn("name: Repo Validation", workflow_text)
         self.assertIn("OWNER_FAST_RESULT: ${{ needs.owner_fast.result }}", workflow_text)
         self.assertIn(
+            "INCREMENTAL_FEDERATION_RESULT: ${{ needs.incremental_federation.result }}",
+            workflow_text,
+        )
+        self.assertIn(
             "RELEASE_AUDIT_RESULT: ${{ needs.release_audit.result }}",
             workflow_text,
         )
@@ -46,6 +54,14 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )
         self.assertIn(
             '[ "$VALIDATION_LANE" = "full-24-owner-audit" ]',
+            workflow_text,
+        )
+        self.assertIn(
+            '[ "$VALIDATION_LANE" = "incremental-federation" ]',
+            workflow_text,
+        )
+        self.assertIn(
+            '[ "$INCREMENTAL_FEDERATION_RESULT" != "success" ]',
             workflow_text,
         )
         self.assertIn(

@@ -4,6 +4,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 import unittest
 from contextlib import redirect_stderr
 from io import StringIO
@@ -76,6 +77,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE,
         )
         self.assertEqual(
+            command_sequence_from_manifest("incremental_federation"),
+            validation_lanes.INCREMENTAL_FEDERATION_COMMAND_SEQUENCE,
+        )
+        self.assertEqual(
             command_sequence_from_manifest("release_check"),
             validation_lanes.RELEASE_CHECK_COMMAND_SEQUENCE,
         )
@@ -109,6 +114,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             validation_lanes.command_sequence_for_lane("generated"),
         )
         self.assertEqual(
+            command_sequence_from_manifest("incremental_federation"),
+            validation_lanes.command_sequence_for_lane("incremental_federation"),
+        )
+        self.assertEqual(
             command_sequence_from_manifest("release_check"),
             validation_lanes.command_sequence_for_lane("release"),
         )
@@ -117,6 +126,16 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             validation_lanes.command_sequence_for_lane("advisory")
         with self.assertRaisesRegex(ValueError, "unknown lane"):
             validation_lanes.command_sequence_for_lane("missing")
+
+    def test_incremental_federation_lane_avoids_full_owner_source_scan(self) -> None:
+        sequence = command_sequence_from_manifest("incremental_federation")
+        flattened = " ".join(part for command in sequence for part in command)
+
+        self.assertIn("tests.test_repo_local_kag_tiered_governance", flattened)
+        self.assertIn("tests.test_repo_local_kag_federation", flattened)
+        self.assertIn("tests.test_repo_local_kag_projections", flattened)
+        self.assertNotIn("generate_repo_local_kag_coverage.py", flattened)
+        self.assertNotIn("release_check.py", flattened)
 
     def test_generated_lanes_rebuild_source_index_after_final_coverage_refresh(self) -> None:
         coverage_command = ("python", "scripts/generate_repo_local_kag_coverage.py")
@@ -210,6 +229,12 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         with patch.object(ci_gate, "run_command") as run_command:
             ci_gate.run_release()
             run_command.assert_called_once_with(("python", "scripts/release_check.py"))
+
+        with patch.object(ci_gate, "run_sequence") as run_sequence:
+            ci_gate.run_incremental_federation()
+            run_sequence.assert_called_once_with(
+                validation_lanes.INCREMENTAL_FEDERATION_COMMAND_SEQUENCE
+            )
 
         with patch.object(ci_gate, "run_sequence") as run_sequence:
             ci_gate.run_compatibility_canary()
@@ -331,6 +356,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("git ls-remote --symref origin HEAD", action)
         self.assertIn('default_branch="$(', action)
         self.assertIn('git merge-base HEAD "$default_ref"', action)
+        self.assertIn('head_ref="$(git rev-parse HEAD)"', action)
+        self.assertIn('history_ref="$(git rev-parse "${head_ref}^1")"', action)
         self.assertIn("refs/remotes/origin/$default_branch", action)
         self.assertNotIn("PULL_REQUEST_HEAD_SHA", action)
         self.assertNotIn("github.event.repository.default_branch", action)
@@ -358,6 +385,130 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("source lineage and repository-event history", authority)
         self.assertIn("target `repo-root`", authority)
         self.assertIn("multi-commit branch and its squash-merged", authority)
+
+    def test_repo_local_index_action_uses_first_parent_on_default_branch(self) -> None:
+        action = (
+            REPO_ROOT
+            / ".github"
+            / "actions"
+            / "repo-local-kag-index"
+            / "action.yml"
+        ).read_text(encoding="utf-8")
+        section = action.split(
+            "    - name: Prepare stable repository history\n",
+            1,
+        )[1].split("    - name: Classify KAG impact\n", 1)[0]
+        run_block = section.split("      run: |\n", 1)[1]
+        script_lines: list[str] = []
+        for line in run_block.splitlines():
+            if line and not line.startswith("        "):
+                break
+            script_lines.append(line[8:] if line else "")
+        script = "\n".join(script_lines) + "\n"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            remote = root / "origin.git"
+            work = root / "work"
+            subprocess.run(
+                ("git", "init", "--bare", str(remote)),
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ("git", "init", "-b", "main", str(work)),
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "-C",
+                    str(remote),
+                    "symbolic-ref",
+                    "HEAD",
+                    "refs/heads/main",
+                ),
+                check=True,
+            )
+            subprocess.run(
+                ("git", "-C", str(work), "config", "user.name", "KAG Test"),
+                check=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "-C",
+                    str(work),
+                    "config",
+                    "user.email",
+                    "kag-test@example.invalid",
+                ),
+                check=True,
+            )
+            subprocess.run(
+                ("git", "-C", str(work), "remote", "add", "origin", str(remote)),
+                check=True,
+            )
+            surface = work / "surface.txt"
+            surface.write_text("base\n", encoding="utf-8")
+            subprocess.run(
+                ("git", "-C", str(work), "add", "surface.txt"),
+                check=True,
+            )
+            subprocess.run(
+                ("git", "-C", str(work), "commit", "-m", "base"),
+                check=True,
+                capture_output=True,
+            )
+            base_ref = subprocess.run(
+                ("git", "-C", str(work), "rev-parse", "HEAD"),
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            surface.write_text("head\n", encoding="utf-8")
+            subprocess.run(
+                ("git", "-C", str(work), "commit", "-am", "head"),
+                check=True,
+                capture_output=True,
+            )
+            head_ref = subprocess.run(
+                ("git", "-C", str(work), "rev-parse", "HEAD"),
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(
+                ("git", "-C", str(work), "push", "-u", "origin", "main"),
+                check=True,
+                capture_output=True,
+            )
+            github_env = root / "github.env"
+            github_output = root / "github.output"
+            result = subprocess.run(
+                ("bash", "-c", script),
+                cwd=work,
+                env={
+                    **os.environ,
+                    "GITHUB_ENV": str(github_env),
+                    "GITHUB_OUTPUT": str(github_output),
+                    "INPUT_HISTORY_REF": "",
+                    "INPUT_EVENT_HISTORY_REF": "",
+                },
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(0, result.returncode, result.stderr)
+            outputs = dict(
+                line.split("=", 1)
+                for line in github_output.read_text(encoding="utf-8").splitlines()
+            )
+            self.assertEqual(base_ref, outputs["ref"])
+            self.assertEqual(base_ref, outputs["event-ref"])
+            self.assertNotEqual(head_ref, outputs["ref"])
 
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
         repo_validation = (
