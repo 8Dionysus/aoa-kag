@@ -48,6 +48,11 @@ owner PR does not checkout or scan 24 source trees. Central schema, builder,
 partition, MCP loader, trust, access, or membership changes route to the full
 24-owner audit.
 
+The workflow publishes one stable required `Repo Validation` summary context.
+It fails unless the owner-fast job succeeds and, whenever the classifier or
+event requires full fan-out, the separate 24-owner audit also succeeds. This
+keeps branch protection stable while preserving the fast owner-local path.
+
 Within one generated/full-audit run, `scripts/ci_gate.py` creates a temporary
 `AOA_KAG_COVERAGE_PACKET`. The first coverage rebuild reads each pinned owner;
 later generators and validators reuse the packet only when its owner Git-tree,

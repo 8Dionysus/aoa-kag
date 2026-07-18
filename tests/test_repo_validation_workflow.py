@@ -28,6 +28,29 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         self.assertIn("git status --porcelain --untracked-files=all -- generated", workflow_text)
         self.assertNotIn("git diff --exit-code -- generated", workflow_text)
 
+    def test_required_summary_preserves_branch_protection_context(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("required_summary:", workflow_text)
+        self.assertIn("name: Repo Validation", workflow_text)
+        self.assertIn("OWNER_FAST_RESULT: ${{ needs.owner_fast.result }}", workflow_text)
+        self.assertIn(
+            "RELEASE_AUDIT_RESULT: ${{ needs.release_audit.result }}",
+            workflow_text,
+        )
+        self.assertIn(
+            'if [ "$OWNER_FAST_RESULT" != "success" ]',
+            workflow_text,
+        )
+        self.assertIn(
+            '[ "$VALIDATION_LANE" = "full-24-owner-audit" ]',
+            workflow_text,
+        )
+        self.assertIn(
+            'if [ "$RELEASE_AUDIT_RESULT" != "success" ]',
+            workflow_text,
+        )
+
     def test_release_check_validates_committed_outputs_before_regeneration(self) -> None:
         release_check_text = RELEASE_CHECK_PATH.read_text(encoding="utf-8")
         manifest_text = (REPO_ROOT / "config" / "validation_lanes.json").read_text(

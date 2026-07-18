@@ -282,3 +282,35 @@ jobs:
             git status --porcelain --untracked-files=all -- generated
             exit 1
           fi
+
+  required_summary:
+    name: Repo Validation
+    needs:
+      - owner_fast
+      - release_audit
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce required landing result
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          OWNER_FAST_RESULT: ${{ needs.owner_fast.result }}
+          RELEASE_AUDIT_RESULT: ${{ needs.release_audit.result }}
+          VALIDATION_LANE: ${{ needs.owner_fast.outputs.validation-lane }}
+        run: |
+          if [ "$OWNER_FAST_RESULT" != "success" ]; then
+            echo "owner-fast gate did not succeed: $OWNER_FAST_RESULT"
+            exit 1
+          fi
+          if [ "$EVENT_NAME" != "pull_request" ] ||
+             [ "$VALIDATION_LANE" = "full-24-owner-audit" ]; then
+            if [ "$RELEASE_AUDIT_RESULT" != "success" ]; then
+              echo "required full audit did not succeed: $RELEASE_AUDIT_RESULT"
+              exit 1
+            fi
+          elif [ "$RELEASE_AUDIT_RESULT" != "skipped" ]; then
+            echo "owner-fast PR produced unexpected audit result: $RELEASE_AUDIT_RESULT"
+            exit 1
+          fi
+
+          fi
