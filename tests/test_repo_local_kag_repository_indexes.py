@@ -442,6 +442,58 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 main(["--repo-root", str(root), "--index-family", "--check"]),
             )
 
+    def test_default_branch_history_boundary_uses_first_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            write_fixture(root)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            base_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            readme = root / "README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8") + "\nDefault branch change.\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "default change"), cwd=root, check=True)
+            head_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(
+                ("git", "update-ref", "refs/remotes/origin/main", head_sha),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "symbolic-ref",
+                    "refs/remotes/origin/HEAD",
+                    "refs/remotes/origin/main",
+                ),
+                cwd=root,
+                check=True,
+            )
+
+            self.assertEqual(base_sha, local_default_history_ref(root))
+
     def test_repository_index_family_matches_schema(self) -> None:
         schema = load_json(REPOSITORY_INDEX_SCHEMA_PATH)
         assert isinstance(schema, dict)

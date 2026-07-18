@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import tempfile
 from pathlib import Path
@@ -13,6 +14,10 @@ try:
     from scripts.generate_repo_local_kag_index import main as generate_main
 except ImportError:  # pragma: no cover - direct script execution
     from generate_repo_local_kag_index import main as generate_main  # type: ignore
+
+
+TIERED_FAMILY_MANIFEST = Path("kag/indexes/index_family.manifest.json")
+TIERED_FAMILY_SCHEMA = "aoa-repo-local-kag-distribution-manifest-v1"
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -35,17 +40,34 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _existing_family_is_externalized(repo_root: Path) -> bool:
+    manifest_path = repo_root / TIERED_FAMILY_MANIFEST
+    if not manifest_path.is_file():
+        return False
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        return False
+    placement = payload.get("placement")
+    return (
+        payload.get("schema_version") == TIERED_FAMILY_SCHEMA
+        and isinstance(placement, dict)
+        and placement.get("state") == "externalized"
+    )
+
+
 def _run(args: argparse.Namespace, artifact_root: Path, *, transient: bool) -> int:
+    repo_root = Path(args.repo_root).resolve()
     routed = [
         "--repo-root",
-        str(Path(args.repo_root).resolve()),
+        str(repo_root),
         "--tiered-family",
         "--artifact-root",
         str(artifact_root.resolve()),
         "--max-pack-bytes",
         str(args.max_pack_bytes),
     ]
-    if args.externalize_cold:
+    if args.externalize_cold or _existing_family_is_externalized(repo_root):
         routed.append("--externalize-cold")
     if args.incremental:
         routed.append("--incremental")

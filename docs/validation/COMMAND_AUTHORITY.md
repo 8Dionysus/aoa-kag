@@ -16,7 +16,7 @@
 | `scripts/validate_kag.py` | repo-wide KAG validation entrypoint |
 | `scripts/validate_local_stats_port.py` | owner-local stats port adapter to the pinned `aoa-stats` validator |
 | `scripts/generate_repo_local_kag_index.py` | v3/v4 owner-family builder, corpus/distribution identity, Git-hot and artifact-cold placement, CAS/pack publication, shard and budget gate, and logical compatibility family builder |
-| `scripts/build_repo_local_kag_release.py` | explicit owner-family release builder/check route; generated lanes use a bounded transient artifact root when no persistent root is supplied |
+| `scripts/build_repo_local_kag_release.py` | explicit owner-family release builder/check route; generated lanes use a bounded transient artifact root when no persistent root is supplied, preserve an existing externalized placement, and resolve default-branch history to the checked-out commit's first parent rather than `HEAD` |
 | `scripts/validate_repo_local_kag_release.py` | complete CAS release and exact compatibility parity validator |
 | `scripts/export_repo_local_kag_bundle.py`, `scripts/import_repo_local_kag_bundle.py` | offline and air-gapped owner-family transfer |
 | `scripts/prepare_repo_local_kag_externalization.py` | explicit isolated-worktree mutation route for canary and rollout externalization; stops before the owner commit and exact-source release |

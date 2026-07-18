@@ -431,6 +431,49 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
         self.assertEqual(0, incremental_check_result)
         self.assertEqual([], remaining)
 
+    def test_generated_lane_release_builder_preserves_externalized_placement(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            artifact_root = base / "artifact"
+            transient_parent = base / "transient"
+            root.mkdir()
+            transient_parent.mkdir()
+            write_fixture(root)
+            initial_result = build_release_main(
+                [
+                    "--repo-root",
+                    str(root),
+                    "--artifact-root",
+                    str(artifact_root),
+                    "--externalize-cold",
+                ]
+            )
+            with patch.dict(
+                "os.environ",
+                {"AOA_KAG_VALIDATION_ARTIFACT_PARENT": str(transient_parent)},
+                clear=False,
+            ):
+                lane_result = build_release_main(
+                    ["--repo-root", str(root)]
+                )
+            manifest = json.loads(
+                (
+                    root
+                    / "kag"
+                    / "indexes"
+                    / "index_family.manifest.json"
+                ).read_text(encoding="utf-8")
+            )
+            remaining = list(transient_parent.iterdir())
+
+        self.assertEqual(0, initial_result)
+        self.assertEqual(0, lane_result)
+        self.assertEqual("externalized", manifest["placement"]["state"])
+        self.assertEqual([], remaining)
+
 
 if __name__ == "__main__":
     unittest.main()
