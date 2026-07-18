@@ -379,7 +379,7 @@ def local_default_history_ref(repo_root: Path) -> str | None:
     if history_ref != head_ref:
         return history_ref
     try:
-        return run_text(("git", "rev-parse", f"{head_ref}^1"), repo_root)
+        return run_text(("git", "rev-parse", "HEAD^1"), repo_root)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
 

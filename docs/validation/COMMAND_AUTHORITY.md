@@ -38,6 +38,9 @@ separate, explicit inputs. It resolves the `origin` default branch inside the
 target `repo-root` and uses its merge base with `HEAD`; when that merge base is
 the checked-out commit itself, as on push, schedule, or manual default-branch
 runs, the durable boundary is the commit's first parent rather than `HEAD`.
+The shared builder fallback and `build_repo_local_kag_release.py` apply the
+same rule, so generated and release lanes cannot silently compare a committed
+family with a `HEAD`-bound rebuild when the composite action is not the caller.
 The builder combines this durable history with the current repository snapshot,
 keeping a multi-commit branch and its squash-merged default-branch snapshot on
 the same generated index family.

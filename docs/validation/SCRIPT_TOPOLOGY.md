@@ -108,9 +108,10 @@ when required, a verified CAS without reading migration shadow copies.
 owner-family artifact release. The generated/release lanes omit a persistent
 artifact root and therefore use one bounded transient root, preferring the
 caller-provided validation parent, GitHub runner temp, or `TMPDIR` in that
-order. The builder preserves an already externalized placement and its history
-fallback uses the current commit's first parent when the checkout is already at
-the default-branch tip. `scripts/export_repo_local_kag_bundle.py` and
+order. The release builder preserves an already externalized placement and
+resolves and forwards the same stable merge-base or default-branch first-parent
+history boundary as the owner action before calling the shared generator.
+`scripts/export_repo_local_kag_bundle.py` and
 `scripts/import_repo_local_kag_bundle.py` provide byte-exact offline transfer.
 
 `scripts/prepare_repo_local_kag_externalization.py` is the only central

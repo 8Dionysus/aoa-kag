@@ -11,9 +11,17 @@ from pathlib import Path
 from typing import Sequence
 
 try:
-    from scripts.generate_repo_local_kag_index import main as generate_main
+    from scripts.generate_repo_local_kag_index import (
+        effective_event_history_ref,
+        effective_history_ref,
+        main as generate_main,
+    )
 except ImportError:  # pragma: no cover - direct script execution
-    from generate_repo_local_kag_index import main as generate_main  # type: ignore
+    from generate_repo_local_kag_index import (  # type: ignore
+        effective_event_history_ref,
+        effective_history_ref,
+        main as generate_main,
+    )
 
 
 TIERED_FAMILY_MANIFEST = Path("kag/indexes/index_family.manifest.json")
@@ -58,6 +66,12 @@ def _existing_family_is_externalized(repo_root: Path) -> bool:
 
 def _run(args: argparse.Namespace, artifact_root: Path, *, transient: bool) -> int:
     repo_root = Path(args.repo_root).resolve()
+    history_ref = effective_history_ref(repo_root, args.history_ref)
+    event_history_ref = effective_event_history_ref(
+        repo_root,
+        args.event_history_ref,
+        fallback=history_ref,
+    )
     routed = [
         "--repo-root",
         str(repo_root),
@@ -75,10 +89,10 @@ def _run(args: argparse.Namespace, artifact_root: Path, *, transient: bool) -> i
         routed.append("--check")
     if args.materialize_artifact_on_check or (transient and args.check):
         routed.append("--materialize-artifact-on-check")
-    if args.history_ref:
-        routed.extend(("--history-ref", args.history_ref))
-    if args.event_history_ref:
-        routed.extend(("--event-history-ref", args.event_history_ref))
+    if history_ref:
+        routed.extend(("--history-ref", history_ref))
+    if event_history_ref:
+        routed.extend(("--event-history-ref", event_history_ref))
     return generate_main(routed)
 
 

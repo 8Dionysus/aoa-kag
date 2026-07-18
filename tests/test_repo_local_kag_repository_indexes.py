@@ -442,7 +442,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 main(["--repo-root", str(root), "--index-family", "--check"]),
             )
 
-    def test_default_branch_history_boundary_uses_first_parent(self) -> None:
+    def test_local_default_branch_history_uses_first_parent_not_head(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
@@ -452,8 +452,8 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 cwd=root,
                 check=True,
             )
-            write_fixture(root)
-            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            (root / "surface.txt").write_text("base\n", encoding="utf-8")
+            subprocess.run(("git", "add", "surface.txt"), cwd=root, check=True)
             subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
             base_sha = subprocess.run(
                 ("git", "rev-parse", "HEAD"),
@@ -462,13 +462,8 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             ).stdout.strip()
-            readme = root / "README.md"
-            readme.write_text(
-                readme.read_text(encoding="utf-8") + "\nDefault branch change.\n",
-                encoding="utf-8",
-            )
-            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
-            subprocess.run(("git", "commit", "-qm", "default change"), cwd=root, check=True)
+            (root / "surface.txt").write_text("head\n", encoding="utf-8")
+            subprocess.run(("git", "commit", "-am", "head", "-q"), cwd=root, check=True)
             head_sha = subprocess.run(
                 ("git", "rev-parse", "HEAD"),
                 cwd=root,
@@ -493,6 +488,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             )
 
             self.assertEqual(base_sha, local_default_history_ref(root))
+            self.assertNotEqual(head_sha, local_default_history_ref(root))
 
     def test_repository_index_family_matches_schema(self) -> None:
         schema = load_json(REPOSITORY_INDEX_SCHEMA_PATH)

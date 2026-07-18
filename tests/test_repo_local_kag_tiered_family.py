@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -430,6 +431,91 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
         self.assertEqual(0, check_result)
         self.assertEqual(0, incremental_check_result)
         self.assertEqual([], remaining)
+
+    def test_release_builder_routes_first_parent_on_default_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            artifact_root = base / "artifact"
+            root.mkdir()
+            artifact_root.mkdir()
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            (root / "surface.txt").write_text("base\n", encoding="utf-8")
+            subprocess.run(("git", "add", "surface.txt"), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            base_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            (root / "surface.txt").write_text("head\n", encoding="utf-8")
+            subprocess.run(("git", "commit", "-am", "head", "-q"), cwd=root, check=True)
+            head_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(
+                ("git", "update-ref", "refs/remotes/origin/main", head_sha),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "symbolic-ref",
+                    "refs/remotes/origin/HEAD",
+                    "refs/remotes/origin/main",
+                ),
+                cwd=root,
+                check=True,
+            )
+
+            routed: list[str] = []
+
+            def capture(argv: list[str]) -> int:
+                routed.extend(argv)
+                return 0
+
+            with patch.dict(
+                "os.environ",
+                {
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "",
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REF": "",
+                    "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF": "",
+                },
+                clear=False,
+            ), patch(
+                "scripts.build_repo_local_kag_release.generate_main",
+                side_effect=capture,
+            ):
+                result = build_release_main(
+                    [
+                        "--repo-root",
+                        str(root),
+                        "--artifact-root",
+                        str(artifact_root),
+                        "--check",
+                    ]
+                )
+
+        self.assertEqual(0, result)
+        self.assertEqual(base_sha, routed[routed.index("--history-ref") + 1])
+        self.assertEqual(
+            base_sha,
+            routed[routed.index("--event-history-ref") + 1],
+        )
+        self.assertNotIn(head_sha, routed)
 
     def test_generated_lane_release_builder_preserves_externalized_placement(
         self,

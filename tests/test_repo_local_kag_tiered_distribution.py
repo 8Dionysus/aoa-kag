@@ -544,7 +544,7 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             readiness.required_validation_lane,
         )
         self.assertIn(
-            "owner membership",
+            "canonical owner membership changed",
             readiness.full_fanout_reason,
         )
         self.assertEqual(
