@@ -31,6 +31,18 @@
         "runtime graph/vector/index state"
       ]
     },
+    "incremental_federation": {
+      "label": "incremental-federation",
+      "posture": "blocking",
+      "owner_surface": ".github/workflows/repo-validation.yml",
+      "command_sequence": "incremental_federation",
+      "purpose": "Validate release-manifest-only composition replacement, affected cross-owner relations, retrieval projections, and tiered delivery without scanning all 24 owner source trees.",
+      "does_not_own": [
+        "full owner membership changes",
+        "shared schema or canonicalization changes",
+        "24-owner release audit"
+      ]
+    },
     "release": {
       "label": "release",
       "posture": "blocking",
@@ -181,6 +193,17 @@
         "python",
         "scripts/generate_kag.py",
         "--check"
+      ]
+    ],
+    "incremental_federation": [
+      [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_repo_local_kag_tiered_governance",
+        "tests.test_repo_local_kag_federation",
+        "tests.test_repo_local_kag_projections",
+        "tests.test_repo_local_kag_tiered_distribution"
       ]
     ],
     "release_check": [

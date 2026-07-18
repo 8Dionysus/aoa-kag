@@ -35,10 +35,12 @@
 
 The repo-local KAG action keeps source lineage and repository-event history as
 separate, explicit inputs. It resolves the `origin` default branch inside the
-target `repo-root` and uses its merge base with `HEAD`; on the default branch
-that boundary is `HEAD`. The builder combines this durable history with the
-current repository snapshot, keeping a multi-commit branch and its squash-merged
-default-branch snapshot on the same generated index family.
+target `repo-root` and uses its merge base with `HEAD`; when that merge base is
+the checked-out commit itself, as on push, schedule, or manual default-branch
+runs, the durable boundary is the commit's first parent rather than `HEAD`.
+The builder combines this durable history with the current repository snapshot,
+keeping a multi-commit branch and its squash-merged default-branch snapshot on
+the same generated index family.
 
 The action classifies the change and checks both full and incremental
 owner-family parity, the changed-generated-bytes and Git-hot budgets, the
@@ -74,6 +76,7 @@ reuse the same model.
 | --- | --- |
 | `source-fast` | `python scripts/ci_gate.py --mode source-fast` |
 | `generated` | `python scripts/ci_gate.py --mode generated` |
+| `incremental-federation` | `python scripts/ci_gate.py --mode incremental-federation` |
 | `release` | `python scripts/release_check.py` |
 | `compatibility-canary` | `python scripts/ci_gate.py --mode compatibility-canary` |
 | `advisory` | `python scripts/ci_gate.py --mode advisory` |
