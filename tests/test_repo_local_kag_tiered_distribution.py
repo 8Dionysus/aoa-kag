@@ -515,6 +515,10 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             ["scripts/repo_local/tiered_governance.py"],
             owner="aoa-kag",
         )
+        readiness = classify_impact(
+            ["manifests/local_kag_readiness.json"],
+            owner="aoa-kag",
+        )
 
         self.assertEqual("owner-local-fast", owner.required_validation_lane)
         self.assertEqual(
@@ -535,6 +539,14 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                 "artifact trust",
                 classified.full_fanout_reason,
             )
+        self.assertEqual(
+            "full-24-owner-audit",
+            readiness.required_validation_lane,
+        )
+        self.assertIn(
+            "canonical owner membership changed",
+            readiness.full_fanout_reason,
+        )
         self.assertEqual(
             immutable_owner_cache_key(
                 owner="demo",

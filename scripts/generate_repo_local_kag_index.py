@@ -369,7 +369,17 @@ def local_default_history_ref(repo_root: Path) -> str | None:
     except (subprocess.CalledProcessError, FileNotFoundError):
         default_ref = "refs/remotes/origin/main"
     try:
-        return run_text(("git", "merge-base", "HEAD", default_ref), repo_root)
+        head_ref = run_text(("git", "rev-parse", "HEAD"), repo_root)
+        history_ref = run_text(
+            ("git", "merge-base", "HEAD", default_ref),
+            repo_root,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    if history_ref != head_ref:
+        return history_ref
+    try:
+        return run_text(("git", "rev-parse", "HEAD^1"), repo_root)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
 

@@ -84,7 +84,7 @@ def _path_classes(path: str) -> set[str]:
     result: set[str] = set()
     if path in {
         "manifests/provider_registry.json",
-        "manifests/local_kag_provider_map.json",
+        "manifests/local_kag_readiness.json",
     }:
         result.update(
             {
