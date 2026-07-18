@@ -302,13 +302,6 @@ jobs:
       - name: Run release audit
         run: python scripts/release_check.py
 
-      - name: Check generated outputs are committed
-        run: |
-          if [ -n "$(git status --porcelain --untracked-files=all -- generated)" ]; then
-            git status --porcelain --untracked-files=all -- generated
-            exit 1
-          fi
-
   required_summary:
     name: Repo Validation
     needs:

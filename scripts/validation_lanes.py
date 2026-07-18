@@ -125,4 +125,12 @@ GENERATED_DRIFT_SNAPSHOT_COMMAND = (
     "--",
     *GENERATED_DRIFT_PATHS,
 )
+GENERATED_UNTRACKED_PATHS_COMMAND = (
+    "git",
+    "ls-files",
+    "--others",
+    "--exclude-standard",
+    "--",
+    *GENERATED_DRIFT_PATHS,
+)
 ADVISORY_BOUNDARIES = tuple(LANE_DEFINITIONS["advisory"].get("boundaries", ()))

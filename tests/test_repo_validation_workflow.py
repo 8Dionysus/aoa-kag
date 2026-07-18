@@ -28,10 +28,18 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         self.assertIn("github.event_name != 'pull_request'", workflow_text)
         self.assertIn('cron: "31 7 * * 1"', workflow_text)
 
-    def test_generated_drift_gate_checks_untracked_files(self) -> None:
+    def test_generated_drift_gate_uses_lane_authority_for_untracked_files(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        ci_gate_text = (REPO_ROOT / "scripts" / "ci_gate.py").read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("git status --porcelain --untracked-files=all -- generated", workflow_text)
+        self.assertIn("python scripts/release_check.py", workflow_text)
+        self.assertIn(
+            "validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND",
+            ci_gate_text,
+        )
+        self.assertNotIn("git status --porcelain --untracked-files=all -- generated", workflow_text)
         self.assertNotIn("git diff --exit-code -- generated", workflow_text)
 
     def test_required_summary_preserves_branch_protection_context(self) -> None:

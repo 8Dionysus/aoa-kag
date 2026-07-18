@@ -98,6 +98,19 @@ def run_generated() -> None:
                 1,
                 validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
             )
+        untracked_paths = capture_command_output(
+            validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND
+        )
+        if untracked_paths.strip():
+            print(
+                "[ci-gate] generated lane left required outputs untracked",
+                file=sys.stderr,
+            )
+            print(untracked_paths.rstrip(), file=sys.stderr)
+            raise subprocess.CalledProcessError(
+                1,
+                validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND,
+            )
 
 
 def run_incremental_federation() -> None:
