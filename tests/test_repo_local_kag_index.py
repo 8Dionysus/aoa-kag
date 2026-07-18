@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -39,6 +40,7 @@ from scripts.generate_repo_local_kag_index import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
+COVERAGE_PACKET_SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-coverage-build-packet.schema.json"
 LOCAL_PROVIDER_MAP_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-provider-map.schema.json"
 EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
 
@@ -1609,6 +1611,82 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             ),
             stderr.getvalue(),
         )
+
+    def test_provider_coverage_packet_reuses_one_verified_scan(self) -> None:
+        payload = {"schema_version": "coverage-test", "owners": []}
+        packet_key = {
+            "builder_digest": f"sha256:{'1' * 64}",
+            "canonicalization_epoch": "canonical-v1",
+            "schema_epoch": "schema-v1",
+            "distribution_epoch": "distribution-v1",
+            "owner_snapshots": [
+                {"owner": "aoa-demo", "source_snapshot": f"git-tree:{'2' * 40}"}
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            packet = Path(tmpdir) / "coverage.packet.json"
+            with patch.dict(
+                os.environ,
+                {coverage_generation.COVERAGE_PACKET_ENV: packet.as_posix()},
+            ), patch.object(
+                coverage_generation,
+                "coverage_packet_key",
+                return_value=packet_key,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=[],
+            ), patch.object(
+                coverage_generation,
+                "build_coverage",
+                return_value=payload,
+            ) as build:
+                first = coverage_generation.build_provider_coverage()
+                second = coverage_generation.build_provider_coverage()
+
+        self.assertEqual(payload, first)
+        self.assertEqual(payload, second)
+        self.assertEqual(1, build.call_count)
+
+    def test_provider_coverage_packet_rejects_tamper_and_snapshot_change(self) -> None:
+        payload = {"schema_version": "coverage-test", "owners": []}
+        packet_key = {
+            "builder_digest": f"sha256:{'1' * 64}",
+            "canonicalization_epoch": "canonical-v1",
+            "schema_epoch": "schema-v1",
+            "distribution_epoch": "distribution-v1",
+            "owner_snapshots": [
+                {"owner": "aoa-demo", "source_snapshot": f"git-tree:{'2' * 40}"}
+            ],
+        }
+        changed_key = json.loads(json.dumps(packet_key))
+        changed_key["owner_snapshots"][0]["source_snapshot"] = f"git-tree:{'3' * 40}"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            packet = Path(tmpdir) / "coverage.packet.json"
+            coverage_generation.write_coverage_packet(
+                packet,
+                key=packet_key,
+                payload=payload,
+            )
+            raw = load_json(packet)
+            assert isinstance(raw, dict)
+            raw["coverage"] = {"schema_version": "tampered", "owners": []}
+            packet.write_text(json.dumps(raw), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "payload digest mismatch"):
+                coverage_generation.load_coverage_packet(packet, expected_key=packet_key)
+
+            coverage_generation.write_coverage_packet(
+                packet,
+                key=packet_key,
+                payload=payload,
+            )
+            with self.assertRaisesRegex(RuntimeError, "snapshot changed"):
+                coverage_generation.load_coverage_packet(packet, expected_key=changed_key)
+
+    def test_coverage_packet_schema_is_valid(self) -> None:
+        schema = load_json(COVERAGE_PACKET_SCHEMA_PATH)
+        assert isinstance(schema, dict)
+        Draft202012Validator.check_schema(schema)
 
     def test_provider_coverage_keeps_invalid_common_index_visible(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
+import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Sequence
+from typing import Iterator, Sequence
 
 try:  # Supports both ``python scripts/ci_gate.py`` and package-style imports.
     from scripts import validation_lanes
@@ -17,6 +20,7 @@ except ImportError:  # pragma: no cover - exercised by direct script execution
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+COVERAGE_PACKET_ENV = "AOA_KAG_COVERAGE_PACKET"
 
 
 def resolve_command(command: Sequence[str]) -> tuple[str, ...]:
@@ -50,19 +54,50 @@ def run_source_fast() -> None:
     run_sequence(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
 
 
+@contextmanager
+def coverage_packet_scope() -> Iterator[Path]:
+    selected_parent = (
+        os.environ.get("AOA_KAG_VALIDATION_ARTIFACT_PARENT")
+        or os.environ.get("RUNNER_TEMP")
+        or os.environ.get("TMPDIR")
+    )
+    parent = Path(selected_parent).resolve() if selected_parent else None
+    if parent is not None and not parent.is_dir():
+        raise OSError(f"generated lane temporary parent does not exist: {parent}")
+    previous_packet = os.environ.get(COVERAGE_PACKET_ENV)
+    with tempfile.TemporaryDirectory(
+        prefix="aoa-kag-generated-lane-",
+        dir=parent,
+    ) as tmpdir:
+        packet_path = Path(tmpdir) / "coverage.packet.json"
+        os.environ[COVERAGE_PACKET_ENV] = str(packet_path)
+        try:
+            yield packet_path
+        finally:
+            if previous_packet is None:
+                os.environ.pop(COVERAGE_PACKET_ENV, None)
+            else:
+                os.environ[COVERAGE_PACKET_ENV] = previous_packet
+
+
 def run_generated() -> None:
-    before_snapshot = capture_command_output(validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND)
-    run_sequence(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
-    after_snapshot = capture_command_output(validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND)
-    if before_snapshot != after_snapshot:
-        print(
-            "[ci-gate] generated lane changed generated/read-model drift paths",
-            file=sys.stderr,
+    with coverage_packet_scope():
+        before_snapshot = capture_command_output(
+            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
         )
-        raise subprocess.CalledProcessError(
-            1,
-            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
+        run_sequence(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
+        after_snapshot = capture_command_output(
+            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
         )
+        if before_snapshot != after_snapshot:
+            print(
+                "[ci-gate] generated lane changed generated/read-model drift paths",
+                file=sys.stderr,
+            )
+            raise subprocess.CalledProcessError(
+                1,
+                validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
+            )
 
 
 def run_release() -> None:
@@ -70,7 +105,8 @@ def run_release() -> None:
 
 
 def run_compatibility_canary() -> None:
-    run_sequence(validation_lanes.COMPATIBILITY_CANARY_COMMAND_SEQUENCE)
+    with coverage_packet_scope():
+        run_sequence(validation_lanes.COMPATIBILITY_CANARY_COMMAND_SEQUENCE)
 
 
 def run_advisory() -> None:

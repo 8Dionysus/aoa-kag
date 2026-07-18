@@ -18,6 +18,10 @@
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 
+## abyss-machine artifact trust
+
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+
 ## abyss-stack
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
@@ -28,6 +32,7 @@
 ## abyss-stack runtime materializers
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## Agents-of-Abyss
 
@@ -50,6 +55,7 @@
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## aoa-kag
 
@@ -68,6 +74,7 @@
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## aoa-memo
 
@@ -114,6 +121,7 @@
 ## aoa-stats
 
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## aoa-techniques
 
@@ -145,6 +153,7 @@
 ## federation and MCP consumers
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## OS Abyss repo-local kag homes
 
@@ -153,6 +162,7 @@
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## owner-local skill homes
 

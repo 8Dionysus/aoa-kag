@@ -1,0 +1,38 @@
+{
+  "policy": {
+    "committed_lru_lfu": "forbidden",
+    "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md",
+    "deterministic": true,
+    "owner_qualified": true
+  },
+  "profile_identity": {
+    "artifact_kind": "repo_local_kag_hot_profile",
+    "content_digest": "sha256:b22a765179fe04feaefc3a863b84eb57874cd80e6de6a53c587c6c59e9fb8fce",
+    "corpus_digest": "sha256:e7028df24570057115702b137532eb311f4de3f6aa48c0b9cd0b0c9c5e1aa3c1",
+    "local_id": "profile:repo-local:kag-git-hot",
+    "schema_ref": "aoa-kag:schemas/repo-local-kag-hot-profile.schema.json"
+  },
+  "repo": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "schema_version": "aoa-repo-local-kag-hot-profile-v1",
+  "selection": {
+    "automatic_merge_or_eviction": "forbidden",
+    "include_record_kinds": [
+      "source",
+      "source_chunk"
+    ],
+    "mode": "record-kind-allowlist",
+    "purpose": [
+      "bootstrap",
+      "discovery",
+      "audit",
+      "owner_return"
+    ],
+    "runtime_frequency_inputs": "forbidden"
+  }
+}

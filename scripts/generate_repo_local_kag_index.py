@@ -403,6 +403,12 @@ def is_source_path(path: Path) -> bool:
 def is_portable_family_control_path(path: Path) -> bool:
     return (
         path == PORTABLE_FAMILY_MANIFEST
+        or path
+        in {
+            Path("kag/indexes/corpus.manifest.json"),
+            Path("kag/indexes/hot_profile.json"),
+            Path("kag/indexes/artifact_locators.json"),
+        }
         or PORTABLE_FAMILY_SHARD_ROOT in (path, *path.parents)
         or PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT in (path, *path.parents)
     )
@@ -2333,6 +2339,42 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--tiered-family",
+        action="store_true",
+        help=(
+            "Generate or check the separated corpus/distribution family, "
+            "publish complete objects to a content-addressed artifact root, "
+            "and retain the deterministic Git-hot bootstrap surface."
+        ),
+    )
+    parser.add_argument(
+        "--artifact-root",
+        help=(
+            "Content-addressed artifact root used by --tiered-family and by "
+            "incremental reads of an externalized family."
+        ),
+    )
+    parser.add_argument(
+        "--externalize-cold",
+        action="store_true",
+        help="Remove artifact-cold shard copies from the current Git tree.",
+    )
+    parser.add_argument(
+        "--max-pack-bytes",
+        type=int,
+        default=8 * 1024 * 1024,
+        help="Maximum deterministic transport pack size for --tiered-family.",
+    )
+    parser.add_argument(
+        "--materialize-artifact-on-check",
+        action="store_true",
+        help=(
+            "During a tiered --check, write the deterministic release into the "
+            "explicit artifact root before validating it. Intended for bounded "
+            "CI scratch storage; never writes authored repository surfaces."
+        ),
+    )
+    parser.add_argument(
         "--keep-v2",
         action="store_true",
         help="Keep legacy v2 monoliths while writing a portable family.",
@@ -2370,18 +2412,39 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
-    if args.index_family and args.portable_family:
-        raise SystemExit("--index-family and --portable-family are mutually exclusive")
+    selected_family_modes = sum(
+        bool(value)
+        for value in (
+            args.index_family,
+            args.portable_family,
+            args.tiered_family,
+        )
+    )
+    if selected_family_modes > 1:
+        raise SystemExit(
+            "--index-family, --portable-family, and --tiered-family are "
+            "mutually exclusive"
+        )
     if args.keep_v2 and not args.portable_family:
         raise SystemExit("--keep-v2 requires --portable-family")
+    if args.externalize_cold and not args.tiered_family:
+        raise SystemExit("--externalize-cold requires --tiered-family")
+    if args.tiered_family and not args.artifact_root:
+        raise SystemExit("--tiered-family requires --artifact-root")
+    if args.materialize_artifact_on_check and not (
+        args.tiered_family and args.check
+    ):
+        raise SystemExit(
+            "--materialize-artifact-on-check requires --tiered-family --check"
+        )
     if args.write_budget_receipt and (
-        not args.portable_family
+        not (args.portable_family or args.tiered_family)
         or args.check
         or not args.budget_base_ref
         or not args.budget_reason.strip()
     ):
         raise SystemExit(
-            "--write-budget-receipt requires a write-mode --portable-family run "
+            "--write-budget-receipt requires a write-mode portable or tiered family run "
             "with --budget-base-ref and --budget-reason"
         )
     repo_root = Path(args.repo_root).resolve()
@@ -2397,8 +2460,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     previous_index: dict[str, Any] | None = None
     previous_family: dict[str, dict[str, Any]] | None = None
     previous_manifest: dict[str, Any] | None = None
+    previous_tiered_migration: dict[str, Any] | None = None
     portable_manifest_path = repo_root / PORTABLE_FAMILY_MANIFEST
-    if args.portable_family and portable_manifest_path.is_file():
+    if (args.portable_family or args.tiered_family) and portable_manifest_path.is_file():
         try:
             loaded_manifest = json.loads(
                 portable_manifest_path.read_text(encoding="utf-8")
@@ -2409,14 +2473,45 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise SystemExit(
                 f"invalid portable family manifest: {portable_manifest_path}"
             )
-        previous_manifest = loaded_manifest
-    if args.incremental and args.portable_family and previous_manifest is not None:
+        if loaded_manifest.get("schema_version") == "aoa-repo-local-kag-family-manifest-v3":
+            previous_manifest = loaded_manifest
+        elif args.tiered_family and loaded_manifest.get("schema_version") == (
+            "aoa-repo-local-kag-distribution-manifest-v1"
+        ):
+            corpus_path = repo_root / "kag/indexes/corpus.manifest.json"
+            try:
+                previous_corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
+            except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+                raise SystemExit(f"invalid tiered corpus manifest: {corpus_path}") from exc
+            if not isinstance(previous_corpus, dict):
+                raise SystemExit(f"invalid tiered corpus manifest: {corpus_path}")
+            migration = previous_corpus.get("migration")
+            if isinstance(migration, dict):
+                previous_tiered_migration = migration
+            previous_manifest = {
+                "partitioning": previous_corpus.get("partitioning"),
+                "budgets": {"tracked_bytes_max": 48 * 1024 * 1024},
+            }
+        else:
+            previous_manifest = loaded_manifest
+    if (
+        args.incremental
+        and (args.portable_family or args.tiered_family)
+        and previous_manifest is not None
+    ):
         try:
             from scripts.repo_local.portable_family import load_portable_family
         except ImportError:  # pragma: no cover - direct script execution
             from repo_local.portable_family import load_portable_family  # type: ignore
         try:
-            previous_index, previous_family, _ = load_portable_family(repo_root)
+            previous_index, previous_family, _ = load_portable_family(
+                repo_root,
+                artifact_root=(
+                    Path(args.artifact_root).resolve()
+                    if args.artifact_root
+                    else None
+                ),
+            )
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
     elif args.incremental and output_path.is_file():
@@ -2427,7 +2522,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if isinstance(loaded_previous, dict):
             previous_index = loaded_previous
         if (
-            (args.index_family or args.portable_family)
+            (args.index_family or args.portable_family or args.tiered_family)
             and all(path.is_file() for path in family_paths.values())
         ):
             loaded_family: dict[str, dict[str, Any]] = {}
@@ -2446,13 +2541,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         output=output,
         excluded_outputs=(
             tuple(family_paths.values())
-            if args.index_family or args.portable_family
+            if args.index_family or args.portable_family or args.tiered_family
             else ()
         ),
         previous_index=previous_index,
         history_ref=history_ref,
     )
-    if args.index_family or args.portable_family:
+    if args.index_family or args.portable_family or args.tiered_family:
         try:
             source_index_path = output_path.resolve().relative_to(repo_root)
         except ValueError as exc:
@@ -2467,7 +2562,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     else:
         family = {}
-    if args.portable_family:
+    if args.portable_family or args.tiered_family:
         try:
             from scripts.repo_local.portable_family import (
                 PortableFamilyError,
@@ -2497,6 +2592,144 @@ def main(argv: Sequence[str] | None = None) -> int:
         except PortableFamilyError as exc:
             print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
             return 1
+        if args.tiered_family:
+            try:
+                from scripts.repo_local.tiered_family import (
+                    build_tiered_family,
+                    check_tiered_artifact,
+                    check_tiered_git_surface,
+                    tiered_budget_projection,
+                    write_tiered_artifact,
+                    write_tiered_git_surface,
+                )
+            except ImportError:  # pragma: no cover - direct script execution
+                from repo_local.tiered_family import (  # type: ignore
+                    build_tiered_family,
+                    check_tiered_artifact,
+                    check_tiered_git_surface,
+                    tiered_budget_projection,
+                    write_tiered_artifact,
+                    write_tiered_git_surface,
+                )
+            try:
+                tiered = build_tiered_family(
+                    portable_manifest,
+                    portable_shards,
+                    max_pack_bytes=args.max_pack_bytes,
+                    shadow_mode=not args.externalize_cold,
+                    migration=previous_tiered_migration,
+                )
+            except PortableFamilyError as exc:
+                print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                return 1
+            artifact_root = Path(args.artifact_root).resolve()
+            budget_manifest = tiered_budget_projection(
+                tiered,
+                externalized=args.externalize_cold,
+            )
+            if args.check:
+                git_ok = check_tiered_git_surface(
+                    repo_root,
+                    tiered,
+                    externalized=args.externalize_cold,
+                )
+                if args.materialize_artifact_on_check:
+                    artifact_receipt = write_tiered_artifact(
+                        artifact_root,
+                        tiered,
+                    )
+                    print(
+                        "[repo-local-kag-index] materialized check artifact "
+                        f"objects_added={artifact_receipt['objects_added']} "
+                        f"objects_reused={artifact_receipt['objects_reused']} "
+                        f"packs={artifact_receipt['packs']}"
+                    )
+                artifact_ok = check_tiered_artifact(artifact_root, tiered)
+                if not git_ok:
+                    print(
+                        "[repo-local-kag-index] tiered Git surface drifted",
+                        file=sys.stderr,
+                    )
+                if not artifact_ok:
+                    print(
+                        "[repo-local-kag-index] tiered artifact surface drifted",
+                        file=sys.stderr,
+                    )
+                if args.budget_base_ref:
+                    try:
+                        changed_bytes, changed_files, receipted = (
+                            validate_changed_generated_budget(
+                                repo_root,
+                                base_ref=args.budget_base_ref,
+                                manifest=budget_manifest,
+                            )
+                        )
+                    except (
+                        PortableFamilyError,
+                        subprocess.CalledProcessError,
+                    ) as exc:
+                        print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                        return 1
+                    receipt_label = " receipt=accepted" if receipted else ""
+                    print(
+                        "[repo-local-kag-index] tiered generated delta "
+                        f"bytes={changed_bytes} files={changed_files}"
+                        f"{receipt_label}"
+                    )
+                return 0 if git_ok and artifact_ok else 1
+            write_tiered_git_surface(
+                repo_root,
+                tiered,
+                externalize=args.externalize_cold,
+            )
+            artifact_receipt = write_tiered_artifact(artifact_root, tiered)
+            if args.write_budget_receipt:
+                try:
+                    receipt_path, receipt = build_budget_receipt(
+                        repo_root,
+                        base_ref=args.budget_base_ref,
+                        manifest=budget_manifest,
+                        reason=args.budget_reason,
+                    )
+                except (
+                    PortableFamilyError,
+                    subprocess.CalledProcessError,
+                ) as exc:
+                    print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                    return 1
+                write_budget_receipt(repo_root, receipt_path, receipt)
+                print(f"[repo-local-kag-index] wrote {repo_root / receipt_path}")
+            if args.budget_base_ref:
+                try:
+                    changed_bytes, changed_files, receipted = (
+                        validate_changed_generated_budget(
+                            repo_root,
+                            base_ref=args.budget_base_ref,
+                            manifest=budget_manifest,
+                        )
+                    )
+                except (
+                    PortableFamilyError,
+                    subprocess.CalledProcessError,
+                ) as exc:
+                    print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                    return 1
+                receipt_label = " receipt=accepted" if receipted else ""
+                print(
+                    "[repo-local-kag-index] tiered generated delta "
+                    f"bytes={changed_bytes} files={changed_files}"
+                    f"{receipt_label}"
+                )
+            print(
+                "[repo-local-kag-index] wrote tiered family "
+                f"corpus={tiered.corpus_manifest['corpus_identity']['content_digest']} "
+                f"distribution={tiered.distribution_manifest['distribution_identity']['content_digest']} "
+                f"git_hot_bytes={tiered.distribution_manifest['summary']['git_hot_bytes']} "
+                f"artifact_cold_bytes={tiered.distribution_manifest['summary']['artifact_cold_bytes']} "
+                f"objects_added={artifact_receipt['objects_added']} "
+                f"objects_reused={artifact_receipt['objects_reused']}"
+            )
+            return 0
         if args.check:
             ok = check_portable_output(
                 repo_root,

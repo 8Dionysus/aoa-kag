@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import unittest
@@ -126,16 +127,13 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         generate_kag_command = ("python", "scripts/generate_kag.py")
         generate_kag_check_command = ("python", "scripts/generate_kag.py", "--check")
-        index_command = (
+        release_command = (
             "python",
-            "scripts/generate_repo_local_kag_index.py",
+            "scripts/build_repo_local_kag_release.py",
             "--repo-root",
             ".",
-            "--output",
-            "kag/indexes/source_surface_index.json",
-            "--portable-family",
         )
-        index_check_command = (*index_command, "--check")
+        release_check_command = (*release_command, "--check")
         for lane_name in ("generated_check", "compatibility_canary"):
             sequence = command_sequence_from_manifest(lane_name)
             last_coverage = max(
@@ -144,16 +142,18 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             last_generate_kag = max(
                 index for index, command in enumerate(sequence) if command == generate_kag_command
             )
-            last_index = max(
-                index for index, command in enumerate(sequence) if command == index_command
+            last_release = max(
+                index for index, command in enumerate(sequence) if command == release_command
             )
             last_coverage_check = max(
                 index
                 for index, command in enumerate(sequence)
                 if command == coverage_check_command
             )
-            last_index_check = max(
-                index for index, command in enumerate(sequence) if command == index_check_command
+            last_release_check = max(
+                index
+                for index, command in enumerate(sequence)
+                if command == release_check_command
             )
             last_check = max(
                 index
@@ -161,20 +161,24 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 if command == generate_kag_check_command
             )
             self.assertLess(last_coverage, last_generate_kag)
-            self.assertLess(last_generate_kag, last_index)
-            self.assertLess(last_index, last_coverage_check)
-            self.assertLess(last_coverage_check, last_index_check)
-            self.assertLess(last_index_check, last_check)
-            self.assertLess(last_index, last_check)
+            self.assertLess(last_generate_kag, last_release)
+            self.assertLess(last_release, last_coverage_check)
+            self.assertLess(last_coverage_check, last_release_check)
+            self.assertLess(last_release_check, last_check)
+            self.assertLess(last_release, last_check)
             self.assertNotIn(coverage_command, sequence[last_coverage_check + 1 :])
-            self.assertNotIn(index_command, sequence[last_index_check + 1 :])
+            self.assertNotIn(release_command, sequence[last_release_check + 1 :])
             self.assertNotIn(generate_kag_command, sequence[last_check + 1 :])
 
-    def test_generated_drift_paths_cover_the_portable_repository_family(self) -> None:
+    def test_generated_drift_paths_cover_the_tiered_repository_family(self) -> None:
         drift_paths = set(drift_paths_from_manifest("generated"))
         self.assertTrue(
             {
+                "kag/indexes/artifact_locators.json",
+                "kag/indexes/corpus.manifest.json",
+                "kag/indexes/hot_profile.json",
                 "kag/indexes/index_family.manifest.json",
+                "kag/receipts/index_family_budget",
                 "kag/indexes/shards",
             }.issubset(drift_paths)
         )
@@ -183,8 +187,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             for command in command_sequence_from_manifest("compatibility_canary")
             if command[:3] == ("git", "diff", "--exit-code")
         )
-        self.assertIn("kag/indexes/index_family.manifest.json", canary_diff)
-        self.assertIn("kag/indexes/shards", canary_diff)
+        for path in drift_paths:
+            self.assertIn(path, canary_diff)
 
     def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
         with patch.object(ci_gate, "run_sequence") as run_sequence:
@@ -223,6 +227,52 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 with redirect_stderr(StringIO()):
                     with self.assertRaises(subprocess.CalledProcessError):
                         ci_gate.run_generated()
+
+    def test_generated_lane_scopes_and_restores_coverage_packet(self) -> None:
+        observed: list[str] = []
+
+        def observe_sequence(_commands: object) -> None:
+            observed.append(os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        with patch.dict(
+            os.environ,
+            {ci_gate.COVERAGE_PACKET_ENV: "caller-owned-packet"},
+        ), patch.object(
+            ci_gate,
+            "run_sequence",
+            side_effect=observe_sequence,
+        ), patch.object(
+            ci_gate,
+            "capture_command_output",
+            return_value="stable",
+        ):
+            ci_gate.run_generated()
+            self.assertEqual("caller-owned-packet", os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        self.assertEqual(1, len(observed))
+        self.assertNotEqual("caller-owned-packet", observed[0])
+        self.assertTrue(observed[0].endswith("coverage.packet.json"))
+
+    def test_compatibility_canary_scopes_and_restores_coverage_packet(self) -> None:
+        observed: list[str] = []
+
+        def observe_sequence(_commands: object) -> None:
+            observed.append(os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        with patch.dict(
+            os.environ,
+            {ci_gate.COVERAGE_PACKET_ENV: "caller-owned-packet"},
+        ), patch.object(
+            ci_gate,
+            "run_sequence",
+            side_effect=observe_sequence,
+        ):
+            ci_gate.run_compatibility_canary()
+            self.assertEqual("caller-owned-packet", os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        self.assertEqual(1, len(observed))
+        self.assertNotEqual("caller-owned-packet", observed[0])
+        self.assertTrue(observed[0].endswith("coverage.packet.json"))
 
     def test_release_check_preserves_entrypoint_without_owning_sequence(self) -> None:
         self.assertEqual("release", release_check.RELEASE_LANE_ID)
@@ -324,11 +374,11 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         self.assertEqual(
             len(expected_sibling_providers),
-            repo_validation.count("fetch-depth: 0"),
+            repo_validation.count("path: .deps/"),
         )
         self.assertEqual(
             len(expected_sibling_providers),
-            canary.count("fetch-depth: 0"),
+            canary.count("path: .deps/"),
         )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):

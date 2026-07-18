@@ -179,6 +179,50 @@ split-only shards, tracked-byte ceilings, generated-delta limits, and explicit
 exceedance receipts keep review and delivery cost approximately proportional
 to the authored material that changed.
 
+### 11. Corpus identity is not delivery identity
+
+The ordered logical record set, source snapshot, canonicalization epoch, and
+compatibility digests define the corpus. Git placement, artifact placement,
+transport packs, mirrors, signatures, and lifecycle state define a separate
+distribution identity. Moving an unchanged shard or rebuilding a pack must not
+look like a knowledge change.
+
+### 12. Git is the bootstrap plane, not the warehouse
+
+The fixed 320 MiB OS budget limits mandatory Git-hot KAG material. It does not
+limit total OS knowledge. Git keeps manifests, contracts, digests,
+owner-return routes, receipts, and a deterministic bootstrap corpus. Complete
+cold families live as immutable content-addressed releases; mutable exact,
+graph, vector, and cache projections remain runtime artifacts.
+
+### 13. Degradation is part of the result contract
+
+A consumer may read Git-hot records, a verified local CAS, a trusted remote
+artifact route, or rebuild from the source snapshot. It must report whether
+the result is complete, hot-only, stale, unavailable, revoked, denied, or
+rebuild-required. Missing cold material may never be silently presented as a
+complete canonical answer.
+
+## Tiered Distribution Shape
+
+The durable distribution contract is documented in
+[`docs/KAG_TIERED_DISTRIBUTION.md`](docs/KAG_TIERED_DISTRIBUTION.md). In short:
+
+```text
+authored owner source
+  -> deterministic corpus manifest
+  -> Git-hot bootstrap + content-addressed cold objects
+  -> signed owner-family release
+  -> small 24-owner OS composition
+  -> abyss-stack materialized projections
+  -> read-only five-operation MCP access
+```
+
+`aoa-kag` owns the logical contracts and compatibility assembly.
+`abyss-machine` owns artifact trust and lifecycle. `abyss-stack` owns mutable
+materialization and last-good runtime state. No downstream plane acquires
+authority over authored meaning.
+
 ## Good Design Feels Like
 
 - a public reader can find the KAG model and boundary;

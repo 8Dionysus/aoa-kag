@@ -84,7 +84,11 @@
   "drift_paths": {
     "generated": [
       "generated",
+      "kag/indexes/artifact_locators.json",
+      "kag/indexes/corpus.manifest.json",
+      "kag/indexes/hot_profile.json",
       "kag/indexes/index_family.manifest.json",
+      "kag/receipts/index_family_budget",
       "kag/indexes/shards"
     ]
   },
@@ -143,12 +147,9 @@
       ],
       [
         "python",
-        "scripts/generate_repo_local_kag_index.py",
+        "scripts/build_repo_local_kag_release.py",
         "--repo-root",
-        ".",
-        "--output",
-        "kag/indexes/source_surface_index.json",
-        "--portable-family"
+        "."
       ],
       [
         "python",
@@ -160,12 +161,9 @@
       ],
       [
         "python",
-        "scripts/generate_repo_local_kag_index.py",
+        "scripts/build_repo_local_kag_release.py",
         "--repo-root",
-        ".",
-        "--output",
-        "kag/indexes/source_surface_index.json",
-        "--portable-family"
+        "."
       ],
       [
         "python",
@@ -174,22 +172,15 @@
       ],
       [
         "python",
-        "scripts/generate_repo_local_kag_index.py",
+        "scripts/build_repo_local_kag_release.py",
         "--repo-root",
         ".",
-        "--output",
-        "kag/indexes/source_surface_index.json",
-        "--portable-family",
         "--check"
       ],
       [
         "python",
         "scripts/generate_kag.py",
         "--check"
-      ],
-      [
-        "python",
-        "scripts/validate_kag.py"
       ]
     ],
     "release_check": [
@@ -233,12 +224,9 @@
       ],
       [
         "python",
-        "scripts/generate_repo_local_kag_index.py",
+        "scripts/build_repo_local_kag_release.py",
         "--repo-root",
-        ".",
-        "--output",
-        "kag/indexes/source_surface_index.json",
-        "--portable-family"
+        "."
       ],
       [
         "python",
@@ -250,12 +238,9 @@
       ],
       [
         "python",
-        "scripts/generate_repo_local_kag_index.py",
+        "scripts/build_repo_local_kag_release.py",
         "--repo-root",
-        ".",
-        "--output",
-        "kag/indexes/source_surface_index.json",
-        "--portable-family"
+        "."
       ],
       [
         "python",
@@ -264,12 +249,9 @@
       ],
       [
         "python",
-        "scripts/generate_repo_local_kag_index.py",
+        "scripts/build_repo_local_kag_release.py",
         "--repo-root",
         ".",
-        "--output",
-        "kag/indexes/source_surface_index.json",
-        "--portable-family",
         "--check"
       ],
       [
@@ -283,7 +265,11 @@
         "--exit-code",
         "--",
         "generated",
+        "kag/indexes/artifact_locators.json",
+        "kag/indexes/corpus.manifest.json",
+        "kag/indexes/hot_profile.json",
         "kag/indexes/index_family.manifest.json",
+        "kag/receipts/index_family_budget",
         "kag/indexes/shards"
       ]
     ]

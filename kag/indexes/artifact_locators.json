@@ -1,0 +1,33 @@
+{
+  "authority": {
+    "corpus_identity_authority": false,
+    "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md",
+    "replaceable": true
+  },
+  "locator_identity": {
+    "artifact_kind": "kag_artifact_locator_set",
+    "content_digest": "sha256:9ef0dd3ecf2058ea28e5ca2779271863b4a446912609024ed5d9098dac3842ec",
+    "corpus_digest": "sha256:e7028df24570057115702b137532eb311f4de3f6aa48c0b9cd0b0c9c5e1aa3c1",
+    "local_id": "locator:repo-local:kag-artifacts",
+    "schema_ref": "aoa-kag:schemas/kag-artifact-locator.schema.json"
+  },
+  "locators": [
+    {
+      "locator_id": "owner-public-cas",
+      "mutable_location": true,
+      "object_key_template": "objects/sha256/{prefix}/{digest}",
+      "pack_key_template": "packs/sha256/{prefix}/{digest}.pack",
+      "priority": 100,
+      "transport": "cas",
+      "trust_domain": "public-kag"
+    }
+  ],
+  "repo": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "schema_version": "aoa-kag-artifact-locator-v1"
+}

@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-pack-index.schema.json",
+  "title": "AoA bounded deterministic KAG transport pack index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "pack_index_identity",
+    "packing",
+    "summary",
+    "packs",
+    "entries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-pack-index-v1"
+    },
+    "repo": {
+      "type": "object"
+    },
+    "pack_index_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "artifact_kind",
+        "content_digest",
+        "schema_ref",
+        "corpus_digest"
+      ],
+      "properties": {
+        "local_id": {
+          "const": "pack-index:repo-local:kag-family"
+        },
+        "artifact_kind": {
+          "const": "kag_pack_index"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/kag-pack-index.schema.json"
+        },
+        "corpus_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "packing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "ordering",
+        "max_pack_bytes",
+        "canonical_identity"
+      ],
+      "properties": {
+        "format": {
+          "const": "concatenated-byte-ranges-v1"
+        },
+        "ordering": {
+          "const": "corpus-object-order"
+        },
+        "max_pack_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8388608
+        },
+        "canonical_identity": {
+          "const": false
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packs",
+        "objects",
+        "bytes"
+      ],
+      "properties": {
+        "packs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "objects": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "packs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pack_digest",
+          "object_key",
+          "bytes",
+          "objects"
+        ],
+        "properties": {
+          "pack_digest": {
+            "$ref": "#/$defs/digest"
+          },
+          "object_key": {
+            "type": "string",
+            "pattern": "^packs/sha256/[a-f0-9]{2}/[a-f0-9]{64}\\.pack$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8388608
+          },
+          "objects": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "object_digest",
+          "kind",
+          "range",
+          "pack_digest",
+          "offset",
+          "length"
+        ],
+        "properties": {
+          "object_digest": {
+            "$ref": "#/$defs/digest"
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "range": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{1,64}$"
+          },
+          "pack_digest": {
+            "$ref": "#/$defs/digest"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 196608
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

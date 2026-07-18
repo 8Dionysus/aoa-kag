@@ -1,0 +1,426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-distribution-manifest.schema.json",
+  "title": "AoA repo-local KAG tiered distribution manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "distribution_identity",
+    "corpus_manifest",
+    "hot_profile",
+    "artifact_locators",
+    "placement",
+    "transport",
+    "trust",
+    "lifecycle",
+    "degradation",
+    "budgets",
+    "summary",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-distribution-manifest-v1"
+    },
+    "repo": {
+      "type": "object"
+    },
+    "distribution_identity": {
+      "$ref": "#/$defs/distributionIdentity"
+    },
+    "corpus_manifest": {
+      "$ref": "#/$defs/manifestRef"
+    },
+    "hot_profile": {
+      "$ref": "#/$defs/manifestRef"
+    },
+    "artifact_locators": {
+      "$ref": "#/$defs/manifestRef"
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "git_hot",
+        "artifact_cold"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "shadow",
+            "externalized"
+          ]
+        },
+        "git_hot": {
+          "$ref": "#/$defs/gitHot"
+        },
+        "artifact_cold": {
+          "$ref": "#/$defs/artifactCold"
+        }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_identity",
+        "pack_index_digest",
+        "pack_format",
+        "packs",
+        "max_pack_bytes",
+        "repacking_changes_corpus_identity"
+      ],
+      "properties": {
+        "object_identity": {
+          "const": "sha256-shard-bytes"
+        },
+        "pack_index_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "pack_format": {
+          "const": "concatenated-byte-ranges-v1"
+        },
+        "packs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_pack_bytes": {
+          "type": "integer",
+          "minimum": 196608,
+          "maximum": 8388608
+        },
+        "repacking_changes_corpus_identity": {
+          "const": false
+        }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trust_domain",
+        "admission",
+        "required_checks"
+      ],
+      "properties": {
+        "trust_domain": {
+          "const": "public-kag"
+        },
+        "admission": {
+          "const": "fail-closed"
+        },
+        "required_checks": {
+          "const": [
+            "digest",
+            "signature",
+            "owner",
+            "source_ref",
+            "schema_abi",
+            "revocation",
+            "access_policy"
+          ]
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "last_good_required",
+        "rollback_by_digest"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "candidate",
+            "built-local",
+            "manually-verified",
+            "release-ready",
+            "published",
+            "superseded",
+            "revoked"
+          ]
+        },
+        "last_good_required": {
+          "const": true
+        },
+        "rollback_by_digest": {
+          "const": true
+        }
+      }
+    },
+    "degradation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "complete_states",
+        "states",
+        "partial_may_claim_complete"
+      ],
+      "properties": {
+        "complete_states": {
+          "const": [
+            "complete",
+            "git_hot_complete"
+          ]
+        },
+        "states": {
+          "const": [
+            "access_denied",
+            "artifact_required",
+            "artifact_unavailable",
+            "complete",
+            "digest_mismatch",
+            "git_hot_complete",
+            "hot_only",
+            "rebuild_available",
+            "rebuild_required",
+            "revoked",
+            "stale"
+          ]
+        },
+        "partial_may_claim_complete": {
+          "const": false
+        }
+      }
+    },
+    "budgets": {
+      "$ref": "#/$defs/budgets"
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "builder",
+        "decision_ref",
+        "authored_truth_owner"
+      ],
+      "properties": {
+        "builder": {
+          "const": "aoa-kag:scripts/repo_local/tiered_family.py"
+        },
+        "decision_ref": {
+          "const": "aoa-kag:docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md"
+        },
+        "authored_truth_owner": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "distributionIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "artifact_kind",
+        "content_digest",
+        "schema_ref",
+        "corpus_digest"
+      ],
+      "properties": {
+        "local_id": {
+          "const": "family:repo-local:tiered-distribution"
+        },
+        "artifact_kind": {
+          "const": "repo_local_kag_distribution"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/repo-local-kag-distribution-manifest.schema.json"
+        },
+        "corpus_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "manifestRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "content_digest"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "gitHot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_kinds",
+        "path_template",
+        "object_set_digest",
+        "objects"
+      ],
+      "properties": {
+        "record_kinds": {
+          "type": "array",
+          "contains": {
+            "const": "source"
+          },
+          "items": {
+            "enum": [
+              "source",
+              "source_chunk"
+            ]
+          }
+        },
+        "path_template": {
+          "const": "kag/indexes/shards/{kind}/{range}.jsonl"
+        },
+        "object_set_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "objects": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "artifactCold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_kinds",
+        "object_key_template",
+        "object_set_digest",
+        "objects",
+        "shadow_git_copy"
+      ],
+      "properties": {
+        "record_kinds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "anchor",
+              "anchor_chunk",
+              "event",
+              "event_chunk"
+            ]
+          }
+        },
+        "object_key_template": {
+          "const": "objects/sha256/{prefix}/{digest}"
+        },
+        "object_set_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "objects": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "shadow_git_copy": {
+          "type": "boolean"
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_git_hot_bytes_max",
+        "owner_hard_bytes_max",
+        "changed_generated_bytes_max",
+        "os_git_hot_bytes_max",
+        "os_git_hot_target_bytes",
+        "aggregate_ceiling_receiptable_by_owner"
+      ],
+      "properties": {
+        "owner_git_hot_bytes_max": {
+          "type": "integer",
+          "minimum": 4194304,
+          "maximum": 50331648
+        },
+        "owner_hard_bytes_max": {
+          "const": 50331648
+        },
+        "changed_generated_bytes_max": {
+          "const": 1048576
+        },
+        "os_git_hot_bytes_max": {
+          "const": 335544320
+        },
+        "os_git_hot_target_bytes": {
+          "const": 234881024
+        },
+        "aggregate_ceiling_receiptable_by_owner": {
+          "const": false
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_total_bytes",
+        "git_hot_shard_bytes",
+        "artifact_cold_bytes",
+        "git_hot_objects",
+        "artifact_cold_objects",
+        "git_hot_bytes",
+        "shadow_git_bytes"
+      ],
+      "properties": {
+        "corpus_total_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50331648
+        },
+        "git_hot_shard_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "artifact_cold_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "git_hot_objects": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "artifact_cold_objects": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "git_hot_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50331648
+        },
+        "shadow_git_bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

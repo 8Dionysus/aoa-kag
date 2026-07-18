@@ -19,9 +19,17 @@
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 
+## artifact admission
+
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+
 ## bounded context
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+
+## bounded hydration
+
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## byte parity
 
@@ -47,6 +55,7 @@
 ## compatibility parity
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## content identity
 
@@ -116,6 +125,14 @@
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 
+## Git-hot ceiling
+
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+
+## identity separation
+
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+
 ## incremental parity
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
@@ -174,6 +191,7 @@
 ## offline portability
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## owner namespace
 
@@ -217,6 +235,10 @@
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 
+## public safety
+
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
+
 ## quarantine and re-entry
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
@@ -233,6 +255,10 @@
 ## repo-local index atom
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
+
+## rollback
+
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## runtime-state boundary
 
@@ -259,6 +285,7 @@
 ## source ownership
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0018 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md`)
 
 ## source return
 

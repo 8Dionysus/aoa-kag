@@ -13,6 +13,34 @@ RECORD_CLASS_DIRECTORIES = {
     "receipt": "receipts",
 }
 PROVIDER_RECORD_DIRECTORIES = tuple(RECORD_CLASS_DIRECTORIES.values())
+OS_GIT_HOT_TARGET_BYTES = 234_881_024
+
+
+def _empty_portable_family() -> dict[str, object]:
+    return {
+        "manifest_ref": "",
+        "content_digest": "",
+        "digest_state": "not-applicable",
+        "tracked_bytes": 0,
+        "tracked_bytes_max": 0,
+        "shards": 0,
+        "budget_state": "not-applicable",
+        "receipt_ref": "",
+        "corpus_digest": "",
+        "distribution_digest": "",
+        "git_hot_bytes": 0,
+        "corpus_total_bytes": 0,
+        "artifact_cold_bytes": 0,
+        "git_hot_objects": 0,
+        "artifact_cold_objects": 0,
+        "placement_state": "not-applicable",
+        "hot_profile_ref": "",
+        "artifact_locator_ref": "",
+        "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
+        "aggregate_ceiling_receiptable_by_owner": False,
+        "measurement_state": "not-applicable",
+        "measurement_ref": "",
+    }
 
 
 def _provider_root(repo: str) -> Path:
@@ -33,6 +61,10 @@ REPOSITORY_META_INDEX_SCHEMA_VERSIONS = {
     "aoa-repo-local-kag-repository-index-v1",
     "aoa-repo-local-kag-repository-index-v2",
     "aoa-repo-local-kag-family-manifest-v3",
+    "aoa-repo-local-kag-corpus-manifest-v1",
+    "aoa-repo-local-kag-distribution-manifest-v1",
+    "aoa-repo-local-kag-hot-profile-v1",
+    "aoa-kag-artifact-locator-v1",
 }
 
 
@@ -160,16 +192,7 @@ def _provider_repo_local_index_packet(
             if status == "passed" and len(repository_index_family) == 7
             else "none"
         )
-        portable_family = {
-            "manifest_ref": "",
-            "content_digest": "",
-            "digest_state": "not-applicable",
-            "tracked_bytes": 0,
-            "tracked_bytes_max": 0,
-            "shards": 0,
-            "budget_state": "not-applicable",
-            "receipt_ref": "",
-        }
+        portable_family = _empty_portable_family()
     elif not isinstance(family_storage, str) or not isinstance(
         portable_family,
         dict,
@@ -550,7 +573,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         {
             "surface_id": surface["surface_id"],
             "surface_class": surface["surface_class"],
-            "root": surface["root"],
+            "root": f"aoa-surface:{surface['surface_id']}",
             "provider_status": surface["provider_status"],
             "owner_return_route": surface["owner_return_route"],
             "candidate_source_surfaces": surface["candidate_source_surfaces"],

@@ -5,10 +5,49 @@ on:
     branches:
       - main
   pull_request:
+  schedule:
+    - cron: "31 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
+  owner_fast:
+    name: Owner Fast Gate
+    runs-on: ubuntu-latest
+    outputs:
+      impact-class: ${{ steps.kag.outputs.impact-class }}
+      validation-lane: ${{ steps.kag.outputs.validation-lane }}
+      full-fanout-reason: ${{ steps.kag.outputs.full-fanout-reason }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+
+      - name: Install owner-gate dependencies
+        run: python -m pip install PyYAML jsonschema
+
+      - name: Check affected owner KAG family
+        id: kag
+        uses: ./.github/actions/repo-local-kag-index
+
   release_audit:
-    name: Repo Validation
+    name: Full 24-owner Release Audit
+    needs: owner_fast
+    if: >-
+      always() &&
+      needs.owner_fast.result == 'success' &&
+      (
+        github.event_name != 'pull_request' ||
+        needs.owner_fast.outputs.validation-lane == 'full-24-owner-audit'
+      )
     runs-on: ubuntu-latest
     env:
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
@@ -37,9 +76,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - name: Check repo-local KAG index family
-        uses: ./.github/actions/repo-local-kag-index
+        with:
+          fetch-depth: 0
 
       - name: Checkout Tree-of-Sophia
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

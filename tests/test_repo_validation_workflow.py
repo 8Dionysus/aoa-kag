@@ -12,6 +12,16 @@ RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
 
 
 class RepoValidationWorkflowTests(unittest.TestCase):
+    def test_owner_fast_gate_controls_full_fanout(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("owner_fast:", workflow_text)
+        self.assertIn("id: kag", workflow_text)
+        self.assertIn("validation-lane: ${{ steps.kag.outputs.validation-lane }}", workflow_text)
+        self.assertIn("needs.owner_fast.outputs.validation-lane == 'full-24-owner-audit'", workflow_text)
+        self.assertIn("github.event_name != 'pull_request'", workflow_text)
+        self.assertIn('cron: "31 7 * * 1"', workflow_text)
+
     def test_generated_drift_gate_checks_untracked_files(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 

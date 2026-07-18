@@ -1,0 +1,374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-owner-family-release.schema.json",
+  "title": "AoA immutable owner KAG family release",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "release_identity",
+    "manifests",
+    "source",
+    "epochs",
+    "objects",
+    "packs",
+    "compatibility",
+    "measurements",
+    "provenance",
+    "lifecycle",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-owner-family-release-v1"
+    },
+    "repo": {
+      "type": "object"
+    },
+    "release_identity": {
+      "$ref": "#/$defs/releaseIdentity"
+    },
+    "manifests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_digest",
+        "distribution_digest",
+        "hot_profile_digest",
+        "locator_digest",
+        "pack_index_digest"
+      ],
+      "properties": {
+        "corpus_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "distribution_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "hot_profile_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "locator_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "pack_index_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot",
+        "owner",
+        "ref"
+      ],
+      "properties": {
+        "snapshot": {
+          "$ref": "#/$defs/digest"
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "epochs": {
+      "type": "object"
+    },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/object"
+      }
+    },
+    "packs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object"
+      }
+    },
+    "compatibility": {
+      "type": "object"
+    },
+    "measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "git_hot_bytes",
+        "corpus_total_bytes",
+        "artifact_unique_bytes"
+      ],
+      "properties": {
+        "git_hot_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50331648
+        },
+        "corpus_total_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50331648
+        },
+        "artifact_unique_bytes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "builder",
+        "decision_ref",
+        "verification_receipt"
+      ],
+      "properties": {
+        "builder": {
+          "const": "aoa-kag:scripts/repo_local/tiered_family.py"
+        },
+        "decision_ref": {
+          "const": "aoa-kag:docs/decisions/AOA-KAG-D-0018-tiered-content-addressed-kag-distribution.md"
+        },
+        "verification_receipt": {
+          "type": "string"
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "supersedes",
+        "rollback_to",
+        "revoked"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "candidate",
+            "built-local",
+            "manually-verified",
+            "release-ready",
+            "published",
+            "superseded",
+            "revoked"
+          ]
+        },
+        "supersedes": {
+          "type": "string"
+        },
+        "rollback_to": {
+          "type": "string"
+        },
+        "revoked": {
+          "type": "boolean"
+        }
+      }
+    },
+    "signature": {
+      "$ref": "#/$defs/signature"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "lifecycle": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "manually-verified",
+                  "release-ready",
+                  "published",
+                  "superseded",
+                  "revoked"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source": {
+            "properties": {
+              "ref": {
+                "$ref": "#/$defs/exactGitCommitRef"
+              }
+            }
+          },
+          "provenance": {
+            "properties": {
+              "verification_receipt": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "exactGitCommitRef": {
+      "type": "string",
+      "pattern": "^commit:[a-f0-9]{40}([a-f0-9]{24})?$"
+    },
+    "releaseIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "artifact_kind",
+        "artifact_class",
+        "abi_epoch",
+        "content_digest",
+        "schema_ref",
+        "corpus_digest",
+        "distribution_digest"
+      ],
+      "properties": {
+        "local_id": {
+          "const": "release:repo-local:kag-family"
+        },
+        "artifact_kind": {
+          "const": "kag_owner_family_release"
+        },
+        "artifact_class": {
+          "const": "kag_owner_family_release"
+        },
+        "abi_epoch": {
+          "const": "aoa-kag-owner-family-release-v1"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/kag-owner-family-release.schema.json"
+        },
+        "corpus_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "distribution_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "range",
+        "content_digest",
+        "bytes",
+        "records",
+        "placement",
+        "object_key"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "range": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "records": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "placement": {
+          "enum": [
+            "git_hot",
+            "artifact_cold"
+          ]
+        },
+        "object_key": {
+          "type": "string",
+          "pattern": "^objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"
+        },
+        "pack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pack_digest",
+            "offset",
+            "length"
+          ],
+          "properties": {
+            "pack_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "length": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "subject_digest",
+        "signature_ref",
+        "verification_state"
+      ],
+      "properties": {
+        "algorithm": {
+          "enum": [
+            "none",
+            "ed25519",
+            "ecdsa-p256-sha256",
+            "rsa-pss-sha256"
+          ]
+        },
+        "subject_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "signature_ref": {
+          "type": "string"
+        },
+        "verification_state": {
+          "enum": [
+            "unsigned-candidate",
+            "signed-unverified",
+            "verified",
+            "invalid",
+            "revoked"
+          ]
+        }
+      }
+    }
+  }
+}

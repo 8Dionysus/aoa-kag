@@ -56,8 +56,74 @@ REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-family-manifest.schema.json"
 )
 
+REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-corpus-manifest.schema.json"
+)
+
+REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-distribution-manifest.schema.json"
+)
+
+REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-hot-profile.schema.json"
+)
+
+KAG_ARTIFACT_LOCATOR_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-artifact-locator.schema.json"
+)
+
+KAG_PACK_SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-pack.schema.json"
+
+KAG_PACK_INDEX_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-pack-index.schema.json"
+)
+
+KAG_OWNER_FAMILY_RELEASE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-owner-family-release.schema.json"
+)
+
+KAG_OS_COMPOSITION_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-os-composition.schema.json"
+)
+
+KAG_OWNER_CHANGE_RECEIPT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-owner-change-receipt.schema.json"
+)
+
+KAG_RECEIPT_GOVERNANCE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-receipt-governance.schema.json"
+)
+
+KAG_RECEIPT_GOVERNANCE_REPORT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-receipt-governance-report.schema.json"
+)
+
+KAG_TIERED_METRICS_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-tiered-metrics.schema.json"
+)
+
+KAG_TIERED_ROLLOUT_EVIDENCE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-tiered-rollout-evidence.schema.json"
+)
+
+KAG_PORTABLE_FAMILY_BUNDLE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-portable-family-bundle.schema.json"
+)
+
+KAG_TIERED_BASELINE_EVIDENCE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-tiered-baseline-evidence.schema.json"
+)
+
+KAG_COVERAGE_BUILD_PACKET_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "kag-coverage-build-packet.schema.json"
+)
+
 REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-query-result.schema.json"
+)
+
+REPO_LOCAL_KAG_QUERY_UNAVAILABLE_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-query-unavailable.schema.json"
 )
 
 KAG_MCP_CAPABILITIES_SCHEMA_PATH = (

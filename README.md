@@ -24,7 +24,7 @@ page.
 | Agent-facing route law | [AGENTS](AGENTS.md), then the nearest nested `AGENTS.md` |
 | KAG model, source policy, and owner boundaries | [KAG_MODEL](docs/KAG_MODEL.md), [BOUNDARIES](docs/BOUNDARIES.md), [SOURCE_POLICY](docs/SOURCE_POLICY.md) |
 | Local `/kag` source-home preflight | [kag](kag/README.md), [source_home.manifest](kag/source_home.manifest.json), [LOCAL_SUBTREE_PROTOCOL](kag/LOCAL_SUBTREE_PROTOCOL.md) |
-| Repo-local knowledge kernel | [kag indexes](kag/README.md), [portable family schema](schemas/repo-local-kag-family-manifest.schema.json), [source schema](schemas/repo-local-kag-index.schema.json), [repository schema](schemas/repo-local-kag-repository-index.schema.json), [coverage report](generated/repo_local_kag_coverage.min.json) |
+| Repo-local knowledge kernel | [kag indexes](kag/README.md), [tiered distribution](docs/KAG_TIERED_DISTRIBUTION.md), [corpus schema](schemas/repo-local-kag-corpus-manifest.schema.json), [distribution schema](schemas/repo-local-kag-distribution-manifest.schema.json), [coverage report](generated/repo_local_kag_coverage.min.json) |
 | KAG-owned statistical questions and reference measurements | [stats](stats/README.md) |
 | Repeatable KAG operation topology | [mechanics](mechanics/README.md), [mechanics topology](mechanics/topology.json) |
 | Current consumer and bridge posture | [CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md), [BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs map](docs/README.md) |
@@ -80,9 +80,12 @@ support, counterpart review posture, and one bounded cross-source projection.
 It also carries the repo-self kernel for artifacts, directories, anchors,
 entities, Git events, assertions, relations, provenance, temporal/trust
 profiles, ABI/sign posture, access, federation, retrieval projection, and
-query coordinates. Its canonical Git form is a v3 content-addressed portable
-record corpus; the exact seven-file v2 form remains an on-demand compatibility
-view.
+query coordinates. Its current canonical form separates a logical corpus
+identity from a v4 tiered distribution identity. Git carries the deterministic
+hot/bootstrap surface and delivery contracts; a content-addressed artifact
+plane carries the complete cold family. The exact seven-file v2 form remains
+an on-demand compatibility view. During migration, shadow copies remain in Git
+until trust, offline, canary, and runtime proofs permit externalization.
 
 That contour is not a claim that `aoa-kag` is a full graph engine. The layer
 still pauses before widening new `AOA-K-*` families while neighboring owners
