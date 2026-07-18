@@ -14,8 +14,34 @@
   },
   "canonical_inputs": [
     {
-      "repo": {"name": "aoa-kag", "namespace": "aoa:aoa-kag"},
-      "source_index_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      "repo": {
+        "name": "aoa-kag",
+        "namespace": "aoa:aoa-kag",
+        "owner_type": "organ",
+        "root": ".",
+        "git_ref": "INDEX"
+      },
+      "source_index_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "family_digests": {
+        "anchor": "1111111111111111111111111111111111111111111111111111111111111111",
+        "artifact": "2222222222222222222222222222222222222222222222222222222222222222",
+        "assertion": "3333333333333333333333333333333333333333333333333333333333333333",
+        "entity": "4444444444444444444444444444444444444444444444444444444444444444",
+        "event": "5555555555555555555555555555555555555555555555555555555555555555",
+        "relation": "6666666666666666666666666666666666666666666666666666666666666666"
+      },
+      "corpus_identity": {
+        "content_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "distribution_identity": {
+        "content_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "delivery_state": "complete",
+        "complete": true,
+        "manifest_schema": "aoa-repo-local-kag-distribution-manifest-v1",
+        "routes": {
+          "local_cas": 7
+        }
+      }
     }
   ],
   "projection_lanes": ["exact", "lexical", "vector", "hybrid", "graph"],

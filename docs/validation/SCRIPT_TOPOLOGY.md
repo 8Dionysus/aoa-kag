@@ -81,8 +81,11 @@ contract, example packet, and OS Abyss readiness matrix.
 `scripts/kag_generation.py` is the compatibility facade for existing imports.
 The implementation modules live in `scripts/generation/`.
 
-`scripts/generate_repo_local_kag_index.py` builds the content-addressed
-source/structure/history corpus and deterministic
+`scripts/generate_repo_local_kag_index.py` builds either the v3 portable family
+or the v4 separated corpus/distribution family. The v4 route selects a
+deterministic Git-hot bootstrap set, publishes complete cold shards and bounded
+packs to a content-addressed artifact root, emits locators and release
+contracts, and preserves the deterministic
 source/artifact/anchor/entity/event/assertion/relation compatibility family
 from the current repository's source, document, mechanics, command, schema,
 generated, and receipt surfaces. It also enforces shard, tracked-byte, and
@@ -97,10 +100,41 @@ portable or legacy family against the common schemas, identities, anchors,
 evidence, budgets, compatibility digests, and relation integrity contract.
 
 `scripts/assemble_repo_local_kag_family.py` reconstructs the exact seven-file
-v2 compatibility view in a caller-selected artifact directory.
+v2 compatibility view in a caller-selected directory from Git-hot shards and,
+when required, a verified CAS without reading migration shadow copies.
+
+`scripts/build_repo_local_kag_release.py` and
+`scripts/validate_repo_local_kag_release.py` build/check the immutable complete
+owner-family artifact release. The generated/release lanes omit a persistent
+artifact root and therefore use one bounded transient root, preferring the
+caller-provided validation parent, GitHub runner temp, or `TMPDIR` in that
+order. `scripts/export_repo_local_kag_bundle.py` and
+`scripts/import_repo_local_kag_bundle.py` provide byte-exact offline transfer.
+
+`scripts/prepare_repo_local_kag_externalization.py` is the only central
+operator route that may rewrite explicitly bound owner worktrees into the v4
+externalized current-tree shape. It requires clean isolated worktrees, removes
+only cold shard copies, publishes their objects to an explicit CAS, emits a
+preparation receipt, and stops before commit-bound signing.
+
+`scripts/run_repo_local_kag_rollout.py` is the non-mutating OS-wide publication
+and evidence route. It binds all 24 clean owner commits, proves repeat
+publication reuse, locator/pack independence, CAS-only dual-reader and v2
+parity, offline export/import, outage honesty, corruption rejection, inner and
+outer signatures, trust admission, and a signed OS composition. Its bounded
+runtime packet validates against
+`schemas/kag-tiered-rollout-evidence.schema.json`; neither packets nor host
+trust state are committed.
+
+`scripts/classify_repo_local_kag_impact.py` chooses owner-fast,
+distribution-fast, incremental-federation, or full-24-owner validation from
+changed paths. Its cache identity is owner, source snapshot, builder digest,
+schema epoch, and canonicalization epoch.
 
 `scripts/query_repo_local_kag.py` validates that family and exposes exact,
-BM25, graph, and hybrid retrieval. `scripts/repo_local/query.py` also provides
+BM25, graph, and hybrid retrieval. A v4 result also exposes corpus and
+distribution identity, selected delivery routes, completeness, and explicit
+degradation. `scripts/repo_local/query.py` also provides
 addressed read, profile-aware filtering, and owner discovery for programmatic
 consumers.
 

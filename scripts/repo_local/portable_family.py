@@ -16,10 +16,22 @@ SHARD_ROOT_RELATIVE_PATH = Path("kag/indexes/shards")
 BUDGET_RECEIPT_ROOT_RELATIVE_PATH = Path(
     "kag/receipts/index_family_budget"
 )
+TIERED_CONTROL_PATHS = {
+    Path("kag/indexes/corpus.manifest.json"),
+    Path("kag/indexes/hot_profile.json"),
+    Path("kag/indexes/artifact_locators.json"),
+}
 BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
 DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0017-portable-content-addressed-repository-family.md"
+)
+TIERED_DECISION_REF = (
+    "aoa-kag:docs/decisions/"
+    "AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md"
+)
+TIERED_DISTRIBUTION_SCHEMA_VERSION = (
+    "aoa-repo-local-kag-distribution-manifest-v1"
 )
 
 TARGET_SHARD_BYTES = 128 * 1024
@@ -115,6 +127,7 @@ def manifest_digest(payload: Mapping[str, Any]) -> str:
 def is_portable_control_path(path: Path) -> bool:
     return (
         path == MANIFEST_RELATIVE_PATH
+        or path in TIERED_CONTROL_PATHS
         or SHARD_ROOT_RELATIVE_PATH in (path, *path.parents)
         or BUDGET_RECEIPT_ROOT_RELATIVE_PATH in (path, *path.parents)
     )
@@ -941,11 +954,24 @@ def reconstruct_compatibility_family(
     return source_index, family
 
 
-def load_portable_family(
+def load_portable_family_with_state(
     repo_root: Path,
     *,
     manifest_path: Path = MANIFEST_RELATIVE_PATH,
-) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
+    artifact_root: Path | None = None,
+    allow_shadow_git: bool = True,
+) -> tuple[
+    dict[str, Any],
+    dict[str, dict[str, Any]],
+    dict[str, Any],
+    dict[str, Any],
+]:
+    """Load either v3 or v4 and preserve the observed delivery state.
+
+    The long-standing ``load_portable_family`` triple remains the compatibility
+    API. Runtime, query, and MCP adapters use this state-bearing route so a
+    missing cold object can never be flattened into a successful full read.
+    """
     root = repo_root.resolve()
     path = manifest_path if manifest_path.is_absolute() else root / manifest_path
     try:
@@ -954,10 +980,61 @@ def load_portable_family(
         raise PortableFamilyError(
             f"cannot read portable family manifest {path}"
         ) from exc
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        try:
+            from scripts.repo_local.tiered_family import (
+                DISTRIBUTION_SCHEMA_VERSION,
+                load_tiered_family,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from repo_local.tiered_family import (  # type: ignore
+                DISTRIBUTION_SCHEMA_VERSION,
+                load_tiered_family,
+            )
+        if manifest.get("schema_version") != DISTRIBUTION_SCHEMA_VERSION:
+            raise PortableFamilyError(
+                "portable family manifest has an unsupported schema version"
+            )
+        source, family, distribution, state = load_tiered_family(
+            root,
+            artifact_root=artifact_root,
+            allow_shadow_git=allow_shadow_git,
+        )
+        return source, family, distribution, state
     validated = _validate_manifest_shape(manifest)
     rows = _load_rows(root, validated)
     source, family = reconstruct_compatibility_family(validated, rows)
-    return source, family, validated
+    state = {
+        "state": "git_hot_complete",
+        "complete": True,
+        "missing_objects": [],
+        "routes": {
+            "git_hot": len(validated["shards"]),
+            "local_cas": 0,
+            "shadow_git": 0,
+        },
+        "corpus_digest": (
+            "sha256:" + validated["family_identity"]["content_digest"]
+        ),
+        "distribution_digest": "",
+    }
+    return source, family, validated, state
+
+
+def load_portable_family(
+    repo_root: Path,
+    *,
+    manifest_path: Path = MANIFEST_RELATIVE_PATH,
+    artifact_root: Path | None = None,
+    allow_shadow_git: bool = True,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
+    source, family, manifest, _ = load_portable_family_with_state(
+        repo_root,
+        manifest_path=manifest_path,
+        artifact_root=artifact_root,
+        allow_shadow_git=allow_shadow_git,
+    )
+    return source, family, manifest
 
 
 def expected_portable_paths(
@@ -1076,6 +1153,75 @@ def _base_portable_paths(repo_root: Path, base_ref: str) -> set[Path]:
         raise PortableFamilyError(
             f"{base_ref} portable family manifest is invalid"
         ) from exc
+    if manifest.get("schema_version") == TIERED_DISTRIBUTION_SCHEMA_VERSION:
+        corpus_bytes = _git_bytes(
+            repo_root,
+            base_ref,
+            Path("kag/indexes/corpus.manifest.json"),
+        )
+        hot_profile_bytes = _git_bytes(
+            repo_root,
+            base_ref,
+            Path("kag/indexes/hot_profile.json"),
+        )
+        if corpus_bytes is None or hot_profile_bytes is None:
+            raise PortableFamilyError(
+                f"{base_ref} tiered family control manifests are incomplete"
+            )
+        try:
+            corpus = json.loads(corpus_bytes)
+            hot_profile = json.loads(hot_profile_bytes)
+        except json.JSONDecodeError as exc:
+            raise PortableFamilyError(
+                f"{base_ref} tiered family control manifest is invalid"
+            ) from exc
+        objects = corpus.get("objects") if isinstance(corpus, dict) else None
+        selection = (
+            hot_profile.get("selection")
+            if isinstance(hot_profile, dict)
+            else None
+        )
+        hot_kinds = (
+            selection.get("include_record_kinds")
+            if isinstance(selection, dict)
+            else None
+        )
+        placement = manifest.get("placement")
+        placement_state = (
+            placement.get("state") if isinstance(placement, dict) else None
+        )
+        if (
+            not isinstance(objects, list)
+            or not isinstance(hot_kinds, list)
+            or placement_state not in {"shadow", "externalized"}
+        ):
+            raise PortableFamilyError(
+                f"{base_ref} tiered family placement is malformed"
+            )
+        paths = {
+            MANIFEST_RELATIVE_PATH,
+            Path("kag/indexes/corpus.manifest.json"),
+            Path("kag/indexes/hot_profile.json"),
+            Path("kag/indexes/artifact_locators.json"),
+        }
+        for descriptor in objects:
+            if not isinstance(descriptor, dict):
+                raise PortableFamilyError(
+                    f"{base_ref} tiered object descriptor is malformed"
+                )
+            kind = descriptor.get("kind")
+            range_value = descriptor.get("range")
+            if not isinstance(kind, str) or not isinstance(range_value, str):
+                raise PortableFamilyError(
+                    f"{base_ref} tiered object path is malformed"
+                )
+            if placement_state == "shadow" or kind in hot_kinds:
+                paths.add(
+                    Path("kag/indexes/shards")
+                    / kind
+                    / f"{range_value}.jsonl"
+                )
+        return paths
     return expected_portable_paths(manifest)
 
 
@@ -1129,7 +1275,14 @@ def _validate_standing_budget(
         raise PortableFamilyError("portable family budgets are malformed")
     for field in ("tracked_bytes_max", "changed_generated_bytes_max"):
         head_value = head_budgets.get(field)
-        base_value = base_budgets.get(field)
+        base_field = (
+            "owner_git_hot_bytes_max"
+            if field == "tracked_bytes_max"
+            and base_manifest.get("schema_version")
+            == TIERED_DISTRIBUTION_SCHEMA_VERSION
+            else field
+        )
+        base_value = base_budgets.get(base_field)
         if (
             not isinstance(head_value, int)
             or not isinstance(base_value, int)
@@ -1142,6 +1295,15 @@ def _validate_standing_budget(
                 f"standing budget {field} cannot be raised by generated output "
                 "or a one-change receipt"
             )
+
+
+def _budget_decision_ref(manifest: Mapping[str, Any]) -> str:
+    return (
+        TIERED_DECISION_REF
+        if manifest.get("schema_version")
+        == TIERED_DISTRIBUTION_SCHEMA_VERSION
+        else DECISION_REF
+    )
 
 
 def changed_generated_bytes(
@@ -1226,7 +1388,7 @@ def build_budget_receipt(
         "allowed_tracked_bytes": summary["tracked_bytes"],
         "reason": reason.strip(),
         "approved_by": approved_by,
-        "decision_ref": DECISION_REF,
+        "decision_ref": _budget_decision_ref(manifest),
     }
     return receipt_path_for(manifest), receipt
 
@@ -1290,7 +1452,7 @@ def validate_changed_generated_budget(
         "default_limit_bytes": limit,
         "tracked_bytes": summary["tracked_bytes"],
         "tracked_bytes_max": budgets["tracked_bytes_max"],
-        "decision_ref": DECISION_REF,
+        "decision_ref": _budget_decision_ref(manifest),
     }
     for field, value in expected.items():
         if receipt.get(field) != value:
@@ -1334,7 +1496,7 @@ def _validate_tracked_size_receipt(
         "head_family_digest": manifest["family_identity"]["content_digest"],
         "tracked_bytes": summary["tracked_bytes"],
         "tracked_bytes_max": budgets["tracked_bytes_max"],
-        "decision_ref": DECISION_REF,
+        "decision_ref": _budget_decision_ref(manifest),
     }
     for field, value in expected.items():
         if receipt.get(field) != value:

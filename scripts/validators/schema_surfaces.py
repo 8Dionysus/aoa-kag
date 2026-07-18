@@ -20,6 +20,10 @@ def validate_schema_surface() -> None:
         "repo-local KAG repository index",
     )
     validate_top_level_schema(REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH, "repo-local KAG query result")
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_QUERY_UNAVAILABLE_SCHEMA_PATH,
+        "repo-local KAG unavailable query result",
+    )
     validate_top_level_schema(KAG_MCP_CAPABILITIES_SCHEMA_PATH, "KAG MCP capabilities")
     validate_top_level_schema(KAG_MCP_RESULT_SCHEMA_PATH, "KAG MCP result")
     validate_top_level_schema(REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH, "repo-local KAG federation")
@@ -33,6 +37,31 @@ def validate_schema_surface() -> None:
     )
     validate_top_level_schema(DOMAIN_INDEX_CATALOG_SCHEMA_PATH, "domain index catalog")
     validate_top_level_schema(REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH, "repo-local KAG coverage")
+    for path, label in (
+        (REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH, "repo-local KAG corpus manifest"),
+        (REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH, "repo-local KAG distribution manifest"),
+        (REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH, "repo-local KAG hot profile"),
+        (KAG_ARTIFACT_LOCATOR_SCHEMA_PATH, "KAG artifact locator"),
+        (KAG_PACK_SCHEMA_PATH, "KAG transport pack"),
+        (KAG_PACK_INDEX_SCHEMA_PATH, "KAG pack index"),
+        (KAG_OWNER_FAMILY_RELEASE_SCHEMA_PATH, "KAG owner-family release"),
+        (KAG_OS_COMPOSITION_SCHEMA_PATH, "KAG OS composition"),
+        (KAG_OWNER_CHANGE_RECEIPT_SCHEMA_PATH, "KAG owner change receipt"),
+        (KAG_RECEIPT_GOVERNANCE_SCHEMA_PATH, "KAG receipt governance"),
+        (KAG_RECEIPT_GOVERNANCE_REPORT_SCHEMA_PATH, "KAG receipt governance report"),
+        (KAG_TIERED_METRICS_SCHEMA_PATH, "KAG tiered metrics"),
+        (
+            KAG_TIERED_ROLLOUT_EVIDENCE_SCHEMA_PATH,
+            "KAG tiered rollout evidence",
+        ),
+        (KAG_PORTABLE_FAMILY_BUNDLE_SCHEMA_PATH, "KAG portable family bundle"),
+        (
+            KAG_TIERED_BASELINE_EVIDENCE_SCHEMA_PATH,
+            "KAG tiered baseline evidence",
+        ),
+        (KAG_COVERAGE_BUILD_PACKET_SCHEMA_PATH, "KAG coverage build packet"),
+    ):
+        validate_top_level_schema(path, label)
 
 def validate_bridge_schema_surface() -> None:
     validate_top_level_schema(BRIDGE_SCHEMA_PATH, "bridge")

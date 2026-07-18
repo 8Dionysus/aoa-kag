@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-corpus-manifest.schema.json",
+  "title": "AoA repo-local KAG logical corpus manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "corpus_identity",
+    "epochs",
+    "builder",
+    "partitioning",
+    "normalization",
+    "source_index_header",
+    "compatibility",
+    "summary",
+    "objects",
+    "migration"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-corpus-manifest-v1"
+    },
+    "repo": {
+      "$ref": "#/$defs/repo"
+    },
+    "corpus_identity": {
+      "$ref": "#/$defs/corpusIdentity"
+    },
+    "epochs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "logical_schema",
+        "canonicalization",
+        "record_key",
+        "shard_partition"
+      ],
+      "properties": {
+        "logical_schema": {
+          "const": "aoa-repo-local-kag-family-manifest-v3"
+        },
+        "canonicalization": {
+          "const": "portable-record-normalization-v3"
+        },
+        "record_key": {
+          "const": "portable-record-key-v1"
+        },
+        "shard_partition": {
+          "const": "sha256-record-key-adaptive-prefix-v1"
+        }
+      }
+    },
+    "builder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route",
+        "contract_version"
+      ],
+      "properties": {
+        "route": {
+          "const": "aoa-kag:scripts/repo_local/tiered_family.py"
+        },
+        "contract_version": {
+          "const": "tiered-family-v1"
+        }
+      }
+    },
+    "partitioning": {
+      "type": "object"
+    },
+    "normalization": {
+      "type": "object"
+    },
+    "source_index_header": {
+      "type": "object",
+      "not": {
+        "required": [
+          "records"
+        ]
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "required": [
+        "view",
+        "assembly",
+        "files"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_records",
+        "objects",
+        "corpus_total_bytes"
+      ],
+      "properties": {
+        "canonical_records": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "objects": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "corpus_total_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50331648
+        }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/object"
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from_schema",
+        "from_family_digest",
+        "decision_ref"
+      ],
+      "properties": {
+        "from_schema": {
+          "const": "aoa-repo-local-kag-family-manifest-v3"
+        },
+        "from_family_digest": {
+          "$ref": "#/$defs/hexDigest"
+        },
+        "decision_ref": {
+          "$ref": "#/$defs/decisionRef"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hexDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "decisionRef": {
+      "const": "aoa-kag:docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md"
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "namespace",
+        "owner_type",
+        "root",
+        "git_ref"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "namespace": {
+          "type": "string",
+          "pattern": "^aoa:[a-z0-9_.-]+$"
+        },
+        "owner_type": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "root": {
+          "const": "."
+        },
+        "git_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "corpusIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "artifact_kind",
+        "content_digest",
+        "schema_ref",
+        "source_snapshot"
+      ],
+      "properties": {
+        "local_id": {
+          "const": "family:repo-local:logical-record-corpus"
+        },
+        "artifact_kind": {
+          "const": "repo_local_kag_corpus"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/repo-local-kag-corpus-manifest.schema.json"
+        },
+        "source_snapshot": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "range",
+        "content_digest",
+        "bytes",
+        "records"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "source",
+            "source_chunk",
+            "anchor",
+            "anchor_chunk",
+            "event",
+            "event_chunk"
+          ]
+        },
+        "range": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{1,64}$"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 196608
+        },
+        "records": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

@@ -39,11 +39,20 @@ identities, Git lineage,
 ABI/signs, provenance, freshness, access, temporal state, and trust remain
 resolvable through the family.
 
-Git tracks that family as `index_family.manifest.json` and bounded
-content-addressed JSONL shards. Source, structure, outbound declarations, and
-repository history are the portable corpus; artifact, entity, assertion, and
-relation files are deterministic compatibility views assembled on demand.
-Tracked bytes and generated change amplification are blocking budgets.
+The v4 family separates `corpus.manifest.json` from
+`index_family.manifest.json`, which now describes distribution. Git tracks the
+hot/bootstrap shards, hot profile, artifact locators, schemas, digests, and
+required receipts. Complete cold shards and deterministic packs are published
+to a digest-addressed artifact plane. Source, structure, outbound declarations,
+and repository history remain the logical portable corpus; artifact, entity,
+assertion, and relation files are deterministic compatibility views assembled
+on demand. During shadow publication the cold Git copies remain present but
+are not required by a CAS-only reader.
+
+The 320 MiB OS ceiling applies to mandatory Git-hot material. Owner hot bytes,
+aggregate hot bytes, and generated change amplification are blocking budgets.
+The current target is at most 70 percent aggregate utilization; a normal owner
+receipt cannot raise the aggregate ceiling.
 
 The family supports both home-port generations. A v1 manifest distinguishes a
 canonical owner skill under `skills/` from its exact declared repository copy

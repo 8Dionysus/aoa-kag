@@ -5,10 +5,49 @@ on:
     branches:
       - main
   pull_request:
+  schedule:
+    - cron: "31 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
+  owner_fast:
+    name: Owner Fast Gate
+    runs-on: ubuntu-latest
+    outputs:
+      impact-class: ${{ steps.kag.outputs.impact-class }}
+      validation-lane: ${{ steps.kag.outputs.validation-lane }}
+      full-fanout-reason: ${{ steps.kag.outputs.full-fanout-reason }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+
+      - name: Install owner-gate dependencies
+        run: python -m pip install PyYAML jsonschema
+
+      - name: Check affected owner KAG family
+        id: kag
+        uses: ./.github/actions/repo-local-kag-index
+
   release_audit:
-    name: Repo Validation
+    name: Full 24-owner Release Audit
+    needs: owner_fast
+    if: >-
+      always() &&
+      needs.owner_fast.result == 'success' &&
+      (
+        github.event_name != 'pull_request' ||
+        needs.owner_fast.outputs.validation-lane == 'full-24-owner-audit'
+      )
     runs-on: ubuntu-latest
     env:
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
@@ -37,9 +76,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - name: Check repo-local KAG index family
-        uses: ./.github/actions/repo-local-kag-index
+        with:
+          fetch-depth: 0
 
       - name: Checkout Tree-of-Sophia
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -242,5 +280,35 @@ jobs:
         run: |
           if [ -n "$(git status --porcelain --untracked-files=all -- generated)" ]; then
             git status --porcelain --untracked-files=all -- generated
+            exit 1
+          fi
+
+  required_summary:
+    name: Repo Validation
+    needs:
+      - owner_fast
+      - release_audit
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce required landing result
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          OWNER_FAST_RESULT: ${{ needs.owner_fast.result }}
+          RELEASE_AUDIT_RESULT: ${{ needs.release_audit.result }}
+          VALIDATION_LANE: ${{ needs.owner_fast.outputs.validation-lane }}
+        run: |
+          if [ "$OWNER_FAST_RESULT" != "success" ]; then
+            echo "owner-fast gate did not succeed: $OWNER_FAST_RESULT"
+            exit 1
+          fi
+          if [ "$EVENT_NAME" != "pull_request" ] ||
+             [ "$VALIDATION_LANE" = "full-24-owner-audit" ]; then
+            if [ "$RELEASE_AUDIT_RESULT" != "success" ]; then
+              echo "required full audit did not succeed: $RELEASE_AUDIT_RESULT"
+              exit 1
+            fi
+          elif [ "$RELEASE_AUDIT_RESULT" != "skipped" ]; then
+            echo "owner-fast PR produced unexpected audit result: $RELEASE_AUDIT_RESULT"
             exit 1
           fi

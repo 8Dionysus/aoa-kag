@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-hot-profile.schema.json",
+  "title": "AoA deterministic repo-local KAG Git-hot profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "profile_identity",
+    "selection",
+    "policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-hot-profile-v1"
+    },
+    "repo": {
+      "type": "object"
+    },
+    "profile_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "artifact_kind",
+        "content_digest",
+        "schema_ref",
+        "corpus_digest"
+      ],
+      "properties": {
+        "local_id": {
+          "const": "profile:repo-local:kag-git-hot"
+        },
+        "artifact_kind": {
+          "const": "repo_local_kag_hot_profile"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/repo-local-kag-hot-profile.schema.json"
+        },
+        "corpus_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "include_record_kinds",
+        "purpose",
+        "runtime_frequency_inputs",
+        "automatic_merge_or_eviction"
+      ],
+      "properties": {
+        "mode": {
+          "const": "record-kind-allowlist"
+        },
+        "include_record_kinds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "contains": {
+            "const": "source"
+          },
+          "items": {
+            "enum": [
+              "source",
+              "source_chunk"
+            ]
+          }
+        },
+        "purpose": {
+          "const": [
+            "bootstrap",
+            "discovery",
+            "audit",
+            "owner_return"
+          ]
+        },
+        "runtime_frequency_inputs": {
+          "const": "forbidden"
+        },
+        "automatic_merge_or_eviction": {
+          "const": "forbidden"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_qualified",
+        "deterministic",
+        "committed_lru_lfu",
+        "decision_ref"
+      ],
+      "properties": {
+        "owner_qualified": {
+          "const": true
+        },
+        "deterministic": {
+          "const": true
+        },
+        "committed_lru_lfu": {
+          "const": "forbidden"
+        },
+        "decision_ref": {
+          "const": "aoa-kag:docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

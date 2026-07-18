@@ -1,14 +1,22 @@
 {
   "coverage_summary": {
-    "aggregate_budget_state": "passed",
+    "aggregate_budget_state": "partial",
+    "artifact_cold_bytes": 0,
+    "corpus_total_bytes": 272425808,
+    "git_hot_bytes": 272425808,
+    "measured_owner_count": 23,
     "migration_needed": 0,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
+    "os_git_hot_target_bytes": 234881024,
     "owner_count": 24,
     "owner_specific": 0,
     "passed": 24,
-    "portable_tracked_bytes": 282446577,
-    "portable_v3": 24
+    "portable_tracked_bytes": 272425808,
+    "portable_v3": 23,
+    "self_excluded_owner_count": 1,
+    "target_budget_state": "exceeded",
+    "tiered_v4": 1
   },
   "owners": [
     {
@@ -88,13 +96,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/8Dionysus/kag",
+      "kag_home": "aoa-owner:8Dionysus:kag",
       "owner_type": "workspace",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "5c0267bfa2ea2364567a0719392bc3608fc839c320c3f2097d17d088c69c43bd",
+        "corpus_digest": "",
+        "corpus_total_bytes": 3897324,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 3897324,
+        "git_hot_objects": 288,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 288,
         "tracked_bytes": 3897324,
@@ -110,7 +132,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/8Dionysus"
+      "root": "aoa-owner:8Dionysus"
     },
     {
       "common_surface_profile": {
@@ -194,13 +216,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/ATM10-Agent/kag",
+      "kag_home": "aoa-owner:ATM10-Agent:kag",
       "owner_type": "workspace",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "630ac15884c953446e7ab2832222142514d34f501504cdde6a4ccf60e5e5d56a",
+        "corpus_digest": "",
+        "corpus_total_bytes": 9012924,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 9012924,
+        "git_hot_objects": 288,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 288,
         "tracked_bytes": 9012924,
@@ -216,7 +252,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/ATM10-Agent"
+      "root": "aoa-owner:ATM10-Agent"
     },
     {
       "common_surface_profile": {
@@ -319,13 +355,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/Agents-of-Abyss/kag",
+      "kag_home": "aoa-owner:Agents-of-Abyss:kag",
       "owner_type": "center",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "4ff1a4094c5b1b7e4da1649faeff0fd2bc096355e1e009222a3c8b404d2af10c",
+        "corpus_digest": "",
+        "corpus_total_bytes": 21935013,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 21935013,
+        "git_hot_objects": 652,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 652,
         "tracked_bytes": 21935013,
@@ -341,7 +391,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/Agents-of-Abyss"
+      "root": "aoa-owner:Agents-of-Abyss"
     },
     {
       "common_surface_profile": {
@@ -430,13 +480,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/Dionysus/kag",
+      "kag_home": "aoa-owner:Dionysus:kag",
       "owner_type": "workspace",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "d49b36f6c9a673100fbe04c3648db1ca103d2397e0729207ef6f2f5a14607563",
+        "corpus_digest": "",
+        "corpus_total_bytes": 21290750,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 21290750,
+        "git_hot_objects": 526,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 526,
         "tracked_bytes": 21290750,
@@ -452,7 +516,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/Dionysus"
+      "root": "aoa-owner:Dionysus"
     },
     {
       "common_surface_profile": {
@@ -557,13 +621,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/Tree-of-Sophia/kag",
+      "kag_home": "aoa-owner:Tree-of-Sophia:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "0308578bcf72413acb8dab3eec5e5d8d01cb0f9993613b63921627ebf0e719f7",
+        "corpus_digest": "",
+        "corpus_total_bytes": 10329132,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 10329132,
+        "git_hot_objects": 543,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 543,
         "tracked_bytes": 10329132,
@@ -579,7 +657,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/Tree-of-Sophia"
+      "root": "aoa-owner:Tree-of-Sophia"
     },
     {
       "common_surface_profile": {
@@ -680,13 +758,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-agents/kag",
+      "kag_home": "aoa-owner:aoa-agents:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "43fb735342f751c7e163fd317db6168c18d50e292ffa40f4df84e93419cb48ca",
+        "corpus_digest": "",
+        "corpus_total_bytes": 14996893,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 14996893,
+        "git_hot_objects": 601,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 601,
         "tracked_bytes": 14996893,
@@ -702,7 +794,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-agents"
+      "root": "aoa-owner:aoa-agents"
     },
     {
       "common_surface_profile": {
@@ -805,13 +897,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-evals/kag",
+      "kag_home": "aoa-owner:aoa-evals:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "68876bcaab7ea7fb97d5166efb94caba07c99d946e8711f38d406b77d93543cd",
+        "corpus_digest": "",
+        "corpus_total_bytes": 23577276,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 23577276,
+        "git_hot_objects": 659,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 659,
         "tracked_bytes": 23577276,
@@ -827,14 +933,14 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-evals"
+      "root": "aoa-owner:aoa-evals"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 83,
-            "document": 315,
+            "config": 84,
+            "document": 320,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -842,30 +948,30 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 77,
-            "script": 16,
+            "schema": 94,
+            "script": 22,
             "security": 1,
-            "source_code": 107,
-            "test": 51,
-            "validator": 15
+            "source_code": 111,
+            "test": 55,
+            "validator": 16
           },
           "command_role": {
-            "builder": 8,
+            "builder": 9,
             "lane_entrypoint": 3,
-            "none": 652,
-            "script": 5,
-            "test": 51,
-            "validator": 15
+            "none": 679,
+            "script": 10,
+            "test": 55,
+            "validator": 16
           },
           "document_role": {
             "agents": 58,
             "boundary": 1,
             "changelog": 1,
-            "decision": 25,
+            "decision": 26,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
-            "none": 411,
+            "none": 444,
             "parts": 13,
             "provenance": 13,
             "readme": 72,
@@ -873,14 +979,14 @@
             "skill": 1,
             "source_policy": 1,
             "testing_doc": 1,
-            "unknown_document": 18,
-            "validation_doc": 3
+            "unknown_document": 21,
+            "validation_doc": 4
           },
           "mechanics_role": {
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 313,
+            "none": 351,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -889,12 +995,12 @@
           },
           "primary_kind": {
             "artifact": 40,
-            "command": 82,
-            "document": 323,
-            "surface": 289
+            "command": 93,
+            "document": 328,
+            "surface": 311
           },
           "surface_state": {
-            "authored_source": 673,
+            "authored_source": 711,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -911,33 +1017,50 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 189,
-        "documents": 323,
+        "commands": 204,
+        "documents": 328,
         "generated": 35,
         "mechanics": 421,
-        "schemas": 78,
-        "scripts": 136,
-        "tests": 53,
-        "validators": 99
+        "schemas": 95,
+        "scripts": 147,
+        "tests": 57,
+        "validators": 100
       },
       "domain_index_catalog_ref": "",
-      "family_storage": "v3-portable-shards",
+      "family_storage": "v4-tiered-content-addressed",
       "index_files": [
+        "kag/indexes/artifact_locators.json",
+        "kag/indexes/corpus.manifest.json",
+        "kag/indexes/hot_profile.json",
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-kag/kag",
+      "kag_home": "aoa-owner:aoa-kag:kag",
       "owner_type": "organ",
       "portable_family": {
-        "budget_state": "passed",
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "kag/indexes/artifact_locators.json",
+        "budget_state": "self-excluded",
         "content_digest": "",
+        "corpus_digest": "",
+        "corpus_total_bytes": 0,
         "digest_state": "self-manifest",
+        "distribution_digest": "",
+        "git_hot_bytes": 0,
+        "git_hot_objects": 0,
+        "hot_profile_ref": "kag/indexes/hot_profile.json",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "owner-family-release.json#/measurements",
+        "measurement_state": "self-excluded",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "shadow",
         "receipt_ref": "",
-        "shards": 483,
-        "tracked_bytes": 10020769,
-        "tracked_bytes_max": 12582912
+        "shards": 0,
+        "tracked_bytes": 0,
+        "tracked_bytes_max": 4194304
       },
       "repo": "aoa-kag",
       "repository_index_family": {
@@ -949,7 +1072,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-kag"
+      "root": "aoa-owner:aoa-kag"
     },
     {
       "common_surface_profile": {
@@ -1056,13 +1179,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-memo/kag",
+      "kag_home": "aoa-owner:aoa-memo:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "ef8a12bd0894a45b955f9e0c30fa9be04a0e752e69231c58bc526268b6a9f032",
+        "corpus_digest": "",
+        "corpus_total_bytes": 16545073,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 16545073,
+        "git_hot_objects": 646,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 646,
         "tracked_bytes": 16545073,
@@ -1078,7 +1215,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-memo"
+      "root": "aoa-owner:aoa-memo"
     },
     {
       "common_surface_profile": {
@@ -1177,13 +1314,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-playbooks/kag",
+      "kag_home": "aoa-owner:aoa-playbooks:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "52b75ff3b4b0dc65eaac5fa3ccaf6ebf35023d626b21c4bec57eca6b989369bd",
+        "corpus_digest": "",
+        "corpus_total_bytes": 8603664,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 8603664,
+        "git_hot_objects": 366,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 366,
         "tracked_bytes": 8603664,
@@ -1199,7 +1350,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-playbooks"
+      "root": "aoa-owner:aoa-playbooks"
     },
     {
       "common_surface_profile": {
@@ -1298,13 +1449,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-routing/kag",
+      "kag_home": "aoa-owner:aoa-routing:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "ffa30bf9ceaa58627679a9b0541f8b25cd2abeacd5bde060c152492937fa4043",
+        "corpus_digest": "",
+        "corpus_total_bytes": 7964006,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 7964006,
+        "git_hot_objects": 394,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 394,
         "tracked_bytes": 7964006,
@@ -1320,7 +1485,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-routing"
+      "root": "aoa-owner:aoa-routing"
     },
     {
       "common_surface_profile": {
@@ -1420,13 +1585,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-sdk/kag",
+      "kag_home": "aoa-owner:aoa-sdk:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "9ae369913caaae1726fd174846781c0e4434a36814b82279493c66c00ae06149",
+        "corpus_digest": "",
+        "corpus_total_bytes": 13812671,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 13812671,
+        "git_hot_objects": 558,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 558,
         "tracked_bytes": 13812671,
@@ -1442,7 +1621,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-sdk"
+      "root": "aoa-owner:aoa-sdk"
     },
     {
       "common_surface_profile": {
@@ -1537,13 +1716,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-skills/kag",
+      "kag_home": "aoa-owner:aoa-skills:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "4f92131ade8ea77a186663daeb6b13cdaa0f927eb66ed7ce32b46f8f9505a53e",
+        "corpus_digest": "",
+        "corpus_total_bytes": 8477033,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 8477033,
+        "git_hot_objects": 357,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 357,
         "tracked_bytes": 8477033,
@@ -1559,7 +1752,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-skills"
+      "root": "aoa-owner:aoa-skills"
     },
     {
       "common_surface_profile": {
@@ -1657,13 +1850,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-stats/kag",
+      "kag_home": "aoa-owner:aoa-stats:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "f16e3f0af19c38047c7988ebf9fb0ee6706e47315e1683725cfc8020408321e6",
+        "corpus_digest": "",
+        "corpus_total_bytes": 8072226,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 8072226,
+        "git_hot_objects": 395,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 395,
         "tracked_bytes": 8072226,
@@ -1679,7 +1886,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-stats"
+      "root": "aoa-owner:aoa-stats"
     },
     {
       "common_surface_profile": {
@@ -1783,13 +1990,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-techniques/kag",
+      "kag_home": "aoa-owner:aoa-techniques:kag",
       "owner_type": "organ",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "23f28c077642d7b3b710d74265a7354af0e374a0260132b85330745ae3b6edd0",
+        "corpus_digest": "",
+        "corpus_total_bytes": 33249508,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 33249508,
+        "git_hot_objects": 743,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 743,
         "tracked_bytes": 33249508,
@@ -1805,7 +2026,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/aoa-techniques"
+      "root": "aoa-owner:aoa-techniques"
     },
     {
       "common_surface_profile": {
@@ -1910,13 +2131,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/home/dionysus/src/abyss-stack/kag",
+      "kag_home": "aoa-owner:abyss-stack:kag",
       "owner_type": "runtime_source",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "4ffb2d1168d791e23ebc6a62ca5f1a91f54475a5f3c6b1e949249e09cae1624a",
+        "corpus_digest": "",
+        "corpus_total_bytes": 21724495,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 21724495,
+        "git_hot_objects": 715,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 715,
         "tracked_bytes": 21724495,
@@ -1932,7 +2167,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/home/dionysus/src/abyss-stack"
+      "root": "aoa-owner:abyss-stack"
     },
     {
       "common_surface_profile": {
@@ -2026,13 +2261,27 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "/home/dionysus/src/abyss-machine/kag",
+      "kag_home": "aoa-owner:abyss-machine:kag",
       "owner_type": "runtime_source",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "4aff3a5f0f9c60dbb84e1782f56b48cbb60d100d3937e5958712fec87bf2ffcc",
+        "corpus_digest": "",
+        "corpus_total_bytes": 24675273,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 24675273,
+        "git_hot_objects": 520,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 520,
         "tracked_bytes": 24675273,
@@ -2048,7 +2297,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/home/dionysus/src/abyss-machine"
+      "root": "aoa-owner:abyss-machine"
     },
     {
       "common_surface_profile": {
@@ -2126,13 +2375,27 @@
         "kag/indexes/session_memory_source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/bundles/aoa-session-memory/kag",
+      "kag_home": "aoa-owner:aoa-session-memory:kag",
       "owner_type": "bundle_provider",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "c6a8cd608690e08ca87ab429f2184508eb46a6d5e4b1dd1caa8d0994689a6985",
+        "corpus_digest": "",
+        "corpus_total_bytes": 11921424,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 11921424,
+        "git_hot_objects": 314,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 314,
         "tracked_bytes": 11921424,
@@ -2148,7 +2411,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/bundles/aoa-session-memory"
+      "root": "aoa-owner:aoa-session-memory"
     },
     {
       "common_surface_profile": {
@@ -2232,13 +2495,27 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/connectors/aoa-4pda-connector/kag",
+      "kag_home": "aoa-owner:aoa-4pda-connector:kag",
       "owner_type": "connector",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "ad0a1168114a971b7149556e807170524eacd5db80588aba8f5253999e540023",
+        "corpus_digest": "",
+        "corpus_total_bytes": 3198708,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 3198708,
+        "git_hot_objects": 213,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 213,
         "tracked_bytes": 3198708,
@@ -2254,7 +2531,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/connectors/aoa-4pda-connector"
+      "root": "aoa-owner:aoa-4pda-connector"
     },
     {
       "common_surface_profile": {
@@ -2334,13 +2611,27 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/connectors/aoa-course-connector/kag",
+      "kag_home": "aoa-owner:aoa-course-connector:kag",
       "owner_type": "connector",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "06d32aaee149182b1aeee0f7cc64297c387ecdcd9d23f389117d2152e977ca25",
+        "corpus_digest": "",
+        "corpus_total_bytes": 5057329,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 5057329,
+        "git_hot_objects": 288,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 288,
         "tracked_bytes": 5057329,
@@ -2356,7 +2647,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/connectors/aoa-course-connector"
+      "root": "aoa-owner:aoa-course-connector"
     },
     {
       "common_surface_profile": {
@@ -2434,13 +2725,27 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/connectors/aoa-discord-connector/kag",
+      "kag_home": "aoa-owner:aoa-discord-connector:kag",
       "owner_type": "connector",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "484b8204bef41546fa3f644322af445e8869b106b60103cd44c52a9ed81eb9d2",
+        "corpus_digest": "",
+        "corpus_total_bytes": 933765,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 933765,
+        "git_hot_objects": 44,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 44,
         "tracked_bytes": 933765,
@@ -2456,7 +2761,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/connectors/aoa-discord-connector"
+      "root": "aoa-owner:aoa-discord-connector"
     },
     {
       "common_surface_profile": {
@@ -2534,13 +2839,27 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector/kag",
+      "kag_home": "aoa-owner:aoa-stackoverflow-connector:kag",
       "owner_type": "connector",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "588c5f8970d6d4ed9ecb498017ffa46500d4247af04d27ff9cf6a9e9f0ef26b2",
+        "corpus_digest": "",
+        "corpus_total_bytes": 1103445,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 1103445,
+        "git_hot_objects": 43,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 43,
         "tracked_bytes": 1103445,
@@ -2556,7 +2875,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector"
+      "root": "aoa-owner:aoa-stackoverflow-connector"
     },
     {
       "common_surface_profile": {
@@ -2634,13 +2953,27 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/connectors/aoa-telegram-connector/kag",
+      "kag_home": "aoa-owner:aoa-telegram-connector:kag",
       "owner_type": "connector",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "0aecf1d7172450f4dba13730bf59b3e69426c5b727c973a9530e18bfb84fed78",
+        "corpus_digest": "",
+        "corpus_total_bytes": 1058389,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 1058389,
+        "git_hot_objects": 43,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 43,
         "tracked_bytes": 1058389,
@@ -2656,7 +2989,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/connectors/aoa-telegram-connector"
+      "root": "aoa-owner:aoa-telegram-connector"
     },
     {
       "common_surface_profile": {
@@ -2735,13 +3068,27 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/connectors/aoa-xda-connector/kag",
+      "kag_home": "aoa-owner:aoa-xda-connector:kag",
       "owner_type": "connector",
       "portable_family": {
+        "aggregate_ceiling_receiptable_by_owner": false,
+        "artifact_cold_bytes": 0,
+        "artifact_cold_objects": 0,
+        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "52593169e259b2f695542a6b9edc9a44d2001e125b776dbf7c4270392b82c7f2",
+        "corpus_digest": "",
+        "corpus_total_bytes": 989487,
         "digest_state": "published",
+        "distribution_digest": "",
+        "git_hot_bytes": 989487,
+        "git_hot_objects": 44,
+        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
+        "measurement_ref": "",
+        "measurement_state": "measured",
+        "os_git_hot_target_bytes": 234881024,
+        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 44,
         "tracked_bytes": 989487,
@@ -2757,10 +3104,10 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "/srv/AbyssOS/connectors/aoa-xda-connector"
+      "root": "aoa-owner:aoa-xda-connector"
     }
   ],
-  "root": "/srv/AbyssOS",
+  "root": "aoa-os:canonical-providers",
   "schema_version": "aoa-repo-local-kag-coverage-v1",
   "source_contract": "schemas/repo-local-kag-index.schema.json"
 }

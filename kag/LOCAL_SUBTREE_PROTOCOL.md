@@ -64,11 +64,20 @@ The six normalized indexes pin the source-index digest and resolve common
 extractor, parser, provenance, temporal, and trust profiles. Runtime stores
 materialize search and graph projections from this canonical family.
 
-The canonical tracked representation is
-`indexes/index_family.manifest.json` plus bounded JSONL shards under
-`indexes/shards/`. The portable corpus stores source, structure, outbound
-reference, and repository-history material once. The seven rows above are
-deterministic compatibility views and may be assembled exactly on demand.
+The v4 representation has two identities. `indexes/corpus.manifest.json`
+identifies the ordered logical corpus and the exact seven compatibility
+digests. `indexes/index_family.manifest.json` identifies its physical
+distribution: Git-hot objects, artifact-cold objects, transport packs,
+locators, lifecycle, trust posture, and degradation routes. Relocating an
+unchanged shard or repacking objects changes distribution identity without
+changing corpus identity.
+
+`indexes/hot_profile.json` selects the deterministic bootstrap set. Committed
+hot selection is source-, discovery-, audit-, and owner-return-driven; runtime
+query frequency may affect only an untracked runtime cache. Shards remain the
+minimum content identity, while bounded packs are only a transport
+optimization. The seven rows above remain deterministic compatibility views
+and may be assembled exactly on demand.
 
 Partition keys use adaptive SHA-256 prefixes. Existing ranges split but never
 merge automatically. The target shard size is 128 KiB, the hard limit is
@@ -97,15 +106,37 @@ merely from `.agents/skills/` placement.
 
 ## Storage Posture
 
-Git carries compact, portable, reviewable provider records and read models.
-Runtime serving state routes to `abyss-stack` or `.aoa` stores. Provider
-records carry enough metadata for a runtime consumer to check freshness and
-return to the owning source.
+Git is the mandatory bootstrap plane, not the complete knowledge warehouse. It
+keeps manifests, schemas, source and compatibility digests, owner-return
+coordinates, locators, receipts, and the bounded hot corpus. Complete cold
+objects live in immutable owner-family releases. Runtime exact, graph, vector,
+embedding, and query-cache material routes to `abyss-stack` and remains
+regenerable rather than canonical.
 
-Each portable family enforces an owner tracked-byte baseline and a 1 MiB
-default changed-generated-bytes budget. OS-wide coverage enforces the aggregate
-ceiling after migration. A deliberate exceedance requires a digest-bound owner
-receipt; raising cost silently is invalid.
+Consumers have four explicit routes: Git-hot, verified local CAS, trusted
+remote artifact fetch, and deterministic source rebuild. They report a state
+such as `complete`, `git_hot_complete`, `hot_only`, `artifact_required`,
+`artifact_unavailable`, `rebuild_available`, `rebuild_required`, `stale`,
+`digest_mismatch`, `revoked`, or `access_denied`. Partial data is never
+reported as complete.
+
+Each family enforces an owner hot baseline, a 48 MiB hard owner ceiling, and a
+1 MiB default changed-generated-bytes budget. OS-wide coverage enforces a
+fixed 320 MiB Git-hot ceiling and a 70 percent operating target. A deliberate
+owner exceedance requires a digest-bound receipt; an owner receipt cannot
+raise a standing budget or bypass the aggregate ceiling.
+
+## Release And Composition
+
+Every owner-family release binds owner and source snapshot to corpus and
+distribution digests, ordered object descriptors, pack indexes, compatibility
+digests, provenance, signature state, verification receipt, lifecycle, and
+rollback coordinates. `abyss-machine` admits the bundle fail-closed and owns
+promotion, revocation, retention, and reachability-based garbage collection.
+
+The OS federation snapshot is a small composition manifest over 24 verified
+owner releases. It replaces only changed owner digests and does not require one
+new OS-wide corpus archive for an ordinary owner update.
 
 ## Registry And Composition
 

@@ -46,7 +46,11 @@
         "content_digest": {"$ref": "#/$defs/digest"}
       }
     },
-    "canonical_inputs": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "canonical_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/canonicalInput"}
+    },
     "projection_lanes": {
       "type": "array",
       "uniqueItems": true,
@@ -89,6 +93,65 @@
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "digestUri": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "canonicalInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "source_index_digest",
+        "family_digests",
+        "corpus_identity",
+        "distribution_identity"
+      ],
+      "properties": {
+        "repo": {
+          "type": "object",
+          "required": ["name", "namespace", "owner_type", "root", "git_ref"]
+        },
+        "source_index_digest": {"$ref": "#/$defs/digest"},
+        "family_digests": {
+          "type": "object",
+          "minProperties": 6,
+          "additionalProperties": {"$ref": "#/$defs/digest"}
+        },
+        "corpus_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["content_digest"],
+          "properties": {
+            "content_digest": {"$ref": "#/$defs/digestUri"}
+          }
+        },
+        "distribution_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "content_digest",
+            "delivery_state",
+            "complete",
+            "manifest_schema",
+            "routes"
+          ],
+          "properties": {
+            "content_digest": {"$ref": "#/$defs/digestUri"},
+            "delivery_state": {"type": "string", "minLength": 1},
+            "complete": {"type": "boolean"},
+            "manifest_schema": {"type": "string", "minLength": 1},
+            "routes": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "hot_profile_digest": {"$ref": "#/$defs/digestUri"},
+            "locator_digest": {"$ref": "#/$defs/digestUri"},
+            "pack_index_digest": {"$ref": "#/$defs/digestUri"}
+          }
+        }
+      }
+    },
     "file": {
       "type": "object",
       "additionalProperties": false,

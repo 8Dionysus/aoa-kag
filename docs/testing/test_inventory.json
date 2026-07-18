@@ -203,6 +203,66 @@
       ]
     },
     {
+      "path": "tests/test_repo_local_kag_tiered_distribution.py",
+      "family": "kag/tiered-family-distribution",
+      "protects": "Corpus/distribution identity separation, transport-independent packs and locators, explicit hot-only degradation, offline CAS reuse, artifact release contents, and selective CI impact classification.",
+      "owner_surface": "docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_tiered_distribution.py",
+      "failure_route": "Route through D-0019, tiered schemas, tiered_family.py, kag_impact.py, or artifact release tooling.",
+      "coverage_kinds": [
+        "topology/inventory",
+        "source/route-contract",
+        "generated/parity",
+        "release/artifact-trust"
+      ]
+    },
+    {
+      "path": "tests/test_repo_local_kag_tiered_family.py",
+      "family": "kag/tiered-family-distribution",
+      "protects": "Separated corpus and distribution identity, deterministic Git-hot selection, CAS object reuse, bounded pack ranges, dual-reader exact parity, explicit degradation, corruption rejection, and offline export/import.",
+      "owner_surface": "schemas/repo-local-kag-distribution-manifest.schema.json",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_tiered_family.py",
+      "failure_route": "Route through D-0019, tiered family schemas, scripts/repo_local/tiered_family.py, or the owner release command route.",
+      "coverage_kinds": [
+        "topology/inventory",
+        "source/route-contract",
+        "generated/parity",
+        "release/artifact-trust"
+      ]
+    },
+    {
+      "path": "tests/test_repo_local_kag_tiered_governance.py",
+      "family": "kag/tiered-family-governance",
+      "protects": "Exact owner-change receipts, amplification metrics, recurring-receipt escalation, verified 24-owner composition, incremental owner replacement, and rejection of unsigned owner releases.",
+      "owner_surface": "schemas/kag-receipt-governance.schema.json",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_tiered_governance.py",
+      "failure_route": "Route through D-0019, tiered_governance.py, owner-release lifecycle validation, OS composition, metrics, or receipt-governance contracts.",
+      "coverage_kinds": [
+        "topology/inventory",
+        "source/route-contract",
+        "generated/parity",
+        "release/artifact-trust"
+      ]
+    },
+    {
+      "path": "tests/test_repo_local_kag_tiered_rollout.py",
+      "family": "kag/tiered-family-rollout",
+      "protects": "Exact-source owner publication, artifact reuse, offline CAS parity, outage honesty, corruption rejection, cold-shard externalization, 24-owner evidence aggregation, and the five-owner canary order.",
+      "owner_surface": "schemas/kag-tiered-rollout-evidence.schema.json",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_tiered_rollout.py",
+      "failure_route": "Route through D-0019, tiered_rollout.py, the externalization preparation command, the 24-owner rollout command, or abyss-machine trust integration.",
+      "coverage_kinds": [
+        "topology/inventory",
+        "source/route-contract",
+        "generated/parity",
+        "release/artifact-trust"
+      ]
+    },
+    {
       "path": "tests/test_roadmap_parity.py",
           "family": "docs/root-surface",
           "protects": "Roadmap parity with current KAG direction.",

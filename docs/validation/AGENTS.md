@@ -19,6 +19,7 @@ validator inventory, script inventory, lane posture, and failure routes for
 - `docs/validation/validator_inventory.json`
 - `docs/validation/SCRIPT_TOPOLOGY.md`
 - `docs/validation/script_inventory.json`
+- `docs/validation/kag_tiered_baseline.evidence.json`
 
 ## Routes
 
@@ -29,6 +30,8 @@ validator inventory, script inventory, lane posture, and failure routes for
 | `validator_inventory.json` | validator module inventory |
 | `SCRIPT_TOPOLOGY.md` | script family map |
 | `script_inventory.json` | script surface inventory |
+| `KAG_TIERED_BASELINE.md` | human-readable immutable v3 baseline and drift explanation |
+| `kag_tiered_baseline.evidence.json` | schema-checked 24-owner baseline evidence packet |
 
 ## Validation
 

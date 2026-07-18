@@ -78,6 +78,11 @@ REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
 REPO_LOCAL_FAMILY_MANIFEST_NAME = "index_family.manifest.json"
+REPO_LOCAL_TIERED_CONTROL_SCHEMAS = {
+    "corpus.manifest.json": REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH,
+    "hot_profile.json": REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH,
+    "artifact_locators.json": KAG_ARTIFACT_LOCATOR_SCHEMA_PATH,
+}
 REPO_LOCAL_REPOSITORY_INDEX_NAMES = {
     "repo_entity_index.json",
     "repo_artifact_index.json",
@@ -561,9 +566,16 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                     repo_local_kag_validate_payload,
                 )
 
+                manifest_schema_path = (
+                    REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH
+                    if isinstance(payload, dict)
+                    and payload.get("schema_version")
+                    == "aoa-repo-local-kag-distribution-manifest-v1"
+                    else REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH
+                )
                 repo_local_kag_validate_payload(
                     payload,
-                    schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+                    schema_path=manifest_schema_path,
                     label=f"{label} {path.relative_to(repo_root).as_posix()}",
                 )
                 load_repo_local_kag_repository_index_family(
@@ -572,6 +584,19 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                         "kag/indexes/source_surface_index.json"
                     ),
                     label=f"{label} portable repository family",
+                )
+                continue
+            if (
+                group_name == "indexes"
+                and path.name in REPO_LOCAL_TIERED_CONTROL_SCHEMAS
+            ):
+                payload = read_json(path)
+                from .repo_local_kag_index import repo_local_kag_validate_payload
+
+                repo_local_kag_validate_payload(
+                    payload,
+                    schema_path=REPO_LOCAL_TIERED_CONTROL_SCHEMAS[path.name],
+                    label=f"{label} {path.relative_to(repo_root).as_posix()}",
                 )
                 continue
             if group_name == "indexes" and path.name in REPO_LOCAL_REPOSITORY_INDEX_NAMES:

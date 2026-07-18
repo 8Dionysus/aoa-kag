@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-of-abyss.dev/schemas/kag-tiered-rollout-evidence.schema.json",
+  "title": "OS Abyss tiered KAG rollout evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "phase",
+    "status",
+    "source_set_digest",
+    "owners",
+    "composition",
+    "aggregate",
+    "canaries",
+    "blocking_obligations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-tiered-rollout-evidence-v1"
+    },
+    "phase": {
+      "enum": [
+        "shadow",
+        "canary",
+        "rollout",
+        "post-merge"
+      ]
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "blocked"
+      ]
+    },
+    "source_set_digest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": {
+        "$ref": "#/$defs/owner"
+      }
+    },
+    "composition": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "content_digest",
+            "owner_count",
+            "proof"
+          ],
+          "properties": {
+            "content_digest": {
+              "$ref": "#/$defs/sha256"
+            },
+            "owner_count": {
+              "const": 24
+            },
+            "proof": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    },
+    "aggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_count",
+        "git_hot_bytes",
+        "shadow_git_bytes",
+        "current_tree_kag_bytes",
+        "corpus_total_bytes",
+        "artifact_cold_logical_bytes",
+        "artifact_unique_bytes",
+        "git_hot_hard_ceiling_bytes",
+        "git_hot_target_bytes"
+      ],
+      "properties": {
+        "owner_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24
+        },
+        "git_hot_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shadow_git_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_tree_kag_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "corpus_total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifact_cold_logical_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifact_unique_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "git_hot_hard_ceiling_bytes": {
+          "const": 335544320
+        },
+        "git_hot_target_bytes": {
+          "const": 234881024
+        }
+      }
+    },
+    "canaries": {
+      "const": [
+        "aoa-techniques",
+        "abyss-machine",
+        "aoa-evals",
+        "Agents-of-Abyss",
+        "abyss-stack"
+      ]
+    },
+    "blocking_obligations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "owner": {
+      "type": "object",
+      "required": [
+        "owner",
+        "source_ref",
+        "input_schema",
+        "placement_state",
+        "corpus_digest",
+        "distribution_digest",
+        "release_digest",
+        "measurements",
+        "checks",
+        "offline_import",
+        "location_pack_proof",
+        "source_rebuild_proof",
+        "trust",
+        "bundle_digest"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^commit:[0-9a-f]{40}([0-9a-f]{24})?$"
+        },
+        "input_schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "placement_state": {
+          "enum": [
+            "shadow",
+            "externalized"
+          ]
+        },
+        "corpus_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "distribution_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "release_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "measurements": {
+          "type": "object"
+        },
+        "checks": {
+          "type": "object"
+        },
+        "offline_import": {
+          "type": "object"
+        },
+        "location_pack_proof": {
+          "type": "object"
+        },
+        "source_rebuild_proof": {
+          "type": "object"
+        },
+        "trust": {
+          "type": "object"
+        },
+        "bundle_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}

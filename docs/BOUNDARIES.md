@@ -86,6 +86,25 @@ expanding the derived answer by invention.
 It should reground the caller back toward stronger source-owned exports,
 authored surfaces, or owner-layer contracts.
 
+## Rule 11: distribution does not own the corpus
+
+`aoa-kag` owns corpus canonicalization, family schemas, compatibility views,
+and federation semantics. Artifact URLs, mirrors, pack layouts, cache paths,
+and runtime databases are replaceable delivery coordinates. Changing them may
+change distribution identity but must not change corpus identity.
+
+## Rule 12: artifact and runtime authority stay separate
+
+`abyss-machine` owns signing, verification, promotion, revocation, retention,
+and garbage collection for KAG family releases. `abyss-stack` owns local CAS,
+exact/graph/vector materialization, freshness, degradation, and last-good
+runtime projections. `aoa-kag-mcp` remains read-only access and cannot become
+storage, mutation, or proof authority.
+
+Public KAG releases must not contain private session, memory, host-runtime, or
+restricted material. A future restricted family requires a separate trust
+domain, registry, and access policy.
+
 ## Compact rule
 
 `aoa-kag` should help AoA and ToS lift knowledge without letting the derived layer quietly replace the sources that feed it.
