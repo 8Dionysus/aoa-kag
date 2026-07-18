@@ -1,0 +1,13 @@
+interface:
+  display_name: "AoA KAG"
+  short_description: "Retrieve owner-grounded AoA knowledge"
+  default_prompt: "Use $aoa-kag to retrieve the canonical owner source and report whether its full contract is executable."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "aoa_kag"
+      description: "Read-only KAG discovery, search, read, traversal, and trace explanation."
+
+policy:
+  allow_implicit_invocation: true

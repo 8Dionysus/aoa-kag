@@ -41,6 +41,11 @@ shape, local subtree rollout posture, portable graph/index record classes, or
 sibling `/kag` stop-lines, also read `kag/AGENTS.md`, `kag/README.md`,
 `kag/source_home.manifest.json`, and `kag/LOCAL_SUBTREE_PROTOCOL.md`.
 
+For changes to the repository-owned callable KAG procedure, its capability
+contract, or its OS user exposure, also read `skills/AGENTS.md`,
+`skills/README.md`, `skills/port.manifest.json`, and the selected bundle
+surface.
+
 For changes to repository authority, owner boundaries, root posture, or claims
 about what `aoa-kag` may own, also read `CHARTER.md`,
 `docs/BOUNDARIES.md`, and `docs/SOURCE_POLICY.md`.
@@ -164,6 +169,7 @@ competing root card.
 | `agent-surface-design` | AGENTS shape, local-card placement, route modes, validation posture, or closeout changes | `DESIGN.AGENTS.md` |
 | `mechanic-change` | repeatable KAG operation topology, mechanics root contract, or future package posture changes | `mechanics/README.md` |
 | `local-kag-source-home` | `kag/` source-home preflight, local `/kag` protocol shape, repo-local subtree contract, sibling rollout stop-line, or portable graph/index record posture changes | `kag/README.md` |
+| `owner-skill` | the callable KAG procedure, capability contract, manual use posture, or OS user exposure changes | `skills/AGENTS.md` -> `skills/README.md` -> `skills/port.manifest.json` |
 | `local-stats` | a KAG-owned statistical question, measurement contract, or reference packet changes | `stats/AGENTS.md` -> `stats/README.md` -> `stats/port.manifest.json` |
 | `model-boundary` | KAG model, ownership, source policy, bridge contract, or non-identity boundary changes | `docs/KAG_MODEL.md` |
 | `decision-rationale` | durable route rationale or decision metadata changes | `docs/decisions/README.md` |
@@ -171,7 +177,7 @@ competing root card.
 | `generated-surface` | generated payloads, compact outputs, or registry read models change | `generated/AGENTS.md` |
 | `schema-example` | payload contracts or public-safe examples change | `schemas/AGENTS.md` or `examples/AGENTS.md` |
 | `builder-validator` | generators, validators, decision-index helpers, or test guards change | `scripts/AGENTS.md` |
-| `agent-companion-lane` | `.agents/` companion lanes, exported skill guidance, or Spark fast-loop posture changes | `.agents/AGENTS.md` |
+| `agent-companion-lane` | `.agents/` companion lanes, handoff prompts, model support, or Spark fast-loop posture changes | `.agents/AGENTS.md` |
 | `proof-pressure` | KAG-local eval intake, cases, fixtures, suites, or reports change | `evals/AGENTS.md` |
 | `direction-change` | current direction, stop-rules, owner wait states, or future contour changes | `ROADMAP.md` |
 

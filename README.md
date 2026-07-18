@@ -22,6 +22,7 @@ page.
 | Repository authority boundary | [CHARTER](CHARTER.md) |
 | KAG-layer system form | [DESIGN](DESIGN.md) |
 | Agent-facing route law | [AGENTS](AGENTS.md), then the nearest nested `AGENTS.md` |
+| Callable KAG procedure and OS exposure | [skills](skills/README.md), [home-port manifest](skills/port.manifest.json) |
 | KAG model, source policy, and owner boundaries | [KAG_MODEL](docs/KAG_MODEL.md), [BOUNDARIES](docs/BOUNDARIES.md), [SOURCE_POLICY](docs/SOURCE_POLICY.md) |
 | Local `/kag` source-home preflight | [kag](kag/README.md), [source_home.manifest](kag/source_home.manifest.json), [LOCAL_SUBTREE_PROTOCOL](kag/LOCAL_SUBTREE_PROTOCOL.md) |
 | Repo-local knowledge kernel | [kag indexes](kag/README.md), [portable family schema](schemas/repo-local-kag-family-manifest.schema.json), [source schema](schemas/repo-local-kag-index.schema.json), [repository schema](schemas/repo-local-kag-repository-index.schema.json), [coverage report](generated/repo_local_kag_coverage.min.json) |
@@ -112,6 +113,7 @@ that inventory.
 | [scripts](scripts/AGENTS.md) and [tests](tests/AGENTS.md) | builders, validators, decision-index helpers, and regression surfaces |
 | [evals](evals/README.md) | KAG-local proof pressure before central `aoa-evals` adoption |
 | [stats](stats/README.md) | owner-local statistical questions, measurement contracts, and evidence-linked reference packets |
+| [skills](skills/README.md) | canonical callable KAG procedure, capability contract, and OS user exposure declaration |
 | [quests](quests/README.md) | durable KAG obligations and source quest records |
 | [.agents](.agents/AGENTS.md), [.github](.github/AGENTS.md), and [config](config/AGENTS.md) | companion agent lanes, GitHub platform support, and repo-local configuration |
 

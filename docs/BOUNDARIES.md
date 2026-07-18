@@ -22,11 +22,14 @@ Authored source meaning still belongs to the originating repository or corpus.
 
 ## Rule 2a: a host projection is not a second source
 
-When an owner contract declares an exact runtime or agent-facing projection,
-KAG may index the physical copy but must return provenance and authority to the
-canonical owner file. A path such as `.agents/skills/` is not sufficient
-evidence by itself; the owner manifest and deterministic parity establish the
-relationship.
+When a v1 owner contract declares an exact repository projection, KAG may
+index the physical copy but must return provenance and authority to the
+canonical owner file. When a v2 owner contract declares OS user exposure, the
+repository keeps only the canonical owner source and the user profile selects
+it without a same-name repository copy. A path such as `.agents/skills/` is
+never sufficient evidence by itself; the owner manifest establishes the
+exposure mode, and deterministic parity is additionally required for a v1
+copy.
 
 ## Rule 3: KAG is not proof
 
