@@ -65,8 +65,8 @@ builder digest, schema epoch, canonicalization epoch, and distribution epoch
 still match exactly. A mismatch fails the run instead of silently rescanning a
 different snapshot. The compatibility canary uses the same run-scoped rule.
 The generated lane validates the complete committed state before regeneration;
-its final per-builder checks plus the before/after drift snapshot replace a
-redundant second full provider validation.
+its final per-builder checks plus before/after tracked-content and all-untracked
+drift snapshots replace a redundant second full provider validation.
 
 Explicit caller inputs keep precedence. The action exports the resolved
 repository name and both boundaries through repo-scoped environment variables

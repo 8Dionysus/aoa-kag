@@ -103,6 +103,17 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             ),
             validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
         )
+        self.assertEqual(
+            (
+                "git",
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+                "--",
+                *validation_lanes.GENERATED_DRIFT_PATHS,
+            ),
+            validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,
+        )
 
     def test_validation_lanes_api_resolves_lane_ids_to_command_sequences(self) -> None:
         self.assertEqual(
@@ -221,7 +232,9 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             self.assertEqual(
                 [
                     (validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,),
+                    (validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,),
                     (validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,),
+                    (validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,),
                 ],
                 [call.args for call in capture.call_args_list],
             )
@@ -247,7 +260,12 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             with patch.object(
                 ci_gate,
                 "capture_command_output",
-                side_effect=("before", "after"),
+                side_effect=(
+                    "tracked",
+                    "",
+                    "tracked",
+                    "?? kag/indexes/shards/new.jsonl\n",
+                ),
             ):
                 with redirect_stderr(StringIO()):
                     with self.assertRaises(subprocess.CalledProcessError):

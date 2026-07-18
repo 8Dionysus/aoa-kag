@@ -304,8 +304,22 @@ jobs:
 
       - name: Check generated outputs are committed
         run: |
-          if [ -n "$(git status --porcelain --untracked-files=all -- generated)" ]; then
-            git status --porcelain --untracked-files=all -- generated
+          if [ -n "$(git status --porcelain=v1 --untracked-files=all -- \
+            generated \
+            kag/indexes/artifact_locators.json \
+            kag/indexes/corpus.manifest.json \
+            kag/indexes/hot_profile.json \
+            kag/indexes/index_family.manifest.json \
+            kag/receipts/index_family_budget \
+            kag/indexes/shards)" ]; then
+            git status --porcelain=v1 --untracked-files=all -- \
+              generated \
+              kag/indexes/artifact_locators.json \
+              kag/indexes/corpus.manifest.json \
+              kag/indexes/hot_profile.json \
+              kag/indexes/index_family.manifest.json \
+              kag/receipts/index_family_budget \
+              kag/indexes/shards
             exit 1
           fi
 

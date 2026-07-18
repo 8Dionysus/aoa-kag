@@ -648,6 +648,16 @@ def validate_pack_index(
         raise TieredFamilyError("pack index shape is incomplete")
     if identity.get("content_digest") != _identity_digest(index, "pack_index_identity"):
         raise TieredFamilyError("pack index digest does not match")
+    for descriptor in packs:
+        if not isinstance(descriptor, Mapping):
+            raise TieredFamilyError("pack descriptor must be an object")
+        pack_digest = descriptor.get("pack_digest")
+        if not _is_digest_uri(pack_digest):
+            raise TieredFamilyError("pack descriptor digest is invalid")
+        if descriptor.get("object_key") != _pack_key(str(pack_digest)):
+            raise TieredFamilyError(
+                "pack object key must be the canonical portable path for its digest"
+            )
     pack_by_digest = {
         item.get("pack_digest"): item
         for item in packs
@@ -878,7 +888,10 @@ def validate_distribution_manifest(
         raise TieredFamilyError("OS Git-hot target drifted")
     if budgets.get("aggregate_ceiling_receiptable_by_owner") is not False:
         raise TieredFamilyError("owner receipt cannot override the OS ceiling")
-    if summary.get("git_hot_bytes", -1) > budgets.get("owner_hard_bytes_max", -1):
+    git_hot_bytes = summary.get("git_hot_bytes")
+    if not isinstance(git_hot_bytes, int) or git_hot_bytes < 0:
+        raise TieredFamilyError("distribution Git-hot byte count is invalid")
+    if git_hot_bytes > budgets.get("owner_hard_bytes_max", -1):
         raise TieredFamilyError("owner Git-hot surface exceeds the hard ceiling")
     if corpus_manifest is not None:
         validate_corpus_manifest(corpus_manifest)
@@ -888,10 +901,111 @@ def validate_distribution_manifest(
         validate_hot_profile(hot_profile)
         if manifest.get("hot_profile", {}).get("content_digest") != hot_profile["profile_identity"]["content_digest"]:
             raise TieredFamilyError("distribution hot profile digest does not match")
+    if corpus_manifest is not None and hot_profile is not None:
+        corpus_digest = corpus_manifest["corpus_identity"]["content_digest"]
+        if hot_profile["profile_identity"].get("corpus_digest") != corpus_digest:
+            raise TieredFamilyError("distribution hot profile targets the wrong corpus")
+        hot_kinds = hot_profile["selection"]["include_record_kinds"]
+        hot_objects = [
+            item
+            for item in corpus_manifest["objects"]
+            if _is_hot_kind(item["kind"], hot_kinds)
+        ]
+        cold_objects = [
+            item
+            for item in corpus_manifest["objects"]
+            if not _is_hot_kind(item["kind"], hot_kinds)
+        ]
+        placement = manifest.get("placement")
+        if not isinstance(placement, Mapping) or placement.get("state") not in {
+            "shadow",
+            "externalized",
+        }:
+            raise TieredFamilyError("distribution placement state is invalid")
+        git_hot_placement = placement.get("git_hot")
+        cold_placement = placement.get("artifact_cold")
+        if not isinstance(git_hot_placement, Mapping) or not isinstance(
+            cold_placement, Mapping
+        ):
+            raise TieredFamilyError("distribution placement sets are missing")
+        expected_hot_digest = _sha256_uri(
+            canonical_json_bytes(
+                [item["content_digest"] for item in hot_objects]
+            )
+        )
+        expected_cold_digest = _sha256_uri(
+            canonical_json_bytes(
+                [item["content_digest"] for item in cold_objects]
+            )
+        )
+        expected_placement = {
+            "git_hot record kinds": (
+                git_hot_placement.get("record_kinds"),
+                list(hot_kinds),
+            ),
+            "git_hot object count": (
+                git_hot_placement.get("objects"),
+                len(hot_objects),
+            ),
+            "git_hot object set": (
+                git_hot_placement.get("object_set_digest"),
+                expected_hot_digest,
+            ),
+            "artifact_cold record kinds": (
+                cold_placement.get("record_kinds"),
+                sorted({item["kind"] for item in cold_objects}),
+            ),
+            "artifact_cold object count": (
+                cold_placement.get("objects"),
+                len(cold_objects),
+            ),
+            "artifact_cold object set": (
+                cold_placement.get("object_set_digest"),
+                expected_cold_digest,
+            ),
+            "artifact_cold shadow state": (
+                cold_placement.get("shadow_git_copy"),
+                placement["state"] == "shadow",
+            ),
+        }
+        for label, (actual, expected) in expected_placement.items():
+            if actual != expected:
+                raise TieredFamilyError(
+                    f"distribution {label} does not match corpus placement"
+                )
+        hot_shard_bytes = sum(int(item["bytes"]) for item in hot_objects)
+        cold_shard_bytes = sum(int(item["bytes"]) for item in cold_objects)
+        expected_summary = {
+            "corpus_total_bytes": hot_shard_bytes + cold_shard_bytes,
+            "git_hot_shard_bytes": hot_shard_bytes,
+            "artifact_cold_bytes": cold_shard_bytes,
+            "git_hot_objects": len(hot_objects),
+            "artifact_cold_objects": len(cold_objects),
+            "shadow_git_bytes": (
+                cold_shard_bytes if placement["state"] == "shadow" else 0
+            ),
+        }
+        for field, expected in expected_summary.items():
+            if summary.get(field) != expected:
+                raise TieredFamilyError(
+                    f"distribution summary {field} does not match corpus placement"
+                )
     if locator_manifest is not None:
         validate_locator_manifest(locator_manifest)
         if manifest.get("artifact_locators", {}).get("content_digest") != locator_manifest["locator_identity"]["content_digest"]:
             raise TieredFamilyError("distribution locator digest does not match")
+        if corpus_manifest is not None and hot_profile is not None:
+            expected_git_hot_bytes = (
+                len(render_manifest(corpus_manifest))
+                + len(render_manifest(hot_profile))
+                + len(render_manifest(locator_manifest))
+                + int(summary["git_hot_shard_bytes"])
+                + len(render_manifest(manifest))
+            )
+            if git_hot_bytes != expected_git_hot_bytes:
+                raise TieredFamilyError(
+                    "distribution summary git_hot_bytes does not match Git-hot surface"
+                )
     if pack_index is not None:
         validate_pack_index(pack_index)
         if manifest.get("transport", {}).get("pack_index_digest") != pack_index["pack_index_identity"]["content_digest"]:
@@ -1649,6 +1763,13 @@ def _validate_release_manifest_set(
         raise TieredFamilyError("owner release source owner is missing")
     if release_repo.get("name") != owner or release_source.get("owner") != owner:
         raise TieredFamilyError("owner release owner does not match corpus")
+    corpus_identity = corpus.get("corpus_identity")
+    if not isinstance(corpus_identity, Mapping):
+        raise TieredFamilyError("corpus identity is missing")
+    if release_source.get("snapshot") != corpus_identity.get("source_snapshot"):
+        raise TieredFamilyError(
+            "owner release source snapshot does not match corpus"
+        )
     identity = release.get("release_identity")
     if not isinstance(identity, Mapping):
         raise TieredFamilyError("owner release identity is missing")

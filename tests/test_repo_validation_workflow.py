@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import subprocess
 import textwrap
@@ -30,8 +31,22 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
     def test_generated_drift_gate_checks_untracked_files(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        manifest = json.loads(
+            (
+                REPO_ROOT / "config" / "validation_lanes.json"
+            ).read_text(encoding="utf-8")
+        )
+        generated_step = workflow_text.split(
+            "      - name: Check generated outputs are committed\n",
+            1,
+        )[1].split("\n  required_summary:", 1)[0]
 
-        self.assertIn("git status --porcelain --untracked-files=all -- generated", workflow_text)
+        self.assertIn(
+            "git status --porcelain=v1 --untracked-files=all --",
+            generated_step,
+        )
+        for path in manifest["drift_paths"]["generated"]:
+            self.assertIn(path, generated_step)
         self.assertNotIn("git diff --exit-code -- generated", workflow_text)
 
     def test_required_summary_preserves_branch_protection_context(self) -> None:

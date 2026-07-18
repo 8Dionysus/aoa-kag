@@ -90,6 +90,9 @@ def _release_verified(release: Mapping[str, Any]) -> bool:
     lifecycle = release.get("lifecycle")
     return (
         isinstance(signature, Mapping)
+        and signature.get("algorithm")
+        in {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
+        and bool(str(signature.get("signature_ref") or "").strip())
         and signature.get("verification_state") == "verified"
         and isinstance(lifecycle, Mapping)
         and lifecycle.get("state")

@@ -54,6 +54,17 @@ def run_source_fast() -> None:
     run_sequence(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
 
 
+def capture_generated_drift_snapshot() -> tuple[str, str]:
+    return (
+        capture_command_output(
+            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
+        ),
+        capture_command_output(
+            validation_lanes.GENERATED_DRIFT_STATUS_COMMAND
+        ),
+    )
+
+
 @contextmanager
 def coverage_packet_scope() -> Iterator[Path]:
     selected_parent = (
@@ -82,13 +93,9 @@ def coverage_packet_scope() -> Iterator[Path]:
 
 def run_generated() -> None:
     with coverage_packet_scope():
-        before_snapshot = capture_command_output(
-            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
-        )
+        before_snapshot = capture_generated_drift_snapshot()
         run_sequence(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
-        after_snapshot = capture_command_output(
-            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
-        )
+        after_snapshot = capture_generated_drift_snapshot()
         if before_snapshot != after_snapshot:
             print(
                 "[ci-gate] generated lane changed generated/read-model drift paths",

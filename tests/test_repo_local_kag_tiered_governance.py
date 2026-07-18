@@ -291,6 +291,28 @@ class TieredKagGovernanceTests(unittest.TestCase):
                     signer=sign_composition,
                 )
 
+            for algorithm, signature_ref in (
+                ("none", ""),
+                ("ed25519", " "),
+            ):
+                with self.subTest(
+                    algorithm=algorithm,
+                    signature_ref=signature_ref,
+                ):
+                    releases[7] = copy.deepcopy(promote(builds[7]))
+                    releases[7]["signature"]["algorithm"] = algorithm
+                    releases[7]["signature"]["signature_ref"] = signature_ref
+                    releases[7]["signature"]["verification_state"] = "verified"
+                    validate_owner_release(releases[7])
+                    with self.assertRaisesRegex(
+                        TieredFamilyError,
+                        "not verified",
+                    ):
+                        build_os_composition(
+                            releases,
+                            signer=sign_composition,
+                        )
+
 
 if __name__ == "__main__":
     unittest.main()
