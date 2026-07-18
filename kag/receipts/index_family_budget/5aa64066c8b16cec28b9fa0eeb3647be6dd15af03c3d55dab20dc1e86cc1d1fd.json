@@ -1,0 +1,17 @@
+{
+  "allowed_bytes": 10451511,
+  "allowed_tracked_bytes": 10020769,
+  "approved_by": "repository-owner",
+  "base_ref": "47e7587154ee2828b913b4a5ca4b20ba646587dc",
+  "changed_generated_bytes": 10451511,
+  "changed_generated_files": 401,
+  "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
+  "default_limit_bytes": 1048576,
+  "head_family_digest": "5aa64066c8b16cec28b9fa0eeb3647be6dd15af03c3d55dab20dc1e86cc1d1fd",
+  "reason": "Approve one measured generated-delta exceedance caused by removing 25 non-owner .agents skill exports, admitting the canonical aoa-kag owner bundle, and adding skill document-role plus v2 OS user-exposure classification; the tracked family shrinks and remains below its standing cap.",
+  "repo": "aoa-kag",
+  "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
+  "scope": "generated_delta",
+  "tracked_bytes": 10020769,
+  "tracked_bytes_max": 12582912
+}
