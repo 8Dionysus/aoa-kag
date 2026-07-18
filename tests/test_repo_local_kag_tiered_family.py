@@ -560,6 +560,76 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
         self.assertEqual("externalized", manifest["placement"]["state"])
         self.assertEqual([], remaining)
 
+    def test_release_builder_preserves_externalized_placement_by_default(
+        self,
+    ) -> None:
+        with (
+            tempfile.TemporaryDirectory() as repo_tmp,
+            tempfile.TemporaryDirectory() as artifact_tmp,
+        ):
+            root = Path(repo_tmp)
+            artifact_root = Path(artifact_tmp)
+            _, _, manifest, shards = build_fixture_family(root)
+            externalized = build_tiered_family(
+                manifest,
+                shards,
+                shadow_mode=False,
+            )
+            write_tiered_git_surface(root, externalized, externalize=True)
+            write_tiered_artifact(artifact_root, externalized)
+            cold_paths = [
+                root
+                / "kag"
+                / "indexes"
+                / "shards"
+                / str(item["kind"])
+                / f"{item['range']}.jsonl"
+                for item in externalized.owner_release["objects"]
+                if item["placement"] == "artifact_cold"
+            ]
+            self.assertTrue(cold_paths)
+            self.assertTrue(all(not path.exists() for path in cold_paths))
+
+            preserved = build_release_main(
+                [
+                    "--repo-root",
+                    str(root),
+                    "--artifact-root",
+                    str(artifact_root),
+                ]
+            )
+            preserved_manifest = json.loads(
+                (
+                    root / "kag/indexes/index_family.manifest.json"
+                ).read_text(encoding="utf-8")
+            )
+
+            self.assertEqual(0, preserved)
+            self.assertEqual(
+                "externalized",
+                preserved_manifest["placement"]["state"],
+            )
+            self.assertTrue(all(not path.exists() for path in cold_paths))
+
+            restored = build_release_main(
+                [
+                    "--repo-root",
+                    str(root),
+                    "--artifact-root",
+                    str(artifact_root),
+                    "--retain-cold-in-git",
+                ]
+            )
+            restored_manifest = json.loads(
+                (
+                    root / "kag/indexes/index_family.manifest.json"
+                ).read_text(encoding="utf-8")
+            )
+
+            self.assertEqual(0, restored)
+            self.assertEqual("shadow", restored_manifest["placement"]["state"])
+            self.assertTrue(all(path.exists() for path in cold_paths))
+
 
 if __name__ == "__main__":
     unittest.main()

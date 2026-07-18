@@ -310,7 +310,7 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                 )
                 with self.assertRaisesRegex(
                     TieredFamilyError,
-                    "canonical portable path",
+                    "canonical portable digest path",
                 ):
                     validate_pack_index(tampered)
 
@@ -420,6 +420,42 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                     artifact_root=artifact,
                     allow_shadow_git=False,
                 )
+
+    def test_release_validation_binds_source_snapshot_to_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            artifact = base / "artifact"
+            root.mkdir()
+            write_fixture(root)
+            _, _, build = build_fixture_family(root, shadow_mode=False)
+            write_tiered_git_surface(root, build, externalize=True)
+            write_tiered_artifact(artifact, build)
+            distribution_digest = build.distribution_manifest[
+                "distribution_identity"
+            ]["content_digest"].removeprefix("sha256:")
+            release_path = (
+                artifact
+                / "releases"
+                / build.distribution_manifest["repo"]["name"]
+                / distribution_digest
+                / OWNER_RELEASE_ARTIFACT_PATH
+            )
+            release = json.loads(release_path.read_text(encoding="utf-8"))
+            release["source"]["snapshot"] = "sha256:" + ("f" * 64)
+            release_digest = owner_release_digest(release)
+            release["release_identity"]["content_digest"] = release_digest
+            release["signature"]["subject_digest"] = release_digest
+            release_path.write_text(
+                json.dumps(release, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                TieredFamilyError,
+                "source snapshot does not match corpus",
+            ):
+                validate_tiered_artifact_release(root, artifact)
 
     def test_portable_bundle_supports_offline_full_read_and_deduplicated_import(
         self,
@@ -533,42 +569,6 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                 "owner release digest does not match",
             ):
                 import_portable_bundle(bundle, imported)
-
-    def test_artifact_release_source_snapshot_must_match_corpus(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            base = Path(tmpdir)
-            root = base / "repo"
-            artifact = base / "artifact"
-            root.mkdir()
-            write_fixture(root)
-            _, _, build = build_fixture_family(root)
-            write_tiered_git_surface(root, build, externalize=False)
-            write_tiered_artifact(artifact, build)
-            distribution_digest = build.distribution_manifest[
-                "distribution_identity"
-            ]["content_digest"].removeprefix("sha256:")
-            release_path = (
-                artifact
-                / "releases"
-                / build.distribution_manifest["repo"]["name"]
-                / distribution_digest
-                / OWNER_RELEASE_ARTIFACT_PATH
-            )
-            release = json.loads(release_path.read_text(encoding="utf-8"))
-            release["source"]["snapshot"] = "sha256:" + ("f" * 64)
-            release_digest = owner_release_digest(release)
-            release["release_identity"]["content_digest"] = release_digest
-            release["signature"]["subject_digest"] = release_digest
-            release_path.write_text(
-                json.dumps(release, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
-
-            with self.assertRaisesRegex(
-                TieredFamilyError,
-                "source snapshot does not match corpus",
-            ):
-                validate_tiered_artifact_release(root, artifact)
 
     def test_bundle_copy_refuses_nonempty_destination(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
