@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import shutil
 import tempfile
@@ -29,6 +30,7 @@ from scripts.repo_local.tiered_family import (
     TieredFamilyBuild,
     TieredFamilyError,
     TieredFamilyUnavailable,
+    _identity_digest,
     build_tiered_family,
     copy_bundle_to_empty_destination,
     export_portable_bundle,
@@ -36,8 +38,11 @@ from scripts.repo_local.tiered_family import (
     import_portable_bundle,
     load_tiered_family,
     load_tiered_rows,
+    owner_release_digest,
     prepare_owner_release_lifecycle,
+    validate_distribution_manifest,
     validate_pack_index,
+    validate_tiered_artifact_release,
     write_tiered_artifact,
     write_tiered_git_surface,
 )
@@ -360,6 +365,90 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                     artifact_root=artifact,
                     allow_shadow_git=False,
                 )
+
+    def test_distribution_validation_recomputes_corpus_measurements(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            _, _, build = build_fixture_family(root)
+
+        for field, invalid in (
+            ("git_hot_bytes", 1),
+            ("artifact_cold_bytes", 0),
+            ("git_hot_objects", 0),
+            ("artifact_cold_objects", 0),
+        ):
+            with self.subTest(field=field):
+                tampered = copy.deepcopy(build.distribution_manifest)
+                tampered["summary"][field] = invalid
+                tampered["distribution_identity"]["content_digest"] = (
+                    _identity_digest(tampered, "distribution_identity")
+                )
+                with self.assertRaisesRegex(
+                    TieredFamilyError,
+                    f"distribution summary {field} does not match",
+                ):
+                    validate_distribution_manifest(
+                        tampered,
+                        corpus_manifest=build.corpus_manifest,
+                        hot_profile=build.hot_profile,
+                        locator_manifest=build.locator_manifest,
+                        pack_index=build.pack_index,
+                    )
+
+    def test_release_validation_binds_source_snapshot_to_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            artifact = base / "artifact"
+            root.mkdir()
+            write_fixture(root)
+            _, _, build = build_fixture_family(root, shadow_mode=False)
+            write_tiered_git_surface(root, build, externalize=True)
+            write_tiered_artifact(artifact, build)
+            distribution_digest = build.distribution_manifest[
+                "distribution_identity"
+            ]["content_digest"].removeprefix("sha256:")
+            release_path = (
+                artifact
+                / "releases"
+                / build.distribution_manifest["repo"]["name"]
+                / distribution_digest
+                / OWNER_RELEASE_ARTIFACT_PATH
+            )
+            release = json.loads(release_path.read_text(encoding="utf-8"))
+            release["source"]["snapshot"] = "sha256:" + ("f" * 64)
+            release_digest = owner_release_digest(release)
+            release["release_identity"]["content_digest"] = release_digest
+            release["signature"]["subject_digest"] = release_digest
+            release_path.write_text(
+                json.dumps(release, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                TieredFamilyError,
+                "source snapshot does not match corpus",
+            ):
+                validate_tiered_artifact_release(root, artifact)
+
+    def test_pack_index_rejects_noncanonical_portable_object_key(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            _, _, build = build_fixture_family(root)
+        tampered = copy.deepcopy(build.pack_index)
+        tampered["packs"][0]["object_key"] = "../outside.pack"
+        tampered["pack_index_identity"]["content_digest"] = _identity_digest(
+            tampered,
+            "pack_index_identity",
+        )
+
+        with self.assertRaisesRegex(
+            TieredFamilyError,
+            "canonical portable digest path",
+        ):
+            validate_pack_index(tampered)
 
     def test_portable_bundle_supports_offline_full_read_and_deduplicated_import(
         self,

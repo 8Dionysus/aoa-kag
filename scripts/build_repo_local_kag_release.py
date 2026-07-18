@@ -38,7 +38,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "one bounded transient validation root"
         ),
     )
-    parser.add_argument("--externalize-cold", action="store_true")
+    placement = parser.add_mutually_exclusive_group()
+    placement.add_argument("--externalize-cold", action="store_true")
+    placement.add_argument(
+        "--retain-cold-in-git",
+        action="store_true",
+        help=(
+            "explicitly rebuild in shadow placement; by default an existing "
+            "externalized v4 family remains externalized"
+        ),
+    )
     parser.add_argument("--incremental", action="store_true")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--materialize-artifact-on-check", action="store_true")
@@ -81,7 +90,7 @@ def _run(args: argparse.Namespace, artifact_root: Path, *, transient: bool) -> i
         "--max-pack-bytes",
         str(args.max_pack_bytes),
     ]
-    if args.externalize_cold or _existing_family_is_externalized(repo_root):
+    if _externalize_cold(args, repo_root):
         routed.append("--externalize-cold")
     if args.incremental:
         routed.append("--incremental")
@@ -94,6 +103,14 @@ def _run(args: argparse.Namespace, artifact_root: Path, *, transient: bool) -> i
     if event_history_ref:
         routed.extend(("--event-history-ref", event_history_ref))
     return generate_main(routed)
+
+
+def _externalize_cold(args: argparse.Namespace, repo_root: Path) -> bool:
+    if args.externalize_cold:
+        return True
+    if args.retain_cold_in_git:
+        return False
+    return _existing_family_is_externalized(repo_root)
 
 
 def _transient_parent() -> Path | None:

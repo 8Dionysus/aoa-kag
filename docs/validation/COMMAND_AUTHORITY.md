@@ -41,6 +41,9 @@ runs, the durable boundary is the commit's first parent rather than `HEAD`.
 The shared builder fallback and `build_repo_local_kag_release.py` apply the
 same rule, so generated and release lanes cannot silently compare a committed
 family with a `HEAD`-bound rebuild when the composite action is not the caller.
+The release builder also preserves an existing v4 `externalized` placement by
+default; returning cold copies to Git requires the explicit
+`--retain-cold-in-git` rollback route.
 The builder combines this durable history with the current repository snapshot,
 keeping a multi-commit branch and its squash-merged default-branch snapshot on
 the same generated index family.
