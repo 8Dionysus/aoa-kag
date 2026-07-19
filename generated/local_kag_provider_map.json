@@ -3153,8 +3153,8 @@
         "receipts": 1
       },
       "repo_local_index": {
-        "status": "passed",
-        "source_index_ref": "kag/indexes/source_surface_index.json",
+        "status": "migration-needed",
+        "source_index_ref": "",
         "index_files": [
           "kag/indexes/domain_index_catalog.json",
           "kag/indexes/index_family.manifest.json",
@@ -3185,15 +3185,7 @@
           "tracked_bytes": 18246477,
           "tracked_bytes_max": 13631488
         },
-        "repository_index_family": {
-          "anchor": "kag/indexes/repo_anchor_index.json",
-          "artifact": "kag/indexes/repo_artifact_index.json",
-          "assertion": "kag/indexes/repo_assertion_index.json",
-          "entity": "kag/indexes/repo_entity_index.json",
-          "event": "kag/indexes/repo_event_index.json",
-          "relation": "kag/indexes/repo_relation_index.json",
-          "source": "kag/indexes/source_surface_index.json"
-        },
+        "repository_index_family": {},
         "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
         "coverage": {
           "commands": 9,
@@ -9942,8 +9934,8 @@
       "coverage_owner_key": "aoa-sdk"
     },
     "aoa-session-memory": {
-      "status": "passed",
-      "source_index_ref": "kag/indexes/source_surface_index.json",
+      "status": "migration-needed",
+      "source_index_ref": "",
       "index_files": [
         "kag/indexes/domain_index_catalog.json",
         "kag/indexes/index_family.manifest.json",
@@ -9974,15 +9966,7 @@
         "tracked_bytes": 18246477,
         "tracked_bytes_max": 13631488
       },
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
+      "repository_index_family": {},
       "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
       "coverage": {
         "commands": 9,

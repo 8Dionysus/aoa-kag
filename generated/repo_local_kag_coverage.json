@@ -5,13 +5,13 @@
     "corpus_total_bytes": 278750861,
     "git_hot_bytes": 278750861,
     "measured_owner_count": 23,
-    "migration_needed": 0,
+    "migration_needed": 1,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
     "os_git_hot_target_bytes": 234881024,
     "owner_count": 24,
     "owner_specific": 0,
-    "passed": 24,
+    "passed": 23,
     "portable_tracked_bytes": 278750861,
     "portable_v3": 23,
     "self_excluded_owner_count": 1,
@@ -2378,7 +2378,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/session_memory_source_inventory.json"
       ],
-      "index_status": "passed",
+      "index_status": "migration-needed",
       "kag_home": "aoa-owner:aoa-session-memory:kag",
       "owner_type": "bundle_provider",
       "portable_family": {
@@ -2406,15 +2406,7 @@
         "tracked_bytes_max": 13631488
       },
       "repo": "aoa-session-memory",
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
+      "repository_index_family": {},
       "root": "aoa-owner:aoa-session-memory"
     },
     {
