@@ -1172,6 +1172,45 @@ def capability_projection_sources(
     return resolved
 
 
+def capability_graph_projection_path(
+    repo_root: Path,
+    tracked_paths: set[Path],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> Path | None:
+    """Return the exact opted-in graph path used by structural extraction."""
+
+    if CAPABILITY_HOME_PORT_MANIFEST not in tracked_paths:
+        return None
+    payload = json_object(
+        source_bytes(
+            repo_root,
+            CAPABILITY_HOME_PORT_MANIFEST,
+            repo_root / CAPABILITY_HOME_PORT_MANIFEST,
+            source_snapshot=source_snapshot,
+        )
+    )
+    if (
+        payload is None
+        or payload.get("schema_version") != CAPABILITY_HOME_PORT_SCHEMA_VERSION
+    ):
+        return None
+    projection = payload.get("projection")
+    if (
+        not isinstance(projection, dict)
+        or projection.get("authority") is not False
+    ):
+        return None
+    try:
+        graph_path = manifest_relative_path(
+            projection.get("graph_json"),
+            field="capability home projection.graph_json",
+        )
+    except ValueError:
+        return None
+    return graph_path if graph_path in tracked_paths else None
+
+
 def home_skill_projection_sources(
     repo_root: Path,
     tracked_entries: Mapping[Path, Mapping[str, str]],
@@ -2035,6 +2074,7 @@ def generated_by_for(
     content: bytes,
     *,
     repo_root: Path,
+    capability_projection: bool,
 ) -> str:
     if state == "generated_projection":
         return HOME_SKILL_PROJECTION_BUILDER_ROUTE
@@ -2045,7 +2085,7 @@ def generated_by_for(
     if builder_surface:
         return builder_surface
     payload = json_object(content)
-    if capability_graph_payload(content) is not None:
+    if capability_projection and capability_graph_payload(content) is not None:
         capability_builder = Path("scripts/build_capability_projection.py")
         if capability_builder in tracked_paths:
             return capability_builder.as_posix()
@@ -2183,27 +2223,14 @@ def build_record(
         ]
     else:
         source_rel = rel
-        capability_sources = capability_graph_source_paths(content, tracked_paths)
-        if capability_sources:
-            source_rel = capability_sources[0]
-            provenance_source_refs = [
-                {
-                    "repo": repo,
-                    "path": source_path.as_posix(),
-                    "role": "primary" if index == 0 else "supporting",
-                    "authority": "authored_source",
-                }
-                for index, source_path in enumerate(capability_sources)
-            ]
-        else:
-            provenance_source_refs = [
-                {
-                    "repo": repo,
-                    "path": source_rel.as_posix(),
-                    "role": "primary",
-                    "authority": source_authority(state),
-                }
-            ]
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_rel.as_posix(),
+                "role": "primary",
+                "authority": source_authority(state),
+            }
+        ]
     projection_manifest = (
         skill_projection["manifest"]
         if skill_projection
@@ -2380,7 +2407,13 @@ def classification_summary(records: Sequence[dict[str, Any]]) -> dict[str, dict[
     }
 
 
-def source_record_projection_current(record: dict[str, Any]) -> bool:
+def source_record_projection_current(
+    record: dict[str, Any],
+    *,
+    capability_projection: bool,
+) -> bool:
+    if not capability_projection:
+        return True
     abi = record.get("abi")
     if (
         not isinstance(abi, dict)
@@ -2927,6 +2960,8 @@ def repository_index_payload(
 def previous_structure_refs(
     source_index: dict[str, Any],
     previous_family: dict[str, dict[str, Any]] | None,
+    *,
+    capability_graph_path: Path | None,
 ) -> dict[str, dict[str, list[dict[str, Any]]]]:
     if not previous_family or set(previous_family) != set(REPOSITORY_INDEX_FILENAMES):
         return {}
@@ -2958,7 +2993,8 @@ def previous_structure_refs(
         ):
             continue
         if (
-            record.get("abi", {}).get("schema_version")
+            Path(str(identity["path"])) == capability_graph_path
+            and record.get("abi", {}).get("schema_version")
             == CAPABILITY_GRAPH_SCHEMA_VERSION
             and not any(
                 anchor.get("parser_ref") == "aoa-capability-graph@1"
@@ -3003,6 +3039,7 @@ def build_repository_indexes(
     event_history_ref: str | None = None,
     source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, dict[str, Any]]:
+    resolved_root: Path | None = None
     if repo_root is not None:
         resolved_root = repo_root.resolve()
         source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(resolved_root)
@@ -3030,7 +3067,24 @@ def build_repository_indexes(
         mutable_record["refs"] = dict(record["refs"])
         records.append(mutable_record)
     repo = str(source_index["repo"]["name"])
-    reusable_structure = previous_structure_refs(source_index, previous_family)
+    tracked_paths = {
+        Path(str(record["identity"]["path"]))
+        for record in records
+    }
+    capability_graph_path = (
+        capability_graph_projection_path(
+            resolved_root,
+            tracked_paths,
+            source_snapshot=source_snapshot,
+        )
+        if resolved_root is not None
+        else None
+    )
+    reusable_structure = previous_structure_refs(
+        source_index,
+        previous_family,
+        capability_graph_path=capability_graph_path,
+    )
     for record in records:
         identity = record["identity"]
         source_id = str(identity["id"])
@@ -3041,7 +3095,6 @@ def build_repository_indexes(
         rel = Path(str(identity["path"]))
         content = b""
         if repo_root is not None:
-            resolved_root = repo_root.resolve()
             content = source_bytes(
                 resolved_root,
                 rel,
@@ -3054,6 +3107,7 @@ def build_repository_indexes(
             path=rel.as_posix(),
             mime=str(identity["mime"]),
             content=content,
+            enable_capability_graph=rel == capability_graph_path,
         )
         refs = record["refs"]
         refs["anchor_refs"] = structure["anchor_refs"]
