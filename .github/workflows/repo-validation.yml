@@ -189,7 +189,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-session-memory
-          ref: 414cfe59baf63148e5df77f2a1e846cfe521c134
+          ref: 536917fb8169a8157ced9c3e74f981c5022d3b89
           path: .deps/aoa-session-memory
           fetch-depth: 0
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
