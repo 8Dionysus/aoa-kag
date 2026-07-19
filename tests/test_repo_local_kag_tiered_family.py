@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import tempfile
@@ -7,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, ValidationError
 
 from scripts.generate_repo_local_kag_index import (
     build_index,
@@ -77,7 +78,30 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
             schema = json.loads(
                 (REPO_ROOT / "schemas" / schema_name).read_text(encoding="utf-8")
             )
-            Draft202012Validator(schema).validate(getattr(build, field))
+            payload = getattr(build, field)
+            Draft202012Validator(schema).validate(payload)
+            escaped = copy.deepcopy(payload)
+            escaped["repo"]["name"] = "../../outside"
+            with self.assertRaises(ValidationError):
+                Draft202012Validator(schema).validate(escaped)
+
+    def test_artifact_release_rejects_owner_path_traversal(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            artifact = base / "artifact"
+            root.mkdir()
+            _, _, manifest, shards = build_fixture_family(root)
+            build = build_tiered_family(manifest, shards)
+            build.distribution_manifest["repo"]["name"] = "../../outside"
+
+            with self.assertRaisesRegex(
+                TieredFamilyError,
+                "single portable path segment",
+            ):
+                write_tiered_artifact(artifact, build)
+
+            self.assertFalse((base / "outside").exists())
 
     def test_unavailable_query_result_is_schema_checked_and_bounded(self) -> None:
         missing = tuple(f"sha256:{index:064x}" for index in range(41))

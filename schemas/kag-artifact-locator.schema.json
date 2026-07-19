@@ -16,7 +16,16 @@
       "const": "aoa-kag-artifact-locator-v1"
     },
     "repo": {
-      "type": "object"
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        }
+      }
     },
     "locator_identity": {
       "type": "object",

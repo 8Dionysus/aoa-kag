@@ -25,7 +25,16 @@
       "const": "aoa-repo-local-kag-distribution-manifest-v1"
     },
     "repo": {
-      "type": "object"
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        }
+      }
     },
     "distribution_identity": {
       "$ref": "#/$defs/distributionIdentity"

@@ -45,6 +45,39 @@ ALL_COMPATIBILITY_VIEWS = (
     "relation",
 )
 
+ARTIFACT_TRUST_POLICY_PATHS = {
+    ".github/actions/repo-local-kag-index/action.yml",
+    ".github/workflows/compatibility-canary.yml",
+    ".github/workflows/repo-validation.yml",
+    "config/validation_lanes.json",
+    "scripts/build_repo_local_kag_release.py",
+    "scripts/ci_gate.py",
+    "scripts/classify_repo_local_kag_impact.py",
+    "scripts/export_repo_local_kag_bundle.py",
+    "scripts/import_repo_local_kag_bundle.py",
+    "scripts/prepare_repo_local_kag_externalization.py",
+    "scripts/release_check.py",
+    "scripts/run_repo_local_kag_rollout.py",
+    "scripts/validate_repo_local_kag_family.py",
+    "scripts/validate_repo_local_kag_release.py",
+    "scripts/validation_lanes.py",
+    "scripts/validators/repo_local_kag_index.py",
+}
+
+MCP_CANONICAL_LOADER_PATHS = {
+    "scripts/assemble_repo_local_kag_family.py",
+    "scripts/query_repo_local_kag.py",
+    "scripts/repo_local/query.py",
+}
+
+CROSS_OWNER_RELATION_PATHS = {
+    "scripts/build_repo_local_kag_federation.py",
+    "scripts/build_repo_local_kag_retrieval_plan.py",
+    "scripts/generation/federation.py",
+    "scripts/repo_local/federation.py",
+    "scripts/repo_local/projections.py",
+}
+
 
 @dataclass(frozen=True)
 class ImpactClassification:
@@ -123,7 +156,8 @@ def _path_classes(path: str) -> set[str]:
         result.add("shard-partition-policy-change")
 
     if (
-        "aoa-kag-mcp" in path
+        path in MCP_CANONICAL_LOADER_PATHS
+        or "aoa-kag-mcp" in path
         or path.endswith("kag-mcp-capabilities.schema.json")
         or path.endswith("kag-mcp-result.schema.json")
     ):
@@ -136,7 +170,8 @@ def _path_classes(path: str) -> set[str]:
             or path.startswith("policies/")
             or path.startswith("manifests/")
         )
-    ) or path in {
+    ) or path in ARTIFACT_TRUST_POLICY_PATHS or path in {
+        "scripts/repo_local/kag_impact.py",
         "scripts/repo_local/tiered_governance.py",
         "scripts/repo_local/tiered_rollout.py",
     } or any(
@@ -151,7 +186,7 @@ def _path_classes(path: str) -> set[str]:
     ):
         result.add("artifact-trust-policy-change")
 
-    if path.startswith(
+    if path in CROSS_OWNER_RELATION_PATHS or path.startswith(
         (
             "generated/repo_local_kag_federation",
             "kag/federation/",
@@ -159,6 +194,9 @@ def _path_classes(path: str) -> set[str]:
         )
     ):
         result.add("cross-owner-relation-change")
+
+    if path.startswith("manifests/") and "federation" in path:
+        result.add("federation-registry-change")
 
     if path.startswith(
         (

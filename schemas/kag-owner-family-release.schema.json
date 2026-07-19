@@ -24,7 +24,16 @@
       "const": "aoa-kag-owner-family-release-v1"
     },
     "repo": {
-      "type": "object"
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        }
+      }
     },
     "release_identity": {
       "$ref": "#/$defs/releaseIdentity"

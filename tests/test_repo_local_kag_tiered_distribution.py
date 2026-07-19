@@ -697,6 +697,22 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             ["scripts/repo_local/tiered_governance.py"],
             owner="aoa-kag",
         )
+        federation_builder = classify_impact(
+            ["scripts/build_repo_local_kag_federation.py"],
+            owner="aoa-kag",
+        )
+        federation_kernel = classify_impact(
+            ["scripts/repo_local/federation.py"],
+            owner="aoa-kag",
+        )
+        rollout_entrypoint = classify_impact(
+            ["scripts/run_repo_local_kag_rollout.py"],
+            owner="aoa-kag",
+        )
+        externalization_entrypoint = classify_impact(
+            ["scripts/prepare_repo_local_kag_externalization.py"],
+            owner="aoa-kag",
+        )
         readiness = classify_impact(
             ["manifests/local_kag_readiness.json"],
             owner="aoa-kag",
@@ -713,6 +729,27 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         )
         self.assertIn("builder changed", central.full_fanout_reason)
         for classified in (rollout, governance):
+            self.assertEqual(
+                "full-24-owner-audit",
+                classified.required_validation_lane,
+            )
+            self.assertIn(
+                "artifact trust",
+                classified.full_fanout_reason,
+            )
+        for classified in (federation_builder, federation_kernel):
+            self.assertEqual(
+                "incremental-federation",
+                classified.required_validation_lane,
+            )
+            self.assertIn(
+                "cross-owner-relation-change",
+                classified.impact_classes,
+            )
+        for classified in (
+            rollout_entrypoint,
+            externalization_entrypoint,
+        ):
             self.assertEqual(
                 "full-24-owner-audit",
                 classified.required_validation_lane,

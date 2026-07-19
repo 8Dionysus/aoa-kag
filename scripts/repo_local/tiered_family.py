@@ -51,6 +51,9 @@ OWNER_RELEASE_ARTIFACT_PATH = Path("owner-family-release.json")
 BUNDLE_MANIFEST_PATH = Path("bundle.manifest.json")
 
 ZERO_DIGEST_URI = f"sha256:{'0' * 64}"
+PORTABLE_OWNER_NAME_PATTERN = re.compile(
+    r"^[A-Za-z0-9][A-Za-z0-9._-]*$"
+)
 OWNER_RELEASE_LIFECYCLE_STATES = (
     "candidate",
     "built-local",
@@ -213,6 +216,10 @@ def _repo_name(manifest: Mapping[str, Any]) -> str:
     name = repo.get("name") if isinstance(repo, Mapping) else None
     if not isinstance(name, str) or not name:
         raise TieredFamilyError("family manifest needs repo.name")
+    if PORTABLE_OWNER_NAME_PATTERN.fullmatch(name) is None:
+        raise TieredFamilyError(
+            "family manifest repo.name must be a single portable path segment"
+        )
     return name
 
 
@@ -362,6 +369,7 @@ def build_corpus_manifest(
 def validate_corpus_manifest(manifest: Mapping[str, Any]) -> None:
     if manifest.get("schema_version") != CORPUS_SCHEMA_VERSION:
         raise TieredFamilyError(f"corpus schema must be {CORPUS_SCHEMA_VERSION}")
+    _repo_name(manifest)
     identity = manifest.get("corpus_identity")
     if not isinstance(identity, Mapping):
         raise TieredFamilyError("corpus manifest needs corpus_identity")
@@ -429,6 +437,7 @@ def build_hot_profile(
 def validate_hot_profile(profile: Mapping[str, Any]) -> None:
     if profile.get("schema_version") != HOT_PROFILE_SCHEMA_VERSION:
         raise TieredFamilyError(f"hot profile schema must be {HOT_PROFILE_SCHEMA_VERSION}")
+    _repo_name(profile)
     identity = profile.get("profile_identity")
     selection = profile.get("selection")
     if not isinstance(identity, Mapping) or not isinstance(selection, Mapping):
@@ -486,6 +495,7 @@ def build_locator_manifest(
 def validate_locator_manifest(manifest: Mapping[str, Any]) -> None:
     if manifest.get("schema_version") != LOCATOR_SCHEMA_VERSION:
         raise TieredFamilyError(f"locator schema must be {LOCATOR_SCHEMA_VERSION}")
+    _repo_name(manifest)
     identity = manifest.get("locator_identity")
     locators = manifest.get("locators")
     if not isinstance(identity, Mapping) or not isinstance(locators, list):
@@ -640,6 +650,7 @@ def validate_pack_index(
 ) -> None:
     if index.get("schema_version") != PACK_INDEX_SCHEMA_VERSION:
         raise TieredFamilyError(f"pack index schema must be {PACK_INDEX_SCHEMA_VERSION}")
+    _repo_name(index)
     identity = index.get("pack_index_identity")
     packs = index.get("packs")
     entries = index.get("entries")
@@ -905,6 +916,7 @@ def validate_distribution_manifest(
         raise TieredFamilyError(
             f"distribution schema must be {DISTRIBUTION_SCHEMA_VERSION}"
         )
+    _repo_name(manifest)
     identity = manifest.get("distribution_identity")
     summary = manifest.get("summary")
     budgets = manifest.get("budgets")
@@ -1315,8 +1327,8 @@ def validate_owner_release(release: Mapping[str, Any]) -> None:
         raise TieredFamilyError("owner release artifact class does not match")
     if identity.get("abi_epoch") != OWNER_RELEASE_ABI_EPOCH:
         raise TieredFamilyError("owner release ABI epoch does not match")
-    owner = repo.get("name")
-    if not isinstance(owner, str) or not owner or source.get("owner") != owner:
+    owner = _repo_name(release)
+    if source.get("owner") != owner:
         raise TieredFamilyError("owner release source owner does not match repo")
     source_ref = source.get("ref")
     if not isinstance(source_ref, str) or not source_ref:
