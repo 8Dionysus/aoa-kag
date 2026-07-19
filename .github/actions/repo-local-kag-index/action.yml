@@ -1,5 +1,5 @@
-name: Repo-local KAG portable family
-description: Check the content-addressed portable corpus, its budgets, and the deterministic seven-file compatibility view.
+name: Repo-local KAG owner fast gate
+description: Classify one owner change, check v3 or v4 family parity, materialize a bounded artifact release, and assemble the deterministic seven-file compatibility view.
 
 inputs:
   repo-root:
@@ -9,11 +9,22 @@ inputs:
     description: Logical v2 source-index path used by the compatibility view.
     default: kag/indexes/source_surface_index.json
   history-ref:
-    description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
+    description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA and default-branch runs use the checked-out commit's first parent.
     default: ""
   event-history-ref:
     description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
     default: ""
+
+outputs:
+  impact-class:
+    description: Deterministic KAG impact class for the owner change.
+    value: ${{ steps.impact.outputs.impact-class }}
+  validation-lane:
+    description: Required validation lane selected by the impact classifier.
+    value: ${{ steps.impact.outputs.validation-lane }}
+  full-fanout-reason:
+    description: Non-empty reason when the change requires the central 24-owner audit.
+    value: ${{ steps.impact.outputs.full-fanout-reason }}
 
 runs:
   using: composite
@@ -42,7 +53,14 @@ runs:
           default_ref="refs/remotes/origin/$default_branch"
           git fetch --no-tags --prune origin \
             "+refs/heads/$default_branch:$default_ref"
+          head_ref="$(git rev-parse HEAD)"
           history_ref="$(git merge-base HEAD "$default_ref")"
+          if [[ "$history_ref" == "$head_ref" ]]; then
+            if ! history_ref="$(git rev-parse "${head_ref}^1")"; then
+              echo "default-branch KAG validation requires a first-parent history boundary" >&2
+              exit 1
+            fi
+          fi
         fi
         event_history_ref="${INPUT_EVENT_HISTORY_REF:-$history_ref}"
         if ! git cat-file -e "${history_ref}^{commit}" 2>/dev/null; then
@@ -59,7 +77,84 @@ runs:
         printf 'AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF=%s\n' "$event_history_ref" >> "$GITHUB_ENV"
         printf 'ref=%s\n' "$history_ref" >> "$GITHUB_OUTPUT"
         printf 'event-ref=%s\n' "$event_history_ref" >> "$GITHUB_OUTPUT"
+    - name: Classify KAG impact
+      id: impact
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        set -euo pipefail
+        receipt="$RUNNER_TEMP/repo-local-kag-impact.json"
+        if git -C "${{ inputs.repo-root }}" diff --quiet \
+          "${{ steps.history.outputs.ref }}" HEAD --; then
+          python3 - "$AOA_REPO_LOCAL_KAG_HISTORY_REPO" > "$receipt" <<'PY'
+        import json
+        import sys
+
+        print(json.dumps({
+            "impact_class": "no_change",
+            "affected_owners": [sys.argv[1]],
+            "affected_logical_views": [],
+            "required_validation_lane": "owner-local-fast",
+            "full_fanout_reason": "",
+        }, sort_keys=True))
+        PY
+        else
+          python3 "$GITHUB_ACTION_PATH/../../../scripts/classify_repo_local_kag_impact.py" \
+            --repo-root "${{ inputs.repo-root }}" \
+            --owner "$AOA_REPO_LOCAL_KAG_HISTORY_REPO" \
+            --base-ref "${{ steps.history.outputs.ref }}" \
+            --head-ref HEAD > "$receipt"
+        fi
+        cat "$receipt"
+        python3 - "$receipt" "$GITHUB_OUTPUT" <<'PY'
+        import json
+        import sys
+        from pathlib import Path
+
+        payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+        with Path(sys.argv[2]).open("a", encoding="utf-8") as output:
+            print(f"impact-class={payload['impact_class']}", file=output)
+            print(f"validation-lane={payload['required_validation_lane']}", file=output)
+            print(
+                f"full-fanout-reason={payload.get('full_fanout_reason', '')}",
+                file=output,
+            )
+        PY
+    - name: Select v3 or v4 family route
+      id: family
+      shell: bash
+      working-directory: ${{ inputs.repo-root }}
+      run: |
+        set -euo pipefail
+        manifest="kag/indexes/index_family.manifest.json"
+        schema="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["schema_version"])' "$manifest")"
+        case "$schema" in
+          aoa-repo-local-kag-family-manifest-v3)
+            printf 'mode=portable\n' >> "$GITHUB_OUTPUT"
+            printf 'externalized=false\n' >> "$GITHUB_OUTPUT"
+            ;;
+          aoa-repo-local-kag-distribution-manifest-v1)
+            placement="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["placement"]["state"])' "$manifest")"
+            printf 'mode=tiered\n' >> "$GITHUB_OUTPUT"
+            if [[ "$placement" == "externalized" ]]; then
+              printf 'externalized=true\n' >> "$GITHUB_OUTPUT"
+            else
+              printf 'externalized=false\n' >> "$GITHUB_OUTPUT"
+            fi
+            ;;
+          *)
+            echo "unsupported KAG family schema: $schema" >&2
+            exit 1
+            ;;
+        esac
+    - name: Ensure repo-local validation dependencies
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        set -euo pipefail
+        python3 -c "import jsonschema" || python3 -m pip install --disable-pip-version-check jsonschema
     - name: Check repo-local index family parity
+      if: steps.family.outputs.mode == 'portable'
       shell: bash
       working-directory: ${{ github.workspace }}
       run: >-
@@ -72,6 +167,7 @@ runs:
         --budget-base-ref "${{ steps.history.outputs.ref }}"
         --check
     - name: Check incremental index family parity
+      if: steps.family.outputs.mode == 'portable'
       shell: bash
       working-directory: ${{ github.workspace }}
       run: >-
@@ -84,27 +180,73 @@ runs:
         --event-history-ref "${{ steps.history.outputs.event-ref }}"
         --budget-base-ref "${{ steps.history.outputs.ref }}"
         --check
-    - name: Ensure repo-local validation dependencies
+    - name: Check tiered owner family parity and artifact release
+      if: steps.family.outputs.mode == 'tiered'
       shell: bash
       working-directory: ${{ github.workspace }}
+      env:
+        EXTERNALIZED: ${{ steps.family.outputs.externalized }}
       run: |
         set -euo pipefail
-        python3 -c "import jsonschema" || python3 -m pip install --disable-pip-version-check jsonschema
+        artifact_root="$RUNNER_TEMP/repo-local-kag-artifacts"
+        rm -rf "$artifact_root"
+        args=(
+          --repo-root "${{ inputs.repo-root }}"
+          --tiered-family
+          --artifact-root "$artifact_root"
+          --history-ref "${{ steps.history.outputs.ref }}"
+          --event-history-ref "${{ steps.history.outputs.event-ref }}"
+          --budget-base-ref "${{ steps.history.outputs.ref }}"
+          --check
+          --materialize-artifact-on-check
+        )
+        if [[ "$EXTERNALIZED" == "true" ]]; then
+          args+=(--externalize-cold)
+        fi
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py" "${args[@]}"
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/validate_repo_local_kag_release.py" \
+          --repo-root "${{ inputs.repo-root }}" \
+          --artifact-root "$artifact_root"
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py" \
+          "${args[@]}" --incremental
     - name: Validate repo-local index family contract
       shell: bash
       working-directory: ${{ github.workspace }}
-      run: >-
-        python3 "$GITHUB_ACTION_PATH/../../../scripts/validate_repo_local_kag_family.py"
-        --repo-root "${{ inputs.repo-root }}"
-        --source-index "${{ inputs.output }}"
+      env:
+        FAMILY_MODE: ${{ steps.family.outputs.mode }}
+        EXTERNALIZED: ${{ steps.family.outputs.externalized }}
+      run: |
+        set -euo pipefail
+        args=(
+          --repo-root "${{ inputs.repo-root }}"
+          --source-index "${{ inputs.output }}"
+        )
+        if [[ "$FAMILY_MODE" == "tiered" ]]; then
+          args+=(--artifact-root "$RUNNER_TEMP/repo-local-kag-artifacts")
+          if [[ "$EXTERNALIZED" == "true" ]]; then
+            args+=(--no-shadow-git)
+          fi
+        fi
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/validate_repo_local_kag_family.py" "${args[@]}"
     - name: Assemble deterministic compatibility view
       shell: bash
       working-directory: ${{ github.workspace }}
+      env:
+        FAMILY_MODE: ${{ steps.family.outputs.mode }}
+        EXTERNALIZED: ${{ steps.family.outputs.externalized }}
       run: |
         set -euo pipefail
         output_dir="$RUNNER_TEMP/repo-local-kag-family-v2"
         rm -rf "$output_dir"
-        python3 "$GITHUB_ACTION_PATH/../../../scripts/assemble_repo_local_kag_family.py" \
-          --repo-root "${{ inputs.repo-root }}" \
+        args=(
+          --repo-root "${{ inputs.repo-root }}"
           --output-dir "$output_dir"
+        )
+        if [[ "$FAMILY_MODE" == "tiered" ]]; then
+          args+=(--artifact-root "$RUNNER_TEMP/repo-local-kag-artifacts")
+          if [[ "$EXTERNALIZED" == "true" ]]; then
+            args+=(--no-shadow-git)
+          fi
+        fi
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/assemble_repo_local_kag_family.py" "${args[@]}"
         test "$(find "$output_dir" -maxdepth 1 -type f | wc -l)" -eq 7

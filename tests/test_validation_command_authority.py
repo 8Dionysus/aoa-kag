@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
+import tempfile
 import unittest
 from contextlib import redirect_stderr
 from io import StringIO
@@ -75,6 +77,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE,
         )
         self.assertEqual(
+            command_sequence_from_manifest("incremental_federation"),
+            validation_lanes.INCREMENTAL_FEDERATION_COMMAND_SEQUENCE,
+        )
+        self.assertEqual(
             command_sequence_from_manifest("release_check"),
             validation_lanes.RELEASE_CHECK_COMMAND_SEQUENCE,
         )
@@ -97,6 +103,28 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             ),
             validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
         )
+        self.assertEqual(
+            (
+                "git",
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+                "--",
+                *validation_lanes.GENERATED_DRIFT_PATHS,
+            ),
+            validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,
+        )
+        self.assertEqual(
+            (
+                "git",
+                "ls-files",
+                "--others",
+                "--exclude-standard",
+                "--",
+                *validation_lanes.GENERATED_DRIFT_PATHS,
+            ),
+            validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND,
+        )
 
     def test_validation_lanes_api_resolves_lane_ids_to_command_sequences(self) -> None:
         self.assertEqual(
@@ -108,6 +136,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             validation_lanes.command_sequence_for_lane("generated"),
         )
         self.assertEqual(
+            command_sequence_from_manifest("incremental_federation"),
+            validation_lanes.command_sequence_for_lane("incremental_federation"),
+        )
+        self.assertEqual(
             command_sequence_from_manifest("release_check"),
             validation_lanes.command_sequence_for_lane("release"),
         )
@@ -116,6 +148,16 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             validation_lanes.command_sequence_for_lane("advisory")
         with self.assertRaisesRegex(ValueError, "unknown lane"):
             validation_lanes.command_sequence_for_lane("missing")
+
+    def test_incremental_federation_lane_avoids_full_owner_source_scan(self) -> None:
+        sequence = command_sequence_from_manifest("incremental_federation")
+        flattened = " ".join(part for command in sequence for part in command)
+
+        self.assertIn("tests.test_repo_local_kag_tiered_governance", flattened)
+        self.assertIn("tests.test_repo_local_kag_federation", flattened)
+        self.assertIn("tests.test_repo_local_kag_projections", flattened)
+        self.assertNotIn("generate_repo_local_kag_coverage.py", flattened)
+        self.assertNotIn("release_check.py", flattened)
 
     def test_generated_lanes_rebuild_source_index_after_final_coverage_refresh(self) -> None:
         coverage_command = ("python", "scripts/generate_repo_local_kag_coverage.py")
@@ -126,16 +168,13 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         generate_kag_command = ("python", "scripts/generate_kag.py")
         generate_kag_check_command = ("python", "scripts/generate_kag.py", "--check")
-        index_command = (
+        release_command = (
             "python",
-            "scripts/generate_repo_local_kag_index.py",
+            "scripts/build_repo_local_kag_release.py",
             "--repo-root",
             ".",
-            "--output",
-            "kag/indexes/source_surface_index.json",
-            "--portable-family",
         )
-        index_check_command = (*index_command, "--check")
+        release_check_command = (*release_command, "--check")
         for lane_name in ("generated_check", "compatibility_canary"):
             sequence = command_sequence_from_manifest(lane_name)
             last_coverage = max(
@@ -144,16 +183,18 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             last_generate_kag = max(
                 index for index, command in enumerate(sequence) if command == generate_kag_command
             )
-            last_index = max(
-                index for index, command in enumerate(sequence) if command == index_command
+            last_release = max(
+                index for index, command in enumerate(sequence) if command == release_command
             )
             last_coverage_check = max(
                 index
                 for index, command in enumerate(sequence)
                 if command == coverage_check_command
             )
-            last_index_check = max(
-                index for index, command in enumerate(sequence) if command == index_check_command
+            last_release_check = max(
+                index
+                for index, command in enumerate(sequence)
+                if command == release_check_command
             )
             last_check = max(
                 index
@@ -161,20 +202,24 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 if command == generate_kag_check_command
             )
             self.assertLess(last_coverage, last_generate_kag)
-            self.assertLess(last_generate_kag, last_index)
-            self.assertLess(last_index, last_coverage_check)
-            self.assertLess(last_coverage_check, last_index_check)
-            self.assertLess(last_index_check, last_check)
-            self.assertLess(last_index, last_check)
+            self.assertLess(last_generate_kag, last_release)
+            self.assertLess(last_release, last_coverage_check)
+            self.assertLess(last_coverage_check, last_release_check)
+            self.assertLess(last_release_check, last_check)
+            self.assertLess(last_release, last_check)
             self.assertNotIn(coverage_command, sequence[last_coverage_check + 1 :])
-            self.assertNotIn(index_command, sequence[last_index_check + 1 :])
+            self.assertNotIn(release_command, sequence[last_release_check + 1 :])
             self.assertNotIn(generate_kag_command, sequence[last_check + 1 :])
 
-    def test_generated_drift_paths_cover_the_portable_repository_family(self) -> None:
+    def test_generated_drift_paths_cover_the_tiered_repository_family(self) -> None:
         drift_paths = set(drift_paths_from_manifest("generated"))
         self.assertTrue(
             {
+                "kag/indexes/artifact_locators.json",
+                "kag/indexes/corpus.manifest.json",
+                "kag/indexes/hot_profile.json",
                 "kag/indexes/index_family.manifest.json",
+                "kag/receipts/index_family_budget",
                 "kag/indexes/shards",
             }.issubset(drift_paths)
         )
@@ -183,8 +228,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             for command in command_sequence_from_manifest("compatibility_canary")
             if command[:3] == ("git", "diff", "--exit-code")
         )
-        self.assertIn("kag/indexes/index_family.manifest.json", canary_diff)
-        self.assertIn("kag/indexes/shards", canary_diff)
+        for path in drift_paths:
+            self.assertIn(path, canary_diff)
 
     def test_ci_gate_executes_lane_sequences_from_loader(self) -> None:
         with patch.object(ci_gate, "run_sequence") as run_sequence:
@@ -192,13 +237,26 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             run_sequence.assert_called_once_with(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
 
         with patch.object(ci_gate, "run_sequence") as run_sequence:
-            with patch.object(ci_gate, "capture_command_output", return_value="stable") as capture:
+            with patch.object(
+                ci_gate,
+                "capture_command_output",
+                side_effect=(
+                    "stable",
+                    "stable",
+                    "stable",
+                    "stable",
+                    "",
+                ),
+            ) as capture:
                 ci_gate.run_generated()
             run_sequence.assert_called_once_with(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
             self.assertEqual(
                 [
                     (validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,),
+                    (validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,),
                     (validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,),
+                    (validation_lanes.GENERATED_DRIFT_STATUS_COMMAND,),
+                    (validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND,),
                 ],
                 [call.args for call in capture.call_args_list],
             )
@@ -206,6 +264,12 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         with patch.object(ci_gate, "run_command") as run_command:
             ci_gate.run_release()
             run_command.assert_called_once_with(("python", "scripts/release_check.py"))
+
+        with patch.object(ci_gate, "run_sequence") as run_sequence:
+            ci_gate.run_incremental_federation()
+            run_sequence.assert_called_once_with(
+                validation_lanes.INCREMENTAL_FEDERATION_COMMAND_SEQUENCE
+            )
 
         with patch.object(ci_gate, "run_sequence") as run_sequence:
             ci_gate.run_compatibility_canary()
@@ -218,11 +282,85 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             with patch.object(
                 ci_gate,
                 "capture_command_output",
-                side_effect=("before", "after"),
+                side_effect=(
+                    "tracked",
+                    "",
+                    "tracked",
+                    "?? kag/indexes/shards/new.jsonl\n",
+                ),
             ):
                 with redirect_stderr(StringIO()):
                     with self.assertRaises(subprocess.CalledProcessError):
                         ci_gate.run_generated()
+
+    def test_generated_lane_fails_when_required_output_is_untracked(self) -> None:
+        with patch.object(ci_gate, "run_sequence"):
+            with patch.object(
+                ci_gate,
+                "capture_command_output",
+                side_effect=(
+                    "stable",
+                    "stable",
+                    "stable",
+                    "stable",
+                    "kag/indexes/shards/anchor/00-1f.json\n",
+                ),
+            ):
+                with redirect_stderr(StringIO()):
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        ci_gate.run_generated()
+
+    def test_generated_lane_scopes_and_restores_coverage_packet(self) -> None:
+        observed: list[str] = []
+
+        def observe_sequence(_commands: object) -> None:
+            observed.append(os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        with patch.dict(
+            os.environ,
+            {ci_gate.COVERAGE_PACKET_ENV: "caller-owned-packet"},
+        ), patch.object(
+            ci_gate,
+            "run_sequence",
+            side_effect=observe_sequence,
+        ), patch.object(
+            ci_gate,
+            "capture_command_output",
+            side_effect=(
+                "stable",
+                "stable",
+                "stable",
+                "stable",
+                "",
+            ),
+        ):
+            ci_gate.run_generated()
+            self.assertEqual("caller-owned-packet", os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        self.assertEqual(1, len(observed))
+        self.assertNotEqual("caller-owned-packet", observed[0])
+        self.assertTrue(observed[0].endswith("coverage.packet.json"))
+
+    def test_compatibility_canary_scopes_and_restores_coverage_packet(self) -> None:
+        observed: list[str] = []
+
+        def observe_sequence(_commands: object) -> None:
+            observed.append(os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        with patch.dict(
+            os.environ,
+            {ci_gate.COVERAGE_PACKET_ENV: "caller-owned-packet"},
+        ), patch.object(
+            ci_gate,
+            "run_sequence",
+            side_effect=observe_sequence,
+        ):
+            ci_gate.run_compatibility_canary()
+            self.assertEqual("caller-owned-packet", os.environ[ci_gate.COVERAGE_PACKET_ENV])
+
+        self.assertEqual(1, len(observed))
+        self.assertNotEqual("caller-owned-packet", observed[0])
+        self.assertTrue(observed[0].endswith("coverage.packet.json"))
 
     def test_release_check_preserves_entrypoint_without_owning_sequence(self) -> None:
         self.assertEqual("release", release_check.RELEASE_LANE_ID)
@@ -281,6 +419,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("git ls-remote --symref origin HEAD", action)
         self.assertIn('default_branch="$(', action)
         self.assertIn('git merge-base HEAD "$default_ref"', action)
+        self.assertIn('head_ref="$(git rev-parse HEAD)"', action)
+        self.assertIn('history_ref="$(git rev-parse "${head_ref}^1")"', action)
         self.assertIn("refs/remotes/origin/$default_branch", action)
         self.assertNotIn("PULL_REQUEST_HEAD_SHA", action)
         self.assertNotIn("github.event.repository.default_branch", action)
@@ -309,6 +449,130 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("target `repo-root`", authority)
         self.assertIn("multi-commit branch and its squash-merged", authority)
 
+    def test_repo_local_index_action_uses_first_parent_on_default_branch(self) -> None:
+        action = (
+            REPO_ROOT
+            / ".github"
+            / "actions"
+            / "repo-local-kag-index"
+            / "action.yml"
+        ).read_text(encoding="utf-8")
+        section = action.split(
+            "    - name: Prepare stable repository history\n",
+            1,
+        )[1].split("    - name: Classify KAG impact\n", 1)[0]
+        run_block = section.split("      run: |\n", 1)[1]
+        script_lines: list[str] = []
+        for line in run_block.splitlines():
+            if line and not line.startswith("        "):
+                break
+            script_lines.append(line[8:] if line else "")
+        script = "\n".join(script_lines) + "\n"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            remote = root / "origin.git"
+            work = root / "work"
+            subprocess.run(
+                ("git", "init", "--bare", str(remote)),
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ("git", "init", "-b", "main", str(work)),
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "-C",
+                    str(remote),
+                    "symbolic-ref",
+                    "HEAD",
+                    "refs/heads/main",
+                ),
+                check=True,
+            )
+            subprocess.run(
+                ("git", "-C", str(work), "config", "user.name", "KAG Test"),
+                check=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "-C",
+                    str(work),
+                    "config",
+                    "user.email",
+                    "kag-test@example.invalid",
+                ),
+                check=True,
+            )
+            subprocess.run(
+                ("git", "-C", str(work), "remote", "add", "origin", str(remote)),
+                check=True,
+            )
+            surface = work / "surface.txt"
+            surface.write_text("base\n", encoding="utf-8")
+            subprocess.run(
+                ("git", "-C", str(work), "add", "surface.txt"),
+                check=True,
+            )
+            subprocess.run(
+                ("git", "-C", str(work), "commit", "-m", "base"),
+                check=True,
+                capture_output=True,
+            )
+            base_ref = subprocess.run(
+                ("git", "-C", str(work), "rev-parse", "HEAD"),
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            surface.write_text("head\n", encoding="utf-8")
+            subprocess.run(
+                ("git", "-C", str(work), "commit", "-am", "head"),
+                check=True,
+                capture_output=True,
+            )
+            head_ref = subprocess.run(
+                ("git", "-C", str(work), "rev-parse", "HEAD"),
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(
+                ("git", "-C", str(work), "push", "-u", "origin", "main"),
+                check=True,
+                capture_output=True,
+            )
+            github_env = root / "github.env"
+            github_output = root / "github.output"
+            result = subprocess.run(
+                ("bash", "-c", script),
+                cwd=work,
+                env={
+                    **os.environ,
+                    "GITHUB_ENV": str(github_env),
+                    "GITHUB_OUTPUT": str(github_output),
+                    "INPUT_HISTORY_REF": "",
+                    "INPUT_EVENT_HISTORY_REF": "",
+                },
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(0, result.returncode, result.stderr)
+            outputs = dict(
+                line.split("=", 1)
+                for line in github_output.read_text(encoding="utf-8").splitlines()
+            )
+            self.assertEqual(base_ref, outputs["ref"])
+            self.assertEqual(base_ref, outputs["event-ref"])
+            self.assertNotEqual(head_ref, outputs["ref"])
+
     def test_compatibility_canary_checks_out_source_ready_provider_roots(self) -> None:
         repo_validation = (
             REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
@@ -324,11 +588,11 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         self.assertEqual(
             len(expected_sibling_providers),
-            repo_validation.count("fetch-depth: 0"),
+            repo_validation.count("path: .deps/"),
         )
         self.assertEqual(
             len(expected_sibling_providers),
-            canary.count("fetch-depth: 0"),
+            canary.count("path: .deps/"),
         )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):

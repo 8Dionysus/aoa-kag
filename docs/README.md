@@ -14,6 +14,12 @@ federation as a whole.
 - Read [mechanics](../mechanics/README.md) for repeatable KAG operation
   topology.
 - Read [KAG_MODEL](KAG_MODEL.md) for the conceptual model.
+- Read [KAG_TIERED_DISTRIBUTION](KAG_TIERED_DISTRIBUTION.md) for the separated
+  corpus, delivery, Git-hot, artifact, runtime, and CI architecture.
+- Read [KAG_TIERED_OPERATIONS](KAG_TIERED_OPERATIONS.md) for build, CAS-only
+  validation, offline transfer, outage, rollback, retention, and GC routes.
+- Read [KAG_TIERED_MIGRATION](KAG_TIERED_MIGRATION.md) for shadow publication,
+  five-owner canary, 24-owner rollout, and final evidence stop-lines.
 - Read [CONSUMER_GUIDE](CONSUMER_GUIDE.md) for the current narrow consumer path
   through experimental surfaces.
 - Read
@@ -85,6 +91,14 @@ federation as a whole.
 ## Docs in this repository
 
 - [KAG_MODEL](KAG_MODEL.md) - what the KAG layer is for
+- [KAG_TIERED_DISTRIBUTION](KAG_TIERED_DISTRIBUTION.md) - the v4 corpus and
+  distribution architecture, owner split, budgets, consumer states, and CI
+  fan-out contract
+- [KAG_TIERED_OPERATIONS](KAG_TIERED_OPERATIONS.md) - deterministic owner
+  build, validation, exact v2 assembly, offline transfer, degradation,
+  rollback, retention, and GC
+- [KAG_TIERED_MIGRATION](KAG_TIERED_MIGRATION.md) - the mandatory shadow,
+  canary, rollout, landing, and live-verification sequence for all 24 owners
 - [root DESIGN](../DESIGN.md) - the system form of the KAG layer
 - [root kag](../kag/README.md) - the source-home preflight for future repo-local KAG
   subtrees

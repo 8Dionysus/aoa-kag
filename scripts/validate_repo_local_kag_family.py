@@ -28,6 +28,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default="kag/indexes/source_surface_index.json",
         help="Source index path, relative to the repository root.",
     )
+    parser.add_argument("--artifact-root")
+    parser.add_argument("--no-shadow-git", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -38,6 +40,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         source, family = load_repo_local_kag_repository_index_family(
             repo_root,
             source_index=Path(args.source_index),
+            artifact_root=(
+                Path(args.artifact_root).resolve()
+                if args.artifact_root
+                else None
+            ),
+            allow_shadow_git=not args.no_shadow_git,
         )
     except ValidationError as exc:
         print(f"[repo-local-kag-family] {exc}", file=sys.stderr)

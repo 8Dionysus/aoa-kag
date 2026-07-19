@@ -45,6 +45,7 @@
   "$defs": {
     "nonEmptyString": {"type": "string", "minLength": 1},
     "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "digestUri": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
     "stringArray": {
       "type": "array",
       "uniqueItems": true,
@@ -74,7 +75,13 @@
     "canonicalInput": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repo", "source_index_digest", "family_digests"],
+      "required": [
+        "repo",
+        "source_index_digest",
+        "family_digests",
+        "corpus_identity",
+        "distribution_identity"
+      ],
       "properties": {
         "repo": {"$ref": "#/$defs/repo"},
         "source_index_digest": {"$ref": "#/$defs/digest"},
@@ -82,6 +89,56 @@
           "type": "object",
           "minProperties": 6,
           "additionalProperties": {"$ref": "#/$defs/digest"}
+        },
+        "corpus_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["content_digest"],
+          "properties": {
+            "content_digest": {"$ref": "#/$defs/digestUri"}
+          }
+        },
+        "distribution_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "content_digest",
+            "delivery_state",
+            "complete",
+            "manifest_schema",
+            "routes"
+          ],
+          "properties": {
+            "content_digest": {"$ref": "#/$defs/digestUri"},
+            "delivery_state": {
+              "enum": [
+                "complete",
+                "git_hot_complete",
+                "hot_only",
+                "artifact_required",
+                "artifact_unavailable",
+                "rebuild_available",
+                "rebuild_required",
+                "stale",
+                "digest_mismatch",
+                "revoked",
+                "access_denied",
+                "legacy_git_full"
+              ]
+            },
+            "complete": {"type": "boolean"},
+            "manifest_schema": {"$ref": "#/$defs/nonEmptyString"},
+            "routes": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "hot_profile_digest": {"$ref": "#/$defs/digestUri"},
+            "locator_digest": {"$ref": "#/$defs/digestUri"},
+            "pack_index_digest": {"$ref": "#/$defs/digestUri"}
+          }
         }
       }
     },

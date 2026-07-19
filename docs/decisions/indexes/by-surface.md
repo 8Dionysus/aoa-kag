@@ -10,6 +10,10 @@
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 
+## artifact distribution
+
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
+
 ## compatibility view
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
@@ -40,6 +44,7 @@
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## generated projection
 
@@ -73,6 +78,7 @@
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## manifests
 
@@ -125,6 +131,10 @@
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 
+## runtime materialization
+
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
+
 ## schema contract
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
@@ -133,6 +143,7 @@
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)
 
 ## schemas
 
@@ -184,3 +195,4 @@
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+- [AOA-KAG-D-0019 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md`)

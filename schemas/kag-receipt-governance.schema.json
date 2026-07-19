@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-receipt-governance.schema.json",
+  "title": "AoA KAG recurring budget receipt governance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "rolling_window", "reason_classes", "recurrence", "standing_budget_mutation", "aggregate_ceiling_override", "routing"],
+  "properties": {
+    "schema_version": {"const": "aoa-kag-receipt-governance-v1"},
+    "rolling_window": {"type": "object", "required": ["unit", "value"], "properties": {"unit": {"enum": ["days", "changes"]}, "value": {"type": "integer", "minimum": 1}}},
+    "reason_classes": {"type": "array", "minItems": 7, "items": {"enum": ["deliberate_source_migration", "legitimate_bulk_authored_change", "schema_builder_migration", "accidental_generated_amplification", "hot_set_pressure", "shard_topology_pressure", "artifact_delivery_migration"]}, "uniqueItems": true},
+    "recurrence": {"type": "object", "required": ["first", "second", "third"], "properties": {"first": {"const": "explicit_exception"}, "second": {"const": "topology_review_required"}, "third": {"const": "blocked_until_decision_or_topology_fix"}}},
+    "standing_budget_mutation": {"const": "forbidden"},
+    "aggregate_ceiling_override": {"const": "forbidden"},
+    "routing": {"type": "array", "items": {"enum": ["offload_owner", "builder_owner", "partitioning_owner", "normalization_owner"]}, "uniqueItems": true}
+  }
+}

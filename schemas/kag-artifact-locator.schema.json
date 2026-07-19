@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-artifact-locator.schema.json",
+  "title": "AoA replaceable KAG artifact locator set",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "locator_identity",
+    "locators",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-artifact-locator-v1"
+    },
+    "repo": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        }
+      }
+    },
+    "locator_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "artifact_kind",
+        "content_digest",
+        "schema_ref",
+        "corpus_digest"
+      ],
+      "properties": {
+        "local_id": {
+          "const": "locator:repo-local:kag-artifacts"
+        },
+        "artifact_kind": {
+          "const": "kag_artifact_locator_set"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_ref": {
+          "const": "aoa-kag:schemas/kag-artifact-locator.schema.json"
+        },
+        "corpus_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "locators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "locator_id",
+          "transport",
+          "priority",
+          "object_key_template",
+          "pack_key_template",
+          "trust_domain",
+          "mutable_location"
+        ],
+        "properties": {
+          "locator_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "transport": {
+            "enum": [
+              "cas",
+              "file",
+              "https",
+              "oci",
+              "s3-compatible"
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "object_key_template": {
+            "type": "string",
+            "pattern": "\\{digest\\}"
+          },
+          "pack_key_template": {
+            "type": "string",
+            "pattern": "\\{digest\\}"
+          },
+          "trust_domain": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mutable_location": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_identity_authority",
+        "replaceable",
+        "decision_ref"
+      ],
+      "properties": {
+        "corpus_identity_authority": {
+          "const": false
+        },
+        "replaceable": {
+          "const": true
+        },
+        "decision_ref": {
+          "const": "aoa-kag:docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

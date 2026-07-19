@@ -40,10 +40,10 @@ implementation lives in `scripts/validators/`.
 | `scripts/validators/expected/docs_contracts.py` | markdown/date/root/snippet expectations |
 | `scripts/validators/common.py` | shared validator errors, file readers, markdown helpers, schema helpers |
 | `scripts/validators/source_refs.py` | source reference resolution |
-| `scripts/validators/schema_surfaces.py` | JSON schema checks, including registry, provider map, repo-local index, retrieval bundle, and coverage schemas |
+| `scripts/validators/schema_surfaces.py` | JSON schema checks, including registry, provider map, v3/v4 corpus/distribution, release, composition, locator, pack, hot-profile, receipt, metrics, query, retrieval, and coverage schemas |
 | `scripts/validators/local_contracts.py` | local route, mechanics skeleton, questbook, antifragility, and ToS tiny-entry checks |
 | `scripts/validators/local_kag_subtree.py` | repo-local KAG subtree schema, example, readiness, and record-link checks |
-| `scripts/validators/repo_local_kag_index.py` | repo-local index family, retrieval contracts, generated parity, and OS-wide coverage checks |
+| `scripts/validators/repo_local_kag_index.py` | v3/v4 repo-local family, CAS-backed generated parity, retrieval/degradation contracts, self-excluding coverage, budgets, and OS-wide coverage checks |
 | `scripts/validators/manifest_contracts.py` | manifest contract facade |
 | `scripts/validators/manifests/technique_lift.py` | technique-lift manifest checks |
 | `scripts/validators/manifests/tos_text_chunk_map.py` | ToS text chunk map manifest checks |

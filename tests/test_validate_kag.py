@@ -524,11 +524,14 @@ class ValidateKagTestCase(unittest.TestCase):
             label="compatible repo-local KAG coverage",
         )
 
-    def test_repo_local_kag_coverage_rejects_partial_portable_rollout(self) -> None:
+    def test_repo_local_kag_coverage_rejects_missing_v3_v4_family(self) -> None:
         payload = load_json(repo_local_kag_index.REPO_LOCAL_KAG_COVERAGE_PATH)
         assert isinstance(payload, dict)
         partial_payload = copy.deepcopy(payload)
-        partial_payload["coverage_summary"]["aggregate_budget_state"] = "partial"
+        partial_payload["owners"][0]["family_storage"] = "none"
+        partial_payload["owners"][0]["portable_family"] = (
+            repo_local_kag_index._empty_family_coordinates()
+        )
 
         with self.assertRaises(validate_kag.ValidationError) as context:
             repo_local_kag_index.validate_repo_local_kag_coverage_payload(
@@ -537,7 +540,7 @@ class ValidateKagTestCase(unittest.TestCase):
             )
 
         self.assertIn(
-            "portable aggregate budget summary is invalid",
+            "complete v3/v4 family coverage for every owner",
             str(context.exception),
         )
 

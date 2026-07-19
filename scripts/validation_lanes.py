@@ -68,6 +68,7 @@ def _lane_definitions(manifest: dict[str, Any]) -> dict[str, LaneDefinition]:
     expected = {
         "source_fast",
         "generated",
+        "incremental_federation",
         "release",
         "compatibility_canary",
         "advisory",
@@ -110,6 +111,9 @@ def command_sequence_for_lane(lane_id: str) -> tuple[Command, ...]:
 
 SOURCE_FAST_COMMAND_SEQUENCE = command_sequence_for_lane("source_fast")
 GENERATED_CHECK_COMMAND_SEQUENCE = command_sequence_for_lane("generated")
+INCREMENTAL_FEDERATION_COMMAND_SEQUENCE = command_sequence_for_lane(
+    "incremental_federation"
+)
 RELEASE_CHECK_COMMAND_SEQUENCE = command_sequence_for_lane("release")
 COMPATIBILITY_CANARY_COMMAND_SEQUENCE = command_sequence_for_lane("compatibility_canary")
 GENERATED_DRIFT_PATHS = _drift_paths(_MANIFEST, "generated")
@@ -118,6 +122,22 @@ GENERATED_DRIFT_SNAPSHOT_COMMAND = (
     "diff",
     "--binary",
     "--no-ext-diff",
+    "--",
+    *GENERATED_DRIFT_PATHS,
+)
+GENERATED_DRIFT_STATUS_COMMAND = (
+    "git",
+    "status",
+    "--porcelain=v1",
+    "--untracked-files=all",
+    "--",
+    *GENERATED_DRIFT_PATHS,
+)
+GENERATED_UNTRACKED_PATHS_COMMAND = (
+    "git",
+    "ls-files",
+    "--others",
+    "--exclude-standard",
     "--",
     *GENERATED_DRIFT_PATHS,
 )

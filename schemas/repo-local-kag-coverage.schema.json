@@ -19,8 +19,7 @@
       "const": "schemas/repo-local-kag-index.schema.json"
     },
     "root": {
-      "type": "string",
-      "minLength": 1
+      "const": "aoa-os:canonical-providers"
     },
     "coverage_summary": {
       "type": "object",
@@ -30,7 +29,9 @@
         "passed",
         "migration_needed",
         "missing",
-        "owner_specific"
+        "owner_specific",
+        "measured_owner_count",
+        "self_excluded_owner_count"
       ],
       "properties": {
         "owner_count": {
@@ -53,7 +54,19 @@
           "type": "integer",
           "minimum": 0
         },
+        "measured_owner_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "self_excluded_owner_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "portable_v3": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tiered_v4": {
           "type": "integer",
           "minimum": 0
         },
@@ -61,10 +74,32 @@
           "type": "integer",
           "minimum": 0
         },
+        "git_hot_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "corpus_total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifact_cold_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
         "os_aggregate_tracked_bytes_max": {
           "const": 335544320
         },
+        "os_git_hot_target_bytes": {
+          "const": 234881024
+        },
         "aggregate_budget_state": {
+          "enum": [
+            "partial",
+            "passed",
+            "exceeded"
+          ]
+        },
+        "target_budget_state": {
           "enum": [
             "partial",
             "passed",
@@ -129,10 +164,11 @@
         },
         "root": {
           "type": "string",
-          "minLength": 1
+          "pattern": "^aoa-owner:[A-Za-z0-9_.-]+$"
         },
         "kag_home": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(|aoa-owner:[A-Za-z0-9_.-]+:kag)$"
         },
         "index_status": {
           "type": "string",
@@ -155,6 +191,7 @@
           "enum": [
             "v2-monoliths",
             "v3-portable-shards",
+            "v4-tiered-content-addressed",
             "none"
           ]
         },
@@ -232,7 +269,21 @@
         "tracked_bytes_max",
         "shards",
         "budget_state",
-        "receipt_ref"
+        "receipt_ref",
+        "corpus_digest",
+        "distribution_digest",
+        "git_hot_bytes",
+        "corpus_total_bytes",
+        "artifact_cold_bytes",
+        "git_hot_objects",
+        "artifact_cold_objects",
+        "placement_state",
+        "hot_profile_ref",
+        "artifact_locator_ref",
+        "os_git_hot_target_bytes",
+        "aggregate_ceiling_receiptable_by_owner",
+        "measurement_state",
+        "measurement_ref"
       ],
       "properties": {
         "manifest_ref": {
@@ -269,12 +320,62 @@
           "enum": [
             "passed",
             "receipted",
+            "self-excluded",
             "not-applicable"
           ]
         },
         "receipt_ref": {
           "type": "string",
           "pattern": "^(|kag/receipts/index_family_budget/[a-f0-9]{64}\\.json)$"
+        },
+        "corpus_digest": {
+          "type": "string",
+          "pattern": "^(|sha256:[a-f0-9]{64})$"
+        },
+        "distribution_digest": {
+          "type": "string",
+          "pattern": "^(|sha256:[a-f0-9]{64})$"
+        },
+        "git_hot_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "corpus_total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifact_cold_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "git_hot_objects": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifact_cold_objects": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "placement_state": {
+          "enum": ["not-applicable", "git-full", "shadow", "externalized"]
+        },
+        "hot_profile_ref": {
+          "enum": ["", "kag/indexes/hot_profile.json"]
+        },
+        "artifact_locator_ref": {
+          "enum": ["", "kag/indexes/artifact_locators.json"]
+        },
+        "os_git_hot_target_bytes": {
+          "const": 234881024
+        },
+        "aggregate_ceiling_receiptable_by_owner": {
+          "const": false
+        },
+        "measurement_state": {
+          "enum": ["measured", "self-excluded", "not-applicable"]
+        },
+        "measurement_ref": {
+          "enum": ["", "owner-family-release.json#/measurements"]
         }
       }
     },

@@ -454,13 +454,16 @@ class KagGenerationTestCase(unittest.TestCase):
             for owner in coverage["owners"]
         }
         self.assertEqual(
-            "/home/dionysus/src/abyss-stack",
+            "aoa-owner:abyss-stack",
             coverage_by_repo["abyss-stack"]["root"],
         )
         self.assertEqual(
-            "/home/dionysus/src/abyss-machine",
+            "aoa-owner:abyss-machine",
             coverage_by_repo["abyss-machine"]["root"],
         )
+        self.assertEqual("aoa-os:canonical-providers", coverage["root"])
+        self.assertNotIn("/home/", json.dumps(payload))
+        self.assertNotIn("/srv/", json.dumps(payload))
 
         for provider in payload["providers"]:
             repo = provider["repo"]
