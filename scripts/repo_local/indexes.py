@@ -214,15 +214,33 @@ def entity_entries(
                 continue
             anchor_kind = str(anchor.get("anchor_kind") or "")
             entity_kind = ""
+            semantic_key = str(anchor.get("semantic_key") or anchor["id"])
+            capability_node = False
             if anchor_kind == "python_symbol":
                 symbol_kind = str(anchor.get("symbol_kind") or "symbol")
                 entity_kind = f"python_{symbol_kind}"
-            elif anchor_kind == "json_pointer" and anchor.get("symbol_kind") == "schema_definition":
-                entity_kind = "schema_definition"
+            elif anchor_kind == "json_pointer":
+                symbol_kind = str(anchor.get("symbol_kind") or "")
+                if symbol_kind.startswith("capability_graph_node:"):
+                    entity_kind = (
+                        symbol_kind.removeprefix("capability_graph_node:")
+                        or "capability"
+                    )
+                    qualified_name = str(anchor.get("qualified_name") or "")
+                    if not qualified_name:
+                        continue
+                    semantic_key = f"capability:{qualified_name}"
+                    capability_node = True
+                elif symbol_kind == "schema_definition":
+                    entity_kind = "schema_definition"
             if not entity_kind:
                 continue
-            semantic_key = str(anchor.get("semantic_key") or anchor["id"])
-            entity_id = qualified_id(repo, "entity", f"{source_id}:{entity_kind}:{semantic_key}")
+            entity_id_key = (
+                semantic_key
+                if capability_node
+                else f"{source_id}:{entity_kind}:{semantic_key}"
+            )
+            entity_id = qualified_id(repo, "entity", entity_id_key)
             entries[entity_id] = _entity(
                 entity_id=entity_id,
                 entity_kind=entity_kind,
@@ -450,6 +468,7 @@ def relation_entries(
     }
     entity_by_anchor: dict[str, dict[str, Any]] = {}
     python_entities_by_name: dict[str, list[dict[str, Any]]] = {}
+    capability_entities_by_name: dict[str, dict[str, Any]] = {}
     for entity in entities:
         for anchor_id in entity["anchor_ids"]:
             entity_by_anchor[anchor_id] = entity
@@ -457,6 +476,10 @@ def relation_entries(
             key = entity["semantic_key"].split(":", 2)[-1]
             qualified_name = key.rsplit(":", 1)[-1]
             python_entities_by_name.setdefault(qualified_name, []).append(entity)
+        if str(entity["semantic_key"]).startswith("capability:"):
+            capability_entities_by_name[
+                str(entity["semantic_key"]).removeprefix("capability:")
+            ] = entity
 
     for anchor in anchors:
         source_id = anchor["source_record_id"]
@@ -575,7 +598,20 @@ def relation_entries(
         for reference in anchor.get("outbound_refs", []):
             target_ref = str(reference.get("target_ref") or "")
             target_id = ""
-            if target_ref.startswith("python:"):
+            source_node: dict[str, Any] | None = None
+            if target_ref.startswith("capability:"):
+                source_context = str(reference.get("source_context") or "")
+                if source_context.startswith("capability:"):
+                    source_node = capability_entities_by_name.get(
+                        source_context.removeprefix("capability:")
+                    )
+                target = capability_entities_by_name.get(
+                    target_ref.removeprefix("capability:")
+                )
+                if source_node is None or target is None:
+                    continue
+                target_id = str(target["id"])
+            elif target_ref.startswith("python:"):
                 matches = python_entities_by_name.get(target_ref.removeprefix("python:"), [])
                 unique = {item["id"]: item for item in matches}
                 if len(unique) == 1:
@@ -595,7 +631,11 @@ def relation_entries(
             evidence_anchor_id = str(anchor["id"])
             if not target_id or evidence_anchor_id not in anchor_by_id:
                 continue
-            source_node = entity_by_anchor.get(evidence_anchor_id) or source_entity
+            source_node = (
+                source_node
+                or entity_by_anchor.get(evidence_anchor_id)
+                or source_entity
+            )
             relation = _relation(
                 repo,
                 relation_kind=str(reference.get("relation_kind") or "references"),

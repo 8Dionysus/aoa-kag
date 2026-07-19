@@ -31,7 +31,11 @@ try:
         entity_entries as project_entity_entries,
         relation_entries as project_relation_entries,
     )
-    from scripts.repo_local.structure import extract_structure, markdown_headings
+    from scripts.repo_local.structure import (
+        CAPABILITY_GRAPH_SCHEMA_VERSION,
+        extract_structure,
+        markdown_headings,
+    )
 except ImportError:  # pragma: no cover - direct script execution
     from repo_local.identity import (  # type: ignore
         artifact_identity,
@@ -47,7 +51,11 @@ except ImportError:  # pragma: no cover - direct script execution
         entity_entries as project_entity_entries,
         relation_entries as project_relation_entries,
     )
-    from repo_local.structure import extract_structure, markdown_headings  # type: ignore
+    from repo_local.structure import (  # type: ignore
+        CAPABILITY_GRAPH_SCHEMA_VERSION,
+        extract_structure,
+        markdown_headings,
+    )
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -617,6 +625,42 @@ def json_object(content: bytes) -> dict[str, Any] | None:
     if isinstance(payload, dict):
         return payload
     return None
+
+
+def capability_graph_payload(content: bytes) -> dict[str, Any] | None:
+    payload = json_object(content)
+    if (
+        payload is None
+        or payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
+        or payload.get("authority") is not False
+    ):
+        return None
+    return payload
+
+
+def capability_graph_source_paths(
+    content: bytes,
+    tracked_paths: set[Path],
+) -> tuple[Path, ...]:
+    payload = capability_graph_payload(content)
+    source = payload.get("source") if payload is not None else None
+    family_files = source.get("family_files") if isinstance(source, dict) else None
+    resolved: list[Path] = []
+    for index, item in enumerate(
+        family_files if isinstance(family_files, list) else []
+    ):
+        if not isinstance(item, dict):
+            continue
+        try:
+            path = manifest_relative_path(
+                item.get("path"),
+                field=f"capability graph source.family_files[{index}].path",
+            )
+        except ValueError:
+            continue
+        if path in tracked_paths and path not in resolved:
+            resolved.append(path)
+    return tuple(resolved)
 
 
 def manifest_relative_path(value: Any, *, field: str) -> Path:
@@ -1486,6 +1530,10 @@ def generated_by_for(
     if builder_surface:
         return builder_surface
     payload = json_object(content)
+    if capability_graph_payload(content) is not None:
+        capability_builder = Path("scripts/build_capability_projection.py")
+        if capability_builder in tracked_paths:
+            return capability_builder.as_posix()
     if (
         isinstance(payload, dict)
         and payload.get("generated_or_authored") == "generated_from_source"
@@ -1588,13 +1636,32 @@ def build_record(
     headings = heading_refs(content, rel_path) if doc_role != "none" else []
     line_refs = [f"{rel_path}:1"] if content else []
     source_rel = skill_projection["source"] if skill_projection else rel
-    authority = "authored_source" if skill_projection else source_authority(state)
-    provenance_source_ref = {
-        "repo": repo,
-        "path": source_rel.as_posix(),
-        "role": "primary",
-        "authority": authority,
-    }
+    capability_sources = (
+        capability_graph_source_paths(content, tracked_paths)
+        if skill_projection is None
+        else ()
+    )
+    if capability_sources:
+        source_rel = capability_sources[0]
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_path.as_posix(),
+                "role": "primary" if index == 0 else "supporting",
+                "authority": "authored_source",
+            }
+            for index, source_path in enumerate(capability_sources)
+        ]
+    else:
+        authority = "authored_source" if skill_projection else source_authority(state)
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_rel.as_posix(),
+                "role": "primary",
+                "authority": authority,
+            }
+        ]
     provenance_materials = (
         [
             {
@@ -1671,7 +1738,7 @@ def build_record(
             "observed_by": observed_by,
             "generated_by": generated_by,
             "validated_by": provenance_validators,
-            "source_refs": [provenance_source_ref],
+            "source_refs": provenance_source_refs,
             "materials": provenance_materials,
         },
         "toolchain": {
@@ -1752,6 +1819,30 @@ def classification_summary(records: Sequence[dict[str, Any]]) -> dict[str, dict[
         "mechanics_role": count_values(records, "mechanics_role"),
         "command_role": count_values(records, "command_role"),
     }
+
+
+def source_record_projection_current(record: dict[str, Any]) -> bool:
+    abi = record.get("abi")
+    if (
+        not isinstance(abi, dict)
+        or abi.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
+    ):
+        return True
+    provenance = record.get("provenance")
+    source_refs = (
+        provenance.get("source_refs")
+        if isinstance(provenance, dict)
+        else None
+    )
+    return bool(
+        isinstance(source_refs, list)
+        and source_refs
+        and all(
+            isinstance(source_ref, dict)
+            and source_ref.get("authority") == "authored_source"
+            for source_ref in source_refs
+        )
+    )
 
 
 def payload_digest(payload: dict[str, Any]) -> str:
@@ -1836,6 +1927,7 @@ def build_index(
                 # small declared projection set so an incremental migration
                 # cannot preserve older authored-source provenance.
                 and rel not in skill_projections
+                and source_record_projection_current(previous)
                 and str(previous["identity"].get("git_blob_id") or "")
                 == tracked_entries[rel]["blob_id"]
                 and str(previous["identity"].get("lineage_path") or "")
@@ -2271,6 +2363,18 @@ def previous_structure_refs(
         if (
             previous_hashes.get(source_id) != str(identity["content_hash"])
             or not previous_anchors
+        ):
+            continue
+        if (
+            record.get("abi", {}).get("schema_version")
+            == CAPABILITY_GRAPH_SCHEMA_VERSION
+            and not any(
+                anchor.get("parser_ref") == "aoa-capability-graph@1"
+                and str(anchor.get("symbol_kind") or "").startswith(
+                    "capability_graph_node:"
+                )
+                for anchor in previous_anchors
+            )
         ):
             continue
         raw_anchors: list[dict[str, Any]] = []
