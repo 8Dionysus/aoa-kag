@@ -774,6 +774,21 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             ["schemas/kag-receipt-governance.schema.json"],
             owner="aoa-kag",
         )
+        provider_map_schema = classify_impact(
+            ["schemas/local-kag-provider-map.schema.json"],
+            owner="aoa-kag",
+        )
+        generated_readmodels = tuple(
+            classify_impact([path], owner="aoa-kag")
+            for path in (
+                "generated/kag_registry.json",
+                "generated/kag_registry.min.json",
+                "generated/local_kag_provider_map.json",
+                "generated/local_kag_provider_map.min.json",
+                "generated/repo_local_kag_coverage.json",
+                "generated/repo_local_kag_coverage.min.json",
+            )
+        )
         readiness = classify_impact(
             ["manifests/local_kag_readiness.json"],
             owner="aoa-kag",
@@ -819,6 +834,27 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             )
             self.assertIn(
                 "artifact trust",
+                classified.full_fanout_reason,
+            )
+        self.assertEqual(
+            "full-24-owner-audit",
+            provider_map_schema.required_validation_lane,
+        )
+        self.assertIn(
+            "family schema changed",
+            provider_map_schema.full_fanout_reason,
+        )
+        for classified in generated_readmodels:
+            self.assertEqual(
+                "full-24-owner-audit",
+                classified.required_validation_lane,
+            )
+            self.assertIn(
+                "owner-membership-change",
+                classified.impact_classes,
+            )
+            self.assertIn(
+                "canonical owner membership changed",
                 classified.full_fanout_reason,
             )
         self.assertEqual(

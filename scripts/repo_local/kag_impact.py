@@ -86,6 +86,12 @@ CROSS_OWNER_RELATION_PATHS = {
     "scripts/repo_local/projections.py",
 }
 
+GENERATED_OWNER_READMODEL_PREFIXES = (
+    "generated/kag_registry",
+    "generated/local_kag_provider_map",
+    "generated/repo_local_kag_coverage",
+)
+
 
 @dataclass(frozen=True)
 class ImpactClassification:
@@ -143,6 +149,7 @@ def _path_classes(path: str) -> set[str]:
         or "kag-owner" in path
         or "kag-os-composition" in path
         or "kag-pack" in path
+        or path.endswith("local-kag-provider-map.schema.json")
     ):
         result.add("family-schema-change")
 
@@ -205,6 +212,14 @@ def _path_classes(path: str) -> set[str]:
 
     if path.startswith("manifests/") and "federation" in path:
         result.add("federation-registry-change")
+
+    if path.startswith(GENERATED_OWNER_READMODEL_PREFIXES):
+        result.update(
+            {
+                "federation-registry-change",
+                "owner-membership-change",
+            }
+        )
 
     if path.startswith(
         (
