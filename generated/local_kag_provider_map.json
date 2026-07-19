@@ -3153,8 +3153,8 @@
         "receipts": 1
       },
       "repo_local_index": {
-        "status": "migration-needed",
-        "source_index_ref": "",
+        "status": "passed",
+        "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/domain_index_catalog.json",
           "kag/indexes/index_family.manifest.json",
@@ -3167,12 +3167,12 @@
           "artifact_cold_objects": 0,
           "artifact_locator_ref": "",
           "budget_state": "receipted",
-          "content_digest": "4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4",
+          "content_digest": "a2e7d8e30a4cb5dbdc677b850143757d969383653dfc6f8724e473ef293df196",
           "corpus_digest": "",
-          "corpus_total_bytes": 18246477,
+          "corpus_total_bytes": 18316502,
           "digest_state": "published",
           "distribution_digest": "",
-          "git_hot_bytes": 18246477,
+          "git_hot_bytes": 18316502,
           "git_hot_objects": 333,
           "hot_profile_ref": "",
           "manifest_ref": "kag/indexes/index_family.manifest.json",
@@ -3180,12 +3180,20 @@
           "measurement_state": "measured",
           "os_git_hot_target_bytes": 234881024,
           "placement_state": "git-full",
-          "receipt_ref": "kag/receipts/index_family_budget/4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4.json",
+          "receipt_ref": "kag/receipts/index_family_budget/a2e7d8e30a4cb5dbdc677b850143757d969383653dfc6f8724e473ef293df196.json",
           "shards": 333,
-          "tracked_bytes": 18246477,
+          "tracked_bytes": 18316502,
           "tracked_bytes_max": 13631488
         },
-        "repository_index_family": {},
+        "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
+          "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
+          "entity": "kag/indexes/repo_entity_index.json",
+          "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
+          "source": "kag/indexes/source_surface_index.json"
+        },
         "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
         "coverage": {
           "commands": 9,
@@ -3223,14 +3231,14 @@
             },
             "document_role": {
               "agents": 15,
-              "audit": 1,
               "decision": 24,
               "design": 1,
               "design_agents": 1,
               "none": 103,
               "readme": 64,
               "report": 1,
-              "unknown_document": 35
+              "skill": 20,
+              "unknown_document": 16
             },
             "mechanics_role": {
               "none": 245
@@ -9934,8 +9942,8 @@
       "coverage_owner_key": "aoa-sdk"
     },
     "aoa-session-memory": {
-      "status": "migration-needed",
-      "source_index_ref": "",
+      "status": "passed",
+      "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/domain_index_catalog.json",
         "kag/indexes/index_family.manifest.json",
@@ -9948,12 +9956,12 @@
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
         "budget_state": "receipted",
-        "content_digest": "4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4",
+        "content_digest": "a2e7d8e30a4cb5dbdc677b850143757d969383653dfc6f8724e473ef293df196",
         "corpus_digest": "",
-        "corpus_total_bytes": 18246477,
+        "corpus_total_bytes": 18316502,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 18246477,
+        "git_hot_bytes": 18316502,
         "git_hot_objects": 333,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
@@ -9961,12 +9969,20 @@
         "measurement_state": "measured",
         "os_git_hot_target_bytes": 234881024,
         "placement_state": "git-full",
-        "receipt_ref": "kag/receipts/index_family_budget/4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4.json",
+        "receipt_ref": "kag/receipts/index_family_budget/a2e7d8e30a4cb5dbdc677b850143757d969383653dfc6f8724e473ef293df196.json",
         "shards": 333,
-        "tracked_bytes": 18246477,
+        "tracked_bytes": 18316502,
         "tracked_bytes_max": 13631488
       },
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
       "coverage": {
         "commands": 9,
@@ -10004,14 +10020,14 @@
           },
           "document_role": {
             "agents": 15,
-            "audit": 1,
             "decision": 24,
             "design": 1,
             "design_agents": 1,
             "none": 103,
             "readme": 64,
             "report": 1,
-            "unknown_document": 35
+            "skill": 20,
+            "unknown_document": 16
           },
           "mechanics_role": {
             "none": 245
@@ -12412,14 +12428,14 @@
         },
         "document_role": {
           "agents": 15,
-          "audit": 1,
           "decision": 24,
           "design": 1,
           "design_agents": 1,
           "none": 103,
           "readme": 64,
           "report": 1,
-          "unknown_document": 35
+          "skill": 20,
+          "unknown_document": 16
         },
         "mechanics_role": {
           "none": 245

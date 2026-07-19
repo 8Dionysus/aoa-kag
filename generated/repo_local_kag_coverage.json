@@ -2,17 +2,17 @@
   "coverage_summary": {
     "aggregate_budget_state": "partial",
     "artifact_cold_bytes": 0,
-    "corpus_total_bytes": 278750861,
-    "git_hot_bytes": 278750861,
+    "corpus_total_bytes": 278820886,
+    "git_hot_bytes": 278820886,
     "measured_owner_count": 23,
-    "migration_needed": 1,
+    "migration_needed": 0,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
     "os_git_hot_target_bytes": 234881024,
     "owner_count": 24,
     "owner_specific": 0,
-    "passed": 23,
-    "portable_tracked_bytes": 278750861,
+    "passed": 24,
+    "portable_tracked_bytes": 278820886,
     "portable_v3": 23,
     "self_excluded_owner_count": 1,
     "target_budget_state": "exceeded",
@@ -2326,14 +2326,14 @@
           },
           "document_role": {
             "agents": 15,
-            "audit": 1,
             "decision": 24,
             "design": 1,
             "design_agents": 1,
             "none": 103,
             "readme": 64,
             "report": 1,
-            "unknown_document": 35
+            "skill": 20,
+            "unknown_document": 16
           },
           "mechanics_role": {
             "none": 245
@@ -2378,7 +2378,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/session_memory_source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "aoa-owner:aoa-session-memory:kag",
       "owner_type": "bundle_provider",
       "portable_family": {
@@ -2387,12 +2387,12 @@
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
         "budget_state": "receipted",
-        "content_digest": "4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4",
+        "content_digest": "a2e7d8e30a4cb5dbdc677b850143757d969383653dfc6f8724e473ef293df196",
         "corpus_digest": "",
-        "corpus_total_bytes": 18246477,
+        "corpus_total_bytes": 18316502,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 18246477,
+        "git_hot_bytes": 18316502,
         "git_hot_objects": 333,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
@@ -2400,13 +2400,21 @@
         "measurement_state": "measured",
         "os_git_hot_target_bytes": 234881024,
         "placement_state": "git-full",
-        "receipt_ref": "kag/receipts/index_family_budget/4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4.json",
+        "receipt_ref": "kag/receipts/index_family_budget/a2e7d8e30a4cb5dbdc677b850143757d969383653dfc6f8724e473ef293df196.json",
         "shards": 333,
-        "tracked_bytes": 18246477,
+        "tracked_bytes": 18316502,
         "tracked_bytes_max": 13631488
       },
       "repo": "aoa-session-memory",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "aoa-owner:aoa-session-memory"
     },
     {
