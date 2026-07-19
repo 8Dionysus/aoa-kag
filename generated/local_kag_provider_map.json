@@ -3166,23 +3166,23 @@
           "artifact_cold_bytes": 0,
           "artifact_cold_objects": 0,
           "artifact_locator_ref": "",
-          "budget_state": "passed",
-          "content_digest": "c6a8cd608690e08ca87ab429f2184508eb46a6d5e4b1dd1caa8d0994689a6985",
+          "budget_state": "receipted",
+          "content_digest": "4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4",
           "corpus_digest": "",
-          "corpus_total_bytes": 11921424,
+          "corpus_total_bytes": 18246477,
           "digest_state": "published",
           "distribution_digest": "",
-          "git_hot_bytes": 11921424,
-          "git_hot_objects": 314,
+          "git_hot_bytes": 18246477,
+          "git_hot_objects": 333,
           "hot_profile_ref": "",
           "manifest_ref": "kag/indexes/index_family.manifest.json",
           "measurement_ref": "",
           "measurement_state": "measured",
           "os_git_hot_target_bytes": 234881024,
           "placement_state": "git-full",
-          "receipt_ref": "",
-          "shards": 314,
-          "tracked_bytes": 11921424,
+          "receipt_ref": "kag/receipts/index_family_budget/4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4.json",
+          "shards": 333,
+          "tracked_bytes": 18246477,
           "tracked_bytes_max": 13631488
         },
         "repository_index_family": {
@@ -3196,58 +3196,62 @@
         },
         "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
         "coverage": {
-          "commands": 3,
-          "documents": 98,
-          "generated": 0,
+          "commands": 9,
+          "documents": 142,
+          "generated": 2,
           "mechanics": 0,
-          "schemas": 7,
-          "scripts": 2,
-          "tests": 1,
-          "validators": 1
+          "schemas": 8,
+          "scripts": 6,
+          "tests": 3,
+          "validators": 2
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
-              "config": 18,
+              "config": 27,
               "directory_marker": 52,
-              "document": 98,
+              "document": 136,
+              "generated_readmodel": 8,
               "index": 2,
               "manifest": 1,
               "owner_metadata": 1,
               "projection": 1,
               "receipt": 1,
-              "schema": 6,
-              "script": 1,
-              "test": 1,
-              "validator": 1
+              "schema": 7,
+              "script": 4,
+              "test": 3,
+              "validator": 2
             },
             "command_role": {
-              "none": 180,
-              "script": 1,
-              "test": 1,
-              "validator": 1
+              "builder": 2,
+              "none": 236,
+              "script": 2,
+              "test": 3,
+              "validator": 2
             },
             "document_role": {
-              "agents": 12,
+              "agents": 15,
               "audit": 1,
+              "decision": 24,
               "design": 1,
               "design_agents": 1,
-              "none": 85,
-              "readme": 57,
-              "unknown_document": 26
+              "none": 103,
+              "readme": 64,
+              "report": 1,
+              "unknown_document": 35
             },
             "mechanics_role": {
-              "none": 183
+              "none": 245
             },
             "primary_kind": {
-              "artifact": 57,
-              "command": 3,
-              "document": 98,
-              "surface": 25
+              "artifact": 59,
+              "command": 9,
+              "document": 142,
+              "surface": 35
             },
             "surface_state": {
-              "authored_source": 180,
-              "generated_readmodel": 2,
+              "authored_source": 233,
+              "generated_readmodel": 11,
               "receipt": 1
             }
           },
@@ -9951,23 +9955,23 @@
         "artifact_cold_bytes": 0,
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "c6a8cd608690e08ca87ab429f2184508eb46a6d5e4b1dd1caa8d0994689a6985",
+        "budget_state": "receipted",
+        "content_digest": "4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4",
         "corpus_digest": "",
-        "corpus_total_bytes": 11921424,
+        "corpus_total_bytes": 18246477,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 11921424,
-        "git_hot_objects": 314,
+        "git_hot_bytes": 18246477,
+        "git_hot_objects": 333,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "measurement_ref": "",
         "measurement_state": "measured",
         "os_git_hot_target_bytes": 234881024,
         "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 314,
-        "tracked_bytes": 11921424,
+        "receipt_ref": "kag/receipts/index_family_budget/4f745e7462d3bb730250632c10243023e77763b5c4cdc49423c08efbd56933f4.json",
+        "shards": 333,
+        "tracked_bytes": 18246477,
         "tracked_bytes_max": 13631488
       },
       "repository_index_family": {
@@ -9981,58 +9985,62 @@
       },
       "domain_index_catalog_ref": "kag/indexes/domain_index_catalog.json",
       "coverage": {
-        "commands": 3,
-        "documents": 98,
-        "generated": 0,
+        "commands": 9,
+        "documents": 142,
+        "generated": 2,
         "mechanics": 0,
-        "schemas": 7,
-        "scripts": 2,
-        "tests": 1,
-        "validators": 1
+        "schemas": 8,
+        "scripts": 6,
+        "tests": 3,
+        "validators": 2
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 18,
+            "config": 27,
             "directory_marker": 52,
-            "document": 98,
+            "document": 136,
+            "generated_readmodel": 8,
             "index": 2,
             "manifest": 1,
             "owner_metadata": 1,
             "projection": 1,
             "receipt": 1,
-            "schema": 6,
-            "script": 1,
-            "test": 1,
-            "validator": 1
+            "schema": 7,
+            "script": 4,
+            "test": 3,
+            "validator": 2
           },
           "command_role": {
-            "none": 180,
-            "script": 1,
-            "test": 1,
-            "validator": 1
+            "builder": 2,
+            "none": 236,
+            "script": 2,
+            "test": 3,
+            "validator": 2
           },
           "document_role": {
-            "agents": 12,
+            "agents": 15,
             "audit": 1,
+            "decision": 24,
             "design": 1,
             "design_agents": 1,
-            "none": 85,
-            "readme": 57,
-            "unknown_document": 26
+            "none": 103,
+            "readme": 64,
+            "report": 1,
+            "unknown_document": 35
           },
           "mechanics_role": {
-            "none": 183
+            "none": 245
           },
           "primary_kind": {
-            "artifact": 57,
-            "command": 3,
-            "document": 98,
-            "surface": 25
+            "artifact": 59,
+            "command": 9,
+            "document": 142,
+            "surface": 35
           },
           "surface_state": {
-            "authored_source": 180,
-            "generated_readmodel": 2,
+            "authored_source": 233,
+            "generated_readmodel": 11,
             "receipt": 1
           }
         },
@@ -12397,46 +12405,50 @@
     "aoa-session-memory": {
       "counts": {
         "artifact_kind": {
-          "config": 18,
+          "config": 27,
           "directory_marker": 52,
-          "document": 98,
+          "document": 136,
+          "generated_readmodel": 8,
           "index": 2,
           "manifest": 1,
           "owner_metadata": 1,
           "projection": 1,
           "receipt": 1,
-          "schema": 6,
-          "script": 1,
-          "test": 1,
-          "validator": 1
+          "schema": 7,
+          "script": 4,
+          "test": 3,
+          "validator": 2
         },
         "command_role": {
-          "none": 180,
-          "script": 1,
-          "test": 1,
-          "validator": 1
+          "builder": 2,
+          "none": 236,
+          "script": 2,
+          "test": 3,
+          "validator": 2
         },
         "document_role": {
-          "agents": 12,
+          "agents": 15,
           "audit": 1,
+          "decision": 24,
           "design": 1,
           "design_agents": 1,
-          "none": 85,
-          "readme": 57,
-          "unknown_document": 26
+          "none": 103,
+          "readme": 64,
+          "report": 1,
+          "unknown_document": 35
         },
         "mechanics_role": {
-          "none": 183
+          "none": 245
         },
         "primary_kind": {
-          "artifact": 57,
-          "command": 3,
-          "document": 98,
-          "surface": 25
+          "artifact": 59,
+          "command": 9,
+          "document": 142,
+          "surface": 35
         },
         "surface_state": {
-          "authored_source": 180,
-          "generated_readmodel": 2,
+          "authored_source": 233,
+          "generated_readmodel": 11,
           "receipt": 1
         }
       },
