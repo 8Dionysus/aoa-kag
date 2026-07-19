@@ -18,6 +18,7 @@ YAML_KEY = re.compile(
 )
 TOML_TABLE = re.compile(r"^[ \t]*\[\[?(?P<name>[^\]]+)\]\]?[ \t]*(?:#.*)?$")
 TOML_KEY = re.compile(r"^[ \t]*(?P<key>[A-Za-z0-9_.-]+)[ \t]*=")
+CAPABILITY_GRAPH_SCHEMA_VERSION = "aoa-capability-graph-v1"
 
 
 def _anchor(
@@ -273,13 +274,98 @@ def _json_pointer_token(value: str) -> str:
     return value.replace("~", "~0").replace("/", "~1")
 
 
-def _json_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]]:
+def _capability_graph_structure(
+    repo: str,
+    source_id: str,
+    payload: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if (
+        payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
+        or payload.get("authority") is not False
+    ):
+        return [], []
+
+    anchors: list[dict[str, Any]] = []
+    outbound: list[dict[str, Any]] = []
+    nodes = payload.get("nodes")
+    for index, node in enumerate(nodes if isinstance(nodes, list) else []):
+        if not isinstance(node, dict):
+            continue
+        node_id = node.get("id")
+        node_kind = node.get("kind")
+        if not isinstance(node_id, str) or not node_id:
+            continue
+        if not isinstance(node_kind, str) or not node_kind:
+            continue
+        pointer = f"/nodes/{index}"
+        anchors.append(
+            _anchor(
+                repo=repo,
+                source_id=source_id,
+                kind="json_pointer",
+                semantic_key=f"json:{pointer}",
+                label=str(node.get("title") or node_id),
+                line=1,
+                pointer=pointer,
+                symbol_kind=f"capability_graph_node:{node_kind}",
+                qualified_name=node_id,
+                parser="aoa-capability-graph",
+            )
+        )
+
+    relations = payload.get("relations")
+    for index, relation in enumerate(
+        relations if isinstance(relations, list) else []
+    ):
+        if not isinstance(relation, dict):
+            continue
+        relation_kind = relation.get("kind")
+        source = relation.get("source")
+        target = relation.get("target")
+        if not all(
+            isinstance(value, str) and value
+            for value in (relation_kind, source, target)
+        ):
+            continue
+        pointer = f"/relations/{index}"
+        relation_anchor = _anchor(
+            repo=repo,
+            source_id=source_id,
+            kind="json_pointer",
+            semantic_key=f"json:{pointer}",
+            label=f"{relation_kind}: {source} -> {target}",
+            line=1,
+            pointer=pointer,
+            symbol_kind="capability_graph_relation",
+            qualified_name=f"{source} -> {target}",
+            parser="aoa-capability-graph",
+        )
+        anchors.append(relation_anchor)
+        outbound.append(
+            {
+                "relation_kind": relation_kind,
+                "source_anchor_id": relation_anchor["id"],
+                "source_context": f"capability:{source}",
+                "target_ref": f"capability:{target}",
+                "evidence_class": "declared",
+            }
+        )
+    return anchors, outbound
+
+
+def _json_structure(
+    repo: str,
+    source_id: str,
+    text: str,
+    *,
+    enable_capability_graph: bool,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     try:
         payload = json.loads(text)
     except json.JSONDecodeError:
-        return []
+        return [], []
     if not isinstance(payload, dict):
-        return []
+        return [], []
     anchors: list[dict[str, Any]] = []
     for key in payload:
         pointer = f"/{_json_pointer_token(str(key))}"
@@ -316,7 +402,15 @@ def _json_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]
                     parser="python-json",
                 )
             )
-    return anchors
+    if enable_capability_graph:
+        capability_anchors, capability_outbound = _capability_graph_structure(
+            repo,
+            source_id,
+            payload,
+        )
+        anchors.extend(capability_anchors)
+        return anchors, capability_outbound
+    return anchors, []
 
 
 def _yaml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]]:
@@ -433,6 +527,7 @@ def extract_structure(
     path: str,
     mime: str,
     content: bytes,
+    enable_capability_graph: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
     anchors = [_artifact_anchor(repo, source_id)]
     outbound: list[dict[str, Any]] = []
@@ -450,7 +545,14 @@ def extract_structure(
         anchors.extend(extracted)
         outbound.extend(references)
     elif mime == "application/json" or path.endswith(".json"):
-        anchors.extend(_json_structure(repo, source_id, text))
+        extracted, references = _json_structure(
+            repo,
+            source_id,
+            text,
+            enable_capability_graph=enable_capability_graph,
+        )
+        anchors.extend(extracted)
+        outbound.extend(references)
     elif mime == "application/yaml" or path.endswith((".yaml", ".yml")):
         anchors.extend(_yaml_structure(repo, source_id, text))
     elif mime == "application/toml" or path.endswith(".toml"):

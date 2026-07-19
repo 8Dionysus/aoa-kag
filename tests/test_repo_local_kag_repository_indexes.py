@@ -25,6 +25,7 @@ from scripts.generate_repo_local_kag_index import (
 )
 from scripts.generate_repo_local_kag_coverage import source_index_matches_owner
 from scripts.generation.provider_map import _is_repo_local_meta_index_payload
+from scripts.repo_local.projections import build_repo_retrieval_documents
 from scripts.repo_local.query import RepoKagQuery
 from scripts.repo_local.portable_family import (
     HARD_MAX_SHARD_BYTES,
@@ -137,6 +138,159 @@ def write_fixture(root: Path) -> None:
         encoding="utf-8",
     )
     (root / "future.unknown").write_bytes(b"future")
+
+
+def write_capability_graph_fixture(root: Path) -> None:
+    family_path = root / "capabilities" / "families" / "session-memory.yaml"
+    family_path.parent.mkdir(parents=True)
+    family_path.write_text(
+        "schema_version: aoa-capability-family-v1\n"
+        "family: session-memory\n"
+        "nodes:\n"
+        "  - id: memory\n"
+        "  - id: skill.query\n"
+        "  - id: adapter.audit\n",
+        encoding="utf-8",
+    )
+    (root / "capabilities" / "port.manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "aoa_capability_home_port_v1",
+                "contract_ref": "aoa-skills:schemas/capability-home-port.schema.json",
+                "owner_repo": "demo",
+                "owner_ref": "capabilities/AGENTS.md",
+                "admission_ref": "docs/decisions/demo.md",
+                "source": {
+                    "family_root": "capabilities/families",
+                    "root_id": "memory",
+                },
+                "federation": {
+                    "parent_owner": "aoa-skills",
+                    "parent_node": "sessions",
+                    "relation": "specializes",
+                },
+                "skill_home_ref": "skills/port.manifest.json",
+                "eval_port_ref": "evals/PORT.yaml",
+                "projection": {
+                    "authority": False,
+                    "graph_json": "generated/capability_graph.json",
+                    "graph_markdown": "generated/capability_graph.md",
+                    "router_markdown": "skills/demo/references/capability-router.md",
+                    "generated_by": "aoa-skills:scripts/build_capability_home_projection.py",
+                },
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    (root / "scripts" / "build_capability_projection.py").write_text(
+        "raise SystemExit(0)\n",
+        encoding="utf-8",
+    )
+    graph_path = root / "generated" / "capability_graph.json"
+    graph_path.parent.mkdir()
+    graph_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "aoa-capability-graph-v1",
+                "authority": False,
+                "source": {
+                    "root": "capabilities/families",
+                    "family_files": [
+                        {
+                            "path": "capabilities/families/session-memory.yaml",
+                            "sha256": "a" * 64,
+                        }
+                    ],
+                    "referenced_files": [],
+                    "content_hash": "b" * 64,
+                },
+                "roots": ["memory"],
+                "nodes": [
+                    {
+                        "id": "memory",
+                        "kind": "capability",
+                        "title": "Session memory",
+                        "contract_level": "navigation",
+                        "primary_parent": None,
+                        "source_family": "session-memory",
+                        "source_path": "capabilities/families/session-memory.yaml",
+                        "owner": {
+                            "authority": "authored",
+                            "repo": "demo",
+                            "surface": "capabilities/families/session-memory.yaml",
+                        },
+                        "lifecycle": {"state": "active"},
+                    },
+                    {
+                        "id": "skill.query",
+                        "kind": "skill",
+                        "title": "Query memory",
+                        "contract_level": "executable",
+                        "primary_parent": "memory",
+                        "source_family": "session-memory",
+                        "source_path": "capabilities/families/session-memory.yaml",
+                        "owner": {
+                            "authority": "authored",
+                            "repo": "demo",
+                            "surface": "capabilities/families/session-memory.yaml",
+                        },
+                        "lifecycle": {"state": "active"},
+                    },
+                    {
+                        "id": "adapter.audit",
+                        "kind": "adapter",
+                        "title": "Audit adapter",
+                        "contract_level": "executable",
+                        "primary_parent": "memory",
+                        "source_family": "session-memory",
+                        "source_path": "capabilities/families/session-memory.yaml",
+                        "owner": {
+                            "authority": "authored",
+                            "repo": "demo",
+                            "surface": "capabilities/families/session-memory.yaml",
+                        },
+                        "lifecycle": {"state": "active"},
+                    },
+                ],
+                "relations": [
+                    {
+                        "kind": "primary-parent",
+                        "source": "skill.query",
+                        "target": "memory",
+                        "source_path": "capabilities/families/session-memory.yaml",
+                    },
+                    {
+                        "kind": "hands-off-to",
+                        "source": "skill.query",
+                        "target": "adapter.audit",
+                        "condition": "Query evidence is ready for audit.",
+                        "source_path": "capabilities/families/session-memory.yaml",
+                    },
+                ],
+                "retrieval_documents": [
+                    {
+                        "id": "skill.query",
+                        "kind": "skill",
+                        "visibility": "internal",
+                        "title": "Query memory",
+                        "description": "Retrieve session evidence.",
+                        "search_text": "query memory evidence",
+                        "positive_text": "find session evidence",
+                        "negative_text": "",
+                        "negative_phrases": [],
+                        "routing_tokens": ["query"],
+                        "positive_tokens": ["evidence"],
+                        "negative_tokens": [],
+                        "tokens": ["query", "evidence"],
+                    }
+                ],
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
 
 
 class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
@@ -740,6 +894,228 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             full = build_repository_indexes(current_source, repo_root=root)
 
         self.assertEqual(full, incremental)
+        self.assertEqual(1, extract_spy.call_count)
+
+    def test_capability_graph_projects_typed_edges_and_authored_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            fixture_graph = root / "tests" / "fixtures" / "capability_graph.json"
+            fixture_graph.parent.mkdir(parents=True)
+            fixture_graph.write_text(
+                (root / "generated" / "capability_graph.json").read_text(
+                    encoding="utf-8"
+                ),
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+            documents = build_repo_retrieval_documents(root, source, family)
+            query = RepoKagQuery(source, family)
+
+        records_by_path = {
+            record["identity"]["path"]: record for record in source["records"]
+        }
+        graph_record = records_by_path["generated/capability_graph.json"]
+        self.assertEqual("generated_readmodel", graph_record["surface_state"])
+        self.assertEqual(
+            [
+                {
+                    "repo": source["repo"]["name"],
+                    "path": "capabilities/families/session-memory.yaml",
+                    "role": "primary",
+                    "authority": "authored_source",
+                }
+            ],
+            graph_record["provenance"]["source_refs"],
+        )
+        self.assertEqual(
+            "scripts/build_capability_projection.py",
+            graph_record["provenance"]["generated_by"],
+        )
+        self.assertEqual(
+            {
+                "repo": source["repo"]["name"],
+                "surface": "capabilities/families/session-memory.yaml",
+                "route_kind": "source_owner",
+            },
+            graph_record["owner_return_route"],
+        )
+
+        capability_entities = {
+            entry["semantic_key"]: entry
+            for entry in family["entity"]["entries"]
+            if str(entry["semantic_key"]).startswith("capability:")
+        }
+        self.assertEqual(
+            {"capability:memory", "capability:skill.query", "capability:adapter.audit"},
+            set(capability_entities),
+        )
+        self.assertEqual(
+            {"capability", "skill", "adapter"},
+            {entry["entity_kind"] for entry in capability_entities.values()},
+        )
+        self.assertEqual(
+            "Query memory",
+            capability_entities["capability:skill.query"]["label"],
+        )
+
+        graph_source_id = graph_record["identity"]["id"]
+        fixture_source_id = records_by_path[
+            "tests/fixtures/capability_graph.json"
+        ]["identity"]["id"]
+        graph_anchors = {
+            entry["locator"]["pointer"]: entry
+            for entry in family["anchor"]["entries"]
+            if entry["source_record_id"] == graph_source_id
+            and entry["parser_ref"] == "aoa-capability-graph@1"
+        }
+        self.assertEqual(
+            {"/nodes/0", "/nodes/1", "/nodes/2", "/relations/0", "/relations/1"},
+            set(graph_anchors),
+        )
+        self.assertFalse(
+            any(
+                entry["source_record_id"] == fixture_source_id
+                and entry["parser_ref"] == "aoa-capability-graph@1"
+                for entry in family["anchor"]["entries"]
+            )
+        )
+        typed_relations = [
+            relation
+            for relation in family["relation"]["entries"]
+            if relation["relation_kind"] in {"primary-parent", "hands-off-to"}
+        ]
+        self.assertEqual(2, len(typed_relations))
+        handoff = next(
+            relation
+            for relation in typed_relations
+            if relation["relation_kind"] == "hands-off-to"
+        )
+        self.assertEqual(
+            capability_entities["capability:skill.query"]["id"],
+            handoff["from_id"],
+        )
+        self.assertEqual(
+            capability_entities["capability:adapter.audit"]["id"],
+            handoff["to_id"],
+        )
+        self.assertEqual(
+            [graph_anchors["/relations/1"]["id"]],
+            handoff["evidence_anchor_ids"],
+        )
+        self.assertEqual("declared", handoff["evidence_class"])
+        self.assertEqual("declared", handoff["provenance_ref"])
+        self.assertEqual("declared", handoff["trust_ref"])
+
+        graph_artifact = next(
+            entry
+            for entry in family["artifact"]["entries"]
+            if entry["path"] == "generated/capability_graph.json"
+        )
+        family_artifact = next(
+            entry
+            for entry in family["artifact"]["entries"]
+            if entry["path"] == "capabilities/families/session-memory.yaml"
+        )
+        self.assertTrue(
+            any(
+                relation["relation_kind"] == "derives_from"
+                and relation["from_id"] == graph_artifact["id"]
+                and relation["to_id"] == family_artifact["id"]
+                for relation in family["relation"]["entries"]
+            )
+        )
+
+        traversed = query.traverse(
+            [capability_entities["capability:skill.query"]["id"]],
+            relation_kinds={"hands-off-to"},
+            max_hops=1,
+        )
+        audit = next(
+            hit
+            for hit in traversed
+            if hit["id"] == capability_entities["capability:adapter.audit"]["id"]
+        )
+        self.assertEqual([handoff["id"]], audit["evidence"]["relation_ids"])
+        relation_document = next(
+            document
+            for document in documents
+            if document["node_id"] == graph_anchors["/relations/1"]["id"]
+        )
+        self.assertIn("Query evidence is ready for audit.", relation_document["text"])
+        self.assertEqual(
+            "capabilities/families/session-memory.yaml",
+            relation_document["provenance"]["source_refs"][0]["path"],
+        )
+
+    def test_capability_projection_upgrade_invalidates_legacy_incremental_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            current_source = build_index(root)
+            current_family = build_repository_indexes(
+                current_source,
+                repo_root=root,
+            )
+            legacy_source = json.loads(json.dumps(current_source))
+            legacy_graph = next(
+                record
+                for record in legacy_source["records"]
+                if record["identity"]["path"] == "generated/capability_graph.json"
+            )
+            legacy_graph["provenance"]["source_refs"] = [
+                {
+                    "repo": current_source["repo"]["name"],
+                    "path": "generated/capability_graph.json",
+                    "role": "primary",
+                    "authority": "derived_readmodel",
+                }
+            ]
+            legacy_graph["provenance"]["generated_by"] = ""
+            legacy_graph["owner_return_route"]["surface"] = (
+                "generated/capability_graph.json"
+            )
+            with mock.patch(
+                "scripts.generate_repo_local_kag_index.build_record",
+                wraps=__import__(
+                    "scripts.generate_repo_local_kag_index",
+                    fromlist=["build_record"],
+                ).build_record,
+            ) as build_record_spy:
+                incremental_source = build_index_incremental(
+                    root,
+                    legacy_source,
+                )
+
+            legacy_family = json.loads(json.dumps(current_family))
+            legacy_family["anchor"]["entries"] = [
+                anchor
+                for anchor in legacy_family["anchor"]["entries"]
+                if anchor["parser_ref"] != "aoa-capability-graph@1"
+            ]
+            with mock.patch(
+                "scripts.generate_repo_local_kag_index.extract_structure",
+                wraps=__import__(
+                    "scripts.generate_repo_local_kag_index",
+                    fromlist=["extract_structure"],
+                ).extract_structure,
+            ) as extract_spy:
+                incremental_family = build_repository_indexes_incremental(
+                    current_source,
+                    legacy_family,
+                    repo_root=root,
+                )
+            full_family = build_repository_indexes(
+                current_source,
+                repo_root=root,
+            )
+
+        self.assertEqual(current_source, incremental_source)
+        self.assertEqual(1, build_record_spy.call_count)
+        self.assertEqual(full_family, incremental_family)
         self.assertEqual(1, extract_spy.call_count)
 
     def test_structural_indexes_cover_anchors_entities_and_relations(self) -> None:

@@ -1,0 +1,17 @@
+{
+  "allowed_bytes": 1056563,
+  "allowed_tracked_bytes": 2131776,
+  "approved_by": "repository-owner",
+  "base_ref": "78c937f17f07693002958c4eaa84b5671e9333b4",
+  "changed_generated_bytes": 1056563,
+  "changed_generated_files": 21,
+  "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md",
+  "default_limit_bytes": 1048576,
+  "head_family_digest": "b21cd73cd09a5586c890c0d2ede71522be82b920edf6ee7ef9f28931623d8f08",
+  "reason": "Refresh tiered KAG projections for the merged aoa-session-memory semantic capability system; the measured generated delta exceeds the 1 MiB standing review budget by 7,987 bytes while Git-hot tracked bytes remain below the 4 MiB owner cap.",
+  "repo": "aoa-kag",
+  "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
+  "scope": "generated_delta",
+  "tracked_bytes": 2131776,
+  "tracked_bytes_max": 4194304
+}
