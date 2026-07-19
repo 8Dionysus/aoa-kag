@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
+from scripts import generate_repo_local_kag_coverage as coverage_generation
 from scripts.build_repo_local_kag_federation import (
     load_owner_bundle_with_delivery,
     parse_owner_artifact_roots,
@@ -23,7 +24,10 @@ from scripts.repo_local.kag_impact import (
     classify_impact,
     immutable_owner_cache_key,
 )
-from scripts.repo_local.portable_family import build_portable_family
+from scripts.repo_local.portable_family import (
+    build_portable_family,
+    render_manifest,
+)
 from scripts.repo_local.tiered_family import (
     CORPUS_MANIFEST_RELATIVE_PATH,
     DEFAULT_PACK_BYTES_MAX,
@@ -275,6 +279,33 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             after.corpus_manifest["corpus_identity"]["content_digest"],
         )
 
+    def test_distribution_binds_migration_without_widening_corpus_identity(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            _, _, build = build_fixture_family(root)
+
+        tampered = copy.deepcopy(build.corpus_manifest)
+        original_corpus_digest = tampered["corpus_identity"]["content_digest"]
+        tampered["migration"]["from_family_digest"] = "f" * 64
+        self.assertEqual(
+            original_corpus_digest,
+            tampered["corpus_identity"]["content_digest"],
+        )
+        with self.assertRaisesRegex(
+            TieredFamilyError,
+            "corpus manifest document digest does not match",
+        ):
+            validate_distribution_manifest(
+                build.distribution_manifest,
+                corpus_manifest=tampered,
+                hot_profile=build.hot_profile,
+                locator_manifest=build.locator_manifest,
+                pack_index=build.pack_index,
+            )
+
     def test_pack_ranges_extract_exact_shard_objects(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -339,9 +370,7 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         ):
             validate_pack_index(tampered, build.pack_bytes)
 
-    def test_distribution_requires_packs_to_cover_every_cold_object(
-        self,
-    ) -> None:
+    def test_distribution_requires_pack_entries_for_every_cold_object(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             write_fixture(root)
@@ -366,10 +395,7 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         tampered_pack["pack_index_identity"]["content_digest"] = (
             _identity_digest(tampered_pack, "pack_index_identity")
         )
-
-        tampered_distribution = copy.deepcopy(
-            build.distribution_manifest
-        )
+        tampered_distribution = copy.deepcopy(build.distribution_manifest)
         tampered_distribution["transport"]["pack_index_digest"] = (
             tampered_pack["pack_index_identity"]["content_digest"]
         )
@@ -383,6 +409,40 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         with self.assertRaisesRegex(
             TieredFamilyError,
             "exactly cover artifact-cold corpus objects",
+        ):
+            validate_distribution_manifest(
+                tampered_distribution,
+                corpus_manifest=build.corpus_manifest,
+                hot_profile=build.hot_profile,
+                locator_manifest=build.locator_manifest,
+                pack_index=tampered_pack,
+            )
+
+    def test_distribution_binds_pack_entry_descriptors_to_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            _, _, build = build_fixture_family(root)
+
+        tampered_pack = copy.deepcopy(build.pack_index)
+        tampered_pack["entries"][0]["range"] = "tampered"
+        tampered_pack["pack_index_identity"]["content_digest"] = (
+            _identity_digest(tampered_pack, "pack_index_identity")
+        )
+        tampered_distribution = copy.deepcopy(build.distribution_manifest)
+        tampered_distribution["transport"]["pack_index_digest"] = (
+            tampered_pack["pack_index_identity"]["content_digest"]
+        )
+        tampered_distribution["distribution_identity"]["content_digest"] = (
+            _identity_digest(
+                tampered_distribution,
+                "distribution_identity",
+            )
+        )
+
+        with self.assertRaisesRegex(
+            TieredFamilyError,
+            "entry does not match artifact-cold corpus object",
         ):
             validate_distribution_manifest(
                 tampered_distribution,
@@ -484,6 +544,72 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         self.assertEqual(expected_family, family)
         self.assertEqual("complete", complete["state"])
         self.assertTrue(complete["complete"])
+
+    def test_coverage_accepts_externalized_family_without_local_cas(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            root.mkdir()
+            write_fixture(root)
+            _, _, build = build_fixture_family(root, shadow_mode=False)
+            write_tiered_git_surface(root, build, externalize=True)
+            coverage_generation._portable_bundle.cache_clear()
+            coverage_generation._externalized_tiered_bundle.cache_clear()
+            with patch.dict(
+                os.environ,
+                {"KAG_ARTIFACT_ROOT": ""},
+                clear=False,
+            ):
+                payload = coverage_generation.build_coverage(
+                    base,
+                    owner_roots=[("repo", root)],
+                )
+            coverage_generation._portable_bundle.cache_clear()
+            coverage_generation._externalized_tiered_bundle.cache_clear()
+
+        owner = payload["owners"][0]
+        self.assertEqual("passed", owner["index_status"])
+        self.assertEqual(
+            "v4-tiered-content-addressed",
+            owner["family_storage"],
+        )
+        self.assertEqual(
+            "externalized",
+            owner["portable_family"]["placement_state"],
+        )
+
+    def test_coverage_rejects_externalized_tampered_migration_without_cas(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "repo"
+            root.mkdir()
+            write_fixture(root)
+            _, _, build = build_fixture_family(root, shadow_mode=False)
+            write_tiered_git_surface(root, build, externalize=True)
+            corpus_path = root / CORPUS_MANIFEST_RELATIVE_PATH
+            corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
+            corpus["migration"]["from_family_digest"] = "f" * 64
+            corpus_path.write_bytes(render_manifest(corpus))
+            coverage_generation._portable_bundle.cache_clear()
+            coverage_generation._externalized_tiered_bundle.cache_clear()
+            with patch.dict(
+                os.environ,
+                {"KAG_ARTIFACT_ROOT": ""},
+                clear=False,
+            ):
+                payload = coverage_generation.build_coverage(
+                    base,
+                    owner_roots=[("repo", root)],
+                )
+            coverage_generation._portable_bundle.cache_clear()
+            coverage_generation._externalized_tiered_bundle.cache_clear()
+
+        self.assertEqual(
+            "migration-needed",
+            payload["owners"][0]["index_status"],
+        )
 
     def test_corrupt_cas_object_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -766,12 +892,8 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             ["scripts/prepare_repo_local_kag_externalization.py"],
             owner="aoa-kag",
         )
-        rollout_schema = classify_impact(
-            ["schemas/kag-tiered-rollout-evidence.schema.json"],
-            owner="aoa-kag",
-        )
-        governance_schema = classify_impact(
-            ["schemas/kag-receipt-governance.schema.json"],
+        coverage_builder = classify_impact(
+            ["scripts/generate_repo_local_kag_coverage.py"],
             owner="aoa-kag",
         )
         provider_map_schema = classify_impact(
@@ -789,6 +911,19 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
                 "generated/repo_local_kag_coverage.min.json",
             )
         )
+        trust_schemas = [
+            classify_impact([path], owner="aoa-kag")
+            for path in (
+                "schemas/kag-coverage-build-packet.schema.json",
+                "schemas/kag-owner-change-receipt.schema.json",
+                "schemas/kag-portable-family-bundle.schema.json",
+                "schemas/kag-receipt-governance-report.schema.json",
+                "schemas/kag-receipt-governance.schema.json",
+                "schemas/kag-tiered-baseline-evidence.schema.json",
+                "schemas/kag-tiered-metrics.schema.json",
+                "schemas/kag-tiered-rollout-evidence.schema.json",
+            )
+        ]
         readiness = classify_impact(
             ["manifests/local_kag_readiness.json"],
             owner="aoa-kag",
@@ -825,8 +960,8 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         for classified in (
             rollout_entrypoint,
             externalization_entrypoint,
-            rollout_schema,
-            governance_schema,
+            coverage_builder,
+            *trust_schemas,
         ):
             self.assertEqual(
                 "full-24-owner-audit",

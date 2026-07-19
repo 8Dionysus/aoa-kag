@@ -40,7 +40,7 @@
       "$ref": "#/$defs/distributionIdentity"
     },
     "corpus_manifest": {
-      "$ref": "#/$defs/manifestRef"
+      "$ref": "#/$defs/corpusManifestRef"
     },
     "hot_profile": {
       "$ref": "#/$defs/manifestRef"
@@ -275,6 +275,26 @@
           "$ref": "#/$defs/relativePath"
         },
         "content_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "corpusManifestRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "content_digest",
+        "document_digest"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "document_digest": {
           "$ref": "#/$defs/digest"
         }
       }

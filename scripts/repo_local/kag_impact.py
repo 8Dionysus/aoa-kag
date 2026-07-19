@@ -62,6 +62,7 @@ ARTIFACT_TRUST_POLICY_PATHS = {
     "scripts/ci_gate.py",
     "scripts/classify_repo_local_kag_impact.py",
     "scripts/export_repo_local_kag_bundle.py",
+    "scripts/generate_repo_local_kag_coverage.py",
     "scripts/import_repo_local_kag_bundle.py",
     "scripts/prepare_repo_local_kag_externalization.py",
     "scripts/release_check.py",

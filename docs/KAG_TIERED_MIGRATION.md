@@ -10,6 +10,14 @@ budgets, generated delta, compatibility digests, CI bytes/time, and current
 consumer routes. Explain any drift from the release-pinned 24/24 v3 baseline
 before changing storage.
 
+For each initial v4 build, derive `migration.from_family_digest` from the
+head-equivalent v3 family using the exact v3 manifest parameters at the pinned
+history boundary. After that owner lands v4, treat the migration block as
+immutable history. Normal regeneration must source it from the pinned base
+commit, while the distribution and owner release bind the digest of the full
+corpus manifest document. The migration block remains outside logical corpus
+identity.
+
 ## Phase 1: Shadow Publication 24/24
 
 For every owner:

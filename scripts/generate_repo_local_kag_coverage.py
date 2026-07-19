@@ -25,6 +25,7 @@ try:
         build_repository_indexes,
         classification_summary,
         coverage_summary,
+        effective_history_ref,
         git_file_paths,
         is_portable_family_control_path,
         manifest_validation_route,
@@ -34,11 +35,14 @@ try:
         repo_name,
         sha256_bytes,
         source_bytes,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
     from scripts.generation.context import KNOWN_REPO_ROOTS
     from scripts.repo_local.portable_family import (
         MANIFEST_RELATIVE_PATH,
         OS_AGGREGATE_TRACKED_BYTES_MAX,
+        build_portable_family,
         load_portable_family,
         reconstruct_source_index,
         receipt_path_for,
@@ -47,6 +51,8 @@ try:
         CORPUS_MANIFEST_RELATIVE_PATH,
         DISTRIBUTION_SCHEMA_VERSION,
         OS_GIT_HOT_TARGET_BYTES,
+        build_tiered_family,
+        check_tiered_git_surface,
         load_tiered_manifests,
         load_tiered_rows,
     )
@@ -64,6 +70,7 @@ except ImportError:  # pragma: no cover - direct script execution
         build_repository_indexes,
         classification_summary,
         coverage_summary,
+        effective_history_ref,
         git_file_paths,
         is_portable_family_control_path,
         manifest_validation_route,
@@ -73,11 +80,14 @@ except ImportError:  # pragma: no cover - direct script execution
         repo_name,
         sha256_bytes,
         source_bytes,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
     from generation.context import KNOWN_REPO_ROOTS  # type: ignore
     from repo_local.portable_family import (  # type: ignore
         MANIFEST_RELATIVE_PATH,
         OS_AGGREGATE_TRACKED_BYTES_MAX,
+        build_portable_family,
         load_portable_family,
         reconstruct_source_index,
         receipt_path_for,
@@ -86,6 +96,8 @@ except ImportError:  # pragma: no cover - direct script execution
         CORPUS_MANIFEST_RELATIVE_PATH,
         DISTRIBUTION_SCHEMA_VERSION,
         OS_GIT_HOT_TARGET_BYTES,
+        build_tiered_family,
+        check_tiered_git_surface,
         load_tiered_manifests,
         load_tiered_rows,
     )
@@ -362,46 +374,10 @@ def _source_index_payload(owner_root: Path) -> dict[str, Any] | None:
     portable = _portable_bundle(owner_root)
     if portable is not None:
         return portable[0]
-    return _externalized_hot_source(owner_root)
-
-
-@lru_cache(maxsize=None)
-def _externalized_hot_source(
-    owner_root: Path,
-) -> dict[str, Any] | None:
-    manifest_path = owner_root / MANIFEST_RELATIVE_PATH
-    try:
-        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        placement = raw_manifest.get("placement")
-        if (
-            raw_manifest.get("schema_version")
-            != DISTRIBUTION_SCHEMA_VERSION
-            or not isinstance(placement, dict)
-            or placement.get("state") != "externalized"
-        ):
-            return None
-        distribution, corpus, _, _, _ = load_tiered_manifests(owner_root)
-        rows, delivery = load_tiered_rows(
-            owner_root,
-            artifact_root=None,
-            allow_shadow_git=False,
-            allow_hot_only=True,
-        )
-        cold_objects = distribution["summary"]["artifact_cold_objects"]
-        expected_state = "hot_only" if cold_objects else "complete"
-        if delivery.get("state") != expected_state:
-            return None
-        return reconstruct_source_index(corpus, rows)
-    except (
-        FileNotFoundError,
-        IsADirectoryError,
-        KeyError,
-        TypeError,
-        ValueError,
-        json.JSONDecodeError,
-        UnicodeDecodeError,
-    ):
-        return None
+    tiered = _externalized_tiered_bundle(owner_root)
+    if tiered is not None:
+        return tiered[0]
+    return None
 
 
 def portable_family_profile(
@@ -425,10 +401,46 @@ def portable_family_profile(
             if artifact_root_value
             else None
         )
-        distribution, corpus, _, _, _ = load_tiered_manifests(
-            owner_root,
-            artifact_root=artifact_root,
-        )
+        try:
+            distribution, corpus, _, _, _ = load_tiered_manifests(
+                owner_root,
+                artifact_root=artifact_root,
+            )
+        except (ValueError, FileNotFoundError, json.JSONDecodeError):
+            placement = raw_manifest.get("placement")
+            placement_state = (
+                placement.get("state")
+                if isinstance(placement, dict)
+                and placement.get("state") in {"shadow", "externalized"}
+                else "not-applicable"
+            )
+            return (
+                "v4-tiered-content-addressed",
+                {
+                    "manifest_ref": MANIFEST_RELATIVE_PATH.as_posix(),
+                    "content_digest": "",
+                    "digest_state": "not-applicable",
+                    "tracked_bytes": 0,
+                    "tracked_bytes_max": 0,
+                    "shards": 0,
+                    "budget_state": "not-applicable",
+                    "receipt_ref": "",
+                    "corpus_digest": "",
+                    "distribution_digest": "",
+                    "git_hot_bytes": 0,
+                    "corpus_total_bytes": 0,
+                    "artifact_cold_bytes": 0,
+                    "git_hot_objects": 0,
+                    "artifact_cold_objects": 0,
+                    "placement_state": placement_state,
+                    "hot_profile_ref": "kag/indexes/hot_profile.json",
+                    "artifact_locator_ref": "kag/indexes/artifact_locators.json",
+                    "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
+                    "aggregate_ceiling_receiptable_by_owner": False,
+                    "measurement_state": "not-applicable",
+                    "measurement_ref": "",
+                },
+            )
         summary = distribution["summary"]
         budgets = distribution["budgets"]
         corpus_digest = corpus["corpus_identity"]["content_digest"]
@@ -667,6 +679,60 @@ def _portable_bundle(
         return None
 
 
+@lru_cache(maxsize=None)
+def _externalized_tiered_bundle(
+    owner_root: Path,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+] | None:
+    if os.environ.get("KAG_ARTIFACT_ROOT"):
+        return None
+    manifest_path = owner_root / MANIFEST_RELATIVE_PATH
+    try:
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        placement = raw_manifest.get("placement")
+        if (
+            raw_manifest.get("schema_version") != DISTRIBUTION_SCHEMA_VERSION
+            or not isinstance(placement, dict)
+            or placement.get("state") != "externalized"
+        ):
+            return None
+        distribution, corpus, hot_profile, locators, _ = (
+            load_tiered_manifests(owner_root)
+        )
+        rows, delivery = load_tiered_rows(
+            owner_root,
+            allow_shadow_git=False,
+            allow_hot_only=True,
+        )
+        cold_objects = distribution["summary"]["artifact_cold_objects"]
+        expected_state = "hot_only" if cold_objects else "complete"
+        if delivery.get("state") != expected_state:
+            return None
+        source_index = reconstruct_source_index(corpus, rows)
+        return (
+            source_index,
+            distribution,
+            corpus,
+            hot_profile,
+            locators,
+        )
+    except (
+        FileNotFoundError,
+        IsADirectoryError,
+        KeyError,
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ):
+        return None
+
+
 def repository_event_history_ref(owner_root: Path) -> str | None:
     portable = _portable_bundle(owner_root)
     if portable is not None:
@@ -730,19 +796,69 @@ def repository_index_family_matches_owner(
     if portable is not None:
         actual = portable[1]
     else:
-        actual = {}
-        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
-            path = owner_root / "kag" / "indexes" / filename
+        tiered = _externalized_tiered_bundle(owner_root)
+        if tiered is not None:
+            _, distribution, corpus, hot_profile, locators = tiered
             try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (
-                FileNotFoundError,
-                json.JSONDecodeError,
-                UnicodeDecodeError,
-                IsADirectoryError,
+                provenance_base_ref = effective_history_ref(owner_root)
+                if provenance_base_ref is not None:
+                    previous_manifest = tiered_previous_portable_manifest(
+                        owner_root,
+                        base_ref=provenance_base_ref,
+                        corpus_manifest=corpus,
+                        fallback=None,
+                    )
+                    expected_manifest, expected_shards = (
+                        build_portable_family(
+                            source_index,
+                            expected,
+                            previous_manifest=previous_manifest,
+                        )
+                    )
+                    expected_tiered = build_tiered_family(
+                        expected_manifest,
+                        expected_shards,
+                        hot_kinds=hot_profile["selection"][
+                            "include_record_kinds"
+                        ],
+                        max_pack_bytes=distribution["transport"][
+                            "max_pack_bytes"
+                        ],
+                        shadow_mode=False,
+                        mirrors=locators["locators"],
+                        migration=tiered_migration_provenance(
+                            owner_root,
+                            expected_manifest,
+                            base_ref=provenance_base_ref,
+                            fallback_corpus=corpus,
+                        ),
+                    )
+            except (KeyError, TypeError, ValueError):
+                return False
+            if (
+                provenance_base_ref is not None
+                and not check_tiered_git_surface(
+                    owner_root,
+                    expected_tiered,
+                    externalized=True,
+                )
             ):
                 return False
-            actual[index_kind] = payload
+            actual = expected
+        else:
+            actual = {}
+            for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
+                path = owner_root / "kag" / "indexes" / filename
+                try:
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                except (
+                    FileNotFoundError,
+                    json.JSONDecodeError,
+                    UnicodeDecodeError,
+                    IsADirectoryError,
+                ):
+                    return False
+                actual[index_kind] = payload
     for index_kind in REPOSITORY_INDEX_FILENAMES:
         if actual[index_kind] != expected[index_kind]:
             return False
@@ -979,22 +1095,22 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
                 relative_files,
             )
         return "migration-needed", relative_files
-    externalized_source = _externalized_hot_source(owner_root)
-    if externalized_source is not None:
+    tiered = _externalized_tiered_bundle(owner_root)
+    if tiered is not None:
+        payload = tiered[0]
         schema = json.loads(INDEX_SCHEMA_PATH.read_text(encoding="utf-8"))
-        errors = list(
-            Draft202012Validator(schema).iter_errors(externalized_source)
-        )
+        errors = list(Draft202012Validator(schema).iter_errors(payload))
         if (
-            externalized_source.get("schema_version")
-            == INDEX_SCHEMA_VERSION
+            payload.get("schema_version") == INDEX_SCHEMA_VERSION
             and not errors
-            and source_index_matches_owner(
-                owner_root,
-                externalized_source,
-            )
+            and source_index_matches_owner(owner_root, payload)
         ):
-            return "passed", relative_files
+            return (
+                "passed"
+                if repository_index_family_matches_owner(owner_root, payload)
+                else "migration-needed",
+                relative_files,
+            )
         return "migration-needed", relative_files
     source_index = indexes / "source_surface_index.json"
     if source_index.is_file():

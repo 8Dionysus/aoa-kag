@@ -14,7 +14,7 @@ import subprocess
 import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 try:
     from scripts.repo_local.identity import (
@@ -382,6 +382,123 @@ def local_default_history_ref(repo_root: Path) -> str | None:
         return run_text(("git", "rev-parse", "HEAD^1"), repo_root)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
+
+
+def git_json_at_ref(
+    repo_root: Path,
+    ref: str | None,
+    path: Path,
+) -> dict[str, Any] | None:
+    if not ref:
+        return None
+    try:
+        content = subprocess.run(
+            ("git", "show", f"{ref}:{path.as_posix()}"),
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{ref}:{path} is not valid JSON") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"{ref}:{path} must contain a JSON object")
+    return payload
+
+
+def tiered_previous_portable_manifest(
+    repo_root: Path,
+    *,
+    base_ref: str | None,
+    corpus_manifest: Mapping[str, Any] | None,
+    fallback: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Select stable v3 partition/budget inputs for a v4 rebuild.
+
+    An initial v3 -> v4 migration must use the exact v3 parameters at the
+    history boundary.  Later v4 rebuilds retain corpus partitioning while the
+    v4 hard owner ceiling replaces the tracked v3 surface budget.
+    """
+    base_manifest = git_json_at_ref(
+        repo_root,
+        base_ref,
+        PORTABLE_FAMILY_MANIFEST,
+    )
+    if base_manifest is not None:
+        schema_version = base_manifest.get("schema_version")
+        if schema_version == "aoa-repo-local-kag-family-manifest-v3":
+            return base_manifest
+        if schema_version != "aoa-repo-local-kag-distribution-manifest-v1":
+            raise ValueError(
+                f"unsupported KAG family schema at {base_ref}: {schema_version}"
+            )
+    if corpus_manifest is not None:
+        return {
+            "partitioning": copy.deepcopy(corpus_manifest.get("partitioning")),
+            "budgets": {"tracked_bytes_max": 48 * 1024 * 1024},
+        }
+    return copy.deepcopy(dict(fallback)) if fallback is not None else None
+
+
+def tiered_migration_provenance(
+    repo_root: Path,
+    portable_manifest: Mapping[str, Any],
+    *,
+    base_ref: str | None,
+    fallback_corpus: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Derive initial migration provenance or preserve it from Git history.
+
+    The current generated corpus is deliberately never an authority for its
+    own migration claim.  Once a v4 family exists at the exact history
+    boundary, the migration record is immutable; on the initial v3 -> v4
+    transition it is derived from the regenerated v3 family.
+    """
+    try:
+        from scripts.repo_local.tiered_family import migration_provenance
+    except ImportError:  # pragma: no cover - direct script execution
+        from repo_local.tiered_family import migration_provenance  # type: ignore
+
+    base_manifest = git_json_at_ref(
+        repo_root,
+        base_ref,
+        PORTABLE_FAMILY_MANIFEST,
+    )
+    if base_manifest is None:
+        fallback_migration = (
+            fallback_corpus.get("migration")
+            if isinstance(fallback_corpus, Mapping)
+            else None
+        )
+        if base_ref is None and isinstance(fallback_migration, Mapping):
+            return copy.deepcopy(dict(fallback_migration))
+        return migration_provenance(portable_manifest)
+    if base_manifest.get("schema_version") == (
+        "aoa-repo-local-kag-family-manifest-v3"
+    ):
+        return migration_provenance(portable_manifest)
+    if base_manifest.get("schema_version") != (
+        "aoa-repo-local-kag-distribution-manifest-v1"
+    ):
+        raise ValueError(
+            f"unsupported KAG family schema at {base_ref}: "
+            f"{base_manifest.get('schema_version')}"
+        )
+    base_corpus = git_json_at_ref(
+        repo_root,
+        base_ref,
+        Path("kag/indexes/corpus.manifest.json"),
+    )
+    migration = base_corpus.get("migration") if base_corpus is not None else None
+    if not isinstance(migration, dict):
+        raise ValueError(
+            f"{base_ref} tiered corpus does not carry migration provenance"
+        )
+    return copy.deepcopy(migration)
 
 
 def owner_type_for(name: str, repo_root: Path) -> str:
@@ -2528,6 +2645,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     previous_index: dict[str, Any] | None = None
     previous_family: dict[str, dict[str, Any]] | None = None
     previous_manifest: dict[str, Any] | None = None
+    previous_corpus: dict[str, Any] | None = None
     previous_tiered_shadow = False
     portable_manifest_path = repo_root / PORTABLE_FAMILY_MANIFEST
     if (args.portable_family or args.tiered_family) and portable_manifest_path.is_file():
@@ -2559,9 +2677,22 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise SystemExit(f"invalid tiered corpus manifest: {corpus_path}")
             previous_manifest = {
                 "partitioning": previous_corpus.get("partitioning"),
+                "budgets": {"tracked_bytes_max": 48 * 1024 * 1024},
             }
         else:
             previous_manifest = loaded_manifest
+    provenance_base_ref = args.budget_base_ref or history_ref
+    if args.tiered_family:
+        try:
+            previous_manifest = tiered_previous_portable_manifest(
+                repo_root,
+                base_ref=provenance_base_ref,
+                corpus_manifest=previous_corpus,
+                fallback=previous_manifest,
+            )
+        except ValueError as exc:
+            print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+            return 1
     if (
         args.incremental
         and (args.portable_family or args.tiered_family)
@@ -2690,13 +2821,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                     write_tiered_git_surface,
                 )
             try:
+                migration = tiered_migration_provenance(
+                    repo_root,
+                    portable_manifest,
+                    base_ref=provenance_base_ref,
+                    fallback_corpus=previous_corpus,
+                )
                 tiered = build_tiered_family(
                     portable_manifest,
                     portable_shards,
                     max_pack_bytes=args.max_pack_bytes,
                     shadow_mode=not args.externalize_cold,
+                    migration=migration,
                 )
-            except PortableFamilyError as exc:
+            except (PortableFamilyError, ValueError) as exc:
                 print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
                 return 1
             artifact_root = Path(args.artifact_root).resolve()

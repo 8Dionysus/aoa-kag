@@ -14,6 +14,9 @@ try:
         build_index,
         build_repository_indexes,
         classification_summary,
+        effective_history_ref,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
 except ImportError:  # pragma: no cover - direct script import fallback
     from generate_repo_local_kag_coverage import build_provider_coverage  # type: ignore
@@ -22,6 +25,9 @@ except ImportError:  # pragma: no cover - direct script import fallback
         build_index,
         build_repository_indexes,
         classification_summary,
+        effective_history_ref,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
 
 
@@ -826,13 +832,17 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
         assert isinstance(hot_profile, dict)
         assert isinstance(locator_manifest, dict)
         try:
+            provenance_base_ref = effective_history_ref(REPO_ROOT)
+            previous_manifest = tiered_previous_portable_manifest(
+                REPO_ROOT,
+                base_ref=provenance_base_ref,
+                corpus_manifest=corpus_manifest,
+                fallback=None,
+            )
             expected_manifest, expected_shards = build_portable_family(
                 expected,
                 expected_family,
-                previous_manifest={
-                    "partitioning": corpus_manifest["partitioning"],
-                    "budgets": {"tracked_bytes_max": 48 * 1024 * 1024},
-                },
+                previous_manifest=previous_manifest,
             )
             build_tiered_family = tiered_context["build_tiered_family"]
             expected_tiered = build_tiered_family(
@@ -842,7 +852,12 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
                 max_pack_bytes=portable_manifest["transport"]["max_pack_bytes"],
                 shadow_mode=portable_manifest["placement"]["state"] == "shadow",
                 mirrors=locator_manifest["locators"],
-                migration=corpus_manifest.get("migration"),
+                migration=tiered_migration_provenance(
+                    REPO_ROOT,
+                    expected_manifest,
+                    base_ref=provenance_base_ref,
+                    fallback_corpus=corpus_manifest,
+                ),
             )
         except ValueError as exc:
             fail(str(exc))

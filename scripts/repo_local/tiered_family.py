@@ -211,6 +211,38 @@ def _corpus_digest(payload: Mapping[str, Any]) -> str:
     return _sha256_uri(canonical_json_bytes(material))
 
 
+def corpus_manifest_document_digest(payload: Mapping[str, Any]) -> str:
+    """Bind the complete corpus manifest without widening corpus identity.
+
+    Migration provenance is intentionally excluded from ``_corpus_digest``:
+    changing historical delivery metadata must not look like a knowledge
+    change.  Distribution and release identities still need to bind the
+    complete manifest document so that provenance cannot be edited beneath a
+    signed release.
+    """
+    return _sha256_uri(canonical_json_bytes(payload))
+
+
+def migration_provenance(
+    portable_manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    identity = portable_manifest.get("family_identity")
+    if not isinstance(identity, Mapping):
+        raise TieredFamilyError("portable family identity is malformed")
+    digest = identity.get("content_digest")
+    if (
+        not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        raise TieredFamilyError("portable family identity digest is malformed")
+    return {
+        "from_schema": PORTABLE_V3_SCHEMA_VERSION,
+        "from_family_digest": digest,
+        "decision_ref": DECISION_REF,
+    }
+
+
 def _repo_name(manifest: Mapping[str, Any]) -> str:
     repo = manifest.get("repo")
     name = repo.get("name") if isinstance(repo, Mapping) else None
@@ -354,11 +386,7 @@ def build_corpus_manifest(
         "migration": (
             copy.deepcopy(dict(migration))
             if migration is not None
-            else {
-                "from_schema": PORTABLE_V3_SCHEMA_VERSION,
-                "from_family_digest": source_identity.get("content_digest"),
-                "decision_ref": DECISION_REF,
-            }
+            else migration_provenance(portable_manifest)
         ),
     }
     manifest["corpus_identity"]["content_digest"] = _corpus_digest(manifest)
@@ -375,6 +403,22 @@ def validate_corpus_manifest(manifest: Mapping[str, Any]) -> None:
         raise TieredFamilyError("corpus manifest needs corpus_identity")
     if identity.get("content_digest") != _corpus_digest(manifest):
         raise TieredFamilyError("corpus identity digest does not match")
+    migration = manifest.get("migration")
+    if not isinstance(migration, Mapping) or set(migration) != {
+        "from_schema",
+        "from_family_digest",
+        "decision_ref",
+    }:
+        raise TieredFamilyError("corpus migration provenance is malformed")
+    from_digest = migration.get("from_family_digest")
+    if (
+        migration.get("from_schema") != PORTABLE_V3_SCHEMA_VERSION
+        or migration.get("decision_ref") != DECISION_REF
+        or not isinstance(from_digest, str)
+        or len(from_digest) != 64
+        or any(character not in "0123456789abcdef" for character in from_digest)
+    ):
+        raise TieredFamilyError("corpus migration provenance is malformed")
     objects = manifest.get("objects")
     summary = manifest.get("summary")
     if not isinstance(objects, list) or not isinstance(summary, Mapping):
@@ -796,6 +840,7 @@ def build_distribution_manifest(
         "corpus_manifest": {
             "path": CORPUS_MANIFEST_RELATIVE_PATH.as_posix(),
             "content_digest": corpus_manifest["corpus_identity"]["content_digest"],
+            "document_digest": corpus_manifest_document_digest(corpus_manifest),
         },
         "hot_profile": {
             "path": HOT_PROFILE_RELATIVE_PATH.as_posix(),
@@ -943,6 +988,19 @@ def validate_distribution_manifest(
         validate_corpus_manifest(corpus_manifest)
         if identity.get("corpus_digest") != corpus_manifest["corpus_identity"]["content_digest"]:
             raise TieredFamilyError("distribution targets the wrong corpus")
+        corpus_reference = manifest.get("corpus_manifest")
+        if not isinstance(corpus_reference, Mapping):
+            raise TieredFamilyError("distribution corpus manifest reference is missing")
+        if corpus_reference.get("content_digest") != corpus_manifest[
+            "corpus_identity"
+        ]["content_digest"]:
+            raise TieredFamilyError("distribution corpus manifest targets the wrong corpus")
+        if corpus_reference.get(
+            "document_digest"
+        ) != corpus_manifest_document_digest(corpus_manifest):
+            raise TieredFamilyError(
+                "distribution corpus manifest document digest does not match"
+            )
     if hot_profile is not None:
         validate_hot_profile(hot_profile)
         if manifest.get("hot_profile", {}).get("content_digest") != hot_profile["profile_identity"]["content_digest"]:
@@ -973,25 +1031,21 @@ def validate_distribution_manifest(
             raise TieredFamilyError("distribution pack index targets the wrong corpus")
         if corpus_manifest is not None and hot_profile is not None:
             hot_kinds = hot_profile["selection"]["include_record_kinds"]
-            cold_by_digest = {
-                item["content_digest"]: item
+            cold_objects = [
+                item
                 for item in corpus_manifest["objects"]
                 if not _is_hot_kind(item["kind"], hot_kinds)
-            }
+            ]
             entries = pack_index.get("entries")
             if not isinstance(entries, list):
                 raise TieredFamilyError("pack index entries are missing")
-            entry_by_digest = {
-                item.get("object_digest"): item
-                for item in entries
-                if isinstance(item, Mapping)
-            }
-            if set(entry_by_digest) != set(cold_by_digest):
+            expected_digests = [item["content_digest"] for item in cold_objects]
+            packed_digests = [item.get("object_digest") for item in entries]
+            if packed_digests != expected_digests:
                 raise TieredFamilyError(
-                    "pack index does not exactly cover artifact-cold corpus objects"
+                    "pack index entries must exactly cover artifact-cold corpus objects"
                 )
-            for digest, descriptor in cold_by_digest.items():
-                entry = entry_by_digest[digest]
+            for descriptor, entry in zip(cold_objects, entries, strict=True):
                 if (
                     entry.get("kind") != descriptor.get("kind")
                     or entry.get("range") != descriptor.get("range")
@@ -1184,6 +1238,9 @@ def build_owner_release(
         },
         "manifests": {
             "corpus_digest": corpus_manifest["corpus_identity"]["content_digest"],
+            "corpus_manifest_digest": corpus_manifest_document_digest(
+                corpus_manifest
+            ),
             "distribution_digest": distribution_manifest["distribution_identity"]["content_digest"],
             "hot_profile_digest": hot_profile["profile_identity"]["content_digest"],
             "locator_digest": locator_manifest["locator_identity"]["content_digest"],
@@ -1947,6 +2004,7 @@ def _validate_release_manifest_set(
         raise TieredFamilyError("owner release distribution identity does not match")
     expected_manifest_digests = {
         "corpus_digest": corpus["corpus_identity"]["content_digest"],
+        "corpus_manifest_digest": corpus_manifest_document_digest(corpus),
         "distribution_digest": distribution["distribution_identity"][
             "content_digest"
         ],

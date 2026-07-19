@@ -68,6 +68,17 @@ revoked, unavailable, and degraded states are explicit. The five-operation
 read-only MCP ABI remains unchanged and cannot hide unbounded hydration inside
 one request.
 
+The corpus manifest also carries the one-time v3 migration provenance. That
+record is deliberately excluded from corpus identity because correcting or
+relocating historical delivery metadata is not a knowledge change. The initial
+v4 build derives it from the regenerated head-equivalent v3 family using the
+exact v3 partition and budget parameters at the Git history boundary. After
+the first v4 landing it is immutable and is read only from that exact history
+boundary, never from the current generated manifest. Distribution and signed
+owner-release identities bind a separate digest of the complete corpus
+manifest document, so migration provenance cannot be altered beneath an
+otherwise unchanged corpus digest.
+
 The 320 MiB aggregate ceiling is reinterpreted as the non-growing hard limit
 for mandatory Git-hot KAG material, not total OS knowledge. It cannot be
 overridden by an ordinary owner receipt. The migration must finish at or below

@@ -43,6 +43,7 @@
       "additionalProperties": false,
       "required": [
         "corpus_digest",
+        "corpus_manifest_digest",
         "distribution_digest",
         "hot_profile_digest",
         "locator_digest",
@@ -50,6 +51,9 @@
       ],
       "properties": {
         "corpus_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "corpus_manifest_digest": {
           "$ref": "#/$defs/digest"
         },
         "distribution_digest": {
