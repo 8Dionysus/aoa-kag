@@ -357,6 +357,8 @@ def _json_structure(
     repo: str,
     source_id: str,
     text: str,
+    *,
+    enable_capability_graph: bool,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     try:
         payload = json.loads(text)
@@ -400,13 +402,15 @@ def _json_structure(
                     parser="python-json",
                 )
             )
-    capability_anchors, capability_outbound = _capability_graph_structure(
-        repo,
-        source_id,
-        payload,
-    )
-    anchors.extend(capability_anchors)
-    return anchors, capability_outbound
+    if enable_capability_graph:
+        capability_anchors, capability_outbound = _capability_graph_structure(
+            repo,
+            source_id,
+            payload,
+        )
+        anchors.extend(capability_anchors)
+        return anchors, capability_outbound
+    return anchors, []
 
 
 def _yaml_structure(repo: str, source_id: str, text: str) -> list[dict[str, Any]]:
@@ -523,6 +527,7 @@ def extract_structure(
     path: str,
     mime: str,
     content: bytes,
+    enable_capability_graph: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
     anchors = [_artifact_anchor(repo, source_id)]
     outbound: list[dict[str, Any]] = []
@@ -540,7 +545,12 @@ def extract_structure(
         anchors.extend(extracted)
         outbound.extend(references)
     elif mime == "application/json" or path.endswith(".json"):
-        extracted, references = _json_structure(repo, source_id, text)
+        extracted, references = _json_structure(
+            repo,
+            source_id,
+            text,
+            enable_capability_graph=enable_capability_graph,
+        )
         anchors.extend(extracted)
         outbound.extend(references)
     elif mime == "application/yaml" or path.endswith((".yaml", ".yml")):

@@ -152,6 +152,37 @@ def write_capability_graph_fixture(root: Path) -> None:
         "  - id: adapter.audit\n",
         encoding="utf-8",
     )
+    (root / "capabilities" / "port.manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "aoa_capability_home_port_v1",
+                "contract_ref": "aoa-skills:schemas/capability-home-port.schema.json",
+                "owner_repo": "demo",
+                "owner_ref": "capabilities/AGENTS.md",
+                "admission_ref": "docs/decisions/demo.md",
+                "source": {
+                    "family_root": "capabilities/families",
+                    "root_id": "memory",
+                },
+                "federation": {
+                    "parent_owner": "aoa-skills",
+                    "parent_node": "sessions",
+                    "relation": "specializes",
+                },
+                "skill_home_ref": "skills/port.manifest.json",
+                "eval_port_ref": "evals/PORT.yaml",
+                "projection": {
+                    "authority": False,
+                    "graph_json": "generated/capability_graph.json",
+                    "graph_markdown": "generated/capability_graph.md",
+                    "router_markdown": "skills/demo/references/capability-router.md",
+                    "generated_by": "aoa-skills:scripts/build_capability_home_projection.py",
+                },
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
     (root / "scripts" / "build_capability_projection.py").write_text(
         "raise SystemExit(0)\n",
         encoding="utf-8",
@@ -870,6 +901,14 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             root = Path(tmpdir)
             write_fixture(root)
             write_capability_graph_fixture(root)
+            fixture_graph = root / "tests" / "fixtures" / "capability_graph.json"
+            fixture_graph.parent.mkdir(parents=True)
+            fixture_graph.write_text(
+                (root / "generated" / "capability_graph.json").read_text(
+                    encoding="utf-8"
+                ),
+                encoding="utf-8",
+            )
             source = build_index(root)
             family = build_repository_indexes(source, repo_root=root)
             documents = build_repo_retrieval_documents(root, source, family)
@@ -923,6 +962,9 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         )
 
         graph_source_id = graph_record["identity"]["id"]
+        fixture_source_id = records_by_path[
+            "tests/fixtures/capability_graph.json"
+        ]["identity"]["id"]
         graph_anchors = {
             entry["locator"]["pointer"]: entry
             for entry in family["anchor"]["entries"]
@@ -932,6 +974,13 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(
             {"/nodes/0", "/nodes/1", "/nodes/2", "/relations/0", "/relations/1"},
             set(graph_anchors),
+        )
+        self.assertFalse(
+            any(
+                entry["source_record_id"] == fixture_source_id
+                and entry["parser_ref"] == "aoa-capability-graph@1"
+                for entry in family["anchor"]["entries"]
+            )
         )
         typed_relations = [
             relation
