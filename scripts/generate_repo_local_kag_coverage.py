@@ -40,6 +40,7 @@ try:
         MANIFEST_RELATIVE_PATH,
         OS_AGGREGATE_TRACKED_BYTES_MAX,
         load_portable_family,
+        reconstruct_source_index,
         receipt_path_for,
     )
     from scripts.repo_local.tiered_family import (
@@ -47,6 +48,7 @@ try:
         DISTRIBUTION_SCHEMA_VERSION,
         OS_GIT_HOT_TARGET_BYTES,
         load_tiered_manifests,
+        load_tiered_rows,
     )
     from scripts.provider_registry import (
         connector_repos,
@@ -77,6 +79,7 @@ except ImportError:  # pragma: no cover - direct script execution
         MANIFEST_RELATIVE_PATH,
         OS_AGGREGATE_TRACKED_BYTES_MAX,
         load_portable_family,
+        reconstruct_source_index,
         receipt_path_for,
     )
     from repo_local.tiered_family import (  # type: ignore
@@ -84,6 +87,7 @@ except ImportError:  # pragma: no cover - direct script execution
         DISTRIBUTION_SCHEMA_VERSION,
         OS_GIT_HOT_TARGET_BYTES,
         load_tiered_manifests,
+        load_tiered_rows,
     )
     from provider_registry import (  # type: ignore
         connector_repos,
@@ -358,7 +362,46 @@ def _source_index_payload(owner_root: Path) -> dict[str, Any] | None:
     portable = _portable_bundle(owner_root)
     if portable is not None:
         return portable[0]
-    return None
+    return _externalized_hot_source(owner_root)
+
+
+@lru_cache(maxsize=None)
+def _externalized_hot_source(
+    owner_root: Path,
+) -> dict[str, Any] | None:
+    manifest_path = owner_root / MANIFEST_RELATIVE_PATH
+    try:
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        placement = raw_manifest.get("placement")
+        if (
+            raw_manifest.get("schema_version")
+            != DISTRIBUTION_SCHEMA_VERSION
+            or not isinstance(placement, dict)
+            or placement.get("state") != "externalized"
+        ):
+            return None
+        distribution, corpus, _, _, _ = load_tiered_manifests(owner_root)
+        rows, delivery = load_tiered_rows(
+            owner_root,
+            artifact_root=None,
+            allow_shadow_git=False,
+            allow_hot_only=True,
+        )
+        cold_objects = distribution["summary"]["artifact_cold_objects"]
+        expected_state = "hot_only" if cold_objects else "complete"
+        if delivery.get("state") != expected_state:
+            return None
+        return reconstruct_source_index(corpus, rows)
+    except (
+        FileNotFoundError,
+        IsADirectoryError,
+        KeyError,
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ):
+        return None
 
 
 def portable_family_profile(
@@ -935,6 +978,23 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
                 else "migration-needed",
                 relative_files,
             )
+        return "migration-needed", relative_files
+    externalized_source = _externalized_hot_source(owner_root)
+    if externalized_source is not None:
+        schema = json.loads(INDEX_SCHEMA_PATH.read_text(encoding="utf-8"))
+        errors = list(
+            Draft202012Validator(schema).iter_errors(externalized_source)
+        )
+        if (
+            externalized_source.get("schema_version")
+            == INDEX_SCHEMA_VERSION
+            and not errors
+            and source_index_matches_owner(
+                owner_root,
+                externalized_source,
+            )
+        ):
+            return "passed", relative_files
         return "migration-needed", relative_files
     source_index = indexes / "source_surface_index.json"
     if source_index.is_file():

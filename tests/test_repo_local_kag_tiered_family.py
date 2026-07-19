@@ -419,6 +419,58 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
         self.assertEqual("complete", materialized_receipt["state"])
         self.assertEqual("unsigned-candidate", receipt["signature_state"])
 
+    def test_tiered_generator_recomputes_migration_metadata(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as repo_tmp,
+            tempfile.TemporaryDirectory() as artifact_tmp,
+            tempfile.TemporaryDirectory() as check_artifact_tmp,
+        ):
+            root = Path(repo_tmp)
+            artifact_root = Path(artifact_tmp)
+            check_artifact_root = Path(check_artifact_tmp)
+            write_fixture(root)
+            self.assertEqual(
+                0,
+                generate_main(
+                    [
+                        "--repo-root",
+                        str(root),
+                        "--tiered-family",
+                        "--artifact-root",
+                        str(artifact_root),
+                    ]
+                ),
+            )
+            corpus_path = root / "kag/indexes/corpus.manifest.json"
+            corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
+            corpus["migration"]["from_family_digest"] = (
+                "sha256:" + ("f" * 64)
+            )
+            corpus_path.write_text(
+                json.dumps(
+                    corpus,
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = generate_main(
+                [
+                    "--repo-root",
+                    str(root),
+                    "--tiered-family",
+                    "--artifact-root",
+                    str(check_artifact_root),
+                    "--check",
+                    "--materialize-artifact-on-check",
+                ]
+            )
+
+        self.assertEqual(1, result)
+
     def test_generated_lane_release_builder_uses_bounded_transient_artifact_root(
         self,
     ) -> None:

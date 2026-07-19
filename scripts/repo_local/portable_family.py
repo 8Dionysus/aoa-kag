@@ -785,10 +785,17 @@ def _strip_portable_fields(row: Mapping[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def reconstruct_compatibility_family(
+def reconstruct_source_index(
     manifest: Mapping[str, Any],
     rows: Sequence[dict[str, Any]],
-) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+) -> dict[str, Any]:
+    """Reconstruct and verify the Git-hot source compatibility view.
+
+    Tiered externalized checkouts retain every source record while
+    artifact-cold anchor and event records may be absent. Source-fast
+    consumers can therefore verify authored coverage without pretending that
+    the complete seven-view family is hydrated.
+    """
     source_rows = [
         _strip_portable_fields(row)
         for row in rows
@@ -801,7 +808,47 @@ def reconstruct_compatibility_family(
     source_index = copy.deepcopy(source_header)
     source_index["records"] = source_rows
 
-    structure_records = copy.deepcopy(source_rows)
+    compatibility = manifest.get("compatibility")
+    files = (
+        compatibility.get("files")
+        if isinstance(compatibility, Mapping)
+        else None
+    )
+    expected_source_digest = next(
+        (
+            item["content_digest"]
+            for item in files or []
+            if isinstance(item, dict)
+            and item.get("kind") == "source"
+            and isinstance(item.get("content_digest"), str)
+        ),
+        None,
+    )
+    identity = source_index.get("index_identity")
+    if (
+        not isinstance(identity, Mapping)
+        or identity.get("content_digest") != expected_source_digest
+    ):
+        raise PortableFamilyError(
+            "portable source compatibility digest does not match"
+        )
+    try:
+        from scripts.generate_repo_local_kag_index import payload_digest
+    except ImportError:  # pragma: no cover - direct script execution
+        from generate_repo_local_kag_index import payload_digest  # type: ignore
+    if identity.get("content_digest") != payload_digest(source_index):
+        raise PortableFamilyError(
+            "portable source compatibility content has drifted"
+        )
+    return source_index
+
+
+def reconstruct_compatibility_family(
+    manifest: Mapping[str, Any],
+    rows: Sequence[dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    source_index = reconstruct_source_index(manifest, rows)
+    structure_records = copy.deepcopy(source_index["records"])
     anchor_rows = _expanded_parents(rows, parent_kind="anchor")
     anchors: list[dict[str, Any]] = []
     records_by_id = {

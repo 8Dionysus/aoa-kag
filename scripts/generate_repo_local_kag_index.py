@@ -2528,7 +2528,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     previous_index: dict[str, Any] | None = None
     previous_family: dict[str, dict[str, Any]] | None = None
     previous_manifest: dict[str, Any] | None = None
-    previous_tiered_migration: dict[str, Any] | None = None
     previous_tiered_shadow = False
     portable_manifest_path = repo_root / PORTABLE_FAMILY_MANIFEST
     if (args.portable_family or args.tiered_family) and portable_manifest_path.is_file():
@@ -2558,12 +2557,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise SystemExit(f"invalid tiered corpus manifest: {corpus_path}") from exc
             if not isinstance(previous_corpus, dict):
                 raise SystemExit(f"invalid tiered corpus manifest: {corpus_path}")
-            migration = previous_corpus.get("migration")
-            if isinstance(migration, dict):
-                previous_tiered_migration = migration
             previous_manifest = {
                 "partitioning": previous_corpus.get("partitioning"),
-                "budgets": {"tracked_bytes_max": 48 * 1024 * 1024},
             }
         else:
             previous_manifest = loaded_manifest
@@ -2700,7 +2695,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     portable_shards,
                     max_pack_bytes=args.max_pack_bytes,
                     shadow_mode=not args.externalize_cold,
-                    migration=previous_tiered_migration,
                 )
             except PortableFamilyError as exc:
                 print(f"[repo-local-kag-index] {exc}", file=sys.stderr)

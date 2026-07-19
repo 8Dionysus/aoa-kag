@@ -35,6 +35,11 @@ from scripts.generate_repo_local_kag_index import (
     payload_digest,
     REPOSITORY_INDEX_FILENAMES,
 )
+from scripts.repo_local.portable_family import build_portable_family
+from scripts.repo_local.tiered_family import (
+    build_tiered_family,
+    write_tiered_git_surface,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1558,6 +1563,75 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             status, _ = coverage_generation.index_status(root)
 
         self.assertEqual("passed", status)
+
+    def test_coverage_accepts_externalized_hot_source_without_cas(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo"
+            root.mkdir()
+            subprocess.run(
+                ["git", "init", "-b", "main"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.com"],
+                cwd=root,
+                check=True,
+            )
+            (root / "README.md").write_text(
+                "# Externalized owner\n",
+                encoding="utf-8",
+            )
+            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
+            source = build_index(
+                root,
+                output=Path("kag/indexes/source_surface_index.json"),
+            )
+            family = build_repository_indexes(
+                source,
+                repo_root=root,
+            )
+            portable, shards = build_portable_family(source, family)
+            tiered = build_tiered_family(
+                portable,
+                shards,
+                shadow_mode=False,
+            )
+            write_tiered_git_surface(
+                root,
+                tiered,
+                externalize=True,
+            )
+            subprocess.run(["git", "add", "kag"], cwd=root, check=True)
+
+            with patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("KAG_ARTIFACT_ROOT", None)
+                status, _ = coverage_generation.index_status(root)
+                storage, profile = (
+                    coverage_generation.portable_family_profile(
+                        root,
+                        owner_name="aoa-demo",
+                        status=status,
+                    )
+                )
+
+        self.assertEqual("passed", status)
+        self.assertEqual("v4-tiered-content-addressed", storage)
+        self.assertEqual("externalized", profile["placement_state"])
+        self.assertEqual(
+            tiered.distribution_manifest["distribution_identity"][
+                "content_digest"
+            ],
+            profile["distribution_digest"],
+        )
 
     def test_coverage_recovers_history_boundary_from_second_merge_parent(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

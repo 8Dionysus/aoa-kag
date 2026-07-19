@@ -339,6 +339,59 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         ):
             validate_pack_index(tampered, build.pack_bytes)
 
+    def test_distribution_requires_packs_to_cover_every_cold_object(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            _, _, build = build_fixture_family(
+                root,
+                max_pack_bytes=8 * 1024,
+            )
+
+        tampered_pack = copy.deepcopy(build.pack_index)
+        descriptor_by_digest = {
+            item["pack_digest"]: item
+            for item in tampered_pack["packs"]
+        }
+        removed = next(
+            entry
+            for entry in tampered_pack["entries"]
+            if descriptor_by_digest[entry["pack_digest"]]["objects"] > 1
+        )
+        tampered_pack["entries"].remove(removed)
+        descriptor_by_digest[removed["pack_digest"]]["objects"] -= 1
+        tampered_pack["summary"]["objects"] -= 1
+        tampered_pack["pack_index_identity"]["content_digest"] = (
+            _identity_digest(tampered_pack, "pack_index_identity")
+        )
+
+        tampered_distribution = copy.deepcopy(
+            build.distribution_manifest
+        )
+        tampered_distribution["transport"]["pack_index_digest"] = (
+            tampered_pack["pack_index_identity"]["content_digest"]
+        )
+        tampered_distribution["distribution_identity"]["content_digest"] = (
+            _identity_digest(
+                tampered_distribution,
+                "distribution_identity",
+            )
+        )
+
+        with self.assertRaisesRegex(
+            TieredFamilyError,
+            "exactly cover artifact-cold corpus objects",
+        ):
+            validate_distribution_manifest(
+                tampered_distribution,
+                corpus_manifest=build.corpus_manifest,
+                hot_profile=build.hot_profile,
+                locator_manifest=build.locator_manifest,
+                pack_index=tampered_pack,
+            )
+
     def test_distribution_validation_recomputes_corpus_measurements(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -713,6 +766,14 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
             ["scripts/prepare_repo_local_kag_externalization.py"],
             owner="aoa-kag",
         )
+        rollout_schema = classify_impact(
+            ["schemas/kag-tiered-rollout-evidence.schema.json"],
+            owner="aoa-kag",
+        )
+        governance_schema = classify_impact(
+            ["schemas/kag-receipt-governance.schema.json"],
+            owner="aoa-kag",
+        )
         readiness = classify_impact(
             ["manifests/local_kag_readiness.json"],
             owner="aoa-kag",
@@ -749,6 +810,8 @@ class RepoLocalKagTieredDistributionTests(unittest.TestCase):
         for classified in (
             rollout_entrypoint,
             externalization_entrypoint,
+            rollout_schema,
+            governance_schema,
         ):
             self.assertEqual(
                 "full-24-owner-audit",

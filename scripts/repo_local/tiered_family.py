@@ -971,6 +971,35 @@ def validate_distribution_manifest(
             "content_digest"
         ]:
             raise TieredFamilyError("distribution pack index targets the wrong corpus")
+        if corpus_manifest is not None and hot_profile is not None:
+            hot_kinds = hot_profile["selection"]["include_record_kinds"]
+            cold_by_digest = {
+                item["content_digest"]: item
+                for item in corpus_manifest["objects"]
+                if not _is_hot_kind(item["kind"], hot_kinds)
+            }
+            entries = pack_index.get("entries")
+            if not isinstance(entries, list):
+                raise TieredFamilyError("pack index entries are missing")
+            entry_by_digest = {
+                item.get("object_digest"): item
+                for item in entries
+                if isinstance(item, Mapping)
+            }
+            if set(entry_by_digest) != set(cold_by_digest):
+                raise TieredFamilyError(
+                    "pack index does not exactly cover artifact-cold corpus objects"
+                )
+            for digest, descriptor in cold_by_digest.items():
+                entry = entry_by_digest[digest]
+                if (
+                    entry.get("kind") != descriptor.get("kind")
+                    or entry.get("range") != descriptor.get("range")
+                    or entry.get("length") != descriptor.get("bytes")
+                ):
+                    raise TieredFamilyError(
+                        "pack index entry does not match artifact-cold corpus object"
+                    )
     if (
         corpus_manifest is not None
         and hot_profile is not None
