@@ -19,6 +19,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Changed
 
+- Compact the owner skill's global description while retaining unknown-owner,
+  cross-repository research, canonical-return, and nearest-route boundaries.
 - Replace provisional per-provider MCP hints with one generated executable
   handoff for `discover`, `search`, `read`, `traverse`, and `explain`.
 - Rebuild manifest-declared owner skill projections during incremental indexing
