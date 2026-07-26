@@ -117,3 +117,10 @@ its full owner contract or live-binding check; a supplied source may still
 require KAG navigation; and role decisions belong to their owner even when the
 responsible repository is unknown. The exact-source exclusion applies only
 when no navigation remains.
+
+### 2026-07-25 - Keep same-owner relation traversal discoverable
+
+Version `0.2.3` removes the accidental cross-repository qualifier from the
+relationship trigger. Evidence-bearing relation or compatibility traversal is
+applicable even when both endpoints belong to one known owner; cross-repository
+impact remains a separate positive case.
