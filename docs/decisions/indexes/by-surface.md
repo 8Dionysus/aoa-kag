@@ -87,6 +87,10 @@
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 
+## mechanics part
+
+- [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
+
 ## mechanics/topology
 
 - [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
@@ -106,6 +110,10 @@
 ## owner skill
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+
+## public example
+
+- [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
 
 ## query foundation
 
@@ -184,3 +192,4 @@
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+- [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)

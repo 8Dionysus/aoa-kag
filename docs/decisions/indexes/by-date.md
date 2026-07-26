@@ -58,3 +58,7 @@
 ## 2026-07-18
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+
+## 2026-07-25
+
+- [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)

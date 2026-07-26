@@ -148,9 +148,17 @@
 
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 
+## distillation
+
+- [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
+
 ## federation and MCP consumers
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## generated projection
+
+- [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
 
 ## OS Abyss repo-local kag homes
 
@@ -192,3 +200,4 @@
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)

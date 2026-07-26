@@ -98,10 +98,87 @@ def validate_tos_zarathustra_route_pack_example(
     expected_payload: dict[str, object],
 ) -> None:
     payload = read_json(TOS_ZARATHUSTRA_ROUTE_PACK_EXAMPLE_PATH)
-    if payload != expected_payload:
+    if not isinstance(payload, dict):
+        fail("ToS Zarathustra route pack example must be a JSON object")
+
+    schema = read_json(TOS_ZARATHUSTRA_ROUTE_PACK_SCHEMA_PATH)
+    if not isinstance(schema, dict):
+        fail("ToS Zarathustra route pack schema must be a JSON object")
+    Draft202012Validator.check_schema(schema)
+    errors = sorted(
+        Draft202012Validator(schema).iter_errors(payload),
+        key=lambda error: list(error.path),
+    )
+    if errors:
+        first = errors[0]
+        error_path = format_schema_path(first.path)
+        if error_path:
+            fail(
+                "ToS Zarathustra route pack example schema violation at "
+                f"'{error_path}': {first.message}"
+            )
+        fail(f"ToS Zarathustra route pack example schema violation: {first.message}")
+
+    expected_nodes = expected_payload.get("nodes")
+    expected_edges = expected_payload.get("edges")
+    if not isinstance(expected_nodes, list) or not isinstance(expected_edges, list):
+        fail("expected ToS Zarathustra route payload must declare nodes and edges")
+
+    fixture_nodes = [
+        node
+        for node in expected_nodes
+        if isinstance(node, dict)
+        and node.get("node_id") in EXPECTED_TOS_ZARATHUSTRA_ROUTE_EXAMPLE_NODE_IDS
+    ]
+    fixture_edges = [
+        edge
+        for edge in expected_edges
+        if isinstance(edge, dict)
+        and edge.get("edge_id") in EXPECTED_TOS_ZARATHUSTRA_ROUTE_EXAMPLE_EDGE_IDS
+    ]
+    if {
+        node.get("node_id") for node in fixture_nodes
+    } != EXPECTED_TOS_ZARATHUSTRA_ROUTE_EXAMPLE_NODE_IDS:
+        fail("expected ToS Zarathustra route payload lost a fixture node")
+    if {
+        edge.get("edge_id") for edge in fixture_edges
+    } != EXPECTED_TOS_ZARATHUSTRA_ROUTE_EXAMPLE_EDGE_IDS:
+        fail("expected ToS Zarathustra route payload lost a fixture edge")
+
+    expected_fixture = dict(expected_payload)
+    expected_fixture["nodes"] = fixture_nodes
+    expected_fixture["edges"] = fixture_edges
+    expected_fixture["node_count"] = len(fixture_nodes)
+    expected_fixture["edge_count"] = len(fixture_edges)
+    expected_fixture["node_type_counts"] = {
+        node_type: sum(
+            node.get("node_type") == node_type for node in fixture_nodes
+        )
+        for node_type in expected_payload["node_type_counts"]
+    }
+    expected_fixture["edge_kind_counts"] = {
+        edge_kind: sum(
+            edge.get("edge_kind") == edge_kind for edge in fixture_edges
+        )
+        for edge_kind in expected_payload["edge_kind_counts"]
+    }
+
+    if any(count < 1 for count in expected_fixture["node_type_counts"].values()):
+        fail("ToS Zarathustra route fixture must cover every canonical node type")
+    if any(count < 1 for count in expected_fixture["edge_kind_counts"].values()):
+        fail("ToS Zarathustra route fixture must cover every canonical edge kind")
+    fixture_node_ids = {node["node_id"] for node in fixture_nodes}
+    if any(
+        edge["from_id"] not in fixture_node_ids
+        or edge["to_id"] not in fixture_node_ids
+        for edge in fixture_edges
+    ):
+        fail("ToS Zarathustra route fixture edge endpoints must stay inside the fixture")
+
+    if payload != expected_fixture:
         fail(
-            "ToS Zarathustra route pack example must match the current bounded "
-            "canonical route payload"
+            "ToS Zarathustra route pack example must match the reviewed bounded "
+            "node-type and edge-kind fixture"
         )
 
 def validate_tos_zarathustra_route_retrieval_pack_example(
