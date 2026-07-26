@@ -1,6 +1,6 @@
 ---
 name: aoa-kag
-description: Use the read-only `aoa_kag` MCP to locate canonical AoA owner sources or full capability contracts, check known-capability applicability or live binding, or ground evidence-bearing relationships, compatibility, and cross-repository impact when navigation is still needed; return owner handles. Do not use for raw sessions, web research, proof or memory, role/routing/playbook decisions, mutations, standalone runtime diagnosis, or when an exact authoritative source is supplied and no navigation is needed.
+description: Use read-only `aoa_kag` MCP to locate canonical AoA owner sources/full capability contracts; check known-capability applicability/live binding; ground evidence-bearing relations, compatibility, or cross-repo impact; or investigate/compare a bounded multi-owner question needing navigation. Return owner handles. Not for raw sessions, web research, proof/memory, role/routing/playbook decisions, mutations, standalone runtime diagnosis, or an exact authoritative source needing no navigation.
 ---
 
 # aoa-kag
@@ -16,7 +16,8 @@ owns authored meaning before making a strong claim or executing a capability.
    - raw `.aoa`, transcript, compaction, or prior-session retrieval: use the
      session-memory owner route
    - live service, process, machine, or runtime health: use its runtime owner
-   - an exact authoritative path already supplied: read that source directly
+   - an exact authoritative path already supplied and no further navigation is
+     needed: read that source directly
    - internet or literature research: use the web research route
    - proof, memo admission, dispatch, role, or playbook judgment: use that owner
 

@@ -124,3 +124,11 @@ Version `0.2.3` removes the accidental cross-repository qualifier from the
 relationship trigger. Evidence-bearing relation or compatibility traversal is
 applicable even when both endpoints belong to one known owner; cross-repository
 impact remains a separate positive case.
+
+### 2026-07-26 - Keep bounded multi-owner research and supplied-source navigation executable
+
+Version `0.2.4` restores investigation and comparison as host-visible positive
+triggers, rather than expecting the agent to discover those modes only after
+activation. The internal exact-source stop now matches the catalog and
+contract boundary: a supplied authoritative path bypasses KAG only when no
+further navigation is needed.

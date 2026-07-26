@@ -22,7 +22,8 @@ Tracking starts with the community-docs baseline for this repository.
 - Compact the owner skill's global description while retaining unknown-owner,
   full-capability-contract and live-binding checks, supplied-source navigation,
   same-owner or cross-repository relationship and compatibility traversal,
-  cross-repository research, canonical-return, and nearest-route boundaries.
+  bounded multi-owner investigation or comparison, cross-repository impact,
+  canonical-return, and nearest-route boundaries.
 - Replace provisional per-provider MCP hints with one generated executable
   handoff for `discover`, `search`, `read`, `traverse`, and `explain`.
 - Rebuild manifest-declared owner skill projections during incremental indexing
