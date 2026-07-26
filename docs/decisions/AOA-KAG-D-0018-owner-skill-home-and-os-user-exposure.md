@@ -106,3 +106,14 @@ Structural support is checked separately with `quick_validate.py`, the shared
 `aoa-skills` home-port validator, focused existing repo-index tests, semantic
 agent-route validation, generated parity, source-fast, and release-facing
 lanes. Green structural checks do not prove skill usefulness.
+
+## Review Log
+
+### 2026-07-25 - Preserve the complete host-visible routing boundary
+
+Version `0.2.2` keeps the compact catalog entry but restores three distinctions
+needed before the bundle body is loaded: a known capability may still require
+its full owner contract or live-binding check; a supplied source may still
+require KAG navigation; and role decisions belong to their owner even when the
+responsible repository is unknown. The exact-source exclusion applies only
+when no navigation remains.

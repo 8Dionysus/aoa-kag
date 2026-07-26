@@ -1,6 +1,6 @@
 ---
 name: aoa-kag
-description: Use the read-only `aoa_kag` MCP when the responsible AoA owner/source is unknown or cross-repository relation or impact research is needed; return canonical owner handles. Do not use for raw sessions, web research, proof, memory, routing/playbooks, mutations, live runtime diagnosis, or when an authoritative source is already supplied.
+description: Use the read-only `aoa_kag` MCP to locate canonical AoA owner sources or full capability contracts, check known-capability applicability or live binding, or ground cross-repository relations and impact when navigation is still needed; return owner handles. Do not use for raw sessions, web research, proof or memory, role/routing/playbook decisions, mutations, standalone runtime diagnosis, or when an exact authoritative source is supplied and no navigation is needed.
 ---
 
 # aoa-kag
