@@ -14,7 +14,8 @@ OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
-EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS)
+RETIRED_REFERENCE_REPOS = {"aoa-routing"}
+EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS) | RETIRED_REFERENCE_REPOS
 
 EXPECTED_CONNECTOR_SURFACE_ROOTS = {
     "connectors/aoa-4pda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-4pda-connector",
@@ -75,7 +76,7 @@ OS_SURFACE_PATH_LIST_KEYS = (
 )
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
-EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
+EXPECTED_PROVIDER_READY_REPOS = set(PROVIDER_REPO_ROOTS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
 REPO_LOCAL_FAMILY_MANIFEST_NAME = "index_family.manifest.json"
 REPO_LOCAL_REPOSITORY_INDEX_NAMES = {

@@ -4,7 +4,8 @@
   "owner_repo": "aoa-kag",
   "source_ref": "manifests/local_kag_readiness.json",
   "provider_status_counts": {
-    "provider_ready": 24
+    "provider_ready": 23,
+    "retired_reference": 1
   },
   "providers": [
     {
@@ -42,7 +43,7 @@
           "manifest_ref": "kag/indexes/index_family.manifest.json",
           "receipt_ref": "",
           "shards": 483,
-          "tracked_bytes": 10083894,
+          "tracked_bytes": 10127476,
           "tracked_bytes_max": 12582912
         },
         "repository_index_family": {
@@ -57,7 +58,7 @@
         "domain_index_catalog_ref": "",
         "coverage": {
           "commands": 189,
-          "documents": 324,
+          "documents": 325,
           "generated": 35,
           "mechanics": 421,
           "schemas": 78,
@@ -69,7 +70,7 @@
           "counts": {
             "artifact_kind": {
               "config": 83,
-              "document": 316,
+              "document": 317,
               "generated_readmodel": 42,
               "index": 1,
               "license": 1,
@@ -87,7 +88,7 @@
             "command_role": {
               "builder": 8,
               "lane_entrypoint": 3,
-              "none": 653,
+              "none": 654,
               "script": 5,
               "test": 51,
               "validator": 15
@@ -96,7 +97,7 @@
               "agents": 58,
               "boundary": 1,
               "changelog": 1,
-              "decision": 26,
+              "decision": 27,
               "design": 1,
               "design_agents": 1,
               "mechanics_doc": 113,
@@ -115,7 +116,7 @@
               "legacy": 16,
               "mechanic_package": 55,
               "mechanic_part": 94,
-              "none": 314,
+              "none": 315,
               "part_contract": 28,
               "part_doc": 129,
               "part_schema": 62,
@@ -125,11 +126,11 @@
             "primary_kind": {
               "artifact": 40,
               "command": 82,
-              "document": 324,
+              "document": 325,
               "surface": 289
             },
             "surface_state": {
-              "authored_source": 674,
+              "authored_source": 675,
               "generated_readmodel": 45,
               "legacy": 16
             }
@@ -2420,270 +2421,6 @@
             "route": "local KAG provider authoring",
             "surface": "kag/manifest.json",
             "record_count": 1
-          }
-        ]
-      }
-    },
-    {
-      "repo": "aoa-routing",
-      "provider_status": "provider_ready",
-      "adoption_order": 9,
-      "local_kag_path": "kag/",
-      "manifest_ref": "kag/manifest.json",
-      "record_class_coverage": [
-        "node",
-        "edge",
-        "index",
-        "projection",
-        "receipt"
-      ],
-      "record_counts": {
-        "nodes": 2,
-        "edges": 1,
-        "indexes": 1,
-        "projections": 1,
-        "receipts": 1
-      },
-      "repo_local_index": {
-        "status": "passed",
-        "source_index_ref": "kag/indexes/source_surface_index.json",
-        "index_files": [
-          "kag/indexes/index_family.manifest.json",
-          "kag/indexes/provider_readiness_index.json"
-        ],
-        "family_storage": "v3-portable-shards",
-        "portable_family": {
-          "budget_state": "passed",
-          "content_digest": "ffa30bf9ceaa58627679a9b0541f8b25cd2abeacd5bde060c152492937fa4043",
-          "digest_state": "published",
-          "manifest_ref": "kag/indexes/index_family.manifest.json",
-          "receipt_ref": "",
-          "shards": 394,
-          "tracked_bytes": 7964006,
-          "tracked_bytes_max": 9437184
-        },
-        "repository_index_family": {
-          "anchor": "kag/indexes/repo_anchor_index.json",
-          "artifact": "kag/indexes/repo_artifact_index.json",
-          "assertion": "kag/indexes/repo_assertion_index.json",
-          "entity": "kag/indexes/repo_entity_index.json",
-          "event": "kag/indexes/repo_event_index.json",
-          "relation": "kag/indexes/repo_relation_index.json",
-          "source": "kag/indexes/source_surface_index.json"
-        },
-        "domain_index_catalog_ref": "",
-        "coverage": {
-          "commands": 49,
-          "documents": 420,
-          "generated": 65,
-          "mechanics": 370,
-          "schemas": 70,
-          "scripts": 23,
-          "tests": 26,
-          "validators": 11
-        },
-        "common_surface_profile": {
-          "counts": {
-            "artifact_kind": {
-              "asset": 50,
-              "config": 164,
-              "dependency_manifest": 1,
-              "document": 412,
-              "generated_readmodel": 71,
-              "index": 1,
-              "license": 1,
-              "manifest": 2,
-              "owner_metadata": 2,
-              "projection": 1,
-              "receipt": 1,
-              "record_log": 1,
-              "schema": 69,
-              "script": 12,
-              "security": 1,
-              "source_code": 2,
-              "test": 25,
-              "validator": 11
-            },
-            "command_role": {
-              "builder": 4,
-              "lane_entrypoint": 1,
-              "none": 779,
-              "script": 7,
-              "test": 25,
-              "validator": 11
-            },
-            "document_role": {
-              "agents": 51,
-              "audit": 3,
-              "boundary": 1,
-              "changelog": 1,
-              "decision": 10,
-              "mechanics_doc": 81,
-              "none": 407,
-              "parts": 11,
-              "provenance": 12,
-              "readme": 105,
-              "report": 1,
-              "roadmap": 12,
-              "unknown_document": 132
-            },
-            "mechanics_role": {
-              "legacy": 60,
-              "mechanic_package": 58,
-              "mechanic_part": 55,
-              "none": 457,
-              "part_doc": 128,
-              "part_schema": 56,
-              "part_script": 2,
-              "part_test": 11
-            },
-            "primary_kind": {
-              "artifact": 121,
-              "command": 48,
-              "document": 420,
-              "surface": 238
-            },
-            "surface_state": {
-              "authored_source": 685,
-              "generated_readmodel": 74,
-              "legacy": 67,
-              "receipt": 1
-            }
-          },
-          "quality": {
-            "has_generated_readmodels": true,
-            "has_kag_home": true,
-            "has_owner_commands": true,
-            "has_record_classes": true,
-            "has_source_index": true,
-            "has_validation_route": true,
-            "unknown_count": 0
-          },
-          "source": "source_surface_index"
-        },
-        "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
-        "coverage_owner_key": "aoa-routing"
-      },
-      "freshness_handles": [
-        {
-          "receipt_ref": "kag/receipts/validation_receipt.json",
-          "checked_ref": "kag/manifest.json",
-          "state": "current",
-          "validator": "aoa-kag:scripts/validate_kag.py",
-          "owner_return_route": {
-            "repo": "aoa-routing",
-            "surface": "routing/README.md",
-            "route_kind": "routing"
-          }
-        }
-      ],
-      "source_surfaces": [
-        {
-          "repo": "aoa-routing",
-          "path": "routing/source_home.manifest.json",
-          "source_class": "route_source",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-routing",
-          "path": "routing/README.md",
-          "source_class": "route_source",
-          "role": "owner_route",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "aoa-routing",
-          "path": "generated/cross_repo_registry.min.json",
-          "source_class": "route_source",
-          "role": "supporting",
-          "authority": "derived_readmodel"
-        },
-        {
-          "repo": "aoa-routing",
-          "path": "generated/aoa_router.min.json",
-          "source_class": "route_source",
-          "role": "supporting",
-          "authority": "derived_readmodel"
-        }
-      ],
-      "validation_routes": [
-        {
-          "route": "scripts/validate_source_home.py",
-          "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
-        }
-      ],
-      "consumer_routes": [
-        "aoa-kag registry",
-        "abyss-stack federation mirror",
-        "aoa-kag-mcp resource"
-      ],
-      "owner_return_routes": [
-        {
-          "repo": "aoa-routing",
-          "surface": "routing/README.md",
-          "route_kind": "routing"
-        }
-      ],
-      "generation_profile": {
-        "source_home_surfaces": [
-          "routing/",
-          "routing/source_home.manifest.json"
-        ],
-        "candidate_source_surfaces": [
-          "routing/source_home.manifest.json",
-          "generated/cross_repo_registry.min.json"
-        ],
-        "source_owned_exports": [],
-        "graph_entities": [
-          "route",
-          "dispatch surface",
-          "cross repo registry row"
-        ],
-        "event_surfaces": [
-          "quests/"
-        ],
-        "document_surfaces": [
-          "README.md",
-          "routing/README.md"
-        ],
-        "validators": [
-          "repo source-fast lane"
-        ],
-        "release_gate": "repo-local release lane",
-        "runtime_consumers": [
-          "aoa-kag registry",
-          "aoa-routing consumers"
-        ],
-        "record_authoring_counts": {
-          "authored_control": 3,
-          "generated_from_source": 3
-        },
-        "record_class_counts": {
-          "edge": 1,
-          "index": 1,
-          "node": 2,
-          "projection": 1,
-          "receipt": 1
-        },
-        "source_authority_counts": {
-          "authored_source": 2,
-          "derived_readmodel": 2
-        },
-        "builder_routes": [
-          {
-            "route": "local KAG provider authoring",
-            "surface": "kag/manifest.json",
-            "record_count": 1
-          },
-          {
-            "route": "router builders",
-            "surface": "scripts/build_router.py",
-            "record_count": 5
           }
         ]
       }
@@ -7102,64 +6839,6 @@
         }
       ]
     },
-    "aoa-routing": {
-      "source_home_surfaces": [
-        "routing/",
-        "routing/source_home.manifest.json"
-      ],
-      "candidate_source_surfaces": [
-        "routing/source_home.manifest.json",
-        "generated/cross_repo_registry.min.json"
-      ],
-      "source_owned_exports": [],
-      "graph_entities": [
-        "route",
-        "dispatch surface",
-        "cross repo registry row"
-      ],
-      "event_surfaces": [
-        "quests/"
-      ],
-      "document_surfaces": [
-        "README.md",
-        "routing/README.md"
-      ],
-      "validators": [
-        "repo source-fast lane"
-      ],
-      "release_gate": "repo-local release lane",
-      "runtime_consumers": [
-        "aoa-kag registry",
-        "aoa-routing consumers"
-      ],
-      "record_authoring_counts": {
-        "authored_control": 3,
-        "generated_from_source": 3
-      },
-      "record_class_counts": {
-        "edge": 1,
-        "index": 1,
-        "node": 2,
-        "projection": 1,
-        "receipt": 1
-      },
-      "source_authority_counts": {
-        "authored_source": 2,
-        "derived_readmodel": 2
-      },
-      "builder_routes": [
-        {
-          "route": "local KAG provider authoring",
-          "surface": "kag/manifest.json",
-          "record_count": 1
-        },
-        {
-          "route": "router builders",
-          "surface": "scripts/build_router.py",
-          "record_count": 5
-        }
-      ]
-    },
     "aoa-sdk": {
       "source_home_surfaces": [
         "sdk/",
@@ -8077,7 +7756,7 @@
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "receipt_ref": "",
         "shards": 483,
-        "tracked_bytes": 10083894,
+        "tracked_bytes": 10127476,
         "tracked_bytes_max": 12582912
       },
       "repository_index_family": {
@@ -8092,7 +7771,7 @@
       "domain_index_catalog_ref": "",
       "coverage": {
         "commands": 189,
-        "documents": 324,
+        "documents": 325,
         "generated": 35,
         "mechanics": 421,
         "schemas": 78,
@@ -8104,7 +7783,7 @@
         "counts": {
           "artifact_kind": {
             "config": 83,
-            "document": 316,
+            "document": 317,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -8122,7 +7801,7 @@
           "command_role": {
             "builder": 8,
             "lane_entrypoint": 3,
-            "none": 653,
+            "none": 654,
             "script": 5,
             "test": 51,
             "validator": 15
@@ -8131,7 +7810,7 @@
             "agents": 58,
             "boundary": 1,
             "changelog": 1,
-            "decision": 26,
+            "decision": 27,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
@@ -8150,7 +7829,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 314,
+            "none": 315,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -8160,11 +7839,11 @@
           "primary_kind": {
             "artifact": 40,
             "command": 82,
-            "document": 324,
+            "document": 325,
             "surface": 289
           },
           "surface_state": {
-            "authored_source": 674,
+            "authored_source": 675,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -9162,126 +8841,6 @@
       },
       "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
       "coverage_owner_key": "aoa-evals"
-    },
-    "aoa-routing": {
-      "status": "passed",
-      "source_index_ref": "kag/indexes/source_surface_index.json",
-      "index_files": [
-        "kag/indexes/index_family.manifest.json",
-        "kag/indexes/provider_readiness_index.json"
-      ],
-      "family_storage": "v3-portable-shards",
-      "portable_family": {
-        "budget_state": "passed",
-        "content_digest": "ffa30bf9ceaa58627679a9b0541f8b25cd2abeacd5bde060c152492937fa4043",
-        "digest_state": "published",
-        "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "receipt_ref": "",
-        "shards": 394,
-        "tracked_bytes": 7964006,
-        "tracked_bytes_max": 9437184
-      },
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
-      "domain_index_catalog_ref": "",
-      "coverage": {
-        "commands": 49,
-        "documents": 420,
-        "generated": 65,
-        "mechanics": 370,
-        "schemas": 70,
-        "scripts": 23,
-        "tests": 26,
-        "validators": 11
-      },
-      "common_surface_profile": {
-        "counts": {
-          "artifact_kind": {
-            "asset": 50,
-            "config": 164,
-            "dependency_manifest": 1,
-            "document": 412,
-            "generated_readmodel": 71,
-            "index": 1,
-            "license": 1,
-            "manifest": 2,
-            "owner_metadata": 2,
-            "projection": 1,
-            "receipt": 1,
-            "record_log": 1,
-            "schema": 69,
-            "script": 12,
-            "security": 1,
-            "source_code": 2,
-            "test": 25,
-            "validator": 11
-          },
-          "command_role": {
-            "builder": 4,
-            "lane_entrypoint": 1,
-            "none": 779,
-            "script": 7,
-            "test": 25,
-            "validator": 11
-          },
-          "document_role": {
-            "agents": 51,
-            "audit": 3,
-            "boundary": 1,
-            "changelog": 1,
-            "decision": 10,
-            "mechanics_doc": 81,
-            "none": 407,
-            "parts": 11,
-            "provenance": 12,
-            "readme": 105,
-            "report": 1,
-            "roadmap": 12,
-            "unknown_document": 132
-          },
-          "mechanics_role": {
-            "legacy": 60,
-            "mechanic_package": 58,
-            "mechanic_part": 55,
-            "none": 457,
-            "part_doc": 128,
-            "part_schema": 56,
-            "part_script": 2,
-            "part_test": 11
-          },
-          "primary_kind": {
-            "artifact": 121,
-            "command": 48,
-            "document": 420,
-            "surface": 238
-          },
-          "surface_state": {
-            "authored_source": 685,
-            "generated_readmodel": 74,
-            "legacy": 67,
-            "receipt": 1
-          }
-        },
-        "quality": {
-          "has_generated_readmodels": true,
-          "has_kag_home": true,
-          "has_owner_commands": true,
-          "has_record_classes": true,
-          "has_source_index": true,
-          "has_validation_route": true,
-          "unknown_count": 0
-        },
-        "source": "source_surface_index"
-      },
-      "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
-      "coverage_owner_key": "aoa-routing"
     },
     "aoa-sdk": {
       "status": "passed",
@@ -10785,7 +10344,7 @@
       "counts": {
         "artifact_kind": {
           "config": 83,
-          "document": 316,
+          "document": 317,
           "generated_readmodel": 42,
           "index": 1,
           "license": 1,
@@ -10803,7 +10362,7 @@
         "command_role": {
           "builder": 8,
           "lane_entrypoint": 3,
-          "none": 653,
+          "none": 654,
           "script": 5,
           "test": 51,
           "validator": 15
@@ -10812,7 +10371,7 @@
           "agents": 58,
           "boundary": 1,
           "changelog": 1,
-          "decision": 26,
+          "decision": 27,
           "design": 1,
           "design_agents": 1,
           "mechanics_doc": 113,
@@ -10831,7 +10390,7 @@
           "legacy": 16,
           "mechanic_package": 55,
           "mechanic_part": 94,
-          "none": 314,
+          "none": 315,
           "part_contract": 28,
           "part_doc": 129,
           "part_schema": 62,
@@ -10841,11 +10400,11 @@
         "primary_kind": {
           "artifact": 40,
           "command": 82,
-          "document": 324,
+          "document": 325,
           "surface": 289
         },
         "surface_state": {
-          "authored_source": 674,
+          "authored_source": 675,
           "generated_readmodel": 45,
           "legacy": 16
         }
@@ -11499,85 +11058,6 @@
           "authored_source": 1800,
           "generated_readmodel": 38,
           "legacy": 118,
-          "receipt": 1
-        }
-      },
-      "quality": {
-        "has_generated_readmodels": true,
-        "has_kag_home": true,
-        "has_owner_commands": true,
-        "has_record_classes": true,
-        "has_source_index": true,
-        "has_validation_route": true,
-        "unknown_count": 0
-      },
-      "source": "source_surface_index"
-    },
-    "aoa-routing": {
-      "counts": {
-        "artifact_kind": {
-          "asset": 50,
-          "config": 164,
-          "dependency_manifest": 1,
-          "document": 412,
-          "generated_readmodel": 71,
-          "index": 1,
-          "license": 1,
-          "manifest": 2,
-          "owner_metadata": 2,
-          "projection": 1,
-          "receipt": 1,
-          "record_log": 1,
-          "schema": 69,
-          "script": 12,
-          "security": 1,
-          "source_code": 2,
-          "test": 25,
-          "validator": 11
-        },
-        "command_role": {
-          "builder": 4,
-          "lane_entrypoint": 1,
-          "none": 779,
-          "script": 7,
-          "test": 25,
-          "validator": 11
-        },
-        "document_role": {
-          "agents": 51,
-          "audit": 3,
-          "boundary": 1,
-          "changelog": 1,
-          "decision": 10,
-          "mechanics_doc": 81,
-          "none": 407,
-          "parts": 11,
-          "provenance": 12,
-          "readme": 105,
-          "report": 1,
-          "roadmap": 12,
-          "unknown_document": 132
-        },
-        "mechanics_role": {
-          "legacy": 60,
-          "mechanic_package": 58,
-          "mechanic_part": 55,
-          "none": 457,
-          "part_doc": 128,
-          "part_schema": 56,
-          "part_script": 2,
-          "part_test": 11
-        },
-        "primary_kind": {
-          "artifact": 121,
-          "command": 48,
-          "document": 420,
-          "surface": 238
-        },
-        "surface_state": {
-          "authored_source": 685,
-          "generated_readmodel": 74,
-          "legacy": 67,
           "receipt": 1
         }
       },
@@ -12514,7 +11994,29 @@
       "source": "source_surface_index"
     }
   },
-  "remaining_routes": [],
+  "remaining_routes": [
+    {
+      "repo": "aoa-routing",
+      "adoption_order": 9,
+      "provider_status": "retired_reference",
+      "candidate_source_surfaces": [
+        "routing/source_home.manifest.json",
+        "generated/cross_repo_registry.min.json"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-routing",
+          "surface": "README.md",
+          "route_kind": "authored_meaning"
+        },
+        {
+          "repo": "aoa-sdk",
+          "surface": "mechanics/boundary-bridge/parts/consumed-surface-posture-gate/docs/routing-consumer-contract.md",
+          "route_kind": "routing"
+        }
+      ]
+    }
+  ],
   "os_surfaces": [
     {
       "surface_id": "src/abyss-stack",
@@ -12870,13 +12372,13 @@
   },
   "generation_readiness": {
     "provider_generation_record_counts": {
-      "authored_control": 61,
-      "generated_from_source": 85
+      "authored_control": 58,
+      "generated_from_source": 82
     },
     "provider_source_authority_counts": {
       "authored_control": 1,
-      "authored_source": 98,
-      "derived_readmodel": 18,
+      "authored_source": 96,
+      "derived_readmodel": 16,
       "source_owned_export": 3
     },
     "generated_record_repos": [
@@ -12895,7 +12397,6 @@
       "aoa-kag",
       "aoa-memo",
       "aoa-playbooks",
-      "aoa-routing",
       "aoa-sdk",
       "aoa-session-memory",
       "aoa-skills",

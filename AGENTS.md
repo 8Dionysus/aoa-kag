@@ -59,8 +59,8 @@ Do not treat generated outputs, compact packs, exported capsules, runtime
 receipts, graph-ready wording, retrieval-ready wording, or future local `/kag`
 pressure as source truth.
 
-Keep proof doctrine in `aoa-evals`, memory truth in `aoa-memo`, routing in
-`aoa-routing`, role meaning in `aoa-agents`, scenario composition in
+Keep proof doctrine in `aoa-evals`, memory truth in `aoa-memo`, the routing
+control plane in `aoa-sdk`, role meaning in `aoa-agents`, scenario composition in
 `aoa-playbooks`, shared portable skill procedures and home-port grammar in
 `aoa-skills`, admitted repository-local skill procedures in their owner
 repositories, reusable practice in `aoa-techniques`, and authored

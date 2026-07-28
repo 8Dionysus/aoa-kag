@@ -18,9 +18,9 @@ canon ownership.
 
 ### Stronger owner split
 
-`aoa-routing` owns live route behavior. `aoa-memo` owns memory truth and
-readiness. `aoa-evals` owns proof. Source repositories own source meaning and
-source-owned exports. Runtime owners own recovery execution.
+The `aoa-sdk` routing control plane owns live route behavior. `aoa-memo` owns
+memory truth and readiness. `aoa-evals` owns proof. Source repositories own
+source meaning and source-owned exports. Runtime owners own recovery execution.
 
 ### Inputs
 

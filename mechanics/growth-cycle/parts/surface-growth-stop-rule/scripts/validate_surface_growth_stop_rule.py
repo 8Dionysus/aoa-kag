@@ -23,7 +23,7 @@ EXPECTED_OWNER_WAIT_REPOS = [
     "aoa-playbooks",
     "aoa-agents",
     "aoa-skills",
-    "aoa-routing",
+    "aoa-sdk",
     "aoa-stats",
 ]
 EXPECTED_STABILITY_TIERS = [

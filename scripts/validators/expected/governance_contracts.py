@@ -71,7 +71,7 @@ EXPECTED_KAG_MATURITY_GOVERNANCE_OWNER_WAIT_REPO_ORDER = [
     "aoa-playbooks",
     "aoa-agents",
     "aoa-skills",
-    "aoa-routing",
+    "aoa-sdk",
     "aoa-stats",
 ]
 

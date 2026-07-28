@@ -165,8 +165,8 @@ def extract_boundary_guardrails_from_doc(path: Path) -> dict[str, str]:
 
     boundary_guardrails: dict[str, str] = {}
     for bullet in bullets:
-        if bullet.startswith("`aoa-routing` owns "):
-            boundary_guardrails["routing_owner"] = "aoa-routing"
+        if bullet.startswith("`aoa-sdk` owns the routing control plane"):
+            boundary_guardrails["routing_owner"] = "aoa-sdk"
         elif bullet.startswith("`aoa-memo` owns "):
             boundary_guardrails["memory_owner"] = "aoa-memo"
         elif bullet.startswith("`Tree-of-Sophia` owns "):

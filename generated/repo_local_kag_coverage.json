@@ -4,11 +4,11 @@
     "migration_needed": 0,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
-    "owner_count": 24,
+    "owner_count": 23,
     "owner_specific": 0,
-    "passed": 24,
-    "portable_tracked_bytes": 282766950,
-    "portable_v3": 24
+    "passed": 23,
+    "portable_tracked_bytes": 274846526,
+    "portable_v3": 23
   },
   "owners": [
     {
@@ -829,7 +829,7 @@
         "counts": {
           "artifact_kind": {
             "config": 83,
-            "document": 316,
+            "document": 317,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -847,7 +847,7 @@
           "command_role": {
             "builder": 8,
             "lane_entrypoint": 3,
-            "none": 653,
+            "none": 654,
             "script": 5,
             "test": 51,
             "validator": 15
@@ -856,7 +856,7 @@
             "agents": 58,
             "boundary": 1,
             "changelog": 1,
-            "decision": 26,
+            "decision": 27,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
@@ -875,7 +875,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 314,
+            "none": 315,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -885,11 +885,11 @@
           "primary_kind": {
             "artifact": 40,
             "command": 82,
-            "document": 324,
+            "document": 325,
             "surface": 289
           },
           "surface_state": {
-            "authored_source": 674,
+            "authored_source": 675,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -907,7 +907,7 @@
       },
       "coverage": {
         "commands": 189,
-        "documents": 324,
+        "documents": 325,
         "generated": 35,
         "mechanics": 421,
         "schemas": 78,
@@ -931,7 +931,7 @@
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "receipt_ref": "",
         "shards": 483,
-        "tracked_bytes": 10083894,
+        "tracked_bytes": 10127476,
         "tracked_bytes_max": 12582912
       },
       "repo": "aoa-kag",
@@ -1194,127 +1194,6 @@
         "source": "kag/indexes/source_surface_index.json"
       },
       "root": "/srv/AbyssOS/aoa-playbooks"
-    },
-    {
-      "common_surface_profile": {
-        "counts": {
-          "artifact_kind": {
-            "asset": 50,
-            "config": 164,
-            "dependency_manifest": 1,
-            "document": 412,
-            "generated_readmodel": 71,
-            "index": 1,
-            "license": 1,
-            "manifest": 2,
-            "owner_metadata": 2,
-            "projection": 1,
-            "receipt": 1,
-            "record_log": 1,
-            "schema": 69,
-            "script": 12,
-            "security": 1,
-            "source_code": 2,
-            "test": 25,
-            "validator": 11
-          },
-          "command_role": {
-            "builder": 4,
-            "lane_entrypoint": 1,
-            "none": 779,
-            "script": 7,
-            "test": 25,
-            "validator": 11
-          },
-          "document_role": {
-            "agents": 51,
-            "audit": 3,
-            "boundary": 1,
-            "changelog": 1,
-            "decision": 10,
-            "mechanics_doc": 81,
-            "none": 407,
-            "parts": 11,
-            "provenance": 12,
-            "readme": 105,
-            "report": 1,
-            "roadmap": 12,
-            "unknown_document": 132
-          },
-          "mechanics_role": {
-            "legacy": 60,
-            "mechanic_package": 58,
-            "mechanic_part": 55,
-            "none": 457,
-            "part_doc": 128,
-            "part_schema": 56,
-            "part_script": 2,
-            "part_test": 11
-          },
-          "primary_kind": {
-            "artifact": 121,
-            "command": 48,
-            "document": 420,
-            "surface": 238
-          },
-          "surface_state": {
-            "authored_source": 685,
-            "generated_readmodel": 74,
-            "legacy": 67,
-            "receipt": 1
-          }
-        },
-        "quality": {
-          "has_generated_readmodels": true,
-          "has_kag_home": true,
-          "has_owner_commands": true,
-          "has_record_classes": true,
-          "has_source_index": true,
-          "has_validation_route": true,
-          "unknown_count": 0
-        },
-        "source": "source_surface_index"
-      },
-      "coverage": {
-        "commands": 49,
-        "documents": 420,
-        "generated": 65,
-        "mechanics": 370,
-        "schemas": 70,
-        "scripts": 23,
-        "tests": 26,
-        "validators": 11
-      },
-      "domain_index_catalog_ref": "",
-      "family_storage": "v3-portable-shards",
-      "index_files": [
-        "kag/indexes/index_family.manifest.json",
-        "kag/indexes/provider_readiness_index.json"
-      ],
-      "index_status": "passed",
-      "kag_home": "/srv/AbyssOS/aoa-routing/kag",
-      "owner_type": "organ",
-      "portable_family": {
-        "budget_state": "passed",
-        "content_digest": "ffa30bf9ceaa58627679a9b0541f8b25cd2abeacd5bde060c152492937fa4043",
-        "digest_state": "published",
-        "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "receipt_ref": "",
-        "shards": 394,
-        "tracked_bytes": 7964006,
-        "tracked_bytes_max": 9437184
-      },
-      "repo": "aoa-routing",
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
-      "root": "/srv/AbyssOS/aoa-routing"
     },
     {
       "common_surface_profile": {

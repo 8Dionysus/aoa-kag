@@ -428,7 +428,34 @@ class KagGenerationTestCase(unittest.TestCase):
     def test_local_kag_provider_map_carries_status_and_freshness_handles(self) -> None:
         payload = kag_generation.build_local_kag_provider_map_payload()
 
-        self.assertEqual([], payload["remaining_routes"])
+        self.assertEqual(
+            [
+                {
+                    "repo": "aoa-routing",
+                    "adoption_order": 9,
+                    "provider_status": "retired_reference",
+                    "candidate_source_surfaces": [
+                        "routing/source_home.manifest.json",
+                        "generated/cross_repo_registry.min.json",
+                    ],
+                    "owner_return_routes": [
+                        {
+                            "repo": "aoa-routing",
+                            "surface": "README.md",
+                            "route_kind": "authored_meaning",
+                        },
+                        {
+                            "repo": "aoa-sdk",
+                            "surface": "mechanics/boundary-bridge/parts/consumed-surface-posture-gate/docs/routing-consumer-contract.md",
+                            "route_kind": "routing",
+                        },
+                    ],
+                }
+            ],
+            payload["remaining_routes"],
+        )
+        self.assertNotIn("aoa-routing", {provider["repo"] for provider in payload["providers"]})
+        self.assertEqual(1, payload["provider_status_counts"]["retired_reference"])
         for provider in payload["providers"]:
             with self.subTest(repo=provider["repo"]):
                 self.assertEqual("provider_ready", provider["provider_status"])

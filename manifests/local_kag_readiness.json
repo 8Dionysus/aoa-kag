@@ -685,7 +685,7 @@
     },
     {
       "repo": "aoa-routing",
-      "repo_role": "routing source home and dispatch authority",
+      "repo_role": "retired routing predecessor retained for historical provenance; current routing control-plane ownership is in aoa-sdk",
       "source_home_surfaces": [
         "routing/",
         "routing/source_home.manifest.json"
@@ -702,7 +702,7 @@
         "tests": true
       },
       "kag_pressure": [
-        "cross repo registry can provide route graph nodes"
+        "preserve bounded provenance for pre-succession routing references without keeping a live provider checkout"
       ],
       "source_owned_exports": [],
       "candidate_source_surfaces": [
@@ -710,9 +710,9 @@
         "generated/cross_repo_registry.min.json"
       ],
       "graph_entities": [
-        "route",
-        "dispatch surface",
-        "cross repo registry row"
+        "historical route",
+        "historical dispatch surface",
+        "historical cross repo registry row"
       ],
       "event_surfaces": [
         "quests/"
@@ -722,29 +722,27 @@
         "routing/README.md"
       ],
       "validators": [
-        "repo source-fast lane"
+        "no active provider validation; historical references remain source-return only"
       ],
-      "release_gate": "repo-local release lane",
+      "release_gate": "predecessor maintenance and archive gate outside aoa-kag",
       "runtime_consumers": [
-        "aoa-kag registry",
-        "aoa-routing consumers"
+        "historical provenance readers"
       ],
       "owner_return_routes": [
         {
           "repo": "aoa-routing",
-          "surface": "routing/README.md",
+          "surface": "README.md",
+          "route_kind": "authored_meaning"
+        },
+        {
+          "repo": "aoa-sdk",
+          "surface": "mechanics/boundary-bridge/parts/consumed-surface-posture-gate/docs/routing-consumer-contract.md",
           "route_kind": "routing"
         }
       ],
-      "provider_status": "provider_ready",
+      "provider_status": "retired_reference",
       "adoption_order": 9,
-      "first_record_classes": [
-        "node",
-        "edge",
-        "index",
-        "projection",
-        "receipt"
-      ]
+      "first_record_classes": []
     },
     {
       "repo": "aoa-sdk",

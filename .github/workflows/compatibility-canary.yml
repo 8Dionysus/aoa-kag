@@ -23,7 +23,6 @@ jobs:
       AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
       AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
-      AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
       ABYSS_STACK_ROOT: ${{ github.workspace }}/.deps/abyss-stack
@@ -117,13 +116,6 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
           persist-credentials: false
-
-      - name: Checkout aoa-routing
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-routing
-          path: .deps/aoa-routing
-          fetch-depth: 0
 
       - name: Checkout aoa-sdk
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

@@ -50,7 +50,7 @@ EXPECTED_PROVENANCE_POSTURE = {
 }
 
 EXPECTED_BOUNDARY_GUARDRAILS = {
-    "routing_owner": "aoa-routing",
+    "routing_owner": "aoa-sdk",
     "memory_owner": "aoa-memo",
     "canon_owner": "Tree-of-Sophia",
     "direct_canon_authorship": "forbidden",

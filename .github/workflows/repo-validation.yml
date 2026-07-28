@@ -21,7 +21,6 @@ jobs:
       EIGHT_DIONYSUS_ROOT: ${{ github.workspace }}/.deps/8Dionysus
       DIONYSUS_ROOT: ${{ github.workspace }}/.deps/Dionysus
       ATM10_AGENT_ROOT: ${{ github.workspace }}/.deps/ATM10-Agent
-      AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
@@ -130,14 +129,6 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
           persist-credentials: false
-
-      - name: Checkout aoa-routing
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-routing
-          ref: cde31e568e49c5a50afbd89071cf72abd9733d99
-          path: .deps/aoa-routing
-          fetch-depth: 0
 
       - name: Checkout aoa-sdk
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

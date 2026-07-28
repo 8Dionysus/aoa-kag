@@ -615,7 +615,13 @@
         },
         "provider_status": {
           "type": "string",
-          "enum": ["provider_ready", "candidate", "source_preparation", "runtime_consumer"]
+          "enum": [
+            "provider_ready",
+            "candidate",
+            "source_preparation",
+            "runtime_consumer",
+            "retired_reference"
+          ]
         },
         "adoption_order": {"type": "integer", "minimum": 0},
         "first_record_classes": {

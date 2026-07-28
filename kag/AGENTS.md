@@ -57,7 +57,7 @@ through `scripts/query_repo_local_kag.py`.
 | authored meaning in a source repository | owning source repository |
 | proof verdicts and scoring | `aoa-evals` |
 | durable memory truth | `aoa-memo` |
-| dispatch and route authority | `aoa-routing` |
+| dispatch and route authority | `aoa-sdk` routing control plane |
 | runtime graph, vector, cache, worker, or deployment state | `abyss-stack` and `.aoa` runtime stores |
 | portable KAG protocol, registry, composition, and provider validation | `aoa-kag` |
 
