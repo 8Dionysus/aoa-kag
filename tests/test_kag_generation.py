@@ -614,6 +614,48 @@ class KagGenerationTestCase(unittest.TestCase):
             counts,
         )
 
+    def test_provider_record_counts_accept_portable_only_index_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo-connector"
+            for group in provider_map.PROVIDER_RECORD_DIRECTORIES:
+                directory = root / "kag" / group
+                directory.mkdir(parents=True)
+                if group == "indexes":
+                    (directory / "index_family.manifest.json").write_text(
+                        json.dumps(
+                            {
+                                "schema_version": (
+                                    "aoa-repo-local-kag-family-manifest-v3"
+                                ),
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                    continue
+                (directory / "demo.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "aoa-local-kag-record-v1",
+                            "record_class": group,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+
+            with self.patch_generation_attribute(
+                "KNOWN_REPO_ROOTS",
+                {"aoa-demo-connector": root},
+            ):
+                counts = provider_map._provider_record_counts(
+                    "aoa-demo-connector",
+                    None,
+                )
+
+        self.assertEqual(
+            {group: 1 for group in provider_map.PROVIDER_RECORD_DIRECTORIES},
+            counts,
+        )
+
     def test_tos_text_chunk_map_builder_matches_generated_outputs(self) -> None:
         registry_payload = kag_generation.build_registry_payload()
         self.assert_builder_matches_generated(

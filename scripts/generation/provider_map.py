@@ -47,6 +47,15 @@ def _is_repo_local_source_index_path(group: str, path: Path) -> bool:
     return group == "indexes" and path.name == "source_surface_index.json"
 
 
+def _is_portable_family_manifest(group: str, path: Path, payload: object) -> bool:
+    return (
+        group == "indexes"
+        and path.name == "index_family.manifest.json"
+        and isinstance(payload, dict)
+        and payload.get("schema_version") == "aoa-repo-local-kag-family-manifest-v3"
+    )
+
+
 def _provider_record_payloads(
     repo: str,
     fallback_provider: dict[str, object] | None,
@@ -263,13 +272,22 @@ def _provider_record_counts(
         if not directory.is_dir():
             fail(f"{repo} local KAG provider is missing kag/{group}/")
         result[group] = 0
+        has_portable_family_manifest = False
         for path in sorted(directory.glob("*.json")):
             if _is_repo_local_source_index_path(group, path):
                 continue
             payload = read_json(path)
+            has_portable_family_manifest = (
+                has_portable_family_manifest
+                or _is_portable_family_manifest(group, path, payload)
+            )
             if _is_repo_local_meta_index_payload(payload):
                 continue
             result[group] += 1
+        if result[group] < 1 and has_portable_family_manifest:
+            # A v3 portable family manifest is the complete live index surface
+            # when compatibility monoliths are assembled only on demand.
+            result[group] = 1
         if result[group] < 1:
             fail(f"{repo} local KAG provider kag/{group}/ must contain JSON records")
     return result
