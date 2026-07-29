@@ -216,6 +216,22 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             self.assertIsNone(review["provider_watermark"])
             self.assertFalse(review["owner_accepted"])
 
+    def test_v1_payload_without_distribution_remains_compatible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = _capture_payload()
+            payload.pop("distribution", None)
+            payload["projection"].pop("distribution", None)
+
+            review, _, _ = self._review(root, payload)
+
+            self.assertEqual("grounded", review["grounding_state"])
+            self.assertEqual("exact", review["freshness_state"])
+            self.assertNotIn(
+                "owner-payload-schema-invalid",
+                review["reason_codes"],
+            )
+
     def test_self_reported_equal_digests_cannot_override_owner_source(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -263,6 +279,67 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                 "aoa-kag-owner-freshness-stale",
                 review["reason_codes"],
             )
+
+    def test_conflicting_owner_runtime_digests_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = _capture_payload()
+            owner = next(
+                item for item in payload["owners"] if item["repo"] == "aoa-kag"
+            )
+            owner["runtime_source_digest"] = "1" * 64
+
+            review, _, _ = self._review(root, payload)
+
+            self.assertEqual("rejected", review["grounding_state"])
+            self.assertEqual("blocked", review["freshness_state"])
+            self.assertIn(
+                "aoa-kag-runtime-source-digest-conflict",
+                review["reason_codes"],
+            )
+            self.assertFalse(review["self_report_is_security_authority"])
+
+    def test_lexical_capture_path_cannot_escape_capture_root(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            parent = Path(directory)
+            root = parent / "capture"
+            receipt_path, result_path = _capture(root, _capture_payload())
+            artifact = json.loads(result_path.read_text(encoding="utf-8"))
+            outside_path = parent / "outside.json"
+            _write_private_json(outside_path, artifact)
+            result_path.unlink()
+
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            traversal_ref = "results/aoa-kag/../../../outside.json"
+            receipt["result_artifact_ref"] = traversal_ref
+            receipt_body = dict(receipt)
+            receipt_body.pop("receipt_id")
+            receipt["receipt_id"] = _digest(receipt_body)
+            _write_private_json(receipt_path, receipt)
+
+            sdk_schema = root / "sdk-review.schema.json"
+            sdk_schema.write_text(json.dumps(_sdk_schema()), encoding="utf-8")
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            lexical_path = root / traversal_ref
+
+            with self.assertRaisesRegex(
+                KagOwnerReviewError,
+                "outside the capture root",
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=lexical_path,
+                    sdk_review_schema_path=sdk_schema,
+                    source_revision=revision,
+                    reviewed_at=NOW + timedelta(seconds=1),
+                )
 
     def test_tampered_capture_and_public_inputs_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

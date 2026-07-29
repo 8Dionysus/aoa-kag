@@ -123,10 +123,11 @@ def _read_public_schema(path: Path, label: str) -> dict[str, Any]:
 
 
 def _relative_ref(root: Path, path: Path, label: str) -> str:
-    root = root.expanduser().absolute()
     try:
-        return path.expanduser().absolute().relative_to(root).as_posix()
-    except ValueError as exc:
+        resolved_root = root.expanduser().resolve(strict=True)
+        resolved_path = path.expanduser().resolve(strict=True)
+        return resolved_path.relative_to(resolved_root).as_posix()
+    except (OSError, ValueError) as exc:
         raise KagOwnerReviewError(f"{label} is outside the capture root") from exc
 
 
@@ -303,9 +304,20 @@ def _freshness_assessment(
     freshness = owner.get("freshness")
     if not isinstance(freshness, dict):
         return "blocked", None, ["aoa-kag-freshness-evidence-missing"], False
+    owner_runtime_digest = owner.get("runtime_source_digest")
     runtime_digest = freshness.get("runtime_source_digest")
     canonical_digest = freshness.get("canonical_source_digest")
     state = freshness.get("state")
+    if (
+        owner_runtime_digest is not None
+        and owner_runtime_digest != runtime_digest
+    ):
+        return (
+            "blocked",
+            f"aoa-kag-source-index:{owner_canonical_digest}",
+            ["aoa-kag-runtime-source-digest-conflict"],
+            False,
+        )
     if (
         not _valid_digest(canonical_digest)
         or canonical_digest != owner_canonical_digest
