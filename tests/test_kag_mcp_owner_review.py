@@ -299,6 +299,33 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             )
             self.assertFalse(review["self_report_is_security_authority"])
 
+    def test_duplicate_aoa_kag_owner_evidence_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = _capture_payload()
+            duplicate = json.loads(
+                json.dumps(
+                    next(
+                        item
+                        for item in payload["owners"]
+                        if item["repo"] == "aoa-kag"
+                    )
+                )
+            )
+            duplicate["runtime_source_digest"] = "1" * 64
+            duplicate["freshness"]["runtime_source_digest"] = "1" * 64
+            payload["owners"].append(duplicate)
+
+            review, _, _ = self._review(root, payload)
+
+            self.assertEqual("rejected", review["grounding_state"])
+            self.assertEqual("blocked", review["freshness_state"])
+            self.assertIn(
+                "aoa-kag-owner-evidence-ambiguous",
+                review["reason_codes"],
+            )
+            self.assertIsNone(review["provider_watermark"])
+
     def test_lexical_capture_path_cannot_escape_capture_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             parent = Path(directory)

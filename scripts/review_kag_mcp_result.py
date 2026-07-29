@@ -287,20 +287,20 @@ def _freshness_assessment(
     owner_canonical_digest: str,
 ) -> tuple[str, str | None, list[str], bool]:
     owners = payload.get("owners")
-    owner = (
-        next(
-            (
-                item
-                for item in owners
-                if isinstance(item, dict) and item.get("repo") == "aoa-kag"
-            ),
-            None,
-        )
+    matching_owners = (
+        [
+            item
+            for item in owners
+            if isinstance(item, dict) and item.get("repo") == "aoa-kag"
+        ]
         if isinstance(owners, list)
-        else None
+        else []
     )
-    if owner is None:
+    if not matching_owners:
         return "blocked", None, ["aoa-kag-owner-evidence-missing"], False
+    if len(matching_owners) != 1:
+        return "blocked", None, ["aoa-kag-owner-evidence-ambiguous"], False
+    owner = matching_owners[0]
     freshness = owner.get("freshness")
     if not isinstance(freshness, dict):
         return "blocked", None, ["aoa-kag-freshness-evidence-missing"], False
