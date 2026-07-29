@@ -145,6 +145,18 @@ The generated handoff gives `aoa-kag-mcp` one compact agent protocol:
 the runtime adapter. MCP Roots remain a client capability rather than a
 repo-provider declaration.
 
+One successful MCP call is runtime evidence only. For the bounded
+`kag_discover` canary, the runtime owner preserves the exact untrusted result
+and `aoa-kag` separately checks its schema, the requested owner row, and
+runtime-to-canonical source-index freshness. The resulting owner review binds
+the exact capture and expires with it. It does not accept or admit the organ.
+
+The owner review resolves the canonical source-index identity from
+`source_surface_index.json` or the portable family manifest's source snapshot.
+The portable family digest is a different identity and must not be compared
+with a runtime `source_index_digest`. Self-reported digest equality in an MCP
+payload cannot override the owner source identity.
+
 ## Current Providers
 
 | Repository | Home | First source route |

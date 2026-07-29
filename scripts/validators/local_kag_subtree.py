@@ -6,14 +6,15 @@ from .common import *
 from .schema_surfaces import validate_top_level_schema
 
 try:
-    from scripts.provider_registry import configured_provider_roots
+    from scripts.provider_registry import configured_provider_roots, provider_roots
 except ImportError:  # pragma: no cover - direct script execution
-    from provider_registry import configured_provider_roots  # type: ignore
+    from provider_registry import configured_provider_roots, provider_roots  # type: ignore
 
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
+CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
 EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS)
 
 EXPECTED_CONNECTOR_SURFACE_ROOTS = {
@@ -42,8 +43,12 @@ EXPECTED_OS_SURFACE_ROOTS = {
     "bundles/aoa-session-memory": OS_ABYSS_ROOT / "bundles" / "aoa-session-memory",
     "connectors": OS_ABYSS_ROOT / "connectors",
     **EXPECTED_CONNECTOR_SURFACE_ROOTS,
-    "src/abyss-machine": HOME_SRC_ROOT / "abyss-machine",
-    "src/abyss-stack": HOME_SRC_ROOT / "abyss-stack",
+    "src/abyss-machine": CANONICAL_PROVIDER_REPO_ROOTS["abyss-machine"],
+    "src/abyss-stack": CANONICAL_PROVIDER_REPO_ROOTS["abyss-stack"],
+}
+RUNTIME_SOURCE_SURFACE_REPOS = {
+    "src/abyss-machine": "abyss-machine",
+    "src/abyss-stack": "abyss-stack",
 }
 
 EXPECTED_OS_SURFACE_CLASSES = {
@@ -217,6 +222,48 @@ def _validate_record_links(packet: dict[str, object]) -> None:
     for receipt in groups["receipts"]:
         if not receipt.get("fallback_route"):
             fail(f"local KAG receipt {receipt.get('local_id')} must keep fallback_route")
+
+
+def _adapt_portable_family_index_record(
+    repo: str,
+    groups: dict[str, list[dict[str, object]]],
+) -> None:
+    if groups["indexes"]:
+        return
+    existing_ids = {
+        record.get("local_id")
+        for group_name in ("nodes", "edges", "projections", "receipts")
+        for record in groups[group_name]
+        if isinstance(record.get("local_id"), str)
+    }
+    missing_index_ids = {
+        record_id
+        for projection in groups["projections"]
+        for record_id in projection.get("source_record_ids", [])
+        if isinstance(record_id, str)
+        and record_id.startswith("index:")
+        and record_id not in existing_ids
+    }
+    if len(missing_index_ids) != 1:
+        fail(
+            f"{repo} portable KAG family must keep exactly one owner-declared "
+            "logical index reference"
+        )
+    source_record_ids = [
+        str(record["local_id"])
+        for group_name in ("nodes", "edges")
+        for record in groups[group_name]
+        if isinstance(record.get("local_id"), str)
+    ]
+    if not source_record_ids:
+        fail(f"{repo} portable KAG family must keep source-linked node or edge records")
+    groups["indexes"].append(
+        {
+            "local_id": missing_index_ids.pop(),
+            "record_class": "index",
+            "source_record_ids": source_record_ids,
+        }
+    )
 
 
 def _validate_registry_entries(packet: dict[str, object]) -> None:
@@ -434,9 +481,14 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             fail(f"OS surface {surface_id} must keep surface_class {expected_class}")
         if entry.get("root") != expected_root.as_posix():
             fail(f"OS surface {surface_id} must keep root {expected_root.as_posix()}")
-        root_available = expected_root.is_dir()
+        validation_root = (
+            PROVIDER_REPO_ROOTS[RUNTIME_SOURCE_SURFACE_REPOS[surface_id]]
+            if surface_id in RUNTIME_SOURCE_SURFACE_REPOS
+            else expected_root
+        )
+        root_available = validation_root.is_dir()
         if STRICT_OS_SURFACE_ROOTS and not root_available:
-            fail(f"OS surface {surface_id} root must exist: {expected_root.as_posix()}")
+            fail(f"OS surface {surface_id} root must exist: {validation_root.as_posix()}")
 
         if expected_class == "connector_repo":
             connector_rows += 1
@@ -453,7 +505,7 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             if not isinstance(values, list):
                 fail(f"OS surface {surface_id} {key} must be a list")
             for relative_path in values:
-                _validate_surface_path(expected_root, relative_path, label=f"OS surface {surface_id} {key}")
+                _validate_surface_path(validation_root, relative_path, label=f"OS surface {surface_id} {key}")
 
     if connector_rows != EXPECTED_CONNECTOR_SURFACE_COUNT:
         fail("local KAG readiness matrix must cover every connector repo")
@@ -540,6 +592,7 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
 
     groups: dict[str, list[dict[str, object]]] = {}
     source_index_cache: dict[Path, dict[str, object]] = {}
+    portable_family_seen = False
     for group_name, def_name in PROVIDER_RECORD_DIRS.items():
         directory = kag_root / group_name
         if not directory.is_dir():
@@ -555,6 +608,7 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                 group_name == "indexes"
                 and path.name == REPO_LOCAL_FAMILY_MANIFEST_NAME
             ):
+                portable_family_seen = True
                 payload = read_json(path)
                 from .repo_local_kag_index import (
                     load_repo_local_kag_repository_index_family,
@@ -647,6 +701,8 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
             records.append(record)
         groups[group_name] = records
 
+    if portable_family_seen:
+        _adapt_portable_family_index_record(repo, groups)
     _validate_record_links({"records": groups})
 
 

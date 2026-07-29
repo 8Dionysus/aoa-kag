@@ -85,7 +85,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-memo
-          ref: 7672add5e2bb4ff21c2581ca656998f0ca7c8a3e
+          ref: c7c83081b7db0a0e908f14888b7438b5ecdde3bf
           path: .deps/aoa-memo
           fetch-depth: 0
 
@@ -101,7 +101,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-evals
-          ref: 3412b47f9ee7bec9567f92e1c2d59596c4428a2c
+          ref: 58bf49d374b008ef6625a9fd6893c61096777b4d
           path: .deps/aoa-evals
           fetch-depth: 0
 
@@ -143,7 +143,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-sdk
-          ref: cdd3af4e1a7d0f0ffc514b65d6dee3b5b838a530
+          ref: cbf225627f9f28d0470deb8a962ae12d1fe72375
           path: .deps/aoa-sdk
           fetch-depth: 0
 
@@ -159,7 +159,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stats
-          ref: 504571995cc36905cc886259c0a19be6e8e35045
+          ref: 5627c41efe9f766a4b3437da857060847cb4f0f1
           path: .deps/aoa-stats
           fetch-depth: 0
 
@@ -167,7 +167,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/abyss-stack
-          ref: 83d64234e719f74d6fd6a84a16c1a2af14754958
+          ref: 9b067b9924e46292418cd580c56dc040f6e93e73
           path: .deps/abyss-stack
           fetch-depth: 0
 
@@ -175,7 +175,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/abyss-machine
-          ref: 2faa6c6ccfc1309f6c3b6a36ddf04c3334c4547b
+          ref: a70b7f3a029c2dc4e86aa7446e4a058aa9e2e83e
           path: .deps/abyss-machine
           fetch-depth: 0
 
@@ -191,7 +191,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-course-connector
-          ref: 346254a134f6f7dd14c6edc0a519a2681d8813a9
+          ref: 5a5219ef027df029313fc527c71a8764cfbd193e
           path: .deps/aoa-course-connector
           fetch-depth: 0
 

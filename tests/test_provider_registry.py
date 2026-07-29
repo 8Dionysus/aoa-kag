@@ -94,18 +94,18 @@ class ProviderRegistryTests(unittest.TestCase):
             session_memory["checkout_ssh_key_secret"],
         )
 
-    def test_runtime_source_repositories_are_pinned_providers(self) -> None:
+    def test_runtime_source_repositories_keep_explicit_physical_roots(self) -> None:
         entries = {entry["repo"]: entry for entry in provider_entries()}
 
         expected = {
-            "abyss-stack": ("ABYSS_STACK_ROOT", ".deps/abyss-stack"),
-            "abyss-machine": ("ABYSS_MACHINE_REPO_ROOT", ".deps/abyss-machine"),
+            "abyss-stack": ("runtime_source", "ABYSS_STACK_ROOT", ".deps/abyss-stack"),
+            "abyss-machine": ("direct", "ABYSS_MACHINE_REPO_ROOT", ".deps/abyss-machine"),
         }
-        for repo, (env_name, checkout_path) in expected.items():
+        for repo, (root_kind, env_name, checkout_path) in expected.items():
             with self.subTest(repo=repo):
                 entry = entries[repo]
                 self.assertEqual("runtime_source", entry["owner_type"])
-                self.assertEqual("runtime_source", entry["root_kind"])
+                self.assertEqual(root_kind, entry["root_kind"])
                 self.assertEqual("pinned", entry["checkout_mode"])
                 self.assertEqual(env_name, entry["env"])
                 self.assertEqual(checkout_path, entry["checkout_path"])

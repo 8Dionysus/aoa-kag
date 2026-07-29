@@ -659,6 +659,54 @@ class ValidateKagTestCase(unittest.TestCase):
         self.assertEqual(0, source_reads)
         self.assertEqual(1, manifest_reads)
 
+    def test_portable_family_adapts_owner_declared_logical_index_reference(self) -> None:
+        groups = {
+            "nodes": [
+                {"local_id": "node:sdk:source-home", "record_class": "node"},
+                {"local_id": "node:sdk:owner-route", "record_class": "node"},
+            ],
+            "edges": [
+                {
+                    "local_id": "edge:sdk:returns-to-owner",
+                    "record_class": "edge",
+                }
+            ],
+            "indexes": [],
+            "projections": [
+                {
+                    "local_id": "projection:sdk:source-return",
+                    "record_class": "projection",
+                    "source_record_ids": [
+                        "node:sdk:source-home",
+                        "index:sdk:source-surfaces",
+                    ],
+                }
+            ],
+            "receipts": [
+                {
+                    "local_id": "receipt:sdk:provider",
+                    "record_class": "receipt",
+                }
+            ],
+        }
+
+        local_kag_subtree._adapt_portable_family_index_record("aoa-sdk", groups)
+
+        self.assertEqual(
+            [
+                {
+                    "local_id": "index:sdk:source-surfaces",
+                    "record_class": "index",
+                    "source_record_ids": [
+                        "node:sdk:source-home",
+                        "node:sdk:owner-route",
+                        "edge:sdk:returns-to-owner",
+                    ],
+                }
+            ],
+            groups["indexes"],
+        )
+
     def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)

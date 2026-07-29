@@ -2000,7 +2000,7 @@
     {
       "surface_id": "src/abyss-machine",
       "surface_class": "runtime_source_repo",
-      "root": "/home/dionysus/src/abyss-machine",
+      "root": "/srv/AbyssOS/abyss-machine",
       "surface_role": "host runtime, storage policy, bootstrap, and hardware-adaptation source repo",
       "source_home_surfaces": [
         "manifests/",
@@ -2030,7 +2030,7 @@
         "runtime tool"
       ],
       "event_surfaces": [
-        "dist/",
+        ".github/workflows/",
         "systemd/"
       ],
       "document_surfaces": [

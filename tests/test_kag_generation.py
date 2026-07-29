@@ -458,7 +458,7 @@ class KagGenerationTestCase(unittest.TestCase):
             coverage_by_repo["abyss-stack"]["root"],
         )
         self.assertEqual(
-            "/home/dionysus/src/abyss-machine",
+            "/srv/AbyssOS/abyss-machine",
             coverage_by_repo["abyss-machine"]["root"],
         )
 
@@ -582,6 +582,72 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertIsNotNone(records)
         assert records is not None
         self.assertEqual(len(provider_map.PROVIDER_RECORD_DIRECTORIES), len(records))
+        self.assertEqual(
+            {group: 1 for group in provider_map.PROVIDER_RECORD_DIRECTORIES},
+            counts,
+        )
+
+    def test_provider_records_adapt_portable_family_manifest_as_index_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = "aoa-demo-connector"
+            root = Path(tmpdir) / repo
+            for group in provider_map.PROVIDER_RECORD_DIRECTORIES:
+                directory = root / "kag" / group
+                directory.mkdir(parents=True)
+                if group == "indexes":
+                    continue
+                record_class = group.removesuffix("s")
+                (directory / "demo.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "aoa-local-kag-record-v1",
+                            "record_class": record_class,
+                            "generated_or_authored": "authored_control",
+                            "builder": {
+                                "route": "owner-local test route",
+                                "surface": "kag/manifest.json",
+                            },
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+            portable_manifest = {
+                "schema_version": provider_map.PORTABLE_FAMILY_SCHEMA_VERSION,
+                "repo": {"name": repo},
+                "family_identity": {"content_digest": "a" * 64},
+                "compatibility": {
+                    "files": [
+                        {"kind": kind}
+                        for kind in sorted(provider_map.PORTABLE_FAMILY_INDEX_KINDS)
+                    ]
+                },
+                "shards": [{"path": "kag/indexes/shards/source/0.jsonl"}],
+            }
+            (
+                root / "kag" / "indexes" / "index_family.manifest.json"
+            ).write_text(json.dumps(portable_manifest), encoding="utf-8")
+
+            with self.patch_generation_attribute(
+                "KNOWN_REPO_ROOTS",
+                {repo: root},
+            ):
+                records = provider_map._provider_record_payloads(repo, None)
+                counts = provider_map._provider_record_counts(repo, None)
+
+        self.assertIsNotNone(records)
+        assert records is not None
+        self.assertEqual(5, len(records))
+        self.assertEqual(
+            {
+                "builder": {
+                    "route": "repo-local KAG portable-family contract",
+                    "surface": "kag/indexes/index_family.manifest.json",
+                },
+                "generated_or_authored": "generated_from_source",
+                "record_class": "index",
+            },
+            next(record for record in records if record["record_class"] == "index"),
+        )
         self.assertEqual(
             {group: 1 for group in provider_map.PROVIDER_RECORD_DIRECTORIES},
             counts,

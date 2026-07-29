@@ -71,12 +71,18 @@ def _validate_provider_rows() -> None:
         root = roots[repo]
         if entry["checkout_mode"] == "self" and repo != KAG_REPO:
             fail("provider registry self checkout mode is reserved for aoa-kag")
-        if (entry["owner_type"] == "runtime_source") != (
-            entry["root_kind"] == "runtime_source"
-        ):
+        if entry["root_kind"] == "runtime_source" and entry["owner_type"] != "runtime_source":
             fail(
                 f"provider registry runtime source {repo} must pair "
                 "owner_type and root_kind"
+            )
+        if entry["owner_type"] == "runtime_source" and entry["root_kind"] not in {
+            "direct",
+            "runtime_source",
+        }:
+            fail(
+                f"provider registry runtime source {repo} must use a direct "
+                "or runtime_source root"
             )
         if entry["checkout_mode"] == "pinned":
             pin = str(entry.get("pinned_ref", ""))

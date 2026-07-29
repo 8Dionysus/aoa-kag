@@ -21,6 +21,7 @@
 ## capability discovery
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
 
 ## capability retrieval
 
@@ -82,6 +83,10 @@
 ## freshness handles
 
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
+
+## freshness review
+
+- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
 
 ## generated indexes
 
@@ -147,6 +152,10 @@
 ## OS surface readiness
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+
+## owner grounding
+
+- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
 
 ## owner route catalog
 

@@ -68,6 +68,10 @@
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 
+## exact capture binding
+
+- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+
 ## explicit exceedance receipt
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
@@ -79,6 +83,10 @@
 ## federation protocol
 
 - [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
+
+## freshness
+
+- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
 
 ## freshness handle
 
@@ -183,6 +191,10 @@
 
 - [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
 
+## no acceptance inference
+
+- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+
 ## no duplicate projection
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
@@ -194,6 +206,10 @@
 ## offline portability
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## owner boundary
+
+- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
 
 ## owner namespace
 
