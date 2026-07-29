@@ -47,7 +47,10 @@ class ProviderRegistryTests(unittest.TestCase):
         self.assertEqual(len(repos), len(set(repos)))
         self.assertEqual({entry["repo"] for entry in entries}, set(repos))
         self.assertIn("aoa-kag", repos)
+        self.assertNotIn("aoa-routing", repos)
         self.assertNotIn("aoa-kag", provider_ci_envs())
+        self.assertNotIn("AOA_ROUTING_ROOT", provider_ci_envs().values())
+        self.assertNotIn("aoa-routing", provider_dependency_pins())
         self.assertIn("aoa-session-memory", provider_dependency_pins())
 
     def test_provider_checkout_envs_follow_registry_checkout_paths(self) -> None:

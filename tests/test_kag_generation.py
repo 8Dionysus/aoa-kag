@@ -428,7 +428,34 @@ class KagGenerationTestCase(unittest.TestCase):
     def test_local_kag_provider_map_carries_status_and_freshness_handles(self) -> None:
         payload = kag_generation.build_local_kag_provider_map_payload()
 
-        self.assertEqual([], payload["remaining_routes"])
+        self.assertEqual(
+            [
+                {
+                    "repo": "aoa-routing",
+                    "adoption_order": 9,
+                    "provider_status": "retired_reference",
+                    "candidate_source_surfaces": [
+                        "routing/source_home.manifest.json",
+                        "generated/cross_repo_registry.min.json",
+                    ],
+                    "owner_return_routes": [
+                        {
+                            "repo": "aoa-routing",
+                            "surface": "README.md",
+                            "route_kind": "authored_meaning",
+                        },
+                        {
+                            "repo": "aoa-sdk",
+                            "surface": "mechanics/boundary-bridge/parts/consumed-surface-posture-gate/docs/routing-consumer-contract.md",
+                            "route_kind": "routing",
+                        },
+                    ],
+                }
+            ],
+            payload["remaining_routes"],
+        )
+        self.assertNotIn("aoa-routing", {provider["repo"] for provider in payload["providers"]})
+        self.assertEqual(1, payload["provider_status_counts"]["retired_reference"])
         for provider in payload["providers"]:
             with self.subTest(repo=provider["repo"]):
                 self.assertEqual("provider_ready", provider["provider_status"])
@@ -582,6 +609,139 @@ class KagGenerationTestCase(unittest.TestCase):
         self.assertIsNotNone(records)
         assert records is not None
         self.assertEqual(len(provider_map.PROVIDER_RECORD_DIRECTORIES), len(records))
+        self.assertEqual(
+            {group: 1 for group in provider_map.PROVIDER_RECORD_DIRECTORIES},
+            counts,
+        )
+
+    def test_provider_record_counts_accept_portable_only_index_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo-connector"
+            for group in provider_map.PROVIDER_RECORD_DIRECTORIES:
+                directory = root / "kag" / group
+                directory.mkdir(parents=True)
+                if group == "indexes":
+                    (directory / "index_family.manifest.json").write_text(
+                        json.dumps(
+                            {
+                                "schema_version": (
+                                    "aoa-repo-local-kag-family-manifest-v3"
+                                ),
+                                "family_identity": {
+                                    "content_digest": "0" * 64,
+                                },
+                                "source_index_header": {
+                                    "index_identity": {
+                                        "local_id": (
+                                            "index:repo-local:source-surfaces"
+                                        ),
+                                    },
+                                },
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                    continue
+                (directory / "demo.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "aoa-local-kag-record-v1",
+                            "record_class": group,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+
+            with self.patch_generation_attribute(
+                "KNOWN_REPO_ROOTS",
+                {"aoa-demo-connector": root},
+            ):
+                records = provider_map._provider_record_payloads(
+                    "aoa-demo-connector",
+                    None,
+                )
+                counts = provider_map._provider_record_counts(
+                    "aoa-demo-connector",
+                    None,
+                )
+
+        self.assertIsNotNone(records)
+        assert records is not None
+        effective_indexes = [
+            record
+            for record in records
+            if record.get("effective_index_surface")
+            == "portable_family_manifest"
+        ]
+        self.assertEqual(1, len(effective_indexes))
+        self.assertEqual("index", effective_indexes[0]["record_class"])
+        self.assertEqual(
+            {group: 1 for group in provider_map.PROVIDER_RECORD_DIRECTORIES},
+            counts,
+        )
+
+    def test_provider_records_do_not_double_count_portable_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-demo-connector"
+            record_classes_by_directory = {
+                directory: record_class
+                for record_class, directory in (
+                    provider_map.RECORD_CLASS_DIRECTORIES.items()
+                )
+            }
+            for group in provider_map.PROVIDER_RECORD_DIRECTORIES:
+                directory = root / "kag" / group
+                directory.mkdir(parents=True)
+                (directory / "demo.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "aoa-local-kag-record-v1",
+                            "record_class": record_classes_by_directory[group],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+            (root / "kag" / "indexes" / "index_family.manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": (
+                            "aoa-repo-local-kag-family-manifest-v3"
+                        ),
+                        "family_identity": {
+                            "content_digest": "0" * 64,
+                        },
+                        "source_index_header": {
+                            "index_identity": {
+                                "local_id": "index:repo-local:source-surfaces",
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.patch_generation_attribute(
+                "KNOWN_REPO_ROOTS",
+                {"aoa-demo-connector": root},
+            ):
+                records = provider_map._provider_record_payloads(
+                    "aoa-demo-connector",
+                    None,
+                )
+                counts = provider_map._provider_record_counts(
+                    "aoa-demo-connector",
+                    None,
+                )
+
+        self.assertIsNotNone(records)
+        assert records is not None
+        self.assertFalse(
+            any(
+                record.get("effective_index_surface")
+                == "portable_family_manifest"
+                for record in records
+            )
+        )
         self.assertEqual(
             {group: 1 for group in provider_map.PROVIDER_RECORD_DIRECTORIES},
             counts,

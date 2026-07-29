@@ -100,9 +100,10 @@ This kind of view remains:
 ## Owner routing
 
 Authored meaning returns to its source repository. Proof routes to `aoa-evals`,
-routing policy to `aoa-routing`, durable memory meaning to `aoa-memo`, session
-history to `aoa-session-memory`, and runtime materialization to `abyss-stack`.
-KAG records preserve the handles needed for each return.
+routing policy to the `aoa-sdk` control plane, durable memory meaning to
+`aoa-memo`, session history to `aoa-session-memory`, and runtime
+materialization to `abyss-stack`. KAG records preserve the handles needed for
+each return.
 
 ## KAG posture
 
@@ -142,7 +143,8 @@ for the compact contract.
 - `aoa-techniques` stores reusable practice
 - `aoa-skills` stores bounded execution
 - `aoa-evals` stores bounded proof
-- `aoa-routing` stores navigation and dispatch
+- `aoa-sdk` stores navigation and dispatch control-plane behavior while
+  preserving the stable `aoa-routing` compatibility namespace
 - `aoa-memo` stores memory and recall surfaces
 - `aoa-agents` stores reusable role-bearing actors
 - `aoa-playbooks` stores reusable scenario compositions

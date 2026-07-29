@@ -31,7 +31,8 @@ before changing quest records.
   source corpus bodies, or runtime evidence here.
 - Do not use quests as a second roadmap or as proof of owner acceptance.
 - Route proof to `aoa-evals`, memory truth to `aoa-memo`, routing authority to
-  `aoa-routing`, and authored source meaning to the owning source repo.
+  the `aoa-sdk` control plane, and authored source meaning to the owning source
+  repo.
 
 ## Validation
 

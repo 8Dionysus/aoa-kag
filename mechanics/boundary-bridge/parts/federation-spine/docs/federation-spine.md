@@ -86,7 +86,7 @@ the current Zarathustra authority slice.
 `aoa-memo` now publishes one bounded source-owned tiny export for the current
 memo bridge donor, and that donor is registry-visible in this tranche, but it
 remains spine-dark and routing-dark so the live spine and downstream
-`aoa-routing` ABI stay two-repo and stable.
+SDK-owned `aoa-routing` ABI stay source-separated and stable.
 
 That also means memo memory readiness stays outside this live spine. KAG may
 reground callers to `aoa-memo/mechanics/readiness-boundary/docs/MEMORY_READINESS_BOUNDARY.md`, but it does
@@ -98,8 +98,8 @@ a wider federation claim.
 
 ## Downstream note
 
-`aoa-routing` now consumes this spine through separate `kag_view` entries for
-`aoa-techniques` and `Tree-of-Sophia`.
+The `aoa-sdk` routing control plane consumes this spine through separate
+`kag_view` entries for `aoa-techniques` and `Tree-of-Sophia`.
 
 That downstream handoff remains additive: it does not turn `aoa-kag` into
 routing authority, and it does not turn the spine into ToS or AoA canon.

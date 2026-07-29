@@ -18,7 +18,8 @@ bundle that package the current reviewable consumer path.
 
 Source-owning parts own their generated surfaces. `counterpart-edge` owns
 counterpart contract refs. `audit/exposure-review` owns exposure review.
-`aoa-routing` does not inherit routing authority from this bundle.
+The `aoa-sdk` routing control plane does not inherit authority from this bundle;
+the bundle cannot reactivate the predecessor `aoa-routing` repository.
 
 ### Inputs
 

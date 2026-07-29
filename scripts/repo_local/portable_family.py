@@ -74,6 +74,55 @@ class PortableFamilyError(ValueError):
     pass
 
 
+def effective_index_surface_record(
+    manifest: Mapping[str, Any],
+    *,
+    repo: str,
+) -> dict[str, object]:
+    """Project a portable-only family manifest as one effective index surface."""
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "effective index surface requires a v3 portable family manifest"
+        )
+    family_identity = manifest.get("family_identity")
+    source_index_header = manifest.get("source_index_header")
+    if not isinstance(family_identity, Mapping) or not isinstance(
+        source_index_header,
+        Mapping,
+    ):
+        raise PortableFamilyError(
+            "portable family manifest needs family and source index identity"
+        )
+    index_identity = source_index_header.get("index_identity")
+    if not isinstance(index_identity, Mapping):
+        raise PortableFamilyError(
+            "portable family manifest needs source_index_header.index_identity"
+        )
+    local_id = index_identity.get("local_id")
+    content_digest = family_identity.get("content_digest")
+    if not isinstance(local_id, str) or not local_id:
+        raise PortableFamilyError(
+            "portable family source index identity needs local_id"
+        )
+    if not isinstance(content_digest, str) or not content_digest:
+        raise PortableFamilyError(
+            "portable family identity needs content_digest"
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "repo": repo,
+        "local_id": local_id,
+        "record_class": "index",
+        "generated_or_authored": "generated_from_source",
+        "builder": {
+            "route": "repo-local KAG portable family",
+            "surface": MANIFEST_RELATIVE_PATH.as_posix(),
+        },
+        "effective_index_surface": "portable_family_manifest",
+        "portable_family_content_digest": content_digest,
+    }
+
+
 def canonical_json_bytes(payload: object) -> bytes:
     return json.dumps(
         payload,

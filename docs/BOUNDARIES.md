@@ -43,7 +43,9 @@ Proof still belongs to `aoa-evals`.
 A derived knowledge surface may support navigation.
 That does not make the KAG layer the owner of dispatch.
 
-Navigation still belongs to `aoa-routing`.
+Navigation and dispatch control-plane behavior belong to `aoa-sdk`. The stable
+`aoa-routing` name may remain a compatibility namespace, but the predecessor
+repository is not the live owner.
 
 ## Rule 5: KAG is not memory truth
 

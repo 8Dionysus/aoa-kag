@@ -21,7 +21,7 @@ to that owner surface rather than manufacturing a derived substitute.
 | `aoa-playbooks` | consume scenario refs and handoff contracts as supporting inputs to derived handoff seams | new scenario-derived KAG families until a playbook-owned route is stable enough to justify them | a playbook mention does not authorize a new KAG surface by itself |
 | `aoa-agents` | consume runtime artifact schemas and seam bindings as supporting inputs to reasoning handoff | actor-centric or role-centric KAG families until owner-layer role contracts demand them clearly | runtime artifact compatibility does not make KAG the runtime owner |
 | `aoa-skills` | reference skills as neighboring workflow owners and future donor candidates | any skill-derived source-owned export contract or live donor posture | KAG must not infer skill meaning indirectly from playbooks, evals, or routing |
-| `aoa-routing` | publish bounded consumer-facing KAG views through routing-owned entry cards | any routing-visible activation beyond owner-approved donors and declared adjuncts | routing demand alone does not justify a new KAG surface |
+| `aoa-sdk` | publish bounded consumer-facing KAG views through SDK-owned routing entry contracts while preserving the stable `aoa-routing` namespace | any routing-visible activation beyond owner-approved donors and declared adjuncts | routing demand alone does not justify a new KAG surface, and predecessor history does not restore the old repository as owner |
 | `aoa-stats` | use stats only as derived observability hints for drift review or health shaping | any attempt to treat stats as source truth for KAG activation, proof, or canon | derived observability does not overrule owner truth |
 
 ## Practical rule

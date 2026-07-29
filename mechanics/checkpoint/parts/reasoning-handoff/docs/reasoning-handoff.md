@@ -99,7 +99,9 @@ remains planned.
 
 ## Boundary guardrails
 
-- `aoa-routing` owns navigation and dispatch
+- `aoa-sdk` owns the routing control plane for navigation and dispatch
+- `aoa-routing` remains a compatibility namespace and historical predecessor
+  reference, not a live owner
 - `aoa-memo` owns memory truth and writeback doctrine
 - `Tree-of-Sophia` owns canon and source-authored meaning
 - `aoa-kag` owns provenance-aware derived surface returns
