@@ -232,6 +232,58 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                 review["reason_codes"],
             )
 
+    def test_v1_distribution_fields_are_independently_optional(self) -> None:
+        for omitted_from in ("top-level", "projection"):
+            with self.subTest(omitted_from=omitted_from):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    payload = _capture_payload()
+                    if omitted_from == "top-level":
+                        payload.pop("distribution")
+                    else:
+                        payload["projection"].pop("distribution")
+
+                    review, _, _ = self._review(root, payload)
+
+                    self.assertEqual("grounded", review["grounding_state"])
+                    self.assertEqual("exact", review["freshness_state"])
+                    self.assertNotIn(
+                        "distribution-projection-binding-mismatch",
+                        review["reason_codes"],
+                    )
+
+    def test_present_distribution_fields_must_still_match(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            payload = _capture_payload()
+            payload["projection"]["distribution"] = {
+                **payload["projection"]["distribution"],
+                "state": "stale",
+            }
+
+            review, _, _ = self._review(Path(directory), payload)
+
+            self.assertEqual("rejected", review["grounding_state"])
+            self.assertEqual("blocked", review["freshness_state"])
+            self.assertIn(
+                "distribution-projection-binding-mismatch",
+                review["reason_codes"],
+            )
+
+    def test_review_labels_are_fixed_to_captured_kag_discover_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            review, _, _ = self._review(Path(directory), _capture_payload())
+
+            self.assertEqual("knowledge-retrieval", review["capability_id"])
+            self.assertEqual("retrieve-knowledge", review["primitive_id"])
+            self.assertEqual(
+                review["capability_id"],
+                review["capture"]["capability_id"],
+            )
+            self.assertEqual(
+                review["primitive_id"],
+                review["capture"]["primitive_id"],
+            )
+
     def test_self_reported_equal_digests_cannot_override_owner_source(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -410,6 +462,23 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             output = Path(directory) / "reviews" / "review.json"
             _write_private_json(output, {"review": "bounded"})
             self.assertEqual(0o600, stat.S_IMODE(output.stat().st_mode))
+            self.assertEqual(0o700, stat.S_IMODE(output.parent.stat().st_mode))
+
+    def test_private_writer_does_not_chmod_existing_shared_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            shared = Path(directory) / "shared"
+            shared.mkdir(mode=0o755)
+            os.chmod(shared, 0o755)
+            output = shared / "review.json"
+
+            with self.assertRaisesRegex(
+                KagOwnerReviewError,
+                "must already be private",
+            ):
+                _write_private_json(output, {"review": "bounded"})
+
+            self.assertEqual(0o755, stat.S_IMODE(shared.stat().st_mode))
+            self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

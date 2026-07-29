@@ -28,6 +28,8 @@ CAPTURE_RECEIPT_SCHEMA = "abyss_stack_mcp_canary_receipt_v1"
 RESULT_ARTIFACT_SCHEMA = "abyss_stack_mcp_canary_result_artifact_v1"
 REVIEW_SCHEMA = "aoa_organ_owner_result_review_v1"
 KAG_RESULT_SCHEMA = "aoa-kag-mcp-capabilities-v1"
+CAPABILITY_ID = "knowledge-retrieval"
+PRIMITIVE_ID = "retrieve-knowledge"
 REVIEW_CLAIM_LIMIT = (
     "This owner-issued review proves only the named owner's schema grounding "
     "and freshness assessment for one content-addressed captured result. It "
@@ -375,8 +377,6 @@ def review_kag_capture(
     sdk_review_schema_path: Path,
     source_revision: str,
     reviewed_at: datetime,
-    capability_id: str = "knowledge-retrieval",
-    primitive_id: str = "retrieve-knowledge",
 ) -> dict[str, Any]:
     if source_revision != _git_revision(REPO_ROOT):
         raise KagOwnerReviewError(
@@ -437,6 +437,8 @@ def review_kag_capture(
     if (
         not schema_errors
         and isinstance(projection, dict)
+        and "distribution" in owner_payload
+        and "distribution" in projection
         and distribution != projection.get("distribution")
     ):
         grounding_state = "rejected"
@@ -453,8 +455,8 @@ def review_kag_capture(
         "schema_version": REVIEW_SCHEMA,
         "review_owner": "aoa-kag",
         "organ_id": "aoa-kag",
-        "capability_id": capability_id,
-        "primitive_id": primitive_id,
+        "capability_id": CAPABILITY_ID,
+        "primitive_id": PRIMITIVE_ID,
         "owners": {
             "source_owner": "aoa-kag",
             "access_owner": "aoa-kag",
@@ -470,8 +472,8 @@ def review_kag_capture(
             "result_artifact_ref": artifact_ref,
             "result_artifact_id": artifact["artifact_id"],
             "organ_id": "aoa-kag",
-            "capability_id": capability_id,
-            "primitive_id": primitive_id,
+            "capability_id": CAPABILITY_ID,
+            "primitive_id": PRIMITIVE_ID,
             "result_digest": receipt["result_digest"],
             "result_schema_identity": KAG_RESULT_SCHEMA,
             "server_schema_digest": receipt["server_schema_digest"],
@@ -544,8 +546,21 @@ def _write_private_json(path: Path, payload: dict[str, Any]) -> None:
     for component in reversed(absolute.parents):
         if component.is_symlink():
             raise KagOwnerReviewError("review output cannot traverse a symlink")
-    absolute.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    os.chmod(absolute.parent, 0o700)
+    missing_parents: list[Path] = []
+    cursor = absolute.parent
+    while not cursor.exists():
+        missing_parents.append(cursor)
+        cursor = cursor.parent
+    if not cursor.is_dir():
+        raise KagOwnerReviewError("review output parent is not a directory")
+    for parent in reversed(missing_parents):
+        parent.mkdir(mode=0o700)
+        os.chmod(parent, 0o700)
+    parent_mode = stat.S_IMODE(absolute.parent.stat().st_mode)
+    if parent_mode & 0o077:
+        raise KagOwnerReviewError(
+            "existing review output directory must already be private"
+        )
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{absolute.name}.",
         dir=absolute.parent,
@@ -571,8 +586,6 @@ def main() -> int:
     parser.add_argument("--sdk-review-schema", type=Path, required=True)
     parser.add_argument("--source-revision", required=True)
     parser.add_argument("--reviewed-at")
-    parser.add_argument("--capability-id", default="knowledge-retrieval")
-    parser.add_argument("--primitive-id", default="retrieve-knowledge")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     reviewed_at = (
@@ -587,8 +600,6 @@ def main() -> int:
         sdk_review_schema_path=args.sdk_review_schema,
         source_revision=args.source_revision,
         reviewed_at=reviewed_at,
-        capability_id=args.capability_id,
-        primitive_id=args.primitive_id,
     )
     _write_private_json(args.output, review)
     print(
