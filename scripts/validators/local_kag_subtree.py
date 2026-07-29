@@ -15,7 +15,8 @@ HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
-EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS)
+RETIRED_REFERENCE_REPOS = {"aoa-routing"}
+EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS) | RETIRED_REFERENCE_REPOS
 
 EXPECTED_CONNECTOR_SURFACE_ROOTS = {
     "connectors/aoa-4pda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-4pda-connector",
@@ -80,7 +81,7 @@ OS_SURFACE_PATH_LIST_KEYS = (
 )
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
-EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
+EXPECTED_PROVIDER_READY_REPOS = set(PROVIDER_REPO_ROOTS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
 REPO_LOCAL_FAMILY_MANIFEST_NAME = "index_family.manifest.json"
 REPO_LOCAL_REPOSITORY_INDEX_NAMES = {
@@ -212,6 +213,21 @@ def _validate_record_links(packet: dict[str, object]) -> None:
 
     for group_name in ("indexes", "projections"):
         for record in groups[group_name]:
+            if (
+                group_name == "indexes"
+                and record.get("effective_index_surface")
+                == "portable_family_manifest"
+            ):
+                if (
+                    record.get("schema_version")
+                    != "aoa-repo-local-kag-family-manifest-v3"
+                    or not record.get("portable_family_content_digest")
+                ):
+                    fail(
+                        "local KAG portable family effective index surface "
+                        "must keep its schema and content digest"
+                    )
+                continue
             source_ids = record.get("source_record_ids")
             if not isinstance(source_ids, list) or not source_ids:
                 fail(f"local KAG {group_name} record {record.get('local_id')} must keep source_record_ids")
@@ -222,48 +238,6 @@ def _validate_record_links(packet: dict[str, object]) -> None:
     for receipt in groups["receipts"]:
         if not receipt.get("fallback_route"):
             fail(f"local KAG receipt {receipt.get('local_id')} must keep fallback_route")
-
-
-def _adapt_portable_family_index_record(
-    repo: str,
-    groups: dict[str, list[dict[str, object]]],
-) -> None:
-    if groups["indexes"]:
-        return
-    existing_ids = {
-        record.get("local_id")
-        for group_name in ("nodes", "edges", "projections", "receipts")
-        for record in groups[group_name]
-        if isinstance(record.get("local_id"), str)
-    }
-    missing_index_ids = {
-        record_id
-        for projection in groups["projections"]
-        for record_id in projection.get("source_record_ids", [])
-        if isinstance(record_id, str)
-        and record_id.startswith("index:")
-        and record_id not in existing_ids
-    }
-    if len(missing_index_ids) != 1:
-        fail(
-            f"{repo} portable KAG family must keep exactly one owner-declared "
-            "logical index reference"
-        )
-    source_record_ids = [
-        str(record["local_id"])
-        for group_name in ("nodes", "edges")
-        for record in groups[group_name]
-        if isinstance(record.get("local_id"), str)
-    ]
-    if not source_record_ids:
-        fail(f"{repo} portable KAG family must keep source-linked node or edge records")
-    groups["indexes"].append(
-        {
-            "local_id": missing_index_ids.pop(),
-            "record_class": "index",
-            "source_record_ids": source_record_ids,
-        }
-    )
 
 
 def _validate_registry_entries(packet: dict[str, object]) -> None:
@@ -592,7 +566,6 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
 
     groups: dict[str, list[dict[str, object]]] = {}
     source_index_cache: dict[Path, dict[str, object]] = {}
-    portable_family_seen = False
     for group_name, def_name in PROVIDER_RECORD_DIRS.items():
         directory = kag_root / group_name
         if not directory.is_dir():
@@ -601,6 +574,7 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
         if not files:
             fail(f"{label} kag/{group_name}/ must contain JSON records")
         records: list[dict[str, object]] = []
+        portable_effective_index: dict[str, object] | None = None
         for path in files:
             if group_name == "indexes" and path.name == REPO_LOCAL_SOURCE_INDEX_NAME:
                 continue
@@ -608,12 +582,19 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                 group_name == "indexes"
                 and path.name == REPO_LOCAL_FAMILY_MANIFEST_NAME
             ):
-                portable_family_seen = True
                 payload = read_json(path)
                 from .repo_local_kag_index import (
                     load_repo_local_kag_repository_index_family,
                     repo_local_kag_validate_payload,
                 )
+                try:
+                    from scripts.repo_local.portable_family import (
+                        effective_index_surface_record,
+                    )
+                except ImportError:  # pragma: no cover - direct script execution
+                    from repo_local.portable_family import (  # type: ignore
+                        effective_index_surface_record,
+                    )
 
                 repo_local_kag_validate_payload(
                     payload,
@@ -626,6 +607,15 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                         "kag/indexes/source_surface_index.json"
                     ),
                     label=f"{label} portable repository family",
+                )
+                if not isinstance(payload, dict):
+                    fail(
+                        f"{label} {path.relative_to(repo_root).as_posix()} "
+                        "must be an object"
+                    )
+                portable_effective_index = effective_index_surface_record(
+                    payload,
+                    repo=repo,
                 )
                 continue
             if group_name == "indexes" and path.name in REPO_LOCAL_REPOSITORY_INDEX_NAMES:
@@ -699,10 +689,14 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                 label=f"{label} {path.relative_to(repo_root).as_posix()}",
             )
             records.append(record)
+        if (
+            group_name == "indexes"
+            and not records
+            and portable_effective_index is not None
+        ):
+            records.append(portable_effective_index)
         groups[group_name] = records
 
-    if portable_family_seen:
-        _adapt_portable_family_index_record(repo, groups)
     _validate_record_links({"records": groups})
 
 

@@ -54,7 +54,7 @@ Ask these questions in order:
 4. Is this change mainly about memory truth?
    - If yes, it probably belongs in `aoa-memo`.
 5. Is this change mainly about dispatch across repos?
-   - If yes, it probably belongs in `aoa-routing`.
+   - If yes, it probably belongs in the `aoa-sdk` routing control plane.
 6. Is this change mainly about one framework consumer rather than the substrate itself?
    - If yes, keep it downstream of the KAG layer if possible.
 

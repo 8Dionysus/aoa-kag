@@ -4,6 +4,15 @@ from collections import Counter
 
 from .common import *
 
+try:
+    from scripts.repo_local.portable_family import (
+        effective_index_surface_record,
+    )
+except ImportError:  # pragma: no cover - direct script execution
+    from repo_local.portable_family import (  # type: ignore
+        effective_index_surface_record,
+    )
+
 
 RECORD_CLASS_DIRECTORIES = {
     "node": "nodes",
@@ -34,18 +43,6 @@ REPOSITORY_META_INDEX_SCHEMA_VERSIONS = {
     "aoa-repo-local-kag-repository-index-v2",
     "aoa-repo-local-kag-family-manifest-v3",
 }
-PORTABLE_FAMILY_SCHEMA_VERSION = "aoa-repo-local-kag-family-manifest-v3"
-PORTABLE_FAMILY_INDEX_KINDS = {
-    "source",
-    "artifact",
-    "anchor",
-    "entity",
-    "event",
-    "assertion",
-    "relation",
-}
-
-
 def _is_repo_local_meta_index_payload(payload: object) -> bool:
     return (
         isinstance(payload, dict)
@@ -57,81 +54,13 @@ def _is_repo_local_source_index_path(group: str, path: Path) -> bool:
     return group == "indexes" and path.name == "source_surface_index.json"
 
 
-def _portable_family_index_record(
-    repo: str,
-    path: Path,
-) -> dict[str, object] | None:
-    if path.name != "index_family.manifest.json":
-        return None
-    payload = read_json(path)
-    if not isinstance(payload, dict) or payload.get("schema_version") != PORTABLE_FAMILY_SCHEMA_VERSION:
-        fail(f"{repo} portable KAG family manifest must use {PORTABLE_FAMILY_SCHEMA_VERSION}")
-    repo_coordinates = payload.get("repo")
-    if not isinstance(repo_coordinates, dict) or repo_coordinates.get("name") != repo:
-        fail(f"{repo} portable KAG family manifest must keep repo.name={repo}")
-    family_identity = payload.get("family_identity")
-    if not isinstance(family_identity, dict) or not isinstance(
-        family_identity.get("content_digest"),
-        str,
-    ):
-        fail(f"{repo} portable KAG family manifest must keep a content digest")
-    compatibility = payload.get("compatibility")
-    files = compatibility.get("files") if isinstance(compatibility, dict) else None
-    if not isinstance(files, list):
-        fail(f"{repo} portable KAG family manifest must keep compatibility files")
-    compatibility_kinds = {
-        item.get("kind")
-        for item in files
-        if isinstance(item, dict) and isinstance(item.get("kind"), str)
-    }
-    if compatibility_kinds != PORTABLE_FAMILY_INDEX_KINDS:
-        fail(
-            f"{repo} portable KAG family manifest must cover the complete "
-            "repository index family"
-        )
-    shards = payload.get("shards")
-    if not isinstance(shards, list) or not shards:
-        fail(f"{repo} portable KAG family manifest must keep content-addressed shards")
-    return {
-        "record_class": "index",
-        "generated_or_authored": "generated_from_source",
-        "builder": {
-            "route": "repo-local KAG portable-family contract",
-            "surface": "kag/indexes/index_family.manifest.json",
-        },
-    }
-
-
-def _provider_group_record_payloads(
-    repo: str,
-    root: Path,
-    group: str,
-) -> list[dict[str, object]]:
-    directory = root / group
-    if not directory.is_dir():
-        fail(f"{repo} local KAG provider is missing kag/{group}/")
-    records: list[dict[str, object]] = []
-    portable_index_record: dict[str, object] | None = None
-    for path in sorted(directory.glob("*.json")):
-        if _is_repo_local_source_index_path(group, path):
-            continue
-        payload = read_json(path)
-        if not isinstance(payload, dict):
-            fail(
-                f"{repo} local KAG provider record must be a JSON object: "
-                f"{path.as_posix()}"
-            )
-        if _is_repo_local_meta_index_payload(payload):
-            if group == "indexes":
-                portable_index_record = (
-                    _portable_family_index_record(repo, path)
-                    or portable_index_record
-                )
-            continue
-        records.append(payload)
-    if not records and portable_index_record is not None:
-        records.append(portable_index_record)
-    return records
+def _is_portable_family_manifest(group: str, path: Path, payload: object) -> bool:
+    return (
+        group == "indexes"
+        and path.name == "index_family.manifest.json"
+        and isinstance(payload, dict)
+        and payload.get("schema_version") == "aoa-repo-local-kag-family-manifest-v3"
+    )
 
 
 def _provider_record_payloads(
@@ -144,7 +73,35 @@ def _provider_record_payloads(
 
     records: list[dict[str, object]] = []
     for group in PROVIDER_RECORD_DIRECTORIES:
-        records.extend(_provider_group_record_payloads(repo, root, group))
+        directory = root / group
+        if not directory.is_dir():
+            fail(f"{repo} local KAG provider is missing kag/{group}/")
+        group_record_start = len(records)
+        portable_effective_index: dict[str, object] | None = None
+        for path in sorted(directory.glob("*.json")):
+            if _is_repo_local_source_index_path(group, path):
+                continue
+            payload = read_json(path)
+            if not isinstance(payload, dict):
+                fail(
+                    f"{repo} local KAG provider record must be a JSON object: "
+                    f"{path.as_posix()}"
+                )
+            if _is_portable_family_manifest(group, path, payload):
+                portable_effective_index = effective_index_surface_record(
+                    payload,
+                    repo=repo,
+                )
+                continue
+            if _is_repo_local_meta_index_payload(payload):
+                continue
+            records.append(payload)
+        if (
+            group == "indexes"
+            and len(records) == group_record_start
+            and portable_effective_index is not None
+        ):
+            records.append(portable_effective_index)
     if not records:
         fail(f"{repo} local KAG provider must contain records")
     return records
@@ -332,7 +289,26 @@ def _provider_record_counts(
         return result
     result: dict[str, int] = {}
     for group in PROVIDER_RECORD_DIRECTORIES:
-        result[group] = len(_provider_group_record_payloads(repo, root, group))
+        directory = root / group
+        if not directory.is_dir():
+            fail(f"{repo} local KAG provider is missing kag/{group}/")
+        result[group] = 0
+        has_portable_family_manifest = False
+        for path in sorted(directory.glob("*.json")):
+            if _is_repo_local_source_index_path(group, path):
+                continue
+            payload = read_json(path)
+            has_portable_family_manifest = (
+                has_portable_family_manifest
+                or _is_portable_family_manifest(group, path, payload)
+            )
+            if _is_repo_local_meta_index_payload(payload):
+                continue
+            result[group] += 1
+        if result[group] < 1 and has_portable_family_manifest:
+            # A v3 portable family manifest is the complete live index surface
+            # when compatibility monoliths are assembled only on demand.
+            result[group] = 1
         if result[group] < 1:
             fail(f"{repo} local KAG provider kag/{group}/ must contain JSON records")
     return result

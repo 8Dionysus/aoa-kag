@@ -24,7 +24,7 @@
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
-- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
 
 ## abyss-stack MCP access plane
 
@@ -55,7 +55,7 @@
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
-- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
 
 ## aoa-kag
 
@@ -75,7 +75,8 @@
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
-- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
 
 ## aoa-memo
 
@@ -100,12 +101,14 @@
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
+- [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
 
 ## aoa-sdk
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
-- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
 
 ## aoa-session-memory
 

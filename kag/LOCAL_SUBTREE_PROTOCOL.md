@@ -170,7 +170,6 @@ payload cannot override the owner source identity.
 | `aoa-playbooks` | `kag/` | playbook source-home manifest and scenario registry |
 | `aoa-memo` | `kag/` | memory registry and reviewed memory corpus route |
 | `aoa-evals` | `kag/` | eval report index and proof bundle route |
-| `aoa-routing` | `kag/` | routing source-home manifest and cross-repo registry |
 | `aoa-sdk` | `kag/` | SDK source-home manifest and typed KAG helper route |
 | `aoa-session-memory` | `kag/` | session-memory kernel, route atlas, and manifest schema |
 | `8Dionysus` | `kag/` | public ecosystem profile and workspace memory map |
@@ -185,3 +184,8 @@ payload cannot override the owner source identity.
 | `aoa-xda-connector` | `kag/` | XDA connector source policy and storage boundary |
 | `abyss-stack` | `kag/` | runtime source topology and MCP access planes |
 | `abyss-machine` | `kag/` | host source contracts and validation lanes |
+
+The readiness matrix keeps `aoa-routing` as a `retired_reference` so historical
+source returns remain explicit. Provider validation and CI must not resolve or
+checkout that predecessor repository; current routing ownership returns to
+`aoa-sdk`.

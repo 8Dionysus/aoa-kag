@@ -21,7 +21,7 @@ being changed.
 - KAG handoff packets are derived guides, not state ownership.
 - `aoa-memo` owns memory writeback and durable memory objects.
 - `aoa-evals` owns proof.
-- `aoa-routing` owns live re-entry.
+- The `aoa-sdk` routing control plane owns live re-entry.
 - Active part directories must stay listed in `mechanics/topology.json` and keep
   a part-local checkpoint contract, validator, and focused tests.
 

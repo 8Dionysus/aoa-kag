@@ -90,20 +90,33 @@ def validate_local_kag_provider_map_payload(
 
 def _validate_provider_map_semantics(payload: dict[str, object], *, label: str) -> None:
     providers = _object_list(payload.get("providers"), f"{label}.providers")
+    remaining_routes = _object_list(
+        payload.get("remaining_routes"),
+        f"{label}.remaining_routes",
+    )
     provider_repos = [str(provider.get("repo")) for provider in providers]
     if len(provider_repos) != len(set(provider_repos)):
         fail(f"{label}.providers must keep unique repo entries")
+    remaining_repos = [str(route.get("repo")) for route in remaining_routes]
+    if len(remaining_repos) != len(set(remaining_repos)):
+        fail(f"{label}.remaining_routes must keep unique repo entries")
+    overlap = sorted(set(provider_repos) & set(remaining_repos))
+    if overlap:
+        fail(
+            f"{label}.providers and remaining_routes must stay disjoint: "
+            + ", ".join(overlap)
+        )
 
     provider_status_counts = _string_int_map(
         payload.get("provider_status_counts"),
         f"{label}.provider_status_counts",
     )
     actual_provider_status_counts: dict[str, int] = {}
-    for provider in providers:
-        status = str(provider.get("provider_status"))
+    for row in (*providers, *remaining_routes):
+        status = str(row.get("provider_status"))
         actual_provider_status_counts[status] = actual_provider_status_counts.get(status, 0) + 1
     if provider_status_counts != actual_provider_status_counts:
-        fail(f"{label}.provider_status_counts must match provider rows")
+        fail(f"{label}.provider_status_counts must match provider and remaining-route rows")
 
     profile_map = _object_map(
         payload.get("provider_generation_profiles"),

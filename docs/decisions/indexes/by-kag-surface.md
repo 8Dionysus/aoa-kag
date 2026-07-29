@@ -21,7 +21,7 @@
 ## capability discovery
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
-- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
 
 ## capability retrieval
 
@@ -86,7 +86,7 @@
 
 ## freshness review
 
-- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
 
 ## generated indexes
 
@@ -99,6 +99,10 @@
 ## generated-change budget
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## historical source return
+
+- [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
 
 ## KAG-only pressure
 
@@ -155,7 +159,7 @@
 
 ## owner grounding
 
-- [AOA-KAG-D-0020 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
 
 ## owner route catalog
 
@@ -192,6 +196,10 @@
 ## provenance posture
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
+
+## provider map
+
+- [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
 
 ## provider packet
 
@@ -248,6 +256,10 @@
 ## review fixture
 
 - [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
+
+## routing owner boundary
+
+- [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
 
 ## script topology
 

@@ -17,9 +17,9 @@ validation hooks while keeping `AOA-K-0008` planned.
 ### Stronger owner split
 
 `Tree-of-Sophia` owns conceptual origin. Source AoA repositories own
-operational meaning. `aoa-routing` owns live routing. `aoa-evals` owns proof.
-This part owns only derived counterpart grammar and consumer-facing contract
-refs.
+operational meaning. The `aoa-sdk` routing control plane owns live routing.
+`aoa-evals` owns proof. This part owns only derived counterpart grammar and
+consumer-facing contract refs.
 
 ### Inputs
 

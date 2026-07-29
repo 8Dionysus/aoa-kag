@@ -18,8 +18,8 @@ bounded, owner-primary, and visible only through reviewed activation gates.
 ### Stronger owner split
 
 Neighboring repositories own their export capsules. `aoa-memo` owns memory
-objects and memory readiness. `Tree-of-Sophia` owns canon. `aoa-routing` owns
-live routing. This part owns its local source-authored activation controls,
+objects and memory readiness. `Tree-of-Sophia` owns canon. The `aoa-sdk`
+routing control plane owns live routing. This part owns its local source-authored activation controls,
 schemas, examples, and generated federation export registry read-models while
 repo-wide generators and validators remain compatibility entrypoints.
 

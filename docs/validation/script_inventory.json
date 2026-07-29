@@ -745,7 +745,7 @@
       "family": "owner_evidence_reviewer",
       "organ_lane": "capability/security contract",
       "owner_surface": "schemas/kag-mcp-capabilities.schema.json",
-      "source_truth": ["schemas/kag-mcp-capabilities.schema.json", "examples/kag_mcp_capabilities.example.json", "docs/decisions/AOA-KAG-D-0020-review-captured-mcp-results-in-the-owner.md", "aoa-sdk:schemas/organ-access/organ-owner-result-review.schema.json"],
+      "source_truth": ["schemas/kag-mcp-capabilities.schema.json", "examples/kag_mcp_capabilities.example.json", "docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md", "aoa-sdk:schemas/organ-access/organ-owner-result-review.schema.json"],
       "reads": ["one private abyss-stack canary receipt, one exact private result artifact, the KAG capability schema, and the SDK owner-review schema"],
       "writes": ["caller-selected private owner-review receipt"],
       "side_effects": "writes one mode-0600 content-addressed review receipt; no MCP call, runtime mutation, acceptance, or proof effect",

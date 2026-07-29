@@ -100,7 +100,6 @@ The provider-ready homes are:
 | `aoa-playbooks` | `kag/` | `playbooks/source_home.manifest.json` |
 | `aoa-memo` | `kag/` | `generated/memory/memo_registry.min.json` |
 | `aoa-evals` | `kag/` | `generated/eval_report_index.min.json` |
-| `aoa-routing` | `kag/` | `routing/source_home.manifest.json` |
 | `aoa-sdk` | `kag/` | `sdk/source_home.manifest.json` |
 | `aoa-session-memory` | `kag/` | `schemas/session.manifest.schema.json` |
 | `8Dionysus` | `kag/` | `generated/workspace_memory_map.min.json` |
@@ -118,6 +117,11 @@ The provider-ready homes are:
 
 All homes expose the same record classes while returning to their own source
 owners.
+
+The predecessor `aoa-routing` repository is tracked separately as a
+`retired_reference`: its source paths remain historical return handles, but it
+is not a provider checkout. Current routing control-plane refs return to
+`aoa-sdk`.
 
 ## Consumer Route
 

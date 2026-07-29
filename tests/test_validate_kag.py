@@ -659,52 +659,136 @@ class ValidateKagTestCase(unittest.TestCase):
         self.assertEqual(0, source_reads)
         self.assertEqual(1, manifest_reads)
 
-    def test_portable_family_adapts_owner_declared_logical_index_reference(self) -> None:
-        groups = {
-            "nodes": [
-                {"local_id": "node:sdk:source-home", "record_class": "node"},
-                {"local_id": "node:sdk:owner-route", "record_class": "node"},
-            ],
-            "edges": [
-                {
-                    "local_id": "edge:sdk:returns-to-owner",
-                    "record_class": "edge",
-                }
-            ],
-            "indexes": [],
-            "projections": [
-                {
-                    "local_id": "projection:sdk:source-return",
-                    "record_class": "projection",
-                    "source_record_ids": [
-                        "node:sdk:source-home",
-                        "index:sdk:source-surfaces",
-                    ],
-                }
-            ],
-            "receipts": [
-                {
-                    "local_id": "receipt:sdk:provider",
-                    "record_class": "receipt",
-                }
-            ],
-        }
+    def test_provider_home_keeps_portable_only_family_as_effective_index(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "portable-provider"
+            kag_root = repo_root / "kag"
+            kag_root.mkdir(parents=True)
+            for filename in ("AGENTS.md", "README.md"):
+                (kag_root / filename).write_text("# fixture\n", encoding="utf-8")
+            (kag_root / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "repo": "portable-provider",
+                        "record_classes": sorted(
+                            local_kag_subtree.REQUIRED_RECORD_CLASSES
+                        ),
+                    }
+                ),
+                encoding="utf-8",
+            )
+            for group_name in local_kag_subtree.PROVIDER_RECORD_DIRS:
+                directory = kag_root / group_name
+                directory.mkdir()
+                if group_name == "indexes":
+                    (directory / "index_family.manifest.json").write_text(
+                        json.dumps(
+                            {
+                                "schema_version": (
+                                    "aoa-repo-local-kag-family-manifest-v3"
+                                ),
+                                "family_identity": {
+                                    "content_digest": "0" * 64,
+                                },
+                                "source_index_header": {
+                                    "index_identity": {
+                                        "local_id": (
+                                            "index:repo-local:source-surfaces"
+                                        ),
+                                    },
+                                },
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                else:
+                    (directory / "fixture.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
 
-        local_kag_subtree._adapt_portable_family_index_record("aoa-sdk", groups)
+            with patch.object(
+                local_kag_subtree,
+                "_validate_payload_against_schema_def",
+            ), patch.object(
+                local_kag_subtree,
+                "_validate_source_refs_exist",
+            ), patch.object(
+                local_kag_subtree,
+                "_validate_checked_ref_is_source_linked",
+            ), patch.object(
+                repo_local_kag_index,
+                "repo_local_kag_validate_payload",
+            ), patch.object(
+                repo_local_kag_index,
+                "load_repo_local_kag_repository_index_family",
+            ), patch.object(
+                local_kag_subtree,
+                "_validate_record_links",
+            ) as validate_links:
+                local_kag_subtree._validate_provider_home(
+                    "portable-provider",
+                    repo_root,
+                )
 
+        packet = validate_links.call_args.args[0]
+        indexes = packet["records"]["indexes"]
+        self.assertEqual(1, len(indexes))
         self.assertEqual(
-            [
-                {
-                    "local_id": "index:sdk:source-surfaces",
-                    "record_class": "index",
-                    "source_record_ids": [
-                        "node:sdk:source-home",
-                        "node:sdk:owner-route",
-                        "edge:sdk:returns-to-owner",
+            "portable_family_manifest",
+            indexes[0]["effective_index_surface"],
+        )
+
+    def test_record_links_accept_portable_family_effective_index(self) -> None:
+        local_kag_subtree._validate_record_links(
+            {
+                "records": {
+                    "nodes": [
+                        {
+                            "local_id": "node:fixture",
+                            "record_class": "node",
+                        }
+                    ],
+                    "edges": [
+                        {
+                            "local_id": "edge:fixture",
+                            "record_class": "edge",
+                            "from_id": "node:fixture",
+                            "to_id": "node:fixture",
+                            "edge_trace": ["fixture"],
+                        }
+                    ],
+                    "indexes": [
+                        {
+                            "schema_version": (
+                                "aoa-repo-local-kag-family-manifest-v3"
+                            ),
+                            "local_id": "index:repo-local:source-surfaces",
+                            "record_class": "index",
+                            "effective_index_surface": (
+                                "portable_family_manifest"
+                            ),
+                            "portable_family_content_digest": "0" * 64,
+                        }
+                    ],
+                    "projections": [
+                        {
+                            "local_id": "projection:fixture",
+                            "record_class": "projection",
+                            "source_record_ids": ["node:fixture"],
+                        }
+                    ],
+                    "receipts": [
+                        {
+                            "local_id": "receipt:fixture",
+                            "record_class": "receipt",
+                            "fallback_route": "owner-review",
+                        }
                     ],
                 }
-            ],
-            groups["indexes"],
+            }
         )
 
     def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
