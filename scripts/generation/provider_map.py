@@ -4,6 +4,15 @@ from collections import Counter
 
 from .common import *
 
+try:
+    from scripts.repo_local.portable_family import (
+        effective_index_surface_record,
+    )
+except ImportError:  # pragma: no cover - direct script execution
+    from repo_local.portable_family import (  # type: ignore
+        effective_index_surface_record,
+    )
+
 
 RECORD_CLASS_DIRECTORIES = {
     "node": "nodes",
@@ -69,6 +78,8 @@ def _provider_record_payloads(
         directory = root / group
         if not directory.is_dir():
             fail(f"{repo} local KAG provider is missing kag/{group}/")
+        group_record_start = len(records)
+        portable_effective_index: dict[str, object] | None = None
         for path in sorted(directory.glob("*.json")):
             if _is_repo_local_source_index_path(group, path):
                 continue
@@ -78,9 +89,21 @@ def _provider_record_payloads(
                     f"{repo} local KAG provider record must be a JSON object: "
                     f"{path.as_posix()}"
                 )
+            if _is_portable_family_manifest(group, path, payload):
+                portable_effective_index = effective_index_surface_record(
+                    payload,
+                    repo=repo,
+                )
+                continue
             if _is_repo_local_meta_index_payload(payload):
                 continue
             records.append(payload)
+        if (
+            group == "indexes"
+            and len(records) == group_record_start
+            and portable_effective_index is not None
+        ):
+            records.append(portable_effective_index)
     if not records:
         fail(f"{repo} local KAG provider must contain records")
     return records
