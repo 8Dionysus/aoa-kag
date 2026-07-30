@@ -55,6 +55,20 @@
           ]
         },
         {
+          "path": "tests/test_impact_routing.py",
+          "family": "release/ci-impact",
+          "protects": "Fail-closed changed-path classification, always-required local proof, typed required-summary states, Git rename handling, and PR #174 regression cases.",
+          "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_impact_routing.py",
+          "failure_route": "Route through impact rules, classifier logic, required-summary semantics, workflow topology, or the classifier corpus.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "source/route-contract",
+            "topology/inventory"
+          ]
+        },
+        {
           "path": "tests/test_downstream_feed_contracts.py",
           "family": "generated/read-model",
           "protects": "Downstream feed contracts, generated KAG outputs, and federation consumer expectations.",
@@ -150,7 +164,7 @@
     {
       "path": "tests/test_repo_validation_workflow.py",
       "family": "release/ci-lane",
-      "protects": "GitHub repo validation workflow dependency pins and generated drift posture.",
+      "protects": "GitHub repo validation always-required local proof, fail-closed conditional full audit, stable required summary, dependency pins, and generated drift posture.",
           "owner_surface": ".github/workflows/repo-validation.yml",
           "runtime_cost": "fast",
           "focused_target": "tests/test_repo_validation_workflow.py",

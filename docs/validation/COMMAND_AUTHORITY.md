@@ -9,6 +9,7 @@
 | --- | --- |
 | `config/validation_lanes.json` | lane definitions and command sequences |
 | `scripts/validation_lanes.py` | Python loader/API |
+| `scripts/impact_routing.py` | fail-closed changed-path classifier and required-summary evaluator |
 | `scripts/ci_gate.py` | CI lane executor |
 | `scripts/release_check.py` | release entrypoint |
 | `scripts/coverage_run.py` | run-scoped coverage packet, telemetry receipt, and lifecycle boundary shared by lane processes |
@@ -24,7 +25,8 @@
 | `scripts/build_repo_local_kag_federation.py` | validated owner-qualified federation projection builder |
 | `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
 | `.github/actions/repo-local-kag-index/action.yml` | owner-callable full, incremental, and contract check using explicit repo-scoped source-lineage and event-history boundaries across the full owner validation job |
-| `.github/workflows/repo-validation.yml`, `.github/workflows/compatibility-canary.yml` | exact provider checkouts with complete Git history for repository-event parity in coverage and canary lanes |
+| `.github/workflows/repo-validation.yml` | always-required source-fast and self owner-family proof, conditional full pinned-provider audit, and stable required summary |
+| `.github/workflows/compatibility-canary.yml` | scheduled floating-provider compatibility proof with complete Git history |
 
 ## Repo-local KAG History Boundaries
 
@@ -83,6 +85,39 @@ compatibility sequences request exactly one `os-wide` scope before their first
 coverage generation consumer. All scopes remain blocking where their owning
 lane invokes them; a skipped OS-wide scope is not a successful audit.
 
+## Fail-Closed Impact Routing
+
+Pull-request impact routing is additive. The `Source Fast and Owner Family`
+job always runs `source-fast` and the repo-local family action, including full
+and incremental family parity, budgets, validation, and exact compatibility
+assembly. The classifier cannot replace either proof; it decides only whether
+the additional full OS-wide release audit is required.
+
+That job materializes only the six pinned source donors required by local KAG
+validation (`Tree-of-Sophia`, `aoa-memo`, `aoa-playbooks`, `aoa-evals`,
+`aoa-agents`, and `aoa-techniques`) plus pinned `aoa-stats`. The remaining
+provider repositories, including private session memory, belong only to the
+full OS-wide audit.
+
+Rules live under `impact_routing` in `config/validation_lanes.json`. Provider
+membership, registry and federation inputs, shared schemas, KAG ABI,
+builders/loaders/validators, generated OS-wide coverage, trust artifacts,
+receipts, budgets, pack/blob paths, and validation or release topology require
+the full route. Full rules take precedence over owner-local rules. Invalid,
+empty, unavailable, mixed high-impact, or unknown change sets also route to
+full audit.
+
+The stable `Repo Validation` job is a typed summary. It accepts only:
+
+- `source-fast=verified`, `owner-family=verified`, and
+  `full-audit=verified`; or
+- for an explicitly owner-local pull request, the same two local proofs plus
+  `full-audit=correctly-not-required`.
+
+Push and manual events always require the full audit. The scheduled
+compatibility canary remains supplementary evidence and cannot replace a
+required pull-request audit.
+
 ## Lane Entries
 
 | Lane | Entry |
@@ -92,6 +127,12 @@ lane invokes them; a skipped OS-wide scope is not a successful audit.
 | `release` | `python scripts/release_check.py` |
 | `compatibility-canary` | `python scripts/ci_gate.py --mode compatibility-canary` |
 | `advisory` | `python scripts/ci_gate.py --mode advisory` |
+
+Impact classification and summary evaluation are support commands rather than
+validation lanes:
+
+- `python scripts/impact_routing.py classify ...`
+- `python scripts/impact_routing.py summarize ...`
 
 ## Inventories
 

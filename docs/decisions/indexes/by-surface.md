@@ -17,6 +17,7 @@
 ## command authority
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
+- [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
 
 ## compatibility view
 
@@ -75,6 +76,14 @@
 
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
 
+## GitHub landing
+
+- [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+
+## impact classifier
+
+- [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+
 ## kag/source-home
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
@@ -99,7 +108,7 @@
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
-- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 
 ## mechanics part
 
@@ -119,7 +128,7 @@
 
 ## owner evidence
 
-- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 
 ## owner return
 
@@ -162,6 +171,10 @@
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
 
+## required summary
+
+- [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+
 ## root route
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
@@ -175,7 +188,7 @@
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
-- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 
 ## schemas
 
@@ -233,3 +246,4 @@
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 - [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
+- [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)

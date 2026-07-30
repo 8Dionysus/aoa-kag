@@ -69,8 +69,9 @@
 
 ## 2026-07-28
 
-- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 
 ## 2026-07-29
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
+- [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
