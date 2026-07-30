@@ -225,62 +225,66 @@ def _valid_digest(value: Any) -> bool:
 
 
 def _canonical_source_index_identity() -> tuple[str, str]:
-    if SOURCE_INDEX.is_file():
-        payload = _read_public_json(SOURCE_INDEX, "canonical KAG source index")
-        identity = payload.get("index_identity")
-        digest = identity.get("content_digest") if isinstance(identity, dict) else None
-        if not _valid_digest(digest):
-            raise KagOwnerReviewError(
-                "canonical KAG source index identity is unavailable"
-            )
-        return str(digest), "kag/indexes/source_surface_index.json"
-
-    manifest = _read_public_json(
-        PORTABLE_FAMILY_MANIFEST,
-        "canonical KAG portable family manifest",
-    )
-    repo = manifest.get("repo")
-    if not isinstance(repo, dict) or repo.get("name") != "aoa-kag":
-        raise KagOwnerReviewError("canonical KAG portable family owner does not match")
-    family_identity = manifest.get("family_identity")
-    source_snapshot = (
-        family_identity.get("source_snapshot")
-        if isinstance(family_identity, dict)
-        else None
-    )
-    source_header = manifest.get("source_index_header")
-    header_identity = (
-        source_header.get("index_identity") if isinstance(source_header, dict) else None
-    )
-    header_digest = (
-        header_identity.get("content_digest")
-        if isinstance(header_identity, dict)
-        else None
-    )
-    compatibility = manifest.get("compatibility")
-    files = compatibility.get("files") if isinstance(compatibility, dict) else None
-    source_file_digests = (
-        {
-            str(item.get("content_digest"))
-            for item in files
-            if isinstance(item, dict)
-            and item.get("kind") == "source"
-            and _valid_digest(item.get("content_digest"))
-        }
-        if isinstance(files, list)
-        else set()
-    )
-    digests = {
-        str(source_snapshot).removeprefix("sha256:") if source_snapshot else "",
-        str(header_digest or ""),
-        *source_file_digests,
-    }
-    digests.discard("")
-    if len(digests) != 1 or not _valid_digest(next(iter(digests), None)):
-        raise KagOwnerReviewError(
-            "canonical KAG portable source-index identities do not agree"
+    if PORTABLE_FAMILY_MANIFEST.is_file():
+        manifest = _read_public_json(
+            PORTABLE_FAMILY_MANIFEST,
+            "canonical KAG portable family manifest",
         )
-    return next(iter(digests)), "kag/indexes/index_family.manifest.json"
+        repo = manifest.get("repo")
+        if not isinstance(repo, dict) or repo.get("name") != "aoa-kag":
+            raise KagOwnerReviewError(
+                "canonical KAG portable family owner does not match"
+            )
+        family_identity = manifest.get("family_identity")
+        source_snapshot = (
+            family_identity.get("source_snapshot")
+            if isinstance(family_identity, dict)
+            else None
+        )
+        source_header = manifest.get("source_index_header")
+        header_identity = (
+            source_header.get("index_identity")
+            if isinstance(source_header, dict)
+            else None
+        )
+        header_digest = (
+            header_identity.get("content_digest")
+            if isinstance(header_identity, dict)
+            else None
+        )
+        compatibility = manifest.get("compatibility")
+        files = compatibility.get("files") if isinstance(compatibility, dict) else None
+        source_file_digests = (
+            {
+                str(item.get("content_digest"))
+                for item in files
+                if isinstance(item, dict)
+                and item.get("kind") == "source"
+                and _valid_digest(item.get("content_digest"))
+            }
+            if isinstance(files, list)
+            else set()
+        )
+        digests = {
+            str(source_snapshot).removeprefix("sha256:") if source_snapshot else "",
+            str(header_digest or ""),
+            *source_file_digests,
+        }
+        digests.discard("")
+        if len(digests) != 1 or not _valid_digest(next(iter(digests), None)):
+            raise KagOwnerReviewError(
+                "canonical KAG portable source-index identities do not agree"
+            )
+        return next(iter(digests)), "kag/indexes/index_family.manifest.json"
+
+    payload = _read_public_json(SOURCE_INDEX, "canonical KAG source index")
+    identity = payload.get("index_identity")
+    digest = identity.get("content_digest") if isinstance(identity, dict) else None
+    if not _valid_digest(digest):
+        raise KagOwnerReviewError(
+            "canonical KAG source index identity is unavailable"
+        )
+    return str(digest), "kag/indexes/source_surface_index.json"
 
 
 def _freshness_assessment(

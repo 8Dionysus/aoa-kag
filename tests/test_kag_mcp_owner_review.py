@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.review_kag_mcp_result import (
     KAG_RESULT_SCHEMA,
@@ -200,6 +201,66 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             self.assertFalse(review["owner_accepted"])
             self.assertFalse(review["central_proof_asserted"])
             self.assertFalse(review["admission_asserted"])
+
+    def test_portable_manifest_cannot_be_shadowed_by_legacy_index(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = root / "index_family.manifest.json"
+            legacy_path = root / "source_surface_index.json"
+            manifest_digest = "a" * 64
+            legacy_digest = "b" * 64
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "repo": {"name": "aoa-kag"},
+                        "family_identity": {
+                            "source_snapshot": f"sha256:{manifest_digest}",
+                        },
+                        "source_index_header": {
+                            "index_identity": {
+                                "content_digest": manifest_digest,
+                            },
+                        },
+                        "compatibility": {
+                            "files": [
+                                {
+                                    "kind": "source",
+                                    "content_digest": manifest_digest,
+                                },
+                            ],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            legacy_path.write_text(
+                json.dumps(
+                    {
+                        "index_identity": {
+                            "content_digest": legacy_digest,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result.PORTABLE_FAMILY_MANIFEST",
+                    manifest_path,
+                ),
+                patch(
+                    "scripts.review_kag_mcp_result.SOURCE_INDEX",
+                    legacy_path,
+                ),
+            ):
+                digest, evidence_ref = _canonical_source_index_identity()
+
+            self.assertEqual(manifest_digest, digest)
+            self.assertEqual(
+                "kag/indexes/index_family.manifest.json",
+                evidence_ref,
+            )
 
     def test_schema_drift_is_rejected_without_acceptance(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
