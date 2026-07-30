@@ -19,6 +19,7 @@ jobs:
       impact-reason-ids: ${{ steps.impact.outputs.reason-ids }}
       full-audit-required: ${{ steps.impact.outputs.full-audit-required }}
     env:
+      OS_ABYSS_ROOT: /srv/AbyssOS
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
       AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
       AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
