@@ -28,6 +28,7 @@ SDK_REVIEW_SCHEMA_REF = (
 )
 MAX_INPUT_BYTES = 2 * 1024 * 1024
 MAX_REVIEW_TTL_SECONDS = 300
+GIT_NO_REPLACE = ("git", "--no-replace-objects")
 CAPTURE_RECEIPT_SCHEMA = "abyss_stack_mcp_canary_receipt_v2"
 RESULT_ARTIFACT_SCHEMA = "abyss_stack_mcp_canary_result_artifact_v2"
 REVIEW_SCHEMA = "aoa_organ_owner_result_review_v1"
@@ -101,15 +102,70 @@ def _require_regular_private_file(path: Path, label: str) -> Path:
     return absolute
 
 
-def _read_private_json(path: Path, label: str) -> dict[str, Any]:
+def _read_private_json(
+    path: Path,
+    label: str,
+) -> tuple[dict[str, Any], bytes, tuple[int, int, int, int, int]]:
     absolute = _require_regular_private_file(path, label)
     try:
-        value = json.loads(absolute.read_text(encoding="utf-8"))
+        descriptor = os.open(
+            absolute,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+        )
+        try:
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode):
+                raise KagOwnerReviewError(f"{label} must be a regular file")
+            if stat.S_IMODE(before.st_mode) & 0o077:
+                raise KagOwnerReviewError(
+                    f"{label} must not be group/world accessible"
+                )
+            if not 1 <= before.st_size <= MAX_INPUT_BYTES:
+                raise KagOwnerReviewError(f"{label} has an invalid bounded size")
+            raw = b""
+            while len(raw) <= MAX_INPUT_BYTES:
+                remaining = MAX_INPUT_BYTES + 1 - len(raw)
+                chunk = os.read(descriptor, min(65536, remaining))
+                if not chunk:
+                    break
+                raw += chunk
+            after = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+        identity = (
+            before.st_dev,
+            before.st_ino,
+            before.st_size,
+            before.st_mtime_ns,
+            before.st_ctime_ns,
+        )
+        if identity != (
+            after.st_dev,
+            after.st_ino,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ):
+            raise KagOwnerReviewError(f"{label} changed while being read")
+        if len(raw) != before.st_size or not 1 <= len(raw) <= MAX_INPUT_BYTES:
+            raise KagOwnerReviewError(f"{label} has an invalid bounded size")
+        value = json.loads(raw.decode("utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise KagOwnerReviewError(f"{label} is not valid JSON") from exc
     if not isinstance(value, dict):
         raise KagOwnerReviewError(f"{label} must be a JSON object")
-    return value
+    return value, raw, identity
+
+
+def _require_unchanged_private_file(
+    path: Path,
+    label: str,
+    expected_raw: bytes,
+    expected_identity: tuple[int, int, int, int, int],
+) -> None:
+    _, raw, identity = _read_private_json(path, label)
+    if raw != expected_raw or identity != expected_identity:
+        raise KagOwnerReviewError(f"{label} changed after verification")
 
 
 def _read_git_public_json(
@@ -120,7 +176,7 @@ def _read_git_public_json(
 ) -> tuple[dict[str, Any], bytes]:
     try:
         resolved_revision = subprocess.run(
-            ["git", "rev-parse", f"{source_revision}^{{commit}}"],
+            [*GIT_NO_REPLACE, "rev-parse", f"{source_revision}^{{commit}}"],
             cwd=repo_root,
             check=True,
             capture_output=True,
@@ -132,7 +188,7 @@ def _read_git_public_json(
             )
         raw = subprocess.run(
             [
-                "git",
+                *GIT_NO_REPLACE,
                 "show",
                 f"{source_revision}:{relative_path}",
             ],
@@ -335,7 +391,12 @@ def _verify_capture_attestation(
 def _committed_path_exists(source_revision: str, relative_path: str) -> bool:
     try:
         result = subprocess.run(
-            ["git", "cat-file", "-e", f"{source_revision}:{relative_path}"],
+            [
+                *GIT_NO_REPLACE,
+                "cat-file",
+                "-e",
+                f"{source_revision}:{relative_path}",
+            ],
             cwd=REPO_ROOT,
             check=False,
             capture_output=True,
@@ -615,7 +676,7 @@ def _freshness_assessment(
 def _git_revision(repo_root: Path) -> str:
     try:
         return subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+            [*GIT_NO_REPLACE, "rev-parse", "HEAD"],
             cwd=repo_root,
             check=True,
             capture_output=True,
@@ -636,9 +697,14 @@ def review_kag_capture(
         raise KagOwnerReviewError(
             "requested source revision is not current aoa-kag HEAD"
         )
-    reviewed_at = _aware_time(_utc_now(), "reviewed_at")
-    receipt = _read_private_json(receipt_path, "capture receipt")
-    artifact = _read_private_json(artifact_path, "result artifact")
+    receipt, receipt_raw, receipt_identity = _read_private_json(
+        receipt_path,
+        "capture receipt",
+    )
+    artifact, artifact_raw, artifact_identity = _read_private_json(
+        artifact_path,
+        "result artifact",
+    )
     trusted_signer_id, public_key = _trusted_stack_signer(source_revision)
     (
         owner_payload,
@@ -655,9 +721,6 @@ def review_kag_capture(
         trusted_signer_id=trusted_signer_id,
         public_key=public_key,
     )
-    if reviewed_at < observed_at or reviewed_at >= capture_expires_at:
-        raise KagOwnerReviewError("review time is outside the live capture window")
-
     owner_schema, owner_schema_bytes = _read_committed_public_json(
         source_revision,
         "schemas/kag-mcp-capabilities.schema.json",
@@ -703,6 +766,22 @@ def review_kag_capture(
         freshness_state = "blocked"
         provider_watermark = None
         reason_codes.append("distribution-projection-binding-mismatch")
+
+    _require_unchanged_private_file(
+        receipt_path,
+        "capture receipt",
+        receipt_raw,
+        receipt_identity,
+    )
+    _require_unchanged_private_file(
+        artifact_path,
+        "result artifact",
+        artifact_raw,
+        artifact_identity,
+    )
+    reviewed_at = _aware_time(_utc_now(), "reviewed_at")
+    if reviewed_at < observed_at or reviewed_at >= capture_expires_at:
+        raise KagOwnerReviewError("review time is outside the live capture window")
 
     expires_at = min(
         capture_expires_at,
@@ -796,6 +875,21 @@ def review_kag_capture(
         raise KagOwnerReviewError(
             "produced owner review does not satisfy the SDK contract"
         )
+    _require_unchanged_private_file(
+        receipt_path,
+        "capture receipt",
+        receipt_raw,
+        receipt_identity,
+    )
+    _require_unchanged_private_file(
+        artifact_path,
+        "result artifact",
+        artifact_raw,
+        artifact_identity,
+    )
+    return_at = _aware_time(_utc_now(), "review completion time")
+    if return_at < observed_at or return_at >= capture_expires_at:
+        raise KagOwnerReviewError("review time is outside the live capture window")
     return review
 
 

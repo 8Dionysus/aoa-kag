@@ -21,6 +21,7 @@ from scripts.review_kag_mcp_result import (
     _canonical_source_index_identity,
     _digest,
     _pinned_sdk_review_schema,
+    _read_git_public_json,
     _trusted_stack_signer,
     _write_private_json,
     review_kag_capture,
@@ -257,6 +258,76 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                     source_revision=revision,
                 )
 
+    def test_capture_expiry_is_rechecked_after_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(root, _capture_payload())
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    side_effect=[
+                        NOW + timedelta(seconds=1),
+                        NOW + timedelta(minutes=11),
+                    ],
+                ),
+                self.assertRaisesRegex(
+                    KagOwnerReviewError,
+                    "outside the live capture window",
+                ),
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=result_path,
+                    source_revision=revision,
+                )
+
+    def test_capture_path_replacement_after_verification_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(root, _capture_payload())
+            artifact = json.loads(result_path.read_text(encoding="utf-8"))
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            sdk_schema = _pinned_sdk_review_schema(revision)
+
+            def replace_capture_path(_: str) -> dict:
+                _write_private_json(result_path, artifact)
+                return sdk_schema
+
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result._pinned_sdk_review_schema",
+                    side_effect=replace_capture_path,
+                ),
+                patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    return_value=NOW + timedelta(seconds=1),
+                ),
+                self.assertRaisesRegex(
+                    KagOwnerReviewError,
+                    "changed after verification",
+                ),
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=result_path,
+                    source_revision=revision,
+                )
+
     def test_sdk_review_schema_is_read_from_the_pinned_commit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             sdk_root = Path(directory)
@@ -484,6 +555,70 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                 "kag/indexes/index_family.manifest.json",
                 evidence_ref,
             )
+
+    def test_git_replacement_cannot_substitute_committed_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence_path = root / "evidence.json"
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "KAG test"],
+                cwd=root,
+                check=True,
+            )
+
+            evidence_path.write_text('{"identity":"pinned"}\n', encoding="utf-8")
+            subprocess.run(["git", "add", "evidence.json"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "pinned evidence"],
+                cwd=root,
+                check=True,
+            )
+            pinned_revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+            evidence_path.write_text(
+                '{"identity":"replacement"}\n',
+                encoding="utf-8",
+            )
+            subprocess.run(["git", "add", "evidence.json"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "replacement evidence"],
+                cwd=root,
+                check=True,
+            )
+            replacement_revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            subprocess.run(
+                ["git", "replace", pinned_revision, replacement_revision],
+                cwd=root,
+                check=True,
+            )
+
+            value, raw = _read_git_public_json(
+                root,
+                pinned_revision,
+                "evidence.json",
+                "test evidence",
+            )
+
+            self.assertEqual({"identity": "pinned"}, value)
+            self.assertEqual(b'{"identity":"pinned"}\n', raw)
 
     def test_schema_drift_is_rejected_without_acceptance(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
