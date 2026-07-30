@@ -63,6 +63,11 @@ def tracked_markdown_paths() -> tuple[Path, ...]:
 
 class ValidationCommandAuthorityTests(unittest.TestCase):
     def test_validation_lanes_manifest_is_loader_authority(self) -> None:
+        manifest = json.loads(
+            (REPO_ROOT / "config" / "validation_lanes.json").read_text(
+                encoding="utf-8"
+            )
+        )
         self.assertEqual(
             REPO_ROOT / "config" / "validation_lanes.json",
             validation_lanes.VALIDATION_LANES_PATH,
@@ -97,6 +102,18 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 *validation_lanes.GENERATED_DRIFT_PATHS,
             ),
             validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
+        )
+        self.assertEqual(
+            tuple(manifest["impact_routing"]["always_required_proofs"]),
+            validation_lanes.IMPACT_ROUTING["always_required_proofs"],
+        )
+        self.assertEqual(
+            "full-audit",
+            validation_lanes.IMPACT_ROUTING["default_route"],
+        )
+        self.assertEqual(
+            {"source-fast", "owner-family"},
+            set(validation_lanes.IMPACT_ROUTING["always_required_proofs"]),
         )
 
     def test_validation_lanes_api_resolves_lane_ids_to_command_sequences(self) -> None:
@@ -351,6 +368,9 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("python scripts/release_check.py", repo_validation)
+        self.assertIn("python scripts/ci_gate.py --mode source-fast", repo_validation)
+        self.assertIn("python scripts/impact_routing.py classify", repo_validation)
+        self.assertIn("python scripts/impact_routing.py summarize", repo_validation)
         self.assertNotIn("python scripts/run_tests.py", repo_validation)
         self.assertNotIn("python scripts/run_part_local_checks.py", repo_validation)
         self.assertNotIn("python scripts/validate_kag.py", repo_validation)
@@ -419,6 +439,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         canary = (
             REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
         ).read_text(encoding="utf-8")
+        release_audit = repo_validation.split("  release_audit:\n", 1)[1].split(
+            "  required_summary:\n",
+            1,
+        )[0]
 
         expected_sibling_providers = provider_ready_repos_from_manifest() - {"aoa-kag"}
         self.assertEqual(
@@ -427,11 +451,11 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         self.assertEqual(
             len(expected_sibling_providers),
-            repo_validation.count("fetch-depth: 0"),
+            release_audit.count("path: .deps/"),
         )
         self.assertEqual(
             len(expected_sibling_providers),
-            canary.count("fetch-depth: 0"),
+            canary.count("path: .deps/"),
         )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):

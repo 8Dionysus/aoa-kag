@@ -5,7 +5,8 @@
   "notes": [
     "This manifest is the canonical storage surface for active validation lane command sequences.",
     "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences.",
-    "The source-fast lane always runs validate_kag local scope; generated and compatibility lanes add one explicit OS-wide provider-home and coverage scope inside the same run-scoped packet epoch."
+    "The source-fast lane always runs validate_kag local scope; generated and compatibility lanes add one explicit OS-wide provider-home and coverage scope inside the same run-scoped packet epoch.",
+    "Impact routing never replaces source-fast or the self owner-family check; it only decides whether an additional full OS-wide release audit is required."
   ],
   "lanes": {
     "source_fast": {
@@ -88,6 +89,150 @@
       "generated",
       "kag/indexes/index_family.manifest.json",
       "kag/indexes/shards"
+    ]
+  },
+  "impact_routing": {
+    "schema_version": 1,
+    "default_route": "full-audit",
+    "default_reason": "unknown-path",
+    "always_required_proofs": [
+      "source-fast",
+      "owner-family"
+    ],
+    "full_audit_rules": [
+      {
+        "id": "artifact-or-pack-blob",
+        "reason": "artifact, pack, archive, or opaque blob changed",
+        "suffixes": [
+          ".bin",
+          ".blob",
+          ".pack",
+          ".pack.json",
+          ".pack.jsonl",
+          ".pack.zst",
+          ".gz",
+          ".tar",
+          ".tar.gz",
+          ".tgz",
+          ".xz",
+          ".zip",
+          ".zst"
+        ]
+      },
+      {
+        "id": "provider-membership-or-federation-input",
+        "reason": "provider membership, registry, readiness, or federation input changed",
+        "prefixes": [
+          "manifests/",
+          "generated/",
+          "kag/edges/",
+          "kag/nodes/",
+          "kag/projections/"
+        ],
+        "exact_paths": [
+          "kag/indexes/provider_readiness_index.json"
+        ]
+      },
+      {
+        "id": "shared-schema-or-abi",
+        "reason": "shared schema, KAG ABI, compatibility contract, or canonical model changed",
+        "prefixes": [
+          "schemas/"
+        ],
+        "exact_paths": [
+          "AGENTS.md",
+          "CHARTER.md",
+          "DESIGN.AGENTS.md",
+          "DESIGN.md",
+          "README.md",
+          "SECURITY.md",
+          "docs/BOUNDARIES.md",
+          "docs/CONSUMER_GUIDE.md",
+          "docs/KAG_MODEL.md",
+          "docs/RELEASING.md",
+          "docs/SOURCE_POLICY.md",
+          "kag/LOCAL_SUBTREE_PROTOCOL.md",
+          "kag/README.md"
+        ]
+      },
+      {
+        "id": "builder-loader-validator-or-release-topology",
+        "reason": "builder, loader, validator, test, release, or CI topology changed",
+        "prefixes": [
+          ".github/",
+          "config/",
+          "docs/decisions/",
+          "docs/testing/",
+          "docs/validation/",
+          "scripts/",
+          "tests/"
+        ]
+      },
+      {
+        "id": "trust-receipt-or-budget",
+        "reason": "artifact trust, receipt, budget, or release artifact changed",
+        "prefixes": [
+          "dist/",
+          "docs/artifact-bundles/",
+          "kag/receipts/",
+          "mechanics/audit/",
+          "mechanics/release-support/"
+        ]
+      },
+      {
+        "id": "federation-or-projection-mechanic",
+        "reason": "federation, projection, or cross-owner bridge mechanic changed",
+        "prefixes": [
+          "mechanics/boundary-bridge/"
+        ]
+      },
+      {
+        "id": "nested-derived-or-trust-surface",
+        "reason": "nested schema, manifest, generated, projection, receipt, artifact, or pack surface changed",
+        "segments": [
+          "artifacts",
+          "generated",
+          "manifests",
+          "packs",
+          "policies",
+          "projections",
+          "receipts",
+          "schemas"
+        ]
+      }
+    ],
+    "owner_local_rules": [
+      {
+        "id": "owner-authored-surface",
+        "reason": "owner-authored documentation, mechanic, quest, skill, eval, or stats surface changed",
+        "prefixes": [
+          ".agents/",
+          "docs/",
+          "evals/",
+          "mechanics/",
+          "quests/",
+          "skills/",
+          "stats/"
+        ],
+        "exact_paths": [
+          "CHANGELOG.md",
+          "CODE_OF_CONDUCT.md",
+          "CONTRIBUTING.md",
+          "LICENSE",
+          "QUESTBOOK.md",
+          "ROADMAP.md"
+        ]
+      },
+      {
+        "id": "owner-portable-family-output",
+        "reason": "self owner portable-family manifest or shard output changed",
+        "prefixes": [
+          "kag/indexes/shards/"
+        ],
+        "exact_paths": [
+          "kag/indexes/index_family.manifest.json"
+        ]
+      }
     ]
   },
   "command_sequences": {

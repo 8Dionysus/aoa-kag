@@ -1,0 +1,184 @@
+{
+  "schema_version": "aoa-kag-impact-routing-corpus-v1",
+  "positive_owner_local_cases": [
+    {
+      "id": "authored-doc-and-self-family",
+      "paths": [
+        "docs/guides/bounded-route.md",
+        "kag/indexes/index_family.manifest.json",
+        "kag/indexes/shards/source/aa.jsonl"
+      ],
+      "expected_reason_ids": [
+        "owner-authored-surface",
+        "owner-portable-family-output"
+      ]
+    },
+    {
+      "id": "mechanic-authored-doc",
+      "paths": [
+        "mechanics/agon/parts/example/README.md"
+      ],
+      "expected_reason_ids": [
+        "owner-authored-surface"
+      ]
+    },
+    {
+      "id": "quest-source",
+      "paths": [
+        "quests/kag/AOA-Q-9999.md"
+      ],
+      "expected_reason_ids": [
+        "owner-authored-surface"
+      ]
+    },
+    {
+      "id": "owner-skill-source",
+      "paths": [
+        "skills/aoa-kag/SKILL.md"
+      ],
+      "expected_reason_ids": [
+        "owner-authored-surface"
+      ]
+    },
+    {
+      "id": "owner-stats-port",
+      "paths": [
+        "stats/port.manifest.json"
+      ],
+      "expected_reason_ids": [
+        "owner-authored-surface"
+      ]
+    },
+    {
+      "id": "bounded-root-changelog",
+      "paths": [
+        "CHANGELOG.md"
+      ],
+      "expected_reason_ids": [
+        "owner-authored-surface"
+      ]
+    }
+  ],
+  "negative_fail_closed_cases": [
+    {
+      "id": "unknown-path",
+      "paths": [
+        "future-surface/opaque.contract"
+      ],
+      "expected_reason_ids": [
+        "unknown-path"
+      ]
+    },
+    {
+      "id": "provider-membership",
+      "paths": [
+        "manifests/provider_registry.json"
+      ],
+      "expected_reason_ids": [
+        "provider-membership-or-federation-input"
+      ]
+    },
+    {
+      "id": "shared-schema",
+      "paths": [
+        "schemas/repo-local-kag-coverage.schema.json"
+      ],
+      "expected_reason_ids": [
+        "shared-schema-or-abi"
+      ]
+    },
+    {
+      "id": "portable-family-builder",
+      "paths": [
+        "scripts/generate_repo_local_kag_index.py"
+      ],
+      "expected_reason_ids": [
+        "builder-loader-validator-or-release-topology"
+      ]
+    },
+    {
+      "id": "generated-os-wide-coverage",
+      "paths": [
+        "generated/repo_local_kag_coverage.json"
+      ],
+      "expected_reason_ids": [
+        "provider-membership-or-federation-input"
+      ]
+    },
+    {
+      "id": "validation-topology",
+      "paths": [
+        "config/validation_lanes.json",
+        ".github/workflows/repo-validation.yml"
+      ],
+      "expected_reason_ids": [
+        "builder-loader-validator-or-release-topology"
+      ]
+    },
+    {
+      "id": "budget-receipt",
+      "paths": [
+        "kag/receipts/index_family_budget/new.json"
+      ],
+      "expected_reason_ids": [
+        "trust-receipt-or-budget"
+      ]
+    },
+    {
+      "id": "kag-abi-doc",
+      "paths": [
+        "docs/KAG_MODEL.md"
+      ],
+      "expected_reason_ids": [
+        "shared-schema-or-abi"
+      ]
+    },
+    {
+      "id": "federation-mechanic",
+      "paths": [
+        "mechanics/boundary-bridge/parts/source-owned-export/README.md"
+      ],
+      "expected_reason_ids": [
+        "federation-or-projection-mechanic"
+      ]
+    },
+    {
+      "id": "nested-schema",
+      "paths": [
+        "mechanics/agon/parts/example/schemas/example.schema.json"
+      ],
+      "expected_reason_ids": [
+        "nested-derived-or-trust-surface"
+      ]
+    },
+    {
+      "id": "pr-174-unverified-pack-blob",
+      "paths": [
+        "mechanics/agon/parts/example/fixtures/extra.pack",
+        "mechanics/agon/parts/example/fixtures/extra.pack.json"
+      ],
+      "expected_reason_ids": [
+        "artifact-or-pack-blob"
+      ]
+    },
+    {
+      "id": "pr-174-trusted-import-code",
+      "paths": [
+        "scripts/import_repo_local_kag_bundle.py"
+      ],
+      "expected_reason_ids": [
+        "builder-loader-validator-or-release-topology"
+      ]
+    },
+    {
+      "id": "mixed-local-and-high-impact",
+      "paths": [
+        "docs/guides/bounded-route.md",
+        "schemas/repo-local-kag-index.schema.json"
+      ],
+      "expected_reason_ids": [
+        "shared-schema-or-abi"
+      ]
+    }
+  ]
+}
