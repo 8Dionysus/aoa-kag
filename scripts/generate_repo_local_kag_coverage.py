@@ -4,9 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import json
+import os
 import subprocess
 import sys
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Sequence
@@ -14,6 +18,7 @@ from typing import Any, Sequence
 from jsonschema import Draft202012Validator
 
 try:
+    from scripts.coverage_run import current_coverage_run, record_coverage_event
     from scripts.generate_repo_local_kag_index import (
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
@@ -41,10 +46,12 @@ try:
     )
     from scripts.provider_registry import (
         connector_repos,
+        provider_by_repo,
         provider_roots,
         provider_repo_order,
     )
 except ImportError:  # pragma: no cover - direct script execution
+    from coverage_run import current_coverage_run, record_coverage_event  # type: ignore
     from generate_repo_local_kag_index import (  # type: ignore
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
@@ -72,6 +79,7 @@ except ImportError:  # pragma: no cover - direct script execution
     )
     from provider_registry import (  # type: ignore
         connector_repos,
+        provider_by_repo,
         provider_roots,
         provider_repo_order,
     )
@@ -81,8 +89,44 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OS_ROOT = Path("/srv/AbyssOS")
 DEFAULT_OUTPUT = REPO_ROOT / "generated" / "repo_local_kag_coverage.json"
 DEFAULT_MIN_OUTPUT = REPO_ROOT / "generated" / "repo_local_kag_coverage.min.json"
+COVERAGE_PACKET_SCHEMA_VERSION = "aoa-kag-coverage-build-packet-v1"
+COVERAGE_IDENTITY_SCHEMA_VERSION = "aoa-kag-coverage-input-identity-v1"
+COVERAGE_CANONICALIZATION_EPOCH = "portable-record-normalization-v3"
+COVERAGE_IDENTITY_FIELDS = {
+    "schema_version",
+    "run_scope_id",
+    "lane",
+    "display_os_root",
+    "canonicalization_epoch",
+    "index_schema_epoch",
+    "provider_registry_digest",
+    "coverage_schema_digest",
+    "family_manifest_schema_digest",
+    "repository_index_schema_digest",
+    "runtime_inputs_digest",
+    "owner_snapshots",
+}
+COVERAGE_OWNER_SNAPSHOT_FIELDS = {
+    "owner",
+    "root",
+    "expected_ref",
+    "head_commit",
+    "index_tree",
+    "worktree_digest",
+    "manifest_digest",
+    "family_content_digest",
+    "source_snapshot",
+    "event_content_digest",
+}
 OWNER_STATUS = ("passed", "migration-needed", "missing", "owner-specific")
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
+FAMILY_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-family-manifest.schema.json"
+)
+REPOSITORY_INDEX_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-repository-index.schema.json"
+)
+COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
 LOCAL_KAG_SUBTREE_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-subtree.schema.json"
 SOURCE_SURFACE_INDEX_REL = Path("kag/indexes/source_surface_index.json")
 REPOSITORY_INDEX_RELS = {
@@ -105,6 +149,23 @@ META_INDEX_NAMES = {
 }
 PROVIDER_REPO_ORDER = provider_repo_order()
 CONNECTOR_REPOS = connector_repos()
+COVERAGE_RUNTIME_INPUT_PATHS = (
+    Path("config/validation_lanes.json"),
+    Path("manifests/provider_registry.json"),
+    Path("schemas/local-kag-subtree.schema.json"),
+    Path("schemas/repo-local-kag-coverage.schema.json"),
+    Path("schemas/repo-local-kag-family-manifest.schema.json"),
+    Path("schemas/repo-local-kag-index.schema.json"),
+    Path("schemas/repo-local-kag-repository-index.schema.json"),
+    Path("scripts/coverage_run.py"),
+    Path("scripts/generate_repo_local_kag_coverage.py"),
+    Path("scripts/generate_repo_local_kag_index.py"),
+    Path("scripts/generation/context.py"),
+    Path("scripts/provider_registry.py"),
+    Path("scripts/validators/common.py"),
+    Path("scripts/validators/local_kag_subtree.py"),
+    Path("scripts/validators/repo_local_kag_index.py"),
+)
 OWNER_SPECIFIC_INDEX_NAMES = {
     "session_memory_source_inventory.json",
     "source_inventory.json",
@@ -778,6 +839,7 @@ def build_coverage(
     owner_roots: Sequence[tuple[str, Path]] | None = None,
     *,
     progress: bool = False,
+    owner_timings: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     owners: list[dict[str, Any]] = []
     roots = list(owner_roots) if owner_roots is not None else [
@@ -786,6 +848,7 @@ def build_coverage(
     if progress:
         coverage_progress(f"owners {len(roots)}")
     for index, (name, owner_root) in enumerate(roots, start=1):
+        owner_started = time.perf_counter()
         if progress:
             coverage_progress(f"owner {index}/{len(roots)} {name}")
         status, files = index_status(owner_root, owner_name=name)
@@ -821,6 +884,16 @@ def build_coverage(
                 ),
             }
         )
+        if owner_timings is not None:
+            owner_timings.append(
+                {
+                    "owner": name,
+                    "duration_ms": max(
+                        0,
+                        round((time.perf_counter() - owner_started) * 1000),
+                    ),
+                }
+            )
     summary = {status: sum(1 for owner in owners if owner["index_status"] == status) for status in OWNER_STATUS}
     portable_owners = [
         owner
@@ -859,16 +932,750 @@ def build_coverage(
     }
 
 
+def _sha256_digest(content: bytes) -> str:
+    return f"sha256:{hashlib.sha256(content).hexdigest()}"
+
+
+def _json_digest(payload: object) -> str:
+    return _sha256_digest(
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    )
+
+
+def _file_digest(path: Path) -> str:
+    if path.is_symlink():
+        return _sha256_digest(path.readlink().as_posix().encode("utf-8"))
+    if not path.is_file():
+        raise RuntimeError(f"coverage identity input is unavailable: {path}")
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return f"sha256:{digest.hexdigest()}"
+
+
+def _git_output(
+    owner: str,
+    owner_root: Path,
+    command: Sequence[str],
+    *,
+    text: bool = False,
+) -> bytes | str:
+    try:
+        result = subprocess.run(
+            command,
+            cwd=owner_root,
+            check=True,
+            capture_output=True,
+            text=text,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        raise RuntimeError(
+            f"coverage identity cannot inspect {owner} with {' '.join(command)}"
+        ) from exc
+    return result.stdout
+
+
+def _git_head(owner: str, owner_root: Path) -> str:
+    output = _git_output(
+        owner,
+        owner_root,
+        ("git", "rev-parse", "--verify", "HEAD"),
+        text=True,
+    )
+    assert isinstance(output, str)
+    value = output.strip()
+    if len(value) not in {40, 64} or any(char not in "0123456789abcdef" for char in value):
+        raise RuntimeError(f"coverage identity received an invalid HEAD for {owner}")
+    return value
+
+
+def _git_index_tree(owner: str, owner_root: Path) -> str:
+    output = _git_output(
+        owner,
+        owner_root,
+        ("git", "write-tree"),
+        text=True,
+    )
+    assert isinstance(output, str)
+    value = output.strip()
+    if len(value) not in {40, 64} or any(char not in "0123456789abcdef" for char in value):
+        raise RuntimeError(f"coverage identity received an invalid index tree for {owner}")
+    return value
+
+
+def _dirty_worktree_paths(owner: str, owner_root: Path) -> tuple[bytes, ...]:
+    output = _git_output(
+        owner,
+        owner_root,
+        (
+            "git",
+            "ls-files",
+            "-m",
+            "-d",
+            "-o",
+            "--exclude-standard",
+            "-z",
+        ),
+    )
+    assert isinstance(output, bytes)
+    return tuple(sorted(set(part for part in output.split(b"\0") if part)))
+
+
+def _git_worktree_digest(owner: str, owner_root: Path) -> str:
+    status = _git_output(
+        owner,
+        owner_root,
+        (
+            "git",
+            "status",
+            "--porcelain=v2",
+            "-z",
+            "--untracked-files=all",
+        ),
+    )
+    assert isinstance(status, bytes)
+    digest = hashlib.sha256()
+    digest.update(b"git-status-v2\0")
+    digest.update(status)
+    digest.update(b"\0")
+    for raw_path in _dirty_worktree_paths(owner, owner_root):
+        relative = Path(os.fsdecode(raw_path))
+        candidate = owner_root / relative
+        digest.update(raw_path)
+        digest.update(b"\0")
+        try:
+            mode = candidate.lstat().st_mode
+        except FileNotFoundError:
+            digest.update(b"missing\0")
+            continue
+        digest.update(f"{mode:o}".encode("ascii"))
+        digest.update(b"\0")
+        if candidate.is_symlink():
+            digest.update(b"symlink\0")
+            digest.update(candidate.readlink().as_posix().encode("utf-8"))
+        elif candidate.is_file():
+            digest.update(b"file\0")
+            with candidate.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+        elif candidate.is_dir():
+            digest.update(b"directory\0")
+            try:
+                nested_head = subprocess.run(
+                    ("git", "rev-parse", "--verify", "HEAD"),
+                    cwd=candidate,
+                    check=True,
+                    capture_output=True,
+                ).stdout.strip()
+                nested_status = subprocess.run(
+                    (
+                        "git",
+                        "status",
+                        "--porcelain=v2",
+                        "-z",
+                        "--untracked-files=all",
+                    ),
+                    cwd=candidate,
+                    check=True,
+                    capture_output=True,
+                ).stdout
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                nested_head = b"not-a-git-directory"
+                nested_status = b""
+            digest.update(nested_head)
+            digest.update(b"\0")
+            digest.update(nested_status)
+        else:
+            digest.update(b"other\0")
+        digest.update(b"\0")
+    return f"sha256:{digest.hexdigest()}"
+
+
+def _portable_manifest_identity(owner: str, owner_root: Path) -> dict[str, str]:
+    manifest_path = owner_root / MANIFEST_RELATIVE_PATH
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise RuntimeError(
+            f"coverage packet requires a portable family manifest for {owner}: "
+            f"{manifest_path}"
+        )
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError) as exc:
+        raise RuntimeError(
+            f"coverage packet cannot read the portable family manifest for {owner}"
+        ) from exc
+    repo_identity = payload.get("repo") if isinstance(payload, dict) else None
+    if not isinstance(repo_identity, dict) or repo_identity.get("name") != owner:
+        raise RuntimeError(
+            f"coverage packet portable family manifest owner mismatch for {owner}"
+        )
+    family_identity = payload.get("family_identity")
+    compatibility = payload.get("compatibility")
+    files = compatibility.get("files") if isinstance(compatibility, dict) else None
+    if not isinstance(family_identity, dict) or not isinstance(files, list):
+        raise RuntimeError(
+            f"coverage packet portable family manifest shape is invalid for {owner}"
+        )
+    event_entry = next(
+        (
+            entry
+            for entry in files
+            if isinstance(entry, dict) and entry.get("kind") == "event"
+        ),
+        None,
+    )
+    values = {
+        "manifest_digest": _file_digest(manifest_path),
+        "family_content_digest": str(family_identity.get("content_digest", "")),
+        "source_snapshot": str(family_identity.get("source_snapshot", "")),
+        "event_content_digest": (
+            str(event_entry.get("content_digest", ""))
+            if isinstance(event_entry, dict)
+            else ""
+        ),
+    }
+    for field in ("family_content_digest", "event_content_digest"):
+        value = values[field]
+        if len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
+            raise RuntimeError(
+                f"coverage packet portable family {field} is invalid for {owner}"
+            )
+    source_snapshot = values["source_snapshot"]
+    if not (
+        source_snapshot.startswith("sha256:")
+        and len(source_snapshot) == len("sha256:") + 64
+        and all(char in "0123456789abcdef" for char in source_snapshot[7:])
+    ):
+        raise RuntimeError(
+            f"coverage packet portable family source_snapshot is invalid for {owner}"
+        )
+    return values
+
+
+def _coverage_runtime_input_paths() -> tuple[Path, ...]:
+    repo_local_modules = tuple(
+        sorted(
+            path.relative_to(REPO_ROOT)
+            for path in (REPO_ROOT / "scripts" / "repo_local").glob("*.py")
+            if path.is_file()
+        )
+    )
+    return tuple(sorted(set((*COVERAGE_RUNTIME_INPUT_PATHS, *repo_local_modules))))
+
+
+def _coverage_runtime_inputs_digest() -> str:
+    digest = hashlib.sha256()
+    for relative in _coverage_runtime_input_paths():
+        path = REPO_ROOT / relative
+        digest.update(relative.as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(_file_digest(path).encode("ascii"))
+        digest.update(b"\0")
+    return f"sha256:{digest.hexdigest()}"
+
+
+def _provider_snapshot(
+    owner: str,
+    owner_root: Path,
+    *,
+    expected_ref: str,
+) -> dict[str, str]:
+    if not owner_root.is_dir():
+        raise RuntimeError(
+            f"coverage packet provider root is unavailable for {owner}: {owner_root}"
+        )
+    head_commit = _git_head(owner, owner_root)
+    if expected_ref and head_commit != expected_ref:
+        raise RuntimeError(
+            f"coverage packet provider pin mismatch for {owner}: "
+            f"expected {expected_ref}, got {head_commit}"
+        )
+    return {
+        "owner": owner,
+        "root": owner_root.as_posix(),
+        "expected_ref": expected_ref,
+        "head_commit": head_commit,
+        "index_tree": _git_index_tree(owner, owner_root),
+        "worktree_digest": _git_worktree_digest(owner, owner_root),
+        **_portable_manifest_identity(owner, owner_root),
+    }
+
+
+def coverage_packet_identity(
+    os_root: Path = DEFAULT_OS_ROOT,
+) -> dict[str, Any]:
+    run = current_coverage_run(required=True)
+    assert run is not None
+    current_order = provider_repo_order()
+    if current_order != PROVIDER_REPO_ORDER:
+        raise RuntimeError(
+            "provider registry changed after coverage modules were imported; "
+            "restart the validation run"
+        )
+    configured = configured_owner_roots()
+    if tuple(owner for owner, _ in configured) != current_order:
+        raise RuntimeError("configured coverage owner order drifted from the provider registry")
+    provider_entries = provider_by_repo()
+    return {
+        "schema_version": COVERAGE_IDENTITY_SCHEMA_VERSION,
+        "run_scope_id": run.run_scope_id,
+        "lane": run.lane,
+        "display_os_root": os_root.resolve().as_posix(),
+        "canonicalization_epoch": COVERAGE_CANONICALIZATION_EPOCH,
+        "index_schema_epoch": INDEX_SCHEMA_VERSION,
+        "provider_registry_digest": _file_digest(
+            REPO_ROOT / "manifests" / "provider_registry.json"
+        ),
+        "coverage_schema_digest": _file_digest(COVERAGE_SCHEMA_PATH),
+        "family_manifest_schema_digest": _file_digest(FAMILY_MANIFEST_SCHEMA_PATH),
+        "repository_index_schema_digest": _file_digest(REPOSITORY_INDEX_SCHEMA_PATH),
+        "runtime_inputs_digest": _coverage_runtime_inputs_digest(),
+        "owner_snapshots": [
+            _provider_snapshot(
+                owner,
+                owner_root,
+                expected_ref=str(provider_entries.get(owner, {}).get("pinned_ref", "")),
+            )
+            for owner, owner_root in configured
+        ],
+    }
+
+
+def _validate_coverage_payload_schema(payload: dict[str, Any]) -> None:
+    try:
+        schema = json.loads(COVERAGE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError) as exc:
+        raise RuntimeError("coverage packet cannot read the coverage schema") from exc
+    errors = sorted(
+        Draft202012Validator(schema).iter_errors(payload),
+        key=lambda error: tuple(str(part) for part in error.absolute_path),
+    )
+    if errors:
+        error = errors[0]
+        location = "$" + "".join(
+            f"[{part}]" if isinstance(part, int) else f".{part}"
+            for part in error.absolute_path
+        )
+        raise RuntimeError(
+            f"coverage packet payload does not match the coverage schema at "
+            f"{location}: {error.message}"
+        )
+
+
+def _is_hex(value: object, lengths: set[int]) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) in lengths
+        and all(char in "0123456789abcdef" for char in value)
+    )
+
+
+def _is_sha256_digest(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and value.startswith("sha256:")
+        and _is_hex(value[7:], {64})
+    )
+
+
+def _validate_coverage_identity(identity: dict[str, Any]) -> None:
+    if set(identity) != COVERAGE_IDENTITY_FIELDS:
+        raise RuntimeError("coverage packet identity shape is invalid")
+    if identity.get("schema_version") != COVERAGE_IDENTITY_SCHEMA_VERSION:
+        raise RuntimeError("coverage packet identity schema is incompatible")
+    run_scope_id = identity.get("run_scope_id")
+    if not _is_hex(run_scope_id, {32}):
+        raise RuntimeError("coverage packet run scope identity is invalid")
+    for field in (
+        "lane",
+        "canonicalization_epoch",
+        "index_schema_epoch",
+    ):
+        if not isinstance(identity.get(field), str) or not identity[field]:
+            raise RuntimeError(f"coverage packet identity {field} is invalid")
+    display_os_root = identity.get("display_os_root")
+    if not isinstance(display_os_root, str) or not Path(display_os_root).is_absolute():
+        raise RuntimeError("coverage packet identity display_os_root is invalid")
+    for field in (
+        "provider_registry_digest",
+        "coverage_schema_digest",
+        "family_manifest_schema_digest",
+        "repository_index_schema_digest",
+        "runtime_inputs_digest",
+    ):
+        if not _is_sha256_digest(identity.get(field)):
+            raise RuntimeError(f"coverage packet identity {field} is invalid")
+
+    snapshots = identity.get("owner_snapshots")
+    if not isinstance(snapshots, list) or not snapshots:
+        raise RuntimeError("coverage packet owner snapshots are incomplete")
+    seen_owners: set[str] = set()
+    for position, snapshot in enumerate(snapshots):
+        if not isinstance(snapshot, dict) or set(snapshot) != COVERAGE_OWNER_SNAPSHOT_FIELDS:
+            raise RuntimeError(
+                f"coverage packet owner snapshot {position} shape is invalid"
+            )
+        owner = snapshot.get("owner")
+        root = snapshot.get("root")
+        expected_ref = snapshot.get("expected_ref")
+        if not isinstance(owner, str) or not owner or owner in seen_owners:
+            raise RuntimeError(
+                f"coverage packet owner snapshot {position} owner is invalid"
+            )
+        seen_owners.add(owner)
+        if not isinstance(root, str) or not Path(root).is_absolute():
+            raise RuntimeError(
+                f"coverage packet owner snapshot {position} root is invalid"
+            )
+        if expected_ref != "" and not _is_hex(expected_ref, {40, 64}):
+            raise RuntimeError(
+                f"coverage packet owner snapshot {position} expected ref is invalid"
+            )
+        if expected_ref and snapshot.get("head_commit") != expected_ref:
+            raise RuntimeError(
+                f"coverage packet owner snapshot {position} does not match its expected ref"
+            )
+        for field in ("head_commit", "index_tree"):
+            if not _is_hex(snapshot.get(field), {40, 64}):
+                raise RuntimeError(
+                    f"coverage packet owner snapshot {position} {field} is invalid"
+                )
+        for field in ("worktree_digest", "manifest_digest", "source_snapshot"):
+            if not _is_sha256_digest(snapshot.get(field)):
+                raise RuntimeError(
+                    f"coverage packet owner snapshot {position} {field} is invalid"
+                )
+        for field in ("family_content_digest", "event_content_digest"):
+            if not _is_hex(snapshot.get(field), {64}):
+                raise RuntimeError(
+                    f"coverage packet owner snapshot {position} {field} is invalid"
+                )
+
+
+def _validate_coverage_packet_completeness(
+    identity: dict[str, Any],
+    payload: dict[str, Any],
+) -> None:
+    snapshots = identity["owner_snapshots"]
+    owners = payload.get("owners")
+    summary = payload.get("coverage_summary")
+    if not isinstance(owners, list) or not isinstance(summary, dict):
+        raise RuntimeError("coverage packet payload completeness is invalid")
+    expected_owners = [snapshot["owner"] for snapshot in snapshots]
+    actual_owners = [
+        owner.get("repo") if isinstance(owner, dict) else None for owner in owners
+    ]
+    if actual_owners != expected_owners:
+        raise RuntimeError(
+            "coverage packet owner membership or order does not match the input identity"
+        )
+    if summary.get("owner_count") != len(expected_owners):
+        raise RuntimeError("coverage packet owner count does not match the input identity")
+    display_os_root = Path(identity["display_os_root"])
+    if payload.get("root") != display_os_root.as_posix():
+        raise RuntimeError("coverage packet root does not match the input identity")
+    status_total = sum(
+        int(summary.get(status, -1))
+        for status in ("passed", "migration_needed", "missing", "owner_specific")
+    )
+    if status_total != len(expected_owners):
+        raise RuntimeError("coverage packet owner status counts are incomplete")
+    for position, (snapshot, owner_payload) in enumerate(zip(snapshots, owners)):
+        expected_display_root = canonical_owner_root(
+            display_os_root,
+            snapshot["owner"],
+        ).as_posix()
+        if owner_payload.get("root") != expected_display_root:
+            raise RuntimeError(
+                f"coverage packet owner display root {position} does not match "
+                "the input identity"
+            )
+
+
+def _coverage_identity_receipt(identity: dict[str, Any]) -> dict[str, Any]:
+    provider_revisions = [
+        {
+            field: snapshot[field]
+            for field in (
+                "owner",
+                "expected_ref",
+                "head_commit",
+            )
+        }
+        for snapshot in identity["owner_snapshots"]
+    ]
+    aoa_kag_revision = next(
+        (
+            revision["head_commit"]
+            for revision in provider_revisions
+            if revision["owner"] == "aoa-kag"
+        ),
+        "",
+    )
+    return {
+        "schema_version": identity["schema_version"],
+        "display_os_root": identity["display_os_root"],
+        "canonicalization_epoch": identity["canonicalization_epoch"],
+        "index_schema_epoch": identity["index_schema_epoch"],
+        "provider_registry_digest": identity["provider_registry_digest"],
+        "coverage_schema_digest": identity["coverage_schema_digest"],
+        "family_manifest_schema_digest": identity["family_manifest_schema_digest"],
+        "repository_index_schema_digest": identity[
+            "repository_index_schema_digest"
+        ],
+        "runtime_inputs_digest": identity["runtime_inputs_digest"],
+        "owner_count": len(identity["owner_snapshots"]),
+        "owner_order": [
+            snapshot["owner"] for snapshot in identity["owner_snapshots"]
+        ],
+        "owner_identity_digest": _json_digest(identity["owner_snapshots"]),
+        "provider_revision_digest": _json_digest(provider_revisions),
+        "pinned_provider_count": sum(
+            1 for revision in provider_revisions if revision["expected_ref"]
+        ),
+        "matching_provider_revision_count": sum(
+            1
+            for revision in provider_revisions
+            if not revision["expected_ref"]
+            or revision["expected_ref"] == revision["head_commit"]
+        ),
+        "aoa_kag_commit": aoa_kag_revision,
+    }
+
+
+def write_coverage_packet(
+    path: Path,
+    *,
+    identity: dict[str, Any],
+    payload: dict[str, Any],
+) -> tuple[str, str]:
+    if path.is_symlink():
+        raise RuntimeError(f"coverage packet path must not be a symlink: {path}")
+    _validate_coverage_identity(identity)
+    _validate_coverage_payload_schema(payload)
+    _validate_coverage_packet_completeness(identity, payload)
+    identity_digest = _json_digest(identity)
+    payload_digest = _json_digest(payload)
+    packet = {
+        "schema_version": COVERAGE_PACKET_SCHEMA_VERSION,
+        "identity": identity,
+        "identity_digest": identity_digest,
+        "payload_digest": payload_digest,
+        "coverage": payload,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    if temporary.is_symlink():
+        raise RuntimeError(f"coverage packet temporary path must not be a symlink: {temporary}")
+    temporary.write_text(normalized_json(packet), encoding="utf-8")
+    temporary.replace(path)
+    return identity_digest, payload_digest
+
+
+def load_coverage_packet(
+    path: Path,
+) -> tuple[dict[str, Any], dict[str, Any], str, str]:
+    if path.is_symlink() or not path.is_file():
+        raise RuntimeError(f"coverage packet is not a regular file: {path}")
+    try:
+        packet = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, IsADirectoryError) as exc:
+        raise RuntimeError(f"coverage packet is unreadable: {path}") from exc
+    if not isinstance(packet, dict):
+        raise RuntimeError(f"coverage packet must be an object: {path}")
+    expected_fields = {
+        "schema_version",
+        "identity",
+        "identity_digest",
+        "payload_digest",
+        "coverage",
+    }
+    if set(packet) != expected_fields:
+        raise RuntimeError(f"coverage packet shape is invalid: {path}")
+    if packet.get("schema_version") != COVERAGE_PACKET_SCHEMA_VERSION:
+        raise RuntimeError(f"coverage packet schema is incompatible: {path}")
+    identity = packet.get("identity")
+    payload = packet.get("coverage")
+    if not isinstance(identity, dict):
+        raise RuntimeError(f"coverage packet identity must be an object: {path}")
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"coverage packet payload must be an object: {path}")
+    _validate_coverage_identity(identity)
+    identity_digest = _json_digest(identity)
+    payload_digest = _json_digest(payload)
+    if packet.get("identity_digest") != identity_digest:
+        raise RuntimeError(f"coverage packet identity digest mismatch: {path}")
+    if packet.get("payload_digest") != payload_digest:
+        raise RuntimeError(f"coverage packet payload digest mismatch: {path}")
+    _validate_coverage_payload_schema(payload)
+    _validate_coverage_packet_completeness(identity, payload)
+    return copy.deepcopy(identity), copy.deepcopy(payload), identity_digest, payload_digest
+
+
 def build_provider_coverage(
     os_root: Path = DEFAULT_OS_ROOT,
     *,
     progress: bool = False,
 ) -> dict[str, Any]:
-    return build_coverage(
-        os_root,
-        owner_roots=configured_owner_roots(),
-        progress=progress,
+    run = current_coverage_run()
+    if run is None:
+        return build_coverage(
+            os_root,
+            owner_roots=configured_owner_roots(),
+            progress=progress,
+        )
+
+    try:
+        identity = coverage_packet_identity(os_root)
+    except Exception as exc:
+        record_coverage_event(
+            {
+                "event": "reject",
+                "reason": "input-identity-unprovable",
+                "detail": str(exc),
+            }
+        )
+        raise
+    identity_digest = _json_digest(identity)
+    packet_path = run.packet_path
+    if packet_path.is_symlink():
+        record_coverage_event(
+            {
+                "event": "reject",
+                "reason": "packet-symlink",
+                "identity_digest": identity_digest,
+            }
+        )
+        raise RuntimeError(f"coverage packet path must not be a symlink: {packet_path}")
+
+    if packet_path.exists():
+        try:
+            (
+                packet_identity,
+                packet_payload,
+                packet_identity_digest,
+                packet_payload_digest,
+            ) = load_coverage_packet(packet_path)
+        except RuntimeError as exc:
+            record_coverage_event(
+                {
+                    "event": "reject",
+                    "reason": "packet-integrity",
+                    "identity_digest": identity_digest,
+                    "detail": str(exc),
+                }
+            )
+            raise
+        if packet_identity == identity:
+            record_coverage_event(
+                {
+                    "event": "hit",
+                    "identity_digest": packet_identity_digest,
+                    "payload_digest": packet_payload_digest,
+                    "owner_count": len(packet_payload.get("owners", [])),
+                }
+            )
+            if progress:
+                coverage_progress(f"reused verified packet {packet_path}")
+            return packet_payload
+        record_coverage_event(
+            {
+                "event": "miss",
+                "reason": "input-identity-changed",
+                "identity_digest": identity_digest,
+                "previous_identity_digest": packet_identity_digest,
+            }
+        )
+    else:
+        record_coverage_event(
+            {
+                "event": "miss",
+                "reason": "packet-absent",
+                "identity_digest": identity_digest,
+            }
+        )
+
+    owner_timings: list[dict[str, Any]] = []
+    started = time.perf_counter()
+    try:
+        payload = build_coverage(
+            os_root,
+            owner_roots=configured_owner_roots(),
+            progress=progress,
+            owner_timings=owner_timings,
+        )
+    except Exception as exc:
+        record_coverage_event(
+            {
+                "event": "build-failed",
+                "identity_digest": identity_digest,
+                "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
+                "detail": str(exc),
+                "owner_timings": owner_timings,
+            }
+        )
+        raise
+
+    try:
+        final_identity = coverage_packet_identity(os_root)
+    except Exception as exc:
+        record_coverage_event(
+            {
+                "event": "reject",
+                "reason": "final-input-identity-unprovable",
+                "identity_digest": identity_digest,
+                "duration_ms": max(
+                    0,
+                    round((time.perf_counter() - started) * 1000),
+                ),
+                "detail": str(exc),
+                "owner_timings": owner_timings,
+            }
+        )
+        raise
+    if final_identity != identity:
+        final_identity_digest = _json_digest(final_identity)
+        record_coverage_event(
+            {
+                "event": "reject",
+                "reason": "input-changed-during-build",
+                "identity_digest": identity_digest,
+                "final_identity_digest": final_identity_digest,
+                "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
+                "owner_timings": owner_timings,
+            }
+        )
+        raise RuntimeError(
+            "coverage inputs changed during the owner audit; restart from one "
+            "immutable input epoch"
+        )
+
+    identity_digest, payload_digest = write_coverage_packet(
+        packet_path,
+        identity=identity,
+        payload=payload,
     )
+    duration_ms = max(0, round((time.perf_counter() - started) * 1000))
+    record_coverage_event(
+        {
+            "event": "build",
+            "identity_digest": identity_digest,
+            "payload_digest": payload_digest,
+            "duration_ms": duration_ms,
+            "owner_count": len(payload.get("owners", [])),
+            "owner_timings": owner_timings,
+            "input_identity": _coverage_identity_receipt(identity),
+        }
+    )
+    if progress:
+        coverage_progress(f"wrote verified packet {packet_path}")
+    return payload
 
 
 def write_outputs(output: Path, min_output: Path, payload: dict[str, Any]) -> None:

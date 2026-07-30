@@ -12,8 +12,10 @@ from typing import Sequence
 
 try:  # Supports both ``python scripts/ci_gate.py`` and package-style imports.
     from scripts import validation_lanes
+    from scripts.coverage_run import coverage_run_scope
 except ImportError:  # pragma: no cover - exercised by direct script execution
     import validation_lanes  # type: ignore
+    from coverage_run import coverage_run_scope  # type: ignore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -47,22 +49,28 @@ def run_sequence(commands: Sequence[Sequence[str]]) -> None:
 
 
 def run_source_fast() -> None:
-    run_sequence(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
+    with coverage_run_scope(lane="source-fast"):
+        run_sequence(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
 
 
 def run_generated() -> None:
-    before_snapshot = capture_command_output(validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND)
-    run_sequence(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
-    after_snapshot = capture_command_output(validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND)
-    if before_snapshot != after_snapshot:
-        print(
-            "[ci-gate] generated lane changed generated/read-model drift paths",
-            file=sys.stderr,
+    with coverage_run_scope(lane="generated"):
+        before_snapshot = capture_command_output(
+            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
         )
-        raise subprocess.CalledProcessError(
-            1,
-            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
+        run_sequence(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
+        after_snapshot = capture_command_output(
+            validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
         )
+        if before_snapshot != after_snapshot:
+            print(
+                "[ci-gate] generated lane changed generated/read-model drift paths",
+                file=sys.stderr,
+            )
+            raise subprocess.CalledProcessError(
+                1,
+                validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
+            )
 
 
 def run_release() -> None:
@@ -70,7 +78,8 @@ def run_release() -> None:
 
 
 def run_compatibility_canary() -> None:
-    run_sequence(validation_lanes.COMPATIBILITY_CANARY_COMMAND_SEQUENCE)
+    with coverage_run_scope(lane="compatibility-canary"):
+        run_sequence(validation_lanes.COMPATIBILITY_CANARY_COMMAND_SEQUENCE)
 
 
 def run_advisory() -> None:

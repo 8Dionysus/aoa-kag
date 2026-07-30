@@ -48,6 +48,7 @@ The machine-readable script map is
 | `skill_local_contract_tool` | exported skill companion helper |
 | `part_local_script_runner` | discovered part-local builder and validator checks |
 | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner` | lane, release, and test execution |
+| `validation_run_artifact` | run-scoped coverage packet, event receipt, and aggregate timing evidence |
 | `script_route_card` | local route card |
 | `projection_helper` | shared generation package modules and compatibility helpers |
 
@@ -55,7 +56,7 @@ The machine-readable script map is
 
 | Function Group | Families |
 | --- | --- |
-| command authority / lane runners | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner`, `part_local_script_runner`, `provider_checkout_tool` |
+| command authority / lane runners | `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner`, `part_local_script_runner`, `provider_checkout_tool`, `validation_run_artifact` |
 | generation and retrieval | `projection_builder`, `projection_helper`, `projection_reader`, `decision_index_builder`, `validator_generation_port` |
 | validators | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator` |
 | topology and route inventory | `script_route_card` |
@@ -66,6 +67,10 @@ The machine-readable script map is
 
 Root `scripts/*.py` own repo-wide builders, validators, lane execution,
 release checks, and test discovery.
+
+`scripts/coverage_run.py` creates one temporary packet/receipt scope for a
+validation run, shares it with nested lane processes, emits the aggregate
+machine-readable timing receipt, and deletes the scope on exit.
 
 `scripts/validate_kag.py` is the entrypoint. The implementation map lives in
 `docs/validation/validator_inventory.json`.

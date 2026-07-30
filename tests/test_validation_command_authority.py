@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import unittest
@@ -9,7 +10,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import ci_gate, release_check, validation_lanes
+from scripts import ci_gate, coverage_run, release_check, validation_lanes
 from scripts.provider_registry import provider_ci_envs
 
 
@@ -223,6 +224,80 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 with redirect_stderr(StringIO()):
                     with self.assertRaises(subprocess.CalledProcessError):
                         ci_gate.run_generated()
+
+    def test_source_fast_creates_a_fresh_run_scope_and_restores_environment(self) -> None:
+        observed: list[coverage_run.CoverageRun] = []
+
+        def observe_sequence(_commands: object) -> None:
+            run = coverage_run.current_coverage_run(required=True)
+            assert run is not None
+            observed.append(run)
+
+        with patch.dict(
+            os.environ,
+            {
+                coverage_run.COVERAGE_PACKET_ENV: "caller-owned-packet",
+                coverage_run.COVERAGE_RECEIPT_ENV: "caller-owned-receipt",
+                coverage_run.COVERAGE_SCOPE_ACTIVE_ENV: "0",
+            },
+            clear=False,
+        ), patch.object(
+            ci_gate,
+            "run_sequence",
+            side_effect=observe_sequence,
+        ):
+            ci_gate.run_source_fast()
+            self.assertEqual(
+                "caller-owned-packet",
+                os.environ[coverage_run.COVERAGE_PACKET_ENV],
+            )
+            self.assertEqual(
+                "caller-owned-receipt",
+                os.environ[coverage_run.COVERAGE_RECEIPT_ENV],
+            )
+
+        self.assertEqual(1, len(observed))
+        self.assertEqual("source-fast", observed[0].lane)
+        self.assertFalse(observed[0].scope_dir.exists())
+
+    def test_release_reuses_one_scope_across_stabilization_passes(self) -> None:
+        before = release_check.RepoStateSnapshot(
+            worktree_status=" M generated/output.json\n",
+            tracked_diff="before",
+            cached_diff="",
+        )
+        after = release_check.RepoStateSnapshot(
+            worktree_status=" M generated/output.json\n",
+            tracked_diff="after",
+            cached_diff="",
+        )
+        observed: list[coverage_run.CoverageRun] = []
+
+        def observe_lane(_commands: object, _repo_root: Path) -> None:
+            run = coverage_run.current_coverage_run(required=True)
+            assert run is not None
+            observed.append(run)
+
+        with patch.dict(
+            os.environ,
+            {coverage_run.COVERAGE_SCOPE_ACTIVE_ENV: "0"},
+            clear=False,
+        ), patch.object(
+            release_check,
+            "capture_repo_state",
+            side_effect=(before, after, after),
+        ), patch.object(
+            release_check,
+            "run_release_lane",
+            side_effect=observe_lane,
+        ):
+            self.assertEqual(0, release_check.main())
+
+        self.assertEqual(2, len(observed))
+        self.assertEqual("release", observed[0].lane)
+        self.assertEqual(observed[0].run_scope_id, observed[1].run_scope_id)
+        self.assertEqual(observed[0].packet_path, observed[1].packet_path)
+        self.assertFalse(observed[0].scope_dir.exists())
 
     def test_release_check_preserves_entrypoint_without_owning_sequence(self) -> None:
         self.assertEqual("release", release_check.RELEASE_LANE_ID)

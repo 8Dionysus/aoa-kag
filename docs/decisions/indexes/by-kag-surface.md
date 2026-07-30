@@ -90,6 +90,7 @@
 ## generated parity
 
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## generated-change budget
 
@@ -151,6 +152,10 @@
 ## OS surface readiness
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
+
+## OS-wide provider coverage
+
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## owner route catalog
 
@@ -312,6 +317,10 @@
 ## validation authority
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+
+## validation input identity
+
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## validator inventory
 
