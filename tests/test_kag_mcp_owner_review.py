@@ -289,6 +289,37 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                     source_revision=revision,
                 )
 
+    def test_review_ttl_is_rechecked_after_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(root, _capture_payload())
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    side_effect=[
+                        NOW + timedelta(seconds=1),
+                        NOW + timedelta(seconds=302),
+                    ],
+                ),
+                self.assertRaisesRegex(
+                    KagOwnerReviewError,
+                    "owner review expired before completion",
+                ),
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=result_path,
+                    source_revision=revision,
+                )
+
     def test_capture_path_replacement_after_verification_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

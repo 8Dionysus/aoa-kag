@@ -890,6 +890,8 @@ def review_kag_capture(
     return_at = _aware_time(_utc_now(), "review completion time")
     if return_at < observed_at or return_at >= capture_expires_at:
         raise KagOwnerReviewError("review time is outside the live capture window")
+    if return_at >= expires_at:
+        raise KagOwnerReviewError("owner review expired before completion")
     return review
 
 
