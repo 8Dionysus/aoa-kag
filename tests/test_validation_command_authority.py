@@ -118,6 +118,34 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown lane"):
             validation_lanes.command_sequence_for_lane("missing")
 
+    def test_local_and_os_wide_validator_scopes_are_blocking_and_explicit(self) -> None:
+        local_command = (
+            "python",
+            "scripts/validate_kag.py",
+            "--scope",
+            "local",
+        )
+        os_wide_command = (
+            "python",
+            "scripts/validate_kag.py",
+            "--scope",
+            "os-wide",
+        )
+
+        source_fast = command_sequence_from_manifest("source_fast")
+        generated = command_sequence_from_manifest("generated_check")
+        canary = command_sequence_from_manifest("compatibility_canary")
+
+        self.assertIn(local_command, source_fast)
+        self.assertNotIn(os_wide_command, source_fast)
+        self.assertEqual(2, generated.count(local_command))
+        self.assertEqual(1, generated.count(os_wide_command))
+        self.assertLess(generated.index(os_wide_command), generated.index(
+            ("python", "scripts/generate_repo_local_kag_coverage.py")
+        ))
+        self.assertEqual(1, canary.count(local_command))
+        self.assertEqual(1, canary.count(os_wide_command))
+
     def test_generated_lanes_rebuild_source_index_after_final_coverage_refresh(self) -> None:
         coverage_command = ("python", "scripts/generate_repo_local_kag_coverage.py")
         coverage_check_command = (

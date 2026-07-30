@@ -13,14 +13,18 @@ public import facade is `scripts/validators/orchestrator.py`.
 
 | Surface | Function |
 | --- | --- |
-| `runner.py` | `main()` and top-level validation flow |
-| `static_surfaces.py` | local, schema, route, and stress surface checks |
+| `runner.py` | scoped `local`, `os-wide`, and full-compatible `main()` validation flow |
+| `static_surfaces.py` | local, schema, route, repo-local family, and stress surface checks |
 | `manifests.py` | registry context and manifest contract checks |
 | `expected_payloads.py` | expected generated payload construction |
 | `generated_text.py` | generated text parity checks |
 | `generated_structures.py` | generated structure checks |
 | `examples.py` | public example checks |
 | `status.py` | success status output |
+
+The OS-wide provider-home and coverage contracts are selected explicitly by
+`runner.py`; neither may be added back to `static_surfaces.py` or another
+local phase.
 
 ## Route
 

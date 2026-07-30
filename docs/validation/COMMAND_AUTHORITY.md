@@ -14,7 +14,7 @@
 | `scripts/coverage_run.py` | run-scoped coverage packet, telemetry receipt, and lifecycle boundary shared by lane processes |
 | `scripts/run_tests.py` | unittest discovery for root and active mechanics part tests |
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
-| `scripts/validate_kag.py` | repo-wide KAG validation entrypoint |
+| `scripts/validate_kag.py` | scoped local, OS-wide, or full KAG validation entrypoint |
 | `scripts/validate_local_stats_port.py` | owner-local stats port adapter to the pinned `aoa-stats` validator |
 | `scripts/review_kag_mcp_result.py` | private KAG owner review of one exact, stack-attested `kag_discover` result against the source-pinned capture signer |
 | `scripts/generate_repo_local_kag_index.py` | repo-local portable family builder, shard/budget gate, and logical source/artifact/anchor/entity/event/assertion/relation family builder |
@@ -48,11 +48,15 @@ reuse the same model.
 ## Run-Scoped Coverage Proof Reuse
 
 `source-fast`, `generated`, compatibility-canary, and release entrypoints
-create one temporary coverage run scope outside the repository. The packet
-identity binds the run and lane, provider registry and validation inputs, every
-configured owner's expected pin, HEAD, Git index tree, dirty/untracked state,
-portable manifest, family/source/event digests, and the active schemas and
-builder bytes.
+create one temporary coverage run scope outside the repository. `source-fast`
+uses only the local validator scope, so its standalone receipt may correctly
+contain zero coverage builds. Generated and compatibility lanes run one
+explicit OS-wide validator scope before fixed-point generation; release
+inherits that audit through the generated lane. The packet identity binds the
+run and lane, provider registry and validation inputs, every configured
+owner's expected pin, HEAD, Git index tree, dirty/untracked state, portable
+manifest, family/source/event digests, and the active schemas and builder
+bytes.
 
 The first OS-wide coverage consumer builds and schema-checks the payload.
 Later consumers reuse it only when the complete identity still matches and the
@@ -65,6 +69,19 @@ and payload identities, coverage and lane wall time, and per-owner timings.
 Exact provider revisions remain visible in the preceding provider-checkout
 verification log. Neither surface becomes a committed read model or owner
 truth.
+
+## Validator Scopes
+
+| Scope | Claim |
+| --- | --- |
+| `local` | repository-local schemas, manifests, provenance, routes, examples, portable family, and generated-structure integrity without loading every provider family |
+| `os-wide` | provider-home completeness plus committed coverage parity against the complete current provider build; lane execution reuses one fully identified run-scoped packet for coverage consumers |
+| `full` | local plus OS-wide validation; the no-argument compatibility default |
+
+The source-fast command sequence always requests `local`. Generated and
+compatibility sequences request exactly one `os-wide` scope before their first
+coverage generation consumer. All scopes remain blocking where their owning
+lane invokes them; a skipped OS-wide scope is not a successful audit.
 
 ## Lane Entries
 
