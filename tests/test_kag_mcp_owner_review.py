@@ -203,60 +203,111 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             self.assertFalse(review["admission_asserted"])
 
     def test_portable_manifest_cannot_be_shadowed_by_legacy_index(self) -> None:
+        manifest_digest = "a" * 64
+        manifest = {
+            "repo": {"name": "aoa-kag"},
+            "family_identity": {
+                "source_snapshot": f"sha256:{manifest_digest}",
+            },
+            "source_index_header": {
+                "index_identity": {
+                    "content_digest": manifest_digest,
+                },
+            },
+            "compatibility": {
+                "files": [
+                    {
+                        "kind": "source",
+                        "content_digest": manifest_digest,
+                    },
+                ],
+            },
+        }
+        with (
+            patch(
+                "scripts.review_kag_mcp_result._committed_path_exists",
+                return_value=True,
+            ),
+            patch(
+                "scripts.review_kag_mcp_result._read_committed_public_json",
+                return_value=(manifest, json.dumps(manifest).encode("utf-8")),
+            ),
+        ):
+            digest, evidence_ref = _canonical_source_index_identity("a" * 40)
+
+        self.assertEqual(manifest_digest, digest)
+        self.assertEqual(
+            "kag/indexes/index_family.manifest.json",
+            evidence_ref,
+        )
+
+    def test_dirty_manifest_cannot_change_committed_canonical_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            manifest_path = root / "index_family.manifest.json"
-            legacy_path = root / "source_surface_index.json"
-            manifest_digest = "a" * 64
-            legacy_digest = "b" * 64
-            manifest_path.write_text(
-                json.dumps(
-                    {
-                        "repo": {"name": "aoa-kag"},
-                        "family_identity": {
-                            "source_snapshot": f"sha256:{manifest_digest}",
-                        },
-                        "source_index_header": {
-                            "index_identity": {
-                                "content_digest": manifest_digest,
-                            },
-                        },
-                        "compatibility": {
-                            "files": [
-                                {
-                                    "kind": "source",
-                                    "content_digest": manifest_digest,
-                                },
-                            ],
-                        },
-                    }
-                ),
-                encoding="utf-8",
-            )
-            legacy_path.write_text(
-                json.dumps(
-                    {
+            manifest_path = root / "kag" / "indexes" / "index_family.manifest.json"
+            manifest_path.parent.mkdir(parents=True)
+
+            def manifest(digest: str) -> dict:
+                return {
+                    "repo": {"name": "aoa-kag"},
+                    "family_identity": {
+                        "source_snapshot": f"sha256:{digest}",
+                    },
+                    "source_index_header": {
                         "index_identity": {
-                            "content_digest": legacy_digest,
+                            "content_digest": digest,
                         },
-                    }
-                ),
+                    },
+                    "compatibility": {
+                        "files": [
+                            {
+                                "kind": "source",
+                                "content_digest": digest,
+                            },
+                        ],
+                    },
+                }
+
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "KAG test"],
+                cwd=root,
+                check=True,
+            )
+            committed_digest = "a" * 64
+            dirty_digest = "b" * 64
+            manifest_path.write_text(
+                json.dumps(manifest(committed_digest)),
+                encoding="utf-8",
+            )
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "fixture"],
+                cwd=root,
+                check=True,
+            )
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            manifest_path.write_text(
+                json.dumps(manifest(dirty_digest)),
                 encoding="utf-8",
             )
 
-            with (
-                patch(
-                    "scripts.review_kag_mcp_result.PORTABLE_FAMILY_MANIFEST",
-                    manifest_path,
-                ),
-                patch(
-                    "scripts.review_kag_mcp_result.SOURCE_INDEX",
-                    legacy_path,
-                ),
-            ):
-                digest, evidence_ref = _canonical_source_index_identity()
+            with patch("scripts.review_kag_mcp_result.REPO_ROOT", root):
+                digest, evidence_ref = _canonical_source_index_identity(revision)
 
-            self.assertEqual(manifest_digest, digest)
+            self.assertEqual(committed_digest, digest)
+            self.assertNotEqual(dirty_digest, digest)
             self.assertEqual(
                 "kag/indexes/index_family.manifest.json",
                 evidence_ref,

@@ -18,9 +18,6 @@ from jsonschema import Draft202012Validator
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-KAG_CAPABILITIES_SCHEMA = REPO_ROOT / "schemas" / "kag-mcp-capabilities.schema.json"
-SOURCE_INDEX = REPO_ROOT / "kag" / "indexes" / "source_surface_index.json"
-PORTABLE_FAMILY_MANIFEST = REPO_ROOT / "kag" / "indexes" / "index_family.manifest.json"
 OWNER_PAYLOAD_SCHEMA_REF = "owner://aoa-kag/schema/payload"
 MAX_INPUT_BYTES = 2 * 1024 * 1024
 MAX_REVIEW_TTL_SECONDS = 300
@@ -58,10 +55,6 @@ def _digest(value: Any, *, ensure_ascii: bool = False) -> str:
             _canonical_json_bytes(value, ensure_ascii=ensure_ascii)
         ).hexdigest()
     )
-
-
-def _file_digest(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _aware_time(value: str | datetime, label: str) -> datetime:
@@ -122,6 +115,54 @@ def _read_public_schema(path: Path, label: str) -> dict[str, Any]:
     value = _read_public_json(path, label)
     Draft202012Validator.check_schema(value)
     return value
+
+
+def _read_committed_public_json(
+    source_revision: str,
+    relative_path: str,
+    label: str,
+) -> tuple[dict[str, Any], bytes]:
+    try:
+        raw = subprocess.run(
+            [
+                "git",
+                "show",
+                f"{source_revision}:{relative_path}",
+            ],
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+        ).stdout
+        value = json.loads(raw.decode("utf-8"))
+    except (
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        subprocess.CalledProcessError,
+    ) as exc:
+        raise KagOwnerReviewError(
+            f"{label} is unavailable or invalid at source revision"
+        ) from exc
+    if not isinstance(value, dict):
+        raise KagOwnerReviewError(
+            f"{label} must be a JSON object at source revision"
+        )
+    return value, raw
+
+
+def _committed_path_exists(source_revision: str, relative_path: str) -> bool:
+    try:
+        result = subprocess.run(
+            ["git", "cat-file", "-e", f"{source_revision}:{relative_path}"],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+        )
+    except OSError as exc:
+        raise KagOwnerReviewError(
+            "aoa-kag committed evidence is unavailable"
+        ) from exc
+    return result.returncode == 0
 
 
 def _relative_ref(root: Path, path: Path, label: str) -> str:
@@ -224,10 +265,15 @@ def _valid_digest(value: Any) -> bool:
     )
 
 
-def _canonical_source_index_identity() -> tuple[str, str]:
-    if PORTABLE_FAMILY_MANIFEST.is_file():
-        manifest = _read_public_json(
-            PORTABLE_FAMILY_MANIFEST,
+def _canonical_source_index_identity(
+    source_revision: str | None = None,
+) -> tuple[str, str]:
+    revision = source_revision or _git_revision(REPO_ROOT)
+    manifest_ref = "kag/indexes/index_family.manifest.json"
+    if _committed_path_exists(revision, manifest_ref):
+        manifest, _ = _read_committed_public_json(
+            revision,
+            manifest_ref,
             "canonical KAG portable family manifest",
         )
         repo = manifest.get("repo")
@@ -275,16 +321,21 @@ def _canonical_source_index_identity() -> tuple[str, str]:
             raise KagOwnerReviewError(
                 "canonical KAG portable source-index identities do not agree"
             )
-        return next(iter(digests)), "kag/indexes/index_family.manifest.json"
+        return next(iter(digests)), manifest_ref
 
-    payload = _read_public_json(SOURCE_INDEX, "canonical KAG source index")
+    source_ref = "kag/indexes/source_surface_index.json"
+    payload, _ = _read_committed_public_json(
+        revision,
+        source_ref,
+        "canonical KAG source index",
+    )
     identity = payload.get("index_identity")
     digest = identity.get("content_digest") if isinstance(identity, dict) else None
     if not _valid_digest(digest):
         raise KagOwnerReviewError(
             "canonical KAG source index identity is unavailable"
         )
-    return str(digest), "kag/indexes/source_surface_index.json"
+    return str(digest), source_ref
 
 
 def _freshness_assessment(
@@ -405,10 +456,12 @@ def review_kag_capture(
     if reviewed_at < observed_at or reviewed_at >= capture_expires_at:
         raise KagOwnerReviewError("review time is outside the live capture window")
 
-    owner_schema = _read_public_schema(
-        KAG_CAPABILITIES_SCHEMA,
+    owner_schema, owner_schema_bytes = _read_committed_public_json(
+        source_revision,
+        "schemas/kag-mcp-capabilities.schema.json",
         "KAG capability schema",
     )
+    Draft202012Validator.check_schema(owner_schema)
     sdk_schema = _read_public_schema(
         sdk_review_schema_path,
         "SDK owner-review schema",
@@ -419,7 +472,9 @@ def review_kag_capture(
     )
     grounding_state = "rejected" if schema_errors else "grounded"
     reason_codes = ["owner-payload-schema-invalid"] if schema_errors else []
-    owner_canonical_digest, canonical_evidence_ref = _canonical_source_index_identity()
+    owner_canonical_digest, canonical_evidence_ref = (
+        _canonical_source_index_identity(source_revision)
+    )
     (
         freshness_state,
         provider_watermark,
@@ -454,7 +509,7 @@ def review_kag_capture(
         capture_expires_at,
         reviewed_at + timedelta(seconds=MAX_REVIEW_TTL_SECONDS),
     )
-    schema_digest = _file_digest(KAG_CAPABILITIES_SCHEMA)
+    schema_digest = "sha256:" + hashlib.sha256(owner_schema_bytes).hexdigest()
     statement = {
         "schema_version": REVIEW_SCHEMA,
         "review_owner": "aoa-kag",
