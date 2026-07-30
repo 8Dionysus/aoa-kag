@@ -832,12 +832,30 @@ def validate_repo_local_kag_index_contract_with_progress() -> None:
     validate_repo_local_kag_index_contract(progress=True)
 
 
-def validate_repo_local_kag_index_contract(*, progress: bool = False) -> None:
+def validate_repo_local_kag_local_contract_with_progress() -> None:
+    validate_repo_local_kag_local_contract(progress=True)
+
+
+def validate_repo_local_kag_os_wide_contract_with_progress() -> None:
+    validate_repo_local_kag_os_wide_contract(progress=True)
+
+
+def validate_repo_local_kag_local_contract(*, progress: bool = False) -> None:
     _repo_local_index_phase("schema-surfaces", progress=progress)
     validate_repo_local_kag_index_schema_surface()
     _repo_local_index_phase("example", progress=progress)
     validate_repo_local_kag_index_example()
     _repo_local_index_phase("generated-index", progress=progress)
     validate_repo_local_kag_index_generated_payload(progress=progress)
+
+
+def validate_repo_local_kag_os_wide_contract(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-coverage", progress=progress)
     validate_repo_local_kag_coverage_generated_payload(progress=progress)
+
+
+def validate_repo_local_kag_index_contract(*, progress: bool = False) -> None:
+    """Compatibility entrypoint for the complete local plus OS-wide contract."""
+
+    validate_repo_local_kag_local_contract(progress=progress)
+    validate_repo_local_kag_os_wide_contract(progress=progress)

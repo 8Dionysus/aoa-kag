@@ -4,7 +4,8 @@
   "command_authority": "config/validation_lanes.json",
   "notes": [
     "This manifest is the canonical storage surface for active validation lane command sequences.",
-    "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences."
+    "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences.",
+    "The source-fast lane always runs validate_kag local scope; generated and compatibility lanes add one explicit OS-wide provider-home and coverage scope inside the same run-scoped packet epoch."
   ],
   "lanes": {
     "source_fast": {
@@ -12,8 +13,9 @@
       "posture": "blocking",
       "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
       "command_sequence": "source_fast",
-      "purpose": "Growth-safe read-only integrity gate for route cards, mechanics skeleton, decision records, semantic AGENTS docs, unit tests, and committed KAG surfaces.",
+      "purpose": "Growth-safe read-only local integrity gate for route cards, mechanics skeleton, decision records, semantic AGENTS docs, unit tests, and committed KAG surfaces.",
       "does_not_own": [
+        "OS-wide provider-home and coverage audit",
         "generated-output mutation",
         "release stabilization",
         "future runtime graph/vector/index state"
@@ -25,7 +27,7 @@
       "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
       "command_sequence": "generated_check",
       "drift_paths": "generated",
-      "purpose": "Generated/read-model parity for KAG outputs derived from manifests and source-owned exports.",
+      "purpose": "Generated/read-model parity plus one explicit blocking OS-wide provider-home and coverage audit for KAG outputs derived from manifests and source-owned exports.",
       "does_not_own": [
         "source repository authored meaning",
         "runtime graph/vector/index state"
@@ -121,7 +123,9 @@
       ],
       [
         "python",
-        "scripts/validate_kag.py"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
       ],
       [
         "python",
@@ -131,7 +135,15 @@
     "generated_check": [
       [
         "python",
-        "scripts/validate_kag.py"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
+      ],
+      [
+        "python",
+        "scripts/validate_kag.py",
+        "--scope",
+        "os-wide"
       ],
       [
         "python",
@@ -189,7 +201,9 @@
       ],
       [
         "python",
-        "scripts/validate_kag.py"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
       ]
     ],
     "release_check": [
@@ -221,7 +235,15 @@
       ],
       [
         "python",
-        "scripts/validate_kag.py"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
+      ],
+      [
+        "python",
+        "scripts/validate_kag.py",
+        "--scope",
+        "os-wide"
       ],
       [
         "python",

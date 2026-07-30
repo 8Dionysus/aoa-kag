@@ -267,7 +267,7 @@
         {
           "path": "tests/test_validate_kag.py",
           "family": "generated/read-model",
-          "protects": "Repo-wide validate_kag behavior for generated/read-model validation and repo-wide example contracts; mechanics-focused assertions live in part tests.",
+          "protects": "Scoped local, OS-wide, and full-compatible validate_kag behavior for generated/read-model validation and repo-wide example contracts; mechanics-focused assertions live in part tests.",
           "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
           "runtime_cost": "medium",
           "focused_target": "tests/test_validate_kag.py",
@@ -280,7 +280,7 @@
         {
           "path": "tests/test_validator_module_topology.py",
           "family": "validation/validator-topology",
-          "protects": "Validator owner modules, validate_kag adapter thinness, validator inventory sync, and source/projection split.",
+          "protects": "Validator owner modules, validate_kag adapter thinness and scoped lane entrypoints, validator inventory sync, and source/projection split.",
           "owner_surface": "docs/validation/validator_inventory.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validator_module_topology.py",
@@ -304,7 +304,7 @@
         {
           "path": "tests/test_validation_command_authority.py",
           "family": "validation/command-authority",
-          "protects": "Lane manifest authority, loader behavior, CI gate routing, workflow entrypoints, and release command storage.",
+          "protects": "Lane manifest authority, explicit local versus OS-wide validator placement, loader behavior, CI gate routing, workflow entrypoints, and release command storage.",
           "owner_surface": "config/validation_lanes.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validation_command_authority.py",

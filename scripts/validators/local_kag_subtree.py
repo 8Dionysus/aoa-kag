@@ -712,7 +712,18 @@ def validate_local_kag_subtree_contract_with_progress() -> None:
     validate_local_kag_subtree_contract(progress=True)
 
 
-def validate_local_kag_subtree_contract(*, progress: bool = False) -> None:
+def validate_local_kag_subtree_local_contract_with_progress() -> None:
+    validate_local_kag_subtree_local_contract(progress=True)
+
+
+def validate_local_kag_provider_homes_contract_with_progress() -> None:
+    validate_local_kag_provider_homes_contract(progress=True)
+
+
+def _validate_local_kag_subtree_local_contract(
+    *,
+    progress: bool,
+) -> dict[str, object]:
     _local_kag_phase("schema", progress=progress)
     validate_top_level_schema(LOCAL_KAG_SUBTREE_SCHEMA_PATH, "local KAG subtree")
 
@@ -738,5 +749,35 @@ def validate_local_kag_subtree_contract(*, progress: bool = False) -> None:
     _validate_registry_entries(example)
     _local_kag_phase("readiness-matrix", progress=progress)
     _validate_readiness_matrix(readiness)
+    return readiness
+
+
+def validate_local_kag_subtree_local_contract(*, progress: bool = False) -> None:
+    _validate_local_kag_subtree_local_contract(progress=progress)
+
+
+def validate_local_kag_provider_homes_contract(*, progress: bool = False) -> None:
+    _local_kag_phase("provider-home-readiness", progress=progress)
+    readiness = read_json(LOCAL_KAG_READINESS_MANIFEST_PATH)
+    if not isinstance(readiness, dict):
+        fail("local KAG readiness matrix must be a JSON object")
+    _validate_payload_against_local_kag_schema(
+        readiness,
+        label="local KAG readiness matrix",
+    )
+    _validate_language_posture(readiness, label="local KAG readiness matrix")
+    _validate_checked_ref_is_source_linked(
+        readiness,
+        label="local KAG readiness matrix",
+    )
+    _validate_readiness_matrix(readiness)
+    _local_kag_phase("provider-homes", progress=progress)
+    _validate_provider_ready_surfaces(readiness, progress=progress)
+
+
+def validate_local_kag_subtree_contract(*, progress: bool = False) -> None:
+    """Compatibility entrypoint for local plus OS-wide provider-home checks."""
+
+    readiness = _validate_local_kag_subtree_local_contract(progress=progress)
     _local_kag_phase("provider-homes", progress=progress)
     _validate_provider_ready_surfaces(readiness, progress=progress)

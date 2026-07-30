@@ -136,7 +136,7 @@ class ValidatorModuleTopologyTests(unittest.TestCase):
 
         self.assertLessEqual(len(text.splitlines()), 12)
         self.assertEqual(set(), defined_names("scripts/validate_kag.py"))
-        self.assertIn("raise SystemExit(main())", text)
+        self.assertIn("raise SystemExit(main(sys.argv[1:]))", text)
 
         imports_validator_package = any(
             isinstance(node, ast.Try)
@@ -407,12 +407,18 @@ class ValidatorModuleTopologyTests(unittest.TestCase):
         lanes = load_json(LANES_PATH)
 
         self.assertIn(
-            ["python", "scripts/validate_kag.py"],
+            ["python", "scripts/validate_kag.py", "--scope", "local"],
             lanes["command_sequences"]["source_fast"],
         )
         self.assertIn(
-            ["python", "scripts/validate_kag.py"],
+            ["python", "scripts/validate_kag.py", "--scope", "local"],
             lanes["command_sequences"]["generated_check"],
+        )
+        self.assertEqual(
+            1,
+            lanes["command_sequences"]["generated_check"].count(
+                ["python", "scripts/validate_kag.py", "--scope", "os-wide"]
+            ),
         )
 
     def test_script_and_test_inventories_cover_validator_topology(self) -> None:
