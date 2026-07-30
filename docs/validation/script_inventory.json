@@ -7,7 +7,7 @@
   "function_groups": {
     "command_authority_lane_runners": ["impact_router", "lane_executor", "lane_loader", "part_local_script_runner", "provider_checkout_tool", "release_entrypoint", "test_runner", "validation_run_artifact"],
     "generation_and_retrieval": ["decision_index_builder", "projection_builder", "projection_helper", "projection_reader", "validator_generation_port"],
-    "validators": ["example_validator", "example_validator_facade", "manifest_validator", "manifest_validator_facade", "projection_validator", "projection_validator_facade", "source_validator", "validator_adapter", "validator_entrypoint", "validator_expected_contracts", "validator_expected_contracts_facade", "validator_orchestration", "validator_orchestrator_facade", "validator_shared"],
+    "validators": ["example_validator", "example_validator_facade", "manifest_validator", "manifest_validator_facade", "owner_evidence_reviewer", "projection_validator", "projection_validator_facade", "source_validator", "validator_adapter", "validator_entrypoint", "validator_expected_contracts", "validator_expected_contracts_facade", "validator_orchestration", "validator_orchestrator_facade", "validator_shared"],
     "topology_and_route_inventory": ["script_route_card"],
     "release_artifact_tooling": ["artifact_bundle_validator"]
   },
@@ -766,6 +766,20 @@
       "validation_lane": "source_fast",
       "ci_inclusion": "focused return-regrounding tests through scripts/run_tests.py",
       "test_target": "mechanics/recurrence/parts/return-regrounding/tests/test_return_regrounding.py",
+      "disposition": "keep"
+    },
+    {
+      "path": "scripts/review_kag_mcp_result.py",
+      "family": "owner_evidence_reviewer",
+      "organ_lane": "capability/security contract",
+      "owner_surface": "schemas/kag-mcp-capabilities.schema.json",
+      "source_truth": ["config/runtime_capture_trust.json", "schemas/kag-mcp-capabilities.schema.json", "examples/kag_mcp_capabilities.example.json", "docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md", "aoa-sdk:schemas/organ-access/organ-owner-result-review.schema.json"],
+      "reads": ["the source-pinned stack capture signer, one private attested abyss-stack canary receipt, one exact private attested result artifact, the KAG capability schema, and the SDK owner-review schema"],
+      "writes": ["caller-selected private owner-review receipt"],
+      "side_effects": "writes one mode-0600 content-addressed review receipt at a path distinct from both capture inputs; no MCP call, runtime mutation, acceptance, or proof effect",
+      "validation_lane": "compatibility_canary",
+      "ci_inclusion": "covered by tests/test_kag_mcp_owner_review.py through scripts/run_tests.py",
+      "test_target": "tests/test_kag_mcp_owner_review.py",
       "disposition": "keep"
     },
     {

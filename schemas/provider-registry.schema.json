@@ -140,7 +140,10 @@
           "then": {
             "properties": {
               "root_kind": {
-                "const": "runtime_source"
+                "enum": [
+                  "direct",
+                  "runtime_source"
+                ]
               }
             }
           }

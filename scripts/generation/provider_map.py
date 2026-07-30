@@ -43,8 +43,6 @@ REPOSITORY_META_INDEX_SCHEMA_VERSIONS = {
     "aoa-repo-local-kag-repository-index-v2",
     "aoa-repo-local-kag-family-manifest-v3",
 }
-
-
 def _is_repo_local_meta_index_payload(payload: object) -> bool:
     return (
         isinstance(payload, dict)

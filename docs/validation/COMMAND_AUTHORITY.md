@@ -17,6 +17,7 @@
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
 | `scripts/validate_kag.py` | scoped local, OS-wide, or full KAG validation entrypoint |
 | `scripts/validate_local_stats_port.py` | owner-local stats port adapter to the pinned `aoa-stats` validator |
+| `scripts/review_kag_mcp_result.py` | private KAG owner review of one exact, stack-attested `kag_discover` result against the source-pinned capture signer |
 | `scripts/generate_repo_local_kag_index.py` | repo-local portable family builder, shard/budget gate, and logical source/artifact/anchor/entity/event/assertion/relation family builder |
 | `scripts/assemble_repo_local_kag_family.py` | exact seven-file v2 compatibility assembler from the portable family |
 | `scripts/validate_repo_local_kag_family.py` | schema and integrity validator for a repository-owned index family |
@@ -92,9 +93,10 @@ and incremental family parity, budgets, validation, and exact compatibility
 assembly. The classifier cannot replace either proof; it decides only whether
 the additional full OS-wide release audit is required.
 
-That job materializes only the six pinned source donors required by local KAG
+That job materializes only the seven pinned source donors required by local KAG
 validation (`Tree-of-Sophia`, `aoa-memo`, `aoa-playbooks`, `aoa-evals`,
-`aoa-agents`, and `aoa-techniques`) plus pinned `aoa-stats`. The remaining
+`aoa-agents`, `aoa-techniques`, and `aoa-sdk`) plus pinned `aoa-stats`.
+`aoa-sdk` supplies the source-pinned owner-review schema; the remaining
 provider repositories, including private session memory, belong only to the
 full OS-wide audit.
 

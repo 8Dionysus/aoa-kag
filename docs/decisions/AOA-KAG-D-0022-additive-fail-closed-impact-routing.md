@@ -29,8 +29,9 @@ Every pull request runs the repository-local `source-fast` lane and the
 repo-local KAG family action, including full/incremental family parity and the
 exact seven-file compatibility assembly. Impact classification is additive:
 it decides only whether the full OS-wide release audit must also run.
-The local validator receives the six pinned source donors it actually reads
-plus the pinned `aoa-stats` owner; it does not materialize the other fifteen
+The local validator receives the seven pinned source donors it actually reads,
+including `aoa-sdk` for source-pinned owner-review schema verification, plus
+the pinned `aoa-stats` owner; it does not materialize the other fourteen
 provider repositories or the private session-memory checkout.
 
 The classifier uses versioned rules stored with validation command authority.
@@ -84,7 +85,7 @@ high-impact pull-request audit.
 
 - Owner-local pull requests avoid materializing all provider repositories and
   omit the OS-wide release audit after local and self-family proof succeeds.
-  Their local job checks out only six pinned source donors plus `aoa-stats`.
+  Their local job checks out only seven pinned source donors plus `aoa-stats`.
 - High-impact, mixed, unknown, malformed, or unprovable changes retain the full
   provider audit and generated fixed point.
 - Classifier, workflow, command-authority, schema, test, decision, trust,
@@ -121,7 +122,7 @@ high-impact pull-request audit.
 Regenerate and validate decision indexes. Run the positive owner-local and
 negative fail-closed classifier corpus, Git rename and unprovable-ref cases,
 required-summary state tests, workflow topology tests, command-authority tests,
-the complete source-fast lane with only its seven pinned external dependencies
+the complete source-fast lane with only its eight pinned external dependencies
 and all unrelated provider roots made unavailable, and one full release gate
 on the exact pinned providers. Compare proof payloads on identical inputs
 rather than treating a digest change caused by this repository's new family as

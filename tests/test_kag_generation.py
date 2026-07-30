@@ -485,7 +485,7 @@ class KagGenerationTestCase(unittest.TestCase):
             coverage_by_repo["abyss-stack"]["root"],
         )
         self.assertEqual(
-            "/home/dionysus/src/abyss-machine",
+            "/srv/AbyssOS/abyss-machine",
             coverage_by_repo["abyss-machine"]["root"],
         )
 

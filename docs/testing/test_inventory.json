@@ -82,6 +82,20 @@
           ]
         },
         {
+          "path": "tests/test_kag_mcp_owner_review.py",
+          "family": "kag/owner-result-review",
+          "protects": "Source-pinned stack signer trust, private receipt/result attestation and binding, output-path isolation, KAG capability grounding, source-index freshness, content addressing, and no-acceptance stop-lines.",
+          "owner_surface": "scripts/review_kag_mcp_result.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_owner_review.py",
+          "failure_route": "Route through the KAG MCP capability schema, owner reviewer, SDK review contract, or stack capture contract.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "sibling/live-dependency",
+            "release/artifact-trust"
+          ]
+        },
+        {
           "path": "tests/test_kag_generation.py",
           "family": "generated/read-model",
           "protects": "KAG generation package, compatibility facade, and generated payload contracts.",

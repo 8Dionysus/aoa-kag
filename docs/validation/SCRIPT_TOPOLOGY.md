@@ -44,6 +44,7 @@ The machine-readable script map is
 | `example_validator` | public example payload checks |
 | `decision_index_builder` | decision lookup index writer |
 | `artifact_bundle_validator` | release artifact bundle check |
+| `owner_evidence_reviewer` | private runtime-capture validation and bounded owner-review receipt materialization |
 | `provider_checkout_tool` | pinned provider checkout materialization |
 | `skill_local_contract_tool` | exported skill companion helper |
 | `part_local_script_runner` | discovered part-local builder and validator checks |
@@ -59,7 +60,7 @@ The machine-readable script map is
 | --- | --- |
 | command authority / lane runners | `lane_executor`, `lane_loader`, `impact_router`, `release_entrypoint`, `test_runner`, `part_local_script_runner`, `provider_checkout_tool`, `validation_run_artifact` |
 | generation and retrieval | `projection_builder`, `projection_helper`, `projection_reader`, `decision_index_builder`, `validator_generation_port` |
-| validators | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator` |
+| validators and owner review | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator`, `owner_evidence_reviewer` |
 | topology and route inventory | `script_route_card` |
 | release / artifact tooling | `artifact_bundle_validator` |
 | skill companion helpers | `skill_local_contract_tool` |
@@ -88,6 +89,16 @@ implementation map lives in `docs/validation/validator_inventory.json`.
 
 `scripts/validate_local_stats_port.py` delegates the KAG-local `stats/` port
 to the pinned `aoa-stats` contract owner and does not reimplement its grammar.
+
+`scripts/review_kag_mcp_result.py` reads one private, content-addressed and
+Ed25519-attested `abyss-stack` canary receipt and result artifact. It resolves
+the one active stack capture signer from the committed
+`config/runtime_capture_trust.json` at the exact reviewed source revision,
+verifies both attestations, validates the exact `kag_discover` owner payload
+against the KAG capability schema, assesses KAG source-index freshness, and
+writes one distinct private SDK-shaped owner review. It does not call MCP,
+accept the result, issue central proof, overwrite capture evidence, or alter
+runtime state.
 
 `scripts/validators/local_kag_subtree.py` separates the repo-local KAG subtree,
 example, and readiness contract from the OS-wide provider-home family

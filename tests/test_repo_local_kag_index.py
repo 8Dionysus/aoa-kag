@@ -293,7 +293,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             canonical_owner_root(Path("/workspace/os"), "abyss-stack"),
         )
         self.assertEqual(
-            Path("/home/dionysus/src/abyss-machine"),
+            Path("/workspace/os/abyss-machine"),
             canonical_owner_root(Path("/workspace/os"), "abyss-machine"),
         )
 

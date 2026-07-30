@@ -79,7 +79,7 @@ surfaces that matter for indexing and MCP access:
 
 | Layer | Surfaces |
 | --- | --- |
-| runtime source | `/home/dionysus/src/abyss-stack`, `/home/dionysus/src/abyss-machine` |
+| runtime source | `/home/dionysus/src/abyss-stack`, `/srv/AbyssOS/abyss-machine` |
 | runtime mirror | `/srv/AbyssOS/abyss-stack` |
 | organs | `/srv/AbyssOS/.aoa`, `/srv/AbyssOS/.agents` |
 | bundles | `/srv/AbyssOS/bundles`, `bundles/aoa-session-memory` |
@@ -135,3 +135,11 @@ for the five tools, nine `aoa-kag://` resource shapes, owner boundaries, and
 runtime owner. The result and capability envelopes live in
 `schemas/kag-mcp-result.schema.json` and
 `schemas/kag-mcp-capabilities.schema.json`.
+
+After `abyss-stack` captures one authenticated `kag_discover` result as a
+private, content-addressed artifact, `scripts/review_kag_mcp_result.py`
+validates the exact artifact against the capability schema and current
+owner-source digest relationship. It emits the shared
+`aoa_organ_owner_result_review_v1` receipt only within the capture expiry.
+That receipt can evidence KAG grounding and freshness; it cannot assert KAG
+acceptance, central proof, admission, cross-organ benefit, or rollback.

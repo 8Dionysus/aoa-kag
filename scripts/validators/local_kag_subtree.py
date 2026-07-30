@@ -6,14 +6,15 @@ from .common import *
 from .schema_surfaces import validate_top_level_schema
 
 try:
-    from scripts.provider_registry import configured_provider_roots
+    from scripts.provider_registry import configured_provider_roots, provider_roots
 except ImportError:  # pragma: no cover - direct script execution
-    from provider_registry import configured_provider_roots  # type: ignore
+    from provider_registry import configured_provider_roots, provider_roots  # type: ignore
 
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
+CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
 RETIRED_REFERENCE_REPOS = {"aoa-routing"}
 EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS) | RETIRED_REFERENCE_REPOS
 
@@ -43,8 +44,12 @@ EXPECTED_OS_SURFACE_ROOTS = {
     "bundles/aoa-session-memory": OS_ABYSS_ROOT / "bundles" / "aoa-session-memory",
     "connectors": OS_ABYSS_ROOT / "connectors",
     **EXPECTED_CONNECTOR_SURFACE_ROOTS,
-    "src/abyss-machine": HOME_SRC_ROOT / "abyss-machine",
-    "src/abyss-stack": HOME_SRC_ROOT / "abyss-stack",
+    "src/abyss-machine": CANONICAL_PROVIDER_REPO_ROOTS["abyss-machine"],
+    "src/abyss-stack": CANONICAL_PROVIDER_REPO_ROOTS["abyss-stack"],
+}
+RUNTIME_SOURCE_SURFACE_REPOS = {
+    "src/abyss-machine": "abyss-machine",
+    "src/abyss-stack": "abyss-stack",
 }
 
 EXPECTED_OS_SURFACE_CLASSES = {
@@ -450,9 +455,14 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             fail(f"OS surface {surface_id} must keep surface_class {expected_class}")
         if entry.get("root") != expected_root.as_posix():
             fail(f"OS surface {surface_id} must keep root {expected_root.as_posix()}")
-        root_available = expected_root.is_dir()
+        validation_root = (
+            PROVIDER_REPO_ROOTS[RUNTIME_SOURCE_SURFACE_REPOS[surface_id]]
+            if surface_id in RUNTIME_SOURCE_SURFACE_REPOS
+            else expected_root
+        )
+        root_available = validation_root.is_dir()
         if STRICT_OS_SURFACE_ROOTS and not root_available:
-            fail(f"OS surface {surface_id} root must exist: {expected_root.as_posix()}")
+            fail(f"OS surface {surface_id} root must exist: {validation_root.as_posix()}")
 
         if expected_class == "connector_repo":
             connector_rows += 1
@@ -469,7 +479,7 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             if not isinstance(values, list):
                 fail(f"OS surface {surface_id} {key} must be a list")
             for relative_path in values:
-                _validate_surface_path(expected_root, relative_path, label=f"OS surface {surface_id} {key}")
+                _validate_surface_path(validation_root, relative_path, label=f"OS surface {surface_id} {key}")
 
     if connector_rows != EXPECTED_CONNECTOR_SURFACE_COUNT:
         fail("local KAG readiness matrix must cover every connector repo")
