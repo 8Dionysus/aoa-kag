@@ -71,6 +71,11 @@ def _aware_time(value: str | datetime, label: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _utc_now() -> datetime:
+    """Return the authorization clock used by the production review path."""
+    return datetime.now(timezone.utc)
+
+
 def _require_regular_private_file(path: Path, label: str) -> Path:
     absolute = path.expanduser().absolute()
     for component in (*reversed(absolute.parents), absolute):
@@ -431,13 +436,12 @@ def review_kag_capture(
     artifact_path: Path,
     sdk_review_schema_path: Path,
     source_revision: str,
-    reviewed_at: datetime,
 ) -> dict[str, Any]:
     if source_revision != _git_revision(REPO_ROOT):
         raise KagOwnerReviewError(
             "requested source revision is not current aoa-kag HEAD"
         )
-    reviewed_at = _aware_time(reviewed_at, "reviewed_at")
+    reviewed_at = _aware_time(_utc_now(), "reviewed_at")
     receipt = _read_private_json(receipt_path, "capture receipt")
     artifact = _read_private_json(artifact_path, "result artifact")
     (
@@ -644,21 +648,14 @@ def main() -> int:
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--sdk-review-schema", type=Path, required=True)
     parser.add_argument("--source-revision", required=True)
-    parser.add_argument("--reviewed-at")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    reviewed_at = (
-        _aware_time(args.reviewed_at, "reviewed_at")
-        if args.reviewed_at
-        else datetime.now(timezone.utc)
-    )
     review = review_kag_capture(
         capture_root=args.capture_root,
         receipt_path=args.receipt,
         artifact_path=args.result,
         sdk_review_schema_path=args.sdk_review_schema,
         source_revision=args.source_revision,
-        reviewed_at=reviewed_at,
     )
     _write_private_json(args.output, review)
     print(

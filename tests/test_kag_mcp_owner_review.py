@@ -68,6 +68,23 @@ def _sdk_schema() -> dict:
     }
 
 
+def _exact_sdk_schema_path() -> Path:
+    sdk_root = Path(
+        os.environ.get("AOA_SDK_ROOT", str(REPO_ROOT.parent / "aoa-sdk"))
+    )
+    schema = (
+        sdk_root
+        / "schemas"
+        / "organ-access"
+        / "organ-owner-result-review.schema.json"
+    )
+    if not schema.is_file():
+        raise AssertionError(
+            "exact aoa-sdk owner-review schema is unavailable; set AOA_SDK_ROOT"
+        )
+    return schema
+
+
 def _capture_payload() -> dict:
     payload = json.loads(
         (REPO_ROOT / "examples" / "kag_mcp_capabilities.example.json").read_text(
@@ -170,8 +187,6 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
         payload: dict,
     ) -> tuple[dict, Path, Path]:
         receipt_path, result_path = _capture(root, payload)
-        sdk_schema = root / "sdk-review.schema.json"
-        sdk_schema.write_text(json.dumps(_sdk_schema()), encoding="utf-8")
         revision = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             cwd=REPO_ROOT,
@@ -179,14 +194,17 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             capture_output=True,
             text=True,
         ).stdout.strip()
-        review = review_kag_capture(
-            capture_root=root,
-            receipt_path=receipt_path,
-            artifact_path=result_path,
-            sdk_review_schema_path=sdk_schema,
-            source_revision=revision,
-            reviewed_at=NOW + timedelta(seconds=1),
-        )
+        with patch(
+            "scripts.review_kag_mcp_result._utc_now",
+            return_value=NOW + timedelta(seconds=1),
+        ):
+            review = review_kag_capture(
+                capture_root=root,
+                receipt_path=receipt_path,
+                artifact_path=result_path,
+                sdk_review_schema_path=_exact_sdk_schema_path(),
+                source_revision=revision,
+            )
         return review, receipt_path, result_path
 
     def test_current_owner_payload_is_grounded_and_exact(self) -> None:
@@ -201,6 +219,35 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             self.assertFalse(review["owner_accepted"])
             self.assertFalse(review["central_proof_asserted"])
             self.assertFalse(review["admission_asserted"])
+
+    def test_actual_review_clock_cannot_authorize_an_expired_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(root, _capture_payload())
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    return_value=NOW + timedelta(minutes=11),
+                ),
+                self.assertRaisesRegex(
+                    KagOwnerReviewError,
+                    "outside the live capture window",
+                ),
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=result_path,
+                    sdk_review_schema_path=_exact_sdk_schema_path(),
+                    source_revision=revision,
+                )
 
     def test_portable_manifest_cannot_be_shadowed_by_legacy_index(self) -> None:
         manifest_digest = "a" * 64
@@ -523,14 +570,17 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                 KagOwnerReviewError,
                 "outside the capture root",
             ):
-                review_kag_capture(
-                    capture_root=root,
-                    receipt_path=receipt_path,
-                    artifact_path=lexical_path,
-                    sdk_review_schema_path=sdk_schema,
-                    source_revision=revision,
-                    reviewed_at=NOW + timedelta(seconds=1),
-                )
+                with patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    return_value=NOW + timedelta(seconds=1),
+                ):
+                    review_kag_capture(
+                        capture_root=root,
+                        receipt_path=receipt_path,
+                        artifact_path=lexical_path,
+                        sdk_review_schema_path=sdk_schema,
+                        source_revision=revision,
+                    )
 
     def test_tampered_capture_and_public_inputs_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -547,27 +597,33 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                 text=True,
             ).stdout.strip()
             with self.assertRaisesRegex(KagOwnerReviewError, "group/world"):
-                review_kag_capture(
-                    capture_root=root,
-                    receipt_path=receipt_path,
-                    artifact_path=result_path,
-                    sdk_review_schema_path=sdk_schema,
-                    source_revision=revision,
-                    reviewed_at=NOW + timedelta(seconds=1),
-                )
+                with patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    return_value=NOW + timedelta(seconds=1),
+                ):
+                    review_kag_capture(
+                        capture_root=root,
+                        receipt_path=receipt_path,
+                        artifact_path=result_path,
+                        sdk_review_schema_path=sdk_schema,
+                        source_revision=revision,
+                    )
             os.chmod(result_path, 0o600)
             artifact = json.loads(result_path.read_text(encoding="utf-8"))
             artifact["owner_payload"]["owners"] = []
             _write_private_json(result_path, artifact)
             with self.assertRaisesRegex(KagOwnerReviewError, "content address"):
-                review_kag_capture(
-                    capture_root=root,
-                    receipt_path=receipt_path,
-                    artifact_path=result_path,
-                    sdk_review_schema_path=sdk_schema,
-                    source_revision=revision,
-                    reviewed_at=NOW + timedelta(seconds=1),
-                )
+                with patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    return_value=NOW + timedelta(seconds=1),
+                ):
+                    review_kag_capture(
+                        capture_root=root,
+                        receipt_path=receipt_path,
+                        artifact_path=result_path,
+                        sdk_review_schema_path=sdk_schema,
+                        source_revision=revision,
+                    )
 
     def test_private_writer_keeps_review_mode_0600(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
