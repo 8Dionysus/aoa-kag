@@ -72,14 +72,19 @@ release checks, and test discovery.
 validation run, shares it with nested lane processes, emits the aggregate
 machine-readable timing receipt, and deletes the scope on exit.
 
-`scripts/validate_kag.py` is the entrypoint. The implementation map lives in
-`docs/validation/validator_inventory.json`.
+`scripts/validate_kag.py` is the entrypoint. It exposes `local`, `os-wide`, and
+`full` scopes while preserving `full` as the no-argument compatibility
+behavior. The local scope never loads every provider family. The explicit
+OS-wide scope validates provider-home completeness and complete coverage, and
+coverage consumers reuse the run-scoped packet when a lane supplies one. The
+implementation map lives in `docs/validation/validator_inventory.json`.
 
 `scripts/validate_local_stats_port.py` delegates the KAG-local `stats/` port
 to the pinned `aoa-stats` contract owner and does not reimplement its grammar.
 
-`scripts/validators/local_kag_subtree.py` checks the repo-local KAG subtree
-contract, example packet, and OS Abyss readiness matrix.
+`scripts/validators/local_kag_subtree.py` separates the repo-local KAG subtree,
+example, and readiness contract from the OS-wide provider-home family
+completeness check while retaining a full compatibility composition.
 
 `scripts/generate_kag.py` is the KAG generated-output entrypoint; its
 `--check` mode compares generated/read-model parity without writing files.

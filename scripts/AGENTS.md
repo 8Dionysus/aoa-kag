@@ -26,3 +26,7 @@ python scripts/ci_gate.py --mode source-fast
 python scripts/ci_gate.py --mode generated
 python scripts/validate_abyss_machine_kag_registry_bundle.py
 ```
+
+`scripts/validate_kag.py` exposes `local`, `os-wide`, and full-compatible
+scopes. Local phases must not acquire the OS-wide provider sweep implicitly;
+the lane manifest owns placement of that blocking audit.

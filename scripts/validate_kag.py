@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import sys
+
 try:  # Supports package imports and direct `python scripts/validate_kag.py`.
     from scripts.validators import *
 except ImportError:  # pragma: no cover - exercised by direct script execution
     from validators import *  # type: ignore
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

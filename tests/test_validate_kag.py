@@ -816,6 +816,14 @@ class ValidateKagTestCase(unittest.TestCase):
             side_effect=mark("static-surfaces"),
         ), patch.object(
             runner,
+            "validate_local_kag_provider_homes_contract_with_progress",
+            side_effect=mark("os-wide-provider-homes"),
+        ), patch.object(
+            runner,
+            "validate_repo_local_kag_os_wide_contract_with_progress",
+            side_effect=mark("os-wide-provider-coverage"),
+        ), patch.object(
+            runner,
             "load_registry_context",
             side_effect=mark("registry-context", ({}, {}, [])),
         ), patch.object(
@@ -842,12 +850,18 @@ class ValidateKagTestCase(unittest.TestCase):
             runner,
             "print_success_status",
             side_effect=mark("success-status"),
+        ), patch.object(
+            runner,
+            "print_os_wide_success_status",
+            side_effect=mark("os-wide-success-status"),
         ):
             with redirect_stderr(stderr):
-                self.assertEqual(0, runner.main())
+                self.assertEqual(0, runner.main(["--scope", "full"]))
 
         expected = [
             "static-surfaces",
+            "os-wide-provider-homes",
+            "os-wide-provider-coverage",
             "registry-context",
             "manifest-contracts",
             "expected-payloads",
@@ -855,12 +869,71 @@ class ValidateKagTestCase(unittest.TestCase):
             "generated-structures",
             "examples",
             "success-status",
+            "os-wide-success-status",
         ]
         self.assertEqual(expected, calls)
         self.assertEqual(
-            "".join(f"[validate-kag] {phase}\n" for phase in expected),
+            "".join(
+                f"[validate-kag] {phase}\n"
+                for phase in (
+                    "static-surfaces",
+                    "os-wide-provider-homes",
+                    "os-wide-provider-coverage",
+                    "registry-context",
+                    "manifest-contracts",
+                    "expected-payloads",
+                    "generated-text",
+                    "generated-structures",
+                    "examples",
+                    "success-status",
+                )
+            ),
             stderr.getvalue(),
         )
+
+    def test_validate_kag_scopes_keep_local_and_os_wide_execution_explicit(self) -> None:
+        self.assertEqual("full", runner.parse_args([]).scope)
+
+        with patch.object(runner, "validate_static_surfaces") as local_validate, patch.object(
+            runner,
+            "validate_local_kag_provider_homes_contract_with_progress",
+        ) as provider_homes_validate, patch.object(
+            runner,
+            "validate_repo_local_kag_os_wide_contract_with_progress",
+        ) as os_wide_validate, patch.object(
+            runner,
+            "load_registry_context",
+            return_value=({}, {}, ["missing-provider-root"]),
+        ), patch.object(
+            runner,
+            "print_success_status",
+        ), redirect_stderr(io.StringIO()):
+            self.assertEqual(0, runner.main(["--scope", "local"]))
+
+        local_validate.assert_called_once_with()
+        provider_homes_validate.assert_not_called()
+        os_wide_validate.assert_not_called()
+
+        with patch.object(runner, "validate_static_surfaces") as local_validate, patch.object(
+            runner,
+            "validate_local_kag_provider_homes_contract_with_progress",
+        ) as provider_homes_validate, patch.object(
+            runner,
+            "validate_repo_local_kag_os_wide_contract_with_progress",
+        ) as os_wide_validate, patch.object(
+            runner,
+            "load_registry_context",
+        ) as load_registry, patch.object(
+            runner,
+            "print_os_wide_success_status",
+        ) as print_os_wide_status, redirect_stderr(io.StringIO()):
+            self.assertEqual(0, runner.main(["--scope", "os-wide"]))
+
+        local_validate.assert_not_called()
+        load_registry.assert_not_called()
+        provider_homes_validate.assert_called_once_with()
+        os_wide_validate.assert_called_once_with()
+        print_os_wide_status.assert_called_once_with()
 
     def test_static_surfaces_reports_subphase_progress_to_stderr(self) -> None:
         calls: list[str] = []
@@ -892,17 +965,93 @@ class ValidateKagTestCase(unittest.TestCase):
             stderr.getvalue(),
         )
 
+    def test_static_surfaces_keep_provider_homes_out_of_local_scope(self) -> None:
+        checks = dict(static_surface_runner.STATIC_SURFACE_PHASES)[
+            "core-local-kag-subtree"
+        ]
+
+        self.assertIn(
+            local_kag_subtree.validate_local_kag_subtree_local_contract_with_progress,
+            checks,
+        )
+        self.assertNotIn(
+            local_kag_subtree.validate_local_kag_subtree_contract_with_progress,
+            checks,
+        )
+        self.assertNotIn(
+            local_kag_subtree.validate_local_kag_provider_homes_contract_with_progress,
+            checks,
+        )
+
     def test_local_kag_progress_wrapper_enables_progress_mode(self) -> None:
         with patch.object(local_kag_subtree, "validate_local_kag_subtree_contract") as validate:
             local_kag_subtree.validate_local_kag_subtree_contract_with_progress()
 
         validate.assert_called_once_with(progress=True)
 
+    def test_local_kag_scope_wrappers_enable_progress_mode(self) -> None:
+        with patch.object(
+            local_kag_subtree,
+            "validate_local_kag_subtree_local_contract",
+        ) as validate_local:
+            local_kag_subtree.validate_local_kag_subtree_local_contract_with_progress()
+        validate_local.assert_called_once_with(progress=True)
+
+        with patch.object(
+            local_kag_subtree,
+            "validate_local_kag_provider_homes_contract",
+        ) as validate_provider_homes:
+            local_kag_subtree.validate_local_kag_provider_homes_contract_with_progress()
+        validate_provider_homes.assert_called_once_with(progress=True)
+
+    def test_local_kag_compatibility_contract_keeps_both_scopes(self) -> None:
+        readiness = {"repos": []}
+        with patch.object(
+            local_kag_subtree,
+            "_validate_local_kag_subtree_local_contract",
+            return_value=readiness,
+        ) as validate_local, patch.object(
+            local_kag_subtree,
+            "_validate_provider_ready_surfaces",
+        ) as validate_provider_homes:
+            local_kag_subtree.validate_local_kag_subtree_contract(progress=True)
+
+        validate_local.assert_called_once_with(progress=True)
+        validate_provider_homes.assert_called_once_with(readiness, progress=True)
+
     def test_repo_local_index_progress_wrapper_enables_progress_mode(self) -> None:
         with patch.object(repo_local_kag_index, "validate_repo_local_kag_index_contract") as validate:
             repo_local_kag_index.validate_repo_local_kag_index_contract_with_progress()
 
         validate.assert_called_once_with(progress=True)
+
+    def test_repo_local_index_scope_wrappers_enable_progress_mode(self) -> None:
+        with patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_local_contract",
+        ) as validate_local:
+            repo_local_kag_index.validate_repo_local_kag_local_contract_with_progress()
+        validate_local.assert_called_once_with(progress=True)
+
+        with patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_os_wide_contract",
+        ) as validate_os_wide:
+            repo_local_kag_index.validate_repo_local_kag_os_wide_contract_with_progress()
+        validate_os_wide.assert_called_once_with(progress=True)
+
+    def test_repo_local_index_compatibility_contract_keeps_both_scopes(self) -> None:
+        with patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_local_contract",
+        ) as validate_local, patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_os_wide_contract",
+        ) as validate_os_wide:
+            repo_local_kag_index.validate_repo_local_kag_index_contract(progress=True)
+
+        validate_local.assert_called_once_with(progress=True)
+        validate_os_wide.assert_called_once_with(progress=True)
 
 
 if __name__ == "__main__":
