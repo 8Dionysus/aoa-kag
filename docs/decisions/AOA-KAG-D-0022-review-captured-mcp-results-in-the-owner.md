@@ -2,7 +2,7 @@
 
 ## Index Metadata
 
-- Decision ID: AOA-KAG-D-0021
+- Decision ID: AOA-KAG-D-0022
 - Original date: 2026-07-28
 - Surface classes: schema contract, MCP handoff, owner evidence
 - KAG surfaces: capability discovery, owner grounding, freshness review

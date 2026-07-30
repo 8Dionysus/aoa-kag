@@ -21,7 +21,7 @@
 
 ## authenticated issuer
 
-- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
 
 ## bounded context
 
@@ -43,6 +43,7 @@
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## command coverage
 
@@ -78,7 +79,7 @@
 
 ## exact capture binding
 
-- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
 
 ## explicit exceedance receipt
 
@@ -88,13 +89,17 @@
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 
+## fail-closed identity
+
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
+
 ## federation protocol
 
 - [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
 
 ## freshness
 
-- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
 
 ## freshness handle
 
@@ -136,6 +141,7 @@
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## generated-reader boundary
 
@@ -206,7 +212,7 @@
 
 ## no acceptance inference
 
-- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
 
 ## no duplicate projection
 
@@ -222,7 +228,11 @@
 
 ## owner boundary
 
-- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0022 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0022-review-captured-mcp-results-in-the-owner.md`)
+
+## owner completeness
+
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## owner namespace
 
@@ -358,6 +368,10 @@
 ## Spark done-or-handoff
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
+
+## tamper rejection
+
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## tracked-byte budget
 

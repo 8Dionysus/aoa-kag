@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
+from scripts import coverage_run
 from scripts import generate_repo_local_kag_coverage as coverage_generation
 from scripts.generate_repo_local_kag_coverage import build_coverage, canonical_owner_root
 from scripts.generate_repo_local_kag_index import (
@@ -45,6 +46,59 @@ EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
 
 def load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def coverage_identity_for_payload(
+    payload: dict[str, object],
+    *,
+    epoch: str = "stable",
+) -> dict[str, object]:
+    owners = payload["owners"]
+    assert isinstance(owners, list)
+
+    def digest(label: str) -> str:
+        return coverage_generation._sha256_digest(label.encode("utf-8"))
+
+    snapshots: list[dict[str, str]] = []
+    for position, owner_payload in enumerate(owners):
+        assert isinstance(owner_payload, dict)
+        owner = owner_payload["repo"]
+        root = owner_payload["root"]
+        assert isinstance(owner, str)
+        assert isinstance(root, str)
+        head_commit = f"{position + 1:040x}"
+        snapshots.append(
+            {
+                "owner": owner,
+                "root": root,
+                "expected_ref": head_commit,
+                "head_commit": head_commit,
+                "index_tree": f"{position + 101:040x}",
+                "worktree_digest": digest(f"{epoch}:{owner}:worktree"),
+                "manifest_digest": digest(f"{epoch}:{owner}:manifest"),
+                "family_content_digest": digest(
+                    f"{epoch}:{owner}:family"
+                ).removeprefix("sha256:"),
+                "source_snapshot": digest(f"{epoch}:{owner}:source"),
+                "event_content_digest": digest(
+                    f"{epoch}:{owner}:event"
+                ).removeprefix("sha256:"),
+            }
+        )
+    return {
+        "schema_version": coverage_generation.COVERAGE_IDENTITY_SCHEMA_VERSION,
+        "run_scope_id": "0" * 32,
+        "lane": "test",
+        "display_os_root": payload["root"],
+        "canonicalization_epoch": epoch,
+        "index_schema_epoch": coverage_generation.INDEX_SCHEMA_VERSION,
+        "provider_registry_digest": digest(f"{epoch}:registry"),
+        "coverage_schema_digest": digest(f"{epoch}:coverage-schema"),
+        "family_manifest_schema_digest": digest(f"{epoch}:family-schema"),
+        "repository_index_schema_digest": digest(f"{epoch}:repository-schema"),
+        "runtime_inputs_digest": digest(f"{epoch}:runtime"),
+        "owner_snapshots": snapshots,
+    }
 
 
 def write_repository_index_family(
@@ -1719,6 +1773,261 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             ),
             stderr.getvalue(),
         )
+
+    def test_provider_coverage_packet_reuses_one_verified_input_epoch(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            coverage_generation,
+            "coverage_packet_identity",
+            return_value=identity,
+        ), patch.object(
+            coverage_generation,
+            "configured_owner_roots",
+            return_value=[],
+        ), patch.object(
+            coverage_generation,
+            "build_coverage",
+            return_value=payload,
+        ) as build:
+            first = coverage_generation.build_provider_coverage()
+            second = coverage_generation.build_provider_coverage()
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(payload, first)
+        self.assertEqual(payload, second)
+        self.assertEqual(1, build.call_count)
+        self.assertEqual(1, summary["coverage_build_count"])
+        self.assertEqual(1, summary["packet_hit_count"])
+        self.assertEqual(1, summary["packet_miss_count"])
+        self.assertEqual(
+            [coverage_generation._json_digest(payload)],
+            summary["payload_digests"],
+        )
+
+    def test_provider_coverage_packet_rebuilds_only_for_a_new_input_epoch(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        first_identity = coverage_identity_for_payload(payload, epoch="first")
+        second_identity = coverage_identity_for_payload(payload, epoch="second")
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            coverage_generation,
+            "coverage_packet_identity",
+            side_effect=(
+                first_identity,
+                first_identity,
+                second_identity,
+                second_identity,
+            ),
+        ), patch.object(
+            coverage_generation,
+            "configured_owner_roots",
+            return_value=[],
+        ), patch.object(
+            coverage_generation,
+            "build_coverage",
+            return_value=payload,
+        ) as build:
+            coverage_generation.build_provider_coverage()
+            coverage_generation.build_provider_coverage()
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(2, build.call_count)
+        self.assertEqual(2, summary["coverage_build_count"])
+        self.assertEqual(2, summary["packet_miss_count"])
+        self.assertEqual(0, summary["packet_hit_count"])
+        self.assertEqual(0, summary["packet_reject_count"])
+
+    def test_coverage_packet_rejects_tamper_and_incompatible_schema(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            coverage_generation.write_coverage_packet(
+                run.packet_path,
+                identity=identity,
+                payload=payload,
+            )
+            packet = load_json(run.packet_path)
+            assert isinstance(packet, dict)
+            packet["coverage"]["owners"][0]["coverage"]["documents"] += 1
+            run.packet_path.write_text(json.dumps(packet), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "payload digest mismatch"):
+                coverage_generation.load_coverage_packet(run.packet_path)
+
+            coverage_generation.write_coverage_packet(
+                run.packet_path,
+                identity=identity,
+                payload=payload,
+            )
+            packet = load_json(run.packet_path)
+            assert isinstance(packet, dict)
+            packet["schema_version"] = "unsupported-packet"
+            run.packet_path.write_text(json.dumps(packet), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "schema is incompatible"):
+                coverage_generation.load_coverage_packet(run.packet_path)
+
+            coverage_generation.write_coverage_packet(
+                run.packet_path,
+                identity=identity,
+                payload=payload,
+            )
+            packet = load_json(run.packet_path)
+            assert isinstance(packet, dict)
+            packet["identity"]["schema_version"] = "unsupported-identity"
+            run.packet_path.write_text(json.dumps(packet), encoding="utf-8")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "identity schema is incompatible",
+            ):
+                coverage_generation.load_coverage_packet(run.packet_path)
+
+    def test_coverage_packet_rejects_incomplete_owner_payload(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        incomplete_payload = json.loads(json.dumps(payload))
+        incomplete_payload["owners"].pop()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "owner membership or order",
+            ):
+                coverage_generation.write_coverage_packet(
+                    Path(tmpdir) / "coverage.packet.json",
+                    identity=identity,
+                    payload=incomplete_payload,
+                )
+
+    def test_coverage_packet_provider_snapshot_rejects_stale_pin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init"), cwd=root, check=True, capture_output=True)
+            subprocess.run(
+                ("git", "config", "user.email", "test@example.com"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.name", "Test"),
+                cwd=root,
+                check=True,
+            )
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-m", "Base"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+            with self.assertRaisesRegex(RuntimeError, "provider pin mismatch"):
+                coverage_generation._provider_snapshot(
+                    "aoa-demo",
+                    root,
+                    expected_ref="f" * 40,
+                )
+
+    def test_coverage_packet_provider_snapshot_rejects_missing_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            missing_root = Path(tmpdir) / "missing-owner"
+            with self.assertRaisesRegex(RuntimeError, "provider root is unavailable"):
+                coverage_generation._provider_snapshot(
+                    "aoa-demo",
+                    missing_root,
+                    expected_ref="f" * 40,
+                )
+
+    def test_coverage_runtime_identity_tracks_schema_and_config_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            config_path = root / "config" / "validation.json"
+            schema_path = root / "schemas" / "coverage.schema.json"
+            config_path.parent.mkdir(parents=True)
+            schema_path.parent.mkdir(parents=True)
+            config_path.write_text('{"lane":"full"}\n', encoding="utf-8")
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            with patch.object(
+                coverage_generation,
+                "REPO_ROOT",
+                root,
+            ), patch.object(
+                coverage_generation,
+                "COVERAGE_RUNTIME_INPUT_PATHS",
+                (
+                    Path("config/validation.json"),
+                    Path("schemas/coverage.schema.json"),
+                ),
+            ):
+                baseline = coverage_generation._coverage_runtime_inputs_digest()
+                config_path.write_text('{"lane":"local"}\n', encoding="utf-8")
+                config_changed = (
+                    coverage_generation._coverage_runtime_inputs_digest()
+                )
+                config_path.write_text('{"lane":"full"}\n', encoding="utf-8")
+                schema_path.write_text(
+                    '{"type":"object","additionalProperties":false}\n',
+                    encoding="utf-8",
+                )
+                schema_changed = (
+                    coverage_generation._coverage_runtime_inputs_digest()
+                )
+
+        self.assertNotEqual(baseline, config_changed)
+        self.assertNotEqual(baseline, schema_changed)
+
+    def test_coverage_packet_identity_tracks_head_index_and_dirty_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init"), cwd=root, check=True, capture_output=True)
+            subprocess.run(
+                ("git", "config", "user.email", "test@example.com"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.name", "Test"),
+                cwd=root,
+                check=True,
+            )
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-m", "Base"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+
+            clean_head = coverage_generation._git_head("demo", root)
+            clean_tree = coverage_generation._git_index_tree("demo", root)
+            clean_worktree = coverage_generation._git_worktree_digest("demo", root)
+            subprocess.run(
+                ("git", "commit", "--allow-empty", "-m", "History"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+            history_head = coverage_generation._git_head("demo", root)
+            history_tree = coverage_generation._git_index_tree("demo", root)
+            history_worktree = coverage_generation._git_worktree_digest("demo", root)
+            (root / "README.md").write_text("# Dirty owner\n", encoding="utf-8")
+            dirty_worktree = coverage_generation._git_worktree_digest("demo", root)
+            (root / "UNTRACKED.md").write_text("# Untracked\n", encoding="utf-8")
+            untracked_worktree = coverage_generation._git_worktree_digest("demo", root)
+
+        self.assertNotEqual(clean_head, history_head)
+        self.assertEqual(clean_tree, history_tree)
+        self.assertEqual(clean_worktree, history_worktree)
+        self.assertNotEqual(history_worktree, dirty_worktree)
+        self.assertNotEqual(dirty_worktree, untracked_worktree)
+
+    def test_coverage_packet_identity_requires_each_owner_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            with self.assertRaisesRegex(RuntimeError, "portable family manifest"):
+                coverage_generation._portable_manifest_identity("aoa-demo", root)
 
     def test_provider_coverage_keeps_invalid_common_index_visible(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
