@@ -1954,7 +1954,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(1, summary["packet_hit_count"])
         self.assertEqual(1, summary["packet_miss_count"])
         self.assertEqual(
-            [coverage_generation.DEFAULT_OWNER_WORKERS],
+            [build.call_args.kwargs["owner_workers"]],
             summary["owner_worker_counts"],
         )
         self.assertEqual(
