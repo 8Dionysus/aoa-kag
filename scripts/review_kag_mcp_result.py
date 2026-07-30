@@ -19,6 +19,10 @@ from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OWNER_PAYLOAD_SCHEMA_REF = "owner://aoa-kag/schema/payload"
+PROVIDER_REGISTRY_REF = "manifests/provider_registry.json"
+SDK_REVIEW_SCHEMA_REF = (
+    "schemas/organ-access/organ-owner-result-review.schema.json"
+)
 MAX_INPUT_BYTES = 2 * 1024 * 1024
 MAX_REVIEW_TTL_SECONDS = 300
 CAPTURE_RECEIPT_SCHEMA = "abyss_stack_mcp_canary_receipt_v1"
@@ -105,36 +109,31 @@ def _read_private_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
-def _read_public_json(path: Path, label: str) -> dict[str, Any]:
-    absolute = path.expanduser().resolve()
-    try:
-        value = json.loads(absolute.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise KagOwnerReviewError(f"{label} is unavailable or invalid") from exc
-    if not isinstance(value, dict):
-        raise KagOwnerReviewError(f"{label} must be a JSON object")
-    return value
-
-
-def _read_public_schema(path: Path, label: str) -> dict[str, Any]:
-    value = _read_public_json(path, label)
-    Draft202012Validator.check_schema(value)
-    return value
-
-
-def _read_committed_public_json(
+def _read_git_public_json(
+    repo_root: Path,
     source_revision: str,
     relative_path: str,
     label: str,
 ) -> tuple[dict[str, Any], bytes]:
     try:
+        resolved_revision = subprocess.run(
+            ["git", "rev-parse", f"{source_revision}^{{commit}}"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        if resolved_revision != source_revision:
+            raise KagOwnerReviewError(
+                f"{label} revision does not resolve to the exact pinned commit"
+            )
         raw = subprocess.run(
             [
                 "git",
                 "show",
                 f"{source_revision}:{relative_path}",
             ],
-            cwd=REPO_ROOT,
+            cwd=repo_root,
             check=True,
             capture_output=True,
         ).stdout
@@ -153,6 +152,62 @@ def _read_committed_public_json(
             f"{label} must be a JSON object at source revision"
         )
     return value, raw
+
+
+def _read_committed_public_json(
+    source_revision: str,
+    relative_path: str,
+    label: str,
+) -> tuple[dict[str, Any], bytes]:
+    return _read_git_public_json(
+        REPO_ROOT,
+        source_revision,
+        relative_path,
+        label,
+    )
+
+
+def _pinned_sdk_review_schema(
+    source_revision: str,
+) -> dict[str, Any]:
+    registry, _ = _read_committed_public_json(
+        source_revision,
+        PROVIDER_REGISTRY_REF,
+        "KAG provider registry",
+    )
+    providers = registry.get("providers")
+    if not isinstance(providers, list):
+        raise KagOwnerReviewError("KAG provider registry is malformed")
+    matches = [
+        provider
+        for provider in providers
+        if isinstance(provider, dict) and provider.get("repo") == "aoa-sdk"
+    ]
+    if len(matches) != 1:
+        raise KagOwnerReviewError(
+            "KAG provider registry must name exactly one aoa-sdk provider"
+        )
+    provider = matches[0]
+    pinned_ref = provider.get("pinned_ref")
+    if (
+        provider.get("checkout_mode") != "pinned"
+        or provider.get("env") != "AOA_SDK_ROOT"
+        or not isinstance(pinned_ref, str)
+        or len(pinned_ref) != 40
+        or any(character not in "0123456789abcdef" for character in pinned_ref)
+    ):
+        raise KagOwnerReviewError("aoa-sdk provider pin is malformed")
+    sdk_root = Path(
+        os.environ.get("AOA_SDK_ROOT", str(REPO_ROOT.parent / "aoa-sdk"))
+    ).expanduser().resolve()
+    schema, _ = _read_git_public_json(
+        sdk_root,
+        pinned_ref,
+        SDK_REVIEW_SCHEMA_REF,
+        "pinned SDK owner-review schema",
+    )
+    Draft202012Validator.check_schema(schema)
+    return schema
 
 
 def _committed_path_exists(source_revision: str, relative_path: str) -> bool:
@@ -434,7 +489,6 @@ def review_kag_capture(
     capture_root: Path,
     receipt_path: Path,
     artifact_path: Path,
-    sdk_review_schema_path: Path,
     source_revision: str,
 ) -> dict[str, Any]:
     if source_revision != _git_revision(REPO_ROOT):
@@ -466,10 +520,7 @@ def review_kag_capture(
         "KAG capability schema",
     )
     Draft202012Validator.check_schema(owner_schema)
-    sdk_schema = _read_public_schema(
-        sdk_review_schema_path,
-        "SDK owner-review schema",
-    )
+    sdk_schema = _pinned_sdk_review_schema(source_revision)
     schema_errors = sorted(
         Draft202012Validator(owner_schema).iter_errors(owner_payload),
         key=lambda error: list(error.absolute_path),
@@ -646,7 +697,6 @@ def main() -> int:
     parser.add_argument("--capture-root", type=Path, required=True)
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--result", type=Path, required=True)
-    parser.add_argument("--sdk-review-schema", type=Path, required=True)
     parser.add_argument("--source-revision", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -654,7 +704,6 @@ def main() -> int:
         capture_root=args.capture_root,
         receipt_path=args.receipt,
         artifact_path=args.result,
-        sdk_review_schema_path=args.sdk_review_schema,
         source_revision=args.source_revision,
     )
     _write_private_json(args.output, review)

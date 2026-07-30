@@ -15,6 +15,7 @@ from scripts.review_kag_mcp_result import (
     KagOwnerReviewError,
     _canonical_source_index_identity,
     _digest,
+    _pinned_sdk_review_schema,
     _write_private_json,
     review_kag_capture,
 )
@@ -22,67 +23,6 @@ from scripts.review_kag_mcp_result import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 7, 28, 12, 0, tzinfo=timezone.utc)
-
-
-def _sdk_schema() -> dict:
-    return {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "type": "object",
-        "required": [
-            "schema_version",
-            "review_id",
-            "review_owner",
-            "capture",
-            "grounding_state",
-            "freshness_state",
-            "owner_accepted",
-            "central_proof_asserted",
-            "admission_asserted",
-            "cross_organ_proven",
-            "rollback_proven",
-        ],
-        "properties": {
-            "schema_version": {"const": "aoa_organ_owner_result_review_v1"},
-            "review_id": {
-                "type": "string",
-                "pattern": "^sha256:[0-9a-f]{64}$",
-            },
-            "review_owner": {"const": "aoa-kag"},
-            "capture": {"type": "object"},
-            "grounding_state": {"enum": ["grounded", "rejected", "blocked"]},
-            "freshness_state": {
-                "enum": [
-                    "exact",
-                    "compatible_drift",
-                    "stale_readable",
-                    "blocked",
-                    "unknown",
-                ]
-            },
-            "owner_accepted": {"const": False},
-            "central_proof_asserted": {"const": False},
-            "admission_asserted": {"const": False},
-            "cross_organ_proven": {"const": False},
-            "rollback_proven": {"const": False},
-        },
-    }
-
-
-def _exact_sdk_schema_path() -> Path:
-    sdk_root = Path(
-        os.environ.get("AOA_SDK_ROOT", str(REPO_ROOT.parent / "aoa-sdk"))
-    )
-    schema = (
-        sdk_root
-        / "schemas"
-        / "organ-access"
-        / "organ-owner-result-review.schema.json"
-    )
-    if not schema.is_file():
-        raise AssertionError(
-            "exact aoa-sdk owner-review schema is unavailable; set AOA_SDK_ROOT"
-        )
-    return schema
 
 
 def _capture_payload() -> dict:
@@ -202,7 +142,6 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                 capture_root=root,
                 receipt_path=receipt_path,
                 artifact_path=result_path,
-                sdk_review_schema_path=_exact_sdk_schema_path(),
                 source_revision=revision,
             )
         return review, receipt_path, result_path
@@ -245,9 +184,87 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                     capture_root=root,
                     receipt_path=receipt_path,
                     artifact_path=result_path,
-                    sdk_review_schema_path=_exact_sdk_schema_path(),
                     source_revision=revision,
                 )
+
+    def test_sdk_review_schema_is_read_from_the_pinned_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            sdk_root = Path(directory)
+            schema_path = (
+                sdk_root
+                / "schemas"
+                / "organ-access"
+                / "organ-owner-result-review.schema.json"
+            )
+            schema_path.parent.mkdir(parents=True)
+            pinned_schema = {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "required": ["pinned_contract_marker"],
+            }
+            schema_path.write_text(json.dumps(pinned_schema), encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=sdk_root, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=sdk_root,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "SDK test"],
+                cwd=sdk_root,
+                check=True,
+            )
+            subprocess.run(["git", "add", "."], cwd=sdk_root, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "pin schema"],
+                cwd=sdk_root,
+                check=True,
+            )
+            pinned_ref = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=sdk_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            schema_path.write_text(
+                json.dumps(
+                    {
+                        "$schema": (
+                            "https://json-schema.org/draft/2020-12/schema"
+                        ),
+                        "type": "object",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            provider_registry = {
+                "providers": [
+                    {
+                        "repo": "aoa-sdk",
+                        "checkout_mode": "pinned",
+                        "env": "AOA_SDK_ROOT",
+                        "pinned_ref": pinned_ref,
+                    }
+                ]
+            }
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result"
+                    "._read_committed_public_json",
+                    return_value=(
+                        provider_registry,
+                        json.dumps(provider_registry).encode("utf-8"),
+                    ),
+                ),
+                patch.dict(
+                    os.environ,
+                    {"AOA_SDK_ROOT": str(sdk_root)},
+                ),
+            ):
+                loaded = _pinned_sdk_review_schema("a" * 40)
+
+            self.assertEqual(pinned_schema, loaded)
 
     def test_portable_manifest_cannot_be_shadowed_by_legacy_index(self) -> None:
         manifest_digest = "a" * 64
@@ -555,8 +572,6 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             receipt["receipt_id"] = _digest(receipt_body)
             _write_private_json(receipt_path, receipt)
 
-            sdk_schema = root / "sdk-review.schema.json"
-            sdk_schema.write_text(json.dumps(_sdk_schema()), encoding="utf-8")
             revision = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
                 cwd=REPO_ROOT,
@@ -578,7 +593,6 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                         capture_root=root,
                         receipt_path=receipt_path,
                         artifact_path=lexical_path,
-                        sdk_review_schema_path=sdk_schema,
                         source_revision=revision,
                     )
 
@@ -587,8 +601,6 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             root = Path(directory)
             receipt_path, result_path = _capture(root, _capture_payload())
             os.chmod(result_path, 0o644)
-            sdk_schema = root / "sdk-review.schema.json"
-            sdk_schema.write_text(json.dumps(_sdk_schema()), encoding="utf-8")
             revision = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
                 cwd=REPO_ROOT,
@@ -605,7 +617,6 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                         capture_root=root,
                         receipt_path=receipt_path,
                         artifact_path=result_path,
-                        sdk_review_schema_path=sdk_schema,
                         source_revision=revision,
                     )
             os.chmod(result_path, 0o600)
@@ -621,7 +632,6 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                         capture_root=root,
                         receipt_path=receipt_path,
                         artifact_path=result_path,
-                        sdk_review_schema_path=sdk_schema,
                         source_revision=revision,
                     )
 
