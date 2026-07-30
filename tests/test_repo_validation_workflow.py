@@ -30,7 +30,7 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("owner_fast:", workflow_text)
 
-    def test_local_job_checks_out_only_the_seven_source_fast_dependencies(self) -> None:
+    def test_local_job_checks_out_only_the_eight_source_fast_dependencies(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
             "  release_audit:\n",
@@ -47,6 +47,7 @@ class RepoValidationWorkflowTests(unittest.TestCase):
                 ".deps/aoa-evals",
                 ".deps/aoa-memo",
                 ".deps/aoa-playbooks",
+                ".deps/aoa-sdk",
                 ".deps/aoa-stats",
                 ".deps/aoa-techniques",
             },

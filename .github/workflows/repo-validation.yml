@@ -26,6 +26,7 @@ jobs:
       TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
       AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+      AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
     steps:
       - name: Checkout
@@ -79,6 +80,14 @@ jobs:
           repository: 8Dionysus/aoa-techniques
           ref: 9a5222cc6a6b1fdc52b4df906f49dadfd0383c71
           path: .deps/aoa-techniques
+          fetch-depth: 0
+
+      - name: Checkout aoa-sdk
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-sdk
+          ref: cbf225627f9f28d0470deb8a962ae12d1fe72375
+          path: .deps/aoa-sdk
           fetch-depth: 0
 
       - name: Checkout aoa-stats

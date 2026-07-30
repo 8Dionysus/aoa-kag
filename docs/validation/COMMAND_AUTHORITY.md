@@ -93,9 +93,10 @@ and incremental family parity, budgets, validation, and exact compatibility
 assembly. The classifier cannot replace either proof; it decides only whether
 the additional full OS-wide release audit is required.
 
-That job materializes only the six pinned source donors required by local KAG
+That job materializes only the seven pinned source donors required by local KAG
 validation (`Tree-of-Sophia`, `aoa-memo`, `aoa-playbooks`, `aoa-evals`,
-`aoa-agents`, and `aoa-techniques`) plus pinned `aoa-stats`. The remaining
+`aoa-agents`, `aoa-techniques`, and `aoa-sdk`) plus pinned `aoa-stats`.
+`aoa-sdk` supplies the source-pinned owner-review schema; the remaining
 provider repositories, including private session memory, belong only to the
 full OS-wide audit.
 

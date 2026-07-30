@@ -21,9 +21,10 @@ The classifier may omit only that additional audit. The summary must report
 `verified` separately from `correctly-not-required`; a skipped required proof
 is a failure, not a successful check.
 
-The source-fast job checks out only its six pinned source donors plus pinned
-`aoa-stats`. Keep every other provider checkout, including private session
-memory, inside the conditional full OS-wide job.
+The source-fast job checks out only its seven pinned source donors, including
+`aoa-sdk` for the source-pinned owner-review schema, plus pinned `aoa-stats`.
+Keep every other provider checkout, including private session memory, inside
+the conditional full OS-wide job.
 
 When workflow or repository-policy files change, report:
 
