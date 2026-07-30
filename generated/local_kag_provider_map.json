@@ -29,8 +29,8 @@
         "receipts": 1
       },
       "repo_local_index": {
-        "status": "migration-needed",
-        "source_index_ref": "",
+        "status": "passed",
+        "source_index_ref": "kag/indexes/source_surface_index.json",
         "index_files": [
           "kag/indexes/index_family.manifest.json",
           "kag/indexes/provider_readiness_index.json"
@@ -43,10 +43,18 @@
           "manifest_ref": "kag/indexes/index_family.manifest.json",
           "receipt_ref": "",
           "shards": 484,
-          "tracked_bytes": 10732851,
+          "tracked_bytes": 10733433,
           "tracked_bytes_max": 12582912
         },
-        "repository_index_family": {},
+        "repository_index_family": {
+          "anchor": "kag/indexes/repo_anchor_index.json",
+          "artifact": "kag/indexes/repo_artifact_index.json",
+          "assertion": "kag/indexes/repo_assertion_index.json",
+          "entity": "kag/indexes/repo_entity_index.json",
+          "event": "kag/indexes/repo_event_index.json",
+          "relation": "kag/indexes/repo_relation_index.json",
+          "source": "kag/indexes/source_surface_index.json"
+        },
         "domain_index_catalog_ref": "",
         "coverage": {
           "commands": 194,
@@ -132,11 +140,11 @@
             "has_kag_home": true,
             "has_owner_commands": true,
             "has_record_classes": true,
-            "has_source_index": false,
+            "has_source_index": true,
             "has_validation_route": true,
             "unknown_count": 0
           },
-          "source": "source_tree_scan"
+          "source": "source_surface_index"
         },
         "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
         "coverage_owner_key": "aoa-kag"
@@ -7746,8 +7754,8 @@
   },
   "provider_repo_local_indexes": {
     "aoa-kag": {
-      "status": "migration-needed",
-      "source_index_ref": "",
+      "status": "passed",
+      "source_index_ref": "kag/indexes/source_surface_index.json",
       "index_files": [
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
@@ -7760,10 +7768,18 @@
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "receipt_ref": "",
         "shards": 484,
-        "tracked_bytes": 10732851,
+        "tracked_bytes": 10733433,
         "tracked_bytes_max": 12582912
       },
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "domain_index_catalog_ref": "",
       "coverage": {
         "commands": 194,
@@ -7849,11 +7865,11 @@
           "has_kag_home": true,
           "has_owner_commands": true,
           "has_record_classes": true,
-          "has_source_index": false,
+          "has_source_index": true,
           "has_validation_route": true,
           "unknown_count": 0
         },
-        "source": "source_tree_scan"
+        "source": "source_surface_index"
       },
       "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
       "coverage_owner_key": "aoa-kag"
@@ -10422,11 +10438,11 @@
         "has_kag_home": true,
         "has_owner_commands": true,
         "has_record_classes": true,
-        "has_source_index": false,
+        "has_source_index": true,
         "has_validation_route": true,
         "unknown_count": 0
       },
-      "source": "source_tree_scan"
+      "source": "source_surface_index"
     },
     "Tree-of-Sophia": {
       "counts": {

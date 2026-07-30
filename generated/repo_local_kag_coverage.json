@@ -1,13 +1,13 @@
 {
   "coverage_summary": {
     "aggregate_budget_state": "passed",
-    "migration_needed": 1,
+    "migration_needed": 0,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
     "owner_count": 23,
     "owner_specific": 0,
-    "passed": 22,
-    "portable_tracked_bytes": 290332391,
+    "passed": 23,
+    "portable_tracked_bytes": 290332973,
     "portable_v3": 23
   },
   "owners": [
@@ -901,11 +901,11 @@
           "has_kag_home": true,
           "has_owner_commands": true,
           "has_record_classes": true,
-          "has_source_index": false,
+          "has_source_index": true,
           "has_validation_route": true,
           "unknown_count": 0
         },
-        "source": "source_tree_scan"
+        "source": "source_surface_index"
       },
       "coverage": {
         "commands": 194,
@@ -923,7 +923,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-kag/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -933,11 +933,19 @@
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "receipt_ref": "",
         "shards": 484,
-        "tracked_bytes": 10732851,
+        "tracked_bytes": 10733433,
         "tracked_bytes_max": 12582912
       },
       "repo": "aoa-kag",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-kag"
     },
     {
