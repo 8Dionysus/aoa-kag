@@ -74,6 +74,7 @@
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 - [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## aoa-memo
 
@@ -178,6 +179,10 @@
 ## owner-local skill homes
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+
+## provider registry
+
+- [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 
 ## runtime source repositories
 
