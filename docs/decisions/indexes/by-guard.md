@@ -23,6 +23,10 @@
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 
+## bounded resources
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
+
 ## byte parity
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
@@ -69,6 +73,10 @@
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
 
+## deterministic parity
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
+
 ## document coverage
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
@@ -80,6 +88,10 @@
 ## extensible kind
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+
+## fail closed
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
 
 ## fail-closed identity
 
@@ -222,6 +234,7 @@
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
 
 ## owner namespace
 

@@ -91,6 +91,13 @@
       "kag/indexes/shards"
     ]
   },
+  "coverage_execution": {
+    "schema_version": 1,
+    "default_owner_workers": 2,
+    "max_owner_workers": 4,
+    "override_env": "AOA_KAG_COVERAGE_WORKERS",
+    "ordering": "provider-registry"
+  },
   "impact_routing": {
     "schema_version": 1,
     "default_route": "full-audit",

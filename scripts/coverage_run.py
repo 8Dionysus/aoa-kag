@@ -188,12 +188,25 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
             if isinstance(event.get("payload_digest"), str)
         }
     )
-    owner_timings = [
+    owner_execution_events = [
+        event
+        for event in events
+        if isinstance(event.get("owner_timings"), list)
+    ]
+    owner_receipts = [
         timing
-        for event in builds
+        for event in owner_execution_events
         for timing in event.get("owner_timings", [])
         if isinstance(timing, dict)
     ]
+    owner_worker_counts = sorted(
+        {
+            int(event["owner_worker_count"])
+            for event in owner_execution_events
+            if isinstance(event.get("owner_worker_count"), int)
+            and not isinstance(event.get("owner_worker_count"), bool)
+        }
+    )
     input_identities = [
         event["input_identity"]
         for event in builds
@@ -208,7 +221,7 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
         "packet_miss_count": len(misses),
         "packet_reject_count": len(rejects),
         "build_failure_count": len(failures),
-        "owner_scan_count": len(owner_timings),
+        "owner_scan_count": len(owner_receipts),
         "build_wall_ms": sum(
             int(event.get("duration_ms", 0))
             for event in builds
@@ -217,7 +230,9 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
         "identity_digests": identity_digests,
         "payload_digests": payload_digests,
         "input_identities": input_identities,
-        "owner_timings": owner_timings,
+        "owner_worker_counts": owner_worker_counts,
+        "owner_receipts": owner_receipts,
+        "owner_timings": owner_receipts,
     }
 
 

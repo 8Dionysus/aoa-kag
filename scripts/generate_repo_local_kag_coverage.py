@@ -11,13 +11,15 @@ import os
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from jsonschema import Draft202012Validator
 
 try:
+    from scripts import validation_lanes
     from scripts.coverage_run import current_coverage_run, record_coverage_event
     from scripts.generate_repo_local_kag_index import (
         EXCLUDED_PARTS,
@@ -51,6 +53,7 @@ try:
         provider_repo_order,
     )
 except ImportError:  # pragma: no cover - direct script execution
+    import validation_lanes  # type: ignore
     from coverage_run import current_coverage_run, record_coverage_event  # type: ignore
     from generate_repo_local_kag_index import (  # type: ignore
         EXCLUDED_PARTS,
@@ -149,6 +152,11 @@ META_INDEX_NAMES = {
 }
 PROVIDER_REPO_ORDER = provider_repo_order()
 CONNECTOR_REPOS = connector_repos()
+DEFAULT_OWNER_WORKERS = int(
+    validation_lanes.COVERAGE_EXECUTION["default_owner_workers"]
+)
+MAX_OWNER_WORKERS = int(validation_lanes.COVERAGE_EXECUTION["max_owner_workers"])
+OWNER_WORKERS_ENV = str(validation_lanes.COVERAGE_EXECUTION["override_env"])
 COVERAGE_RUNTIME_INPUT_PATHS = (
     Path("config/validation_lanes.json"),
     Path("manifests/provider_registry.json"),
@@ -162,6 +170,7 @@ COVERAGE_RUNTIME_INPUT_PATHS = (
     Path("scripts/generate_repo_local_kag_index.py"),
     Path("scripts/generation/context.py"),
     Path("scripts/provider_registry.py"),
+    Path("scripts/validation_lanes.py"),
     Path("scripts/validators/common.py"),
     Path("scripts/validators/local_kag_subtree.py"),
     Path("scripts/validators/repo_local_kag_index.py"),
@@ -834,66 +843,178 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
     return "migration-needed", relative_files
 
 
+def configured_owner_workers(
+    environ: Mapping[str, str] | None = None,
+) -> int:
+    source = os.environ if environ is None else environ
+    raw_value = source.get(OWNER_WORKERS_ENV, "").strip()
+    if not raw_value:
+        return DEFAULT_OWNER_WORKERS
+    if not raw_value.isdecimal():
+        raise RuntimeError(
+            f"{OWNER_WORKERS_ENV} must be an integer from 1 to "
+            f"{MAX_OWNER_WORKERS}, got {raw_value!r}"
+        )
+    workers = int(raw_value)
+    if workers < 1 or workers > MAX_OWNER_WORKERS:
+        raise RuntimeError(
+            f"{OWNER_WORKERS_ENV} must be an integer from 1 to "
+            f"{MAX_OWNER_WORKERS}, got {workers}"
+        )
+    return workers
+
+
+def _owner_coverage_row(
+    name: str,
+    owner_root: Path,
+    display_root: Path,
+) -> dict[str, Any]:
+    status, files = index_status(owner_root, owner_name=name)
+    family_storage, portable_family = portable_family_profile(
+        owner_root,
+        owner_name=name,
+        status=status,
+    )
+    display_kag_home = (
+        display_root / "kag" if (owner_root / "kag").is_dir() else Path("")
+    )
+    return {
+        "repo": name,
+        "owner_type": owner_type_for(name, owner_root),
+        "root": display_root.as_posix(),
+        "kag_home": (
+            display_kag_home.as_posix()
+            if display_kag_home.as_posix() != "."
+            else ""
+        ),
+        "index_status": status,
+        "index_files": files,
+        "family_storage": family_storage,
+        "portable_family": portable_family,
+        "repository_index_family": repository_index_family_refs(
+            files,
+            status=status,
+            storage=family_storage,
+        ),
+        "domain_index_catalog_ref": (
+            DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in files else ""
+        ),
+        "coverage": source_counts(owner_root),
+        "common_surface_profile": common_surface_profile(
+            owner_root,
+            index_status=status,
+        ),
+    }
+
+
+def _timed_owner_coverage(
+    position: int,
+    name: str,
+    owner_root: Path,
+    display_root: Path,
+) -> tuple[dict[str, Any] | None, dict[str, Any], Exception | None]:
+    started = time.perf_counter()
+    try:
+        row = _owner_coverage_row(name, owner_root, display_root)
+    except Exception as exc:
+        return (
+            None,
+            {
+                "position": position,
+                "owner": name,
+                "duration_ms": max(
+                    0,
+                    round((time.perf_counter() - started) * 1000),
+                ),
+                "execution_status": "failed",
+                "error_type": type(exc).__name__,
+            },
+            exc,
+        )
+    return (
+        row,
+        {
+            "position": position,
+            "owner": name,
+            "duration_ms": max(
+                0,
+                round((time.perf_counter() - started) * 1000),
+            ),
+            "execution_status": "completed",
+        },
+        None,
+    )
+
+
 def build_coverage(
     os_root: Path,
     owner_roots: Sequence[tuple[str, Path]] | None = None,
     *,
     progress: bool = False,
     owner_timings: list[dict[str, Any]] | None = None,
+    owner_workers: int = 1,
 ) -> dict[str, Any]:
-    owners: list[dict[str, Any]] = []
+    configured_roots = owner_roots is not None
     roots = list(owner_roots) if owner_roots is not None else [
         (owner_root.name, owner_root) for owner_root in direct_owner_roots(os_root)
     ]
+    if (
+        isinstance(owner_workers, bool)
+        or not isinstance(owner_workers, int)
+        or owner_workers < 1
+        or owner_workers > MAX_OWNER_WORKERS
+    ):
+        raise ValueError(
+            f"owner_workers must be an integer from 1 to {MAX_OWNER_WORKERS}"
+        )
+    effective_workers = min(owner_workers, len(roots)) if roots else 1
     if progress:
         coverage_progress(f"owners {len(roots)}")
     for index, (name, owner_root) in enumerate(roots, start=1):
-        owner_started = time.perf_counter()
         if progress:
             coverage_progress(f"owner {index}/{len(roots)} {name}")
-        status, files = index_status(owner_root, owner_name=name)
-        family_storage, portable_family = portable_family_profile(
+
+    tasks = [
+        (
+            position,
+            name,
             owner_root,
-            owner_name=name,
-            status=status,
+            canonical_owner_root(os_root, name)
+            if configured_roots
+            else owner_root,
         )
-        display_root = canonical_owner_root(os_root, name) if owner_roots is not None else owner_root
-        display_kag_home = display_root / "kag" if (owner_root / "kag").is_dir() else Path("")
-        owners.append(
-            {
-                "repo": name,
-                "owner_type": owner_type_for(name, owner_root),
-                "root": display_root.as_posix(),
-                "kag_home": display_kag_home.as_posix() if display_kag_home.as_posix() != "." else "",
-                "index_status": status,
-                "index_files": files,
-                "family_storage": family_storage,
-                "portable_family": portable_family,
-                "repository_index_family": repository_index_family_refs(
-                    files,
-                    status=status,
-                    storage=family_storage,
-                ),
-                "domain_index_catalog_ref": (
-                    DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in files else ""
-                ),
-                "coverage": source_counts(owner_root),
-                "common_surface_profile": common_surface_profile(
-                    owner_root,
-                    index_status=status,
-                ),
-            }
-        )
+        for position, (name, owner_root) in enumerate(roots, start=1)
+    ]
+    if effective_workers == 1:
+        results = []
+        for task in tasks:
+            results.append(_timed_owner_coverage(*task))
+    else:
+        with ThreadPoolExecutor(
+            max_workers=effective_workers,
+            thread_name_prefix="kag-owner",
+        ) as executor:
+            futures = [
+                executor.submit(_timed_owner_coverage, *task)
+                for task in tasks
+            ]
+            results = [future.result() for future in futures]
+
+    owners: list[dict[str, Any]] = []
+    first_failure: tuple[str, Exception] | None = None
+    for row, timing, error in results:
         if owner_timings is not None:
-            owner_timings.append(
-                {
-                    "owner": name,
-                    "duration_ms": max(
-                        0,
-                        round((time.perf_counter() - owner_started) * 1000),
-                    ),
-                }
-            )
+            owner_timings.append(timing)
+        if row is not None:
+            owners.append(row)
+        if error is not None and first_failure is None:
+            first_failure = (str(timing["owner"]), error)
+    if first_failure is not None:
+        failed_owner, error = first_failure
+        raise RuntimeError(
+            f"coverage owner audit failed for {failed_owner}: {error}"
+        ) from error
+
     summary = {status: sum(1 for owner in owners if owner["index_status"] == status) for status in OWNER_STATUS}
     portable_owners = [
         owner
@@ -1523,12 +1644,14 @@ def build_provider_coverage(
     *,
     progress: bool = False,
 ) -> dict[str, Any]:
+    owner_workers = configured_owner_workers()
     run = current_coverage_run()
     if run is None:
         return build_coverage(
             os_root,
             owner_roots=configured_owner_roots(),
             progress=progress,
+            owner_workers=owner_workers,
         )
 
     try:
@@ -1609,6 +1732,7 @@ def build_provider_coverage(
             owner_roots=configured_owner_roots(),
             progress=progress,
             owner_timings=owner_timings,
+            owner_workers=owner_workers,
         )
     except Exception as exc:
         record_coverage_event(
@@ -1618,6 +1742,7 @@ def build_provider_coverage(
                 "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
                 "detail": str(exc),
                 "owner_timings": owner_timings,
+                "owner_worker_count": owner_workers,
             }
         )
         raise
@@ -1636,6 +1761,7 @@ def build_provider_coverage(
                 ),
                 "detail": str(exc),
                 "owner_timings": owner_timings,
+                "owner_worker_count": owner_workers,
             }
         )
         raise
@@ -1649,6 +1775,7 @@ def build_provider_coverage(
                 "final_identity_digest": final_identity_digest,
                 "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
                 "owner_timings": owner_timings,
+                "owner_worker_count": owner_workers,
             }
         )
         raise RuntimeError(
@@ -1670,6 +1797,7 @@ def build_provider_coverage(
             "duration_ms": duration_ms,
             "owner_count": len(payload.get("owners", [])),
             "owner_timings": owner_timings,
+            "owner_worker_count": owner_workers,
             "input_identity": _coverage_identity_receipt(identity),
         }
     )
@@ -1710,7 +1838,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     payload = (
-        build_coverage(Path(args.os_root).resolve(), progress=True)
+        build_coverage(
+            Path(args.os_root).resolve(),
+            progress=True,
+            owner_workers=configured_owner_workers(),
+        )
         if args.os_root
         else build_provider_coverage(progress=True)
     )

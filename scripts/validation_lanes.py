@@ -13,6 +13,7 @@ from typing import Any
 Command = tuple[str, ...]
 LaneDefinition = dict[str, Any]
 ImpactRoutingDefinition = dict[str, Any]
+CoverageExecutionDefinition = dict[str, Any]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VALIDATION_LANES_PATH = REPO_ROOT / "config" / "validation_lanes.json"
@@ -189,9 +190,60 @@ def _impact_routing(manifest: dict[str, Any]) -> ImpactRoutingDefinition:
     }
 
 
+def _coverage_execution(manifest: dict[str, Any]) -> CoverageExecutionDefinition:
+    execution = manifest.get("coverage_execution")
+    if not isinstance(execution, dict):
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: coverage_execution must be an object"
+        )
+    if execution.get("schema_version") != 1:
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: unsupported coverage_execution "
+            f"schema_version {execution.get('schema_version')!r}"
+        )
+    default_workers = execution.get("default_owner_workers")
+    max_workers = execution.get("max_owner_workers")
+    if (
+        not isinstance(default_workers, int)
+        or isinstance(default_workers, bool)
+        or default_workers < 1
+    ):
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: "
+            "coverage_execution.default_owner_workers must be a positive integer"
+        )
+    if (
+        not isinstance(max_workers, int)
+        or isinstance(max_workers, bool)
+        or max_workers < default_workers
+    ):
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: coverage_execution.max_owner_workers "
+            "must be an integer no smaller than the default"
+        )
+    override_env = execution.get("override_env")
+    if not isinstance(override_env, str) or not override_env:
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: coverage_execution.override_env is required"
+        )
+    if execution.get("ordering") != "provider-registry":
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: coverage_execution.ordering must be "
+            "'provider-registry'"
+        )
+    return {
+        "schema_version": 1,
+        "default_owner_workers": default_workers,
+        "max_owner_workers": max_workers,
+        "override_env": override_env,
+        "ordering": "provider-registry",
+    }
+
+
 _MANIFEST = _load_manifest()
 LANE_DEFINITIONS = _lane_definitions(_MANIFEST)
 IMPACT_ROUTING = _impact_routing(_MANIFEST)
+COVERAGE_EXECUTION = _coverage_execution(_MANIFEST)
 
 
 def command_sequence_for_lane(lane_id: str) -> tuple[Command, ...]:

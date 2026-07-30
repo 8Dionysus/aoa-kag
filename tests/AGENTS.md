@@ -19,6 +19,11 @@ fail-closed negative cases. Preserve explicit regressions for unknown paths,
 unverified pack/blob additions, trusted import code, and any workflow shape
 that lets an owner-family check replace source-fast.
 
+Owner-audit execution tests must compare sequential and parallel payload bytes,
+force out-of-order completion, preserve provider-registry result and receipt
+order, and prove that one worker failure rejects the aggregate without skipping
+the remaining owner receipts.
+
 Full validation command sequences live in `config/validation_lanes.json`.
 Use the test runner or lane entrypoint:
 

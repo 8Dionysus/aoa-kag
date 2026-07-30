@@ -66,10 +66,26 @@ starts a new input epoch and rebuilds the packet; malformed, tampered, missing,
 or symlinked packet state fails closed. The packet and JSONL timing receipt are
 deleted when the run exits. The final receipt reports build count, hit/miss
 count, the verified provider-revision digest and match count, compact full-input
-and payload identities, coverage and lane wall time, and per-owner timings.
+and payload identities, coverage and lane wall time, configured worker counts,
+and registry-ordered per-owner execution receipts.
 Exact provider revisions remain visible in the preceding provider-checkout
 verification log. Neither surface becomes a committed read model or owner
 truth.
+
+## Bounded Owner-Audit Execution
+
+The `coverage_execution` object in `config/validation_lanes.json` owns the
+OS-wide owner-audit execution policy. The default is two workers, the hard
+ceiling is four, and `AOA_KAG_COVERAGE_WORKERS=1` selects the sequential
+comparison path. Invalid overrides fail before a verified packet can be
+reused.
+
+Workers audit independent configured owner roots. Completion order never
+controls output: coverage rows and typed owner execution receipts are assembled
+in provider-registry order. Every scheduled owner reports `completed` or
+`failed`; any failure rejects the aggregate and prevents packet admission.
+Concurrency does not remove provider completeness, immutable-input rechecks,
+schema validation, generated fixed-point proof, family parity, or budgets.
 
 ## Validator Scopes
 

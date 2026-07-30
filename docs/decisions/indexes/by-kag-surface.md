@@ -87,6 +87,7 @@
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
 
 ## generated indexes
 
@@ -187,6 +188,10 @@
 
 - [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
 
+## portable family
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
+
 ## portable record corpus
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
@@ -206,6 +211,10 @@
 ## provenance posture
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
+
+## provider coverage
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
 
 ## provider map
 

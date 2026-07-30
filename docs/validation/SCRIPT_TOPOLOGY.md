@@ -71,7 +71,8 @@ release checks, and test discovery.
 
 `scripts/coverage_run.py` creates one temporary packet/receipt scope for a
 validation run, shares it with nested lane processes, emits the aggregate
-machine-readable timing receipt, and deletes the scope on exit.
+machine-readable timing receipt with configured worker counts and
+registry-ordered owner execution receipts, and deletes the scope on exit.
 
 `scripts/impact_routing.py` classifies a pull-request change set against the
 versioned command-authority rules. Full-audit rules override owner-local
@@ -132,7 +133,10 @@ bundle for streaming runtime materializers.
 
 `scripts/generate_repo_local_kag_coverage.py` builds
 `generated/repo_local_kag_coverage.json` and the minified companion from live
-OS Abyss provider roots materialized from the pinned provider registry.
+OS Abyss provider roots materialized from the pinned provider registry. It
+uses the bounded owner-worker policy from command authority, schedules only
+independent owner rows, assembles output deterministically in registry order,
+and rejects the complete build if any owner fails.
 
 The repo-local builders support `--check` for parity without writing files.
 

@@ -44,6 +44,7 @@ Each inventory file entry names one or more `coverage_kinds`.
 | `docs/root-surface` | Root/docs routing, roadmap parity, and public KAG posture. | `README.md`, `ROADMAP.md`, `docs/`. |
 | `decision-lane` | Decision record metadata and generated lookup indexes. | `docs/decisions/`. |
 | `generated/read-model` | Generated KAG read models and downstream feed contracts. | repo-wide and part-local manifests/generated companions, builders, and `scripts/validate_kag.py`. |
+| `generated/coverage-execution` | Bounded owner-worker configuration, sequential/parallel payload parity, registry-order assembly, and fail-closed owner receipts. | `config/validation_lanes.json`, `scripts/generate_repo_local_kag_coverage.py`, and `scripts/coverage_run.py`. |
 | `kag/source-home-preflight` | Local `/kag` source-home manifest, protocol topology, reserved surface map, source/projection provenance, and source-home evidence map. | `kag/`. |
 | `release/ci-impact` | Fail-closed impact classification, always-required local proof, and typed required-summary states. | `config/validation_lanes.json`, `scripts/impact_routing.py`, and `.github/workflows/repo-validation.yml`. |
 | `release/ci-lane` | CI lane composition, release stabilization, and workflow posture. | `config/validation_lanes.json`, `.github/workflows/*`, `scripts/release_check.py`. |

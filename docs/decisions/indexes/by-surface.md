@@ -18,6 +18,7 @@
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
 
 ## compatibility view
 
@@ -125,6 +126,10 @@
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 
+## OS-wide provider audit
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
+
 ## owner return
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
@@ -175,6 +180,10 @@
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 
+## run receipt
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
+
 ## schema contract
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
@@ -222,6 +231,10 @@
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
+
+## validation execution
+
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)
 
 ## validation guard
 

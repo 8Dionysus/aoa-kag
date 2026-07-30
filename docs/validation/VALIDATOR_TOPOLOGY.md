@@ -42,6 +42,20 @@ changes to schemas, builders, validators, federation, trust, receipts, budgets,
 compatibility, generated coverage, or release topology require that audit. The
 required summary rejects a skipped required proof.
 
+## Owner-Audit Execution Boundary
+
+The explicit OS-wide coverage build may scan independent provider-registry
+owners with the bounded execution policy in
+`config/validation_lanes.json`. Parallelism ends at the owner-row boundary:
+validator scopes, provider membership, coverage schema, packet input identity,
+final immutable-input verification, and generated fixed-point checks are not
+split or omitted.
+
+Rows and execution receipts are assembled in registry order even when workers
+finish out of order. A failed owner rejects the whole aggregate and yields no
+admissible coverage packet. The one-worker mode is the same implementation's
+sequential equivalence comparator.
+
 | Module | Function |
 | --- | --- |
 | `scripts/validators/generation.py` | KAG generation constants and payload builders from the generation package/facade |

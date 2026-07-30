@@ -71,3 +71,4 @@
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0023 - Bounded Deterministic Owner-Audit Parallelism](../AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md) (`docs/decisions/AOA-KAG-D-0023-bounded-deterministic-owner-audit-parallelism.md`)

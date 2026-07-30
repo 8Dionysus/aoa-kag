@@ -115,6 +115,20 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             {"source-fast", "owner-family"},
             set(validation_lanes.IMPACT_ROUTING["always_required_proofs"]),
         )
+        self.assertEqual(
+            manifest["coverage_execution"],
+            validation_lanes.COVERAGE_EXECUTION,
+        )
+        self.assertEqual(
+            {
+                "schema_version": 1,
+                "default_owner_workers": 2,
+                "max_owner_workers": 4,
+                "override_env": "AOA_KAG_COVERAGE_WORKERS",
+                "ordering": "provider-registry",
+            },
+            validation_lanes.COVERAGE_EXECUTION,
+        )
 
     def test_validation_lanes_api_resolves_lane_ids_to_command_sequences(self) -> None:
         self.assertEqual(

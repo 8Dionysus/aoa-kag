@@ -4,6 +4,7 @@ import io
 import json
 import subprocess
 import tempfile
+import threading
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
@@ -1774,6 +1775,157 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             stderr.getvalue(),
         )
 
+    def test_coverage_owner_worker_configuration_is_bounded(self) -> None:
+        self.assertEqual(
+            coverage_generation.DEFAULT_OWNER_WORKERS,
+            coverage_generation.configured_owner_workers({}),
+        )
+        self.assertEqual(
+            1,
+            coverage_generation.configured_owner_workers(
+                {coverage_generation.OWNER_WORKERS_ENV: "1"}
+            ),
+        )
+        self.assertEqual(
+            coverage_generation.MAX_OWNER_WORKERS,
+            coverage_generation.configured_owner_workers(
+                {
+                    coverage_generation.OWNER_WORKERS_ENV: str(
+                        coverage_generation.MAX_OWNER_WORKERS
+                    )
+                }
+            ),
+        )
+        for invalid in (
+            "0",
+            str(coverage_generation.MAX_OWNER_WORKERS + 1),
+            "many",
+        ):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                RuntimeError,
+                coverage_generation.OWNER_WORKERS_ENV,
+            ):
+                coverage_generation.configured_owner_workers(
+                    {coverage_generation.OWNER_WORKERS_ENV: invalid}
+                )
+
+    def test_parallel_owner_audit_preserves_sequential_payload_and_order(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            slow_root = root / "slow-checkout"
+            fast_root = root / "fast-checkout"
+            for owner_root in (slow_root, fast_root):
+                owner_root.mkdir()
+                (owner_root / "README.md").write_text(
+                    f"# {owner_root.name}\n",
+                    encoding="utf-8",
+                )
+            roots = [
+                ("slow-owner", slow_root),
+                ("fast-owner", fast_root),
+            ]
+            sequential = coverage_generation.build_coverage(
+                root,
+                owner_roots=roots,
+                owner_workers=1,
+            )
+
+            fast_finished = threading.Event()
+            completion_order: list[str] = []
+            original = coverage_generation._owner_coverage_row
+
+            def delayed_owner_row(
+                name: str,
+                owner_root: Path,
+                display_root: Path,
+            ) -> dict[str, object]:
+                if name == "slow-owner":
+                    if not fast_finished.wait(timeout=5):
+                        raise RuntimeError("fast owner did not complete")
+                    row = original(name, owner_root, display_root)
+                else:
+                    row = original(name, owner_root, display_root)
+                    fast_finished.set()
+                completion_order.append(name)
+                return row
+
+            owner_receipts: list[dict[str, object]] = []
+            with patch.object(
+                coverage_generation,
+                "_owner_coverage_row",
+                side_effect=delayed_owner_row,
+            ):
+                parallel = coverage_generation.build_coverage(
+                    root,
+                    owner_roots=roots,
+                    owner_workers=2,
+                    owner_timings=owner_receipts,
+                )
+
+        self.assertEqual(["fast-owner", "slow-owner"], completion_order)
+        self.assertEqual(normalized_json(sequential), normalized_json(parallel))
+        self.assertEqual(
+            ["slow-owner", "fast-owner"],
+            [owner["repo"] for owner in parallel["owners"]],
+        )
+        self.assertEqual(
+            ["slow-owner", "fast-owner"],
+            [receipt["owner"] for receipt in owner_receipts],
+        )
+        self.assertEqual(
+            ["completed", "completed"],
+            [receipt["execution_status"] for receipt in owner_receipts],
+        )
+
+    def test_parallel_owner_audit_fails_closed_with_complete_receipts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            roots: list[tuple[str, Path]] = []
+            for name in ("first-owner", "broken-owner", "last-owner"):
+                owner_root = root / f"{name}-checkout"
+                owner_root.mkdir()
+                (owner_root / "README.md").write_text(
+                    f"# {name}\n",
+                    encoding="utf-8",
+                )
+                roots.append((name, owner_root))
+            original = coverage_generation._owner_coverage_row
+
+            def failing_owner_row(
+                name: str,
+                owner_root: Path,
+                display_root: Path,
+            ) -> dict[str, object]:
+                if name == "broken-owner":
+                    raise ValueError("owner fixture failure")
+                return original(name, owner_root, display_root)
+
+            owner_receipts: list[dict[str, object]] = []
+            with patch.object(
+                coverage_generation,
+                "_owner_coverage_row",
+                side_effect=failing_owner_row,
+            ), self.assertRaisesRegex(
+                RuntimeError,
+                "coverage owner audit failed for broken-owner",
+            ):
+                coverage_generation.build_coverage(
+                    root,
+                    owner_roots=roots,
+                    owner_workers=2,
+                    owner_timings=owner_receipts,
+                )
+
+        self.assertEqual(
+            ["first-owner", "broken-owner", "last-owner"],
+            [receipt["owner"] for receipt in owner_receipts],
+        )
+        self.assertEqual(
+            ["completed", "failed", "completed"],
+            [receipt["execution_status"] for receipt in owner_receipts],
+        )
+        self.assertEqual("ValueError", owner_receipts[1]["error_type"])
+
     def test_provider_coverage_packet_reuses_one_verified_input_epoch(self) -> None:
         payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
         assert isinstance(payload, dict)
@@ -1802,9 +1954,39 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(1, summary["packet_hit_count"])
         self.assertEqual(1, summary["packet_miss_count"])
         self.assertEqual(
+            [coverage_generation.DEFAULT_OWNER_WORKERS],
+            summary["owner_worker_counts"],
+        )
+        self.assertEqual(
             [coverage_generation._json_digest(payload)],
             summary["payload_digests"],
         )
+
+    def test_invalid_owner_worker_override_fails_before_packet_reuse(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        with coverage_run.coverage_run_scope(
+            lane="test",
+            force_new=True,
+        ) as run:
+            coverage_generation.write_coverage_packet(
+                run.packet_path,
+                identity=identity,
+                payload=payload,
+            )
+            with patch.dict(
+                coverage_generation.os.environ,
+                {coverage_generation.OWNER_WORKERS_ENV: "0"},
+            ), patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+            ) as identity_builder, self.assertRaisesRegex(
+                RuntimeError,
+                coverage_generation.OWNER_WORKERS_ENV,
+            ):
+                coverage_generation.build_provider_coverage()
+            identity_builder.assert_not_called()
 
     def test_provider_coverage_packet_rebuilds_only_for_a_new_input_epoch(self) -> None:
         payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")

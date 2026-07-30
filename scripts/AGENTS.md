@@ -36,3 +36,8 @@ always-required source-fast and self owner-family proofs. Keep its owner-local
 surface an explicit allowlist; invalid, empty, unavailable, or unknown paths
 must route to full audit. Its required-summary mode must distinguish a verified
 audit from one that was correctly not required.
+
+Owner-audit concurrency may overlap only independent provider rows. Keep the
+worker count bounded by `config/validation_lanes.json`, assemble payloads and
+receipts in provider-registry order, and fail the aggregate without writing a
+packet when any owner fails.
