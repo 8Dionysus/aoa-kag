@@ -12,6 +12,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
+from jsonschema import Draft202012Validator
+
 from scripts.review_kag_mcp_result import (
     KAG_RESULT_SCHEMA,
     KagOwnerReviewError,
@@ -497,6 +499,33 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             )
             self.assertIsNone(review["provider_watermark"])
             self.assertFalse(review["owner_accepted"])
+
+    def test_capability_schema_rejects_unknown_degradation_field(self) -> None:
+        payload = _capture_payload()
+        degradation = {
+            "target": "semantic",
+            "state": "degraded",
+            "fallback": "lexical",
+            "unsupported_claim": "must-not-pass",
+        }
+        payload["distribution"]["degradation"] = [degradation]
+        payload["projection"]["distribution"]["degradation"] = [degradation]
+        schema = json.loads(
+            (REPO_ROOT / "schemas" / "kag-mcp-capabilities.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        errors = list(Draft202012Validator(schema).iter_errors(payload))
+
+        self.assertTrue(errors)
+        self.assertTrue(
+            any(
+                "Additional properties are not allowed" in error.message
+                and "unsupported_claim" in error.message
+                for error in errors
+            )
+        )
 
     def test_v1_payload_without_distribution_remains_compatible(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

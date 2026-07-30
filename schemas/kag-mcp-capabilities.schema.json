@@ -177,14 +177,14 @@
     },
     "degradation": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["target", "state", "fallback"],
       "properties": {
         "target": {"$ref": "#/$defs/nonEmptyString"},
         "state": {"$ref": "#/$defs/nonEmptyString"},
         "fallback": {"$ref": "#/$defs/nonEmptyString"},
         "reason": {"$ref": "#/$defs/nonEmptyString"}
-      },
-      "additionalProperties": true
+      }
     },
     "distribution": {
       "type": "object",
