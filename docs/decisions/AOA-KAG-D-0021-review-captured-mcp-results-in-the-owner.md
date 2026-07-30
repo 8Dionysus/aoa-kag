@@ -7,7 +7,7 @@
 - Surface classes: schema contract, MCP handoff, owner evidence
 - KAG surfaces: capability discovery, owner grounding, freshness review
 - Source lanes: aoa-kag, aoa-sdk, abyss-stack, aoa-evals
-- Guard families: owner boundary, exact capture binding, freshness, no acceptance inference
+- Guard families: owner boundary, authenticated issuer, exact capture binding, freshness, no acceptance inference
 - Posture: accepted
 
 ## Context
@@ -27,10 +27,14 @@ KAG owner's grounding or freshness judgment.
 Keep capture and owner review separate.
 
 `abyss-stack` captures one bounded, untrusted `kag_discover` result and issues
-only runtime evidence. `aoa-kag` validates the exact content-addressed artifact
+only runtime evidence. It independently Ed25519-attests the receipt and result
+artifact. `aoa-kag` resolves the active public capture signer from
+`config/runtime_capture_trust.json` at the exact reviewed KAG source revision,
+verifies both attestations, then validates the exact content-addressed artifact
 against `schemas/kag-mcp-capabilities.schema.json`, requires the requested
 `aoa-kag` owner row, compares runtime and canonical source-index digests, and
-materializes the shared SDK owner-review receipt.
+materializes the shared SDK owner-review receipt at a path distinct from both
+capture inputs.
 
 The capability schema additively admits the runtime-owned `distribution` and
 `degradation` handoff fields while keeping their bounded top-level shape. The
@@ -51,9 +55,19 @@ and source-freshness meaning; stack owns mutable serving state and capture.
 The SDK supplies only the shared transport-neutral receipt shape, and evals
 remain consumers rather than sources of owner truth.
 
+Content addressing alone cannot authenticate an issuer because an attacker can
+rewrite a payload and recompute its digest. The committed KAG trust registry is
+therefore the owner-reviewed public trust root for stack capture evidence.
+Signer rotation requires an explicit KAG source change; a self-declared signer
+inside a private capture never becomes trusted.
+
 ## Consequences
 
 - Schema drift now produces an explicit rejected owner review.
+- A recomputed content address with a missing, forged, or unpinned signer
+  attestation is rejected before payload grounding.
+- Receipt and result attestations must resolve to the same active stack signer.
+- The private review output cannot alias either immutable capture input.
 - Matching runtime and canonical owner digests can support exact freshness.
 - The reviewer independently resolves the canonical source-index digest from
   the owner source. It rejects self-reported equality that conflicts with that
@@ -70,6 +84,7 @@ remain consumers rather than sources of owner truth.
 - `schemas/kag-mcp-capabilities.schema.json`
 - `examples/kag_mcp_capabilities.example.json`
 - `scripts/review_kag_mcp_result.py`
+- `config/runtime_capture_trust.json`
 - `tests/test_kag_mcp_owner_review.py`
 - `docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`
 - `aoa-sdk:schemas/organ-access/organ-owner-result-review.schema.json`

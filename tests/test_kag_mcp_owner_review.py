@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import os
 import stat
@@ -13,9 +15,11 @@ from unittest.mock import patch
 from scripts.review_kag_mcp_result import (
     KAG_RESULT_SCHEMA,
     KagOwnerReviewError,
+    _assert_distinct_io_paths,
     _canonical_source_index_identity,
     _digest,
     _pinned_sdk_review_schema,
+    _trusted_stack_signer,
     _write_private_json,
     review_kag_capture,
 )
@@ -23,6 +27,14 @@ from scripts.review_kag_mcp_result import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 7, 28, 12, 0, tzinfo=timezone.utc)
+TEST_PRIVATE_KEY_RAW = bytes(range(32))
+TEST_PUBLIC_KEY_RAW = bytes.fromhex(
+    "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+)
+TEST_SIGNER_ID = "sha256:" + hashlib.sha256(TEST_PUBLIC_KEY_RAW).hexdigest()
+TEST_PRIVATE_KEY_DER = (
+    bytes.fromhex("302e020100300506032b657004220420") + TEST_PRIVATE_KEY_RAW
+)
 
 
 def _capture_payload() -> dict:
@@ -42,11 +54,65 @@ def _capture_payload() -> dict:
     return payload
 
 
+def _attested_payload(body: dict, identity: str) -> dict:
+    unsigned_body = {
+        "signer_id": TEST_SIGNER_ID,
+        "attestation_algorithm": "ed25519",
+        **body,
+    }
+    statement = {
+        identity: _digest(unsigned_body),
+        **unsigned_body,
+    }
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        private_path = root / "private.der"
+        statement_path = root / "statement.json"
+        attestation_path = root / "attestation.bin"
+        private_path.write_bytes(TEST_PRIVATE_KEY_DER)
+        statement_path.write_text(
+            json.dumps(
+                statement,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            [
+                "openssl",
+                "pkeyutl",
+                "-sign",
+                "-inkey",
+                str(private_path),
+                "-keyform",
+                "DER",
+                "-rawin",
+                "-in",
+                str(statement_path),
+                "-out",
+                str(attestation_path),
+            ],
+            check=False,
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise AssertionError("test capture attestation failed")
+        attestation = base64.urlsafe_b64encode(
+            attestation_path.read_bytes()
+        ).decode("ascii").rstrip("=")
+    return {
+        **statement,
+        "attestation": attestation,
+    }
+
+
 def _capture(root: Path, payload: dict) -> tuple[Path, Path]:
     result_digest = _digest(payload)
     result_ref = f"results/aoa-kag/{result_digest.removeprefix('sha256:')}.json"
     receipt_body = {
-        "schema_version": "abyss_stack_mcp_canary_receipt_v1",
+        "schema_version": "abyss_stack_mcp_canary_receipt_v2",
         "issuer": "abyss-stack",
         "consumer_id": "abyss-stack-mcp-canary",
         "organ_id": "aoa-kag",
@@ -82,12 +148,9 @@ def _capture(root: Path, payload: dict) -> tuple[Path, Path]:
         "instruction_authority": "none",
         "claim_limit": "stack capture only",
     }
-    receipt = {
-        "receipt_id": _digest(receipt_body),
-        **receipt_body,
-    }
+    receipt = _attested_payload(receipt_body, "receipt_id")
     artifact_body = {
-        "schema_version": "abyss_stack_mcp_canary_result_artifact_v1",
+        "schema_version": "abyss_stack_mcp_canary_result_artifact_v2",
         "issuer": "abyss-stack",
         "organ_id": "aoa-kag",
         "policy_family": "read",
@@ -104,10 +167,7 @@ def _capture(root: Path, payload: dict) -> tuple[Path, Path]:
         "instruction_authority": "none",
         "claim_limit": "capture is not owner review",
     }
-    artifact = {
-        "artifact_id": _digest(artifact_body),
-        **artifact_body,
-    }
+    artifact = _attested_payload(artifact_body, "artifact_id")
     receipt_path = (
         root
         / "records"
@@ -121,6 +181,14 @@ def _capture(root: Path, payload: dict) -> tuple[Path, Path]:
 
 
 class KagMcpOwnerReviewTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.stack_signer = patch(
+            "scripts.review_kag_mcp_result._trusted_stack_signer",
+            return_value=(TEST_SIGNER_ID, TEST_PUBLIC_KEY_RAW),
+        )
+        self.stack_signer.start()
+        self.addCleanup(self.stack_signer.stop)
+
     def _review(
         self,
         root: Path,
@@ -265,6 +333,44 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                 loaded = _pinned_sdk_review_schema("a" * 40)
 
             self.assertEqual(pinned_schema, loaded)
+
+    def test_stack_signer_is_bound_to_committed_trust_registry(self) -> None:
+        trust = {
+            "schema_version": "aoa_kag_runtime_capture_trust_v1",
+            "issuers": [
+                {
+                    "issuer": "abyss-stack",
+                    "purpose": "mcp-canary-capture",
+                    "state": "active",
+                    "attestation_algorithm": "ed25519",
+                    "signer_id": TEST_SIGNER_ID,
+                    "public_key_base64url": base64.urlsafe_b64encode(
+                        TEST_PUBLIC_KEY_RAW
+                    ).decode("ascii").rstrip("="),
+                }
+            ],
+        }
+        with patch(
+            "scripts.review_kag_mcp_result._read_committed_public_json",
+            return_value=(trust, json.dumps(trust).encode("utf-8")),
+        ):
+            signer_id, public_key = _trusted_stack_signer("a" * 40)
+
+        self.assertEqual(TEST_SIGNER_ID, signer_id)
+        self.assertEqual(TEST_PUBLIC_KEY_RAW, public_key)
+
+        trust["issuers"][0]["signer_id"] = "sha256:" + ("0" * 64)
+        with (
+            patch(
+                "scripts.review_kag_mcp_result._read_committed_public_json",
+                return_value=(trust, json.dumps(trust).encode("utf-8")),
+            ),
+            self.assertRaisesRegex(
+                KagOwnerReviewError,
+                "identity does not match",
+            ),
+        ):
+            _trusted_stack_signer("a" * 40)
 
     def test_portable_manifest_cannot_be_shadowed_by_legacy_index(self) -> None:
         manifest_digest = "a" * 64
@@ -569,7 +675,15 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             receipt["result_artifact_ref"] = traversal_ref
             receipt_body = dict(receipt)
             receipt_body.pop("receipt_id")
-            receipt["receipt_id"] = _digest(receipt_body)
+            receipt_body.pop("attestation")
+            receipt = _attested_payload(
+                {
+                    key: value
+                    for key, value in receipt_body.items()
+                    if key not in {"signer_id", "attestation_algorithm"}
+                },
+                "receipt_id",
+            )
             _write_private_json(receipt_path, receipt)
 
             revision = subprocess.run(
@@ -595,6 +709,68 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
                         artifact_path=lexical_path,
                         source_revision=revision,
                     )
+
+    def test_recomputed_hashes_cannot_forge_stack_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(root, _capture_payload())
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            forged_body = dict(receipt)
+            forged_body.pop("receipt_id")
+            forged_body.pop("attestation")
+            forged_body["server_version"] = "forged"
+            forged = {
+                "receipt_id": _digest(forged_body),
+                **forged_body,
+                "attestation": "A" * 86,
+            }
+            forged_path = (
+                root
+                / "records"
+                / "aoa-kag"
+                / f"{forged['receipt_id'].removeprefix('sha256:')}.json"
+            )
+            _write_private_json(forged_path, forged)
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    return_value=NOW + timedelta(seconds=1),
+                ),
+                self.assertRaisesRegex(
+                    KagOwnerReviewError,
+                    "attestation does not verify",
+                ),
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=forged_path,
+                    artifact_path=result_path,
+                    source_revision=revision,
+                )
+
+    def test_review_output_cannot_overwrite_capture_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(root, _capture_payload())
+            for output in (receipt_path, result_path):
+                with self.subTest(output=output):
+                    with self.assertRaisesRegex(
+                        KagOwnerReviewError,
+                        "must be distinct",
+                    ):
+                        _assert_distinct_io_paths(
+                            receipt_path,
+                            result_path,
+                            output,
+                        )
 
     def test_tampered_capture_and_public_inputs_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

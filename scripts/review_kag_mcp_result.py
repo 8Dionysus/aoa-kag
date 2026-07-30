@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import json
 import os
@@ -20,13 +22,14 @@ from jsonschema import Draft202012Validator
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OWNER_PAYLOAD_SCHEMA_REF = "owner://aoa-kag/schema/payload"
 PROVIDER_REGISTRY_REF = "manifests/provider_registry.json"
+RUNTIME_CAPTURE_TRUST_REF = "config/runtime_capture_trust.json"
 SDK_REVIEW_SCHEMA_REF = (
     "schemas/organ-access/organ-owner-result-review.schema.json"
 )
 MAX_INPUT_BYTES = 2 * 1024 * 1024
 MAX_REVIEW_TTL_SECONDS = 300
-CAPTURE_RECEIPT_SCHEMA = "abyss_stack_mcp_canary_receipt_v1"
-RESULT_ARTIFACT_SCHEMA = "abyss_stack_mcp_canary_result_artifact_v1"
+CAPTURE_RECEIPT_SCHEMA = "abyss_stack_mcp_canary_receipt_v2"
+RESULT_ARTIFACT_SCHEMA = "abyss_stack_mcp_canary_result_artifact_v2"
 REVIEW_SCHEMA = "aoa_organ_owner_result_review_v1"
 KAG_RESULT_SCHEMA = "aoa-kag-mcp-capabilities-v1"
 CAPABILITY_ID = "knowledge-retrieval"
@@ -210,6 +213,125 @@ def _pinned_sdk_review_schema(
     return schema
 
 
+def _trusted_stack_signer(source_revision: str) -> tuple[str, bytes]:
+    trust, _ = _read_committed_public_json(
+        source_revision,
+        RUNTIME_CAPTURE_TRUST_REF,
+        "KAG runtime capture trust registry",
+    )
+    if trust.get("schema_version") != "aoa_kag_runtime_capture_trust_v1":
+        raise KagOwnerReviewError("KAG runtime capture trust registry is malformed")
+    issuers = trust.get("issuers")
+    if not isinstance(issuers, list):
+        raise KagOwnerReviewError("KAG runtime capture trust registry is malformed")
+    matches = [
+        issuer
+        for issuer in issuers
+        if isinstance(issuer, dict)
+        and issuer.get("issuer") == "abyss-stack"
+        and issuer.get("purpose") == "mcp-canary-capture"
+        and issuer.get("state") == "active"
+    ]
+    if len(matches) != 1:
+        raise KagOwnerReviewError(
+            "KAG runtime capture trust registry must name one active stack signer"
+        )
+    signer = matches[0]
+    signer_id = signer.get("signer_id")
+    encoded = signer.get("public_key_base64url")
+    if (
+        signer.get("attestation_algorithm") != "ed25519"
+        or not isinstance(signer_id, str)
+        or not isinstance(encoded, str)
+    ):
+        raise KagOwnerReviewError("KAG runtime capture signer is malformed")
+    try:
+        public_key = base64.b64decode(
+            encoded + ("=" * (-len(encoded) % 4)),
+            altchars=b"-_",
+            validate=True,
+        )
+    except (ValueError, binascii.Error) as exc:
+        raise KagOwnerReviewError(
+            "KAG runtime capture signer public key is malformed"
+        ) from exc
+    expected_id = "sha256:" + hashlib.sha256(public_key).hexdigest()
+    if len(public_key) != 32 or signer_id != expected_id:
+        raise KagOwnerReviewError(
+            "KAG runtime capture signer identity does not match its public key"
+        )
+    return signer_id, public_key
+
+
+def _verify_capture_attestation(
+    payload: dict[str, Any],
+    *,
+    identity: str,
+    label: str,
+    trusted_signer_id: str,
+    public_key: bytes,
+) -> None:
+    if (
+        payload.get("signer_id") != trusted_signer_id
+        or payload.get("attestation_algorithm") != "ed25519"
+    ):
+        raise KagOwnerReviewError(f"{label} signer is not trusted")
+    encoded = payload.get("attestation")
+    if not isinstance(encoded, str):
+        raise KagOwnerReviewError(f"{label} attestation is unavailable")
+    try:
+        attestation = base64.b64decode(
+            encoded + ("=" * (-len(encoded) % 4)),
+            altchars=b"-_",
+            validate=True,
+        )
+    except (ValueError, binascii.Error) as exc:
+        raise KagOwnerReviewError(f"{label} attestation is malformed") from exc
+    if len(attestation) != 64:
+        raise KagOwnerReviewError(f"{label} attestation is malformed")
+    statement = dict(payload)
+    statement.pop("attestation", None)
+    if identity not in statement:
+        raise KagOwnerReviewError(f"{label} identity is unavailable")
+    subject_public_key = bytes.fromhex("302a300506032b6570032100") + public_key
+    with tempfile.TemporaryDirectory(prefix="aoa-kag-capture-verify-") as directory:
+        root = Path(directory)
+        public_path = root / "public.der"
+        statement_path = root / "statement.json"
+        attestation_path = root / "attestation.bin"
+        public_path.write_bytes(subject_public_key)
+        statement_path.write_bytes(
+            _canonical_json_bytes(statement, ensure_ascii=False)
+        )
+        attestation_path.write_bytes(attestation)
+        try:
+            result = subprocess.run(
+                [
+                    "openssl",
+                    "pkeyutl",
+                    "-verify",
+                    "-pubin",
+                    "-inkey",
+                    str(public_path),
+                    "-keyform",
+                    "DER",
+                    "-rawin",
+                    "-in",
+                    str(statement_path),
+                    "-sigfile",
+                    str(attestation_path),
+                ],
+                check=False,
+                capture_output=True,
+            )
+        except OSError as exc:
+            raise KagOwnerReviewError(
+                f"{label} attestation verifier is unavailable"
+            ) from exc
+    if result.returncode != 0:
+        raise KagOwnerReviewError(f"{label} attestation does not verify")
+
+
 def _committed_path_exists(source_revision: str, relative_path: str) -> bool:
     try:
         result = subprocess.run(
@@ -238,6 +360,7 @@ def _assert_content_address(payload: dict[str, Any], identity: str, label: str) 
     claimed = payload.get(identity)
     body = dict(payload)
     body.pop(identity, None)
+    body.pop("attestation", None)
     expected = _digest(body)
     if claimed != expected:
         raise KagOwnerReviewError(f"{label} content address does not match")
@@ -250,6 +373,8 @@ def _validate_capture(
     capture_root: Path,
     receipt_path: Path,
     artifact_path: Path,
+    trusted_signer_id: str,
+    public_key: bytes,
 ) -> tuple[dict[str, Any], datetime, datetime, str, str]:
     if receipt.get("schema_version") != CAPTURE_RECEIPT_SCHEMA:
         raise KagOwnerReviewError("capture receipt schema is unsupported")
@@ -272,6 +397,13 @@ def _validate_capture(
     if receipt.get("reason_codes") not in ([], ()):
         raise KagOwnerReviewError("successful capture receipt carries failure reasons")
     _assert_content_address(receipt, "receipt_id", "capture receipt")
+    _verify_capture_attestation(
+        receipt,
+        identity="receipt_id",
+        label="capture receipt",
+        trusted_signer_id=trusted_signer_id,
+        public_key=public_key,
+    )
 
     if artifact.get("schema_version") != RESULT_ARTIFACT_SCHEMA:
         raise KagOwnerReviewError("result artifact schema is unsupported")
@@ -294,6 +426,15 @@ def _validate_capture(
         if artifact.get(field) != expected:
             raise KagOwnerReviewError(f"result artifact {field} does not match")
     _assert_content_address(artifact, "artifact_id", "result artifact")
+    _verify_capture_attestation(
+        artifact,
+        identity="artifact_id",
+        label="result artifact",
+        trusted_signer_id=trusted_signer_id,
+        public_key=public_key,
+    )
+    if artifact.get("signer_id") != receipt.get("signer_id"):
+        raise KagOwnerReviewError("result artifact signer does not match receipt")
 
     owner_payload = artifact.get("owner_payload")
     if not isinstance(owner_payload, dict):
@@ -498,6 +639,7 @@ def review_kag_capture(
     reviewed_at = _aware_time(_utc_now(), "reviewed_at")
     receipt = _read_private_json(receipt_path, "capture receipt")
     artifact = _read_private_json(artifact_path, "result artifact")
+    trusted_signer_id, public_key = _trusted_stack_signer(source_revision)
     (
         owner_payload,
         observed_at,
@@ -510,6 +652,8 @@ def review_kag_capture(
         capture_root=capture_root,
         receipt_path=receipt_path,
         artifact_path=artifact_path,
+        trusted_signer_id=trusted_signer_id,
+        public_key=public_key,
     )
     if reviewed_at < observed_at or reviewed_at >= capture_expires_at:
         raise KagOwnerReviewError("review time is outside the live capture window")
@@ -692,6 +836,22 @@ def _write_private_json(path: Path, payload: dict[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _assert_distinct_io_paths(
+    receipt_path: Path,
+    artifact_path: Path,
+    output_path: Path,
+) -> None:
+    resolved = {
+        receipt_path.expanduser().resolve(strict=False),
+        artifact_path.expanduser().resolve(strict=False),
+        output_path.expanduser().resolve(strict=False),
+    }
+    if len(resolved) != 3:
+        raise KagOwnerReviewError(
+            "capture receipt, result artifact, and review output must be distinct"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--capture-root", type=Path, required=True)
@@ -700,6 +860,7 @@ def main() -> int:
     parser.add_argument("--source-revision", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    _assert_distinct_io_paths(args.receipt, args.result, args.output)
     review = review_kag_capture(
         capture_root=args.capture_root,
         receipt_path=args.receipt,

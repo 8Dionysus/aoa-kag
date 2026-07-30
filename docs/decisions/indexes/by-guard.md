@@ -19,6 +19,10 @@
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 
+## authenticated issuer
+
+- [AOA-KAG-D-0021 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0021-review-captured-mcp-results-in-the-owner.md`)
+
 ## bounded context
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)

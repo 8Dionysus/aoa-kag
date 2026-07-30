@@ -74,12 +74,15 @@ release checks, and test discovery.
 `scripts/validate_local_stats_port.py` delegates the KAG-local `stats/` port
 to the pinned `aoa-stats` contract owner and does not reimplement its grammar.
 
-`scripts/review_kag_mcp_result.py` reads one private, content-addressed
-`abyss-stack` canary receipt and result artifact, validates the exact
-`kag_discover` owner payload against the KAG capability schema, assesses KAG
-source-index freshness, and writes one private SDK-shaped owner review. It
-does not call MCP, accept the result, issue central proof, or alter runtime
-state.
+`scripts/review_kag_mcp_result.py` reads one private, content-addressed and
+Ed25519-attested `abyss-stack` canary receipt and result artifact. It resolves
+the one active stack capture signer from the committed
+`config/runtime_capture_trust.json` at the exact reviewed source revision,
+verifies both attestations, validates the exact `kag_discover` owner payload
+against the KAG capability schema, assesses KAG source-index freshness, and
+writes one distinct private SDK-shaped owner review. It does not call MCP,
+accept the result, issue central proof, overwrite capture evidence, or alter
+runtime state.
 
 `scripts/validators/local_kag_subtree.py` checks the repo-local KAG subtree
 contract, example packet, and OS Abyss readiness matrix.
