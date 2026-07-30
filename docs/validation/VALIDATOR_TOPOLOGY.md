@@ -30,6 +30,18 @@ verified packet when a lane run scope is active. `full` composes both and
 remains the no-argument compatibility behavior. Command authority, not an
 implicit validator side effect, decides where the blocking OS-wide proof runs.
 
+## Impact Route Boundary
+
+Impact routing is not a weaker validator scope. Every pull request still runs
+the complete `source-fast` lane and the self owner-family full/incremental
+parity action. The fail-closed classifier may only require or correctly omit
+the additional `os-wide` release audit. Source-fast receives its six pinned
+source donors plus pinned `aoa-stats`, while the other provider homes remain
+exclusive to the OS-wide lane. Unknown paths, classifier uncertainty, and
+changes to schemas, builders, validators, federation, trust, receipts, budgets,
+compatibility, generated coverage, or release topology require that audit. The
+required summary rejects a skipped required proof.
+
 | Module | Function |
 | --- | --- |
 | `scripts/validators/generation.py` | KAG generation constants and payload builders from the generation package/facade |

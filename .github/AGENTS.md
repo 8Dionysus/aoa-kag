@@ -15,6 +15,16 @@ Keep `.github/CODEOWNERS`, PR templates, and workflow names aligned with the roo
 
 Full lane command sequences live in `config/validation_lanes.json`; GitHub workflow YAML should call `python scripts/release_check.py` or `python scripts/ci_gate.py --mode ...` instead of rebuilding lane meaning inline.
 
+`Repo Validation` is a required summary over an always-required source-fast
+plus self owner-family job and a fail-closed conditional full OS-wide audit.
+The classifier may omit only that additional audit. The summary must report
+`verified` separately from `correctly-not-required`; a skipped required proof
+is a failure, not a successful check.
+
+The source-fast job checks out only its six pinned source donors plus pinned
+`aoa-stats`. Keep every other provider checkout, including private session
+memory, inside the conditional full OS-wide job.
+
 When workflow or repository-policy files change, report:
 
 - GitHub surface touched

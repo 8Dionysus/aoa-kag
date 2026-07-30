@@ -5,10 +5,124 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
+  source_fast:
+    name: Source Fast and Owner Family
+    runs-on: ubuntu-latest
+    outputs:
+      impact-route: ${{ steps.impact.outputs.route }}
+      impact-reason-ids: ${{ steps.impact.outputs.reason-ids }}
+      full-audit-required: ${{ steps.impact.outputs.full-audit-required }}
+    env:
+      OS_ABYSS_ROOT: /srv/AbyssOS
+      AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
+      AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
+      AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
+      TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+      AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
+      AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+      AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Checkout Tree-of-Sophia
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/Tree-of-Sophia
+          ref: d95a583272acb84dcb5b7e6896801f0364c7b234
+          path: .deps/Tree-of-Sophia
+          fetch-depth: 0
+
+      - name: Checkout aoa-memo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-memo
+          ref: bcda57fe47d5e3daaee8258cc4428dc6315ae239
+          path: .deps/aoa-memo
+          fetch-depth: 0
+
+      - name: Checkout aoa-playbooks
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-playbooks
+          ref: b72ca2d333bcdf516ed6656e34670fa93df88162
+          path: .deps/aoa-playbooks
+          fetch-depth: 0
+
+      - name: Checkout aoa-evals
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-evals
+          ref: 12b408727e40174dd10e1f9ad0fa2e7f7fd11eec
+          path: .deps/aoa-evals
+          fetch-depth: 0
+
+      - name: Checkout aoa-agents
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-agents
+          ref: 92dd79e6c79fef60faedf6b97f2c65ff89477d06
+          path: .deps/aoa-agents
+          fetch-depth: 0
+
+      - name: Checkout aoa-techniques
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-techniques
+          ref: 9a5222cc6a6b1fdc52b4df906f49dadfd0383c71
+          path: .deps/aoa-techniques
+          fetch-depth: 0
+
+      - name: Checkout aoa-stats
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stats
+          ref: 740c57d6ab2fe78d6a8440c19c2637431e039c6b
+          path: .deps/aoa-stats
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+
+      - name: Install validation dependencies
+        run: python -m pip install PyYAML jsonschema
+
+      - name: Classify KAG validation impact
+        id: impact
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: >-
+          python scripts/impact_routing.py classify
+          --event-name "$EVENT_NAME"
+          --base-ref "$BASE_SHA"
+          --head-ref "$HEAD_SHA"
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Check repo-local KAG index family
+        uses: ./.github/actions/repo-local-kag-index
+
+      - name: Run source-fast validation
+        run: python scripts/ci_gate.py --mode source-fast
+
   release_audit:
-    name: Repo Validation
+    name: Full OS-wide Release Audit
+    needs: source_fast
+    if: >-
+      always() &&
+      needs.source_fast.result == 'success' &&
+      needs.source_fast.outputs.full-audit-required == 'true'
     runs-on: ubuntu-latest
     env:
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
@@ -36,9 +150,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - name: Check repo-local KAG index family
-        uses: ./.github/actions/repo-local-kag-index
+        with:
+          fetch-depth: 0
 
       - name: Checkout Tree-of-Sophia
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -235,3 +348,28 @@ jobs:
             git status --porcelain --untracked-files=all -- generated
             exit 1
           fi
+
+  required_summary:
+    name: Repo Validation
+    needs:
+      - source_fast
+      - release_audit
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Enforce required landing result
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_FAST_RESULT: ${{ needs.source_fast.result }}
+          FULL_AUDIT_RESULT: ${{ needs.release_audit.result }}
+          FULL_AUDIT_REQUIRED: ${{ needs.source_fast.outputs.full-audit-required }}
+        run: |
+          python scripts/impact_routing.py summarize \
+            --event-name "$EVENT_NAME" \
+            --source-fast-result "$SOURCE_FAST_RESULT" \
+            --full-audit-result "$FULL_AUDIT_RESULT" \
+            --full-audit-required "$FULL_AUDIT_REQUIRED" \
+            --github-step-summary "$GITHUB_STEP_SUMMARY"
