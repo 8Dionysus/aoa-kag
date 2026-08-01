@@ -6,7 +6,8 @@
     "This manifest is the canonical storage surface for active validation lane command sequences.",
     "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences.",
     "The source-fast lane always runs validate_kag local scope; generated and compatibility lanes add one explicit OS-wide provider-home and coverage scope inside the same run-scoped packet epoch.",
-    "Impact routing never replaces source-fast or the self owner-family check; it only decides whether an additional full OS-wide release audit is required."
+    "Impact routing never replaces source-fast or the self owner-family check; it only decides whether an additional full OS-wide release audit is required.",
+    "The CI release continuation may omit only a source-fast proof accepted through the exact same-run handoff contract; any absent, malformed, stale, mismatched, or ambiguous receipt falls back to the full release sequence."
   ],
   "lanes": {
     "source_fast": {
@@ -44,6 +45,19 @@
       "does_not_own": [
         "ordinary docs status",
         "GitHub dependency canary scheduling"
+      ]
+    },
+    "release_continuation": {
+      "label": "release-continuation",
+      "posture": "blocking",
+      "owner_surface": "docs/RELEASING.md",
+      "command_sequence": "release_continuation",
+      "entrypoint": "scripts/ci_release_check.py",
+      "purpose": "CI-only release continuation after exact same-run source-fast and owner-family receipt acceptance.",
+      "does_not_own": [
+        "standalone release validation",
+        "cross-run proof reuse",
+        "source repository authored meaning"
       ]
     },
     "compatibility_canary": {
@@ -89,6 +103,22 @@
       "generated",
       "kag/indexes/index_family.manifest.json",
       "kag/indexes/shards"
+    ]
+  },
+  "source_fast_handoff": {
+    "schema_version": "aoa_kag_source_fast_handoff_v1",
+    "producer_job": "source_fast",
+    "consumer_job": "release_audit",
+    "invalid_receipt_posture": "fallback-full-release",
+    "donors": [
+      "Tree-of-Sophia",
+      "aoa-memo",
+      "aoa-playbooks",
+      "aoa-evals",
+      "aoa-agents",
+      "aoa-techniques",
+      "aoa-sdk",
+      "aoa-stats"
     ]
   },
   "impact_routing": {
@@ -358,6 +388,18 @@
         "--mode",
         "source-fast"
       ],
+      [
+        "python",
+        "scripts/ci_gate.py",
+        "--mode",
+        "generated"
+      ],
+      [
+        "python",
+        "scripts/validate_abyss_machine_kag_registry_bundle.py"
+      ]
+    ],
+    "release_continuation": [
       [
         "python",
         "scripts/ci_gate.py",

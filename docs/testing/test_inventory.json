@@ -161,8 +161,8 @@
             "release/artifact-trust"
           ]
         },
-    {
-      "path": "tests/test_repo_validation_workflow.py",
+        {
+          "path": "tests/test_repo_validation_workflow.py",
       "family": "release/ci-lane",
       "protects": "GitHub repo validation always-required local proof, fail-closed conditional full audit, stable required summary, dependency pins, and generated drift posture.",
           "owner_surface": ".github/workflows/repo-validation.yml",
@@ -240,6 +240,19 @@
           "failure_route": "Route through roadmap/current direction source.",
           "coverage_kinds": [
             "source/route-contract"
+          ]
+        },
+        {
+          "path": "tests/test_source_fast_handoff.py",
+          "family": "release/ci-lane",
+          "protects": "Exact same-run source-fast receipt identity, donor pins, owner-family binding, strict receipt shape, CI continuation, and fail-closed full-release fallback.",
+          "owner_surface": "config/validation_lanes.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_source_fast_handoff.py",
+          "failure_route": "Route through the source-fast handoff contract, CI continuation entrypoint, workflow transfer, or full release fallback.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "topology/inventory"
           ]
         },
         {

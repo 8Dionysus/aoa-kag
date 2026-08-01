@@ -12,6 +12,8 @@
 | `scripts/impact_routing.py` | fail-closed changed-path classifier and required-summary evaluator |
 | `scripts/ci_gate.py` | CI lane executor |
 | `scripts/release_check.py` | release entrypoint |
+| `scripts/source_fast_handoff.py` | strict same-run source-fast receipt issuer and verifier |
+| `scripts/ci_release_check.py` | CI-only release continuation selector with complete-release fallback |
 | `scripts/coverage_run.py` | run-scoped coverage packet, telemetry receipt, and lifecycle boundary shared by lane processes |
 | `scripts/run_tests.py` | unittest discovery for root and active mechanics part tests |
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
@@ -84,6 +86,31 @@ does not alter the blocking proof verdict recorded by the lane.
 Exact provider revisions remain visible in the preceding provider-checkout
 verification log. Neither surface becomes a committed read model or owner
 truth.
+
+## Exact Source-Fast Job Handoff
+
+The high-impact GitHub workflow performs source-fast and owner-family proof in
+its first job. That job issues one ephemeral
+`aoa_kag_source_fast_handoff_v1` receipt only after both proofs succeed. The
+receipt binds exact `HEAD`, Git index tree and entry digest, command-authority
+and source-fast sequence digests, validator and builder input digests, donor
+names with expected and observed registry pins, owner-family and source-index
+identities, explicit history boundaries, and GitHub run, attempt, workflow,
+SHA, repository, and producer-job identity.
+
+The independent full-audit checkout recomputes the entire typed receipt.
+Strict schema shape, digest, clean checkout, pin, family, command, input, and
+workflow equality are all required. An accepted receipt selects the
+`release-continuation` command sequence, which still runs the generated lane,
+OS-wide provider/coverage audit, generated fixed point, machine-registry
+bundle proof, and workflow generated-output cleanliness check. Missing,
+malformed, ambiguous, stale, tampered, cross-run, or otherwise mismatched
+receipts select the complete `release` sequence instead.
+
+The receipt is not persisted and has no cross-run authority. Standalone
+`scripts/release_check.py` always runs the full release sequence. Source-fast
+checkout refs use the same exact pins as `manifests/provider_registry.json`,
+and the owner-family action receives explicit event history refs.
 
 ## Immutable Owner Source Scans
 
@@ -174,6 +201,7 @@ the typed summary while a superseded workflow can actually release its runner.
 | `source-fast` | `python scripts/ci_gate.py --mode source-fast` |
 | `generated` | `python scripts/ci_gate.py --mode generated` |
 | `release` | `python scripts/release_check.py` |
+| `release-continuation` | `python scripts/ci_release_check.py` (CI-only, exact receipt or full fallback) |
 | `compatibility-canary` | `python scripts/ci_gate.py --mode compatibility-canary` |
 | `advisory` | `python scripts/ci_gate.py --mode advisory` |
 

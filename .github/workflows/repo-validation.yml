@@ -22,6 +22,7 @@ jobs:
       impact-route: ${{ steps.impact.outputs.route }}
       impact-reason-ids: ${{ steps.impact.outputs.reason-ids }}
       full-audit-required: ${{ steps.impact.outputs.full-audit-required }}
+      source_fast_handoff: ${{ steps.source_fast_handoff.outputs.receipt }}
     env:
       OS_ABYSS_ROOT: /srv/AbyssOS
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
@@ -32,6 +33,8 @@ jobs:
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -50,7 +53,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-memo
-          ref: bcda57fe47d5e3daaee8258cc4428dc6315ae239
+          ref: c7c83081b7db0a0e908f14888b7438b5ecdde3bf
           path: .deps/aoa-memo
           fetch-depth: 0
 
@@ -66,7 +69,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-evals
-          ref: 12b408727e40174dd10e1f9ad0fa2e7f7fd11eec
+          ref: 58bf49d374b008ef6625a9fd6893c61096777b4d
           path: .deps/aoa-evals
           fetch-depth: 0
 
@@ -98,7 +101,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stats
-          ref: 740c57d6ab2fe78d6a8440c19c2637431e039c6b
+          ref: 5627c41efe9f766a4b3437da857060847cb4f0f1
           path: .deps/aoa-stats
           fetch-depth: 0
 
@@ -125,9 +128,16 @@ jobs:
 
       - name: Check repo-local KAG index family
         uses: ./.github/actions/repo-local-kag-index
+        with:
+          history-ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          event-history-ref: ${{ github.event.pull_request.base.sha || github.sha }}
 
       - name: Run source-fast validation
         run: python scripts/ci_gate.py --mode source-fast
+
+      - name: Issue exact source-fast handoff
+        id: source_fast_handoff
+        run: python scripts/source_fast_handoff.py issue --github-output "$GITHUB_OUTPUT"
 
   release_audit:
     name: Full OS-wide Release Audit
@@ -160,6 +170,9 @@ jobs:
       AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
       AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
       AOA_XDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-xda-connector
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -353,7 +366,7 @@ jobs:
         run: python -m pip install PyYAML jsonschema
 
       - name: Run release audit
-        run: python scripts/release_check.py
+        run: python scripts/ci_release_check.py
 
       - name: Check generated outputs are committed
         run: |

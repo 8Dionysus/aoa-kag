@@ -13,7 +13,11 @@ Do not encode sibling-repo doctrine, private workspace assumptions, or hidden re
 Keep `.github/CODEOWNERS`, PR templates, and workflow names aligned with the root route card.
 `Repo Validation` is the landing check expected by the root GitHub landing workflow. If that check is added, renamed, or its meaning changes, update the root route, PR expectations, `docs/validation/COMMAND_AUTHORITY.md`, and this file in the same change.
 
-Full lane command sequences live in `config/validation_lanes.json`; GitHub workflow YAML should call `python scripts/release_check.py` or `python scripts/ci_gate.py --mode ...` instead of rebuilding lane meaning inline.
+Full lane command sequences live in `config/validation_lanes.json`; GitHub
+workflow YAML should call `python scripts/release_check.py`, the exact-receipt
+`python scripts/ci_release_check.py` continuation, or
+`python scripts/ci_gate.py --mode ...` instead of rebuilding lane meaning
+inline.
 
 `Repo Validation` is a required summary over an always-required source-fast
 plus self owner-family job and a fail-closed conditional full OS-wide audit.
@@ -25,6 +29,12 @@ The source-fast job checks out only its seven pinned source donors, including
 `aoa-sdk` for the source-pinned owner-review schema, plus pinned `aoa-stats`.
 Keep every other provider checkout, including private session memory, inside
 the conditional full OS-wide job.
+
+The conditional full job may omit its duplicate source-fast invocation only
+after `scripts/source_fast_handoff.py` recomputes the exact same-run receipt.
+Any invalid receipt must execute the complete standalone release sequence;
+receipt acceptance cannot omit generated, OS-wide, artifact-bundle, or
+generated-cleanliness proof.
 
 When workflow or repository-policy files change, report:
 
