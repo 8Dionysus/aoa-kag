@@ -16,7 +16,12 @@ STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
 RETIRED_REFERENCE_REPOS = {"aoa-routing"}
-EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS) | RETIRED_REFERENCE_REPOS
+SOURCE_PREPARATION_REPOS = {"aoa-models"}
+EXPECTED_DIRECT_REPOS = (
+    set(PROVIDER_REPO_ROOTS)
+    | RETIRED_REFERENCE_REPOS
+    | SOURCE_PREPARATION_REPOS
+)
 
 EXPECTED_CONNECTOR_SURFACE_ROOTS = {
     "connectors/aoa-4pda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-4pda-connector",
@@ -272,6 +277,15 @@ def _validate_readiness_matrix(payload: dict[str, object]) -> None:
         if not isinstance(entry, dict):
             fail("local KAG readiness matrix repo entries must be objects")
         repo = entry["repo"]
+        if (
+            str(repo) in SOURCE_PREPARATION_REPOS
+            and entry["provider_status"] != "source_preparation"
+        ):
+            fail(
+                "unadmitted direct owner repos must remain source_preparation until "
+                "their committed provider homes enter the provider registry: "
+                + str(repo)
+            )
         if entry["provider_status"] == "provider_ready":
             ready_repos.add(str(repo))
             if set(entry.get("first_record_classes", [])) != REQUIRED_RECORD_CLASSES:

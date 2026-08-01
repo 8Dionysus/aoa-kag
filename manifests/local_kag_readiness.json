@@ -621,6 +621,74 @@
       ]
     },
     {
+      "repo": "aoa-models",
+      "repo_role": "configuration-scoped model knowledge owner in pre-provider source preparation",
+      "source_home_surfaces": [
+        "source/",
+        "schemas/",
+        "docs/decisions/"
+      ],
+      "surface_inventory": {
+        "evals": false,
+        "memo": false,
+        "mechanics": false,
+        "generated": true,
+        "manifests": false,
+        "schemas": true,
+        "examples": false,
+        "scripts": true,
+        "tests": true
+      },
+      "kag_pressure": [
+        "model identity, realization, claim, and study source-return handles after owner landing",
+        "future model-fit retrieval without granting routing, activation, proof, or acceptance authority"
+      ],
+      "source_owned_exports": [],
+      "candidate_source_surfaces": [
+        "README.md",
+        "DIRECTION.md",
+        "source/model-identities/openai-gpt-5.6-luna.json",
+        "source/model-studies/external-codex-landing-readiness-2026-08-01.json"
+      ],
+      "graph_entities": [
+        "model identity",
+        "model realization",
+        "model claim",
+        "model study",
+        "model-fit projection"
+      ],
+      "event_surfaces": [
+        "source/model-studies/"
+      ],
+      "document_surfaces": [
+        "README.md",
+        "DIRECTION.md",
+        "docs/decisions/AOA-MODELS-D-0001-own-configuration-scoped-model-knowledge.md"
+      ],
+      "validators": [
+        "python scripts/validate_models.py",
+        "python scripts/build_model_fit_projections.py --check",
+        "python scripts/generate_decision_index.py --check",
+        "python -m unittest discover -s tests -v"
+      ],
+      "release_gate": "owner landing, committed source identity, and repo-local KAG provider admission",
+      "runtime_consumers": [
+        "aoa-sdk routing control plane",
+        "aoa-evals proof references",
+        "future aoa-kag provider route"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-models",
+          "surface": "README.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "provider_status": "source_preparation",
+      "adoption_order": 24,
+      "first_record_classes": []
+    },
+    {
       "repo": "aoa-playbooks",
       "repo_role": "playbook source home and scenario choreography",
       "source_home_surfaces": [

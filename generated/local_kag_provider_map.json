@@ -5,7 +5,8 @@
   "source_ref": "manifests/local_kag_readiness.json",
   "provider_status_counts": {
     "provider_ready": 23,
-    "retired_reference": 1
+    "retired_reference": 1,
+    "source_preparation": 1
   },
   "providers": [
     {
@@ -43,7 +44,7 @@
           "manifest_ref": "kag/indexes/index_family.manifest.json",
           "receipt_ref": "",
           "shards": 484,
-          "tracked_bytes": 11312835,
+          "tracked_bytes": 11320949,
           "tracked_bytes_max": 12582912
         },
         "repository_index_family": {
@@ -7768,7 +7769,7 @@
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "receipt_ref": "",
         "shards": 484,
-        "tracked_bytes": 11312835,
+        "tracked_bytes": 11320949,
         "tracked_bytes_max": 12582912
       },
       "repository_index_family": {
@@ -12049,6 +12050,24 @@
           "repo": "aoa-sdk",
           "surface": "mechanics/boundary-bridge/parts/consumed-surface-posture-gate/docs/routing-consumer-contract.md",
           "route_kind": "routing"
+        }
+      ]
+    },
+    {
+      "repo": "aoa-models",
+      "adoption_order": 24,
+      "provider_status": "source_preparation",
+      "candidate_source_surfaces": [
+        "README.md",
+        "DIRECTION.md",
+        "source/model-identities/openai-gpt-5.6-luna.json",
+        "source/model-studies/external-codex-landing-readiness-2026-08-01.json"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-models",
+          "surface": "README.md",
+          "route_kind": "authored_meaning"
         }
       ]
     }
