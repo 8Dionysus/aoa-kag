@@ -79,3 +79,7 @@
 ## 2026-07-31
 
 - [AOA-KAG-D-0024 - Immutable Batch Owner Source Scan](../AOA-KAG-D-0024-immutable-batch-owner-source-scan.md) (`docs/decisions/AOA-KAG-D-0024-immutable-batch-owner-source-scan.md`)
+
+## 2026-08-01
+
+- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)

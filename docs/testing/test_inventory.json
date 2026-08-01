@@ -82,6 +82,19 @@
           ]
         },
         {
+          "path": "tests/test_kag_mcp_source_identity.py",
+          "family": "kag/source-identity",
+          "protects": "Clean committed KAG source binding, canonical source-index identity, bounded freshness, private content-addressed outputs, stack overlay shape, and no-proof/no-acceptance stop-lines.",
+          "owner_surface": "scripts/issue_kag_mcp_source_identity.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_source_identity.py",
+          "failure_route": "Route through the KAG MCP source-identity schema, canonical source-index identity, issuer, or owner-boundary decision.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "release/artifact-trust"
+          ]
+        },
+        {
           "path": "tests/test_kag_mcp_owner_review.py",
           "family": "kag/owner-result-review",
           "protects": "Source-pinned stack signer trust, private receipt/result attestation and binding, output-path isolation, KAG capability grounding, source-index freshness, content addressing, and no-acceptance stop-lines.",
@@ -89,6 +102,34 @@
           "runtime_cost": "fast",
           "focused_target": "tests/test_kag_mcp_owner_review.py",
           "failure_route": "Route through the KAG MCP capability schema, owner reviewer, SDK review contract, or stack capture contract.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "sibling/live-dependency",
+            "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_kag_mcp_owner_review_projection.py",
+          "family": "kag/owner-review-projection",
+          "protects": "Exact live owner-review and capture continuity, grounded-canary and freshness overlay projection, expiry, and no-proof/no-acceptance stop-lines.",
+          "owner_surface": "scripts/project_kag_mcp_owner_review.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_owner_review_projection.py",
+          "failure_route": "Route through the KAG owner-review projector, SDK review contract, or stack evidence-overlay contract.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "sibling/live-dependency",
+            "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_kag_mcp_owner_acceptance.py",
+          "family": "kag/owner-acceptance",
+          "protects": "Exact source, runtime, consumer, canary, owner-review, proof-packet, and content-addressed central-proof binding; expiry; private outputs; and no-admission/no-rollback stop-lines.",
+          "owner_surface": "scripts/accept_kag_mcp_owner_contour.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_owner_acceptance.py",
+          "failure_route": "Route through the KAG owner-acceptance schema, issuer, owner-boundary decision, stack observation, or aoa-evals proof contract.",
           "coverage_kinds": [
             "source/route-contract",
             "sibling/live-dependency",

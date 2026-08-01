@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-of-abyss.example/aoa-kag/kag-mcp-owner-acceptance-receipt.schema.json",
+  "title": "KAG MCP owner acceptance receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_digest",
+    "organ_id",
+    "capability_id",
+    "policy_family",
+    "decision",
+    "owners",
+    "accepted_at",
+    "expires_at",
+    "source",
+    "package",
+    "runtime_target",
+    "central_proof",
+    "owner_result_review",
+    "admission_authorized",
+    "higher_effect_authorized",
+    "cross_organ_benefit_asserted",
+    "rollback_proven",
+    "contains_secrets",
+    "claim_limits"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa_kag_mcp_owner_acceptance_receipt_v1"},
+    "receipt_digest": {"$ref": "#/$defs/digest"},
+    "organ_id": {"const": "aoa-kag"},
+    "capability_id": {"const": "knowledge-retrieval"},
+    "policy_family": {"const": "read"},
+    "decision": {"const": "accepted"},
+    "owners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "access", "control", "runtime", "proof", "acceptance"],
+      "properties": {
+        "source": {"const": "aoa-kag"},
+        "access": {"const": "aoa-kag"},
+        "control": {"const": "aoa-sdk"},
+        "runtime": {"const": "abyss-stack"},
+        "proof": {"const": "aoa-evals"},
+        "acceptance": {"const": "aoa-kag"}
+      }
+    },
+    "accepted_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "tree_digest", "source_ref", "source_receipt_digest"],
+      "properties": {
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tree_digest": {"$ref": "#/$defs/digest"},
+        "source_ref": {"type": "string", "minLength": 1},
+        "source_receipt_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "artifact_digest", "deploy_revision", "deploy_tree_digest", "deploy_manifest_digest"],
+      "properties": {
+        "name": {"const": "aoa-kag-mcp"},
+        "version": {"type": "string", "minLength": 1},
+        "artifact_digest": {"$ref": "#/$defs/digest"},
+        "deploy_revision": {"type": "string", "minLength": 1},
+        "deploy_tree_digest": {"$ref": "#/$defs/digest"},
+        "deploy_manifest_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "runtime_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["process_identity", "server_schema_digest", "consumer_registration_ref", "canary_route", "canary_ref"],
+      "properties": {
+        "process_identity": {"type": "string", "minLength": 1},
+        "server_schema_digest": {"$ref": "#/$defs/digest"},
+        "consumer_registration_ref": {"type": "string", "minLength": 1},
+        "canary_route": {"type": "string", "minLength": 1},
+        "canary_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "central_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proof_ref", "proof_digest", "evaluated_at", "eval_name", "packet_ref", "packet_digest", "packet_id", "eval_digest", "manifest_digest", "packet_schema_digest"],
+      "properties": {
+        "proof_ref": {"type": "string", "minLength": 1},
+        "proof_digest": {"$ref": "#/$defs/digest"},
+        "evaluated_at": {"type": "string", "format": "date-time"},
+        "eval_name": {"const": "aoa-organ-access-admission-integrity"},
+        "packet_ref": {"type": "string", "minLength": 1},
+        "packet_digest": {"$ref": "#/$defs/digest"},
+        "packet_id": {"type": "string", "minLength": 3},
+        "eval_digest": {"$ref": "#/$defs/digest"},
+        "manifest_digest": {"$ref": "#/$defs/digest"},
+        "packet_schema_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "owner_result_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_ref", "review_id", "result_digest", "provider_watermark"],
+      "properties": {
+        "review_ref": {"type": "string", "minLength": 1},
+        "review_id": {"$ref": "#/$defs/digest"},
+        "result_digest": {"$ref": "#/$defs/digest"},
+        "provider_watermark": {"type": "string", "pattern": "^aoa-kag-source-index:[0-9a-f]{64}$"}
+      }
+    },
+    "admission_authorized": {"const": false},
+    "higher_effect_authorized": {"const": false},
+    "cross_organ_benefit_asserted": {"const": false},
+    "rollback_proven": {"const": false},
+    "contains_secrets": {"const": false},
+    "claim_limits": {
+      "type": "array",
+      "minItems": 4,
+      "items": {"type": "string", "minLength": 20},
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

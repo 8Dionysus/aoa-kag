@@ -39,6 +39,10 @@
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
 
+## clean committed source
+
+- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
+
 ## command authority
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
@@ -85,6 +89,10 @@
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 
+## exact identity
+
+- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
+
 ## explicit exceedance receipt
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
@@ -116,6 +124,7 @@
 ## freshness
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
 
 ## freshness handle
 
@@ -229,10 +238,15 @@
 ## no acceptance inference
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
+- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
 
 ## no duplicate projection
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+
+## no proof inference
+
+- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
 
 ## no-root-Spark
 

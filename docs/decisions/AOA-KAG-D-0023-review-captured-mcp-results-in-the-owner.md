@@ -76,6 +76,9 @@ inside a private capture never becomes trusted.
 - Stale or missing owner digests remain readable only under an explicit
   non-exact state or block the review.
 - A valid owner review is still not KAG acceptance or organ admission.
+- A separate fail-closed projector may carry an exact, still-live owner review
+  into stack grounded-canary and freshness fields, but it cannot promote that
+  review into central proof, acceptance, admission, or rollback.
 - Other KAG operations need their own owner payload review before they can
   claim result grounding.
 
@@ -84,8 +87,10 @@ inside a private capture never becomes trusted.
 - `schemas/kag-mcp-capabilities.schema.json`
 - `examples/kag_mcp_capabilities.example.json`
 - `scripts/review_kag_mcp_result.py`
+- `scripts/project_kag_mcp_owner_review.py`
 - `config/runtime_capture_trust.json`
 - `tests/test_kag_mcp_owner_review.py`
+- `tests/test_kag_mcp_owner_review_projection.py`
 - `docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`
 - `aoa-sdk:schemas/organ-access/organ-owner-result-review.schema.json`
 - `abyss-stack:mcp/services/abyss-stack-mcp/src/abyss_stack_mcp/canary.py`

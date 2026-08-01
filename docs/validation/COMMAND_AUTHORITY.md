@@ -17,7 +17,10 @@
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
 | `scripts/validate_kag.py` | scoped local, OS-wide, or full KAG validation entrypoint |
 | `scripts/validate_local_stats_port.py` | owner-local stats port adapter to the pinned `aoa-stats` validator |
+| `scripts/issue_kag_mcp_source_identity.py` | private source-identity receipt and stack overlay issuer for one clean committed KAG source-index identity |
 | `scripts/review_kag_mcp_result.py` | private KAG owner review of one exact, stack-attested `kag_discover` result against the source-pinned capture signer |
+| `scripts/project_kag_mcp_owner_review.py` | fail-closed projection of one still-live exact KAG owner review into grounded-canary and freshness overlay fields, without proof or acceptance |
+| `scripts/accept_kag_mcp_owner_contour.py` | private KAG owner acceptance of one exact proved read contour, without registry admission, runtime mutation, or rollback claim |
 | `scripts/generate_repo_local_kag_index.py` | repo-local portable family builder, shard/budget gate, and logical source/artifact/anchor/entity/event/assertion/relation family builder |
 | `scripts/assemble_repo_local_kag_family.py` | exact seven-file v2 compatibility assembler from the portable family |
 | `scripts/validate_repo_local_kag_family.py` | schema and integrity validator for a repository-owned index family |
