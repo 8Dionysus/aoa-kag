@@ -57,13 +57,16 @@ audit; scheduled compatibility proof supplements this route and does not
 replace pre-merge classification.
 
 Workflow concurrency may cancel only a superseded head of the same pull
-request. Its group identity is workflow-qualified and stable by pull-request
-number; push and manual runs receive unique run identities. The controller's
-cancellation switch is unconditional because isolation is carried entirely by
-that group identity, avoiding event-condition ambiguity without widening the
-cancellation scope. Cancellation is a scheduling result, not proof: only the
-replacement head's complete typed summary may satisfy landing. Main, manual,
-other pull-request, and scheduled compatibility runs remain independent.
+request. Its first-attempt group identity uses a file-owned stable prefix and
+the pull-request number; it does not depend on the mutable workflow display
+name. Push, manual, and re-run attempts receive unique run/attempt identities.
+This prevents a stale re-run from colliding with and cancelling the current PR
+head. The controller's cancellation switch is unconditional because isolation
+is carried entirely by that group identity, avoiding event-condition ambiguity
+without widening the cancellation scope. Cancellation is a scheduling result,
+not proof: only the replacement head's complete typed summary may satisfy
+landing. Main, manual, other pull-request, stale re-run, and scheduled
+compatibility runs remain independent.
 The full-audit and required-summary job conditions remain fail-closed for
 ordinary failures but explicitly stop on `cancelled()`; an `always()` guard
 would make those jobs ignore a concurrency cancellation and spend the work

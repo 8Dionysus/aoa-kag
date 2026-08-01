@@ -20,9 +20,10 @@ Tracking starts with the community-docs baseline for this repository.
 ### Changed
 
 - Cancel superseded runs only within one pull request while keeping main,
-  manual, other pull-request, and compatibility workflows independent; make
-  the full audit and required summary cancellation-responsive without changing
-  their fail-closed result contract for current heads.
+  manual, stale re-run, other pull-request, and compatibility workflows
+  independent; use a stable file-owned group prefix and make the full audit and
+  required summary cancellation-responsive without changing their fail-closed
+  result contract for current heads.
 - Compact the owner skill's global description while retaining unknown-owner,
   full-capability-contract and live-binding checks, supplied-source navigation,
   same-owner or cross-repository relationship and compatibility traversal,

@@ -21,13 +21,16 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         workflow_header = workflow_text.split("jobs:\n", 1)[0]
 
         self.assertIn("concurrency:\n", workflow_header)
-        self.assertIn("${{ github.workflow }}", workflow_header)
+        self.assertNotIn("github.workflow", workflow_header)
+        self.assertIn("aoa-kag-repo-validation-pr-{0}", workflow_header)
         self.assertIn("github.event_name == 'pull_request'", workflow_header)
+        self.assertIn("github.run_attempt == '1'", workflow_header)
         self.assertIn("github.event.pull_request.number", workflow_header)
         self.assertIn(
-            "format('{0}-{1}', github.event_name, github.run_id)",
+            "aoa-kag-repo-validation-{0}-{1}-attempt-{2}",
             workflow_header,
         )
+        self.assertIn("github.run_id, github.run_attempt", workflow_header)
         self.assertIn(
             "cancel-in-progress: true",
             workflow_header,

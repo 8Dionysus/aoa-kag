@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.run_id) }}
+  group: ${{ github.event_name == 'pull_request' && github.run_attempt == '1' && format('aoa-kag-repo-validation-pr-{0}', github.event.pull_request.number) || format('aoa-kag-repo-validation-{0}-{1}-attempt-{2}', github.event_name, github.run_id, github.run_attempt) }}
   cancel-in-progress: true
 
 jobs:

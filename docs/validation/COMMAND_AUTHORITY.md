@@ -154,16 +154,18 @@ Push and manual events always require the full audit. The scheduled
 compatibility canary remains supplementary evidence and cannot replace a
 required pull-request audit.
 
-The repository workflow uses a workflow-qualified concurrency group. Pull
-requests share a stable group only with later heads of the same pull request;
-push and manual events include their unique run identity. Although the
-concurrency controller is enabled unconditionally, only successive heads of
-one pull request can share a group and therefore cancel in-progress work. A
+The repository workflow uses a file-owned stable concurrency prefix. First
+attempts share a stable group only with later first-attempt heads of the same
+pull request; push, manual, and re-run attempts include their unique run and
+attempt identity. A workflow display-name change cannot split the PR group,
+and a stale re-run cannot collide with or cancel the current head. Although the
+concurrency controller is enabled unconditionally, only successive first heads
+of one pull request can share a group and therefore cancel in-progress work. A
 cancelled superseded run is saved runner work, not validation evidence for its
-replacement, and it cannot cancel main, manual, another pull request, or the
-compatibility canary. Jobs on the expensive and required-summary path use
-`!cancelled()` rather than `always()`, so ordinary failures still reach the
-typed summary while a superseded workflow can actually release its runner.
+replacement, and it cannot cancel main, manual, another pull request, a stale
+re-run, or the compatibility canary. Jobs on the expensive and required-summary
+path use `!cancelled()` rather than `always()`, so ordinary failures still reach
+the typed summary while a superseded workflow can actually release its runner.
 
 ## Lane Entries
 
