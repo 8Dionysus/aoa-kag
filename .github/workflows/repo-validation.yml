@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && github.run_attempt == '1' && format('aoa-kag-repo-validation-pr-{0}', github.event.pull_request.number) || format('aoa-kag-repo-validation-{0}-{1}-attempt-{2}', github.event_name, github.run_id, github.run_attempt) }}
+  cancel-in-progress: true
+
 jobs:
   source_fast:
     name: Source Fast and Owner Family
@@ -129,7 +133,7 @@ jobs:
     name: Full OS-wide Release Audit
     needs: source_fast
     if: >-
-      always() &&
+      !cancelled() &&
       needs.source_fast.result == 'success' &&
       needs.source_fast.outputs.full-audit-required == 'true'
     runs-on: ubuntu-latest
@@ -363,7 +367,7 @@ jobs:
     needs:
       - source_fast
       - release_audit
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

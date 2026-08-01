@@ -9,10 +9,36 @@ from scripts.provider_registry import provider_dependency_pins
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
+COMPATIBILITY_WORKFLOW_PATH = (
+    REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
+)
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
 
 
 class RepoValidationWorkflowTests(unittest.TestCase):
+    def test_concurrency_cancels_only_superseded_runs_of_the_same_pr(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        workflow_header = workflow_text.split("jobs:\n", 1)[0]
+
+        self.assertIn("concurrency:\n", workflow_header)
+        self.assertNotIn("github.workflow", workflow_header)
+        self.assertIn("aoa-kag-repo-validation-pr-{0}", workflow_header)
+        self.assertIn("github.event_name == 'pull_request'", workflow_header)
+        self.assertIn("github.run_attempt == '1'", workflow_header)
+        self.assertIn("github.event.pull_request.number", workflow_header)
+        self.assertIn(
+            "aoa-kag-repo-validation-{0}-{1}-attempt-{2}",
+            workflow_header,
+        )
+        self.assertIn("github.run_id, github.run_attempt", workflow_header)
+        self.assertIn(
+            "cancel-in-progress: true",
+            workflow_header,
+        )
+
+        compatibility_text = COMPATIBILITY_WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("github.event.pull_request.number", compatibility_text)
+
     def test_source_fast_and_owner_family_are_always_in_the_required_local_job(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
@@ -64,6 +90,8 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
         self.assertIn("name: Full OS-wide Release Audit", release_audit)
         self.assertIn("needs: source_fast", release_audit)
+        self.assertIn("!cancelled()", release_audit)
+        self.assertNotIn("always()", release_audit)
         self.assertIn("needs.source_fast.result == 'success'", release_audit)
         self.assertIn(
             "needs.source_fast.outputs.full-audit-required == 'true'",
@@ -77,7 +105,8 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         summary = workflow_text.split("  required_summary:\n", 1)[1]
 
         self.assertIn("name: Repo Validation", summary)
-        self.assertIn("if: always()", summary)
+        self.assertIn("if: ${{ !cancelled() }}", summary)
+        self.assertNotIn("if: always()", summary)
         self.assertIn("SOURCE_FAST_RESULT: ${{ needs.source_fast.result }}", summary)
         self.assertIn(
             "FULL_AUDIT_RESULT: ${{ needs.release_audit.result }}",

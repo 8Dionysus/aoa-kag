@@ -56,6 +56,22 @@ fails the summary. Pushes to `main` and manual runs always require the full
 audit; scheduled compatibility proof supplements this route and does not
 replace pre-merge classification.
 
+Workflow concurrency may cancel only a superseded head of the same pull
+request. Its first-attempt group identity uses a file-owned stable prefix and
+the pull-request number; it does not depend on the mutable workflow display
+name. Push, manual, and re-run attempts receive unique run/attempt identities.
+This prevents a stale re-run from colliding with and cancelling the current PR
+head. The controller's cancellation switch is unconditional because isolation
+is carried entirely by that group identity, avoiding event-condition ambiguity
+without widening the cancellation scope. Cancellation is a scheduling result,
+not proof: only the replacement head's complete typed summary may satisfy
+landing. Main, manual, other pull-request, stale re-run, and scheduled
+compatibility runs remain independent.
+The full-audit and required-summary job conditions remain fail-closed for
+ordinary failures but explicitly stop on `cancelled()`; an `always()` guard
+would make those jobs ignore a concurrency cancellation and spend the work
+that supersession is intended to save.
+
 ## Options Considered
 
 - Keep the full audit on every change: simplest and strongest operationally,
@@ -97,6 +113,9 @@ high-impact pull-request audit.
 - The classifier receipt and required summary are machine-readable execution
   evidence. They do not become owner truth or prove the underlying KAG
   invariants by themselves.
+- A newer head stops obsolete work for the same pull request without changing
+  which proofs the newer head must complete. It cannot cancel main, manual,
+  another pull request, or the compatibility canary.
 - Bounded parallel owner execution and cross-run caching remain separate
   decisions with separate equivalence and pressure evidence.
 
@@ -127,3 +146,8 @@ and all unrelated provider roots made unavailable, and one full release gate
 on the exact pinned providers. Compare proof payloads on identical inputs
 rather than treating a digest change caused by this repository's new family as
 proof drift.
+
+For concurrency changes, also push two successive heads to one test pull
+request after the first full audit has started. Confirm that the older run is
+cancelled, the replacement head completes all required proofs, and unrelated
+main, manual, pull-request, and compatibility runs remain unaffected.
