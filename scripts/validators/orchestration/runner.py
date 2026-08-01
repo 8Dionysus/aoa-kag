@@ -4,6 +4,15 @@ import argparse
 import sys
 from collections.abc import Sequence
 
+try:
+    from scripts.generate_repo_local_kag_coverage import (
+        provider_coverage_prebuild_scope,
+    )
+except ImportError:  # pragma: no cover - direct script execution
+    from generate_repo_local_kag_coverage import (  # type: ignore
+        provider_coverage_prebuild_scope,
+    )
+
 from ..common import *
 from ..local_kag_subtree import validate_local_kag_provider_homes_contract_with_progress
 from ..repo_local_kag_index import validate_repo_local_kag_os_wide_contract_with_progress
@@ -47,10 +56,11 @@ def main(argv: Sequence[str] = ()) -> int:
             _runner_phase("static-surfaces")
             validate_static_surfaces()
         if run_os_wide:
-            _runner_phase("os-wide-provider-homes")
-            validate_local_kag_provider_homes_contract_with_progress()
-            _runner_phase("os-wide-provider-coverage")
-            validate_repo_local_kag_os_wide_contract_with_progress()
+            with provider_coverage_prebuild_scope():
+                _runner_phase("os-wide-provider-homes")
+                validate_local_kag_provider_homes_contract_with_progress()
+                _runner_phase("os-wide-provider-coverage")
+                validate_repo_local_kag_os_wide_contract_with_progress()
         if run_local:
             _runner_phase("registry-context")
             registry_manifest_payload, registry_manifest_surfaces, missing_roots = (

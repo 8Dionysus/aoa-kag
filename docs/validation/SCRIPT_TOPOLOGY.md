@@ -188,12 +188,13 @@ Within each owner scan it reuses the same captured source epoch for source-index
 parity, logical-family reconstruction, counts, and profile derivation. Its
 run-scoped receipt includes owner wall/CPU/RSS and source-reader process, file,
 object, byte, and cache telemetry.
-The validator and coverage builder may share only a process-local, run-scoped
-portable-family validation token bound to the resolved owner root and exact
-family digest. It suppresses one duplicate schema traversal after provider-home
-success; shard digest checks, rebuilt-family equality, owner ordering, and the
-final input-identity recheck remain blocking. Decoded portable-family caching
-is bounded to one sequential owner.
+The validator and coverage builder may share only the current process-local,
+run-scoped decoded portable family, bound to the resolved owner root and exact
+family digest. Immediately after provider-home success, coverage builds one
+canonical owner row, retains only that compact row and its timing, and releases
+the decoded family before advancing. Shard digest checks, rebuilt-family
+equality, exact complete owner ordering, schema validation, and the final
+input-identity recheck remain blocking. Standalone coverage remains cold.
 
 The repo-local builders support `--check` for parity without writing files.
 

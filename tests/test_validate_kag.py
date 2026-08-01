@@ -6,7 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import nullcontext, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -751,7 +751,12 @@ class ValidateKagTestCase(unittest.TestCase):
                 "repo_local_kag_validate_payload",
             ), patch.object(
                 repo_local_kag_index,
-                "load_repo_local_kag_repository_index_family",
+                "load_repo_local_kag_repository_index_family_with_manifest",
+                return_value=(
+                    {},
+                    {},
+                    {"family_identity": {"content_digest": "0" * 64}},
+                ),
             ), patch.object(
                 local_kag_subtree,
                 "_validate_record_links",
@@ -882,7 +887,11 @@ class ValidateKagTestCase(unittest.TestCase):
             runner,
             "print_os_wide_success_status",
             side_effect=mark("os-wide-success-status"),
-        ):
+        ), patch.object(
+            runner,
+            "provider_coverage_prebuild_scope",
+            return_value=nullcontext(),
+        ) as coverage_prebuild_scope:
             with redirect_stderr(stderr):
                 self.assertEqual(0, runner.main(["--scope", "full"]))
 
@@ -900,6 +909,7 @@ class ValidateKagTestCase(unittest.TestCase):
             "os-wide-success-status",
         ]
         self.assertEqual(expected, calls)
+        coverage_prebuild_scope.assert_called_once_with()
         self.assertEqual(
             "".join(
                 f"[validate-kag] {phase}\n"
@@ -935,12 +945,17 @@ class ValidateKagTestCase(unittest.TestCase):
         ), patch.object(
             runner,
             "print_success_status",
-        ), redirect_stderr(io.StringIO()):
+        ), patch.object(
+            runner,
+            "provider_coverage_prebuild_scope",
+            return_value=nullcontext(),
+        ) as coverage_prebuild_scope, redirect_stderr(io.StringIO()):
             self.assertEqual(0, runner.main(["--scope", "local"]))
 
         local_validate.assert_called_once_with()
         provider_homes_validate.assert_not_called()
         os_wide_validate.assert_not_called()
+        coverage_prebuild_scope.assert_not_called()
 
         with patch.object(runner, "validate_static_surfaces") as local_validate, patch.object(
             runner,
@@ -954,7 +969,11 @@ class ValidateKagTestCase(unittest.TestCase):
         ) as load_registry, patch.object(
             runner,
             "print_os_wide_success_status",
-        ) as print_os_wide_status, redirect_stderr(io.StringIO()):
+        ) as print_os_wide_status, patch.object(
+            runner,
+            "provider_coverage_prebuild_scope",
+            return_value=nullcontext(),
+        ) as coverage_prebuild_scope, redirect_stderr(io.StringIO()):
             self.assertEqual(0, runner.main(["--scope", "os-wide"]))
 
         local_validate.assert_not_called()
@@ -962,6 +981,7 @@ class ValidateKagTestCase(unittest.TestCase):
         provider_homes_validate.assert_called_once_with()
         os_wide_validate.assert_called_once_with()
         print_os_wide_status.assert_called_once_with()
+        coverage_prebuild_scope.assert_called_once_with()
 
     def test_static_surfaces_reports_subphase_progress_to_stderr(self) -> None:
         calls: list[str] = []

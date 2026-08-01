@@ -65,7 +65,13 @@ owner's expected pin, HEAD, Git index tree, dirty/untracked state, portable
 manifest, family/source/event digests, and the active schemas and builder
 bytes.
 
-The first OS-wide coverage consumer builds and schema-checks the payload.
+Before the provider sweep, the process captures the complete packet identity.
+After each provider home passes its full validation, coverage builds that
+owner's canonical row from the exact decoded family already bound to the
+active run, resolved root, and family digest. Only the compact row and timing
+survive into the next owner. The first OS-wide coverage consumer requires all
+owners exactly once in canonical order, rechecks the complete identity, and
+only then schema-checks and writes the payload.
 Later consumers reuse it only when the complete identity still matches and the
 packet identity and payload digests remain intact. A valid identity change
 starts a new input epoch and rebuilds the packet; malformed, tampered, missing,
@@ -77,11 +83,12 @@ Each owner timing also reports user/system CPU, process peak RSS, and the
 owner-source snapshot backend, capture wall time, Git invocation count, tracked
 and content-read file counts, unique object count, bytes read, and in-process
 read-cache hits/misses. These are execution telemetry, not proof results.
-During one OS-wide process, provider-home validation may issue an ephemeral
-token for the exact run scope, owner root, and portable-family digest. Coverage
-still reloads and digest-checks the shards and proves complete rebuilt-family
-equality; only the duplicate schema/semantic traversal is reused. Any token
-miss performs the full traversal, and decoded-family retention is bounded to
+During one OS-wide process, provider-home validation may pass the exact decoded
+portable family forward only for the current owner. Coverage still proves
+complete rebuilt-family equality and source parity; it removes the second
+shard decode as well as the duplicate schema/semantic traversal. A missing
+prebuild scope preserves the cold standalone path, while an incomplete or
+mismatched active prebuild fails closed. Decoded-family retention is bounded to
 the current sequential owner.
 On GitHub Actions the same schema-versioned receipt is appended to the bounded
 step summary; an unavailable or oversized summary is reported as degraded and

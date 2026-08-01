@@ -12,9 +12,11 @@ import resource
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Iterator, Sequence
 
 from jsonschema import Draft202012Validator
 
@@ -196,6 +198,26 @@ PROVIDER_RECORD_SCHEMA_DEFS = {
     "projections": "projectionRecord",
     "receipts": "receiptRecord",
 }
+
+PortableBundle = tuple[
+    dict[str, Any],
+    dict[str, dict[str, Any]],
+    dict[str, Any],
+]
+
+
+@dataclass
+class _ProviderCoveragePrebuild:
+    run_scope_id: str
+    os_root: Path
+    identity: dict[str, Any]
+    owner_roots: tuple[tuple[str, Path], ...]
+    owners: dict[str, dict[str, Any]] = field(default_factory=dict)
+    owner_timings: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+
+_ACTIVE_PROVIDER_COVERAGE_PREBUILD: _ProviderCoveragePrebuild | None = None
+_TRANSIENT_PORTABLE_BUNDLE: tuple[Path, PortableBundle] | None = None
 
 
 def coverage_progress(label: str) -> None:
@@ -510,13 +532,9 @@ def repository_index_family_refs(
 
 
 @lru_cache(maxsize=1)
-def _portable_bundle(
+def _portable_bundle_from_disk(
     owner_root: Path,
-) -> tuple[
-    dict[str, Any],
-    dict[str, dict[str, Any]],
-    dict[str, Any],
-] | None:
+) -> PortableBundle | None:
     manifest = owner_root / MANIFEST_RELATIVE_PATH
     if not manifest.is_file():
         return None
@@ -524,6 +542,32 @@ def _portable_bundle(
         return load_portable_family(owner_root)
     except (ValueError, FileNotFoundError, json.JSONDecodeError):
         return None
+
+
+def _portable_bundle(owner_root: Path) -> PortableBundle | None:
+    transient = _TRANSIENT_PORTABLE_BUNDLE
+    resolved_root = owner_root.resolve()
+    if transient is not None and transient[0] == resolved_root:
+        return transient[1]
+    return _portable_bundle_from_disk(resolved_root)
+
+
+@contextmanager
+def _transient_portable_bundle(
+    owner_root: Path,
+    portable_bundle: PortableBundle | None,
+) -> Iterator[None]:
+    global _TRANSIENT_PORTABLE_BUNDLE
+    if portable_bundle is None:
+        yield
+        return
+    if _TRANSIENT_PORTABLE_BUNDLE is not None:
+        raise RuntimeError("coverage portable-family reuse cannot be nested")
+    _TRANSIENT_PORTABLE_BUNDLE = (owner_root.resolve(), portable_bundle)
+    try:
+        yield
+    finally:
+        _TRANSIENT_PORTABLE_BUNDLE = None
 
 
 def repository_event_history_ref(owner_root: Path) -> str | None:
@@ -921,24 +965,16 @@ def index_status(
     return "migration-needed", relative_files
 
 
-def build_coverage(
-    os_root: Path,
-    owner_roots: Sequence[tuple[str, Path]] | None = None,
+def _build_owner_coverage(
+    name: str,
+    owner_root: Path,
     *,
-    progress: bool = False,
-    owner_timings: list[dict[str, Any]] | None = None,
-) -> dict[str, Any]:
-    owners: list[dict[str, Any]] = []
-    roots = list(owner_roots) if owner_roots is not None else [
-        (owner_root.name, owner_root) for owner_root in direct_owner_roots(os_root)
-    ]
-    if progress:
-        coverage_progress(f"owners {len(roots)}")
-    for index, (name, owner_root) in enumerate(roots, start=1):
-        owner_started = time.perf_counter()
-        usage_before = resource.getrusage(resource.RUSAGE_SELF)
-        if progress:
-            coverage_progress(f"owner {index}/{len(roots)} {name}")
+    display_root: Path,
+    portable_bundle: PortableBundle | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    owner_started = time.perf_counter()
+    usage_before = resource.getrusage(resource.RUSAGE_SELF)
+    with _transient_portable_bundle(owner_root, portable_bundle):
         source_snapshot = OwnerSourceSnapshot.capture(owner_root)
         status, files = index_status(
             owner_root,
@@ -950,58 +986,65 @@ def build_coverage(
             owner_name=name,
             status=status,
         )
-        display_root = canonical_owner_root(os_root, name) if owner_roots is not None else owner_root
-        display_kag_home = display_root / "kag" if (owner_root / "kag").is_dir() else Path("")
-        owners.append(
-            {
-                "repo": name,
-                "owner_type": owner_type_for(name, owner_root),
-                "root": display_root.as_posix(),
-                "kag_home": display_kag_home.as_posix() if display_kag_home.as_posix() != "." else "",
-                "index_status": status,
-                "index_files": files,
-                "family_storage": family_storage,
-                "portable_family": portable_family,
-                "repository_index_family": repository_index_family_refs(
-                    files,
-                    status=status,
-                    storage=family_storage,
-                ),
-                "domain_index_catalog_ref": (
-                    DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in files else ""
-                ),
-                "coverage": source_counts(
-                    owner_root,
-                    source_snapshot=source_snapshot,
-                ),
-                "common_surface_profile": common_surface_profile(
-                    owner_root,
-                    index_status=status,
-                    source_snapshot=source_snapshot,
-                ),
-            }
+        display_kag_home = (
+            display_root / "kag" if (owner_root / "kag").is_dir() else Path("")
         )
-        if owner_timings is not None:
-            usage_after = resource.getrusage(resource.RUSAGE_SELF)
-            owner_timings.append(
-                {
-                    "owner": name,
-                    "duration_ms": max(
-                        0,
-                        round((time.perf_counter() - owner_started) * 1000),
-                    ),
-                    "cpu_user_ms": max(
-                        0,
-                        round((usage_after.ru_utime - usage_before.ru_utime) * 1000),
-                    ),
-                    "cpu_system_ms": max(
-                        0,
-                        round((usage_after.ru_stime - usage_before.ru_stime) * 1000),
-                    ),
-                    "process_peak_rss_kib": max(0, int(usage_after.ru_maxrss)),
-                    "source_snapshot": source_snapshot.telemetry(),
-                }
-            )
+        owner = {
+            "repo": name,
+            "owner_type": owner_type_for(name, owner_root),
+            "root": display_root.as_posix(),
+            "kag_home": (
+                display_kag_home.as_posix()
+                if display_kag_home.as_posix() != "."
+                else ""
+            ),
+            "index_status": status,
+            "index_files": files,
+            "family_storage": family_storage,
+            "portable_family": portable_family,
+            "repository_index_family": repository_index_family_refs(
+                files,
+                status=status,
+                storage=family_storage,
+            ),
+            "domain_index_catalog_ref": (
+                DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in files else ""
+            ),
+            "coverage": source_counts(
+                owner_root,
+                source_snapshot=source_snapshot,
+            ),
+            "common_surface_profile": common_surface_profile(
+                owner_root,
+                index_status=status,
+                source_snapshot=source_snapshot,
+            ),
+        }
+    usage_after = resource.getrusage(resource.RUSAGE_SELF)
+    timing = {
+        "owner": name,
+        "duration_ms": max(
+            0,
+            round((time.perf_counter() - owner_started) * 1000),
+        ),
+        "cpu_user_ms": max(
+            0,
+            round((usage_after.ru_utime - usage_before.ru_utime) * 1000),
+        ),
+        "cpu_system_ms": max(
+            0,
+            round((usage_after.ru_stime - usage_before.ru_stime) * 1000),
+        ),
+        "process_peak_rss_kib": max(0, int(usage_after.ru_maxrss)),
+        "source_snapshot": source_snapshot.telemetry(),
+    }
+    return owner, timing
+
+
+def _assemble_coverage(
+    os_root: Path,
+    owners: Sequence[dict[str, Any]],
+) -> dict[str, Any]:
     summary = {status: sum(1 for owner in owners if owner["index_status"] == status) for status in OWNER_STATUS}
     portable_owners = [
         owner
@@ -1038,6 +1081,37 @@ def build_coverage(
         },
         "owners": owners,
     }
+
+
+def build_coverage(
+    os_root: Path,
+    owner_roots: Sequence[tuple[str, Path]] | None = None,
+    *,
+    progress: bool = False,
+    owner_timings: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    owners: list[dict[str, Any]] = []
+    roots = list(owner_roots) if owner_roots is not None else [
+        (owner_root.name, owner_root) for owner_root in direct_owner_roots(os_root)
+    ]
+    if progress:
+        coverage_progress(f"owners {len(roots)}")
+    for index, (name, owner_root) in enumerate(roots, start=1):
+        if progress:
+            coverage_progress(f"owner {index}/{len(roots)} {name}")
+        owner, timing = _build_owner_coverage(
+            name,
+            owner_root,
+            display_root=(
+                canonical_owner_root(os_root, name)
+                if owner_roots is not None
+                else owner_root
+            ),
+        )
+        owners.append(owner)
+        if owner_timings is not None:
+            owner_timings.append(timing)
+    return _assemble_coverage(os_root, owners)
 
 
 def _sha256_digest(content: bytes) -> str:
@@ -1626,6 +1700,125 @@ def load_coverage_packet(
     return copy.deepcopy(identity), copy.deepcopy(payload), identity_digest, payload_digest
 
 
+@contextmanager
+def provider_coverage_prebuild_scope(
+    os_root: Path = DEFAULT_OS_ROOT,
+) -> Iterator[None]:
+    global _ACTIVE_PROVIDER_COVERAGE_PREBUILD
+    run = current_coverage_run()
+    if run is None:
+        yield
+        return
+    if _ACTIVE_PROVIDER_COVERAGE_PREBUILD is not None:
+        raise RuntimeError("provider coverage prebuild scope cannot be nested")
+    owner_roots = tuple(
+        (owner, owner_root.resolve())
+        for owner, owner_root in configured_owner_roots()
+    )
+    identity = coverage_packet_identity(os_root)
+    if identity.get("run_scope_id") != run.run_scope_id:
+        raise RuntimeError("provider coverage prebuild identity left the active run scope")
+    _ACTIVE_PROVIDER_COVERAGE_PREBUILD = _ProviderCoveragePrebuild(
+        run_scope_id=run.run_scope_id,
+        os_root=os_root.resolve(),
+        identity=identity,
+        owner_roots=owner_roots,
+    )
+    try:
+        yield
+    finally:
+        _ACTIVE_PROVIDER_COVERAGE_PREBUILD = None
+
+
+def prebuild_provider_coverage_owner(
+    owner: str,
+    owner_root: Path,
+    portable_bundle: PortableBundle,
+) -> None:
+    prebuild = _ACTIVE_PROVIDER_COVERAGE_PREBUILD
+    if prebuild is None:
+        return
+    run = current_coverage_run(required=True)
+    assert run is not None
+    if run.run_scope_id != prebuild.run_scope_id:
+        raise RuntimeError("provider coverage prebuild crossed run scopes")
+    expected_roots = dict(prebuild.owner_roots)
+    resolved_root = owner_root.resolve()
+    if owner not in expected_roots or expected_roots[owner] != resolved_root:
+        raise RuntimeError(
+            f"provider coverage prebuild received an unexpected owner root: {owner}"
+        )
+    if owner in prebuild.owners:
+        raise RuntimeError(
+            f"provider coverage prebuild received duplicate owner: {owner}"
+        )
+    manifest = portable_bundle[2]
+    family_identity = manifest.get("family_identity")
+    family_digest = (
+        family_identity.get("content_digest")
+        if isinstance(family_identity, dict)
+        else None
+    )
+    snapshot = next(
+        (
+            item
+            for item in prebuild.identity["owner_snapshots"]
+            if item.get("owner") == owner
+        ),
+        None,
+    )
+    if (
+        not isinstance(family_digest, str)
+        or not isinstance(snapshot, dict)
+        or snapshot.get("family_content_digest") != family_digest
+    ):
+        raise RuntimeError(
+            f"provider coverage prebuild family identity mismatch for {owner}"
+        )
+    owner_payload, owner_timing = _build_owner_coverage(
+        owner,
+        resolved_root,
+        display_root=canonical_owner_root(prebuild.os_root, owner),
+        portable_bundle=portable_bundle,
+    )
+    prebuild.owners[owner] = owner_payload
+    prebuild.owner_timings[owner] = owner_timing
+
+
+def _active_provider_coverage_prebuild(
+    os_root: Path,
+) -> _ProviderCoveragePrebuild | None:
+    prebuild = _ACTIVE_PROVIDER_COVERAGE_PREBUILD
+    if prebuild is None:
+        return None
+    run = current_coverage_run(required=True)
+    assert run is not None
+    if run.run_scope_id != prebuild.run_scope_id:
+        raise RuntimeError("provider coverage prebuild crossed run scopes")
+    if os_root.resolve() != prebuild.os_root:
+        raise RuntimeError("provider coverage prebuild display root changed")
+    return prebuild
+
+
+def _assemble_prebuilt_provider_coverage(
+    prebuild: _ProviderCoveragePrebuild,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    expected_owners = [owner for owner, _owner_root in prebuild.owner_roots]
+    actual_owners = list(prebuild.owners)
+    if len(actual_owners) != len(expected_owners) or set(actual_owners) != set(
+        expected_owners
+    ):
+        missing = [owner for owner in expected_owners if owner not in prebuild.owners]
+        unexpected = [owner for owner in actual_owners if owner not in expected_owners]
+        raise RuntimeError(
+            "provider coverage prebuild owner membership is incomplete"
+            f"; missing={missing}; unexpected={unexpected}"
+        )
+    owners = [prebuild.owners[owner] for owner in expected_owners]
+    owner_timings = [prebuild.owner_timings[owner] for owner in expected_owners]
+    return _assemble_coverage(prebuild.os_root, owners), owner_timings
+
+
 def build_provider_coverage(
     os_root: Path = DEFAULT_OS_ROOT,
     *,
@@ -1639,8 +1832,15 @@ def build_provider_coverage(
             progress=progress,
         )
 
+    packet_path = run.packet_path
     try:
-        identity = coverage_packet_identity(os_root)
+        prebuild = _active_provider_coverage_prebuild(os_root)
+        use_prebuild = prebuild is not None and not packet_path.exists()
+        identity = (
+            copy.deepcopy(prebuild.identity)
+            if use_prebuild and prebuild is not None
+            else coverage_packet_identity(os_root)
+        )
     except Exception as exc:
         record_coverage_event(
             {
@@ -1651,7 +1851,6 @@ def build_provider_coverage(
         )
         raise
     identity_digest = _json_digest(identity)
-    packet_path = run.packet_path
     if packet_path.is_symlink():
         record_coverage_event(
             {
@@ -1709,23 +1908,39 @@ def build_provider_coverage(
             }
         )
 
-    owner_timings: list[dict[str, Any]] = []
+    owner_timings: list[dict[str, Any]] = (
+        list(prebuild.owner_timings.values())
+        if use_prebuild and prebuild is not None
+        else []
+    )
+    build_strategy = "provider-home-fused" if use_prebuild else "cold"
     started = time.perf_counter()
     try:
-        payload = build_coverage(
-            os_root,
-            owner_roots=configured_owner_roots(),
-            progress=progress,
-            owner_timings=owner_timings,
-        )
+        if use_prebuild and prebuild is not None:
+            payload, owner_timings = _assemble_prebuilt_provider_coverage(prebuild)
+        else:
+            payload = build_coverage(
+                os_root,
+                owner_roots=configured_owner_roots(),
+                progress=progress,
+                owner_timings=owner_timings,
+            )
     except Exception as exc:
+        duration_ms = max(0, round((time.perf_counter() - started) * 1000))
+        if use_prebuild:
+            duration_ms += sum(
+                int(timing.get("duration_ms", 0))
+                for timing in owner_timings
+                if isinstance(timing.get("duration_ms", 0), int)
+            )
         record_coverage_event(
             {
                 "event": "build-failed",
                 "identity_digest": identity_digest,
-                "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
+                "duration_ms": duration_ms,
                 "detail": str(exc),
                 "owner_timings": owner_timings,
+                "strategy": build_strategy,
             }
         )
         raise
@@ -1733,30 +1948,43 @@ def build_provider_coverage(
     try:
         final_identity = coverage_packet_identity(os_root)
     except Exception as exc:
+        duration_ms = max(0, round((time.perf_counter() - started) * 1000))
+        if use_prebuild:
+            duration_ms += sum(
+                int(timing.get("duration_ms", 0))
+                for timing in owner_timings
+                if isinstance(timing.get("duration_ms", 0), int)
+            )
         record_coverage_event(
             {
                 "event": "reject",
                 "reason": "final-input-identity-unprovable",
                 "identity_digest": identity_digest,
-                "duration_ms": max(
-                    0,
-                    round((time.perf_counter() - started) * 1000),
-                ),
+                "duration_ms": duration_ms,
                 "detail": str(exc),
                 "owner_timings": owner_timings,
+                "strategy": build_strategy,
             }
         )
         raise
     if final_identity != identity:
         final_identity_digest = _json_digest(final_identity)
+        duration_ms = max(0, round((time.perf_counter() - started) * 1000))
+        if use_prebuild:
+            duration_ms += sum(
+                int(timing.get("duration_ms", 0))
+                for timing in owner_timings
+                if isinstance(timing.get("duration_ms", 0), int)
+            )
         record_coverage_event(
             {
                 "event": "reject",
                 "reason": "input-changed-during-build",
                 "identity_digest": identity_digest,
                 "final_identity_digest": final_identity_digest,
-                "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
+                "duration_ms": duration_ms,
                 "owner_timings": owner_timings,
+                "strategy": build_strategy,
             }
         )
         raise RuntimeError(
@@ -1770,6 +1998,12 @@ def build_provider_coverage(
         payload=payload,
     )
     duration_ms = max(0, round((time.perf_counter() - started) * 1000))
+    if use_prebuild:
+        duration_ms += sum(
+            int(timing.get("duration_ms", 0))
+            for timing in owner_timings
+            if isinstance(timing.get("duration_ms", 0), int)
+        )
     record_coverage_event(
         {
             "event": "build",
@@ -1779,6 +2013,8 @@ def build_provider_coverage(
             "owner_count": len(payload.get("owners", [])),
             "owner_timings": owner_timings,
             "input_identity": _coverage_identity_receipt(identity),
+            "strategy": build_strategy,
+            "prebuilt_owner_count": len(owner_timings) if use_prebuild else 0,
         }
     )
     if progress:

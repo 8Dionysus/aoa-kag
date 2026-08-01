@@ -563,12 +563,16 @@ def validate_repo_local_kag_repository_index_family(
     return validated
 
 
-def load_repo_local_kag_repository_index_family(
+def load_repo_local_kag_repository_index_family_with_manifest(
     repo_root: Path,
     *,
     source_index: Path = Path("kag/indexes/source_surface_index.json"),
     label: str | None = None,
-) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
+) -> tuple[
+    dict[str, object],
+    dict[str, dict[str, object]],
+    dict[str, object] | None,
+]:
     source_path = source_index if source_index.is_absolute() else repo_root / source_index
     portable_manifest_path = source_path.parent / "index_family.manifest.json"
     portable_manifest: object | None = None
@@ -599,6 +603,26 @@ def load_repo_local_kag_repository_index_family(
         fail(f"{label or repo_root.name} source index must be an object")
     if portable_manifest is not None:
         record_run_validated_portable_family(repo_root, portable_manifest)
+    return (
+        source_payload,
+        validated,
+        portable_manifest if isinstance(portable_manifest, dict) else None,
+    )
+
+
+def load_repo_local_kag_repository_index_family(
+    repo_root: Path,
+    *,
+    source_index: Path = Path("kag/indexes/source_surface_index.json"),
+    label: str | None = None,
+) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
+    source_payload, validated, _portable_manifest = (
+        load_repo_local_kag_repository_index_family_with_manifest(
+            repo_root,
+            source_index=source_index,
+            label=label,
+        )
+    )
     return source_payload, validated
 
 

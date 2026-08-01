@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import io
 import json
 import os
@@ -1968,6 +1969,321 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             ),
             stderr.getvalue(),
         )
+
+    def test_provider_home_fusion_builds_exact_payload_without_cold_reload(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        owners = payload["owners"]
+        assert isinstance(owners, list)
+        owner_payloads = {
+            owner["repo"]: owner
+            for owner in owners
+            if isinstance(owner, dict) and isinstance(owner.get("repo"), str)
+        }
+        roots = [
+            (snapshot["owner"], Path(snapshot["root"]))
+            for snapshot in identity["owner_snapshots"]
+        ]
+
+        def build_owner(
+            owner: str,
+            _owner_root: Path,
+            *,
+            display_root: Path,
+            portable_bundle: object,
+        ) -> tuple[dict[str, object], dict[str, object]]:
+            self.assertIsNotNone(portable_bundle)
+            self.assertEqual(owner_payloads[owner]["root"], display_root.as_posix())
+            return copy.deepcopy(owner_payloads[owner]), {
+                "owner": owner,
+                "duration_ms": 1,
+                "cpu_user_ms": 1,
+                "cpu_system_ms": 0,
+                "process_peak_rss_kib": 1024,
+                "source_snapshot": {},
+            }
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                side_effect=(identity, identity),
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ), patch.object(
+                coverage_generation,
+                "_build_owner_coverage",
+                side_effect=build_owner,
+            ) as owner_build, patch.object(
+                coverage_generation,
+                "build_coverage",
+            ) as cold_build:
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    for snapshot, (owner, owner_root) in reversed(
+                        list(zip(identity["owner_snapshots"], roots))
+                    ):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            owner,
+                            owner_root,
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": snapshot[
+                                            "family_content_digest"
+                                        ]
+                                    }
+                                },
+                            ),
+                        )
+                    actual = coverage_generation.build_provider_coverage()
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(payload, actual)
+        self.assertEqual(len(roots), owner_build.call_count)
+        cold_build.assert_not_called()
+        self.assertEqual(["provider-home-fused"], summary["build_strategies"])
+        self.assertEqual(len(roots), summary["prebuilt_owner_count"])
+        self.assertEqual(len(roots), summary["owner_scan_count"])
+
+    def test_provider_home_fusion_rejects_incomplete_owner_set_without_packet(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+        owner_payloads = {
+            owner["repo"]: owner
+            for owner in payload["owners"]
+            if isinstance(owner, dict) and isinstance(owner.get("repo"), str)
+        }
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ), patch.object(
+                coverage_generation,
+                "_build_owner_coverage",
+                side_effect=lambda owner, *_args, **_kwargs: (
+                    copy.deepcopy(owner_payloads[owner]),
+                    {
+                        "owner": owner,
+                        "duration_ms": 1,
+                        "source_snapshot": {},
+                    },
+                ),
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    first = snapshots[0]
+                    coverage_generation.prebuild_provider_coverage_owner(
+                        first["owner"],
+                        Path(first["root"]),
+                        (
+                            {},
+                            {},
+                            {
+                                "family_identity": {
+                                    "content_digest": first[
+                                        "family_content_digest"
+                                    ]
+                                }
+                            },
+                        ),
+                    )
+                    with self.assertRaisesRegex(RuntimeError, "owner membership"):
+                        coverage_generation.build_provider_coverage()
+                    self.assertFalse(run.packet_path.exists())
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(1, summary["build_failure_count"])
+        self.assertEqual(0, summary["coverage_build_count"])
+
+    def test_provider_home_fusion_rejects_identity_mutation(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        initial = coverage_identity_for_payload(payload, epoch="initial")
+        changed = coverage_identity_for_payload(payload, epoch="changed")
+        snapshots = initial["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+        owner_payloads = {
+            owner["repo"]: owner
+            for owner in payload["owners"]
+            if isinstance(owner, dict) and isinstance(owner.get("repo"), str)
+        }
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            initial["run_scope_id"] = run.run_scope_id
+            changed["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                side_effect=(initial, changed),
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ), patch.object(
+                coverage_generation,
+                "_build_owner_coverage",
+                side_effect=lambda owner, *_args, **_kwargs: (
+                    copy.deepcopy(owner_payloads[owner]),
+                    {
+                        "owner": owner,
+                        "duration_ms": 1,
+                        "source_snapshot": {},
+                    },
+                ),
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    for snapshot, (owner, owner_root) in zip(snapshots, roots):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            owner,
+                            owner_root,
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": snapshot[
+                                            "family_content_digest"
+                                        ]
+                                    }
+                                },
+                            ),
+                        )
+                    with self.assertRaisesRegex(RuntimeError, "inputs changed"):
+                        coverage_generation.build_provider_coverage()
+                    self.assertFalse(run.packet_path.exists())
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(1, summary["packet_reject_count"])
+        self.assertEqual(0, summary["coverage_build_count"])
+
+    def test_transient_portable_bundle_is_root_exact_and_released(self) -> None:
+        owner_root = Path("/srv/AbyssOS/aoa-demo")
+        other_root = Path("/srv/AbyssOS/aoa-other")
+        injected = ({"source": "injected"}, {}, {"manifest": "injected"})
+        disk = ({"source": "disk"}, {}, {"manifest": "disk"})
+
+        with patch.object(
+            coverage_generation,
+            "_portable_bundle_from_disk",
+            return_value=disk,
+        ) as load_disk:
+            with coverage_generation._transient_portable_bundle(
+                owner_root,
+                injected,
+            ):
+                self.assertIs(
+                    injected,
+                    coverage_generation._portable_bundle(owner_root),
+                )
+                self.assertIs(
+                    disk,
+                    coverage_generation._portable_bundle(other_root),
+                )
+            self.assertIs(
+                disk,
+                coverage_generation._portable_bundle(owner_root),
+            )
+
+        self.assertEqual(2, load_disk.call_count)
+
+    def test_provider_failure_scope_writes_no_coverage_packet(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "provider failed"):
+                    with coverage_generation.provider_coverage_prebuild_scope():
+                        raise RuntimeError("provider failed")
+            self.assertFalse(run.packet_path.exists())
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(0, summary["coverage_build_count"])
+        self.assertEqual(0, summary["packet_hit_count"])
+        self.assertEqual(0, summary["packet_miss_count"])
+
+    def test_provider_home_fusion_rejects_wrong_root_and_family_digest(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+        first = snapshots[0]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    with self.assertRaisesRegex(RuntimeError, "unexpected owner root"):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            first["owner"],
+                            Path(first["root"]) / "wrong",
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": first[
+                                            "family_content_digest"
+                                        ]
+                                    }
+                                },
+                            ),
+                        )
+                    with self.assertRaisesRegex(RuntimeError, "identity mismatch"):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            first["owner"],
+                            Path(first["root"]),
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": "f" * 64,
+                                    }
+                                },
+                            ),
+                        )
+            self.assertFalse(run.packet_path.exists())
 
     def test_provider_coverage_packet_reuses_one_verified_input_epoch(self) -> None:
         payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
