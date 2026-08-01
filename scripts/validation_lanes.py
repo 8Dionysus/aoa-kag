@@ -215,12 +215,51 @@ def _source_fast_handoff(manifest: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(
             f"{VALIDATION_LANES_PATH}: invalid source-fast handoff must fall back"
         )
+    omitted_value = handoff.get("generated_continuation_omitted_prefix")
+    if not isinstance(omitted_value, list) or not omitted_value:
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: source-fast handoff omitted prefix is required"
+        )
+    omitted_prefix = tuple(
+        _command(
+            command,
+            f"source_fast_handoff.generated_continuation_omitted_prefix[{idx}]",
+        )
+        for idx, command in enumerate(omitted_value)
+    )
+    expected_prefix = (("python", "scripts/validate_kag.py", "--scope", "local"),)
+    if omitted_prefix != expected_prefix:
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: source-fast handoff may omit only the exact "
+            "leading local KAG validator"
+        )
+    source_fast_sequence = _command_sequence(manifest, "source_fast")
+    generated_sequence = _command_sequence(manifest, "generated_check")
+    if not all(command in source_fast_sequence for command in omitted_prefix):
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: omitted generated prefix is not proved by "
+            "source-fast"
+        )
+    if generated_sequence[: len(omitted_prefix)] != omitted_prefix:
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: omitted generated prefix is not the exact "
+            "generated sequence prefix"
+        )
+    if generated_sequence[len(omitted_prefix) :].count(expected_prefix[0]) != 1:
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: generated continuation must preserve one "
+            "final local KAG validator"
+        )
     donors = _string_list(handoff.get("donors"), "source_fast_handoff.donors")
     if len(donors) != len(set(donors)):
         raise ValueError(
             f"{VALIDATION_LANES_PATH}: source_fast_handoff donors must be unique"
         )
-    return {**handoff, "donors": donors}
+    return {
+        **handoff,
+        "donors": donors,
+        "generated_continuation_omitted_prefix": omitted_prefix,
+    }
 
 
 SOURCE_FAST_HANDOFF = _source_fast_handoff(_MANIFEST)
@@ -240,6 +279,12 @@ def command_sequence_for_lane(lane_id: str) -> tuple[Command, ...]:
 
 SOURCE_FAST_COMMAND_SEQUENCE = command_sequence_for_lane("source_fast")
 GENERATED_CHECK_COMMAND_SEQUENCE = command_sequence_for_lane("generated")
+GENERATED_CONTINUATION_OMITTED_PREFIX = SOURCE_FAST_HANDOFF[
+    "generated_continuation_omitted_prefix"
+]
+GENERATED_CONTINUATION_COMMAND_SEQUENCE = GENERATED_CHECK_COMMAND_SEQUENCE[
+    len(GENERATED_CONTINUATION_OMITTED_PREFIX) :
+]
 RELEASE_CHECK_COMMAND_SEQUENCE = command_sequence_for_lane("release")
 RELEASE_CONTINUATION_COMMAND_SEQUENCE = command_sequence_for_lane(
     "release_continuation"

@@ -7,7 +7,7 @@
     "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences.",
     "The source-fast lane always runs validate_kag local scope; generated and compatibility lanes add one explicit OS-wide provider-home and coverage scope inside the same run-scoped packet epoch.",
     "Impact routing never replaces source-fast or the self owner-family check; it only decides whether an additional full OS-wide release audit is required.",
-    "The CI release continuation may omit only a source-fast proof accepted through the exact same-run handoff contract; any absent, malformed, stale, mismatched, or ambiguous receipt falls back to the full release sequence."
+    "The CI release continuation may omit the source-fast command and the generated sequence's exact leading local validator only through the exact same-run handoff contract; any absent, malformed, stale, mismatched, or ambiguous receipt falls back to the full release sequence."
   ],
   "lanes": {
     "source_fast": {
@@ -110,6 +110,14 @@
     "producer_job": "source_fast",
     "consumer_job": "release_audit",
     "invalid_receipt_posture": "fallback-full-release",
+    "generated_continuation_omitted_prefix": [
+      [
+        "python",
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
+      ]
+    ],
     "donors": [
       "Tree-of-Sophia",
       "aoa-memo",
@@ -404,7 +412,7 @@
         "python",
         "scripts/ci_gate.py",
         "--mode",
-        "generated"
+        "generated-continuation"
       ],
       [
         "python",

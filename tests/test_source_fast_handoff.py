@@ -178,10 +178,30 @@ class SourceFastHandoffTests(unittest.TestCase):
         continuation = validation_lanes.RELEASE_CONTINUATION_COMMAND_SEQUENCE
         source_fast = ("python", "scripts/ci_gate.py", "--mode", "source-fast")
         generated = ("python", "scripts/ci_gate.py", "--mode", "generated")
+        generated_continuation = (
+            "python",
+            "scripts/ci_gate.py",
+            "--mode",
+            "generated-continuation",
+        )
         bundle = ("python", "scripts/validate_abyss_machine_kag_registry_bundle.py")
 
         self.assertEqual((source_fast, generated, bundle), full)
-        self.assertEqual((generated, bundle), continuation)
+        self.assertEqual((generated_continuation, bundle), continuation)
+        self.assertEqual(
+            (("python", "scripts/validate_kag.py", "--scope", "local"),),
+            validation_lanes.GENERATED_CONTINUATION_OMITTED_PREFIX,
+        )
+        self.assertEqual(
+            validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE[1:],
+            validation_lanes.GENERATED_CONTINUATION_COMMAND_SEQUENCE,
+        )
+        self.assertEqual(
+            1,
+            validation_lanes.GENERATED_CONTINUATION_COMMAND_SEQUENCE.count(
+                ("python", "scripts/validate_kag.py", "--scope", "local")
+            ),
+        )
 
     def test_workflow_transfers_same_run_receipt_and_uses_registry_pins(self) -> None:
         workflow = (

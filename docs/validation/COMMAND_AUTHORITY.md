@@ -111,11 +111,15 @@ SHA, repository, and producer-job identity.
 The independent full-audit checkout recomputes the entire typed receipt.
 Strict schema shape, digest, clean checkout, pin, family, command, input, and
 workflow equality are all required. An accepted receipt selects the
-`release-continuation` command sequence, which still runs the generated lane,
-OS-wide provider/coverage audit, generated fixed point, machine-registry
-bundle proof, and workflow generated-output cleanliness check. Missing,
-malformed, ambiguous, stale, tampered, cross-run, or otherwise mismatched
-receipts select the complete `release` sequence instead.
+`release-continuation` command sequence. Its guarded generated entry verifies
+the receipt again and omits only the exact leading `validate_kag --scope local`
+command already completed in source-fast. It still runs the OS-wide
+provider/coverage audit, both generated fixed-point passes, every final
+`--check`, the concluding local validator, machine-registry bundle proof, and
+workflow generated-output cleanliness check. Missing, malformed, ambiguous,
+stale, tampered, cross-run, or otherwise mismatched receipts select the
+complete `release` sequence instead; a mismatch at the guarded child entry
+fails closed.
 
 The receipt is not persisted and has no cross-run authority. Standalone
 `scripts/release_check.py` always runs the full release sequence. Source-fast

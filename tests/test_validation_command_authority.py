@@ -10,7 +10,13 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import ci_gate, coverage_run, release_check, validation_lanes
+from scripts import (
+    ci_gate,
+    coverage_run,
+    release_check,
+    source_fast_handoff,
+    validation_lanes,
+)
 from scripts.provider_registry import provider_ci_envs
 
 
@@ -79,6 +85,20 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertEqual(
             command_sequence_from_manifest("generated_check"),
             validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE,
+        )
+        omitted_prefix = tuple(
+            tuple(command)
+            for command in manifest["source_fast_handoff"][
+                "generated_continuation_omitted_prefix"
+            ]
+        )
+        self.assertEqual(
+            omitted_prefix,
+            validation_lanes.GENERATED_CONTINUATION_OMITTED_PREFIX,
+        )
+        self.assertEqual(
+            validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE[len(omitted_prefix) :],
+            validation_lanes.GENERATED_CONTINUATION_COMMAND_SEQUENCE,
         )
         self.assertEqual(
             command_sequence_from_manifest("release_check"),
@@ -249,6 +269,26 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 [call.args for call in capture.call_args_list],
             )
 
+        accepted = source_fast_handoff.VerificationResult(
+            True,
+            "accepted",
+            "4" * 64,
+        )
+        with patch.object(
+            ci_gate.source_fast_handoff,
+            "verify_encoded_receipt",
+            return_value=accepted,
+        ), patch.object(ci_gate, "run_generated_sequence") as run_generated_sequence:
+            with patch.dict(
+                os.environ,
+                {source_fast_handoff.RECEIPT_ENV: "receipt"},
+            ):
+                ci_gate.run_generated_continuation()
+        run_generated_sequence.assert_called_once_with(
+            validation_lanes.GENERATED_CONTINUATION_COMMAND_SEQUENCE,
+            lane="generated-continuation",
+        )
+
         with patch.object(ci_gate, "run_command") as run_command:
             ci_gate.run_release()
             run_command.assert_called_once_with(("python", "scripts/release_check.py"))
@@ -269,6 +309,16 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 with redirect_stderr(StringIO()):
                     with self.assertRaises(subprocess.CalledProcessError):
                         ci_gate.run_generated()
+
+    def test_generated_continuation_rejects_an_unproved_omission(self) -> None:
+        rejected = source_fast_handoff.VerificationResult(False, "mismatch")
+        with patch.object(
+            ci_gate.source_fast_handoff,
+            "verify_encoded_receipt",
+            return_value=rejected,
+        ), redirect_stderr(StringIO()):
+            with self.assertRaises(subprocess.CalledProcessError):
+                ci_gate.run_generated_continuation()
 
     def test_source_fast_creates_a_fresh_run_scope_and_restores_environment(self) -> None:
         observed: list[coverage_run.CoverageRun] = []

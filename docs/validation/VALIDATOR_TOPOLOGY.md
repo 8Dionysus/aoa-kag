@@ -11,7 +11,7 @@ route cards, and mechanics surfaces.
 | `source-fast` | read-only repository-local source and topology integrity |
 | `generated` | generated/read-model parity plus explicit OS-wide provider-home and coverage validation |
 | `release` | release-prep validation |
-| `release-continuation` | CI-only generated and artifact continuation after exact same-run source-fast receipt acceptance; invalid receipts fall back to `release` |
+| `release-continuation` | CI-only generated and artifact continuation after exact same-run source-fast receipt acceptance; its guarded generated entry omits only the identical leading local validator and preserves the final local proof; invalid receipts fall back to `release` |
 | `compatibility-canary` | floating sibling compatibility check |
 | `advisory` | route inventory for later KAG pressure |
 

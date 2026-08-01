@@ -101,6 +101,7 @@
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
+- [AOA-KAG-D-0030 - Guarded Generated-Continuation Prefix Handoff](../AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md) (`docs/decisions/AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md`)
 
 ## generated indexes
 
@@ -283,6 +284,10 @@
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 
+## release continuation
+
+- [AOA-KAG-D-0030 - Guarded Generated-Continuation Prefix Handoff](../AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md) (`docs/decisions/AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md`)
+
 ## repo-local coverage
 
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
@@ -340,6 +345,10 @@
 ## source return
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+
+## source-fast
+
+- [AOA-KAG-D-0030 - Guarded Generated-Continuation Prefix Handoff](../AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md) (`docs/decisions/AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md`)
 
 ## source-fast handoff
 

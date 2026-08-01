@@ -91,7 +91,10 @@ same-run receipt that binds the successful source-fast and owner-family job to
 exact local, donor, command, builder, family, and GitHub workflow identities.
 `scripts/ci_release_check.py` selects the CI-only release continuation only
 after complete receipt recomputation; otherwise it executes the original full
-release lane through `scripts/release_check.py`.
+release lane through `scripts/release_check.py`. The continuation's guarded
+`ci_gate` entry verifies the receipt again before omitting only the generated
+sequence's identical leading local validator; the final local validator after
+fixed-point generation remains blocking.
 
 `scripts/validate_kag.py` is the entrypoint. It exposes `local`, `os-wide`, and
 `full` scopes while preserving `full` as the no-argument compatibility

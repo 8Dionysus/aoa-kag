@@ -5,15 +5,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
 
 try:  # Supports both ``python scripts/ci_gate.py`` and package-style imports.
-    from scripts import validation_lanes
+    from scripts import source_fast_handoff, validation_lanes
     from scripts.coverage_run import coverage_run_scope
 except ImportError:  # pragma: no cover - exercised by direct script execution
+    import source_fast_handoff  # type: ignore
     import validation_lanes  # type: ignore
     from coverage_run import coverage_run_scope  # type: ignore
 
@@ -53,12 +55,16 @@ def run_source_fast() -> None:
         run_sequence(validation_lanes.SOURCE_FAST_COMMAND_SEQUENCE)
 
 
-def run_generated() -> None:
-    with coverage_run_scope(lane="generated"):
+def run_generated_sequence(
+    commands: Sequence[Sequence[str]],
+    *,
+    lane: str,
+) -> None:
+    with coverage_run_scope(lane=lane):
         before_snapshot = capture_command_output(
             validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
         )
-        run_sequence(validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE)
+        run_sequence(commands)
         after_snapshot = capture_command_output(
             validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND
         )
@@ -71,6 +77,37 @@ def run_generated() -> None:
                 1,
                 validation_lanes.GENERATED_DRIFT_SNAPSHOT_COMMAND,
             )
+
+
+def run_generated() -> None:
+    run_generated_sequence(
+        validation_lanes.GENERATED_CHECK_COMMAND_SEQUENCE,
+        lane="generated",
+    )
+
+
+def run_generated_continuation() -> None:
+    encoded_receipt = os.environ.get(source_fast_handoff.RECEIPT_ENV, "")
+    verification = source_fast_handoff.verify_encoded_receipt(encoded_receipt)
+    if not verification.accepted:
+        print(
+            "[ci-gate] generated continuation rejected source-fast handoff: "
+            f"{verification.reason}",
+            file=sys.stderr,
+        )
+        raise subprocess.CalledProcessError(
+            1,
+            ("source-fast-handoff", "verify"),
+        )
+    print(
+        "[ci-gate] generated continuation accepted exact source-fast handoff "
+        f"digest={verification.receipt_digest}",
+        flush=True,
+    )
+    run_generated_sequence(
+        validation_lanes.GENERATED_CONTINUATION_COMMAND_SEQUENCE,
+        lane="generated-continuation",
+    )
 
 
 def run_release() -> None:
@@ -103,6 +140,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         choices=(
             "source-fast",
             "generated",
+            "generated-continuation",
             "release",
             "compatibility-canary",
             "advisory",
@@ -119,6 +157,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             run_source_fast()
         elif args.mode == "generated":
             run_generated()
+        elif args.mode == "generated-continuation":
+            run_generated_continuation()
         elif args.mode == "release":
             run_release()
         elif args.mode == "compatibility-canary":

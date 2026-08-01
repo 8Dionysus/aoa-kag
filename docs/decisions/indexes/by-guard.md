@@ -74,6 +74,10 @@
 
 - [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
 
+## declared omitted prefix
+
+- [AOA-KAG-D-0030 - Guarded Generated-Continuation Prefix Handoff](../AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md) (`docs/decisions/AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md`)
+
 ## degraded route
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
@@ -114,6 +118,10 @@
 
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
+
+## exact receipt identity
+
+- [AOA-KAG-D-0030 - Guarded Generated-Continuation Prefix Handoff](../AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md) (`docs/decisions/AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md`)
 
 ## explicit exceedance receipt
 
@@ -159,6 +167,10 @@
 
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
 
+## final local validation
+
+- [AOA-KAG-D-0030 - Guarded Generated-Continuation Prefix Handoff](../AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md) (`docs/decisions/AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md`)
+
 ## freshness
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
@@ -175,6 +187,10 @@
 ## full-contract executability
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
+
+## full-release fallback
+
+- [AOA-KAG-D-0030 - Guarded Generated-Continuation Prefix Handoff](../AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md) (`docs/decisions/AOA-KAG-D-0030-guarded-generated-continuation-prefix-handoff.md`)
 
 ## generated index parity
 
