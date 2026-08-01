@@ -1,6 +1,6 @@
 {
   "schema_version": "aoa_stats_local_port_v1",
-  "contract_version": "1.0.0",
+  "contract_version": "1.1.0",
   "owner_repo": "aoa-kag",
   "status": "active",
   "owner_boundary_ref": "CHARTER.md",
@@ -20,6 +20,14 @@
       "consumer_refs": [
         "stats/README.md",
         "kag/README.md"
+      ]
+    },
+    {
+      "id": "question:owner-local-pr-workflow-wall-time",
+      "question": "What is the hosted wall-time distribution of successful aoa-kag pull-request workflows that are classified owner-local and retain both always-required proofs?",
+      "consumer_refs": [
+        "stats/README.md",
+        "docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md"
       ]
     }
   ],
@@ -90,6 +98,75 @@
         "capability": "reference_only"
       },
       "authority_ceiling": "Counts only complete canonical repo-self index-family pass classifications in the named coverage read model; it does not establish source meaning, knowledge or retrieval quality, proof strength, or runtime readiness."
+    },
+    {
+      "schema_version": "aoa_stats_measurement_contract_v1",
+      "measurement_id": "aoa-kag/owner-local-pr-workflow-wall-time",
+      "contract_version": "1.0.0",
+      "owner_repo": "aoa-kag",
+      "question_ref": "question:owner-local-pr-workflow-wall-time",
+      "semantic_class": "statistic",
+      "statistic": "distribution",
+      "object_kind": "github-repo-validation-owner-local-pr-run",
+      "unit": {
+        "symbol": "s",
+        "quantity": "workflow wall time"
+      },
+      "population": {
+        "subject": "GitHub Repo Validation pull-request workflows classified owner-local under one named workflow revision",
+        "definition": "one completed hosted pull-request workflow whose classifier reports owner-local, whose source-fast and owner-family proofs are verified, whose full audit is correctly not required, and whose typed summary succeeds",
+        "inclusion_rule": "include only first-attempt completed GitHub-hosted pull-request runs at the packet's exact workflow source revision with owner-local classification, both always-required proofs verified, full-audit correctly-not-required, and successful typed summary",
+        "exclusion_rule": "exclude cancelled, failed, rerun, push, manual, high-impact, mixed, unknown, malformed, stale, unavailable, or otherwise unprovable runs and runs from a different workflow source revision",
+        "sampling": "sample"
+      },
+      "window": {
+        "temporality": "interval",
+        "clock": "event_time"
+      },
+      "dimensions": {
+        "allowed": [],
+        "prohibited": [
+          "repo",
+          "root",
+          "branch",
+          "actor"
+        ]
+      },
+      "aggregation": {
+        "operator": "none",
+        "across": []
+      },
+      "missingness": {
+        "states": [
+          "missing",
+          "unknown",
+          "stale"
+        ],
+        "zero_is_observation": false
+      },
+      "uncertainty": {
+        "required": false,
+        "methods": [
+          "not_estimated"
+        ]
+      },
+      "provenance": {
+        "evidence_refs_required": true,
+        "source_revision_required": true
+      },
+      "lifecycle": {
+        "status": "active",
+        "compatible_with": []
+      },
+      "privacy": {
+        "classification": "public",
+        "raw_content_allowed": false,
+        "sensitive_dimensions_allowed": false
+      },
+      "live_state": {
+        "capability": "reference_only"
+      },
+      "authority_ceiling": "Describes only the observed wall times of the explicitly admitted hosted run sample. It does not prove validator strength, route correctness outside each named run, future performance, causality, runner cost, or KAG proof equivalence."
     }
   ],
   "exports": [
@@ -103,6 +180,16 @@
         "generated/repo_local_kag_coverage.min.json",
         "schemas/repo-local-kag-index.schema.json",
         "manifests/local_kag_readiness.json"
+      ]
+    },
+    {
+      "measurement_id": "aoa-kag/owner-local-pr-workflow-wall-time",
+      "posture": "declaration_only",
+      "packet_refs": [],
+      "evidence_refs": [
+        ".github/workflows/repo-validation.yml",
+        "config/validation_lanes.json",
+        "scripts/impact_routing.py"
       ]
     }
   ]

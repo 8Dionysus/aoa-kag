@@ -9,6 +9,7 @@ KAG source ownership or generated-evidence authority into the central organ.
 | Measurement | Question | Reference value |
 | --- | --- | --- |
 | `aoa-kag/repo-self-family-pass-ratio` | What fraction of inventoried owners pass the complete canonical repo-self index-family check? | `10 / 24` at source revision `6bb1f5770ca608b14ddec858011e5cf7cd6b14b1` |
+| `aoa-kag/owner-local-pr-workflow-wall-time` | What wall time do real hosted owner-local PR workflows require while both local proofs remain blocking? | Declaration only until 3–5 comparable successful hosted runs exist |
 
 The reference packet is a census of the owner rows reported by
 `generated/repo_local_kag_coverage.min.json`. The coverage read model and its
@@ -20,6 +21,16 @@ The ratio reports only the current complete-family validation classification.
 It does not measure authored knowledge quality, retrieval quality, proof
 strength, or live graph readiness. `aoa-stats` may validate and compose the
 packet without redefining that ceiling.
+
+The owner-local timing measurement admits only first-attempt hosted PR runs at
+one exact workflow source revision. Every admitted run must report the
+`owner-local` route, successful source-fast and owner-family proofs,
+`full-audit=correctly-not-required`, and a successful typed summary. Failed,
+cancelled, rerun, high-impact, mixed, unknown, malformed, stale, unavailable,
+or otherwise unprovable runs are excluded rather than converted into a fast
+sample. Its eventual distribution is performance telemetry, not proof of
+validator strength, future performance, causality, runner cost, or KAG
+equivalence.
 
 ## Surfaces
 
