@@ -81,6 +81,23 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("AOA_SESSION_MEMORY_ROOT", source_fast)
 
+        dependency_checkout_blocks = [
+            block
+            for block in source_fast.split("      - name: ")[1:]
+            if "          path: .deps/" in block
+        ]
+        self.assertEqual(8, len(dependency_checkout_blocks))
+        self.assertTrue(
+            all(
+                "          fetch-depth: 1" in block
+                for block in dependency_checkout_blocks
+            )
+        )
+        self.assertEqual(8, source_fast.count("          fetch-depth: 1"))
+        self.assertEqual(1, source_fast.count("          fetch-depth: 0"))
+        compatibility_text = COMPATIBILITY_WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("fetch-depth: 1", compatibility_text)
+
     def test_full_audit_is_additive_and_fail_closed(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         release_audit = workflow_text.split("  release_audit:\n", 1)[1].split(
@@ -103,6 +120,7 @@ class RepoValidationWorkflowTests(unittest.TestCase):
             release_audit,
         )
         self.assertIn("fetch-depth: 0", release_audit)
+        self.assertNotIn("fetch-depth: 1", release_audit)
 
     def test_required_summary_preserves_context_and_typed_skip_status(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")

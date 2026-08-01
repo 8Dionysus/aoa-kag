@@ -47,7 +47,7 @@ jobs:
           repository: 8Dionysus/Tree-of-Sophia
           ref: d95a583272acb84dcb5b7e6896801f0364c7b234
           path: .deps/Tree-of-Sophia
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout aoa-memo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -55,7 +55,7 @@ jobs:
           repository: 8Dionysus/aoa-memo
           ref: c7c83081b7db0a0e908f14888b7438b5ecdde3bf
           path: .deps/aoa-memo
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout aoa-playbooks
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -63,7 +63,7 @@ jobs:
           repository: 8Dionysus/aoa-playbooks
           ref: b72ca2d333bcdf516ed6656e34670fa93df88162
           path: .deps/aoa-playbooks
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout aoa-evals
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -71,7 +71,7 @@ jobs:
           repository: 8Dionysus/aoa-evals
           ref: 58bf49d374b008ef6625a9fd6893c61096777b4d
           path: .deps/aoa-evals
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout aoa-agents
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -79,7 +79,7 @@ jobs:
           repository: 8Dionysus/aoa-agents
           ref: 92dd79e6c79fef60faedf6b97f2c65ff89477d06
           path: .deps/aoa-agents
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout aoa-techniques
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -87,7 +87,7 @@ jobs:
           repository: 8Dionysus/aoa-techniques
           ref: 9a5222cc6a6b1fdc52b4df906f49dadfd0383c71
           path: .deps/aoa-techniques
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout aoa-sdk
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -95,7 +95,7 @@ jobs:
           repository: 8Dionysus/aoa-sdk
           ref: cbf225627f9f28d0470deb8a962ae12d1fe72375
           path: .deps/aoa-sdk
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout aoa-stats
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -103,7 +103,7 @@ jobs:
           repository: 8Dionysus/aoa-stats
           ref: 5627c41efe9f766a4b3437da857060847cb4f0f1
           path: .deps/aoa-stats
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
