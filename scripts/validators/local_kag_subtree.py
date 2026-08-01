@@ -15,8 +15,8 @@ HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
-RETIRED_REFERENCE_REPOS = {"aoa-routing"}
-SOURCE_PREPARATION_REPOS = {"aoa-models"}
+RETIRED_REFERENCE_REPOS = {"Dionysus", "aoa-routing"}
+SOURCE_PREPARATION_REPOS = {"ATM10-Agent", "aoa-models"}
 EXPECTED_DIRECT_REPOS = (
     set(PROVIDER_REPO_ROOTS)
     | RETIRED_REFERENCE_REPOS

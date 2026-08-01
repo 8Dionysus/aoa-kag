@@ -131,6 +131,13 @@
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
+- [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
+
+## manifest
+
+- [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
+- [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
 
 ## manifests
 
@@ -183,6 +190,8 @@
 ## provider registry
 
 - [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
+- [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
+- [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
 
 ## public example
 
@@ -302,3 +311,5 @@
 - [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
 - [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
+- [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
+- [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)

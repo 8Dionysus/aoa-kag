@@ -173,8 +173,6 @@ payload cannot override the owner source identity.
 | `aoa-sdk` | `kag/` | SDK source-home manifest and typed KAG helper route |
 | `aoa-session-memory` | `kag/` | session-memory kernel, route atlas, and manifest schema |
 | `8Dionysus` | `kag/` | public ecosystem profile and workspace memory map |
-| `Dionysus` | `kag/` | seed garden route map and registry |
-| `ATM10-Agent` | `kag/` | project-local KAG runtime and operator runbook route |
 | `aoa-stats` | `kag/` | derived KAG stats observability registry |
 | `aoa-4pda-connector` | `kag/` | 4PDA connector source policy and storage boundary |
 | `aoa-course-connector` | `kag/` | course connector boundaries and source/storage policies |
@@ -189,3 +187,11 @@ The readiness matrix keeps `aoa-routing` as a `retired_reference` so historical
 source returns remain explicit. Provider validation and CI must not resolve or
 checkout that predecessor repository; current routing ownership returns to
 `aoa-sdk`.
+
+`Dionysus` is also a `retired_reference`: its former seed provider survives as
+bounded historical provenance, not as an active checkout or MCP provider.
+
+`ATM10-Agent` remains a direct owner row in `source_preparation`, not a provider
+checkout. Its standalone autonomy contract is stronger than the former shared
+provider-home assumption; any future KAG handoff must be optional and
+owner-published.

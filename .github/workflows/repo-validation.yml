@@ -156,8 +156,6 @@ jobs:
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
       AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
       EIGHT_DIONYSUS_ROOT: ${{ github.workspace }}/.deps/8Dionysus
-      DIONYSUS_ROOT: ${{ github.workspace }}/.deps/Dionysus
-      ATM10_AGENT_ROOT: ${{ github.workspace }}/.deps/ATM10-Agent
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
@@ -201,22 +199,6 @@ jobs:
           repository: 8Dionysus/8Dionysus
           ref: aa67908a137a9c9631a439f266d32a8918c7213c
           path: .deps/8Dionysus
-          fetch-depth: 0
-
-      - name: Checkout Dionysus
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/Dionysus
-          ref: 8529c00c731ce560c0d8d2719fabbaf9dcbe222e
-          path: .deps/Dionysus
-          fetch-depth: 0
-
-      - name: Checkout ATM10-Agent
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/ATM10-Agent
-          ref: f0108816981e81a5951ed0f74743982a46a8fad1
-          path: .deps/ATM10-Agent
           fetch-depth: 0
 
       - name: Checkout aoa-memo

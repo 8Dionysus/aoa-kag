@@ -4,9 +4,9 @@
   "owner_repo": "aoa-kag",
   "source_ref": "manifests/local_kag_readiness.json",
   "provider_status_counts": {
-    "provider_ready": 23,
-    "retired_reference": 1,
-    "source_preparation": 1
+    "provider_ready": 21,
+    "retired_reference": 2,
+    "source_preparation": 2
   },
   "providers": [
     {
@@ -44,7 +44,7 @@
           "manifest_ref": "kag/indexes/index_family.manifest.json",
           "receipt_ref": "",
           "shards": 484,
-          "tracked_bytes": 11439436,
+          "tracked_bytes": 11478067,
           "tracked_bytes_max": 12582912
         },
         "repository_index_family": {
@@ -59,7 +59,7 @@
         "domain_index_catalog_ref": "",
         "coverage": {
           "commands": 203,
-          "documents": 334,
+          "documents": 336,
           "generated": 35,
           "mechanics": 421,
           "schemas": 80,
@@ -71,7 +71,7 @@
           "counts": {
             "artifact_kind": {
               "config": 91,
-              "document": 326,
+              "document": 328,
               "generated_readmodel": 42,
               "index": 1,
               "license": 1,
@@ -89,7 +89,7 @@
             "command_role": {
               "builder": 8,
               "lane_entrypoint": 3,
-              "none": 674,
+              "none": 676,
               "script": 12,
               "test": 57,
               "validator": 15
@@ -98,7 +98,7 @@
               "agents": 58,
               "boundary": 1,
               "changelog": 1,
-              "decision": 36,
+              "decision": 38,
               "design": 1,
               "design_agents": 1,
               "mechanics_doc": 113,
@@ -117,7 +117,7 @@
               "legacy": 16,
               "mechanic_package": 55,
               "mechanic_part": 94,
-              "none": 348,
+              "none": 350,
               "part_contract": 28,
               "part_doc": 129,
               "part_schema": 62,
@@ -127,11 +127,11 @@
             "primary_kind": {
               "artifact": 40,
               "command": 95,
-              "document": 334,
+              "document": 336,
               "surface": 300
             },
             "surface_state": {
-              "authored_source": 708,
+              "authored_source": 710,
               "generated_readmodel": 45,
               "legacy": 16
             }
@@ -3284,539 +3284,6 @@
             "route": "workspace memory map builder",
             "surface": "scripts/build_workspace_memory_map.py",
             "record_count": 5
-          }
-        ]
-      }
-    },
-    {
-      "repo": "Dionysus",
-      "provider_status": "provider_ready",
-      "adoption_order": 13,
-      "local_kag_path": "kag/",
-      "manifest_ref": "kag/manifest.json",
-      "record_class_coverage": [
-        "node",
-        "edge",
-        "index",
-        "projection",
-        "receipt"
-      ],
-      "record_counts": {
-        "nodes": 2,
-        "edges": 1,
-        "indexes": 1,
-        "projections": 1,
-        "receipts": 1
-      },
-      "repo_local_index": {
-        "status": "passed",
-        "source_index_ref": "kag/indexes/source_surface_index.json",
-        "index_files": [
-          "kag/indexes/index_family.manifest.json",
-          "kag/indexes/provider_readiness_index.json"
-        ],
-        "family_storage": "v3-portable-shards",
-        "portable_family": {
-          "budget_state": "passed",
-          "content_digest": "d49b36f6c9a673100fbe04c3648db1ca103d2397e0729207ef6f2f5a14607563",
-          "digest_state": "published",
-          "manifest_ref": "kag/indexes/index_family.manifest.json",
-          "receipt_ref": "",
-          "shards": 526,
-          "tracked_bytes": 21290750,
-          "tracked_bytes_max": 24117248
-        },
-        "repository_index_family": {
-          "anchor": "kag/indexes/repo_anchor_index.json",
-          "artifact": "kag/indexes/repo_artifact_index.json",
-          "assertion": "kag/indexes/repo_assertion_index.json",
-          "entity": "kag/indexes/repo_entity_index.json",
-          "event": "kag/indexes/repo_event_index.json",
-          "relation": "kag/indexes/repo_relation_index.json",
-          "source": "kag/indexes/source_surface_index.json"
-        },
-        "domain_index_catalog_ref": "",
-        "coverage": {
-          "commands": 43,
-          "documents": 642,
-          "generated": 6,
-          "mechanics": 0,
-          "schemas": 11,
-          "scripts": 28,
-          "tests": 15,
-          "validators": 15
-        },
-        "common_surface_profile": {
-          "counts": {
-            "artifact_kind": {
-              "archive": 102,
-              "asset": 50,
-              "config": 217,
-              "dependency_manifest": 2,
-              "directory_marker": 4,
-              "document": 634,
-              "generated_readmodel": 13,
-              "index": 1,
-              "license": 1,
-              "manifest": 1,
-              "owner_metadata": 2,
-              "projection": 1,
-              "receipt": 1,
-              "schema": 10,
-              "script": 12,
-              "security": 1,
-              "source_code": 5,
-              "test": 15,
-              "text_artifact": 3,
-              "validator": 15
-            },
-            "command_role": {
-              "builder": 3,
-              "lane_entrypoint": 1,
-              "none": 1048,
-              "script": 8,
-              "test": 15,
-              "validator": 15
-            },
-            "document_role": {
-              "agents": 21,
-              "audit": 9,
-              "changelog": 1,
-              "decision": 8,
-              "none": 448,
-              "readme": 33,
-              "report": 275,
-              "roadmap": 1,
-              "unknown_document": 294
-            },
-            "mechanics_role": {
-              "none": 1090
-            },
-            "primary_kind": {
-              "artifact": 172,
-              "command": 42,
-              "document": 642,
-              "surface": 234
-            },
-            "surface_state": {
-              "authored_source": 906,
-              "generated_readmodel": 18,
-              "legacy": 166
-            }
-          },
-          "quality": {
-            "has_generated_readmodels": true,
-            "has_kag_home": true,
-            "has_owner_commands": true,
-            "has_record_classes": true,
-            "has_source_index": true,
-            "has_validation_route": true,
-            "unknown_count": 0
-          },
-          "source": "source_surface_index"
-        },
-        "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
-        "coverage_owner_key": "Dionysus"
-      },
-      "freshness_handles": [
-        {
-          "receipt_ref": "kag/receipts/validation_receipt.json",
-          "checked_ref": "generated/seed_route_map.min.json",
-          "state": "current",
-          "validator": "python scripts/validate_seed_surfaces.py",
-          "owner_return_route": {
-            "repo": "Dionysus",
-            "surface": "README.md",
-            "route_kind": "authored_meaning"
-          }
-        }
-      ],
-      "source_surfaces": [
-        {
-          "repo": "Dionysus",
-          "path": "generated/seed_route_map.min.json",
-          "source_class": "route_source",
-          "role": "primary",
-          "authority": "derived_readmodel"
-        },
-        {
-          "repo": "Dionysus",
-          "path": "seed-registry.yaml",
-          "source_class": "route_source",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "Dionysus",
-          "path": "README.md",
-          "source_class": "route_source",
-          "role": "owner_route",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "Dionysus",
-          "path": "seed_notes/README.md",
-          "source_class": "route_source",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "Dionysus",
-          "path": "seed_staging/README.md",
-          "source_class": "route_source",
-          "role": "supporting",
-          "authority": "authored_source"
-        }
-      ],
-      "validation_routes": [
-        {
-          "route": "python scripts/validate_seed_surfaces.py",
-          "lane": "owner-local"
-        },
-        {
-          "route": "python scripts/build_seed_route_map.py --check",
-          "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag local subtree validator",
-          "lane": "local-kag"
-        }
-      ],
-      "consumer_routes": [
-        "aoa-kag registry",
-        "abyss-stack federation mirror",
-        "aoa-kag-mcp resource"
-      ],
-      "owner_return_routes": [
-        {
-          "repo": "Dionysus",
-          "surface": "README.md",
-          "route_kind": "authored_meaning"
-        }
-      ],
-      "generation_profile": {
-        "source_home_surfaces": [
-          "seed_notes/",
-          "seed_staging/",
-          "seed_expansion/"
-        ],
-        "candidate_source_surfaces": [
-          "README.md",
-          "seed-registry.yaml",
-          "generated/seed_route_map.min.json",
-          "seed_notes/README.md",
-          "seed_staging/README.md"
-        ],
-        "source_owned_exports": [],
-        "graph_entities": [
-          "seed note",
-          "staging packet"
-        ],
-        "event_surfaces": [
-          "quests/"
-        ],
-        "document_surfaces": [
-          "README.md",
-          "seed_notes/README.md",
-          "seed_staging/README.md"
-        ],
-        "validators": [
-          "python scripts/validate_seed_surfaces.py",
-          "python scripts/build_seed_route_map.py --check"
-        ],
-        "release_gate": "repo-local validation lane",
-        "runtime_consumers": [
-          "future ingest pipeline",
-          "aoa-kag registry",
-          "aoa-kag-mcp resource"
-        ],
-        "record_authoring_counts": {
-          "authored_control": 1,
-          "generated_from_source": 5
-        },
-        "record_class_counts": {
-          "edge": 1,
-          "index": 1,
-          "node": 2,
-          "projection": 1,
-          "receipt": 1
-        },
-        "source_authority_counts": {
-          "authored_source": 4,
-          "derived_readmodel": 1
-        },
-        "builder_routes": [
-          {
-            "route": "python scripts/build_seed_route_map.py --check",
-            "surface": "scripts/build_seed_route_map.py",
-            "record_count": 1
-          },
-          {
-            "route": "seed route map builder",
-            "surface": "scripts/build_seed_route_map.py",
-            "record_count": 5
-          }
-        ]
-      }
-    },
-    {
-      "repo": "ATM10-Agent",
-      "provider_status": "provider_ready",
-      "adoption_order": 14,
-      "local_kag_path": "kag/",
-      "manifest_ref": "kag/manifest.json",
-      "record_class_coverage": [
-        "node",
-        "edge",
-        "index",
-        "projection",
-        "receipt"
-      ],
-      "record_counts": {
-        "nodes": 2,
-        "edges": 1,
-        "indexes": 1,
-        "projections": 1,
-        "receipts": 1
-      },
-      "repo_local_index": {
-        "status": "passed",
-        "source_index_ref": "kag/indexes/source_surface_index.json",
-        "index_files": [
-          "kag/indexes/index_family.manifest.json",
-          "kag/indexes/provider_readiness_index.json"
-        ],
-        "family_storage": "v3-portable-shards",
-        "portable_family": {
-          "budget_state": "passed",
-          "content_digest": "e50a2e85c377cae3fd6f6d5625395b46e8d6a5a6954d534bd9199895b288a973",
-          "digest_state": "published",
-          "manifest_ref": "kag/indexes/index_family.manifest.json",
-          "receipt_ref": "",
-          "shards": 288,
-          "tracked_bytes": 7394451,
-          "tracked_bytes_max": 10485760
-        },
-        "repository_index_family": {
-          "anchor": "kag/indexes/repo_anchor_index.json",
-          "artifact": "kag/indexes/repo_artifact_index.json",
-          "assertion": "kag/indexes/repo_assertion_index.json",
-          "entity": "kag/indexes/repo_entity_index.json",
-          "event": "kag/indexes/repo_event_index.json",
-          "relation": "kag/indexes/repo_relation_index.json",
-          "source": "kag/indexes/source_surface_index.json"
-        },
-        "domain_index_catalog_ref": "",
-        "coverage": {
-          "commands": 182,
-          "documents": 60,
-          "generated": 0,
-          "mechanics": 0,
-          "schemas": 6,
-          "scripts": 79,
-          "tests": 103,
-          "validators": 3
-        },
-        "common_surface_profile": {
-          "counts": {
-            "artifact_kind": {
-              "config": 27,
-              "dependency_manifest": 9,
-              "document": 52,
-              "generated_readmodel": 8,
-              "index": 1,
-              "license": 1,
-              "owner_metadata": 3,
-              "projection": 1,
-              "receipt": 1,
-              "record_log": 7,
-              "schema": 5,
-              "script": 9,
-              "security": 1,
-              "source_code": 98,
-              "test": 103,
-              "validator": 3
-            },
-            "command_role": {
-              "builder": 2,
-              "none": 214,
-              "script": 7,
-              "test": 103,
-              "validator": 3
-            },
-            "document_role": {
-              "agents": 17,
-              "changelog": 1,
-              "decision": 9,
-              "none": 269,
-              "readme": 9,
-              "release_notes": 1,
-              "roadmap": 1,
-              "unknown_document": 22
-            },
-            "mechanics_role": {
-              "none": 329
-            },
-            "primary_kind": {
-              "artifact": 23,
-              "command": 115,
-              "document": 60,
-              "surface": 131
-            },
-            "surface_state": {
-              "authored_source": 317,
-              "generated_readmodel": 12
-            }
-          },
-          "quality": {
-            "has_generated_readmodels": true,
-            "has_kag_home": true,
-            "has_owner_commands": true,
-            "has_record_classes": true,
-            "has_source_index": true,
-            "has_validation_route": true,
-            "unknown_count": 0
-          },
-          "source": "source_surface_index"
-        },
-        "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
-        "coverage_owner_key": "ATM10-Agent"
-      },
-      "freshness_handles": [
-        {
-          "receipt_ref": "kag/receipts/validation_receipt.json",
-          "checked_ref": "src/kag/baseline.py",
-          "state": "current",
-          "validator": "python -m pytest",
-          "owner_return_route": {
-            "repo": "ATM10-Agent",
-            "surface": "docs/RUNBOOK.md",
-            "route_kind": "runtime"
-          }
-        }
-      ],
-      "source_surfaces": [
-        {
-          "repo": "ATM10-Agent",
-          "path": "src/kag/baseline.py",
-          "source_class": "runtime_advisory",
-          "role": "primary",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "ATM10-Agent",
-          "path": "src/kag/neo4j_backend.py",
-          "source_class": "runtime_advisory",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "ATM10-Agent",
-          "path": "stats/README.md",
-          "source_class": "runtime_advisory",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "ATM10-Agent",
-          "path": "docs/RUNBOOK.md",
-          "source_class": "runtime_advisory",
-          "role": "owner_route",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "ATM10-Agent",
-          "path": "docs/SOURCE_OF_TRUTH.md",
-          "source_class": "runtime_advisory",
-          "role": "supporting",
-          "authority": "authored_source"
-        },
-        {
-          "repo": "ATM10-Agent",
-          "path": "README.md",
-          "source_class": "runtime_advisory",
-          "role": "supporting",
-          "authority": "authored_source"
-        }
-      ],
-      "validation_routes": [
-        {
-          "route": "python -m pytest",
-          "lane": "owner-local"
-        }
-      ],
-      "consumer_routes": [
-        "aoa-kag registry",
-        "project-local runtime",
-        "aoa-kag-mcp resource"
-      ],
-      "owner_return_routes": [
-        {
-          "repo": "ATM10-Agent",
-          "surface": "docs/RUNBOOK.md",
-          "route_kind": "runtime"
-        }
-      ],
-      "generation_profile": {
-        "source_home_surfaces": [
-          "src/kag"
-        ],
-        "candidate_source_surfaces": [
-          "README.md",
-          "docs/RUNBOOK.md",
-          "docs/SOURCE_OF_TRUTH.md",
-          "src/kag/baseline.py",
-          "src/kag/neo4j_backend.py"
-        ],
-        "source_owned_exports": [],
-        "graph_entities": [
-          "game session",
-          "retrieval result",
-          "KAG expansion row"
-        ],
-        "event_surfaces": [
-          "docs/RUNBOOK.md"
-        ],
-        "document_surfaces": [
-          "README.md",
-          "docs/QWEN3_MODEL_STACK.md"
-        ],
-        "validators": [
-          "repo-local tests",
-          "KAG Neo4j guardrail workflow"
-        ],
-        "release_gate": "repo-local validation lane",
-        "runtime_consumers": [
-          "application runtime",
-          "Neo4j",
-          "Qdrant",
-          "aoa-kag registry",
-          "aoa-kag-mcp resource"
-        ],
-        "record_authoring_counts": {
-          "authored_control": 2,
-          "generated_from_source": 4
-        },
-        "record_class_counts": {
-          "edge": 1,
-          "index": 1,
-          "node": 2,
-          "projection": 1,
-          "receipt": 1
-        },
-        "source_authority_counts": {
-          "authored_source": 6
-        },
-        "builder_routes": [
-          {
-            "route": "project-local KAG modules",
-            "surface": "src/kag/baseline.py",
-            "record_count": 5
-          },
-          {
-            "route": "python -m pytest",
-            "surface": "tests/",
-            "record_count": 1
           }
         ]
       }
@@ -7035,133 +6502,6 @@
         }
       ]
     },
-    "Dionysus": {
-      "source_home_surfaces": [
-        "seed_notes/",
-        "seed_staging/",
-        "seed_expansion/"
-      ],
-      "candidate_source_surfaces": [
-        "README.md",
-        "seed-registry.yaml",
-        "generated/seed_route_map.min.json",
-        "seed_notes/README.md",
-        "seed_staging/README.md"
-      ],
-      "source_owned_exports": [],
-      "graph_entities": [
-        "seed note",
-        "staging packet"
-      ],
-      "event_surfaces": [
-        "quests/"
-      ],
-      "document_surfaces": [
-        "README.md",
-        "seed_notes/README.md",
-        "seed_staging/README.md"
-      ],
-      "validators": [
-        "python scripts/validate_seed_surfaces.py",
-        "python scripts/build_seed_route_map.py --check"
-      ],
-      "release_gate": "repo-local validation lane",
-      "runtime_consumers": [
-        "future ingest pipeline",
-        "aoa-kag registry",
-        "aoa-kag-mcp resource"
-      ],
-      "record_authoring_counts": {
-        "authored_control": 1,
-        "generated_from_source": 5
-      },
-      "record_class_counts": {
-        "edge": 1,
-        "index": 1,
-        "node": 2,
-        "projection": 1,
-        "receipt": 1
-      },
-      "source_authority_counts": {
-        "authored_source": 4,
-        "derived_readmodel": 1
-      },
-      "builder_routes": [
-        {
-          "route": "python scripts/build_seed_route_map.py --check",
-          "surface": "scripts/build_seed_route_map.py",
-          "record_count": 1
-        },
-        {
-          "route": "seed route map builder",
-          "surface": "scripts/build_seed_route_map.py",
-          "record_count": 5
-        }
-      ]
-    },
-    "ATM10-Agent": {
-      "source_home_surfaces": [
-        "src/kag"
-      ],
-      "candidate_source_surfaces": [
-        "README.md",
-        "docs/RUNBOOK.md",
-        "docs/SOURCE_OF_TRUTH.md",
-        "src/kag/baseline.py",
-        "src/kag/neo4j_backend.py"
-      ],
-      "source_owned_exports": [],
-      "graph_entities": [
-        "game session",
-        "retrieval result",
-        "KAG expansion row"
-      ],
-      "event_surfaces": [
-        "docs/RUNBOOK.md"
-      ],
-      "document_surfaces": [
-        "README.md",
-        "docs/QWEN3_MODEL_STACK.md"
-      ],
-      "validators": [
-        "repo-local tests",
-        "KAG Neo4j guardrail workflow"
-      ],
-      "release_gate": "repo-local validation lane",
-      "runtime_consumers": [
-        "application runtime",
-        "Neo4j",
-        "Qdrant",
-        "aoa-kag registry",
-        "aoa-kag-mcp resource"
-      ],
-      "record_authoring_counts": {
-        "authored_control": 2,
-        "generated_from_source": 4
-      },
-      "record_class_counts": {
-        "edge": 1,
-        "index": 1,
-        "node": 2,
-        "projection": 1,
-        "receipt": 1
-      },
-      "source_authority_counts": {
-        "authored_source": 6
-      },
-      "builder_routes": [
-        {
-          "route": "project-local KAG modules",
-          "surface": "src/kag/baseline.py",
-          "record_count": 5
-        },
-        {
-          "route": "python -m pytest",
-          "surface": "tests/",
-          "record_count": 1
-        }
-      ]
-    },
     "aoa-stats": {
       "source_home_surfaces": [
         "src/"
@@ -7769,7 +7109,7 @@
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "receipt_ref": "",
         "shards": 484,
-        "tracked_bytes": 11439436,
+        "tracked_bytes": 11478067,
         "tracked_bytes_max": 12582912
       },
       "repository_index_family": {
@@ -7784,7 +7124,7 @@
       "domain_index_catalog_ref": "",
       "coverage": {
         "commands": 203,
-        "documents": 334,
+        "documents": 336,
         "generated": 35,
         "mechanics": 421,
         "schemas": 80,
@@ -7796,7 +7136,7 @@
         "counts": {
           "artifact_kind": {
             "config": 91,
-            "document": 326,
+            "document": 328,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -7814,7 +7154,7 @@
           "command_role": {
             "builder": 8,
             "lane_entrypoint": 3,
-            "none": 674,
+            "none": 676,
             "script": 12,
             "test": 57,
             "validator": 15
@@ -7823,7 +7163,7 @@
             "agents": 58,
             "boundary": 1,
             "changelog": 1,
-            "decision": 36,
+            "decision": 38,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
@@ -7842,7 +7182,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 348,
+            "none": 350,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -7852,11 +7192,11 @@
           "primary_kind": {
             "artifact": 40,
             "command": 95,
-            "document": 334,
+            "document": 336,
             "surface": 300
           },
           "surface_state": {
-            "authored_source": 708,
+            "authored_source": 710,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -9182,219 +8522,6 @@
       "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
       "coverage_owner_key": "8Dionysus"
     },
-    "Dionysus": {
-      "status": "passed",
-      "source_index_ref": "kag/indexes/source_surface_index.json",
-      "index_files": [
-        "kag/indexes/index_family.manifest.json",
-        "kag/indexes/provider_readiness_index.json"
-      ],
-      "family_storage": "v3-portable-shards",
-      "portable_family": {
-        "budget_state": "passed",
-        "content_digest": "d49b36f6c9a673100fbe04c3648db1ca103d2397e0729207ef6f2f5a14607563",
-        "digest_state": "published",
-        "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "receipt_ref": "",
-        "shards": 526,
-        "tracked_bytes": 21290750,
-        "tracked_bytes_max": 24117248
-      },
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
-      "domain_index_catalog_ref": "",
-      "coverage": {
-        "commands": 43,
-        "documents": 642,
-        "generated": 6,
-        "mechanics": 0,
-        "schemas": 11,
-        "scripts": 28,
-        "tests": 15,
-        "validators": 15
-      },
-      "common_surface_profile": {
-        "counts": {
-          "artifact_kind": {
-            "archive": 102,
-            "asset": 50,
-            "config": 217,
-            "dependency_manifest": 2,
-            "directory_marker": 4,
-            "document": 634,
-            "generated_readmodel": 13,
-            "index": 1,
-            "license": 1,
-            "manifest": 1,
-            "owner_metadata": 2,
-            "projection": 1,
-            "receipt": 1,
-            "schema": 10,
-            "script": 12,
-            "security": 1,
-            "source_code": 5,
-            "test": 15,
-            "text_artifact": 3,
-            "validator": 15
-          },
-          "command_role": {
-            "builder": 3,
-            "lane_entrypoint": 1,
-            "none": 1048,
-            "script": 8,
-            "test": 15,
-            "validator": 15
-          },
-          "document_role": {
-            "agents": 21,
-            "audit": 9,
-            "changelog": 1,
-            "decision": 8,
-            "none": 448,
-            "readme": 33,
-            "report": 275,
-            "roadmap": 1,
-            "unknown_document": 294
-          },
-          "mechanics_role": {
-            "none": 1090
-          },
-          "primary_kind": {
-            "artifact": 172,
-            "command": 42,
-            "document": 642,
-            "surface": 234
-          },
-          "surface_state": {
-            "authored_source": 906,
-            "generated_readmodel": 18,
-            "legacy": 166
-          }
-        },
-        "quality": {
-          "has_generated_readmodels": true,
-          "has_kag_home": true,
-          "has_owner_commands": true,
-          "has_record_classes": true,
-          "has_source_index": true,
-          "has_validation_route": true,
-          "unknown_count": 0
-        },
-        "source": "source_surface_index"
-      },
-      "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
-      "coverage_owner_key": "Dionysus"
-    },
-    "ATM10-Agent": {
-      "status": "passed",
-      "source_index_ref": "kag/indexes/source_surface_index.json",
-      "index_files": [
-        "kag/indexes/index_family.manifest.json",
-        "kag/indexes/provider_readiness_index.json"
-      ],
-      "family_storage": "v3-portable-shards",
-      "portable_family": {
-        "budget_state": "passed",
-        "content_digest": "e50a2e85c377cae3fd6f6d5625395b46e8d6a5a6954d534bd9199895b288a973",
-        "digest_state": "published",
-        "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "receipt_ref": "",
-        "shards": 288,
-        "tracked_bytes": 7394451,
-        "tracked_bytes_max": 10485760
-      },
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
-      "domain_index_catalog_ref": "",
-      "coverage": {
-        "commands": 182,
-        "documents": 60,
-        "generated": 0,
-        "mechanics": 0,
-        "schemas": 6,
-        "scripts": 79,
-        "tests": 103,
-        "validators": 3
-      },
-      "common_surface_profile": {
-        "counts": {
-          "artifact_kind": {
-            "config": 27,
-            "dependency_manifest": 9,
-            "document": 52,
-            "generated_readmodel": 8,
-            "index": 1,
-            "license": 1,
-            "owner_metadata": 3,
-            "projection": 1,
-            "receipt": 1,
-            "record_log": 7,
-            "schema": 5,
-            "script": 9,
-            "security": 1,
-            "source_code": 98,
-            "test": 103,
-            "validator": 3
-          },
-          "command_role": {
-            "builder": 2,
-            "none": 214,
-            "script": 7,
-            "test": 103,
-            "validator": 3
-          },
-          "document_role": {
-            "agents": 17,
-            "changelog": 1,
-            "decision": 9,
-            "none": 269,
-            "readme": 9,
-            "release_notes": 1,
-            "roadmap": 1,
-            "unknown_document": 22
-          },
-          "mechanics_role": {
-            "none": 329
-          },
-          "primary_kind": {
-            "artifact": 23,
-            "command": 115,
-            "document": 60,
-            "surface": 131
-          },
-          "surface_state": {
-            "authored_source": 317,
-            "generated_readmodel": 12
-          }
-        },
-        "quality": {
-          "has_generated_readmodels": true,
-          "has_kag_home": true,
-          "has_owner_commands": true,
-          "has_record_classes": true,
-          "has_source_index": true,
-          "has_validation_route": true,
-          "unknown_count": 0
-        },
-        "source": "source_surface_index"
-      },
-      "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
-      "coverage_owner_key": "ATM10-Agent"
-    },
     "aoa-stats": {
       "status": "passed",
       "source_index_ref": "kag/indexes/source_surface_index.json",
@@ -10369,7 +9496,7 @@
       "counts": {
         "artifact_kind": {
           "config": 91,
-          "document": 326,
+          "document": 328,
           "generated_readmodel": 42,
           "index": 1,
           "license": 1,
@@ -10387,7 +9514,7 @@
         "command_role": {
           "builder": 8,
           "lane_entrypoint": 3,
-          "none": 674,
+          "none": 676,
           "script": 12,
           "test": 57,
           "validator": 15
@@ -10396,7 +9523,7 @@
           "agents": 58,
           "boundary": 1,
           "changelog": 1,
-          "decision": 36,
+          "decision": 38,
           "design": 1,
           "design_agents": 1,
           "mechanics_doc": 113,
@@ -10415,7 +9542,7 @@
           "legacy": 16,
           "mechanic_package": 55,
           "mechanic_part": 94,
-          "none": 348,
+          "none": 350,
           "part_contract": 28,
           "part_doc": 129,
           "part_schema": 62,
@@ -10425,11 +9552,11 @@
         "primary_kind": {
           "artifact": 40,
           "command": 95,
-          "document": 334,
+          "document": 336,
           "surface": 300
         },
         "surface_state": {
-          "authored_source": 708,
+          "authored_source": 710,
           "generated_readmodel": 45,
           "legacy": 16
         }
@@ -11300,137 +10427,6 @@
       },
       "source": "source_surface_index"
     },
-    "Dionysus": {
-      "counts": {
-        "artifact_kind": {
-          "archive": 102,
-          "asset": 50,
-          "config": 217,
-          "dependency_manifest": 2,
-          "directory_marker": 4,
-          "document": 634,
-          "generated_readmodel": 13,
-          "index": 1,
-          "license": 1,
-          "manifest": 1,
-          "owner_metadata": 2,
-          "projection": 1,
-          "receipt": 1,
-          "schema": 10,
-          "script": 12,
-          "security": 1,
-          "source_code": 5,
-          "test": 15,
-          "text_artifact": 3,
-          "validator": 15
-        },
-        "command_role": {
-          "builder": 3,
-          "lane_entrypoint": 1,
-          "none": 1048,
-          "script": 8,
-          "test": 15,
-          "validator": 15
-        },
-        "document_role": {
-          "agents": 21,
-          "audit": 9,
-          "changelog": 1,
-          "decision": 8,
-          "none": 448,
-          "readme": 33,
-          "report": 275,
-          "roadmap": 1,
-          "unknown_document": 294
-        },
-        "mechanics_role": {
-          "none": 1090
-        },
-        "primary_kind": {
-          "artifact": 172,
-          "command": 42,
-          "document": 642,
-          "surface": 234
-        },
-        "surface_state": {
-          "authored_source": 906,
-          "generated_readmodel": 18,
-          "legacy": 166
-        }
-      },
-      "quality": {
-        "has_generated_readmodels": true,
-        "has_kag_home": true,
-        "has_owner_commands": true,
-        "has_record_classes": true,
-        "has_source_index": true,
-        "has_validation_route": true,
-        "unknown_count": 0
-      },
-      "source": "source_surface_index"
-    },
-    "ATM10-Agent": {
-      "counts": {
-        "artifact_kind": {
-          "config": 27,
-          "dependency_manifest": 9,
-          "document": 52,
-          "generated_readmodel": 8,
-          "index": 1,
-          "license": 1,
-          "owner_metadata": 3,
-          "projection": 1,
-          "receipt": 1,
-          "record_log": 7,
-          "schema": 5,
-          "script": 9,
-          "security": 1,
-          "source_code": 98,
-          "test": 103,
-          "validator": 3
-        },
-        "command_role": {
-          "builder": 2,
-          "none": 214,
-          "script": 7,
-          "test": 103,
-          "validator": 3
-        },
-        "document_role": {
-          "agents": 17,
-          "changelog": 1,
-          "decision": 9,
-          "none": 269,
-          "readme": 9,
-          "release_notes": 1,
-          "roadmap": 1,
-          "unknown_document": 22
-        },
-        "mechanics_role": {
-          "none": 329
-        },
-        "primary_kind": {
-          "artifact": 23,
-          "command": 115,
-          "document": 60,
-          "surface": 131
-        },
-        "surface_state": {
-          "authored_source": 317,
-          "generated_readmodel": 12
-        }
-      },
-      "quality": {
-        "has_generated_readmodels": true,
-        "has_kag_home": true,
-        "has_owner_commands": true,
-        "has_record_classes": true,
-        "has_source_index": true,
-        "has_validation_route": true,
-        "unknown_count": 0
-      },
-      "source": "source_surface_index"
-    },
     "aoa-stats": {
       "counts": {
         "artifact_kind": {
@@ -12054,6 +11050,44 @@
       ]
     },
     {
+      "repo": "Dionysus",
+      "adoption_order": 13,
+      "provider_status": "retired_reference",
+      "candidate_source_surfaces": [
+        "README.md",
+        "seed-registry.yaml",
+        "generated/seed_route_map.min.json",
+        "seed_notes/README.md",
+        "seed_staging/README.md"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "Dionysus",
+          "surface": "README.md",
+          "route_kind": "authored_meaning"
+        }
+      ]
+    },
+    {
+      "repo": "ATM10-Agent",
+      "adoption_order": 14,
+      "provider_status": "source_preparation",
+      "candidate_source_surfaces": [
+        "README.md",
+        "docs/RUNBOOK.md",
+        "docs/SOURCE_OF_TRUTH.md",
+        "src/kag/baseline.py",
+        "src/kag/neo4j_backend.py"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "ATM10-Agent",
+          "surface": "docs/RUNBOOK.md",
+          "route_kind": "runtime"
+        }
+      ]
+    },
+    {
       "repo": "aoa-models",
       "adoption_order": 24,
       "provider_status": "source_preparation",
@@ -12427,20 +11461,18 @@
   },
   "generation_readiness": {
     "provider_generation_record_counts": {
-      "authored_control": 58,
-      "generated_from_source": 82
+      "authored_control": 55,
+      "generated_from_source": 73
     },
     "provider_source_authority_counts": {
       "authored_control": 1,
-      "authored_source": 96,
-      "derived_readmodel": 16,
+      "authored_source": 86,
+      "derived_readmodel": 15,
       "source_owned_export": 3
     },
     "generated_record_repos": [
       "8Dionysus",
-      "ATM10-Agent",
       "Agents-of-Abyss",
-      "Dionysus",
       "Tree-of-Sophia",
       "abyss-machine",
       "abyss-stack",

@@ -103,8 +103,6 @@ The provider-ready homes are:
 | `aoa-sdk` | `kag/` | `sdk/source_home.manifest.json` |
 | `aoa-session-memory` | `kag/` | `schemas/session.manifest.schema.json` |
 | `8Dionysus` | `kag/` | `generated/workspace_memory_map.min.json` |
-| `Dionysus` | `kag/` | `generated/seed_route_map.min.json` |
-| `ATM10-Agent` | `kag/` | `src/kag/baseline.py` |
 | `aoa-stats` | `kag/` | `generated/agon_kag_stats_observability_registry.min.json` |
 | `abyss-stack` | `kag/` | `mcp/README.md` |
 | `abyss-machine` | `kag/` | `manifests/repo_scaffold.manifest.json` |
@@ -117,6 +115,16 @@ The provider-ready homes are:
 
 All homes expose the same record classes while returning to their own source
 owners.
+
+`ATM10-Agent` is intentionally `source_preparation`: its accepted standalone
+autonomy boundary removed the former top-level provider packet. KAG may retain
+explicit source-return candidates, but it must not require a sibling checkout
+or advertise an owner provider until ATM10 explicitly publishes a new optional
+handoff.
+
+`Dionysus` is a `retired_reference`: the former seed-garden provider packet was
+removed when that repository was isolated from active OS surfaces. Historical
+source returns remain explicit, but it is not a provider checkout.
 
 The predecessor `aoa-routing` repository is tracked separately as a
 `retired_reference`: its source paths remain historical return handles, but it
