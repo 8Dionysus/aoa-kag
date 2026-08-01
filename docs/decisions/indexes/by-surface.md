@@ -4,7 +4,7 @@
 
 ## acceptance boundary
 
-- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
+- [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
 
 ## agent companion
 
@@ -21,11 +21,13 @@
 ## CI performance
 
 - [AOA-KAG-D-0024 - Immutable Batch Owner Source Scan](../AOA-KAG-D-0024-immutable-batch-owner-source-scan.md) (`docs/decisions/AOA-KAG-D-0024-immutable-batch-owner-source-scan.md`)
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 
 ## command authority
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 
 ## compatibility view
 
@@ -56,6 +58,7 @@
 ## ephemeral proof artifact
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 
 ## examples
 
@@ -91,6 +94,7 @@
 ## GitHub landing
 
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 
 ## impact classifier
 
@@ -121,7 +125,7 @@
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
-- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
+- [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
 
 ## mechanics part
 
@@ -142,7 +146,7 @@
 ## owner evidence
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
-- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
+- [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
 
 ## owner return
 
@@ -228,7 +232,7 @@
 
 ## source identity
 
-- [AOA-KAG-D-0025 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md`)
+- [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
 
 ## source reader
 
@@ -270,3 +274,4 @@
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
 - [AOA-KAG-D-0024 - Immutable Batch Owner Source Scan](../AOA-KAG-D-0024-immutable-batch-owner-source-scan.md) (`docs/decisions/AOA-KAG-D-0024-immutable-batch-owner-source-scan.md`)
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)

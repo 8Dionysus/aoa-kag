@@ -350,11 +350,15 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             validation_lanes.command_sequence_for_lane("release"),
             release_check.release_lane_commands(),
         )
+        self.assertEqual(
+            validation_lanes.command_sequence_for_lane("release_continuation"),
+            release_check.release_lane_commands("release_continuation"),
+        )
 
         release_check_text = (REPO_ROOT / "scripts" / "release_check.py").read_text(
             encoding="utf-8"
         )
-        self.assertIn("validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)", release_check_text)
+        self.assertIn("validation_lanes.command_sequence_for_lane(lane_id)", release_check_text)
         self.assertNotIn("COMMANDS =", release_check_text)
         self.assertNotIn('"validate committed KAG surfaces"', release_check_text)
         self.assertNotIn('"generate KAG outputs"', release_check_text)
@@ -367,13 +371,15 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("python scripts/release_check.py", repo_validation)
+        self.assertIn("python scripts/ci_release_check.py", repo_validation)
+        self.assertIn("python scripts/source_fast_handoff.py issue", repo_validation)
         self.assertIn("python scripts/ci_gate.py --mode source-fast", repo_validation)
         self.assertIn("python scripts/impact_routing.py classify", repo_validation)
         self.assertIn("python scripts/impact_routing.py summarize", repo_validation)
         self.assertNotIn("python scripts/run_tests.py", repo_validation)
         self.assertNotIn("python scripts/run_part_local_checks.py", repo_validation)
         self.assertNotIn("python scripts/validate_kag.py", repo_validation)
+        self.assertNotIn("python scripts/release_check.py", repo_validation)
         self.assertIn("python scripts/ci_gate.py --mode compatibility-canary", canary)
         self.assertNotIn("python scripts/generate_kag.py", canary)
 

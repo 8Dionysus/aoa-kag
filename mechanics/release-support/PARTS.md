@@ -11,7 +11,7 @@ rollback or return posture, and owner evidence boundaries.
 
 | Candidate part | Use when | Current route |
 | --- | --- | --- |
-| `release-lane` | release command authority or workflow posture changes. | `config/validation_lanes.json`, `scripts/release_check.py`, workflow tests. |
+| `release-lane` | release command authority or workflow posture changes. | `config/validation_lanes.json`, `scripts/release_check.py`, `scripts/ci_release_check.py`, workflow tests. |
 | `artifact-identity` | generated release artifacts need identity and drift checks. | root KAG registry artifact identity, `docs/artifact-bundles/kag_registry.bundle.json`, generated parity checks. |
 | `release-contour` | public release posture or roadmap contour changes. | `README.md`, `ROADMAP.md`, `docs/RELEASING.md`, release tests. |
 

@@ -70,6 +70,7 @@ def _lane_definitions(manifest: dict[str, Any]) -> dict[str, LaneDefinition]:
         "source_fast",
         "generated",
         "release",
+        "release_continuation",
         "compatibility_canary",
         "advisory",
     }
@@ -194,6 +195,37 @@ LANE_DEFINITIONS = _lane_definitions(_MANIFEST)
 IMPACT_ROUTING = _impact_routing(_MANIFEST)
 
 
+def _source_fast_handoff(manifest: dict[str, Any]) -> dict[str, Any]:
+    handoff = manifest.get("source_fast_handoff")
+    if not isinstance(handoff, dict):
+        raise ValueError(f"{VALIDATION_LANES_PATH}: source_fast_handoff must be an object")
+    if handoff.get("schema_version") != "aoa_kag_source_fast_handoff_v1":
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: source_fast_handoff schema is unsupported"
+        )
+    if handoff.get("producer_job") != "source_fast":
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: source_fast_handoff producer must be source_fast"
+        )
+    if handoff.get("consumer_job") != "release_audit":
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: source_fast_handoff consumer must be release_audit"
+        )
+    if handoff.get("invalid_receipt_posture") != "fallback-full-release":
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: invalid source-fast handoff must fall back"
+        )
+    donors = _string_list(handoff.get("donors"), "source_fast_handoff.donors")
+    if len(donors) != len(set(donors)):
+        raise ValueError(
+            f"{VALIDATION_LANES_PATH}: source_fast_handoff donors must be unique"
+        )
+    return {**handoff, "donors": donors}
+
+
+SOURCE_FAST_HANDOFF = _source_fast_handoff(_MANIFEST)
+
+
 def command_sequence_for_lane(lane_id: str) -> tuple[Command, ...]:
     lane = LANE_DEFINITIONS.get(lane_id)
     if lane is None:
@@ -209,6 +241,9 @@ def command_sequence_for_lane(lane_id: str) -> tuple[Command, ...]:
 SOURCE_FAST_COMMAND_SEQUENCE = command_sequence_for_lane("source_fast")
 GENERATED_CHECK_COMMAND_SEQUENCE = command_sequence_for_lane("generated")
 RELEASE_CHECK_COMMAND_SEQUENCE = command_sequence_for_lane("release")
+RELEASE_CONTINUATION_COMMAND_SEQUENCE = command_sequence_for_lane(
+    "release_continuation"
+)
 COMPATIBILITY_CANARY_COMMAND_SEQUENCE = command_sequence_for_lane("compatibility_canary")
 GENERATED_DRIFT_PATHS = _drift_paths(_MANIFEST, "generated")
 GENERATED_DRIFT_SNAPSHOT_COMMAND = (

@@ -51,7 +51,7 @@ The machine-readable script map is
 | `provider_checkout_tool` | pinned provider checkout materialization |
 | `skill_local_contract_tool` | exported skill companion helper |
 | `part_local_script_runner` | discovered part-local builder and validator checks |
-| `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner` | lane, release, and test execution |
+| `lane_executor`, `lane_loader`, `release_entrypoint`, `test_runner` | lane, exact CI handoff, release, and test execution |
 | `impact_router` | fail-closed changed-path routing and required-summary state evaluation |
 | `validation_run_artifact` | run-scoped coverage packet, event receipt, and aggregate timing evidence |
 | `script_route_card` | local route card |
@@ -85,6 +85,13 @@ versioned command-authority rules. Full-audit rules override owner-local
 allow rules, and unknown or unprovable inputs route to full audit. Its summary
 mode verifies the always-required source-fast and owner-family job and records
 the OS-wide audit as either `verified` or `correctly-not-required`.
+
+`scripts/source_fast_handoff.py` issues and verifies one strict, ephemeral
+same-run receipt that binds the successful source-fast and owner-family job to
+exact local, donor, command, builder, family, and GitHub workflow identities.
+`scripts/ci_release_check.py` selects the CI-only release continuation only
+after complete receipt recomputation; otherwise it executes the original full
+release lane through `scripts/release_check.py`.
 
 `scripts/validate_kag.py` is the entrypoint. It exposes `local`, `os-wide`, and
 `full` scopes while preserving `full` as the no-argument compatibility

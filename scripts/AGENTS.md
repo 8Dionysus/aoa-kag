@@ -24,8 +24,14 @@ Use lane entrypoints instead of copying release sequences:
 ```bash
 python scripts/ci_gate.py --mode source-fast
 python scripts/ci_gate.py --mode generated
+python scripts/ci_release_check.py
 python scripts/validate_abyss_machine_kag_registry_bundle.py
 ```
+
+`ci_release_check.py` is CI-only: it accepts the source-fast omission only
+through an exact same-run receipt and otherwise falls back to the complete
+`release_check.py` sequence. Do not use it to weaken standalone release
+validation or to authorize cross-run reuse.
 
 `scripts/validate_kag.py` exposes `local`, `os-wide`, and full-compatible
 scopes. Local phases must not acquire the OS-wide provider sweep implicitly;

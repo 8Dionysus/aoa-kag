@@ -69,6 +69,20 @@
       "disposition": "keep"
     },
     {
+      "path": "scripts/ci_release_check.py",
+      "family": "release_entrypoint",
+      "organ_lane": "release/ci-lane",
+      "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+      "source_truth": ["config/validation_lanes.json", "docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md"],
+      "reads": ["exact source-fast handoff environment and validation lane manifest"],
+      "writes": ["temporary coverage run scope outside the repository"],
+      "side_effects": "selects the CI release continuation after exact receipt acceptance or executes the complete release sequence as fail-closed fallback",
+      "validation_lane": "release",
+      "ci_inclusion": "Repo Validation conditional full-audit entrypoint",
+      "test_target": "tests/test_source_fast_handoff.py",
+      "disposition": "keep"
+    },
+    {
       "path": "scripts/coverage_run.py",
       "family": "validation_run_artifact",
       "organ_lane": "release/ci-lane",
@@ -94,6 +108,20 @@
       "validation_lane": "release",
       "ci_inclusion": "Repo Validation always runs classification before source-fast and uses summary evaluation for the stable required context",
       "test_target": "tests/test_impact_routing.py",
+      "disposition": "keep"
+    },
+    {
+      "path": "scripts/source_fast_handoff.py",
+      "family": "validation_run_artifact",
+      "organ_lane": "release/ci-lane",
+      "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+      "source_truth": ["config/validation_lanes.json", "manifests/provider_registry.json", "docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md"],
+      "reads": ["clean Git index identity, command authority, donor checkout HEADs, owner portable-family identity, explicit history refs, and GitHub workflow identity"],
+      "writes": ["one ephemeral base64-encoded receipt to the GitHub job output"],
+      "side_effects": "issues and recomputes a strict same-run source-fast receipt; never persists or admits cross-run evidence",
+      "validation_lane": "release",
+      "ci_inclusion": "source-fast job issuer and conditional full-audit verifier",
+      "test_target": "tests/test_source_fast_handoff.py",
       "disposition": "keep"
     },
     {
@@ -773,7 +801,7 @@
       "family": "owner_evidence_issuer",
       "organ_lane": "capability/security contract",
       "owner_surface": "schemas/kag-mcp-source-identity-receipt.schema.json",
-      "source_truth": ["kag/indexes/index_family.manifest.json", "schemas/kag-mcp-source-identity-receipt.schema.json", "docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md"],
+      "source_truth": ["kag/indexes/index_family.manifest.json", "schemas/kag-mcp-source-identity-receipt.schema.json", "docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md"],
       "reads": ["the current clean committed aoa-kag revision and its canonical source-index identity"],
       "writes": ["one caller-selected private content-addressed source-identity receipt and one private abyss-stack source-evidence overlay fragment"],
       "side_effects": "writes mode-0600 owner source evidence only; no MCP call, runtime mutation, central proof, owner acceptance, admission, or rollback effect",
@@ -815,7 +843,7 @@
       "family": "owner_acceptance_issuer",
       "organ_lane": "capability/security contract",
       "owner_surface": "schemas/kag-mcp-owner-acceptance-receipt.schema.json",
-      "source_truth": ["schemas/kag-mcp-owner-acceptance-receipt.schema.json", "docs/decisions/AOA-KAG-D-0025-separate-mcp-source-identity-from-acceptance.md", "aoa-sdk:schemas/organ-access/organ-owner-result-review.schema.json", "aoa-evals:evals/boundary/aoa-organ-access-admission-integrity/EVAL.md", "abyss-stack:abyss_stack_runtime_observation_v1"],
+      "source_truth": ["schemas/kag-mcp-owner-acceptance-receipt.schema.json", "docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md", "aoa-sdk:schemas/organ-access/organ-owner-result-review.schema.json", "aoa-evals:evals/boundary/aoa-organ-access-admission-integrity/EVAL.md", "abyss-stack:abyss_stack_runtime_observation_v1"],
       "reads": ["one private current source receipt, owner result review, consumer-bound proof packet, content-addressed aoa-evals proof record, and exact stack runtime observation"],
       "writes": ["one private content-addressed KAG acceptance receipt and one private stack acceptance-evidence overlay fragment"],
       "side_effects": "writes mode-0600 owner acceptance evidence only; no MCP call, registry admission, runtime mutation, higher-effect authorization, rollback claim, or cross-organ benefit claim",

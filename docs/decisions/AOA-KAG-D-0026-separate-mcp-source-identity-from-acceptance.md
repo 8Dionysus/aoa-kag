@@ -2,7 +2,7 @@
 
 ## Index Metadata
 
-- Decision ID: AOA-KAG-D-0025
+- Decision ID: AOA-KAG-D-0026
 - Original date: 2026-08-01
 - Surface classes: source identity, MCP handoff, owner evidence, acceptance boundary
 - KAG surfaces: canonical source index, access-plane evidence, owner acceptance
