@@ -43,6 +43,23 @@ Record owner wall time, user/system CPU, process peak RSS, snapshot capture
 time, Git invocation count, tracked/content-read files, unique objects, bytes,
 and read-cache hits/misses in the ephemeral run receipt. Telemetry describes
 execution cost and cannot substitute for output parity or a proof verdict.
+GitHub-hosted lanes append the same schema-versioned receipt to a bounded step
+summary. Missing, unwritable, or oversized summary output is explicitly
+degraded but cannot turn a failed proof into success or become owner truth.
+
+Within one active validation run, a successful provider-home validation may
+record a process-local token keyed by the run scope, resolved owner root, and
+exact portable-family content digest. The later coverage reconstruction still
+loads and digest-checks the portable shards and compares the complete rebuilt
+family to the owner family, but it may reuse the already completed schema and
+semantic traversal when that exact token matches. A missing run, root mismatch,
+family digest change, non-portable family, or failed provider validation keeps
+the full traversal. The token is never persisted or accepted across runs.
+
+Keep only the current owner's decoded portable bundle in the in-process LRU.
+The ordered audit is sequential, so retaining all 23 decoded families adds no
+proof and only inflates peak RSS. The receipt reports family-validation token
+hits and misses alongside the source-byte cache counters.
 
 ## Options Considered
 

@@ -72,7 +72,10 @@ release checks, and test discovery.
 
 `scripts/coverage_run.py` creates one temporary packet/receipt scope for a
 validation run, shares it with nested lane processes, emits the aggregate
-machine-readable timing receipt, and deletes the scope on exit.
+machine-readable timing receipt, appends a bounded copy to the GitHub step
+summary when that surface is available, and deletes the temporary scope on
+exit. Summary publication is telemetry-only and reports degradation without
+changing a validation result.
 
 `scripts/impact_routing.py` classifies a pull-request change set against the
 versioned command-authority rules. Full-audit rules override owner-local
@@ -152,6 +155,12 @@ Within each owner scan it reuses the same captured source epoch for source-index
 parity, logical-family reconstruction, counts, and profile derivation. Its
 run-scoped receipt includes owner wall/CPU/RSS and source-reader process, file,
 object, byte, and cache telemetry.
+The validator and coverage builder may share only a process-local, run-scoped
+portable-family validation token bound to the resolved owner root and exact
+family digest. It suppresses one duplicate schema traversal after provider-home
+success; shard digest checks, rebuilt-family equality, owner ordering, and the
+final input-identity recheck remain blocking. Decoded portable-family caching
+is bounded to one sequential owner.
 
 The repo-local builders support `--check` for parity without writing files.
 

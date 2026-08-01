@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
@@ -24,6 +26,7 @@ from scripts.generate_repo_local_kag_index import (
     PORTABLE_TEXT_BASENAMES,
     RECORD_LOG_SUFFIXES,
     SERVICE_UNIT_SUFFIXES,
+    SourceReadMetrics,
     SOURCE_CODE_SUFFIXES,
     SPREADSHEET_SUFFIXES,
     SourceSnapshotError,
@@ -37,6 +40,7 @@ from scripts.generate_repo_local_kag_index import (
     payload_digest,
     REPOSITORY_INDEX_FILENAMES,
 )
+from scripts.validators import repo_local_kag_index as repo_local_kag_validator
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1647,6 +1651,89 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                     )
                 )
 
+    def test_coverage_reuses_exact_family_validation_from_same_run(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        source_index: dict[str, object] = {}
+        family = {index_kind: {} for index_kind in REPOSITORY_INDEX_FILENAMES}
+        manifest = {
+            "family_identity": {
+                "content_digest": "a" * 64,
+            }
+        }
+        metrics = SourceReadMetrics()
+        snapshot = SimpleNamespace(metrics=metrics)
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True):
+            repo_local_kag_validator.record_run_validated_portable_family(
+                root,
+                manifest,
+            )
+            with patch.object(
+                coverage_generation,
+                "build_repository_indexes",
+                return_value=family,
+            ), patch.object(
+                coverage_generation,
+                "repository_event_history_ref",
+                return_value=None,
+            ), patch.object(
+                coverage_generation,
+                "_portable_bundle",
+                return_value=(source_index, family, manifest),
+            ), patch.object(
+                repo_local_kag_validator,
+                "validate_repo_local_kag_repository_index_family",
+            ) as validate:
+                matches = coverage_generation.repository_index_family_matches_owner(
+                    root,
+                    source_index,
+                    source_snapshot=snapshot,
+                )
+
+        self.assertTrue(matches)
+        validate.assert_not_called()
+        self.assertEqual(1, metrics.family_validation_cache_hits)
+        self.assertEqual(0, metrics.family_validation_cache_misses)
+
+    def test_coverage_validates_family_without_same_run_identity(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        source_index: dict[str, object] = {}
+        family = {index_kind: {} for index_kind in REPOSITORY_INDEX_FILENAMES}
+        manifest = {
+            "family_identity": {
+                "content_digest": "b" * 64,
+            }
+        }
+        metrics = SourceReadMetrics()
+        snapshot = SimpleNamespace(metrics=metrics)
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True), patch.object(
+            coverage_generation,
+            "build_repository_indexes",
+            return_value=family,
+        ), patch.object(
+            coverage_generation,
+            "repository_event_history_ref",
+            return_value=None,
+        ), patch.object(
+            coverage_generation,
+            "_portable_bundle",
+            return_value=(source_index, family, manifest),
+        ), patch.object(
+            repo_local_kag_validator,
+            "validate_repo_local_kag_repository_index_family",
+        ) as validate:
+            matches = coverage_generation.repository_index_family_matches_owner(
+                root,
+                source_index,
+                source_snapshot=snapshot,
+            )
+
+        self.assertTrue(matches)
+        validate.assert_called_once()
+        self.assertEqual(0, metrics.family_validation_cache_hits)
+        self.assertEqual(1, metrics.family_validation_cache_misses)
+
     def test_coverage_recovers_landed_snapshot_history_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir) / "aoa-demo"
@@ -1932,6 +2019,8 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                                 "files_read_count": 11,
                                 "unique_object_count": 9,
                                 "bytes_read": 2048,
+                                "family_validation_cache_hit_count": 1,
+                                "family_validation_cache_miss_count": 0,
                             },
                         }
                     ],
@@ -1946,6 +2035,66 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(11, summary["source_snapshot_files_read_count"])
         self.assertEqual(9, summary["source_snapshot_unique_object_count"])
         self.assertEqual(2048, summary["source_snapshot_bytes_read"])
+        self.assertEqual(1, summary["family_validation_cache_hit_count"])
+        self.assertEqual(0, summary["family_validation_cache_miss_count"])
+
+    def test_coverage_run_receipt_appends_bounded_github_step_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            step_summary = Path(temp_dir) / "step-summary.md"
+            with patch.dict(
+                os.environ,
+                {coverage_run.GITHUB_STEP_SUMMARY_ENV: step_summary.as_posix()},
+            ):
+                with coverage_run.coverage_run_scope(lane="test", force_new=True):
+                    pass
+
+            rendered = step_summary.read_text(encoding="utf-8")
+
+        self.assertIn("### KAG coverage run receipt: `test`", rendered)
+        encoded = rendered.split("```json\n", 1)[1].split("\n```", 1)[0]
+        receipt = json.loads(encoded)
+        self.assertEqual(
+            coverage_run.COVERAGE_RECEIPT_SCHEMA_VERSION,
+            receipt["schema_version"],
+        )
+        self.assertEqual("test", receipt["lane"])
+        self.assertEqual(0, receipt["coverage_build_count"])
+
+    def test_coverage_run_receipt_reports_step_summary_failure_as_degraded(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            unavailable = Path(temp_dir) / "missing" / "step-summary.md"
+            stderr = io.StringIO()
+            with patch.dict(
+                os.environ,
+                {coverage_run.GITHUB_STEP_SUMMARY_ENV: unavailable.as_posix()},
+            ), redirect_stderr(stderr):
+                with coverage_run.coverage_run_scope(lane="test", force_new=True):
+                    pass
+
+        output = stderr.getvalue()
+        self.assertIn("[aoa-kag-coverage-run-receipt]", output)
+        self.assertIn(
+            "[aoa-kag-coverage-run-receipt-summary-degraded]",
+            output,
+        )
+
+    def test_coverage_run_receipt_refuses_oversized_step_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            step_summary = Path(temp_dir) / "step-summary.md"
+            stderr = io.StringIO()
+            with patch.dict(
+                os.environ,
+                {coverage_run.GITHUB_STEP_SUMMARY_ENV: step_summary.as_posix()},
+            ), patch.object(
+                coverage_run,
+                "GITHUB_STEP_SUMMARY_RECEIPT_MAX_BYTES",
+                1,
+            ), redirect_stderr(stderr):
+                with coverage_run.coverage_run_scope(lane="test", force_new=True):
+                    pass
+
+        self.assertFalse(step_summary.exists())
+        self.assertIn("bounded maximum is 1", stderr.getvalue())
 
     def test_provider_coverage_packet_rebuilds_only_for_a_new_input_epoch(self) -> None:
         payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")

@@ -22,6 +22,8 @@ COVERAGE_SCOPE_MARKER = ".aoa-kag-coverage-scope.json"
 COVERAGE_EVENT_SCHEMA_VERSION = "aoa-kag-coverage-run-event-v1"
 COVERAGE_RECEIPT_SCHEMA_VERSION = "aoa-kag-coverage-run-receipt-v1"
 VALIDATION_ARTIFACT_PARENT_ENV = "AOA_KAG_VALIDATION_ARTIFACT_PARENT"
+GITHUB_STEP_SUMMARY_ENV = "GITHUB_STEP_SUMMARY"
+GITHUB_STEP_SUMMARY_RECEIPT_MAX_BYTES = 64 * 1024
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 _SCOPE_ENV_NAMES = (
@@ -260,6 +262,16 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
             for snapshot in source_snapshots
             if isinstance(snapshot.get("bytes_read", 0), int)
         ),
+        "family_validation_cache_hit_count": sum(
+            int(snapshot.get("family_validation_cache_hit_count", 0))
+            for snapshot in source_snapshots
+            if isinstance(snapshot.get("family_validation_cache_hit_count", 0), int)
+        ),
+        "family_validation_cache_miss_count": sum(
+            int(snapshot.get("family_validation_cache_miss_count", 0))
+            for snapshot in source_snapshots
+            if isinstance(snapshot.get("family_validation_cache_miss_count", 0), int)
+        ),
         "owner_timings": owner_timings,
     }
 
@@ -279,17 +291,44 @@ def emit_coverage_run_summary(
             "lane": run.lane,
             "receipt_error": str(exc),
         }
+    encoded_summary = json.dumps(
+        summary,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     print(
-        "[aoa-kag-coverage-run-receipt] "
-        + json.dumps(
-            summary,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ),
+        "[aoa-kag-coverage-run-receipt] " + encoded_summary,
         file=sys.stderr,
         flush=True,
     )
+    step_summary_path = os.environ.get(GITHUB_STEP_SUMMARY_ENV, "").strip()
+    if not step_summary_path:
+        return
+    receipt_block = (
+        f"### KAG coverage run receipt: `{run.lane}`\n\n"
+        f"```json\n{encoded_summary}\n```\n\n"
+    )
+    receipt_size = len(receipt_block.encode("utf-8"))
+    if receipt_size > GITHUB_STEP_SUMMARY_RECEIPT_MAX_BYTES:
+        print(
+            "[aoa-kag-coverage-run-receipt-summary-degraded] "
+            f"receipt requires {receipt_size} bytes; bounded maximum is "
+            f"{GITHUB_STEP_SUMMARY_RECEIPT_MAX_BYTES}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return
+    try:
+        with Path(step_summary_path).open("a", encoding="utf-8") as summary_file:
+            summary_file.write(receipt_block)
+    except OSError as exc:
+        print(
+            "[aoa-kag-coverage-run-receipt-summary-degraded] "
+            f"unable to append GitHub step summary: {exc}",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 @contextmanager

@@ -72,6 +72,15 @@ Each owner timing also reports user/system CPU, process peak RSS, and the
 owner-source snapshot backend, capture wall time, Git invocation count, tracked
 and content-read file counts, unique object count, bytes read, and in-process
 read-cache hits/misses. These are execution telemetry, not proof results.
+During one OS-wide process, provider-home validation may issue an ephemeral
+token for the exact run scope, owner root, and portable-family digest. Coverage
+still reloads and digest-checks the shards and proves complete rebuilt-family
+equality; only the duplicate schema/semantic traversal is reused. Any token
+miss performs the full traversal, and decoded-family retention is bounded to
+the current sequential owner.
+On GitHub Actions the same schema-versioned receipt is appended to the bounded
+step summary; an unavailable or oversized summary is reported as degraded and
+does not alter the blocking proof verdict recorded by the lane.
 Exact provider revisions remain visible in the preceding provider-checkout
 verification log. Neither surface becomes a committed read model or owner
 truth.

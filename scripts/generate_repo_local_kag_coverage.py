@@ -509,7 +509,7 @@ def repository_index_family_refs(
     }
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=1)
 def _portable_bundle(
     owner_root: Path,
 ) -> tuple[
@@ -612,19 +612,31 @@ def repository_index_family_matches_owner(
         try:
             from scripts.validators.common import ValidationError
             from scripts.validators.repo_local_kag_index import (
+                portable_family_validated_in_current_run,
                 validate_repo_local_kag_repository_index_family,
             )
         except ImportError:  # pragma: no cover - direct script execution
             from validators.common import ValidationError  # type: ignore
             from validators.repo_local_kag_index import (  # type: ignore
+                portable_family_validated_in_current_run,
                 validate_repo_local_kag_repository_index_family,
             )
 
-        validate_repo_local_kag_repository_index_family(
-            actual,
-            source_payload=source_index,
-            label=f"{owner_root.name} coverage family",
+        validation_reused = portable is not None and portable_family_validated_in_current_run(
+            owner_root,
+            portable[2],
         )
+        if source_snapshot is not None:
+            if validation_reused:
+                source_snapshot.metrics.family_validation_cache_hits += 1
+            else:
+                source_snapshot.metrics.family_validation_cache_misses += 1
+        if not validation_reused:
+            validate_repo_local_kag_repository_index_family(
+                actual,
+                source_payload=source_index,
+                label=f"{owner_root.name} coverage family",
+            )
     except ValidationError:
         return False
     return True

@@ -420,6 +420,8 @@ class SourceSnapshotError(RuntimeError):
 class SourceReadMetrics:
     read_requests: int = 0
     cache_hits: int = 0
+    family_validation_cache_hits: int = 0
+    family_validation_cache_misses: int = 0
 
 
 @dataclass(frozen=True)
@@ -695,6 +697,12 @@ class OwnerSourceSnapshot:
             "read_request_count": self.metrics.read_requests,
             "cache_hit_count": self.metrics.cache_hits,
             "cache_miss_count": self.unique_object_count,
+            "family_validation_cache_hit_count": (
+                self.metrics.family_validation_cache_hits
+            ),
+            "family_validation_cache_miss_count": (
+                self.metrics.family_validation_cache_misses
+            ),
         }
 
 
