@@ -56,6 +56,13 @@ fails the summary. Pushes to `main` and manual runs always require the full
 audit; scheduled compatibility proof supplements this route and does not
 replace pre-merge classification.
 
+Workflow concurrency may cancel only a superseded head of the same pull
+request. Its group identity is workflow-qualified and stable by pull-request
+number; push and manual runs receive unique run identities. Cancellation is a
+scheduling result, not proof: only the replacement head's complete typed
+summary may satisfy landing. Main, manual, other pull-request, and scheduled
+compatibility runs remain independent.
+
 ## Options Considered
 
 - Keep the full audit on every change: simplest and strongest operationally,
@@ -97,6 +104,9 @@ high-impact pull-request audit.
 - The classifier receipt and required summary are machine-readable execution
   evidence. They do not become owner truth or prove the underlying KAG
   invariants by themselves.
+- A newer head stops obsolete work for the same pull request without changing
+  which proofs the newer head must complete. It cannot cancel main, manual,
+  another pull request, or the compatibility canary.
 - Bounded parallel owner execution and cross-run caching remain separate
   decisions with separate equivalence and pressure evidence.
 
@@ -127,3 +137,8 @@ and all unrelated provider roots made unavailable, and one full release gate
 on the exact pinned providers. Compare proof payloads on identical inputs
 rather than treating a digest change caused by this repository's new family as
 proof drift.
+
+For concurrency changes, also push two successive heads to one test pull
+request after the first full audit has started. Confirm that the older run is
+cancelled, the replacement head completes all required proofs, and unrelated
+main, manual, pull-request, and compatibility runs remain unaffected.
