@@ -60,6 +60,7 @@
 ## complete owner order
 
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
 ## consumer-zero
 
@@ -101,6 +102,10 @@
 
 - [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 
+## exact fragment identity
+
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
+
 ## exact identity
 
 - [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
@@ -121,6 +126,10 @@
 ## extensible kind
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+
+## fail-closed cold fallback
+
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
 ## fail-closed fallback
 
@@ -469,6 +478,10 @@
 ## trust admission
 
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+
+## trusted producer
+
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
 ## typed skip
 

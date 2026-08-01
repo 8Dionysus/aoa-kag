@@ -14,6 +14,10 @@
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
 
+## artifact trust
+
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
+
 ## CI checkout
 
 - [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
@@ -24,6 +28,7 @@
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 - [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
 ## command authority
 
@@ -42,6 +47,10 @@
 ## coverage telemetry
 
 - [AOA-KAG-D-0024 - Immutable Batch Owner Source Scan](../AOA-KAG-D-0024-immutable-batch-owner-source-scan.md) (`docs/decisions/AOA-KAG-D-0024-immutable-batch-owner-source-scan.md`)
+
+## cross-run reuse
+
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
 ## dependency checkout
 
@@ -292,3 +301,4 @@
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 - [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)

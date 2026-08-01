@@ -199,6 +199,10 @@
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 - [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 
+## owner proof fragments
+
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
+
 ## owner route catalog
 
 - [AOA-KAG-D-0002 - Owner Route Catalog Refresh](../AOA-KAG-D-0002-owner-route-catalog-refresh.md) (`docs/decisions/AOA-KAG-D-0002-owner-route-catalog-refresh.md`)
@@ -252,6 +256,7 @@
 ## provider-home audit
 
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
 ## qualified resources
 
@@ -281,6 +286,7 @@
 ## repo-local coverage
 
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
+- [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
 ## repo-local source index
 
