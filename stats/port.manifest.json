@@ -184,8 +184,10 @@
     },
     {
       "measurement_id": "aoa-kag/owner-local-pr-workflow-wall-time",
-      "posture": "declaration_only",
-      "packet_refs": [],
+      "posture": "reference",
+      "packet_refs": [
+        "stats/packets/owner-local-pr-workflow-wall-time.reference.json"
+      ],
       "evidence_refs": [
         ".github/workflows/repo-validation.yml",
         "config/validation_lanes.json",
