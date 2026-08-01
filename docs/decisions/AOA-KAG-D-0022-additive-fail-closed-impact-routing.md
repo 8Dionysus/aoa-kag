@@ -58,10 +58,12 @@ replace pre-merge classification.
 
 Workflow concurrency may cancel only a superseded head of the same pull
 request. Its group identity is workflow-qualified and stable by pull-request
-number; push and manual runs receive unique run identities. Cancellation is a
-scheduling result, not proof: only the replacement head's complete typed
-summary may satisfy landing. Main, manual, other pull-request, and scheduled
-compatibility runs remain independent.
+number; push and manual runs receive unique run identities. The controller's
+cancellation switch is unconditional because isolation is carried entirely by
+that group identity, avoiding event-condition ambiguity without widening the
+cancellation scope. Cancellation is a scheduling result, not proof: only the
+replacement head's complete typed summary may satisfy landing. Main, manual,
+other pull-request, and scheduled compatibility runs remain independent.
 
 ## Options Considered
 
