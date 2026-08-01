@@ -580,6 +580,11 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
 
     groups: dict[str, list[dict[str, object]]] = {}
     source_index_cache: dict[Path, dict[str, object]] = {}
+    validated_portable_bundle: tuple[
+        dict[str, object],
+        dict[str, dict[str, object]],
+        dict[str, object],
+    ] | None = None
     for group_name, def_name in PROVIDER_RECORD_DIRS.items():
         directory = kag_root / group_name
         if not directory.is_dir():
@@ -598,7 +603,7 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
             ):
                 payload = read_json(path)
                 from .repo_local_kag_index import (
-                    load_repo_local_kag_repository_index_family,
+                    load_repo_local_kag_repository_index_family_with_manifest,
                     repo_local_kag_validate_payload,
                 )
                 try:
@@ -615,12 +620,21 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                     schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
                     label=f"{label} {path.relative_to(repo_root).as_posix()}",
                 )
-                load_repo_local_kag_repository_index_family(
-                    repo_root=repo_root,
-                    source_index=Path(
-                        "kag/indexes/source_surface_index.json"
-                    ),
-                    label=f"{label} portable repository family",
+                source_payload, validated_family, portable_manifest = (
+                    load_repo_local_kag_repository_index_family_with_manifest(
+                        repo_root=repo_root,
+                        source_index=Path(
+                            "kag/indexes/source_surface_index.json"
+                        ),
+                        label=f"{label} portable repository family",
+                    )
+                )
+                if portable_manifest is None:
+                    fail(f"{label} portable repository family must keep its manifest")
+                validated_portable_bundle = (
+                    source_payload,
+                    validated_family,
+                    portable_manifest,
                 )
                 if not isinstance(payload, dict):
                     fail(
@@ -712,6 +726,23 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
         groups[group_name] = records
 
     _validate_record_links({"records": groups})
+    if validated_portable_bundle is not None:
+        try:
+            from scripts.generate_repo_local_kag_coverage import (
+                prebuild_provider_coverage_owner,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from generate_repo_local_kag_coverage import (  # type: ignore
+                prebuild_provider_coverage_owner,
+            )
+        try:
+            prebuild_provider_coverage_owner(
+                repo,
+                repo_root,
+                validated_portable_bundle,
+            )
+        except RuntimeError as exc:
+            fail(str(exc))
 
 
 def _validate_provider_ready_surfaces(

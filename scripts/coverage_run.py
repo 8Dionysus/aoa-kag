@@ -221,6 +221,18 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
             for event in builds
             if isinstance(event.get("duration_ms", 0), int)
         ),
+        "build_strategies": sorted(
+            {
+                str(event["strategy"])
+                for event in builds
+                if isinstance(event.get("strategy"), str)
+            }
+        ),
+        "prebuilt_owner_count": sum(
+            int(event.get("prebuilt_owner_count", 0))
+            for event in builds
+            if isinstance(event.get("prebuilt_owner_count", 0), int)
+        ),
         "identity_digests": identity_digests,
         "payload_digests": payload_digests,
         "input_identities": input_identities,
