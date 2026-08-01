@@ -450,12 +450,32 @@ class KagGenerationTestCase(unittest.TestCase):
                             "route_kind": "routing",
                         },
                     ],
-                }
+                },
+                {
+                    "repo": "aoa-models",
+                    "adoption_order": 24,
+                    "provider_status": "source_preparation",
+                    "candidate_source_surfaces": [
+                        "README.md",
+                        "DIRECTION.md",
+                        "source/model-identities/openai-gpt-5.6-luna.json",
+                        "source/model-studies/external-codex-landing-readiness-2026-08-01.json",
+                    ],
+                    "owner_return_routes": [
+                        {
+                            "repo": "aoa-models",
+                            "surface": "README.md",
+                            "route_kind": "authored_meaning",
+                        }
+                    ],
+                },
             ],
             payload["remaining_routes"],
         )
         self.assertNotIn("aoa-routing", {provider["repo"] for provider in payload["providers"]})
+        self.assertNotIn("aoa-models", {provider["repo"] for provider in payload["providers"]})
         self.assertEqual(1, payload["provider_status_counts"]["retired_reference"])
+        self.assertEqual(1, payload["provider_status_counts"]["source_preparation"])
         for provider in payload["providers"]:
             with self.subTest(repo=provider["repo"]):
                 self.assertEqual("provider_ready", provider["provider_status"])

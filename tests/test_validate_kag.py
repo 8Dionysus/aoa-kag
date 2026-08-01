@@ -432,6 +432,34 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("source-ready provider repo", str(context.exception))
 
+    def test_local_kag_readiness_keeps_unadmitted_owner_in_source_preparation(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        row = next(entry for entry in payload["repos"] if entry["repo"] == "aoa-models")
+        self.assertEqual("source_preparation", row["provider_status"])
+        self.assertEqual([], row["source_owned_exports"])
+        self.assertEqual([], row["first_record_classes"])
+
+    def test_local_kag_readiness_rejects_unadmitted_owner_promotion(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        for entry in broken_payload["repos"]:
+            if entry["repo"] == "aoa-models":
+                entry["provider_status"] = "provider_ready"
+                break
+
+        with self.patched_read_json(
+            local_kag_subtree,
+            {
+                validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH: broken_payload,
+            },
+        ):
+            with self.assertRaises(validate_kag.ValidationError) as context:
+                local_kag_subtree.validate_local_kag_subtree_local_contract()
+
+        self.assertIn("must remain source_preparation", str(context.exception))
+
     def test_local_kag_provider_map_schema_rejects_invalid_repo_index_status(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(payload, dict)
