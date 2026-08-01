@@ -97,7 +97,7 @@ hosted comparison evidence.
 | Method | Potential saving | Required safety boundary | Current posture |
 | --- | --- | --- | --- |
 | In-process compiled-schema reuse | avoid parsing and meta-validating identical schema bytes for every owner payload | cache key is the complete schema bytes; every payload and semantic assertion still executes; changed bytes compile cold | locally reproducible candidate |
-| Exact same-run root-family proof | avoid a later process repeating semantic family assertions already completed in the same lane | run ID/lane, root, portable-family digest, validator/schema/runtime epoch, self-digest, cold fallback | locally reproducible candidate; hosted effect pending |
+| Exact same-run root-family proof | avoid a later process repeating semantic family assertions already completed in the same lane | run ID/lane, root, portable-family digest, validator/schema/runtime epoch, self-digest, cold fallback | locally effective, but failed the three-pair hosted benefit gate; do not land unchanged |
 | Checkout/history routing | avoid full history where the invoked provider proof does not read it | prove command-by-command history requirements; uncertainty selects full history | compare shallow, partial, and full modes |
 | Provider validation algorithm | reduce cold scan/decode/build work without caching a verdict | same schemas, source bytes, family parity, coverage row, and final identity barrier | profile dominant providers and subphases |
 | SCC-aware bounded scheduling | overlap independent provider proofs or prefetch without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, cancellation and cold serial fallback | compare serial, resource-class waves, and narrow overlap |
@@ -169,17 +169,18 @@ are not substituted for hosted evidence.
 | --- | --- | --- | --- |
 | Exact same-run semantic proof | three interleaved pairs of two local validators | warm lane 16.572/17.683/20.326 s versus forced-cold 21.936/22.278/23.608 s; warm won 3/3 by 5.364/4.595/3.282 s; each warm receipt recorded one issue and one exact hit | proof-equivalent local success; full-job hosted benefit still required |
 | Exact same-run semantic proof | one full generated pair, normalized for provider-home time | warm non-provider 28.843 s versus forced-cold 32.783 s; final semantic traversal 5.187 s to 0; total wall was noisy and cold happened to win because its providers were 10.952 s faster | preserve candidate, do not infer from total alone |
+| Exact same-run semantic proof | three paired GitHub-hosted full jobs against exact current main | candidate/main full jobs were 584/606, 577/541, and 577/543 s; release lanes were approximately 447/470, 450/421, and 441/417 s; one win and two losses, candidate median 577 s versus main 543 s | stop unchanged implementation and omit it from landing; reopen only when the proof edge removes a materially larger node or composes with admitted fragments |
 | Exact-byte compiled schema | two complete interleaved OS-wide pairs | cached 198.435/214.097 s versus forced-cold 223.850/239.199 s; cached won both by 25.415/25.102 s; semantic component improved by 17.132/14.366 s | locally material candidate; third pair and hosted proof pending |
 | Exact-byte compiled schema | third pair | cached half completed at 235.570 s; forced-cold admission was blocked by the host hard memory reserve and unknown-demand gate after swap activity | incomplete, do not count as a pair; retry only after resource admission |
 | Whole provider sweep with two workers | local plus hosted experiment recorded by PR 185 | local improved 7.86 percent, hosted lane regressed from 938.768 to 990.153 s | reject that exact scheduler; retain narrower DAG scheduling candidates |
 | Leading-local omission | one hosted candidate recorded by PR 197 | candidate lane 486.930 s versus main 455.497 s with higher CPU | negative but noisy single run; do not generalize to all same-run proof reuse |
 | Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
 
-The same-run semantic proof is ephemeral under the active run scope. It binds
-the complete portable-family content digest and the semantic validator/schema
-runtime epoch. Missing, changed, malformed, corrupt, wrong-run, or symlinked
-proof state executes the cold semantic validator. The explicit
-`AOA_KAG_FORCE_COLD_SEMANTIC_VALIDATION=1` switch is an A/B and rollback path.
+The exact same-run semantic proof prototype was fail-closed and passed its
+negative identity matrix, but its approximately 3--5 second local saving did
+not survive full hosted variance. The mechanism remains useful design evidence
+for a larger SCC or admitted owner-fragment edge; its code and feature flag are
+not part of the landing diff.
 
 Compiled-schema reuse is narrower still: the complete schema bytes are the
 cache key inside one Python process. Schema meta-validation is reused, but

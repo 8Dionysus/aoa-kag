@@ -90,17 +90,6 @@ observation, and bounded component identity. Telemetry publication failure is
 reported as degraded and never changes a validation verdict. The dependency
 and experiment interpretation of these records is documented in
 `docs/validation/CI_EVIDENCE_DAG.md`.
-Within one active run scope, a successful root repository-family semantic
-validation may issue an ephemeral
-`aoa-kag-portable-family-semantic-proof-v1` record. A later root local
-validator may omit only that exact semantic traversal after it has independently
-loaded and digest-verified the portable manifest/shards and matched run ID,
-lane, resolved root, complete family digest, validator/schema/runtime epoch,
-and proof self-digest. It still performs source rebuild, generated parity,
-family build/parity, portable rebuild/parity, and every other local assertion.
-Any absent, changed, malformed, corrupt, wrong-run, or symlinked proof executes
-the cold semantic traversal. `AOA_KAG_FORCE_COLD_SEMANTIC_VALIDATION=1`
-forces that cold route for comparison or rollback.
 
 Repository-family payload validation may reuse a compiled JSON Schema
 validator only for byte-identical schema content inside the same Python

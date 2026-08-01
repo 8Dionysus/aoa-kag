@@ -334,17 +334,6 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
         )[:10]
         for component_type in validation_component_types
     }
-    semantic_proof_events = [
-        event
-        for event in events
-        if event.get("event")
-        in {
-            "portable-family-semantic-proof-hit",
-            "portable-family-semantic-proof-issued",
-            "portable-family-semantic-proof-miss",
-            "portable-family-semantic-proof-reject",
-        }
-    ]
     return {
         "schema_version": COVERAGE_RECEIPT_SCHEMA_VERSION,
         "run_scope_id": run.run_scope_id,
@@ -441,35 +430,6 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
             },
             "timings": compact_validation_timings,
             "top_slowest_by_component_type": top_slowest_by_component_type,
-        },
-        "same_run_semantic_proof": {
-            "hit_count": sum(
-                1
-                for event in semantic_proof_events
-                if event.get("event") == "portable-family-semantic-proof-hit"
-            ),
-            "issued_count": sum(
-                1
-                for event in semantic_proof_events
-                if event.get("event") == "portable-family-semantic-proof-issued"
-            ),
-            "miss_count": sum(
-                1
-                for event in semantic_proof_events
-                if event.get("event") == "portable-family-semantic-proof-miss"
-            ),
-            "reject_count": sum(
-                1
-                for event in semantic_proof_events
-                if event.get("event") == "portable-family-semantic-proof-reject"
-            ),
-            "reasons": sorted(
-                {
-                    str(event["reason"])
-                    for event in semantic_proof_events
-                    if isinstance(event.get("reason"), str)
-                }
-            ),
         },
     }
 

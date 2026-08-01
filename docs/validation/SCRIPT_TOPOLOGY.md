@@ -193,11 +193,6 @@ commands, provider-home proofs, and root repo-local index phases. These records
 are observability only: publication degradation is visible but cannot alter the
 blocking proof verdict. `docs/validation/CI_EVIDENCE_DAG.md` owns their
 dependency-graph and comparison interpretation.
-The run scope may also carry one ephemeral, exact root portable-family
-semantic proof between local-validator processes. Its consumer independently
-verifies the portable bytes and complete proof identity before omitting only a
-repeated semantic traversal; all mismatches take the cold path. The proof is
-deleted with the run scope and has no cross-run authority.
 
 `scripts/validators/repo_local_kag_index.py` compiles a repository-family JSON
 Schema once per byte-identical schema input inside a process. This reuses schema
