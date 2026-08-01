@@ -72,7 +72,10 @@ release checks, and test discovery.
 
 `scripts/coverage_run.py` creates one temporary packet/receipt scope for a
 validation run, shares it with nested lane processes, emits the aggregate
-machine-readable timing receipt, and deletes the scope on exit.
+machine-readable timing receipt, appends a bounded copy to the GitHub step
+summary when that surface is available, and deletes the temporary scope on
+exit. Summary publication is telemetry-only and reports degradation without
+changing a validation result.
 
 `scripts/impact_routing.py` classifies a pull-request change set against the
 versioned command-authority rules. Full-audit rules override owner-local
@@ -119,6 +122,10 @@ builder also preserves canonical skill source versus generated host projection
 provenance instead of inferring authority from `.agents/skills/` placement, and
 rebuilds declared projections during incremental migration so old authority
 claims cannot survive an unchanged copied blob.
+The builder's owner-source reader captures one strict staged Git-index epoch,
+batch-loads unique blobs, and shares immutable path/mode/object/byte maps across
+source and structural builders. Missing or malformed Git state fails closed;
+the filesystem fallback is only for a non-Git source root.
 
 `scripts/validate_repo_local_kag_family.py` validates any owner repository's
 portable or legacy family against the common schemas, identities, anchors,
@@ -144,6 +151,16 @@ bundle for streaming runtime materializers.
 `scripts/generate_repo_local_kag_coverage.py` builds
 `generated/repo_local_kag_coverage.json` and the minified companion from live
 OS Abyss provider roots materialized from the pinned provider registry.
+Within each owner scan it reuses the same captured source epoch for source-index
+parity, logical-family reconstruction, counts, and profile derivation. Its
+run-scoped receipt includes owner wall/CPU/RSS and source-reader process, file,
+object, byte, and cache telemetry.
+The validator and coverage builder may share only a process-local, run-scoped
+portable-family validation token bound to the resolved owner root and exact
+family digest. It suppresses one duplicate schema traversal after provider-home
+success; shard digest checks, rebuilt-family equality, owner ordering, and the
+final input-identity recheck remain blocking. Decoded portable-family caching
+is bounded to one sequential owner.
 
 The repo-local builders support `--check` for parity without writing files.
 

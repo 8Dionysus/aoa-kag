@@ -68,9 +68,44 @@ or symlinked packet state fails closed. The packet and JSONL timing receipt are
 deleted when the run exits. The final receipt reports build count, hit/miss
 count, the verified provider-revision digest and match count, compact full-input
 and payload identities, coverage and lane wall time, and per-owner timings.
+Each owner timing also reports user/system CPU, process peak RSS, and the
+owner-source snapshot backend, capture wall time, Git invocation count, tracked
+and content-read file counts, unique object count, bytes read, and in-process
+read-cache hits/misses. These are execution telemetry, not proof results.
+During one OS-wide process, provider-home validation may issue an ephemeral
+token for the exact run scope, owner root, and portable-family digest. Coverage
+still reloads and digest-checks the shards and proves complete rebuilt-family
+equality; only the duplicate schema/semantic traversal is reused. Any token
+miss performs the full traversal, and decoded-family retention is bounded to
+the current sequential owner.
+On GitHub Actions the same schema-versioned receipt is appended to the bounded
+step summary; an unavailable or oversized summary is reported as degraded and
+does not alter the blocking proof verdict recorded by the lane.
 Exact provider revisions remain visible in the preceding provider-checkout
 verification log. Neither surface becomes a committed read model or owner
 truth.
+
+## Immutable Owner Source Scans
+
+An OS-wide coverage build captures one owner-local source epoch before it
+validates that owner's source index, reconstructs the logical repository index
+family, derives coverage counts, or falls back to a source-tree profile. For a
+Git owner, the epoch is the staged index: one strict `git ls-files -s -z`
+inventory plus one `git cat-file --batch` read of the unique required blobs.
+All consumers receive the same read-only path, mode, object-id, and byte maps.
+Repeated per-file `git show` calls are not the owner-scan authority.
+
+Staged bytes and staged symlink targets remain authoritative even when the
+worktree differs or a tracked path is deleted locally. Unmerged entries,
+malformed index records, missing or wrong-type objects, truncated batch output,
+unsafe paths, and a Git worktree without a usable Git reader fail closed. A
+non-Git directory retains the explicit filesystem-source fallback. Portable
+family control shards remain in tracked-path accounting but their bytes are not
+loaded because they are excluded from the canonical source corpus.
+
+The run still compares the complete provider input identity after the build.
+Snapshot reuse therefore removes repeated reads inside one owner pass; it does
+not authorize cross-owner, cross-run, or changed-input reuse.
 
 ## Validator Scopes
 

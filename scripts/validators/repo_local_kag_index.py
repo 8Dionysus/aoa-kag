@@ -7,6 +7,11 @@ from .common import *
 from .schema_surfaces import validate_top_level_schema
 
 try:
+    from scripts.coverage_run import current_coverage_run
+except ImportError:  # pragma: no cover - direct script import fallback
+    from coverage_run import current_coverage_run  # type: ignore
+
+try:
     from scripts.generate_repo_local_kag_coverage import build_provider_coverage
     from scripts.generate_repo_local_kag_index import (
         REPOSITORY_INDEX_FILENAMES,
@@ -32,6 +37,39 @@ REPOSITORY_INDEX_FAMILY_REFS = {
     },
 }
 DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
+_RUN_VALIDATED_PORTABLE_FAMILIES: set[tuple[str, str, str]] = set()
+
+
+def _portable_family_validation_identity(
+    repo_root: Path,
+    manifest: object,
+) -> tuple[str, str, str] | None:
+    run = current_coverage_run()
+    if run is None or not isinstance(manifest, dict):
+        return None
+    family_identity = manifest.get("family_identity")
+    family_digest = (
+        family_identity.get("content_digest")
+        if isinstance(family_identity, dict)
+        else None
+    )
+    if not isinstance(family_digest, str) or not family_digest:
+        return None
+    return run.run_scope_id, repo_root.resolve().as_posix(), family_digest
+
+
+def record_run_validated_portable_family(repo_root: Path, manifest: object) -> None:
+    identity = _portable_family_validation_identity(repo_root, manifest)
+    if identity is not None:
+        _RUN_VALIDATED_PORTABLE_FAMILIES.add(identity)
+
+
+def portable_family_validated_in_current_run(
+    repo_root: Path,
+    manifest: object,
+) -> bool:
+    identity = _portable_family_validation_identity(repo_root, manifest)
+    return identity is not None and identity in _RUN_VALIDATED_PORTABLE_FAMILIES
 
 
 def _repo_local_index_phase(label: str, *, progress: bool) -> None:
@@ -533,13 +571,14 @@ def load_repo_local_kag_repository_index_family(
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
     source_path = source_index if source_index.is_absolute() else repo_root / source_index
     portable_manifest_path = source_path.parent / "index_family.manifest.json"
+    portable_manifest: object | None = None
     if not source_path.is_file() and portable_manifest_path.is_file():
         try:
             from scripts.repo_local.portable_family import load_portable_family
         except ImportError:  # pragma: no cover - direct script import fallback
             from repo_local.portable_family import load_portable_family  # type: ignore
         try:
-            source_payload, family, _ = load_portable_family(
+            source_payload, family, portable_manifest = load_portable_family(
                 repo_root,
                 manifest_path=portable_manifest_path.relative_to(repo_root),
             )
@@ -558,6 +597,8 @@ def load_repo_local_kag_repository_index_family(
     )
     if not isinstance(source_payload, dict):
         fail(f"{label or repo_root.name} source index must be an object")
+    if portable_manifest is not None:
+        record_run_validated_portable_family(repo_root, portable_manifest)
     return source_payload, validated
 
 
