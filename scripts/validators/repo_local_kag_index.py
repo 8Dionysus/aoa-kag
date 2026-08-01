@@ -9,13 +9,20 @@ from .common import *
 from .schema_surfaces import validate_top_level_schema
 
 try:
+    import jsonschema_rs
+except ImportError:  # Optional accelerator; the Python validator remains the fallback.
+    jsonschema_rs = None  # type: ignore[assignment]
+
+try:
     from scripts.coverage_run import (
         current_coverage_run,
+        record_validation_event,
         validation_timing,
     )
 except ImportError:  # pragma: no cover - direct script import fallback
     from coverage_run import (  # type: ignore
         current_coverage_run,
+        record_validation_event,
         validation_timing,
     )
 
@@ -47,6 +54,8 @@ REPOSITORY_INDEX_FAMILY_REFS = {
 DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
 _RUN_VALIDATED_PORTABLE_FAMILIES: set[tuple[str, str, str]] = set()
 FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
+FORCE_PYTHON_SCHEMA_VALIDATION_ENV = "AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION"
+_FAST_SCHEMA_SHADOWED_BYTES: set[bytes] = set()
 
 
 def _portable_family_validation_identity(
@@ -168,12 +177,140 @@ def _repo_local_schema_validator(
         raise AssertionError("unreachable") from exc
 
 
-def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
-    validator = _repo_local_schema_validator(schema_path, label=label)
-    errors = sorted(
+def _build_fast_repo_local_schema_validator(schema_bytes: bytes) -> object:
+    if jsonschema_rs is None:
+        raise RuntimeError("jsonschema-rs is unavailable")
+    schema = json.loads(schema_bytes.decode("utf-8"))
+    if not isinstance(schema, dict):
+        raise ValueError("schema must be a JSON object")
+    return jsonschema_rs.Draft202012Validator(
+        schema,
+        validate_formats=False,
+    )
+
+
+@lru_cache(maxsize=16)
+def _cached_fast_repo_local_schema_validator(schema_bytes: bytes) -> object:
+    return _build_fast_repo_local_schema_validator(schema_bytes)
+
+
+def _record_schema_validation_engine_event(
+    event: str,
+    *,
+    schema_path: Path,
+    reason: str | None = None,
+) -> None:
+    payload: dict[str, object] = {
+        "event": event,
+        "component_type": "schema-validation-engine",
+        "component_id": schema_path.name,
+    }
+    if reason is not None:
+        payload["reason"] = reason
+    record_validation_event(payload)
+
+
+def _fast_repo_local_schema_validator(
+    schema_path: Path,
+    *,
+    schema_bytes: bytes,
+) -> object | None:
+    if os.environ.get(FORCE_PYTHON_SCHEMA_VALIDATION_ENV) == "1":
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            reason="forced-python",
+        )
+        return None
+    if jsonschema_rs is None:
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            reason="accelerator-unavailable",
+        )
+        return None
+    try:
+        if os.environ.get(FORCE_COLD_SCHEMA_COMPILATION_ENV) == "1":
+            return _build_fast_repo_local_schema_validator(schema_bytes)
+        return _cached_fast_repo_local_schema_validator(schema_bytes)
+    except Exception:  # Optional acceleration failure always returns to Python.
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            reason="accelerator-compile-error",
+        )
+        return None
+
+
+def _python_schema_errors(
+    validator: Draft202012Validator,
+    payload: object,
+) -> list[object]:
+    return sorted(
         validator.iter_errors(payload),
         key=lambda error: list(error.path),
     )
+
+
+def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
+    validator = _repo_local_schema_validator(schema_path, label=label)
+    try:
+        schema_bytes = schema_path.read_bytes()
+    except OSError:
+        schema_bytes = b""
+    fast_validator = _fast_repo_local_schema_validator(
+        schema_path,
+        schema_bytes=schema_bytes,
+    )
+    fast_rejected = False
+    errors: list[object] | None = None
+    if fast_validator is not None:
+        try:
+            fast_valid = bool(fast_validator.is_valid(payload))  # type: ignore[attr-defined]
+        except Exception:  # The optional accelerator may never suppress the Python path.
+            _record_schema_validation_engine_event(
+                "schema-validation-python-fallback",
+                schema_path=schema_path,
+                reason="accelerator-runtime-error",
+            )
+        else:
+            if fast_valid:
+                if schema_bytes not in _FAST_SCHEMA_SHADOWED_BYTES:
+                    shadow_errors = _python_schema_errors(validator, payload)
+                    if shadow_errors:
+                        _record_schema_validation_engine_event(
+                            "schema-validation-engine-disagreement",
+                            schema_path=schema_path,
+                            reason="accelerator-false-positive",
+                        )
+                        errors = shadow_errors
+                    else:
+                        _FAST_SCHEMA_SHADOWED_BYTES.add(schema_bytes)
+                        _record_schema_validation_engine_event(
+                            "schema-validation-fast-shadow-confirmed",
+                            schema_path=schema_path,
+                        )
+                        return
+                else:
+                    _record_schema_validation_engine_event(
+                        "schema-validation-fast-accept",
+                        schema_path=schema_path,
+                    )
+                    return
+            else:
+                fast_rejected = True
+                _record_schema_validation_engine_event(
+                    "schema-validation-fast-reject",
+                    schema_path=schema_path,
+                )
+    if errors is None:
+        errors = _python_schema_errors(validator, payload)
+    if fast_rejected and not errors:
+        _record_schema_validation_engine_event(
+            "schema-validation-engine-disagreement",
+            schema_path=schema_path,
+            reason="accelerator-false-negative",
+        )
     if errors:
         first = errors[0]
         path = format_schema_path(first.path)

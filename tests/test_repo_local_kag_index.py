@@ -10,7 +10,7 @@ import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from jsonschema import Draft202012Validator
 
@@ -1748,6 +1748,114 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
             self.assertEqual(0, cache_info.misses)
             self.assertEqual(0, cache_info.hits)
+
+    def test_fast_schema_accept_uses_one_python_shadow_per_exact_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            python_validator = Mock()
+            python_validator.iter_errors.return_value = []
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = True
+            repo_local_kag_validator._FAST_SCHEMA_SHADOWED_BYTES.clear()
+            with patch.object(
+                repo_local_kag_validator,
+                "_repo_local_schema_validator",
+                return_value=python_validator,
+            ), patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                for _ in range(2):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+
+        self.assertEqual(1, python_validator.iter_errors.call_count)
+        self.assertEqual(2, fast_validator.is_valid.call_count)
+
+    def test_fast_schema_reject_preserves_python_verdict_and_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = False
+            with patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                with self.assertRaisesRegex(
+                    repo_local_kag_validator.ValidationError,
+                    "does not match schema",
+                ):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+
+        fast_validator.is_valid.assert_called_once_with({})
+
+    def test_fast_schema_false_negative_defers_to_python_acceptance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = False
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["disagreement_count"],
+        )
+        self.assertIn(
+            "accelerator-false-negative",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_force_python_schema_validation_is_exact_rollback(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            accelerator = SimpleNamespace(Draft202012Validator=Mock())
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "1"},
+            ), patch.object(
+                repo_local_kag_validator,
+                "jsonschema_rs",
+                accelerator,
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        accelerator.Draft202012Validator.assert_not_called()
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["python_fallback_count"],
+        )
+        self.assertEqual(
+            ["forced-python"],
+            summary["schema_validation_engine"]["reasons"],
+        )
 
     def test_coverage_validates_family_without_same_run_identity(self) -> None:
         root = Path("/srv/AbyssOS/aoa-demo")

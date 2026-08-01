@@ -334,6 +334,11 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
         )[:10]
         for component_type in validation_component_types
     }
+    schema_engine_events = [
+        event
+        for event in events
+        if event.get("component_type") == "schema-validation-engine"
+    ]
     return {
         "schema_version": COVERAGE_RECEIPT_SCHEMA_VERSION,
         "run_scope_id": run.run_scope_id,
@@ -430,6 +435,44 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
             },
             "timings": compact_validation_timings,
             "top_slowest_by_component_type": top_slowest_by_component_type,
+        },
+        "schema_validation_engine": {
+            "fast_accept_count": sum(
+                1
+                for event in schema_engine_events
+                if event.get("event")
+                in {
+                    "schema-validation-fast-accept",
+                    "schema-validation-fast-shadow-confirmed",
+                }
+            ),
+            "shadow_confirmed_count": sum(
+                1
+                for event in schema_engine_events
+                if event.get("event") == "schema-validation-fast-shadow-confirmed"
+            ),
+            "fast_reject_count": sum(
+                1
+                for event in schema_engine_events
+                if event.get("event") == "schema-validation-fast-reject"
+            ),
+            "python_fallback_count": sum(
+                1
+                for event in schema_engine_events
+                if event.get("event") == "schema-validation-python-fallback"
+            ),
+            "disagreement_count": sum(
+                1
+                for event in schema_engine_events
+                if event.get("event") == "schema-validation-engine-disagreement"
+            ),
+            "reasons": sorted(
+                {
+                    str(event["reason"])
+                    for event in schema_engine_events
+                    if isinstance(event.get("reason"), str)
+                }
+            ),
         },
     }
 
