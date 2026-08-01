@@ -133,7 +133,7 @@ jobs:
     name: Full OS-wide Release Audit
     needs: source_fast
     if: >-
-      always() &&
+      !cancelled() &&
       needs.source_fast.result == 'success' &&
       needs.source_fast.outputs.full-audit-required == 'true'
     runs-on: ubuntu-latest
@@ -367,7 +367,7 @@ jobs:
     needs:
       - source_fast
       - release_audit
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -87,6 +87,8 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
         self.assertIn("name: Full OS-wide Release Audit", release_audit)
         self.assertIn("needs: source_fast", release_audit)
+        self.assertIn("!cancelled()", release_audit)
+        self.assertNotIn("always()", release_audit)
         self.assertIn("needs.source_fast.result == 'success'", release_audit)
         self.assertIn(
             "needs.source_fast.outputs.full-audit-required == 'true'",
@@ -100,7 +102,8 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         summary = workflow_text.split("  required_summary:\n", 1)[1]
 
         self.assertIn("name: Repo Validation", summary)
-        self.assertIn("if: always()", summary)
+        self.assertIn("if: ${{ !cancelled() }}", summary)
+        self.assertNotIn("if: always()", summary)
         self.assertIn("SOURCE_FAST_RESULT: ${{ needs.source_fast.result }}", summary)
         self.assertIn(
             "FULL_AUDIT_RESULT: ${{ needs.release_audit.result }}",

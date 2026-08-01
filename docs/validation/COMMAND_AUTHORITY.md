@@ -161,7 +161,9 @@ concurrency controller is enabled unconditionally, only successive heads of
 one pull request can share a group and therefore cancel in-progress work. A
 cancelled superseded run is saved runner work, not validation evidence for its
 replacement, and it cannot cancel main, manual, another pull request, or the
-compatibility canary.
+compatibility canary. Jobs on the expensive and required-summary path use
+`!cancelled()` rather than `always()`, so ordinary failures still reach the
+typed summary while a superseded workflow can actually release its runner.
 
 ## Lane Entries
 

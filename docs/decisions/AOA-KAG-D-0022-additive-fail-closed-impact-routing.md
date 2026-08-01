@@ -64,6 +64,10 @@ that group identity, avoiding event-condition ambiguity without widening the
 cancellation scope. Cancellation is a scheduling result, not proof: only the
 replacement head's complete typed summary may satisfy landing. Main, manual,
 other pull-request, and scheduled compatibility runs remain independent.
+The full-audit and required-summary job conditions remain fail-closed for
+ordinary failures but explicitly stop on `cancelled()`; an `always()` guard
+would make those jobs ignore a concurrency cancellation and spend the work
+that supersession is intended to save.
 
 ## Options Considered
 
