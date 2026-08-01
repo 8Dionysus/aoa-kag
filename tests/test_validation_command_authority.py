@@ -259,6 +259,45 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 validation_lanes.COMPATIBILITY_CANARY_COMMAND_SEQUENCE
             )
 
+    def test_ci_gate_records_typed_command_timing_without_changing_execution(self) -> None:
+        command = ("python", "scripts/example.py", "--check")
+        completed = subprocess.CompletedProcess(command, 0)
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            ci_gate.subprocess,
+            "run",
+            return_value=completed,
+        ) as execute:
+            ci_gate.run_command(command)
+            summary = coverage_run.coverage_run_summary(run)
+
+        execute.assert_called_once_with(
+            ci_gate.resolve_command(command),
+            cwd=ci_gate.REPO_ROOT,
+            check=True,
+        )
+        timings = summary["validation_telemetry"]["timings"]
+        self.assertEqual(1, len(timings))
+        self.assertEqual("validation-command", timings[0]["component_type"])
+        self.assertEqual("passed", timings[0]["status"])
+        self.assertEqual(list(command), timings[0]["details"]["command"])
+        self.assertEqual(0, timings[0]["details"]["return_code"])
+
+    def test_ci_gate_preserves_command_failure_and_records_failed_timing(self) -> None:
+        command = ("python", "scripts/example.py")
+        failure = subprocess.CalledProcessError(7, command)
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            ci_gate.subprocess,
+            "run",
+            side_effect=failure,
+        ):
+            with self.assertRaises(subprocess.CalledProcessError):
+                ci_gate.run_command(command)
+            summary = coverage_run.coverage_run_summary(run)
+
+        timing = summary["validation_telemetry"]["timings"][0]
+        self.assertEqual("failed", timing["status"])
+        self.assertEqual(7, timing["details"]["return_code"])
+
     def test_generated_lane_fails_when_projection_snapshot_changes(self) -> None:
         with patch.object(ci_gate, "run_sequence"):
             with patch.object(

@@ -37,6 +37,9 @@ federation as a whole.
   generated decision lookup indexes.
 - Read [validation command authority](validation/COMMAND_AUTHORITY.md) for
   active validation lanes, command storage, and script topology.
+- Read [CI evidence DAG](validation/CI_EVIDENCE_DAG.md) for the validation cost
+  model, fixed-point SCC, typed telemetry, and optimization experiment
+  protocol.
 - Read [test topology](testing/TEST_TOPOLOGY.md) for test homes, coverage
   authority, and failure routes.
 - Read [artifact bundles](artifact-bundles/README.md) for the portable
@@ -110,6 +113,9 @@ federation as a whole.
   `AOA-KAG-D` decision records, and generated lookup indexes
 - [validation/COMMAND_AUTHORITY](validation/COMMAND_AUTHORITY.md) - active
   validation lanes, command storage, script inventory, and failure routes
+- [validation/CI_EVIDENCE_DAG](validation/CI_EVIDENCE_DAG.md) - validation
+  dependency graph, fixed-point SCC, typed performance evidence, and safe
+  comparison protocol
 - [testing/TEST_TOPOLOGY](testing/TEST_TOPOLOGY.md) - test homes, coverage
   authority, and test inventory route
 - [artifact-bundles](artifact-bundles/README.md) - portable release-input

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import resource
 import secrets
 import sys
 import tempfile
@@ -21,6 +22,7 @@ COVERAGE_SCOPE_LANE_ENV = "AOA_KAG_COVERAGE_SCOPE_LANE"
 COVERAGE_SCOPE_MARKER = ".aoa-kag-coverage-scope.json"
 COVERAGE_EVENT_SCHEMA_VERSION = "aoa-kag-coverage-run-event-v1"
 COVERAGE_RECEIPT_SCHEMA_VERSION = "aoa-kag-coverage-run-receipt-v1"
+VALIDATION_TIMING_SCHEMA_VERSION = "aoa-kag-validation-timing-v1"
 VALIDATION_ARTIFACT_PARENT_ENV = "AOA_KAG_VALIDATION_ARTIFACT_PARENT"
 GITHUB_STEP_SUMMARY_ENV = "GITHUB_STEP_SUMMARY"
 GITHUB_STEP_SUMMARY_RECEIPT_MAX_BYTES = 64 * 1024
@@ -137,6 +139,86 @@ def record_coverage_event(event: dict[str, Any]) -> None:
         )
 
 
+def record_validation_event(event: dict[str, Any]) -> None:
+    """Publish additive observability without changing validation authority."""
+
+    try:
+        record_coverage_event(event)
+    except (OSError, RuntimeError, UnicodeError, ValueError, TypeError) as exc:
+        component_type = event.get("component_type", "validation-event")
+        component_id = event.get("component_id", event.get("event", "unknown"))
+        print(
+            "[aoa-kag-validation-telemetry-degraded] "
+            f"{component_type}/{component_id}: {exc}",
+            file=sys.stderr,
+            flush=True,
+        )
+
+
+def record_validation_timing(
+    *,
+    component_type: str,
+    component_id: str,
+    duration_ms: int,
+    cpu_user_ms: int,
+    cpu_system_ms: int,
+    process_peak_rss_kib: int,
+    status: str,
+    details: dict[str, Any] | None = None,
+) -> None:
+    """Append additive validation telemetry without changing proof verdicts."""
+
+    if status not in {"passed", "failed"}:
+        raise ValueError("validation timing status must be passed or failed")
+    if not component_type or not component_id:
+        raise ValueError("validation timing requires component type and id")
+    event: dict[str, Any] = {
+        "event": "validation-timing",
+        "timing_schema_version": VALIDATION_TIMING_SCHEMA_VERSION,
+        "component_type": component_type,
+        "component_id": component_id,
+        "duration_ms": max(0, int(duration_ms)),
+        "cpu_user_ms": max(0, int(cpu_user_ms)),
+        "cpu_system_ms": max(0, int(cpu_system_ms)),
+        "process_peak_rss_kib": max(0, int(process_peak_rss_kib)),
+        "status": status,
+    }
+    if details:
+        event["details"] = details
+    record_validation_event(event)
+
+
+@contextmanager
+def validation_timing(
+    *,
+    component_type: str,
+    component_id: str,
+    details: dict[str, Any] | None = None,
+) -> Iterator[None]:
+    """Measure one in-process validation component in the active run scope."""
+
+    started = time.perf_counter()
+    before = resource.getrusage(resource.RUSAGE_SELF)
+    status = "passed"
+    try:
+        yield
+    except BaseException:
+        status = "failed"
+        raise
+    finally:
+        after = resource.getrusage(resource.RUSAGE_SELF)
+        record_validation_timing(
+            component_type=component_type,
+            component_id=component_id,
+            duration_ms=round((time.perf_counter() - started) * 1000),
+            cpu_user_ms=round((after.ru_utime - before.ru_utime) * 1000),
+            cpu_system_ms=round((after.ru_stime - before.ru_stime) * 1000),
+            process_peak_rss_kib=round(after.ru_maxrss),
+            status=status,
+            details=details,
+        )
+
+
 def read_coverage_events(run: CoverageRun) -> list[dict[str, Any]]:
     if not run.receipt_path.exists():
         return []
@@ -176,6 +258,12 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
     misses = [event for event in events if event.get("event") == "miss"]
     rejects = [event for event in events if event.get("event") == "reject"]
     failures = [event for event in events if event.get("event") == "build-failed"]
+    validation_timings = [
+        event
+        for event in events
+        if event.get("event") == "validation-timing"
+        and event.get("timing_schema_version") == VALIDATION_TIMING_SCHEMA_VERSION
+    ]
     identity_digests = sorted(
         {
             str(event["identity_digest"])
@@ -205,6 +293,57 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
         timing["source_snapshot"]
         for timing in owner_timings
         if isinstance(timing.get("source_snapshot"), dict)
+    ]
+    compact_validation_timings = [
+        {
+            key: event[key]
+            for key in (
+                "component_type",
+                "component_id",
+                "duration_ms",
+                "cpu_user_ms",
+                "cpu_system_ms",
+                "process_peak_rss_kib",
+                "status",
+                "details",
+            )
+            if key in event
+        }
+        for event in validation_timings
+    ]
+    validation_component_types = sorted(
+        {
+            str(event["component_type"])
+            for event in validation_timings
+            if isinstance(event.get("component_type"), str)
+        }
+    )
+    top_slowest_by_component_type = {
+        component_type: sorted(
+            (
+                {
+                    "component_id": str(event.get("component_id", "unknown")),
+                    "duration_ms": int(event.get("duration_ms", 0)),
+                    "status": str(event.get("status", "unknown")),
+                }
+                for event in validation_timings
+                if event.get("component_type") == component_type
+                and isinstance(event.get("duration_ms", 0), int)
+            ),
+            key=lambda item: (-item["duration_ms"], item["component_id"]),
+        )[:10]
+        for component_type in validation_component_types
+    }
+    semantic_proof_events = [
+        event
+        for event in events
+        if event.get("event")
+        in {
+            "portable-family-semantic-proof-hit",
+            "portable-family-semantic-proof-issued",
+            "portable-family-semantic-proof-miss",
+            "portable-family-semantic-proof-reject",
+        }
     ]
     return {
         "schema_version": COVERAGE_RECEIPT_SCHEMA_VERSION,
@@ -285,6 +424,53 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
             if isinstance(snapshot.get("family_validation_cache_miss_count", 0), int)
         ),
         "owner_timings": owner_timings,
+        "validation_telemetry": {
+            "schema_version": VALIDATION_TIMING_SCHEMA_VERSION,
+            "timing_count": len(validation_timings),
+            "failed_timing_count": sum(
+                1 for event in validation_timings if event.get("status") == "failed"
+            ),
+            "wall_ms_by_component_type": {
+                component_type: sum(
+                    int(event.get("duration_ms", 0))
+                    for event in validation_timings
+                    if event.get("component_type") == component_type
+                    and isinstance(event.get("duration_ms", 0), int)
+                )
+                for component_type in validation_component_types
+            },
+            "timings": compact_validation_timings,
+            "top_slowest_by_component_type": top_slowest_by_component_type,
+        },
+        "same_run_semantic_proof": {
+            "hit_count": sum(
+                1
+                for event in semantic_proof_events
+                if event.get("event") == "portable-family-semantic-proof-hit"
+            ),
+            "issued_count": sum(
+                1
+                for event in semantic_proof_events
+                if event.get("event") == "portable-family-semantic-proof-issued"
+            ),
+            "miss_count": sum(
+                1
+                for event in semantic_proof_events
+                if event.get("event") == "portable-family-semantic-proof-miss"
+            ),
+            "reject_count": sum(
+                1
+                for event in semantic_proof_events
+                if event.get("event") == "portable-family-semantic-proof-reject"
+            ),
+            "reasons": sorted(
+                {
+                    str(event["reason"])
+                    for event in semantic_proof_events
+                    if isinstance(event.get("reason"), str)
+                }
+            ),
+        },
     }
 
 

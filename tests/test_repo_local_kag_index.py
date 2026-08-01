@@ -1696,6 +1696,257 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(1, metrics.family_validation_cache_hits)
         self.assertEqual(0, metrics.family_validation_cache_misses)
 
+    def test_semantic_proof_reuses_only_exact_same_run_family_identity(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        manifest = {"family_identity": {"content_digest": "a" * 64}}
+        changed = {"family_identity": {"content_digest": "b" * 64}}
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            self.assertFalse(
+                repo_local_kag_validator.portable_family_semantic_proof_in_current_run(
+                    root,
+                    manifest,
+                )
+            )
+            repo_local_kag_validator.record_run_portable_family_semantic_proof(
+                root,
+                manifest,
+            )
+            self.assertTrue(
+                repo_local_kag_validator.portable_family_semantic_proof_in_current_run(
+                    root,
+                    manifest,
+                )
+            )
+            self.assertFalse(
+                repo_local_kag_validator.portable_family_semantic_proof_in_current_run(
+                    root,
+                    changed,
+                )
+            )
+            summary = coverage_run.coverage_run_summary(run)
+
+        proof_summary = summary["same_run_semantic_proof"]
+        self.assertEqual(1, proof_summary["hit_count"])
+        self.assertEqual(1, proof_summary["issued_count"])
+        self.assertEqual(2, proof_summary["miss_count"])
+        self.assertEqual(0, proof_summary["reject_count"])
+        self.assertEqual(
+            ["identity-mismatch", "proof-absent"],
+            proof_summary["reasons"],
+        )
+
+    def test_semantic_proof_rejects_validator_epoch_change(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        manifest = {"family_identity": {"content_digest": "a" * 64}}
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True):
+            with patch.object(
+                repo_local_kag_validator,
+                "_portable_family_semantic_validator_digest",
+                return_value="sha256:" + "1" * 64,
+            ):
+                repo_local_kag_validator.record_run_portable_family_semantic_proof(
+                    root,
+                    manifest,
+                )
+            with patch.object(
+                repo_local_kag_validator,
+                "_portable_family_semantic_validator_digest",
+                return_value="sha256:" + "2" * 64,
+            ):
+                self.assertFalse(
+                    repo_local_kag_validator.portable_family_semantic_proof_in_current_run(
+                        root,
+                        manifest,
+                    )
+                )
+
+    def test_semantic_proof_epoch_binds_repository_schema_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "repository-index.schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            with patch.object(
+                repo_local_kag_validator,
+                "REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH",
+                schema_path,
+            ):
+                before = (
+                    repo_local_kag_validator._portable_family_semantic_validator_digest()
+                )
+                schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+                after = (
+                    repo_local_kag_validator._portable_family_semantic_validator_digest()
+                )
+
+        self.assertNotEqual(before, after)
+
+    def test_semantic_proof_corruption_and_symlink_fall_back_cold(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        manifest = {"family_identity": {"content_digest": "a" * 64}}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            external = Path(temp_dir) / "external.json"
+            external.write_text("{}\n", encoding="utf-8")
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+                path = (
+                    run.scope_dir
+                    / repo_local_kag_validator.PORTABLE_FAMILY_SEMANTIC_PROOF_FILENAME
+                )
+                path.write_text("not-json\n", encoding="utf-8")
+                self.assertFalse(
+                    repo_local_kag_validator.portable_family_semantic_proof_in_current_run(
+                        root,
+                        manifest,
+                    )
+                )
+                path.unlink()
+                path.symlink_to(external)
+                self.assertFalse(
+                    repo_local_kag_validator.portable_family_semantic_proof_in_current_run(
+                        root,
+                        manifest,
+                    )
+                )
+                repo_local_kag_validator.record_run_portable_family_semantic_proof(
+                    root,
+                    manifest,
+                )
+                self.assertTrue(path.is_symlink())
+
+    def test_semantic_proof_force_cold_switch_disables_issue_and_consume(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        manifest = {"family_identity": {"content_digest": "a" * 64}}
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.dict(
+            os.environ,
+            {repo_local_kag_validator.FORCE_COLD_SEMANTIC_VALIDATION_ENV: "1"},
+        ):
+            repo_local_kag_validator.record_run_portable_family_semantic_proof(
+                root,
+                manifest,
+            )
+            self.assertFalse(
+                repo_local_kag_validator.portable_family_semantic_proof_in_current_run(
+                    root,
+                    manifest,
+                )
+            )
+            self.assertFalse(
+                (
+                    run.scope_dir
+                    / repo_local_kag_validator.PORTABLE_FAMILY_SEMANTIC_PROOF_FILENAME
+                ).exists()
+            )
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            ["forced-cold"],
+            summary["same_run_semantic_proof"]["reasons"],
+        )
+
+    def test_generated_family_semantic_phase_consumes_exact_run_proof(self) -> None:
+        from scripts.repo_local import portable_family
+
+        payload: dict[str, object] = {}
+        family = {index_kind: {} for index_kind in REPOSITORY_INDEX_FILENAMES}
+        manifest = {"family_identity": {"content_digest": "a" * 64}}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / "index_family.manifest.json"
+            manifest_path.write_text("{}\n", encoding="utf-8")
+            with patch.object(
+                repo_local_kag_validator,
+                "REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH",
+                manifest_path,
+            ), patch.object(
+                portable_family,
+                "load_portable_family",
+                return_value=(payload, family, manifest),
+            ), patch.object(
+                repo_local_kag_validator,
+                "repo_local_kag_validate_payload",
+            ), patch.object(
+                repo_local_kag_validator,
+                "validate_repo_local_kag_index_payload",
+            ), patch.object(
+                repo_local_kag_validator,
+                "build_index",
+                return_value=payload,
+            ), patch.object(
+                repo_local_kag_validator,
+                "build_repository_indexes",
+                return_value=family,
+            ), patch.object(
+                repo_local_kag_validator,
+                "portable_family_semantic_proof_in_current_run",
+                return_value=True,
+            ), patch.object(
+                repo_local_kag_validator,
+                "validate_repo_local_kag_repository_index_family",
+            ) as semantic_validate, patch.object(
+                portable_family,
+                "build_portable_family",
+                return_value=(manifest, {}),
+            ), patch.object(
+                portable_family,
+                "check_portable_output",
+                return_value=True,
+            ):
+                repo_local_kag_validator.validate_repo_local_kag_index_generated_payload()
+
+        semantic_validate.assert_not_called()
+
+    def test_repo_local_schema_compilation_reuses_only_exact_schema_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            repo_local_kag_validator._cached_repo_local_schema_validator.cache_clear()
+
+            repo_local_kag_validator.repo_local_kag_validate_payload(
+                {},
+                schema_path=schema_path,
+                label="demo",
+            )
+            repo_local_kag_validator.repo_local_kag_validate_payload(
+                {},
+                schema_path=schema_path,
+                label="demo",
+            )
+            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(1, cache_info.misses)
+            self.assertEqual(1, cache_info.hits)
+
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            with self.assertRaisesRegex(
+                repo_local_kag_validator.ValidationError,
+                "does not match schema",
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+            changed_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(2, changed_info.misses)
+
+    def test_force_cold_schema_compilation_bypasses_same_process_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            repo_local_kag_validator._cached_repo_local_schema_validator.cache_clear()
+            with patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_COLD_SCHEMA_COMPILATION_ENV: "1"},
+            ):
+                for _ in range(2):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+
+            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(0, cache_info.misses)
+            self.assertEqual(0, cache_info.hits)
+
     def test_coverage_validates_family_without_same_run_identity(self) -> None:
         root = Path("/srv/AbyssOS/aoa-demo")
         source_index: dict[str, object] = {}
@@ -2353,6 +2604,77 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(2048, summary["source_snapshot_bytes_read"])
         self.assertEqual(1, summary["family_validation_cache_hit_count"])
         self.assertEqual(0, summary["family_validation_cache_miss_count"])
+
+    def test_validation_timing_is_typed_and_additive_to_coverage_receipt(self) -> None:
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with coverage_run.validation_timing(
+                component_type="provider-home",
+                component_id="aoa-demo",
+                details={"repo_root": "/tmp/aoa-demo"},
+            ):
+                pass
+            summary = coverage_run.coverage_run_summary(run)
+
+        telemetry = summary["validation_telemetry"]
+        self.assertEqual(
+            coverage_run.VALIDATION_TIMING_SCHEMA_VERSION,
+            telemetry["schema_version"],
+        )
+        self.assertEqual(1, telemetry["timing_count"])
+        self.assertEqual(0, telemetry["failed_timing_count"])
+        self.assertEqual(
+            telemetry["timings"][0]["duration_ms"],
+            telemetry["wall_ms_by_component_type"]["provider-home"],
+        )
+        self.assertEqual("aoa-demo", telemetry["timings"][0]["component_id"])
+        self.assertEqual(
+            {"repo_root": "/tmp/aoa-demo"},
+            telemetry["timings"][0]["details"],
+        )
+        self.assertEqual(
+            [
+                {
+                    "component_id": "aoa-demo",
+                    "duration_ms": telemetry["timings"][0]["duration_ms"],
+                    "status": "passed",
+                }
+            ],
+            telemetry["top_slowest_by_component_type"]["provider-home"],
+        )
+
+    def test_failed_validation_timing_preserves_failure_and_records_status(self) -> None:
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with self.assertRaisesRegex(RuntimeError, "proof failed"):
+                with coverage_run.validation_timing(
+                    component_type="repo-local-index-phase",
+                    component_id="semantic-validation",
+                ):
+                    raise RuntimeError("proof failed")
+            summary = coverage_run.coverage_run_summary(run)
+
+        telemetry = summary["validation_telemetry"]
+        self.assertEqual(1, telemetry["failed_timing_count"])
+        self.assertEqual("failed", telemetry["timings"][0]["status"])
+
+    def test_validation_telemetry_publication_failure_is_degraded(self) -> None:
+        stderr = io.StringIO()
+        with patch.object(
+            coverage_run,
+            "record_coverage_event",
+            side_effect=OSError("receipt unavailable"),
+        ), redirect_stderr(stderr):
+            coverage_run.record_validation_timing(
+                component_type="provider-home",
+                component_id="aoa-demo",
+                duration_ms=1,
+                cpu_user_ms=1,
+                cpu_system_ms=0,
+                process_peak_rss_kib=1024,
+                status="passed",
+            )
+
+        self.assertIn("[aoa-kag-validation-telemetry-degraded]", stderr.getvalue())
+        self.assertIn("receipt unavailable", stderr.getvalue())
 
     def test_coverage_run_receipt_appends_bounded_github_step_summary(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

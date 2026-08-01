@@ -1,0 +1,197 @@
+# CI Evidence DAG and Optimization Protocol
+
+This document is the working cost model for KAG validation. It does not replace
+the command authority in `config/validation_lanes.json`, change a proof verdict,
+or authorize proof reuse. It makes dependencies, repeated work, measurement,
+and experiment admission explicit so a faster run remains the same proof.
+
+## Current baseline
+
+The current-main postmerge run observed on 2026-08-01 was
+[`30710043887`](https://github.com/8Dionysus/aoa-kag/actions/runs/30710043887):
+
+- source-fast job: 115 seconds;
+- full OS-wide job: 606 seconds;
+- provider checkout fan-in: approximately 121 seconds;
+- generated/release audit command: approximately 470 seconds;
+- run-scoped lane wall time inside that command: 468.809 seconds;
+- provider coverage build: 97.935 seconds over 21 owner scans, 63 Git
+  invocations, 17,403 files, and 142,487,357 source bytes;
+- the first and final local validations each cost approximately 21 seconds;
+- the six slowest provider homes account for approximately 57 percent of the
+  observed provider-home phase.
+
+These values are an orientation baseline, not a performance guarantee. Hosted
+comparisons must use current paired runs because runner placement and shared
+host load are noisy.
+
+## Dependency graph
+
+The graph has independent branches, barriers, and one real strongly connected
+component (SCC). It is therefore useful as a component DAG only after the fixed
+point is collapsed.
+
+```text
+checkout + command authority
+        |
+        +--> source-fast proof ------------------------+
+        |                                              |
+        +--> self owner-family proof ------------------+--> landing summary
+        |
+        +--> complete provider identity capture
+                    |
+                    +--> provider proof A --+
+                    +--> provider proof B --+--> canonical owner composition
+                    +--> ...                +           |
+                    +--> provider proof N --+           v
+                                              [self_coverage_fixed_point SCC]
+                                              coverage -> generated KAG
+                                                 ^              |
+                                                 |              v
+                                                 +-- portable family
+                                                         |
+                                                         v
+                                              parity checks + final local
+                                                         |
+                                                         v
+                                                artifact/release gates
+```
+
+The provider proofs are logically independent after the complete input
+identity is captured. Their result is not admissible until every configured
+owner appears exactly once in canonical order and the complete input identity
+is rechecked. That shape permits bounded scheduling experiments, but it does
+not imply that more workers are faster: the providers contend for CPU, memory,
+filesystem cache, and Git object access.
+
+The `self_coverage_fixed_point` SCC is genuine. Root coverage affects generated
+KAG surfaces; generated KAG affects the root portable family; the root family
+is itself one coverage input. A pure acyclic execution would either omit an
+edge or weaken the fixed-point proof. The safe DAG node is the entire SCC,
+whose internal convergence and final `--check` operations remain blocking.
+
+## Typed telemetry
+
+Every lane run keeps its existing ephemeral coverage packet and JSONL receipt.
+Additive `aoa-kag-validation-timing-v1` events measure:
+
+- each canonical validation command;
+- each OS-wide provider-home proof;
+- the root repo-local index phases: read, payload validation, source rebuild,
+  parity, repository-family build, family parity, semantic validation, portable
+  rebuild, and portable parity.
+
+Each timing binds a component type and ID, pass/fail status, wall time,
+user/system CPU, process peak RSS observation, and bounded component details.
+The aggregate receipt reports typed records and wall totals by component type.
+Telemetry publication is deliberately degraded-only: losing a timing may make
+the performance evidence incomplete, but cannot turn a failing proof green or
+a passing proof red.
+
+## Methods that remain live candidates
+
+No candidate is rejected merely because another method looks simpler or one
+run is noisy. Each method receives its own cold-path, identity, resource, and
+hosted comparison evidence.
+
+| Method | Potential saving | Required safety boundary | Current posture |
+| --- | --- | --- | --- |
+| In-process compiled-schema reuse | avoid parsing and meta-validating identical schema bytes for every owner payload | cache key is the complete schema bytes; every payload and semantic assertion still executes; changed bytes compile cold | locally reproducible candidate |
+| Exact same-run root-family proof | avoid a later process repeating semantic family assertions already completed in the same lane | run ID/lane, root, portable-family digest, validator/schema/runtime epoch, self-digest, cold fallback | locally reproducible candidate; hosted effect pending |
+| Checkout/history routing | avoid full history where the invoked provider proof does not read it | prove command-by-command history requirements; uncertainty selects full history | compare shallow, partial, and full modes |
+| Provider validation algorithm | reduce cold scan/decode/build work without caching a verdict | same schemas, source bytes, family parity, coverage row, and final identity barrier | profile dominant providers and subphases |
+| SCC-aware bounded scheduling | overlap independent provider proofs or prefetch without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, cancellation and cold serial fallback | compare serial, resource-class waves, and narrow overlap |
+| Cross-run owner fragments | replace unchanged external-owner proof with admitted prior evidence | owner-admitted artifact class, trusted main producer, provenance, expiry/revocation, exact consumer gate, cold fallback | blocked by `AOA-KAG-D-0029`; preserve feasibility evidence |
+
+The earlier whole-provider `workers=2` experiment remains a valid negative data
+point: its hosted lane regressed even though local wall time improved. It rules
+out that exact scheduling policy on that evidence; it does not rule out narrow
+prefetch, memory-aware waves, a different provider partition, or faster cold
+algorithms. Likewise, one hosted regression of leading-local omission is not
+enough to discard all exact same-run reuse designs.
+
+## Experiment protocol
+
+Every candidate starts with a proof-equivalence matrix. It must name the exact
+assertions retained, the work moved or omitted, the identity fields that bind
+reuse, invalidation cases, and the cold fallback. Missing, malformed,
+ambiguous, changed, stale, or tampered evidence always executes the full cold
+proof or fails closed according to the existing owner contract.
+
+The comparison sequence is:
+
+1. capture a current cold baseline with typed command, provider, phase, CPU,
+   RSS, file/byte, and Git-invocation evidence;
+2. prove local output and verdict parity, negative invalidation cases, and the
+   complete generated fixed point;
+3. compare cold candidate versus cold main on the same host when possible;
+4. run interleaved hosted main/candidate pairs, normally at least three pairs,
+   and retain every run including regressions and outliers;
+5. compare median wall time, pair wins, CPU, peak RSS, checkout time, and cold
+   fallback overhead rather than selecting the best single run;
+6. land only a reproducible material improvement with all blocking proofs
+   intact, then verify the merged postmerge path.
+
+A candidate is material when it removes at least 30 seconds from the targeted
+full job or at least 5 percent from the targeted component median without a
+material cold-path or resource regression. A smaller result may still land if
+it removes billed hosted work at negligible complexity, but its rationale must
+be explicit. Failure, deferral, and inconclusive evidence stay recorded so a
+promising mechanism is neither forgotten nor repeatedly retried unchanged.
+
+## DAG efficiency answer
+
+An effective DAG is possible, but its main benefit is explicit identity and
+scheduling, not automatic maximum parallelism. The safe future shape is:
+
+- a component graph generated from canonical commands and proof dependencies;
+- content and builder identities on every reusable edge;
+- the fixed-point cycle represented as one SCC with an internal convergence
+  contract;
+- resource annotations for CPU, RSS, I/O, and history needs;
+- deterministic canonical fan-in after independent provider nodes;
+- same-run proof edges first; cross-run edges only after artifact admission;
+- cold execution as the universal fallback.
+
+This form can eliminate redundant work, route checkout depth, and schedule
+independent nodes conservatively while preserving all current owner coverage.
+It cannot safely turn owner truth into a cache key or remove the fixed-point
+cycle.
+
+## Experiment ledger
+
+All local comparisons below used the same pinned 21-owner registry and the
+canonical validators. `PYTHONDONTWRITEBYTECODE=1` kept disposable provider
+checkouts clean; it did not change proof inputs or outputs. Absolute host times
+are not substituted for hosted evidence.
+
+| Candidate | Comparison | Result | Posture |
+| --- | --- | --- | --- |
+| Exact same-run semantic proof | three interleaved pairs of two local validators | warm lane 16.572/17.683/20.326 s versus forced-cold 21.936/22.278/23.608 s; warm won 3/3 by 5.364/4.595/3.282 s; each warm receipt recorded one issue and one exact hit | proof-equivalent local success; full-job hosted benefit still required |
+| Exact same-run semantic proof | one full generated pair, normalized for provider-home time | warm non-provider 28.843 s versus forced-cold 32.783 s; final semantic traversal 5.187 s to 0; total wall was noisy and cold happened to win because its providers were 10.952 s faster | preserve candidate, do not infer from total alone |
+| Exact-byte compiled schema | two complete interleaved OS-wide pairs | cached 198.435/214.097 s versus forced-cold 223.850/239.199 s; cached won both by 25.415/25.102 s; semantic component improved by 17.132/14.366 s | locally material candidate; third pair and hosted proof pending |
+| Exact-byte compiled schema | third pair | cached half completed at 235.570 s; forced-cold admission was blocked by the host hard memory reserve and unknown-demand gate after swap activity | incomplete, do not count as a pair; retry only after resource admission |
+| Whole provider sweep with two workers | local plus hosted experiment recorded by PR 185 | local improved 7.86 percent, hosted lane regressed from 938.768 to 990.153 s | reject that exact scheduler; retain narrower DAG scheduling candidates |
+| Leading-local omission | one hosted candidate recorded by PR 197 | candidate lane 486.930 s versus main 455.497 s with higher CPU | negative but noisy single run; do not generalize to all same-run proof reuse |
+| Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
+
+The same-run semantic proof is ephemeral under the active run scope. It binds
+the complete portable-family content digest and the semantic validator/schema
+runtime epoch. Missing, changed, malformed, corrupt, wrong-run, or symlinked
+proof state executes the cold semantic validator. The explicit
+`AOA_KAG_FORCE_COLD_SEMANTIC_VALIDATION=1` switch is an A/B and rollback path.
+
+Compiled-schema reuse is narrower still: the complete schema bytes are the
+cache key inside one Python process. Schema meta-validation is reused, but
+`iter_errors` and every family cross-reference assertion still run for every
+owner. `AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION=1` provides the exact cold
+comparison and rollback route.
+
+## Related decisions
+
+- `AOA-KAG-D-0021`: run-scoped coverage proof reuse;
+- `AOA-KAG-D-0025`: exact same-run source-fast handoff;
+- `AOA-KAG-D-0027`: history-bounded source-fast donor checkouts;
+- `AOA-KAG-D-0028`: run-scoped provider coverage fusion;
+- `AOA-KAG-D-0029`: defer cross-run owner proof fragments until artifact
+  admission exists.

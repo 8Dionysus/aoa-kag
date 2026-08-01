@@ -1,15 +1,28 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import importlib.metadata
+import os
+import secrets
 import sys
+from functools import lru_cache
 
 from .common import *
 from .schema_surfaces import validate_top_level_schema
 
 try:
-    from scripts.coverage_run import current_coverage_run
+    from scripts.coverage_run import (
+        current_coverage_run,
+        record_validation_event,
+        validation_timing,
+    )
 except ImportError:  # pragma: no cover - direct script import fallback
-    from coverage_run import current_coverage_run  # type: ignore
+    from coverage_run import (  # type: ignore
+        current_coverage_run,
+        record_validation_event,
+        validation_timing,
+    )
 
 try:
     from scripts.generate_repo_local_kag_coverage import build_provider_coverage
@@ -38,6 +51,297 @@ REPOSITORY_INDEX_FAMILY_REFS = {
 }
 DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
 _RUN_VALIDATED_PORTABLE_FAMILIES: set[tuple[str, str, str]] = set()
+PORTABLE_FAMILY_SEMANTIC_PROOF_SCHEMA_VERSION = (
+    "aoa-kag-portable-family-semantic-proof-v1"
+)
+PORTABLE_FAMILY_SEMANTIC_PROOF_FILENAME = (
+    "portable-family.semantic-proofs.json"
+)
+FORCE_COLD_SEMANTIC_VALIDATION_ENV = (
+    "AOA_KAG_FORCE_COLD_SEMANTIC_VALIDATION"
+)
+FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
+
+
+def _canonical_digest(payload: object) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _portable_family_semantic_validator_digest() -> str:
+    digest = hashlib.sha256()
+    surfaces = (
+        Path(__file__),
+        Path(__file__).with_name("common.py"),
+        Path(__file__).parents[1] / "generate_repo_local_kag_index.py",
+        Path(__file__).parents[1] / "repo_local" / "portable_family.py",
+        REPO_LOCAL_KAG_INDEX_SCHEMA_PATH,
+        REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+        REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+    )
+    for path in surfaces:
+        resolved = path.resolve()
+        digest.update(resolved.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(resolved.read_bytes())
+        digest.update(b"\0")
+    runtime_identity = {
+        "jsonschema": importlib.metadata.version("jsonschema"),
+        "python_cache_tag": sys.implementation.cache_tag,
+        "repository_index_filenames": REPOSITORY_INDEX_FILENAMES,
+    }
+    digest.update(
+        json.dumps(
+            runtime_identity,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    )
+    return f"sha256:{digest.hexdigest()}"
+
+
+def _portable_family_content_digest(manifest: object) -> str | None:
+    family_identity = (
+        manifest.get("family_identity")
+        if isinstance(manifest, dict)
+        else None
+    )
+    content_digest = (
+        family_identity.get("content_digest")
+        if isinstance(family_identity, dict)
+        else None
+    )
+    if (
+        not isinstance(content_digest, str)
+        or len(content_digest) != 64
+        or any(character not in "0123456789abcdef" for character in content_digest)
+    ):
+        return None
+    return content_digest
+
+
+def _portable_family_semantic_proof_identity(
+    repo_root: Path,
+    manifest: object,
+) -> dict[str, object] | None:
+    run = current_coverage_run()
+    content_digest = _portable_family_content_digest(manifest)
+    if run is None or content_digest is None:
+        return None
+    try:
+        semantic_validator_digest = _portable_family_semantic_validator_digest()
+    except (OSError, importlib.metadata.PackageNotFoundError):
+        return None
+    return {
+        "schema_version": PORTABLE_FAMILY_SEMANTIC_PROOF_SCHEMA_VERSION,
+        "run_scope_id": run.run_scope_id,
+        "lane": run.lane,
+        "repo_root": repo_root.resolve().as_posix(),
+        "family_content_digest": content_digest,
+        "semantic_validator_digest": semantic_validator_digest,
+    }
+
+
+def _portable_family_semantic_proof_path() -> Path | None:
+    run = current_coverage_run()
+    return (
+        run.scope_dir / PORTABLE_FAMILY_SEMANTIC_PROOF_FILENAME
+        if run is not None
+        else None
+    )
+
+
+def _semantic_proof_record(identity: dict[str, object]) -> dict[str, object]:
+    record = {**identity, "status": "passed"}
+    return {**record, "proof_digest": _canonical_digest(record)}
+
+
+def _read_semantic_proofs(path: Path) -> tuple[list[dict[str, object]], str | None]:
+    run = current_coverage_run()
+    if run is None:
+        return [], "scope-unavailable"
+    if path.is_symlink():
+        return [], "proof-path-symlink"
+    if not path.exists():
+        return [], "proof-absent"
+    if not path.is_file():
+        return [], "proof-path-not-file"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        return [], "proof-unreadable"
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != {"schema_version", "run_scope_id", "lane", "proofs"}
+        or payload.get("schema_version") != PORTABLE_FAMILY_SEMANTIC_PROOF_SCHEMA_VERSION
+        or payload.get("run_scope_id") != run.run_scope_id
+        or payload.get("lane") != run.lane
+        or not isinstance(payload.get("proofs"), list)
+    ):
+        return [], "proof-envelope-invalid"
+    proofs: list[dict[str, object]] = []
+    expected_keys = {
+        "schema_version",
+        "run_scope_id",
+        "lane",
+        "repo_root",
+        "family_content_digest",
+        "semantic_validator_digest",
+        "status",
+        "proof_digest",
+    }
+    for proof in payload["proofs"]:
+        if not isinstance(proof, dict) or set(proof) != expected_keys:
+            return [], "proof-record-invalid"
+        unsigned = {key: value for key, value in proof.items() if key != "proof_digest"}
+        if (
+            proof.get("status") != "passed"
+            or proof.get("proof_digest") != _canonical_digest(unsigned)
+        ):
+            return [], "proof-digest-invalid"
+        proofs.append(proof)
+    return proofs, None
+
+
+def _record_semantic_proof_event(
+    event: str,
+    *,
+    repo_root: Path,
+    manifest: object,
+    reason: str | None = None,
+) -> None:
+    payload: dict[str, object] = {
+        "event": event,
+        "component_type": "portable-family-semantic-proof",
+        "component_id": repo_root.name,
+    }
+    content_digest = _portable_family_content_digest(manifest)
+    if content_digest is not None:
+        payload["family_content_digest"] = content_digest
+    if reason is not None:
+        payload["reason"] = reason
+    record_validation_event(payload)
+
+
+def portable_family_semantic_proof_in_current_run(
+    repo_root: Path,
+    manifest: object,
+) -> bool:
+    if os.environ.get(FORCE_COLD_SEMANTIC_VALIDATION_ENV) == "1":
+        _record_semantic_proof_event(
+            "portable-family-semantic-proof-miss",
+            repo_root=repo_root,
+            manifest=manifest,
+            reason="forced-cold",
+        )
+        return False
+    identity = _portable_family_semantic_proof_identity(repo_root, manifest)
+    path = _portable_family_semantic_proof_path()
+    if identity is None or path is None:
+        return False
+    proofs, rejection = _read_semantic_proofs(path)
+    if rejection is not None:
+        event = (
+            "portable-family-semantic-proof-miss"
+            if rejection == "proof-absent"
+            else "portable-family-semantic-proof-reject"
+        )
+        _record_semantic_proof_event(
+            event,
+            repo_root=repo_root,
+            manifest=manifest,
+            reason=rejection,
+        )
+        return False
+    expected = _semantic_proof_record(identity)
+    if expected in proofs:
+        _record_semantic_proof_event(
+            "portable-family-semantic-proof-hit",
+            repo_root=repo_root,
+            manifest=manifest,
+        )
+        return True
+    _record_semantic_proof_event(
+        "portable-family-semantic-proof-miss",
+        repo_root=repo_root,
+        manifest=manifest,
+        reason="identity-mismatch",
+    )
+    return False
+
+
+def record_run_portable_family_semantic_proof(
+    repo_root: Path,
+    manifest: object,
+) -> None:
+    if os.environ.get(FORCE_COLD_SEMANTIC_VALIDATION_ENV) == "1":
+        return
+    identity = _portable_family_semantic_proof_identity(repo_root, manifest)
+    path = _portable_family_semantic_proof_path()
+    if identity is None or path is None:
+        return
+    proofs, rejection = _read_semantic_proofs(path)
+    if rejection is not None and rejection != "proof-absent":
+        _record_semantic_proof_event(
+            "portable-family-semantic-proof-reject",
+            repo_root=repo_root,
+            manifest=manifest,
+            reason=rejection,
+        )
+        proofs = []
+    record = _semantic_proof_record(identity)
+    proofs = [
+        proof
+        for proof in proofs
+        if proof.get("repo_root") != identity["repo_root"]
+    ]
+    proofs.append(record)
+    run = current_coverage_run(required=True)
+    payload = {
+        "schema_version": PORTABLE_FAMILY_SEMANTIC_PROOF_SCHEMA_VERSION,
+        "run_scope_id": run.run_scope_id,
+        "lane": run.lane,
+        "proofs": proofs,
+    }
+    temporary = path.with_name(
+        f".{path.name}.{os.getpid()}.{secrets.token_hex(6)}.tmp"
+    )
+    try:
+        if path.is_symlink():
+            raise OSError("semantic proof path must not be a symlink")
+        temporary.write_text(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, path)
+    except OSError as exc:
+        print(
+            "[aoa-kag-semantic-proof-degraded] "
+            f"unable to publish same-run proof: {exc}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return
+    finally:
+        if temporary.exists() and not temporary.is_symlink():
+            temporary.unlink()
+    _record_semantic_proof_event(
+        "portable-family-semantic-proof-issued",
+        repo_root=repo_root,
+        manifest=manifest,
+    )
 
 
 def _portable_family_validation_identity(
@@ -123,12 +427,48 @@ def _payload_value_summary(value: object) -> str:
     return rendered if len(rendered) <= 240 else f"{rendered[:237]}..."
 
 
-def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
-    schema = read_json(schema_path)
+def _build_repo_local_schema_validator(
+    schema_bytes: bytes,
+) -> Draft202012Validator:
+    schema = json.loads(schema_bytes.decode("utf-8"))
     if not isinstance(schema, dict):
-        fail(f"{label} schema must be a JSON object")
+        raise ValueError("schema must be a JSON object")
     Draft202012Validator.check_schema(schema)
-    errors = sorted(Draft202012Validator(schema).iter_errors(payload), key=lambda error: list(error.path))
+    return Draft202012Validator(schema)
+
+
+@lru_cache(maxsize=16)
+def _cached_repo_local_schema_validator(
+    schema_bytes: bytes,
+) -> Draft202012Validator:
+    return _build_repo_local_schema_validator(schema_bytes)
+
+
+def _repo_local_schema_validator(
+    schema_path: Path,
+    *,
+    label: str,
+) -> Draft202012Validator:
+    try:
+        schema_bytes = schema_path.read_bytes()
+    except OSError as exc:
+        fail(f"{label} schema is unavailable: {schema_path}")
+        raise AssertionError("unreachable") from exc
+    try:
+        if os.environ.get(FORCE_COLD_SCHEMA_COMPILATION_ENV) == "1":
+            return _build_repo_local_schema_validator(schema_bytes)
+        return _cached_repo_local_schema_validator(schema_bytes)
+    except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as exc:
+        fail(f"{label} schema must be a valid JSON object: {schema_path}")
+        raise AssertionError("unreachable") from exc
+
+
+def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
+    validator = _repo_local_schema_validator(schema_path, label=label)
+    errors = sorted(
+        validator.iter_errors(payload),
+        key=lambda error: list(error.path),
+    )
     if errors:
         first = errors[0]
         path = format_schema_path(first.path)
@@ -373,7 +713,7 @@ def validate_repo_local_kag_repository_index_against_source(
     return payload
 
 
-def validate_repo_local_kag_repository_index_family(
+def _validate_repo_local_kag_repository_index_family_impl(
     family: object,
     *,
     source_payload: object,
@@ -563,6 +903,23 @@ def validate_repo_local_kag_repository_index_family(
     return validated
 
 
+def validate_repo_local_kag_repository_index_family(
+    family: object,
+    *,
+    source_payload: object,
+    label: str,
+) -> dict[str, dict[str, object]]:
+    with validation_timing(
+        component_type="portable-family-semantic-validation",
+        component_id=label,
+    ):
+        return _validate_repo_local_kag_repository_index_family_impl(
+            family,
+            source_payload=source_payload,
+            label=label,
+        )
+
+
 def load_repo_local_kag_repository_index_family_with_manifest(
     repo_root: Path,
     *,
@@ -629,71 +986,121 @@ def load_repo_local_kag_repository_index_family(
 def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-index-read", progress=progress)
     portable_manifest: dict[str, object] | None = None
-    if REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH.is_file():
-        try:
-            from scripts.repo_local.portable_family import (
-                build_portable_family,
-                check_portable_output,
-                load_portable_family,
+    with validation_timing(
+        component_type="repo-local-index-phase",
+        component_id="generated-index-read",
+    ):
+        if REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH.is_file():
+            try:
+                from scripts.repo_local.portable_family import (
+                    build_portable_family,
+                    check_portable_output,
+                    load_portable_family,
+                )
+            except ImportError:  # pragma: no cover
+                from repo_local.portable_family import (  # type: ignore
+                    build_portable_family,
+                    check_portable_output,
+                    load_portable_family,
+                )
+            try:
+                payload, actual_family, portable_manifest = load_portable_family(
+                    REPO_ROOT
+                )
+            except ValueError as exc:
+                fail(str(exc))
+            repo_local_kag_validate_payload(
+                portable_manifest,
+                schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+                label="repo-local KAG portable family manifest",
             )
-        except ImportError:  # pragma: no cover
-            from repo_local.portable_family import (  # type: ignore
-                build_portable_family,
-                check_portable_output,
-                load_portable_family,
-            )
-        try:
-            payload, actual_family, portable_manifest = load_portable_family(
-                REPO_ROOT
-            )
-        except ValueError as exc:
-            fail(str(exc))
-        repo_local_kag_validate_payload(
-            portable_manifest,
-            schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
-            label="repo-local KAG portable family manifest",
-        )
-    else:
-        payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
-        actual_family = {
-            index_kind: read_json(
-                REPO_ROOT / "kag" / "indexes" / filename
-            )
-            for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
-        }
+        else:
+            payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
+            actual_family = {
+                index_kind: read_json(
+                    REPO_ROOT / "kag" / "indexes" / filename
+                )
+                for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+            }
     _repo_local_index_phase("generated-index-payload", progress=progress)
-    validate_repo_local_kag_index_payload(payload, label="repo-local KAG generated index")
+    with validation_timing(
+        component_type="repo-local-index-phase",
+        component_id="generated-index-payload",
+    ):
+        validate_repo_local_kag_index_payload(payload, label="repo-local KAG generated index")
     _repo_local_index_phase("generated-index-rebuild", progress=progress)
-    expected = build_index(REPO_ROOT, output=Path("kag/indexes/source_surface_index.json"))
+    with validation_timing(
+        component_type="repo-local-index-phase",
+        component_id="generated-index-rebuild",
+    ):
+        expected = build_index(REPO_ROOT, output=Path("kag/indexes/source_surface_index.json"))
     _repo_local_index_phase("generated-index-parity", progress=progress)
-    if payload != expected:
-        fail("repo-local KAG generated index drifted from generator")
+    with validation_timing(
+        component_type="repo-local-index-phase",
+        component_id="generated-index-parity",
+    ):
+        if payload != expected:
+            fail("repo-local KAG generated index drifted from generator")
 
     _repo_local_index_phase("generated-repository-index-family", progress=progress)
-    expected_family = build_repository_indexes(expected, repo_root=REPO_ROOT)
-    for index_kind in REPOSITORY_INDEX_FILENAMES:
-        if actual_family[index_kind] != expected_family[index_kind]:
-            fail(f"repo-local KAG {index_kind} index drifted from generator")
-    validate_repo_local_kag_repository_index_family(
-        actual_family,
-        source_payload=payload,
-        label="repo-local KAG repository family",
-    )
-    if portable_manifest is not None:
-        try:
-            expected_manifest, expected_shards = build_portable_family(
-                expected,
-                expected_family,
-                previous_manifest=portable_manifest,
-            )
-        except ValueError as exc:
-            fail(str(exc))
-        if not check_portable_output(
+    with validation_timing(
+        component_type="repo-local-index-phase",
+        component_id="repository-family-build",
+    ):
+        expected_family = build_repository_indexes(expected, repo_root=REPO_ROOT)
+    with validation_timing(
+        component_type="repo-local-index-phase",
+        component_id="repository-family-parity",
+    ):
+        for index_kind in REPOSITORY_INDEX_FILENAMES:
+            if actual_family[index_kind] != expected_family[index_kind]:
+                fail(f"repo-local KAG {index_kind} index drifted from generator")
+    semantic_proof_reused = (
+        portable_manifest is not None
+        and portable_family_semantic_proof_in_current_run(
             REPO_ROOT,
-            expected_manifest,
-            expected_shards,
+            portable_manifest,
+        )
+    )
+    with validation_timing(
+        component_type="repo-local-index-phase",
+        component_id="repository-family-semantic-validation",
+        details={"same_run_proof_reused": semantic_proof_reused},
+    ):
+        if not semantic_proof_reused:
+            validate_repo_local_kag_repository_index_family(
+                actual_family,
+                source_payload=payload,
+                label="repo-local KAG repository family",
+            )
+            if portable_manifest is not None:
+                record_run_portable_family_semantic_proof(
+                    REPO_ROOT,
+                    portable_manifest,
+                )
+    if portable_manifest is not None:
+        with validation_timing(
+            component_type="repo-local-index-phase",
+            component_id="portable-family-rebuild",
         ):
-            fail("repo-local KAG portable family drifted from generator")
+            try:
+                expected_manifest, expected_shards = build_portable_family(
+                    expected,
+                    expected_family,
+                    previous_manifest=portable_manifest,
+                )
+            except ValueError as exc:
+                fail(str(exc))
+        with validation_timing(
+            component_type="repo-local-index-phase",
+            component_id="portable-family-parity",
+        ):
+            if not check_portable_output(
+                REPO_ROOT,
+                expected_manifest,
+                expected_shards,
+            ):
+                fail("repo-local KAG portable family drifted from generator")
 
 
 def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> dict[str, object]:
