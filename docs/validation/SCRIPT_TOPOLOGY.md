@@ -44,7 +44,10 @@ The machine-readable script map is
 | `example_validator` | public example payload checks |
 | `decision_index_builder` | decision lookup index writer |
 | `artifact_bundle_validator` | release artifact bundle check |
+| `owner_evidence_issuer` | clean committed owner-source identity and bounded private overlay materialization |
 | `owner_evidence_reviewer` | private runtime-capture validation and bounded owner-review receipt materialization |
+| `owner_evidence_projector` | exact owner-review to runtime-evidence overlay projection without authority promotion |
+| `owner_acceptance_issuer` | exact proof-bound owner acceptance receipt and overlay materialization without admission |
 | `provider_checkout_tool` | pinned provider checkout materialization |
 | `skill_local_contract_tool` | exported skill companion helper |
 | `part_local_script_runner` | discovered part-local builder and validator checks |
@@ -60,7 +63,7 @@ The machine-readable script map is
 | --- | --- |
 | command authority / lane runners | `lane_executor`, `lane_loader`, `impact_router`, `release_entrypoint`, `test_runner`, `part_local_script_runner`, `provider_checkout_tool`, `validation_run_artifact` |
 | generation and retrieval | `projection_builder`, `projection_helper`, `projection_reader`, `decision_index_builder`, `validator_generation_port` |
-| validators and owner review | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator`, `owner_evidence_reviewer` |
+| validators and owner evidence | `source_validator`, `validator_entrypoint`, `validator_adapter`, `validator_expected_contracts_facade`, `validator_expected_contracts`, `validator_shared`, `manifest_validator_facade`, `manifest_validator`, `validator_orchestrator_facade`, `validator_orchestration`, `projection_validator_facade`, `projection_validator`, `example_validator_facade`, `example_validator`, `owner_evidence_issuer`, `owner_evidence_reviewer`, `owner_evidence_projector`, `owner_acceptance_issuer` |
 | topology and route inventory | `script_route_card` |
 | release / artifact tooling | `artifact_bundle_validator` |
 | skill companion helpers | `skill_local_contract_tool` |
@@ -100,6 +103,13 @@ implementation map lives in `docs/validation/validator_inventory.json`.
 `scripts/validate_local_stats_port.py` delegates the KAG-local `stats/` port
 to the pinned `aoa-stats` contract owner and does not reimplement its grammar.
 
+`scripts/issue_kag_mcp_source_identity.py` binds one clean committed KAG
+revision to the canonical source-index identity already owned by the portable
+repository family. It writes a private content-addressed source receipt and a
+private `abyss-stack` evidence-overlay fragment. It does not call MCP, inspect
+runtime state, issue central proof, accept an owner result, admit an organ, or
+prove rollback.
+
 `scripts/review_kag_mcp_result.py` reads one private, content-addressed and
 Ed25519-attested `abyss-stack` canary receipt and result artifact. It resolves
 the one active stack capture signer from the committed
@@ -109,6 +119,22 @@ against the KAG capability schema, assesses KAG source-index freshness, and
 writes one distinct private SDK-shaped owner review. It does not call MCP,
 accept the result, issue central proof, overwrite capture evidence, or alter
 runtime state.
+
+`scripts/project_kag_mcp_owner_review.py` revalidates one current KAG review
+against the exact source-pinned SDK schema and its unchanged content-addressed
+stack capture receipt. Only a still-live `grounded` plus `exact` review becomes
+the stack-attributed endpoint plus KAG-owned grounded-canary and freshness
+fields of a private stack overlay.
+The projection preserves the stack receipt and KAG review as separate evidence
+refs and cannot add central proof, acceptance, admission, or rollback claims.
+
+`scripts/accept_kag_mcp_owner_contour.py` revalidates one private stack
+observation against the current KAG source receipt, pinned owner review, exact
+consumer-bound proof packet, and content-addressed `aoa-evals` proof record.
+It accepts only the exact proved read contour and emits a short-lived private
+owner receipt plus acceptance overlay. It cannot authorize registry admission,
+change runtime state, grant higher effects, or claim rollback or cross-organ
+benefit.
 
 `scripts/validators/local_kag_subtree.py` separates the repo-local KAG subtree,
 example, and readiness contract from the OS-wide provider-home family
