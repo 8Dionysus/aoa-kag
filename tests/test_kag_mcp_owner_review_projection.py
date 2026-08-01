@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
-import pytest
+from tempfile import TemporaryDirectory
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
@@ -163,7 +163,7 @@ def _project(root: Path) -> dict:
     )
 
 
-def test_projects_exact_grounding_and_freshness(tmp_path: Path) -> None:
+def _case_projects_exact_grounding_and_freshness(tmp_path: Path) -> None:
     overlay = _project(tmp_path)
     subject = overlay["subjects"][0]
 
@@ -180,7 +180,7 @@ def test_projects_exact_grounding_and_freshness(tmp_path: Path) -> None:
     assert "proof" not in subject
 
 
-def test_rejects_acceptance_laundering(tmp_path: Path) -> None:
+def _case_rejects_acceptance_laundering(tmp_path: Path) -> None:
     review_path, capture_root = _inputs(tmp_path)
     review = json.loads(review_path.read_text(encoding="utf-8"))
     review["owner_accepted"] = True
@@ -189,7 +189,9 @@ def test_rejects_acceptance_laundering(tmp_path: Path) -> None:
     review["review_id"] = _digest(statement, ensure_ascii=True)
     _write_private_json(review_path, review)
 
-    with pytest.raises(KagOwnerReviewProjectionError, match="claim boundary"):
+    with unittest.TestCase().assertRaisesRegex(
+        KagOwnerReviewProjectionError, "claim boundary"
+    ):
         project_owner_review(
             review_path=review_path,
             capture_root=capture_root,
@@ -198,7 +200,7 @@ def test_rejects_acceptance_laundering(tmp_path: Path) -> None:
         )
 
 
-def test_rejects_changed_capture_receipt(tmp_path: Path) -> None:
+def _case_rejects_changed_capture_receipt(tmp_path: Path) -> None:
     review_path, capture_root = _inputs(tmp_path)
     review = json.loads(review_path.read_text(encoding="utf-8"))
     receipt_path = capture_root / review["capture"]["capture_receipt_ref"]
@@ -206,7 +208,7 @@ def test_rejects_changed_capture_receipt(tmp_path: Path) -> None:
     receipt["server_schema_digest"] = DIGEST_B
     _write_private_json(receipt_path, receipt)
 
-    with pytest.raises(KagOwnerReviewError, match="content address"):
+    with unittest.TestCase().assertRaisesRegex(KagOwnerReviewError, "content address"):
         project_owner_review(
             review_path=review_path,
             capture_root=capture_root,
@@ -215,13 +217,31 @@ def test_rejects_changed_capture_receipt(tmp_path: Path) -> None:
         )
 
 
-def test_rejects_expired_review(tmp_path: Path) -> None:
+def _case_rejects_expired_review(tmp_path: Path) -> None:
     review_path, capture_root = _inputs(tmp_path)
 
-    with pytest.raises(KagOwnerReviewProjectionError, match="expired"):
+    with unittest.TestCase().assertRaisesRegex(KagOwnerReviewProjectionError, "expired"):
         project_owner_review(
             review_path=review_path,
             capture_root=capture_root,
             clock=lambda: NOW + timedelta(minutes=6),
             schema_loader=lambda _: _schema(),
         )
+
+
+class KagMcpOwnerReviewProjectionTests(unittest.TestCase):
+    def _with_temp_path(self, case) -> None:
+        with TemporaryDirectory() as tmp:
+            case(Path(tmp))
+
+    def test_projects_exact_grounding_and_freshness(self) -> None:
+        self._with_temp_path(_case_projects_exact_grounding_and_freshness)
+
+    def test_rejects_acceptance_laundering(self) -> None:
+        self._with_temp_path(_case_rejects_acceptance_laundering)
+
+    def test_rejects_changed_capture_receipt(self) -> None:
+        self._with_temp_path(_case_rejects_changed_capture_receipt)
+
+    def test_rejects_expired_review(self) -> None:
+        self._with_temp_path(_case_rejects_expired_review)

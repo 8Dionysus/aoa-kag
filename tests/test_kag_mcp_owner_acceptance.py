@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 
@@ -306,7 +307,7 @@ def _issue(paths: dict[str, Path], when: datetime = NOW + timedelta(seconds=2)):
     )
 
 
-def test_accepts_exact_proved_contour_without_admission(tmp_path: Path) -> None:
+def _case_accepts_exact_proved_contour_without_admission(tmp_path: Path) -> None:
     receipt, _ = _issue(_inputs(tmp_path))
     schema = json.loads(ACCEPTANCE_SCHEMA.read_text(encoding="utf-8"))
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(receipt)
@@ -320,7 +321,7 @@ def test_accepts_exact_proved_contour_without_admission(tmp_path: Path) -> None:
     assert receipt["central_proof"]["proof_digest"].startswith("sha256:")
 
 
-def test_public_example_is_schema_valid_and_content_addressed() -> None:
+def _case_public_example_is_schema_valid_and_content_addressed() -> None:
     receipt = json.loads(ACCEPTANCE_EXAMPLE.read_text(encoding="utf-8"))
     schema = json.loads(ACCEPTANCE_SCHEMA.read_text(encoding="utf-8"))
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(receipt)
@@ -330,7 +331,7 @@ def test_public_example_is_schema_valid_and_content_addressed() -> None:
     assert claimed == _digest(unsigned)
 
 
-def test_outputs_private_acceptance_overlay(tmp_path: Path) -> None:
+def _case_outputs_private_acceptance_overlay(tmp_path: Path) -> None:
     receipt, _ = _issue(_inputs(tmp_path / "inputs"))
     record, overlay_path, overlay = write_outputs(receipt, tmp_path / "out")
 
@@ -342,34 +343,36 @@ def test_outputs_private_acceptance_overlay(tmp_path: Path) -> None:
     assert acceptance["evidence"]["evidence_refs"][0]["owner"] == "aoa-kag"
 
 
-def test_rejects_proof_target_drift(tmp_path: Path) -> None:
+def _case_rejects_proof_target_drift(tmp_path: Path) -> None:
     paths = _inputs(tmp_path)
     observation = json.loads(paths["observation"].read_text(encoding="utf-8"))
     observation["subjects"][0]["proof"]["proved_server_schema_digest"] = DIGEST_A
     _write_private_json(paths["observation"], observation)
 
-    with pytest.raises(KagMcpAcceptanceError, match="targets differ"):
+    with unittest.TestCase().assertRaisesRegex(KagMcpAcceptanceError, "targets differ"):
         _issue(paths)
 
 
-def test_rejects_expired_evidence(tmp_path: Path) -> None:
+def _case_rejects_expired_evidence(tmp_path: Path) -> None:
     paths = _inputs(tmp_path)
 
-    with pytest.raises(KagMcpAcceptanceError, match="expired"):
+    with unittest.TestCase().assertRaisesRegex(KagMcpAcceptanceError, "expired"):
         _issue(paths, NOW + timedelta(minutes=11))
 
 
-def test_rejects_unbound_consumer(tmp_path: Path) -> None:
+def _case_rejects_unbound_consumer(tmp_path: Path) -> None:
     paths = _inputs(tmp_path)
     observation = json.loads(paths["observation"].read_text(encoding="utf-8"))
     observation["subjects"][0]["consumers"][0]["observed_schema_digest"] = DIGEST_A
     _write_private_json(paths["observation"], observation)
 
-    with pytest.raises(KagMcpAcceptanceError, match="consumer is not exact and compatible"):
+    with unittest.TestCase().assertRaisesRegex(
+        KagMcpAcceptanceError, "consumer is not exact and compatible"
+    ):
         _issue(paths)
 
 
-def test_rejects_non_content_addressed_proof_path(tmp_path: Path) -> None:
+def _case_rejects_non_content_addressed_proof_path(tmp_path: Path) -> None:
     paths = _inputs(tmp_path)
     wrong_path = tmp_path / "not-the-proof-digest.json"
     _write_private_json(
@@ -378,12 +381,46 @@ def test_rejects_non_content_addressed_proof_path(tmp_path: Path) -> None:
     )
     paths["proof"] = wrong_path
 
-    with pytest.raises(KagMcpAcceptanceError, match="path is not content-addressed"):
+    with unittest.TestCase().assertRaisesRegex(
+        KagMcpAcceptanceError, "path is not content-addressed"
+    ):
         _issue(paths)
 
 
-def test_rejects_future_dated_proof(tmp_path: Path) -> None:
+def _case_rejects_future_dated_proof(tmp_path: Path) -> None:
     paths = _inputs(tmp_path)
 
-    with pytest.raises(KagMcpAcceptanceError, match="causally future-dated"):
+    with unittest.TestCase().assertRaisesRegex(
+        KagMcpAcceptanceError, "causally future-dated"
+    ):
         _issue(paths, NOW - timedelta(minutes=1))
+
+
+class KagMcpOwnerAcceptanceTests(unittest.TestCase):
+    def _with_temp_path(self, case) -> None:
+        with TemporaryDirectory() as tmp:
+            case(Path(tmp))
+
+    def test_accepts_exact_proved_contour_without_admission(self) -> None:
+        self._with_temp_path(_case_accepts_exact_proved_contour_without_admission)
+
+    def test_public_example_is_schema_valid_and_content_addressed(self) -> None:
+        _case_public_example_is_schema_valid_and_content_addressed()
+
+    def test_outputs_private_acceptance_overlay(self) -> None:
+        self._with_temp_path(_case_outputs_private_acceptance_overlay)
+
+    def test_rejects_proof_target_drift(self) -> None:
+        self._with_temp_path(_case_rejects_proof_target_drift)
+
+    def test_rejects_expired_evidence(self) -> None:
+        self._with_temp_path(_case_rejects_expired_evidence)
+
+    def test_rejects_unbound_consumer(self) -> None:
+        self._with_temp_path(_case_rejects_unbound_consumer)
+
+    def test_rejects_non_content_addressed_proof_path(self) -> None:
+        self._with_temp_path(_case_rejects_non_content_addressed_proof_path)
+
+    def test_rejects_future_dated_proof(self) -> None:
+        self._with_temp_path(_case_rejects_future_dated_proof)
