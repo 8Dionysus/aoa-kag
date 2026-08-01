@@ -93,6 +93,10 @@
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 
+## exact donor pin
+
+- [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
+
 ## exact identity
 
 - [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
@@ -104,6 +108,10 @@
 ## explicit exceedance receipt
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## explicit history boundary
+
+- [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 
 ## extensible kind
 
@@ -141,6 +149,10 @@
 ## freshness handle
 
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
+
+## full-audit preservation
+
+- [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 
 ## full-contract executability
 
@@ -452,3 +464,7 @@
 ## validator modules
 
 - [AOA-KAG-D-0009 - Validator Owner Modules](../AOA-KAG-D-0009-validator-owner-modules.md) (`docs/decisions/AOA-KAG-D-0009-validator-owner-modules.md`)
+
+## working-tree parity
+
+- [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
