@@ -77,6 +77,10 @@
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 
+## donor pin parity
+
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
+
 ## exact byte parity
 
 - [AOA-KAG-D-0024 - Immutable Batch Owner Source Scan](../AOA-KAG-D-0024-immutable-batch-owner-source-scan.md) (`docs/decisions/AOA-KAG-D-0024-immutable-batch-owner-source-scan.md`)
@@ -85,6 +89,10 @@
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 
+## exact input identity
+
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
+
 ## explicit exceedance receipt
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
@@ -92,6 +100,10 @@
 ## extensible kind
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+
+## fail-closed fallback
+
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 
 ## fail-closed Git input
 
@@ -271,6 +283,7 @@
 ## owner-family parity
 
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 
 ## owner-return route
 
@@ -331,6 +344,10 @@
 ## runtime-state exclusion
 
 - [AOA-KAG-D-0007 - KAG Source Home Preflight](../AOA-KAG-D-0007-kag-source-home-preflight.md) (`docs/decisions/AOA-KAG-D-0007-kag-source-home-preflight.md`)
+
+## same-run binding
+
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 
 ## schema parity
 

@@ -9,6 +9,9 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Added
 
+- Add an exact same-run source-fast handoff receipt and CI-only release
+  continuation with strict SHA/tree/authority/input/donor/family/workflow
+  binding and complete-release fallback.
 - Add the five-operation KAG MCP contract, nine qualified resource shapes,
   capability and result schemas, provenance-rich examples, bounded pagination,
   and explicit canonical degradation fields.
@@ -19,6 +22,9 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Changed
 
+- Align all eight source-fast dependency checkouts with provider-registry pins
+  and avoid repeating source-fast inside a high-impact full-audit job only
+  after exact receipt acceptance; standalone release validation remains full.
 - Cancel superseded runs only within one pull request while keeping main,
   manual, stale re-run, other pull-request, and compatibility workflows
   independent; use a stable file-owned group prefix and make the full audit and

@@ -58,8 +58,10 @@ def capture_repo_state(repo_root: Path) -> RepoStateSnapshot:
     )
 
 
-def release_lane_commands() -> tuple[validation_lanes.Command, ...]:
-    return validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)
+def release_lane_commands(
+    lane_id: str = RELEASE_LANE_ID,
+) -> tuple[validation_lanes.Command, ...]:
+    return validation_lanes.command_sequence_for_lane(lane_id)
 
 
 def normalized_worktree_status(snapshot: RepoStateSnapshot) -> str:
@@ -89,8 +91,8 @@ def run_release_lane(commands: tuple[validation_lanes.Command, ...], repo_root: 
         run_command(command, repo_root)
 
 
-def run_release_check(repo_root: Path) -> int:
-    release_commands = release_lane_commands()
+def run_release_check(repo_root: Path, *, lane_id: str = RELEASE_LANE_ID) -> int:
+    release_commands = release_lane_commands(lane_id)
     before_state = capture_repo_state(repo_root)
 
     run_release_lane(release_commands, repo_root)

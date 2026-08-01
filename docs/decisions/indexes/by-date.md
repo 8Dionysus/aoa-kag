@@ -79,3 +79,7 @@
 ## 2026-07-31
 
 - [AOA-KAG-D-0024 - Immutable Batch Owner Source Scan](../AOA-KAG-D-0024-immutable-batch-owner-source-scan.md) (`docs/decisions/AOA-KAG-D-0024-immutable-batch-owner-source-scan.md`)
+
+## 2026-08-01
+
+- [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)

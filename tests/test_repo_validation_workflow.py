@@ -97,7 +97,11 @@ class RepoValidationWorkflowTests(unittest.TestCase):
             "needs.source_fast.outputs.full-audit-required == 'true'",
             release_audit,
         )
-        self.assertIn("python scripts/release_check.py", release_audit)
+        self.assertIn("python scripts/ci_release_check.py", release_audit)
+        self.assertIn(
+            "AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}",
+            release_audit,
+        )
         self.assertIn("fetch-depth: 0", release_audit)
 
     def test_required_summary_preserves_context_and_typed_skip_status(self) -> None:
@@ -132,7 +136,7 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )
 
         self.assertIn(
-            "validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)",
+            "validation_lanes.command_sequence_for_lane(lane_id)",
             release_check_text,
         )
         self.assertIn('"generated_check"', manifest_text)
