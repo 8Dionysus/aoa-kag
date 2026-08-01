@@ -9,10 +9,33 @@ from scripts.provider_registry import provider_dependency_pins
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
+COMPATIBILITY_WORKFLOW_PATH = (
+    REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
+)
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
 
 
 class RepoValidationWorkflowTests(unittest.TestCase):
+    def test_concurrency_cancels_only_superseded_runs_of_the_same_pr(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        workflow_header = workflow_text.split("jobs:\n", 1)[0]
+
+        self.assertIn("concurrency:\n", workflow_header)
+        self.assertIn("${{ github.workflow }}", workflow_header)
+        self.assertIn("github.event_name == 'pull_request'", workflow_header)
+        self.assertIn("github.event.pull_request.number", workflow_header)
+        self.assertIn(
+            "format('{0}-{1}', github.event_name, github.run_id)",
+            workflow_header,
+        )
+        self.assertIn(
+            "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+            workflow_header,
+        )
+
+        compatibility_text = COMPATIBILITY_WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("github.event.pull_request.number", compatibility_text)
+
     def test_source_fast_and_owner_family_are_always_in_the_required_local_job(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
