@@ -29,7 +29,7 @@ class RepoValidationWorkflowTests(unittest.TestCase):
             workflow_header,
         )
         self.assertIn(
-            "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+            "cancel-in-progress: true",
             workflow_header,
         )
 
