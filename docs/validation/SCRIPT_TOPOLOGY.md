@@ -119,6 +119,10 @@ builder also preserves canonical skill source versus generated host projection
 provenance instead of inferring authority from `.agents/skills/` placement, and
 rebuilds declared projections during incremental migration so old authority
 claims cannot survive an unchanged copied blob.
+The builder's owner-source reader captures one strict staged Git-index epoch,
+batch-loads unique blobs, and shares immutable path/mode/object/byte maps across
+source and structural builders. Missing or malformed Git state fails closed;
+the filesystem fallback is only for a non-Git source root.
 
 `scripts/validate_repo_local_kag_family.py` validates any owner repository's
 portable or legacy family against the common schemas, identities, anchors,
@@ -144,6 +148,10 @@ bundle for streaming runtime materializers.
 `scripts/generate_repo_local_kag_coverage.py` builds
 `generated/repo_local_kag_coverage.json` and the minified companion from live
 OS Abyss provider roots materialized from the pinned provider registry.
+Within each owner scan it reuses the same captured source epoch for source-index
+parity, logical-family reconstruction, counts, and profile derivation. Its
+run-scoped receipt includes owner wall/CPU/RSS and source-reader process, file,
+object, byte, and cache telemetry.
 
 The repo-local builders support `--check` for parity without writing files.
 

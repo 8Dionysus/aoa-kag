@@ -8,6 +8,7 @@ import copy
 import hashlib
 import json
 import os
+import resource
 import subprocess
 import sys
 import time
@@ -22,7 +23,9 @@ try:
     from scripts.generate_repo_local_kag_index import (
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
+        OwnerSourceSnapshot,
         REPOSITORY_INDEX_FILENAMES,
+        SourceSnapshotError,
         build_index,
         build_repository_indexes,
         classification_summary,
@@ -55,7 +58,9 @@ except ImportError:  # pragma: no cover - direct script execution
     from generate_repo_local_kag_index import (  # type: ignore
         EXCLUDED_PARTS,
         INDEX_SCHEMA_VERSION,
+        OwnerSourceSnapshot,
         REPOSITORY_INDEX_FILENAMES,
+        SourceSnapshotError,
         build_index,
         build_repository_indexes,
         classification_summary,
@@ -258,7 +263,11 @@ def direct_owner_roots(os_root: Path) -> list[Path]:
     return sorted({root.resolve() for root in roots}, key=lambda path: path.as_posix())
 
 
-def source_counts(owner_root: Path) -> dict[str, int]:
+def source_counts(
+    owner_root: Path,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> dict[str, int]:
     counts = {
         "documents": 0,
         "mechanics": 0,
@@ -269,7 +278,12 @@ def source_counts(owner_root: Path) -> dict[str, int]:
         "schemas": 0,
         "generated": 0,
     }
-    for rel in git_file_paths(owner_root):
+    paths = (
+        sorted(source_snapshot.entries)
+        if source_snapshot is not None
+        else git_file_paths(owner_root)
+    )
+    for rel in paths:
         if (EXCLUDED_PARTS | {".deps", "dist"}).intersection(rel.parts):
             continue
         if rel.suffix == ".md":
@@ -308,7 +322,13 @@ def configured_owner_roots() -> list[tuple[str, Path]]:
     return [(repo, KNOWN_REPO_ROOTS[repo].resolve()) for repo in PROVIDER_REPO_ORDER]
 
 
-def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> bool:
+def source_index_matches_owner(
+    owner_root: Path,
+    payload: dict[str, Any],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> bool:
+    source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(owner_root)
     repo = repo_name(owner_root)
     repo_payload = payload.get("repo")
     if not isinstance(repo_payload, dict) or repo_payload.get("name") != repo:
@@ -344,7 +364,7 @@ def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> boo
         return False
     expected_paths = {
         rel.as_posix()
-        for rel in git_file_paths(owner_root)
+        for rel in source_snapshot.entries
         if rel not in COMMON_GENERATED_INDEX_RELS
         and not is_portable_family_control_path(rel)
     }
@@ -357,8 +377,18 @@ def source_index_matches_owner(owner_root: Path, payload: dict[str, Any]) -> boo
             continue
         rel = Path(rel_path)
         try:
-            content = source_bytes(owner_root, rel, owner_root / rel)
-        except (FileNotFoundError, IsADirectoryError, subprocess.CalledProcessError):
+            content = source_bytes(
+                owner_root,
+                rel,
+                owner_root / rel,
+                source_snapshot=source_snapshot,
+            )
+        except (
+            FileNotFoundError,
+            IsADirectoryError,
+            subprocess.CalledProcessError,
+            SourceSnapshotError,
+        ):
             return False
         digest = sha256_bytes(content)
         if identity.get("content_hash") != digest:
@@ -546,6 +576,8 @@ def repository_event_history_ref(owner_root: Path) -> str | None:
 def repository_index_family_matches_owner(
     owner_root: Path,
     source_index: dict[str, Any],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> bool:
     history_ref = repository_event_history_ref(owner_root)
     expected = build_repository_indexes(
@@ -554,6 +586,7 @@ def repository_index_family_matches_owner(
         repo_root=owner_root,
         history_ref=history_ref,
         event_history_ref=history_ref,
+        source_snapshot=source_snapshot,
     )
     portable = _portable_bundle(owner_root)
     if portable is not None:
@@ -597,11 +630,27 @@ def repository_index_family_matches_owner(
     return True
 
 
-def _profile_payload(owner_root: Path, *, index_status: str) -> tuple[str, dict[str, Any]]:
+def _profile_payload(
+    owner_root: Path,
+    *,
+    index_status: str,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> tuple[str, dict[str, Any]]:
     payload = _source_index_payload(owner_root)
-    if payload is not None and (index_status == "passed" or source_index_matches_owner(owner_root, payload)):
+    if payload is not None and (
+        index_status == "passed"
+        or source_index_matches_owner(
+            owner_root,
+            payload,
+            source_snapshot=source_snapshot,
+        )
+    ):
         return "source_surface_index", payload
-    return "source_tree_scan", build_index(owner_root, output=SOURCE_SURFACE_INDEX_REL)
+    return "source_tree_scan", build_index(
+        owner_root,
+        output=SOURCE_SURFACE_INDEX_REL,
+        source_snapshot=source_snapshot,
+    )
 
 
 def _records_have_owner_commands(records: object) -> bool:
@@ -628,8 +677,13 @@ def common_surface_profile(
     owner_root: Path,
     *,
     index_status: str,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, Any]:
-    source, payload = _profile_payload(owner_root, index_status=index_status)
+    source, payload = _profile_payload(
+        owner_root,
+        index_status=index_status,
+        source_snapshot=source_snapshot,
+    )
     records = payload.get("records")
     if not isinstance(records, list):
         records = []
@@ -782,7 +836,12 @@ def owner_specific_provider_records_are_usable(owner_name: str, owner_root: Path
     return True
 
 
-def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[str, list[str]]:
+def index_status(
+    owner_root: Path,
+    *,
+    owner_name: str | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> tuple[str, list[str]]:
     owner_name = owner_name or owner_root.name
     indexes = owner_root / "kag" / "indexes"
     if not indexes.is_dir():
@@ -799,11 +858,19 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
         if (
             payload.get("schema_version") == INDEX_SCHEMA_VERSION
             and not errors
-            and source_index_matches_owner(owner_root, payload)
+            and source_index_matches_owner(
+                owner_root,
+                payload,
+                source_snapshot=source_snapshot,
+            )
         ):
             return (
                 "passed"
-                if repository_index_family_matches_owner(owner_root, payload)
+                if repository_index_family_matches_owner(
+                    owner_root,
+                    payload,
+                    source_snapshot=source_snapshot,
+                )
                 else "migration-needed",
                 relative_files,
             )
@@ -818,11 +885,19 @@ def index_status(owner_root: Path, *, owner_name: str | None = None) -> tuple[st
                 isinstance(payload, dict)
                 and payload.get("schema_version") == INDEX_SCHEMA_VERSION
                 and not errors
-                and source_index_matches_owner(owner_root, payload)
+                and source_index_matches_owner(
+                    owner_root,
+                    payload,
+                    source_snapshot=source_snapshot,
+                )
             ):
                 return (
                     "passed"
-                    if repository_index_family_matches_owner(owner_root, payload)
+                    if repository_index_family_matches_owner(
+                        owner_root,
+                        payload,
+                        source_snapshot=source_snapshot,
+                    )
                     else "migration-needed",
                     relative_files,
                 )
@@ -849,9 +924,15 @@ def build_coverage(
         coverage_progress(f"owners {len(roots)}")
     for index, (name, owner_root) in enumerate(roots, start=1):
         owner_started = time.perf_counter()
+        usage_before = resource.getrusage(resource.RUSAGE_SELF)
         if progress:
             coverage_progress(f"owner {index}/{len(roots)} {name}")
-        status, files = index_status(owner_root, owner_name=name)
+        source_snapshot = OwnerSourceSnapshot.capture(owner_root)
+        status, files = index_status(
+            owner_root,
+            owner_name=name,
+            source_snapshot=source_snapshot,
+        )
         family_storage, portable_family = portable_family_profile(
             owner_root,
             owner_name=name,
@@ -877,14 +958,19 @@ def build_coverage(
                 "domain_index_catalog_ref": (
                     DOMAIN_INDEX_CATALOG_REF if DOMAIN_INDEX_CATALOG_REF in files else ""
                 ),
-                "coverage": source_counts(owner_root),
+                "coverage": source_counts(
+                    owner_root,
+                    source_snapshot=source_snapshot,
+                ),
                 "common_surface_profile": common_surface_profile(
                     owner_root,
                     index_status=status,
+                    source_snapshot=source_snapshot,
                 ),
             }
         )
         if owner_timings is not None:
+            usage_after = resource.getrusage(resource.RUSAGE_SELF)
             owner_timings.append(
                 {
                     "owner": name,
@@ -892,6 +978,16 @@ def build_coverage(
                         0,
                         round((time.perf_counter() - owner_started) * 1000),
                     ),
+                    "cpu_user_ms": max(
+                        0,
+                        round((usage_after.ru_utime - usage_before.ru_utime) * 1000),
+                    ),
+                    "cpu_system_ms": max(
+                        0,
+                        round((usage_after.ru_stime - usage_before.ru_stime) * 1000),
+                    ),
+                    "process_peak_rss_kib": max(0, int(usage_after.ru_maxrss)),
+                    "source_snapshot": source_snapshot.telemetry(),
                 }
             )
     summary = {status: sum(1 for owner in owners if owner["index_status"] == status) for status in OWNER_STATUS}

@@ -44,6 +44,7 @@ Each inventory file entry names one or more `coverage_kinds`.
 | `docs/root-surface` | Root/docs routing, roadmap parity, and public KAG posture. | `README.md`, `ROADMAP.md`, `docs/`. |
 | `decision-lane` | Decision record metadata and generated lookup indexes. | `docs/decisions/`. |
 | `generated/read-model` | Generated KAG read models and downstream feed contracts. | repo-wide and part-local manifests/generated companions, builders, and `scripts/validate_kag.py`. |
+| `kag/owner-source-snapshot` | Exact staged-file and symlink bytes, batch object loading, immutable owner-scan reuse, telemetry, and fail-closed malformed or missing Git state. | `scripts/generate_repo_local_kag_index.py`, `scripts/generate_repo_local_kag_coverage.py`, and `scripts/coverage_run.py`. |
 | `kag/owner-result-review` | Source-pinned stack signer trust, receipt/result attestation, exact capture binding, output-path isolation, KAG schema grounding, source-index freshness, and authority stop-lines. | `scripts/review_kag_mcp_result.py`. |
 | `kag/source-home-preflight` | Local `/kag` source-home manifest, protocol topology, reserved surface map, source/projection provenance, and source-home evidence map. | `kag/`. |
 | `release/ci-impact` | Fail-closed impact classification, always-required local proof, and typed required-summary states. | `config/validation_lanes.json`, `scripts/impact_routing.py`, and `.github/workflows/repo-validation.yml`. |

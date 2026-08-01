@@ -199,6 +199,11 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
         for event in builds
         if isinstance(event.get("input_identity"), dict)
     ]
+    source_snapshots = [
+        timing["source_snapshot"]
+        for timing in owner_timings
+        if isinstance(timing.get("source_snapshot"), dict)
+    ]
     return {
         "schema_version": COVERAGE_RECEIPT_SCHEMA_VERSION,
         "run_scope_id": run.run_scope_id,
@@ -217,6 +222,44 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
         "identity_digests": identity_digests,
         "payload_digests": payload_digests,
         "input_identities": input_identities,
+        "owner_cpu_user_ms": sum(
+            int(timing.get("cpu_user_ms", 0))
+            for timing in owner_timings
+            if isinstance(timing.get("cpu_user_ms", 0), int)
+        ),
+        "owner_cpu_system_ms": sum(
+            int(timing.get("cpu_system_ms", 0))
+            for timing in owner_timings
+            if isinstance(timing.get("cpu_system_ms", 0), int)
+        ),
+        "process_peak_rss_kib": max(
+            (
+                int(timing.get("process_peak_rss_kib", 0))
+                for timing in owner_timings
+                if isinstance(timing.get("process_peak_rss_kib", 0), int)
+            ),
+            default=0,
+        ),
+        "source_snapshot_git_invocation_count": sum(
+            int(snapshot.get("git_invocation_count", 0))
+            for snapshot in source_snapshots
+            if isinstance(snapshot.get("git_invocation_count", 0), int)
+        ),
+        "source_snapshot_files_read_count": sum(
+            int(snapshot.get("files_read_count", 0))
+            for snapshot in source_snapshots
+            if isinstance(snapshot.get("files_read_count", 0), int)
+        ),
+        "source_snapshot_unique_object_count": sum(
+            int(snapshot.get("unique_object_count", 0))
+            for snapshot in source_snapshots
+            if isinstance(snapshot.get("unique_object_count", 0), int)
+        ),
+        "source_snapshot_bytes_read": sum(
+            int(snapshot.get("bytes_read", 0))
+            for snapshot in source_snapshots
+            if isinstance(snapshot.get("bytes_read", 0), int)
+        ),
         "owner_timings": owner_timings,
     }
 
