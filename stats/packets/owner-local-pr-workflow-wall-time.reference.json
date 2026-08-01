@@ -4,8 +4,8 @@
   "contract_version": "1.0.0",
   "measurement_id": "aoa-kag/owner-local-pr-workflow-wall-time",
   "writer_repo": "aoa-kag",
-  "observation_id": "aoa-kag:owner-local-pr-workflow-wall-time:workflow-41372d185b9ca250:sample-1",
-  "observed_at": "2026-08-01T09:23:52Z",
+  "observation_id": "aoa-kag:owner-local-pr-workflow-wall-time:workflow-41372d185b9ca250:sample-2",
+  "observed_at": "2026-08-01T09:29:12Z",
   "object_ref": {
     "kind": "github-repo-validation-owner-local-pr-run",
     "id": "github-actions:workflow:249937401:blob:41372d185b9ca250b110faf5421d975db8d0c805",
@@ -17,16 +17,16 @@
     "size": null
   },
   "sample": {
-    "size": 1,
-    "selection": "all eligible first-attempt PR runs observed for this workflow blob during the bounded 3-5 run measurement campaign"
+    "size": 2,
+    "selection": "the first three eligible first-attempt PR runs observed for this workflow blob during the bounded reference campaign"
   },
   "cohort": {
     "id": "workflow-blob:41372d185b9ca250b110faf5421d975db8d0c805"
   },
   "window": {
-    "id": "github-actions:runs:30693560083",
+    "id": "github-actions:runs:30693560083,30693734844",
     "start": "2026-08-01T09:20:34Z",
-    "end": "2026-08-01T09:23:52Z",
+    "end": "2026-08-01T09:29:12Z",
     "temporality": "interval"
   },
   "dimensions": {},
@@ -35,28 +35,32 @@
     "kind": "distribution",
     "unit": "s",
     "distribution": {
-      "count": 1,
-      "minimum": 198,
+      "count": 2,
+      "minimum": 188,
       "maximum": 198,
       "quantiles": [
         {
           "q": 0.5,
-          "value": 198
+          "value": 193
         }
       ]
     }
   },
   "uncertainty": {
     "status": "not_estimated",
-    "sample_size": 1,
+    "sample_size": 2,
     "method": "not_estimated",
-    "reason": "One admitted run is insufficient for an uncertainty estimate."
+    "reason": "Two admitted runs are insufficient for a stable uncertainty estimate."
   },
   "provenance": {
     "evidence_refs": [
       {
         "kind": "github-actions-run",
         "ref": "https://github.com/8Dionysus/aoa-kag/actions/runs/30693560083"
+      },
+      {
+        "kind": "github-actions-run",
+        "ref": "https://github.com/8Dionysus/aoa-kag/actions/runs/30693734844"
       },
       {
         "kind": "workflow-source",
@@ -82,7 +86,7 @@
   },
   "progress": {
     "state": "partial",
-    "completed": 1,
-    "total": 5
+    "completed": 2,
+    "total": 3
   }
 }

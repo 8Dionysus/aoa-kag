@@ -9,7 +9,7 @@ KAG source ownership or generated-evidence authority into the central organ.
 | Measurement | Question | Reference value |
 | --- | --- | --- |
 | `aoa-kag/repo-self-family-pass-ratio` | What fraction of inventoried owners pass the complete canonical repo-self index-family check? | `10 / 24` at source revision `6bb1f5770ca608b14ddec858011e5cf7cd6b14b1` |
-| `aoa-kag/owner-local-pr-workflow-wall-time` | What wall time do real hosted owner-local PR workflows require while both local proofs remain blocking? | `198 s` median, `n=1`, workflow blob `41372d185b9ca250b110faf5421d975db8d0c805` |
+| `aoa-kag/owner-local-pr-workflow-wall-time` | What wall time do real hosted owner-local PR workflows require while both local proofs remain blocking? | `193 s` median, `n=2`, workflow blob `41372d185b9ca250b110faf5421d975db8d0c805` |
 
 The reference packet is a census of the owner rows reported by
 `generated/repo_local_kag_coverage.min.json`. The coverage read model and its
