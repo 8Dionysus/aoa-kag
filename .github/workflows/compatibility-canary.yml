@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EIGHT_DIONYSUS_ROOT: ${{ github.workspace }}/.deps/8Dionysus
-      DIONYSUS_ROOT: ${{ github.workspace }}/.deps/Dionysus
-      ATM10_AGENT_ROOT: ${{ github.workspace }}/.deps/ATM10-Agent
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
       AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
@@ -57,20 +55,6 @@ jobs:
         with:
           repository: 8Dionysus/8Dionysus
           path: .deps/8Dionysus
-          fetch-depth: 0
-
-      - name: Checkout Dionysus
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/Dionysus
-          path: .deps/Dionysus
-          fetch-depth: 0
-
-      - name: Checkout ATM10-Agent
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/ATM10-Agent
-          path: .deps/ATM10-Agent
           fetch-depth: 0
 
       - name: Checkout aoa-memo

@@ -452,6 +452,44 @@ class KagGenerationTestCase(unittest.TestCase):
                     ],
                 },
                 {
+                    "repo": "Dionysus",
+                    "adoption_order": 13,
+                    "provider_status": "retired_reference",
+                    "candidate_source_surfaces": [
+                        "README.md",
+                        "seed-registry.yaml",
+                        "generated/seed_route_map.min.json",
+                        "seed_notes/README.md",
+                        "seed_staging/README.md",
+                    ],
+                    "owner_return_routes": [
+                        {
+                            "repo": "Dionysus",
+                            "surface": "README.md",
+                            "route_kind": "authored_meaning",
+                        }
+                    ],
+                },
+                {
+                    "repo": "ATM10-Agent",
+                    "adoption_order": 14,
+                    "provider_status": "source_preparation",
+                    "candidate_source_surfaces": [
+                        "README.md",
+                        "docs/RUNBOOK.md",
+                        "docs/SOURCE_OF_TRUTH.md",
+                        "src/kag/baseline.py",
+                        "src/kag/neo4j_backend.py",
+                    ],
+                    "owner_return_routes": [
+                        {
+                            "repo": "ATM10-Agent",
+                            "surface": "docs/RUNBOOK.md",
+                            "route_kind": "runtime",
+                        }
+                    ],
+                },
+                {
                     "repo": "aoa-models",
                     "adoption_order": 24,
                     "provider_status": "source_preparation",
@@ -474,8 +512,8 @@ class KagGenerationTestCase(unittest.TestCase):
         )
         self.assertNotIn("aoa-routing", {provider["repo"] for provider in payload["providers"]})
         self.assertNotIn("aoa-models", {provider["repo"] for provider in payload["providers"]})
-        self.assertEqual(1, payload["provider_status_counts"]["retired_reference"])
-        self.assertEqual(1, payload["provider_status_counts"]["source_preparation"])
+        self.assertEqual(2, payload["provider_status_counts"]["retired_reference"])
+        self.assertEqual(2, payload["provider_status_counts"]["source_preparation"])
         for provider in payload["providers"]:
             with self.subTest(repo=provider["repo"]):
                 self.assertEqual("provider_ready", provider["provider_status"])
