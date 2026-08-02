@@ -233,6 +233,9 @@ are not substituted for hosted evidence.
 | Final candidate root-test path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 3/3 while running 431 rather than 425 tests; median wall was 31.860 versus 32.747 s, saving 0.888 s or 2.71 percent; median RSS was 180,292 versus 191,344 KiB | corroborating mechanism evidence only; below the landing benefit gate |
 | Final candidate source-fast path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 2/3; median wall was 42.712 versus 45.211 s, saving 2.498 s or 5.53 percent; all six canonical lanes passed with zero systemd-observed swap | retain for the full OS-wide comparison, but do not land for source-fast benefit alone because the material-saving gate failed |
 | Global rollback testability | run the canonical test runner with `AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION=1` and separately with `AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` | the first attempts exposed two behavior-specific tests per flag that inherited the global override and asserted the opposite path; after isolating those test preconditions, both complete runners passed in 60.737 and 43.381 s with 0 B swap | retain the test isolation as part of the rollback contract; full OS-wide rollback paths remain required before landing |
+| Final candidate full OS-wide path | three interleaved local pairs, candidate `b3131a4b` versus control `6c6d94fe` | candidate won 3/3: 76.031/70.059/69.661 s versus 123.650/110.073/128.103 s; medians were 70.059 versus 123.650 s, saving 53.592 s or 43.34 percent; every run retained 21/21 owners, fused canonical fan-in, zero disagreement, and 0 B systemd swap | local benefit gate passed by percentage; exact hosted A/B remains mandatory |
+| Final candidate full rollback paths | full OS-wide candidate at `b3131a4b` with each global rollback flag | forced-cold passed in 99.204 s with accelerated payload evaluation still admitted; forced-Python passed in 180.303 s with 191 typed Python fallbacks; both retained 21/21 owners, zero disagreement, and 0 B swap | correctness and rollback gate passed locally; these are fallback proofs, not candidate latency samples |
+| Final hotspot attribution | parity benchmark over all 21 pinned owners | source-schema route saved 10.618 s across 21/21 cases; copy elision saved 4.963 s direct and 10.768 s on the prior double-copy helper path across 147/147 equal digests; schema-def cache saved 7.755 s across 149/149 cases | retained attribution evidence; full-path and hosted comparisons remain authoritative for benefit |
 | SCC convergence strategy | bounded local regeneration trials on the candidate branch | naive simultaneous/Jacobi regeneration did not converge within four passes plus confirmation; ordered staging of family, coverage/root outputs, then family regeneration reached a clean fixed point and passed final checks | retained mechanism evidence: model the cycle as one atomic ordered SCC node; workflow benefit and exact-head proof remain pending |
 | Fail-closed impact routing | PR 191 terminal hosted corpus plus classifier/summary negative corpus | three eligible owner-local workflows were 198/188/179 s (median 188 s), all kept both local proofs, correctly skipped the full audit, and passed the typed summary; unknown, invalid, empty, mixed, unprovable, and required-full skip cases are rejected by tests | retain the existing router; do not add a duplicate DAG classifier; separately reconfirm the post-PR-198 compatibility canary and do not claim paired causal saving |
 
@@ -272,17 +275,33 @@ now set their own precondition explicitly: cache-reuse tests disable the cold
 override, while accelerator-fallback-cause tests disable the blanket Python
 override. This does not hide or weaken either rollback path; the separate
 forced-path tests remain blocking, and the complete canonical test runner now
-passes under each global override. Full OS-wide forced-path validation is still
-pending.
+passes under each global override. At `b3131a4b`, forced-cold passed the
+complete fused path in 99.204 seconds and forced-Python passed in 180.303
+seconds with 191 typed fallbacks. Both retained all 21 owners, the canonical
+fan-in, zero disagreement, and zero systemd-observed swap.
+
+The final unprofiled full-path local comparison passed the material-benefit
+gate independently of the hotspot benchmark. Across three interleaved pairs,
+the candidate won 3/3 and reduced the median from 123.650 to 70.059 seconds,
+or 53.592 seconds and 43.34 percent. Median process CPU fell from 117.147 to
+65.573 seconds while self-observed peak RSS remained approximately 506 MiB.
+This is strong local evidence, not permission to land without hosted pairs.
+
+Resource-wave modelling also narrows the next scheduling experiment. Seven
+owners accounted for 64.0 percent of the profiled owner duration, while every
+sub-three-second owner together accounted for only 5.9 percent and source
+snapshot capture only 4.3 percent. Therefore idealized two-way partitioning is
+not a new hypothesis after the real hosted `workers=2` regression. The distinct
+remaining candidate is parallel provider checkout or object acquisition with
+serial semantic proof and deterministic canonical fan-in.
 
 The first post-`D-0032` cProfile of the fused OS-wide path took 327.898 seconds
 under profiling. It attributed 105.084 cumulative seconds to deep copies,
 57.385 seconds to 420 `payload_digest` calls, approximately 58.398 seconds to
 21 source-index schema checks, and 28.253 seconds to 155 schema meta-checks.
-Those figures are mechanism evidence for the three current code candidates;
-they are not benefit proof. The final exact candidate still requires repeated
-unprofiled full OS-wide pairs, forced-cold and forced-Python full-path checks,
-and hosted A/B.
+Those figures identified the three current code candidates. Exact local
+hotspot parity and three full-path pairs now corroborate them; hosted A/B and
+canonical postmerge proof remain outstanding.
 
 ## Related decisions
 
