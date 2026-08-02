@@ -230,6 +230,8 @@ are not substituted for hosted evidence.
 | Leading-local omission | one hosted candidate recorded by PR 197 | candidate lane 486.930 s versus main 455.497 s with higher CPU | negative but noisy single run; do not generalize to all same-run proof reuse |
 | Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
 | Digest copy elision, admitted source-schema routing, and exact-byte local schema-validator reuse | first exact local fused OS-wide pair, candidate `dc7d8a2f` versus control `6c6d94fe` | 85.851 versus 118.181 s, saving 32.330 s or 27.36 percent; candidate won 1/1, retained 21/21 owners, and reported zero fallback or disagreement | inconclusive: the pair predates the final cold-path commit, does not satisfy the two-win minimum, and is not hosted evidence |
+| Final candidate root-test path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 3/3 while running 431 rather than 425 tests; median wall was 31.860 versus 32.747 s, saving 0.888 s or 2.71 percent; median RSS was 180,292 versus 191,344 KiB | corroborating mechanism evidence only; below the landing benefit gate |
+| Final candidate source-fast path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 2/3; median wall was 42.712 versus 45.211 s, saving 2.498 s or 5.53 percent; all six canonical lanes passed with zero systemd-observed swap | retain for the full OS-wide comparison, but do not land for source-fast benefit alone because the material-saving gate failed |
 | SCC convergence strategy | bounded local regeneration trials on the candidate branch | naive simultaneous/Jacobi regeneration did not converge within four passes plus confirmation; ordered staging of family, coverage/root outputs, then family regeneration reached a clean fixed point and passed final checks | retained mechanism evidence: model the cycle as one atomic ordered SCC node; workflow benefit and exact-head proof remain pending |
 | Fail-closed impact routing | PR 191 terminal hosted corpus plus classifier/summary negative corpus | three eligible owner-local workflows were 198/188/179 s (median 188 s), all kept both local proofs, correctly skipped the full audit, and passed the typed summary; unknown, invalid, empty, mixed, unprovable, and required-full skip cases are rejected by tests | retain the existing router; do not add a duplicate DAG classifier; separately reconfirm the post-PR-198 compatibility canary and do not claim paired causal saving |
 
@@ -251,13 +253,24 @@ rejection confirmation, fallback, and disagreement. Unknown vocabulary or an
 engine version other than exactly `0.49.2` selects Python, and
 `AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` disables the accelerated path.
 
+The final candidate's source-fast decomposition confirms that its main expected
+benefit is not in the quick lane. Root discovery improved only 2.71 percent at
+the median and the complete source-fast command improved 5.53 percent, below
+the 15-percent or 60-second material-saving gate. The dominant candidate root
+modules remain repo-local index tests (12.742-second median), repository-index
+tests (5.744 seconds), local KAG validation tests (4.340 seconds), and MCP owner
+review tests (3.256 seconds). This evidence keeps source-fast as a required
+early-failure lane and avoids redesigning it around an effect too small for
+hosted variance.
+
 The first post-`D-0032` cProfile of the fused OS-wide path took 327.898 seconds
 under profiling. It attributed 105.084 cumulative seconds to deep copies,
 57.385 seconds to 420 `payload_digest` calls, approximately 58.398 seconds to
 21 source-index schema checks, and 28.253 seconds to 155 schema meta-checks.
 Those figures are mechanism evidence for the three current code candidates;
 they are not benefit proof. The final exact candidate still requires repeated
-unprofiled local pairs, forced-cold and forced-Python checks, and hosted A/B.
+unprofiled full OS-wide pairs, forced-cold and forced-Python full-path checks,
+and hosted A/B.
 
 ## Related decisions
 
