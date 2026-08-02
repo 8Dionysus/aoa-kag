@@ -177,70 +177,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout Tree-of-Sophia
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/Tree-of-Sophia
-          ref: d95a583272acb84dcb5b7e6896801f0364c7b234
-          path: .deps/Tree-of-Sophia
-          fetch-depth: 0
-
-      - name: Checkout Agents-of-Abyss
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/Agents-of-Abyss
-          ref: 66d86b04e685cf06b03a95a3f9c74e7c8d607740
-          path: .deps/Agents-of-Abyss
-          fetch-depth: 0
-
-      - name: Checkout 8Dionysus
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/8Dionysus
-          ref: aa67908a137a9c9631a439f266d32a8918c7213c
-          path: .deps/8Dionysus
-          fetch-depth: 0
-
-      - name: Checkout aoa-memo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-memo
-          ref: c7c83081b7db0a0e908f14888b7438b5ecdde3bf
-          path: .deps/aoa-memo
-          fetch-depth: 0
-
-      - name: Checkout aoa-playbooks
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-playbooks
-          ref: b72ca2d333bcdf516ed6656e34670fa93df88162
-          path: .deps/aoa-playbooks
-          fetch-depth: 0
-
-      - name: Checkout aoa-evals
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-evals
-          ref: 58bf49d374b008ef6625a9fd6893c61096777b4d
-          path: .deps/aoa-evals
-          fetch-depth: 0
-
-      - name: Checkout aoa-agents
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-agents
-          ref: 92dd79e6c79fef60faedf6b97f2c65ff89477d06
-          path: .deps/aoa-agents
-          fetch-depth: 0
-
-      - name: Checkout aoa-techniques
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-techniques
-          ref: 9a5222cc6a6b1fdc52b4df906f49dadfd0383c71
-          path: .deps/aoa-techniques
-          fetch-depth: 0
-
       - name: Checkout aoa-session-memory
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
@@ -251,93 +187,13 @@ jobs:
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
           persist-credentials: false
 
-      - name: Checkout aoa-sdk
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-sdk
-          ref: cbf225627f9f28d0470deb8a962ae12d1fe72375
-          path: .deps/aoa-sdk
-          fetch-depth: 0
-
-      - name: Checkout aoa-skills
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-skills
-          ref: 5929ad000ff06750ced1c806766138dc11e54e5a
-          path: .deps/aoa-skills
-          fetch-depth: 0
-
-      - name: Checkout aoa-stats
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-stats
-          ref: 5627c41efe9f766a4b3437da857060847cb4f0f1
-          path: .deps/aoa-stats
-          fetch-depth: 0
-
-      - name: Checkout abyss-stack
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/abyss-stack
-          ref: 017210fa2b9b4ba10fe7c3c00ee8d3e63b926298
-          path: .deps/abyss-stack
-          fetch-depth: 0
-
-      - name: Checkout abyss-machine
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/abyss-machine
-          ref: a70b7f3a029c2dc4e86aa7446e4a058aa9e2e83e
-          path: .deps/abyss-machine
-          fetch-depth: 0
-
-      - name: Checkout aoa-4pda-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-4pda-connector
-          ref: a273f71c6fcc30c34759b2ef1e2f08cd8fc6baa3
-          path: .deps/aoa-4pda-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-course-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-course-connector
-          ref: 5a5219ef027df029313fc527c71a8764cfbd193e
-          path: .deps/aoa-course-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-discord-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-discord-connector
-          ref: 2652b1d657cbe5a7888ac979cc07a8f9ec792887
-          path: .deps/aoa-discord-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-stackoverflow-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-stackoverflow-connector
-          ref: a239551bd629f59d32b59649eb308245be99c903
-          path: .deps/aoa-stackoverflow-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-telegram-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-telegram-connector
-          ref: 1d7e4157446839dc03f3ec80b687fdbb12dd8a22
-          path: .deps/aoa-telegram-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-xda-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-xda-connector
-          ref: 45dc97667c104f17b71fcd13978de5172e5c4c8d
-          path: .deps/aoa-xda-connector
-          fetch-depth: 0
+      - name: Checkout public providers in bounded parallel wave
+        env:
+          AOA_KAG_CHECKOUT_WORKERS: "3"
+        run: >-
+          python scripts/sync_provider_checkouts.py
+          --jobs "$AOA_KAG_CHECKOUT_WORKERS"
+          --exclude-secret-checkouts
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405

@@ -412,9 +412,9 @@
       "source_truth": ["manifests/provider_registry.json", "schemas/provider-registry.schema.json"],
       "reads": ["provider registry manifest and pinned provider git remotes"],
       "writes": [".deps/<provider>/"],
-      "side_effects": "materializes pinned provider checkouts and can run a command with CI-equivalent provider root env",
+      "side_effects": "materializes exact complete-history provider checkouts with bounded optional concurrency and secret-owned exclusion, and can run a command with CI-equivalent provider root env",
       "validation_lane": "release",
-      "ci_inclusion": "covered by provider checkout tests and script topology inventory",
+      "ci_inclusion": "full release audit uses a bounded public-provider checkout wave; covered by provider checkout, workflow, registry, and script topology tests",
       "test_target": "tests/test_sync_provider_checkouts.py",
       "disposition": "keep"
     },

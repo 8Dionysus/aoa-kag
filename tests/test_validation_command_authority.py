@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import ci_gate, coverage_run, release_check, validation_lanes
-from scripts.provider_registry import provider_ci_envs
+from scripts.provider_registry import provider_ci_envs, provider_entries
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -494,20 +494,24 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             expected_sibling_providers,
             set(CANARY_PROVIDER_ROOT_ENVS),
         )
-        self.assertEqual(
-            len(expected_sibling_providers),
-            release_audit.count("path: .deps/"),
-        )
+        self.assertEqual(1, release_audit.count("path: .deps/"))
+        self.assertIn("python scripts/sync_provider_checkouts.py", release_audit)
+        self.assertIn("--exclude-secret-checkouts", release_audit)
         self.assertEqual(
             len(expected_sibling_providers),
             canary.count("path: .deps/"),
         )
         for repo, env_name in CANARY_PROVIDER_ROOT_ENVS.items():
             with self.subTest(repo=repo):
+                entry = next(entry for entry in provider_entries() if entry["repo"] == repo)
                 self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", repo_validation)
                 self.assertIn(f"{env_name}: ${{{{ github.workspace }}}}/.deps/{repo}", canary)
-                self.assertIn(f"repository: 8Dionysus/{repo}", repo_validation)
-                self.assertIn(f"path: .deps/{repo}", repo_validation)
+                if entry.get("checkout_ssh_key_secret"):
+                    self.assertIn(f"repository: 8Dionysus/{repo}", release_audit)
+                    self.assertIn(f"path: .deps/{repo}", release_audit)
+                else:
+                    self.assertNotIn(f"repository: 8Dionysus/{repo}", release_audit)
+                    self.assertNotIn(f"path: .deps/{repo}", release_audit)
                 self.assertIn(f"repository: 8Dionysus/{repo}", canary)
                 self.assertIn(f"path: .deps/{repo}", canary)
 

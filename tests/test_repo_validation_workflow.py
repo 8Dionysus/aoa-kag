@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import unittest
 
-from scripts.provider_registry import provider_dependency_pins
+from scripts.provider_registry import provider_dependency_pins, provider_entries
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -121,6 +121,36 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )
         self.assertIn("fetch-depth: 0", release_audit)
         self.assertNotIn("fetch-depth: 1", release_audit)
+        self.assertNotIn("filter:", release_audit)
+
+    def test_full_audit_uses_bounded_manifest_owned_public_checkout(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        release_audit = workflow_text.split("  release_audit:\n", 1)[1].split(
+            "  required_summary:\n",
+            1,
+        )[0]
+
+        self.assertIn('AOA_KAG_CHECKOUT_WORKERS: "3"', release_audit)
+        self.assertIn("python scripts/sync_provider_checkouts.py", release_audit)
+        self.assertIn('--jobs "$AOA_KAG_CHECKOUT_WORKERS"', release_audit)
+        self.assertIn("--exclude-secret-checkouts", release_audit)
+        self.assertEqual(1, release_audit.count("          path: .deps/"))
+        self.assertIn("repository: 8Dionysus/aoa-session-memory", release_audit)
+        self.assertIn("ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}", release_audit)
+        self.assertIn("persist-credentials: false", release_audit)
+
+        public_entries = [
+            entry
+            for entry in provider_entries()
+            if entry.get("checkout_mode") == "pinned"
+            and not entry.get("checkout_ssh_key_secret")
+        ]
+        for entry in public_entries:
+            with self.subTest(repo=entry["repo"]):
+                self.assertNotIn(
+                    f"repository: {entry['github_repository']}",
+                    release_audit,
+                )
 
     def test_required_summary_preserves_context_and_typed_skip_status(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
@@ -172,12 +202,16 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         self.assertIn('"--check"', manifest_text)
         self.assertIn('"scripts/validate_decision_records.py"', manifest_text)
 
-    def test_repo_validation_uses_current_dependency_pins(self) -> None:
+    def test_workflows_route_current_dependency_pins_through_owned_surfaces(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
         for repo, pin in provider_dependency_pins().items():
             with self.subTest(repo=repo):
-                self.assertIn(pin, workflow_text)
+                entry = next(entry for entry in provider_entries() if entry["repo"] == repo)
+                if entry.get("checkout_ssh_key_secret"):
+                    self.assertIn(pin, workflow_text)
+                else:
+                    self.assertIn("python scripts/sync_provider_checkouts.py", workflow_text)
 
 
 if __name__ == "__main__":

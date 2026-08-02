@@ -213,9 +213,11 @@ The repo-local builders support `--check` for parity without writing files.
 surfaces, runs builders with `--check`, and runs validators directly from the
 `source-fast` lane.
 
-`scripts/sync_provider_checkouts.py` materializes pinned provider roots from
-`manifests/provider_registry.json` under `.deps/` and can run a command with the
-same provider-root environment used by repository validation.
+`scripts/sync_provider_checkouts.py` materializes exact, complete-history
+provider roots from `manifests/provider_registry.json` under `.deps/`, supports
+a bounded worker count, can leave secret-owned checkouts to their explicit
+credential route, and can run a command with the same provider-root environment
+used by repository validation. One worker is the sequential rollback posture.
 
 ## Generation Package
 
