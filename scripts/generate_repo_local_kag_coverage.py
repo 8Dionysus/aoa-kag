@@ -892,6 +892,29 @@ def owner_specific_provider_records_are_usable(owner_name: str, owner_root: Path
     return True
 
 
+def source_index_schema_matches(payload: object, *, label: str) -> bool:
+    try:
+        try:
+            from scripts.validators.common import ValidationError
+            from scripts.validators.repo_local_kag_index import (
+                repo_local_kag_validate_payload,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from validators.common import ValidationError  # type: ignore
+            from validators.repo_local_kag_index import (  # type: ignore
+                repo_local_kag_validate_payload,
+            )
+
+        repo_local_kag_validate_payload(
+            payload,
+            schema_path=INDEX_SCHEMA_PATH,
+            label=label,
+        )
+    except ValidationError:
+        return False
+    return True
+
+
 def index_status(
     owner_root: Path,
     *,
@@ -909,11 +932,12 @@ def index_status(
     portable = _portable_bundle(owner_root)
     if portable is not None:
         payload = portable[0]
-        schema = json.loads(INDEX_SCHEMA_PATH.read_text(encoding="utf-8"))
-        errors = list(Draft202012Validator(schema).iter_errors(payload))
         if (
             payload.get("schema_version") == INDEX_SCHEMA_VERSION
-            and not errors
+            and source_index_schema_matches(
+                payload,
+                label=f"{owner_name} coverage source index",
+            )
             and source_index_matches_owner(
                 owner_root,
                 payload,
@@ -935,12 +959,13 @@ def index_status(
     if source_index.is_file():
         try:
             payload = json.loads(source_index.read_text(encoding="utf-8"))
-            schema = json.loads(INDEX_SCHEMA_PATH.read_text(encoding="utf-8"))
-            errors = list(Draft202012Validator(schema).iter_errors(payload))
             if (
                 isinstance(payload, dict)
                 and payload.get("schema_version") == INDEX_SCHEMA_VERSION
-                and not errors
+                and source_index_schema_matches(
+                    payload,
+                    label=f"{owner_name} coverage source index",
+                )
                 and source_index_matches_owner(
                     owner_root,
                     payload,

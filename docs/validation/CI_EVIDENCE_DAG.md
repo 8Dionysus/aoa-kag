@@ -7,19 +7,61 @@ and experiment admission explicit so a faster run remains the same proof.
 
 ## Current baseline
 
-The current-main postmerge run observed on 2026-08-01 was
-[`30710043887`](https://github.com/8Dionysus/aoa-kag/actions/runs/30710043887):
+The current-main postmerge run after `AOA-KAG-D-0032`, observed on 2026-08-01,
+was [`30728022522`](https://github.com/8Dionysus/aoa-kag/actions/runs/30728022522)
+at exact commit `6c6d94fe7963da726f38dba11276fe8208643d33`:
 
-- source-fast job: 115 seconds;
-- full OS-wide job: 606 seconds;
-- provider checkout fan-in: approximately 121 seconds;
-- generated/release audit command: approximately 470 seconds;
-- run-scoped lane wall time inside that command: 468.809 seconds;
-- provider coverage build: 97.935 seconds over 21 owner scans, 63 Git
-  invocations, 17,403 files, and 142,487,357 source bytes;
-- the first and final local validations each cost approximately 21 seconds;
-- the six slowest provider homes account for approximately 57 percent of the
-  observed provider-home phase.
+- source-fast and owner-family job: 113 seconds, including 23 seconds across
+  its checkout steps, 20 seconds for the leading family check, and 59 seconds
+  for source-fast validation;
+- full OS-wide job: 374 seconds;
+- full provider checkout fan-in: 121 seconds;
+- generated/release audit command: 237 seconds;
+- run-scoped release-continuation lane wall time: 235.746 seconds;
+- provider coverage build: 100.718 seconds over all 21 configured owners;
+- OS-wide validation command: 197.160 seconds, with 195.257 seconds summed
+  across provider-home timings;
+- portable-family semantic validation: 33.631 seconds summed across the
+  release-continuation receipt;
+- the first and final local validations cost 10.851 and 10.656 seconds;
+- process peak RSS observed by the release receipt: 550,040 KiB;
+- the release receipt recorded 202 accelerated accepts, 23 Python shadow
+  confirmations, two typed `propertyNames` fallbacks, and zero disagreements.
+
+The same run's critical job span was 499 seconds and its three job runtimes
+summed to 491 seconds. The residual source job is not one opaque 113-second
+node: checkout steps consumed 23 seconds, the leading family action 20
+seconds, and source-fast validation 59 seconds. Inside that last step,
+`scripts/run_tests.py` consumed 45.561 seconds, of which the root `tests/`
+discovery occupied approximately 39.778 seconds; the 28 mechanics-part homes
+then completed in approximately 5.751 seconds. Local KAG validation added
+10.715 seconds. This makes the root test corpus, not broad mechanics-test
+parallelism, the first source-fast profiling target.
+
+The pre-acceleration postmerge run
+[`30710043887`](https://github.com/8Dionysus/aoa-kag/actions/runs/30710043887)
+remains the comparison point: source-fast was 115 seconds and the full job was
+606 seconds. The admitted evaluator therefore removed 232 seconds, or 38.3
+percent, from that full hosted job while source-fast remained effectively flat.
+
+Impact routing is already a real bounded saving, not a hypothetical DAG edge.
+PR 191 recorded three first-attempt hosted `owner-local` workflows at one exact
+workflow blob: 198, 188, and 179 seconds (median 188 seconds). Every sample kept
+source-fast and owner-family blocking, reported the OS-wide audit as
+`correctly-not-required`, and ended in the typed required summary. Those runs
+prove routed execution and its absolute cost; they are not a paired
+counterfactual against an otherwise identical full audit, so no causal saving
+is attributed to the difference from the current 499-second full critical
+span.
+
+The floating compatibility canary is supplementary drift detection, not proof
+that makes an owner-local skip valid. Its latest observed scheduled run,
+`30695223927`, failed at pre-fix commit `32a8b6f` because the retired `Dionysus`
+provider had no admitted manifest. `AOA-KAG-D-0031` and PR 198 removed that
+retired provider from the registry and both workflows at `ba780519`; current
+main contains that fix. A scheduled or manual exact-current-main canary has not
+yet reconfirmed the repair, so current hosted canary health remains pending
+rather than green by inference.
 
 These values are an orientation baseline, not a performance guarantee. Hosted
 comparisons must use current paired runs because runner placement and shared
@@ -107,6 +149,7 @@ hosted comparison evidence.
 | Checkout/history routing | avoid transferring blobs that the invoked provider proof does not read | retain complete commit history and exact pins; compare checkout plus real owner proof, missing-object fetches, storage, and fallback | `blob:none` rejected for time; `blob:limit=1m` storage-positive but wall-neutral, preserve for separate hosted comparison |
 | Provider validation algorithm | reduce cold scan/decode/build work without caching a verdict | same schemas, source bytes, family parity, coverage row, and final identity barrier | profile dominant providers and subphases |
 | SCC-aware bounded scheduling | overlap independent provider proofs or prefetch without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, cancellation and cold serial fallback | compare serial, resource-class waves, and narrow overlap |
+| Fail-closed impact routing | avoid the full OS-wide branch for positively admitted owner-local PR changes | source-fast and owner-family always block; mixed, unknown, malformed, empty, unprovable, non-PR, main, and manual inputs route full; required summary rejects an invalid skip | accepted by `AOA-KAG-D-0022`; hosted owner-local cost is measured, while exact-current canary health and a paired counterfactual remain open evidence |
 | Cross-run owner fragments | replace unchanged external-owner proof with admitted prior evidence | owner-admitted artifact class, trusted main producer, provenance, expiry/revocation, exact consumer gate, cold fallback | blocked by `AOA-KAG-D-0029`; preserve feasibility evidence |
 
 The earlier whole-provider `workers=2` experiment remains a valid negative data
@@ -138,12 +181,14 @@ The comparison sequence is:
 6. land only a reproducible material improvement with all blocking proofs
    intact, then verify the merged postmerge path.
 
-A candidate is material when it removes at least 30 seconds from the targeted
-full job or at least 5 percent from the targeted component median without a
-material cold-path or resource regression. A smaller result may still land if
-it removes billed hosted work at negligible complexity, but its rationale must
-be explicit. Failure, deferral, and inconclusive evidence stay recorded so a
-promising mechanism is neither forgotten nor repeatedly retried unchanged.
+A hosted candidate passes the benefit gate only when it wins at least two of
+three comparable pairs and removes at least 60 seconds or 15 percent from the
+targeted full-path median without a material cold-path or resource regression.
+A smaller result may still land only for a separately proven resource benefit,
+such as materially lower billed compute, storage, network, or RSS without a
+meaningful latency regression. Failure, deferral, and inconclusive evidence
+stay recorded so a promising mechanism is neither forgotten nor repeatedly
+retried unchanged.
 
 ## DAG efficiency answer
 
@@ -184,6 +229,15 @@ are not substituted for hosted evidence.
 | Whole provider sweep with two workers | local plus hosted experiment recorded by PR 185 | local improved 7.86 percent, hosted lane regressed from 938.768 to 990.153 s | reject that exact scheduler; retain narrower DAG scheduling candidates |
 | Leading-local omission | one hosted candidate recorded by PR 197 | candidate lane 486.930 s versus main 455.497 s with higher CPU | negative but noisy single run; do not generalize to all same-run proof reuse |
 | Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
+| Digest copy elision, admitted source-schema routing, and exact-byte local schema-validator reuse | first exact local fused OS-wide pair, candidate `dc7d8a2f` versus control `6c6d94fe` | 85.851 versus 118.181 s, saving 32.330 s or 27.36 percent; candidate won 1/1, retained 21/21 owners, and reported zero fallback or disagreement | inconclusive: the pair predates the final cold-path commit, does not satisfy the two-win minimum, and is not hosted evidence |
+| Final candidate root-test path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 3/3 while running 431 rather than 425 tests; median wall was 31.860 versus 32.747 s, saving 0.888 s or 2.71 percent; median RSS was 180,292 versus 191,344 KiB | corroborating mechanism evidence only; below the landing benefit gate |
+| Final candidate source-fast path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 2/3; median wall was 42.712 versus 45.211 s, saving 2.498 s or 5.53 percent; all six canonical lanes passed with zero systemd-observed swap | retain for the full OS-wide comparison, but do not land for source-fast benefit alone because the material-saving gate failed |
+| Global rollback testability | run the canonical test runner with `AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION=1` and separately with `AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` | the first attempts exposed two behavior-specific tests per flag that inherited the global override and asserted the opposite path; after isolating those test preconditions, both complete runners passed in 60.737 and 43.381 s with 0 B swap | retain the test isolation as part of the rollback contract; full OS-wide rollback paths remain required before landing |
+| Final candidate full OS-wide path | three interleaved local pairs, candidate `b3131a4b` versus control `6c6d94fe` | candidate won 3/3: 76.031/70.059/69.661 s versus 123.650/110.073/128.103 s; medians were 70.059 versus 123.650 s, saving 53.592 s or 43.34 percent; every run retained 21/21 owners, fused canonical fan-in, zero disagreement, and 0 B systemd swap | local benefit gate passed by percentage; exact hosted A/B remains mandatory |
+| Final candidate full rollback paths | full OS-wide candidate at `b3131a4b` with each global rollback flag | forced-cold passed in 99.204 s with accelerated payload evaluation still admitted; forced-Python passed in 180.303 s with 191 typed Python fallbacks; both retained 21/21 owners, zero disagreement, and 0 B swap | correctness and rollback gate passed locally; these are fallback proofs, not candidate latency samples |
+| Final hotspot attribution | parity benchmark over all 21 pinned owners | source-schema route saved 10.618 s across 21/21 cases; copy elision saved 4.963 s direct and 10.768 s on the prior double-copy helper path across 147/147 equal digests; schema-def cache saved 7.755 s across 149/149 cases | retained attribution evidence; full-path and hosted comparisons remain authoritative for benefit |
+| SCC convergence strategy | bounded local regeneration trials on the candidate branch | naive simultaneous/Jacobi regeneration did not converge within four passes plus confirmation; ordered staging of family, coverage/root outputs, then family regeneration reached a clean fixed point and passed final checks | retained mechanism evidence: model the cycle as one atomic ordered SCC node; workflow benefit and exact-head proof remain pending |
+| Fail-closed impact routing | PR 191 terminal hosted corpus plus classifier/summary negative corpus | three eligible owner-local workflows were 198/188/179 s (median 188 s), all kept both local proofs, correctly skipped the full audit, and passed the typed summary; unknown, invalid, empty, mixed, unprovable, and required-full skip cases are rejected by tests | retain the existing router; do not add a duplicate DAG classifier; separately reconfirm the post-PR-198 compatibility canary and do not claim paired causal saving |
 
 The exact same-run semantic proof prototype was fail-closed and passed its
 negative identity matrix, but its approximately 3--5 second local saving did
@@ -203,9 +257,56 @@ rejection confirmation, fallback, and disagreement. Unknown vocabulary or an
 engine version other than exactly `0.49.2` selects Python, and
 `AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` disables the accelerated path.
 
+The final candidate's source-fast decomposition confirms that its main expected
+benefit is not in the quick lane. Root discovery improved only 2.71 percent at
+the median and the complete source-fast command improved 5.53 percent, below
+the 15-percent or 60-second material-saving gate. The dominant candidate root
+modules remain repo-local index tests (12.742-second median), repository-index
+tests (5.744 seconds), local KAG validation tests (4.340 seconds), and MCP owner
+review tests (3.256 seconds). This evidence keeps source-fast as a required
+early-failure lane and avoids redesigning it around an effect too small for
+hosted variance.
+
+The rollback flags must also be usable around the complete test command, not
+only around a hand-picked validator call. The first global forced-cold and
+forced-Python source-fast attempts correctly changed runtime behavior but made
+two behavior-specific tests in each run assert the opposite route. Those tests
+now set their own precondition explicitly: cache-reuse tests disable the cold
+override, while accelerator-fallback-cause tests disable the blanket Python
+override. This does not hide or weaken either rollback path; the separate
+forced-path tests remain blocking, and the complete canonical test runner now
+passes under each global override. At `b3131a4b`, forced-cold passed the
+complete fused path in 99.204 seconds and forced-Python passed in 180.303
+seconds with 191 typed fallbacks. Both retained all 21 owners, the canonical
+fan-in, zero disagreement, and zero systemd-observed swap.
+
+The final unprofiled full-path local comparison passed the material-benefit
+gate independently of the hotspot benchmark. Across three interleaved pairs,
+the candidate won 3/3 and reduced the median from 123.650 to 70.059 seconds,
+or 53.592 seconds and 43.34 percent. Median process CPU fell from 117.147 to
+65.573 seconds while self-observed peak RSS remained approximately 506 MiB.
+This is strong local evidence, not permission to land without hosted pairs.
+
+Resource-wave modelling also narrows the next scheduling experiment. Seven
+owners accounted for 64.0 percent of the profiled owner duration, while every
+sub-three-second owner together accounted for only 5.9 percent and source
+snapshot capture only 4.3 percent. Therefore idealized two-way partitioning is
+not a new hypothesis after the real hosted `workers=2` regression. The distinct
+remaining candidate is parallel provider checkout or object acquisition with
+serial semantic proof and deterministic canonical fan-in.
+
+The first post-`D-0032` cProfile of the fused OS-wide path took 327.898 seconds
+under profiling. It attributed 105.084 cumulative seconds to deep copies,
+57.385 seconds to 420 `payload_digest` calls, approximately 58.398 seconds to
+21 source-index schema checks, and 28.253 seconds to 155 schema meta-checks.
+Those figures identified the three current code candidates. Exact local
+hotspot parity and three full-path pairs now corroborate them; hosted A/B and
+canonical postmerge proof remain outstanding.
+
 ## Related decisions
 
 - `AOA-KAG-D-0021`: run-scoped coverage proof reuse;
+- `AOA-KAG-D-0022`: additive fail-closed impact routing;
 - `AOA-KAG-D-0025`: exact same-run source-fast handoff;
 - `AOA-KAG-D-0027`: history-bounded source-fast donor checkouts;
 - `AOA-KAG-D-0028`: run-scoped provider coverage fusion;

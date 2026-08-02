@@ -1702,31 +1702,38 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             schema_path = Path(temp_dir) / "schema.json"
             schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
             repo_local_kag_validator._cached_repo_local_schema_validator.cache_clear()
-
-            repo_local_kag_validator.repo_local_kag_validate_payload(
-                {},
-                schema_path=schema_path,
-                label="demo",
-            )
-            repo_local_kag_validator.repo_local_kag_validate_payload(
-                {},
-                schema_path=schema_path,
-                label="demo",
-            )
-            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
-            self.assertEqual(1, cache_info.misses)
-            self.assertEqual(1, cache_info.hits)
-
-            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
-            with self.assertRaisesRegex(
-                repo_local_kag_validator.ValidationError,
-                "does not match schema",
+            with patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_COLD_SCHEMA_COMPILATION_ENV: "0"},
             ):
                 repo_local_kag_validator.repo_local_kag_validate_payload(
                     {},
                     schema_path=schema_path,
                     label="demo",
                 )
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(1, cache_info.misses)
+            self.assertEqual(1, cache_info.hits)
+
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            with patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_COLD_SCHEMA_COMPILATION_ENV: "0"},
+            ):
+                with self.assertRaisesRegex(
+                    repo_local_kag_validator.ValidationError,
+                    "does not match schema",
+                ):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
             changed_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
             self.assertEqual(2, changed_info.misses)
 
@@ -1892,7 +1899,10 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             schema_path = Path(temp_dir) / "schema.json"
             schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
             accelerator = SimpleNamespace(Draft202012Validator=Mock())
-            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "0"},
+            ), patch.object(
                 repo_local_kag_validator,
                 "jsonschema_rs",
                 accelerator,
@@ -1924,7 +1934,10 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 encoding="utf-8",
             )
             accelerator = SimpleNamespace(Draft202012Validator=Mock())
-            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "0"},
+            ), patch.object(
                 repo_local_kag_validator,
                 "jsonschema_rs",
                 accelerator,
@@ -2082,6 +2095,51 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(
             ["forced-python"],
             summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_coverage_source_schema_preserves_forced_python_rollback(self) -> None:
+        payload = load_json(EXAMPLE_PATH)
+        with coverage_run.coverage_run_scope(
+            lane="test",
+            force_new=True,
+        ) as run, patch.dict(
+            os.environ,
+            {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "1"},
+        ):
+            self.assertTrue(
+                coverage_generation.source_index_schema_matches(
+                    payload,
+                    label="coverage source index",
+                )
+            )
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["python_fallback_count"],
+        )
+        self.assertEqual(
+            ["forced-python"],
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_coverage_source_schema_converts_validation_failure_to_status(self) -> None:
+        with patch.object(
+            repo_local_kag_validator,
+            "repo_local_kag_validate_payload",
+            side_effect=repo_local_kag_validator.ValidationError("invalid source index"),
+        ) as validate:
+            self.assertFalse(
+                coverage_generation.source_index_schema_matches(
+                    {},
+                    label="coverage source index",
+                )
+            )
+
+        validate.assert_called_once_with(
+            {},
+            schema_path=coverage_generation.INDEX_SCHEMA_PATH,
+            label="coverage source index",
         )
 
     def test_coverage_validates_family_without_same_run_identity(self) -> None:

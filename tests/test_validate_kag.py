@@ -28,6 +28,64 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
+    def test_local_kag_schema_def_validator_is_reused_by_schema_identity(self) -> None:
+        payload = load_json(REPO_ROOT / "kag" / "manifest.json")
+        local_kag_subtree._cached_local_kag_schema_def_validator.cache_clear()
+        with patch.dict(
+            local_kag_subtree.os.environ,
+            {local_kag_subtree.FORCE_COLD_SCHEMA_COMPILATION_ENV: "0"},
+        ), patch.object(
+            local_kag_subtree,
+            "_build_local_kag_schema_def_validator",
+            wraps=local_kag_subtree._build_local_kag_schema_def_validator,
+        ) as build_validator:
+            for _ in range(2):
+                local_kag_subtree._validate_payload_against_schema_def(
+                    payload,
+                    def_name="localManifest",
+                    label="local manifest",
+                )
+
+        build_validator.assert_called_once()
+
+    def test_local_kag_schema_def_validator_has_forced_cold_path(self) -> None:
+        payload = load_json(REPO_ROOT / "kag" / "manifest.json")
+        with patch.dict(
+            local_kag_subtree.os.environ,
+            {local_kag_subtree.FORCE_COLD_SCHEMA_COMPILATION_ENV: "1"},
+        ), patch.object(
+            local_kag_subtree,
+            "_build_local_kag_schema_def_validator",
+            wraps=local_kag_subtree._build_local_kag_schema_def_validator,
+        ) as build_validator:
+            for _ in range(2):
+                local_kag_subtree._validate_payload_against_schema_def(
+                    payload,
+                    def_name="localManifest",
+                    label="local manifest",
+                )
+
+        self.assertEqual(2, build_validator.call_count)
+
+    def test_local_kag_schema_def_validator_preserves_non_object_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "local-kag-subtree.schema.json"
+            schema_path.write_text("[]\n", encoding="utf-8")
+            with patch.object(
+                local_kag_subtree,
+                "LOCAL_KAG_SUBTREE_SCHEMA_PATH",
+                schema_path,
+            ):
+                with self.assertRaisesRegex(
+                    local_kag_subtree.ValidationError,
+                    "local KAG subtree schema must be a JSON object",
+                ):
+                    local_kag_subtree._validate_payload_against_schema_def(
+                        {},
+                        def_name="localManifest",
+                        label="local manifest",
+                    )
+
     def test_local_kag_schemas_share_runtime_source_vocabulary(self) -> None:
         subtree_schema = load_json(validate_kag.LOCAL_KAG_SUBTREE_SCHEMA_PATH)
         provider_map_schema = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH)

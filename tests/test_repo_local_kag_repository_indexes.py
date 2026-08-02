@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+import hashlib
 import json
 import subprocess
 import sys
@@ -469,6 +471,29 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     source_index["index_identity"]["content_digest"],
                     payload["source_index"]["content_digest"],
                 )
+
+    def test_payload_digest_matches_deepcopy_reference_without_mutating_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            payload = build_index(root)
+
+        original = copy.deepcopy(payload)
+        digest_material = copy.deepcopy(payload)
+        digest_material["index_identity"]["content_digest"] = "0" * 64
+        expected = hashlib.sha256(
+            json.dumps(
+                digest_material,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+
+        self.assertEqual(expected, payload_digest(payload))
+        self.assertEqual(original, payload)
+        self.assertEqual(expected, repo_local_kag_index_digest_without_self(payload))
+        self.assertEqual(original, payload)
 
     def test_entity_and_artifact_indexes_cover_unknown_surfaces(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
