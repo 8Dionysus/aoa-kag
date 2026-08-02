@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from functools import lru_cache
 
 from .common import *
 from .schema_surfaces import validate_top_level_schema
@@ -148,10 +149,13 @@ def _validate_payload_against_local_kag_schema(payload: object, *, label: str) -
         fail(f"{label} does not match local KAG subtree schema{suffix}: {first.message}")
 
 
-def _validate_payload_against_schema_def(payload: object, *, def_name: str, label: str) -> None:
-    schema = read_json(LOCAL_KAG_SUBTREE_SCHEMA_PATH)
+def _build_local_kag_schema_def_validator(
+    schema_bytes: bytes,
+    def_name: str,
+) -> Draft202012Validator:
+    schema = json.loads(schema_bytes.decode("utf-8"))
     if not isinstance(schema, dict):
-        fail("local KAG subtree schema must be a JSON object")
+        raise ValueError("local KAG subtree schema must be a JSON object")
     wrapper = {
         "$schema": schema.get("$schema"),
         "$id": f"{schema.get('$id', 'local-kag-subtree')}.{def_name}.validator.json",
@@ -159,7 +163,27 @@ def _validate_payload_against_schema_def(payload: object, *, def_name: str, labe
         "$ref": f"#/$defs/{def_name}",
     }
     Draft202012Validator.check_schema(wrapper)
-    errors = sorted(Draft202012Validator(wrapper).iter_errors(payload), key=lambda error: list(error.path))
+    return Draft202012Validator(wrapper)
+
+
+@lru_cache(maxsize=16)
+def _cached_local_kag_schema_def_validator(
+    schema_bytes: bytes,
+    def_name: str,
+) -> Draft202012Validator:
+    return _build_local_kag_schema_def_validator(schema_bytes, def_name)
+
+
+def _validate_payload_against_schema_def(payload: object, *, def_name: str, label: str) -> None:
+    try:
+        schema_bytes = LOCAL_KAG_SUBTREE_SCHEMA_PATH.read_bytes()
+    except FileNotFoundError:
+        fail(f"missing required file: {display_path(LOCAL_KAG_SUBTREE_SCHEMA_PATH)}")
+    try:
+        validator = _cached_local_kag_schema_def_validator(schema_bytes, def_name)
+    except json.JSONDecodeError as exc:
+        fail(f"invalid JSON in {display_path(LOCAL_KAG_SUBTREE_SCHEMA_PATH)}: {exc}")
+    errors = sorted(validator.iter_errors(payload), key=lambda error: list(error.path))
     if errors:
         first = errors[0]
         path = format_schema_path(first.path)

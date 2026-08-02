@@ -28,6 +28,23 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
+    def test_local_kag_schema_def_validator_is_reused_by_schema_identity(self) -> None:
+        payload = load_json(REPO_ROOT / "kag" / "manifest.json")
+        local_kag_subtree._cached_local_kag_schema_def_validator.cache_clear()
+        with patch.object(
+            local_kag_subtree,
+            "_build_local_kag_schema_def_validator",
+            wraps=local_kag_subtree._build_local_kag_schema_def_validator,
+        ) as build_validator:
+            for _ in range(2):
+                local_kag_subtree._validate_payload_against_schema_def(
+                    payload,
+                    def_name="localManifest",
+                    label="local manifest",
+                )
+
+        build_validator.assert_called_once()
+
     def test_local_kag_schemas_share_runtime_source_vocabulary(self) -> None:
         subtree_schema = load_json(validate_kag.LOCAL_KAG_SUBTREE_SCHEMA_PATH)
         provider_map_schema = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH)
