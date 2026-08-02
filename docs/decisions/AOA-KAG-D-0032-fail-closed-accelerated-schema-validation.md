@@ -41,8 +41,8 @@ Admit exactly `jsonschema-rs==0.49.2` as an optional accelerated evaluator for
 repository-family payloads only when the complete schema uses the explicitly
 admitted vocabulary and local references. Python `jsonschema` remains the
 compatibility and fail-closed authority: the first valid instance for each
-exact engine-version, schema-byte, and payload-shape route is shadow-validated
-in Python; every accelerated rejection is confirmed in Python; and any
+exact engine-version and schema-byte identity is shadow-validated in Python;
+every accelerated rejection is confirmed in Python; and any
 missing or wrong engine version, unknown vocabulary, non-local reference,
 engine error, or disagreement executes the Python path.
 
