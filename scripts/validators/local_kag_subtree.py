@@ -19,6 +19,7 @@ except ImportError:  # pragma: no cover - direct script execution
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
+FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
 RETIRED_REFERENCE_REPOS = {"Dionysus", "aoa-routing"}
@@ -180,7 +181,11 @@ def _validate_payload_against_schema_def(payload: object, *, def_name: str, labe
     except FileNotFoundError:
         fail(f"missing required file: {display_path(LOCAL_KAG_SUBTREE_SCHEMA_PATH)}")
     try:
-        validator = _cached_local_kag_schema_def_validator(schema_bytes, def_name)
+        validator = (
+            _build_local_kag_schema_def_validator(schema_bytes, def_name)
+            if os.environ.get(FORCE_COLD_SCHEMA_COMPILATION_ENV) == "1"
+            else _cached_local_kag_schema_def_validator(schema_bytes, def_name)
+        )
     except json.JSONDecodeError as exc:
         fail(f"invalid JSON in {display_path(LOCAL_KAG_SUBTREE_SCHEMA_PATH)}: {exc}")
     errors = sorted(validator.iter_errors(payload), key=lambda error: list(error.path))
