@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import importlib.metadata
 import os
 import sys
@@ -439,7 +438,7 @@ def repo_local_kag_index_digest_without_self(payload: dict[str, object]) -> str:
     except ImportError:  # pragma: no cover
         from generate_repo_local_kag_index import payload_digest  # type: ignore
 
-    return payload_digest(copy.deepcopy(payload))
+    return payload_digest(payload)
 
 
 def validate_repo_local_kag_index_schema_surface() -> None:

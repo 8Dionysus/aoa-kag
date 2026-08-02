@@ -1963,8 +1963,13 @@ def classification_summary(records: Sequence[dict[str, Any]]) -> dict[str, dict[
 
 
 def payload_digest(payload: dict[str, Any]) -> str:
-    copy_payload = copy.deepcopy(payload)
-    copy_payload["index_identity"]["content_digest"] = ZERO_DIGEST
+    copy_payload = {
+        **payload,
+        "index_identity": {
+            **payload["index_identity"],
+            "content_digest": ZERO_DIGEST,
+        },
+    }
     encoded = json.dumps(copy_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
 
