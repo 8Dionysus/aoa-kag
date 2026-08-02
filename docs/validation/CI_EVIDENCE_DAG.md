@@ -7,19 +7,32 @@ and experiment admission explicit so a faster run remains the same proof.
 
 ## Current baseline
 
-The current-main postmerge run observed on 2026-08-01 was
-[`30710043887`](https://github.com/8Dionysus/aoa-kag/actions/runs/30710043887):
+The current-main postmerge run after `AOA-KAG-D-0032`, observed on 2026-08-01,
+was [`30728022522`](https://github.com/8Dionysus/aoa-kag/actions/runs/30728022522)
+at exact commit `6c6d94fe7963da726f38dba11276fe8208643d33`:
 
-- source-fast job: 115 seconds;
-- full OS-wide job: 606 seconds;
-- provider checkout fan-in: approximately 121 seconds;
-- generated/release audit command: approximately 470 seconds;
-- run-scoped lane wall time inside that command: 468.809 seconds;
-- provider coverage build: 97.935 seconds over 21 owner scans, 63 Git
-  invocations, 17,403 files, and 142,487,357 source bytes;
-- the first and final local validations each cost approximately 21 seconds;
-- the six slowest provider homes account for approximately 57 percent of the
-  observed provider-home phase.
+- source-fast and owner-family job: 113 seconds, including 23 seconds across
+  its checkout steps, 20 seconds for the leading family check, and 59 seconds
+  for source-fast validation;
+- full OS-wide job: 374 seconds;
+- full provider checkout fan-in: 121 seconds;
+- generated/release audit command: 237 seconds;
+- run-scoped release-continuation lane wall time: 235.746 seconds;
+- provider coverage build: 100.718 seconds over all 21 configured owners;
+- OS-wide validation command: 197.160 seconds, with 195.257 seconds summed
+  across provider-home timings;
+- portable-family semantic validation: 33.631 seconds summed across the
+  release-continuation receipt;
+- the first and final local validations cost 10.851 and 10.656 seconds;
+- process peak RSS observed by the release receipt: 550,040 KiB;
+- the release receipt recorded 202 accelerated accepts, 23 Python shadow
+  confirmations, two typed `propertyNames` fallbacks, and zero disagreements.
+
+The pre-acceleration postmerge run
+[`30710043887`](https://github.com/8Dionysus/aoa-kag/actions/runs/30710043887)
+remains the comparison point: source-fast was 115 seconds and the full job was
+606 seconds. The admitted evaluator therefore removed 232 seconds, or 38.3
+percent, from that full hosted job while source-fast remained effectively flat.
 
 These values are an orientation baseline, not a performance guarantee. Hosted
 comparisons must use current paired runs because runner placement and shared
@@ -138,12 +151,14 @@ The comparison sequence is:
 6. land only a reproducible material improvement with all blocking proofs
    intact, then verify the merged postmerge path.
 
-A candidate is material when it removes at least 30 seconds from the targeted
-full job or at least 5 percent from the targeted component median without a
-material cold-path or resource regression. A smaller result may still land if
-it removes billed hosted work at negligible complexity, but its rationale must
-be explicit. Failure, deferral, and inconclusive evidence stay recorded so a
-promising mechanism is neither forgotten nor repeatedly retried unchanged.
+A hosted candidate passes the benefit gate only when it wins at least two of
+three comparable pairs and removes at least 60 seconds or 15 percent from the
+targeted full-path median without a material cold-path or resource regression.
+A smaller result may still land only for a separately proven resource benefit,
+such as materially lower billed compute, storage, network, or RSS without a
+meaningful latency regression. Failure, deferral, and inconclusive evidence
+stay recorded so a promising mechanism is neither forgotten nor repeatedly
+retried unchanged.
 
 ## DAG efficiency answer
 
@@ -184,6 +199,8 @@ are not substituted for hosted evidence.
 | Whole provider sweep with two workers | local plus hosted experiment recorded by PR 185 | local improved 7.86 percent, hosted lane regressed from 938.768 to 990.153 s | reject that exact scheduler; retain narrower DAG scheduling candidates |
 | Leading-local omission | one hosted candidate recorded by PR 197 | candidate lane 486.930 s versus main 455.497 s with higher CPU | negative but noisy single run; do not generalize to all same-run proof reuse |
 | Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
+| Digest copy elision, admitted source-schema routing, and exact-byte local schema-validator reuse | first exact local fused OS-wide pair, candidate `dc7d8a2f` versus control `6c6d94fe` | 85.851 versus 118.181 s, saving 32.330 s or 27.36 percent; candidate won 1/1, retained 21/21 owners, and reported zero fallback or disagreement | inconclusive: the pair predates the final cold-path commit, does not satisfy the two-win minimum, and is not hosted evidence |
+| SCC convergence strategy | bounded local regeneration trials on the candidate branch | naive simultaneous/Jacobi regeneration did not converge within four passes plus confirmation; ordered staging of family, coverage/root outputs, then family regeneration reached a clean fixed point and passed final checks | retained mechanism evidence: model the cycle as one atomic ordered SCC node; workflow benefit and exact-head proof remain pending |
 
 The exact same-run semantic proof prototype was fail-closed and passed its
 negative identity matrix, but its approximately 3--5 second local saving did
@@ -202,6 +219,14 @@ execution mechanism. Python remains installed and authoritative for shadow,
 rejection confirmation, fallback, and disagreement. Unknown vocabulary or an
 engine version other than exactly `0.49.2` selects Python, and
 `AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` disables the accelerated path.
+
+The first post-`D-0032` cProfile of the fused OS-wide path took 327.898 seconds
+under profiling. It attributed 105.084 cumulative seconds to deep copies,
+57.385 seconds to 420 `payload_digest` calls, approximately 58.398 seconds to
+21 source-index schema checks, and 28.253 seconds to 155 schema meta-checks.
+Those figures are mechanism evidence for the three current code candidates;
+they are not benefit proof. The final exact candidate still requires repeated
+unprofiled local pairs, forced-cold and forced-Python checks, and hosted A/B.
 
 ## Related decisions
 

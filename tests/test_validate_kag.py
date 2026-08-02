@@ -64,6 +64,25 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertEqual(2, build_validator.call_count)
 
+    def test_local_kag_schema_def_validator_preserves_non_object_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "local-kag-subtree.schema.json"
+            schema_path.write_text("[]\n", encoding="utf-8")
+            with patch.object(
+                local_kag_subtree,
+                "LOCAL_KAG_SUBTREE_SCHEMA_PATH",
+                schema_path,
+            ):
+                with self.assertRaisesRegex(
+                    local_kag_subtree.ValidationError,
+                    "local KAG subtree schema must be a JSON object",
+                ):
+                    local_kag_subtree._validate_payload_against_schema_def(
+                        {},
+                        def_name="localManifest",
+                        label="local manifest",
+                    )
+
     def test_local_kag_schemas_share_runtime_source_vocabulary(self) -> None:
         subtree_schema = load_json(validate_kag.LOCAL_KAG_SUBTREE_SCHEMA_PATH)
         provider_map_schema = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH)

@@ -2084,6 +2084,51 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             summary["schema_validation_engine"]["reasons"],
         )
 
+    def test_coverage_source_schema_preserves_forced_python_rollback(self) -> None:
+        payload = load_json(EXAMPLE_PATH)
+        with coverage_run.coverage_run_scope(
+            lane="test",
+            force_new=True,
+        ) as run, patch.dict(
+            os.environ,
+            {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "1"},
+        ):
+            self.assertTrue(
+                coverage_generation.source_index_schema_matches(
+                    payload,
+                    label="coverage source index",
+                )
+            )
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["python_fallback_count"],
+        )
+        self.assertEqual(
+            ["forced-python"],
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_coverage_source_schema_converts_validation_failure_to_status(self) -> None:
+        with patch.object(
+            repo_local_kag_validator,
+            "repo_local_kag_validate_payload",
+            side_effect=repo_local_kag_validator.ValidationError("invalid source index"),
+        ) as validate:
+            self.assertFalse(
+                coverage_generation.source_index_schema_matches(
+                    {},
+                    label="coverage source index",
+                )
+            )
+
+        validate.assert_called_once_with(
+            {},
+            schema_path=coverage_generation.INDEX_SCHEMA_PATH,
+            label="coverage source index",
+        )
+
     def test_coverage_validates_family_without_same_run_identity(self) -> None:
         root = Path("/srv/AbyssOS/aoa-demo")
         source_index: dict[str, object] = {}

@@ -156,7 +156,7 @@ def _build_local_kag_schema_def_validator(
 ) -> Draft202012Validator:
     schema = json.loads(schema_bytes.decode("utf-8"))
     if not isinstance(schema, dict):
-        raise ValueError("local KAG subtree schema must be a JSON object")
+        fail("local KAG subtree schema must be a JSON object")
     wrapper = {
         "$schema": schema.get("$schema"),
         "$id": f"{schema.get('$id', 'local-kag-subtree')}.{def_name}.validator.json",
