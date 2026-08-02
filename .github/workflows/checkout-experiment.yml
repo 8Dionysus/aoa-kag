@@ -1,0 +1,285 @@
+name: Experimental Checkout A/B
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checkout-experiment-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  representative_checkout_proof:
+    name: ${{ matrix.mode }} checkout plus owner proof
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.head_ref == 'codex/kag-checkout-limit1m-20260802'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: full
+            filter: ''
+            strategy: actions-sequential
+          - mode: blob-limit-1m
+            filter: blob:limit=1m
+            strategy: actions-sequential
+          - mode: parallel-full
+            filter: ''
+            strategy: parallel-git
+    env:
+      CHECKOUT_MODE: ${{ matrix.mode }}
+      AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
+      TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+      ABYSS_STACK_ROOT: ${{ github.workspace }}/.deps/abyss-stack
+    steps:
+      - name: Checkout aoa-kag experiment code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 1
+
+      - name: Checkout Agents-of-Abyss
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/Agents-of-Abyss
+          ref: 66d86b04e685cf06b03a95a3f9c74e7c8d607740
+          path: .deps/Agents-of-Abyss
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout Tree-of-Sophia
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/Tree-of-Sophia
+          ref: d95a583272acb84dcb5b7e6896801f0364c7b234
+          path: .deps/Tree-of-Sophia
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout abyss-stack
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/abyss-stack
+          ref: 017210fa2b9b4ba10fe7c3c00ee8d3e63b926298
+          path: .deps/abyss-stack
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout representative providers in parallel
+        if: matrix.strategy == 'parallel-git'
+        run: |
+          python - <<'PY'
+          import concurrent.futures
+          import subprocess
+          from pathlib import Path
+
+          repositories = [
+              ('Agents-of-Abyss', '66d86b04e685cf06b03a95a3f9c74e7c8d607740'),
+              ('Tree-of-Sophia', 'd95a583272acb84dcb5b7e6896801f0364c7b234'),
+              ('abyss-stack', '017210fa2b9b4ba10fe7c3c00ee8d3e63b926298'),
+          ]
+
+          def checkout(item):
+              repository, pin = item
+              destination = Path('.deps') / repository
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              subprocess.run(['git', 'init', '--quiet', str(destination)], check=True)
+              subprocess.run(
+                  ['git', '-C', str(destination), 'remote', 'add', 'origin',
+                   f'https://github.com/8Dionysus/{repository}.git'],
+                  check=True,
+              )
+              subprocess.run(
+                  [
+                      'git', '-C', str(destination), '-c', 'protocol.version=2',
+                      'fetch', '--no-tags', '--prune', '--no-recurse-submodules',
+                      'origin', '+refs/heads/*:refs/remotes/origin/*',
+                      '+refs/tags/*:refs/tags/*',
+                  ],
+                  check=True,
+              )
+              subprocess.run(
+                  ['git', '-C', str(destination), 'checkout', '--quiet', '--detach', pin],
+                  check=True,
+              )
+              observed = subprocess.check_output(
+                  ['git', '-C', str(destination), 'rev-parse', 'HEAD'], text=True
+              ).strip()
+              if observed != pin:
+                  raise RuntimeError(f'{repository}: expected {pin}, observed {observed}')
+              return repository, observed
+
+          with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+              results = list(executor.map(checkout, repositories))
+          print('parallel exact full-history checkouts:', sorted(results))
+          PY
+
+      - name: Measure object stores before proof
+        env:
+          METRIC_PHASE: before-proof
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          roots = [
+              Path('.deps/Agents-of-Abyss'),
+              Path('.deps/Tree-of-Sophia'),
+              Path('.deps/abyss-stack'),
+          ]
+          rows = []
+          for root in roots:
+              git_dir = Path(subprocess.check_output(
+                  ['git', '-C', str(root), 'rev-parse', '--path-format=absolute', '--git-dir'],
+                  text=True,
+              ).strip())
+              object_dir = git_dir / 'objects'
+              object_bytes = sum(
+                  path.stat().st_size for path in object_dir.rglob('*') if path.is_file()
+              )
+              missing_output = subprocess.check_output(
+                  ['git', '-C', str(root), 'rev-list', '--objects', '--all', '--missing=print'],
+                  text=True,
+              )
+              rows.append({
+                  'repo': root.name,
+                  'head': subprocess.check_output(
+                      ['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True
+                  ).strip(),
+                  'object_bytes': object_bytes,
+                  'missing_promisor_objects': sum(
+                      line.startswith('?') for line in missing_output.splitlines()
+                  ),
+                  'partial_clone_filter': subprocess.run(
+                      ['git', '-C', str(root), 'config', '--get', 'remote.origin.partialclonefilter'],
+                      text=True,
+                      capture_output=True,
+                      check=False,
+                  ).stdout.strip() or None,
+              })
+          payload = {
+              'schema_version': 'aoa-kag-hosted-checkout-metrics-v1',
+              'mode': os.environ['CHECKOUT_MODE'],
+              'phase': os.environ['METRIC_PHASE'],
+              'repository_count': len(rows),
+              'object_bytes': sum(row['object_bytes'] for row in rows),
+              'missing_promisor_objects': sum(
+                  row['missing_promisor_objects'] for row in rows
+              ),
+              'repositories': rows,
+          }
+          print('[aoa-kag-hosted-checkout-metrics] ' + json.dumps(payload, sort_keys=True))
+          PY
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+
+      - name: Install validation dependencies
+        run: python -m pip install PyYAML jsonschema jsonschema-rs==0.49.2
+
+      - name: Run representative real owner proof
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from scripts.generate_repo_local_kag_coverage import _build_owner_coverage
+
+          roots = {
+              'Agents-of-Abyss': Path(os.environ['AGENTS_OF_ABYSS_ROOT']),
+              'Tree-of-Sophia': Path(os.environ['TREE_OF_SOPHIA_ROOT']),
+              'abyss-stack': Path(os.environ['ABYSS_STACK_ROOT']),
+          }
+          rows = []
+          for owner, root in roots.items():
+              payload, timing = _build_owner_coverage(owner, root, display_root=root)
+              if payload['index_status'] != 'passed':
+                  raise SystemExit(f'{owner}: index_status={payload["index_status"]!r}')
+              rows.append({
+                  'owner': owner,
+                  'index_status': payload['index_status'],
+                  'family_storage': payload['family_storage'],
+                  'portable_digest': payload['portable_family'].get('content_digest', ''),
+                  'timing': timing,
+              })
+          receipt = {
+              'schema_version': 'aoa-kag-hosted-checkout-proof-v1',
+              'mode': os.environ['CHECKOUT_MODE'],
+              'owner_count': len(rows),
+              'owners': rows,
+              'proof_wall_ms': sum(row['timing']['duration_ms'] for row in rows),
+          }
+          print('[aoa-kag-hosted-checkout-proof] ' + json.dumps(receipt, sort_keys=True))
+          PY
+
+      - name: Measure object stores after proof
+        env:
+          METRIC_PHASE: after-proof
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          roots = [
+              Path('.deps/Agents-of-Abyss'),
+              Path('.deps/Tree-of-Sophia'),
+              Path('.deps/abyss-stack'),
+          ]
+          rows = []
+          for root in roots:
+              git_dir = Path(subprocess.check_output(
+                  ['git', '-C', str(root), 'rev-parse', '--path-format=absolute', '--git-dir'],
+                  text=True,
+              ).strip())
+              object_dir = git_dir / 'objects'
+              object_bytes = sum(
+                  path.stat().st_size for path in object_dir.rglob('*') if path.is_file()
+              )
+              missing_output = subprocess.check_output(
+                  ['git', '-C', str(root), 'rev-list', '--objects', '--all', '--missing=print'],
+                  text=True,
+              )
+              rows.append({
+                  'repo': root.name,
+                  'head': subprocess.check_output(
+                      ['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True
+                  ).strip(),
+                  'object_bytes': object_bytes,
+                  'missing_promisor_objects': sum(
+                      line.startswith('?') for line in missing_output.splitlines()
+                  ),
+                  'partial_clone_filter': subprocess.run(
+                      ['git', '-C', str(root), 'config', '--get', 'remote.origin.partialclonefilter'],
+                      text=True,
+                      capture_output=True,
+                      check=False,
+                  ).stdout.strip() or None,
+              })
+          payload = {
+              'schema_version': 'aoa-kag-hosted-checkout-metrics-v1',
+              'mode': os.environ['CHECKOUT_MODE'],
+              'phase': os.environ['METRIC_PHASE'],
+              'repository_count': len(rows),
+              'object_bytes': sum(row['object_bytes'] for row in rows),
+              'missing_promisor_objects': sum(
+                  row['missing_promisor_objects'] for row in rows
+              ),
+              'repositories': rows,
+          }
+          print('[aoa-kag-hosted-checkout-metrics] ' + json.dumps(payload, sort_keys=True))
+          PY
