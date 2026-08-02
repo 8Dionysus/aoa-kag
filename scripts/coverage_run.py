@@ -437,6 +437,20 @@ def coverage_run_summary(run: CoverageRun) -> dict[str, Any]:
             "top_slowest_by_component_type": top_slowest_by_component_type,
         },
         "schema_validation_engine": {
+            "engines": sorted(
+                {
+                    f"{event['engine']}@{event.get('engine_version', 'unknown')}"
+                    for event in schema_engine_events
+                    if isinstance(event.get("engine"), str)
+                }
+            ),
+            "accelerator_versions": sorted(
+                {
+                    str(event["accelerator_version"])
+                    for event in schema_engine_events
+                    if isinstance(event.get("accelerator_version"), str)
+                }
+            ),
             "fast_accept_count": sum(
                 1
                 for event in schema_engine_events

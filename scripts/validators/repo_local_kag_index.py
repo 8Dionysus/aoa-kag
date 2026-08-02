@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import copy
+import importlib.metadata
 import os
 import sys
 from functools import lru_cache
+from typing import Any
 
 from .common import *
 from .schema_surfaces import validate_top_level_schema
@@ -55,7 +57,85 @@ DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
 _RUN_VALIDATED_PORTABLE_FAMILIES: set[tuple[str, str, str]] = set()
 FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
 FORCE_PYTHON_SCHEMA_VALIDATION_ENV = "AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION"
-_FAST_SCHEMA_SHADOWED_BYTES: set[bytes] = set()
+ADMITTED_JSONSCHEMA_RS_VERSION = "0.49.2"
+_FAST_SCHEMA_SHADOWED_IDENTITIES: set[tuple[str, bytes]] = set()
+_FAST_SCHEMA_KEYWORDS = frozenset(
+    {
+        "$defs",
+        "$id",
+        "$ref",
+        "$schema",
+        "additionalProperties",
+        "allOf",
+        "const",
+        "enum",
+        "if",
+        "items",
+        "maxItems",
+        "maximum",
+        "minItems",
+        "minLength",
+        "minProperties",
+        "minimum",
+        "not",
+        "oneOf",
+        "pattern",
+        "properties",
+        "required",
+        "then",
+        "title",
+        "type",
+        "uniqueItems",
+    }
+)
+_FAST_SCHEMA_MAP_KEYWORDS = frozenset({"$defs", "properties"})
+_FAST_SCHEMA_SINGLE_KEYWORDS = frozenset(
+    {"additionalProperties", "if", "items", "not", "then"}
+)
+_FAST_SCHEMA_LIST_KEYWORDS = frozenset({"allOf", "oneOf"})
+
+
+class _FastSchemaNotAdmitted(ValueError):
+    pass
+
+
+@lru_cache(maxsize=4)
+def _distribution_version(distribution: str) -> str:
+    try:
+        return importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return "unavailable"
+
+
+def _unsupported_fast_schema_features(schema: object) -> tuple[str, ...]:
+    unsupported: set[str] = set()
+
+    def visit(node: object) -> None:
+        if isinstance(node, bool):
+            return
+        if not isinstance(node, dict):
+            unsupported.add("non-schema-node")
+            return
+        unsupported.update(str(key) for key in node if key not in _FAST_SCHEMA_KEYWORDS)
+        reference = node.get("$ref")
+        if isinstance(reference, str) and not reference.startswith("#/"):
+            unsupported.add("non-local-$ref")
+        for keyword in _FAST_SCHEMA_MAP_KEYWORDS:
+            children = node.get(keyword)
+            if isinstance(children, dict):
+                for child in children.values():
+                    visit(child)
+        for keyword in _FAST_SCHEMA_SINGLE_KEYWORDS:
+            if keyword in node:
+                visit(node[keyword])
+        for keyword in _FAST_SCHEMA_LIST_KEYWORDS:
+            children = node.get(keyword)
+            if isinstance(children, list):
+                for child in children:
+                    visit(child)
+
+    visit(schema)
+    return tuple(sorted(unsupported))
 
 
 def _portable_family_validation_identity(
@@ -183,6 +263,9 @@ def _build_fast_repo_local_schema_validator(schema_bytes: bytes) -> object:
     schema = json.loads(schema_bytes.decode("utf-8"))
     if not isinstance(schema, dict):
         raise ValueError("schema must be a JSON object")
+    unsupported = _unsupported_fast_schema_features(schema)
+    if unsupported:
+        raise _FastSchemaNotAdmitted(",".join(unsupported))
     return jsonschema_rs.Draft202012Validator(
         schema,
         validate_formats=False,
@@ -198,12 +281,17 @@ def _record_schema_validation_engine_event(
     event: str,
     *,
     schema_path: Path,
+    engine: str,
     reason: str | None = None,
 ) -> None:
+    distribution = "jsonschema-rs" if engine == "jsonschema-rs" else "jsonschema"
     payload: dict[str, object] = {
         "event": event,
         "component_type": "schema-validation-engine",
         "component_id": schema_path.name,
+        "engine": engine,
+        "engine_version": _distribution_version(distribution),
+        "accelerator_version": _distribution_version("jsonschema-rs"),
     }
     if reason is not None:
         payload["reason"] = reason
@@ -219,6 +307,7 @@ def _fast_repo_local_schema_validator(
         _record_schema_validation_engine_event(
             "schema-validation-python-fallback",
             schema_path=schema_path,
+            engine="python-jsonschema",
             reason="forced-python",
         )
         return None
@@ -226,17 +315,36 @@ def _fast_repo_local_schema_validator(
         _record_schema_validation_engine_event(
             "schema-validation-python-fallback",
             schema_path=schema_path,
+            engine="python-jsonschema",
             reason="accelerator-unavailable",
+        )
+        return None
+    accelerator_version = _distribution_version("jsonschema-rs")
+    if accelerator_version != ADMITTED_JSONSCHEMA_RS_VERSION:
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason="accelerator-version-not-admitted",
         )
         return None
     try:
         if os.environ.get(FORCE_COLD_SCHEMA_COMPILATION_ENV) == "1":
             return _build_fast_repo_local_schema_validator(schema_bytes)
         return _cached_fast_repo_local_schema_validator(schema_bytes)
+    except _FastSchemaNotAdmitted as exc:
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason=f"schema-vocabulary-not-admitted:{exc}",
+        )
+        return None
     except Exception:  # Optional acceleration failure always returns to Python.
         _record_schema_validation_engine_event(
             "schema-validation-python-fallback",
             schema_path=schema_path,
+            engine="python-jsonschema",
             reason="accelerator-compile-error",
         )
         return None
@@ -245,7 +353,7 @@ def _fast_repo_local_schema_validator(
 def _python_schema_errors(
     validator: Draft202012Validator,
     payload: object,
-) -> list[object]:
+) -> list[Any]:
     return sorted(
         validator.iter_errors(payload),
         key=lambda error: list(error.path),
@@ -263,7 +371,7 @@ def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label
         schema_bytes=schema_bytes,
     )
     fast_rejected = False
-    errors: list[object] | None = None
+    errors: list[Any] | None = None
     if fast_validator is not None:
         try:
             fast_valid = bool(fast_validator.is_valid(payload))  # type: ignore[attr-defined]
@@ -271,30 +379,35 @@ def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label
             _record_schema_validation_engine_event(
                 "schema-validation-python-fallback",
                 schema_path=schema_path,
+                engine="python-jsonschema",
                 reason="accelerator-runtime-error",
             )
         else:
             if fast_valid:
-                if schema_bytes not in _FAST_SCHEMA_SHADOWED_BYTES:
+                shadow_identity = (ADMITTED_JSONSCHEMA_RS_VERSION, schema_bytes)
+                if shadow_identity not in _FAST_SCHEMA_SHADOWED_IDENTITIES:
                     shadow_errors = _python_schema_errors(validator, payload)
                     if shadow_errors:
                         _record_schema_validation_engine_event(
                             "schema-validation-engine-disagreement",
                             schema_path=schema_path,
+                            engine="python-jsonschema",
                             reason="accelerator-false-positive",
                         )
                         errors = shadow_errors
                     else:
-                        _FAST_SCHEMA_SHADOWED_BYTES.add(schema_bytes)
+                        _FAST_SCHEMA_SHADOWED_IDENTITIES.add(shadow_identity)
                         _record_schema_validation_engine_event(
                             "schema-validation-fast-shadow-confirmed",
                             schema_path=schema_path,
+                            engine="jsonschema-rs",
                         )
                         return
                 else:
                     _record_schema_validation_engine_event(
                         "schema-validation-fast-accept",
                         schema_path=schema_path,
+                        engine="jsonschema-rs",
                     )
                     return
             else:
@@ -302,6 +415,7 @@ def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label
                 _record_schema_validation_engine_event(
                     "schema-validation-fast-reject",
                     schema_path=schema_path,
+                    engine="jsonschema-rs",
                 )
     if errors is None:
         errors = _python_schema_errors(validator, payload)
@@ -309,6 +423,7 @@ def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label
         _record_schema_validation_engine_event(
             "schema-validation-engine-disagreement",
             schema_path=schema_path,
+            engine="python-jsonschema",
             reason="accelerator-false-negative",
         )
     if errors:

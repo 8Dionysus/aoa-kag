@@ -90,7 +90,7 @@ runs:
       run: |
         set -euo pipefail
         python3 -c "import jsonschema" || python3 -m pip install --disable-pip-version-check jsonschema
-        python3 -c "import jsonschema_rs" || python3 -m pip install --disable-pip-version-check jsonschema-rs==0.49.2
+        python3 -c "import importlib.metadata; assert importlib.metadata.version('jsonschema-rs') == '0.49.2'" || python3 -m pip install --disable-pip-version-check jsonschema-rs==0.49.2
     - name: Validate repo-local index family contract
       shell: bash
       working-directory: ${{ github.workspace }}

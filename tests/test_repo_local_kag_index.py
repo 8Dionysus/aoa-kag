@@ -41,6 +41,7 @@ from scripts.generate_repo_local_kag_index import (
     payload_digest,
     REPOSITORY_INDEX_FILENAMES,
 )
+from scripts.repo_local.portable_family import load_portable_family
 from scripts.validators import repo_local_kag_index as repo_local_kag_validator
 
 
@@ -1757,7 +1758,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             python_validator.iter_errors.return_value = []
             fast_validator = Mock()
             fast_validator.is_valid.return_value = True
-            repo_local_kag_validator._FAST_SCHEMA_SHADOWED_BYTES.clear()
+            repo_local_kag_validator._FAST_SCHEMA_SHADOWED_IDENTITIES.clear()
             with patch.object(
                 repo_local_kag_validator,
                 "_repo_local_schema_validator",
@@ -1826,6 +1827,232 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             "accelerator-false-negative",
             summary["schema_validation_engine"]["reasons"],
         )
+
+    def test_fast_schema_false_positive_preserves_python_rejection(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = True
+            repo_local_kag_validator._FAST_SCHEMA_SHADOWED_IDENTITIES.clear()
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                with self.assertRaisesRegex(
+                    repo_local_kag_validator.ValidationError,
+                    "does not match schema",
+                ):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+                summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["disagreement_count"],
+        )
+        self.assertIn(
+            "accelerator-false-positive",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_fast_schema_runtime_error_falls_back_to_python(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.side_effect = RuntimeError("probe failure")
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["python_fallback_count"],
+        )
+        self.assertIn(
+            "accelerator-runtime-error",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_fast_schema_unadmitted_version_falls_back_to_python(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            accelerator = SimpleNamespace(Draft202012Validator=Mock())
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "jsonschema_rs",
+                accelerator,
+            ), patch.object(
+                repo_local_kag_validator,
+                "_distribution_version",
+                side_effect=lambda distribution: (
+                    "0.49.1" if distribution == "jsonschema-rs" else "test"
+                ),
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        accelerator.Draft202012Validator.assert_not_called()
+        self.assertIn(
+            "accelerator-version-not-admitted",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_fast_schema_unknown_vocabulary_falls_back_to_python(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text(
+                '{"anyOf":[{"type":"object"}]}\n',
+                encoding="utf-8",
+            )
+            accelerator = SimpleNamespace(Draft202012Validator=Mock())
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "jsonschema_rs",
+                accelerator,
+            ), patch.object(
+                repo_local_kag_validator,
+                "_distribution_version",
+                side_effect=lambda distribution: (
+                    repo_local_kag_validator.ADMITTED_JSONSCHEMA_RS_VERSION
+                    if distribution == "jsonschema-rs"
+                    else "test"
+                ),
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        accelerator.Draft202012Validator.assert_not_called()
+        self.assertIn(
+            "schema-vocabulary-not-admitted:anyOf",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_current_repo_local_schema_vocabulary_is_fast_engine_admitted(self) -> None:
+        schema_paths = (
+            repo_local_kag_validator.REPO_LOCAL_KAG_INDEX_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH,
+        )
+        for schema_path in schema_paths:
+            with self.subTest(schema=schema_path.name):
+                self.assertEqual(
+                    (),
+                    repo_local_kag_validator._unsupported_fast_schema_features(
+                        load_json(schema_path)
+                    ),
+                )
+
+    @unittest.skipIf(
+        repo_local_kag_validator.jsonschema_rs is None,
+        "jsonschema-rs is not installed",
+    )
+    def test_admitted_fast_schema_engine_matches_python_on_current_corpus(self) -> None:
+        if (
+            repo_local_kag_validator._distribution_version("jsonschema-rs")
+            != repo_local_kag_validator.ADMITTED_JSONSCHEMA_RS_VERSION
+        ):
+            self.skipTest("installed jsonschema-rs version is not admitted")
+        source_payload, family, manifest = load_portable_family(REPO_ROOT)
+        cases = [
+            (
+                "source",
+                repo_local_kag_validator.REPO_LOCAL_KAG_INDEX_SCHEMA_PATH,
+                source_payload,
+            ),
+            *(
+                (
+                    f"repository-{index_kind}",
+                    repo_local_kag_validator.REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+                    payload,
+                )
+                for index_kind, payload in sorted(family.items())
+            ),
+            (
+                "family-manifest",
+                repo_local_kag_validator.REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+                manifest,
+            ),
+            (
+                "query-result",
+                repo_local_kag_validator.REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_QUERY_RESULT_EXAMPLE_PATH),
+            ),
+            (
+                "federation",
+                repo_local_kag_validator.REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_FEDERATION_EXAMPLE_PATH),
+            ),
+            (
+                "retrieval-plan",
+                repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_PLAN_EXAMPLE_PATH),
+            ),
+            (
+                "retrieval-bundle",
+                repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_EXAMPLE_PATH),
+            ),
+            (
+                "coverage",
+                repo_local_kag_validator.REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_COVERAGE_PATH),
+            ),
+        ]
+        for label, schema_path, payload in cases:
+            schema_bytes = schema_path.read_bytes()
+            schema = json.loads(schema_bytes)
+            assert isinstance(schema, dict)
+            assert isinstance(payload, dict)
+            required = schema["required"]
+            assert isinstance(required, list) and required
+            missing_required = dict(payload)
+            missing_required.pop(required[0], None)
+            unexpected_property = {**payload, "__schema_engine_parity_probe__": True}
+            probes = (
+                ("valid", payload, True),
+                ("null-root", None, False),
+                ("empty-root", {}, False),
+                ("missing-required", missing_required, False),
+                ("unexpected-property", unexpected_property, False),
+            )
+            python_validator = Draft202012Validator(schema)
+            fast_validator = repo_local_kag_validator._build_fast_repo_local_schema_validator(
+                schema_bytes
+            )
+            for probe, candidate, expected in probes:
+                with self.subTest(case=label, probe=probe):
+                    python_valid = python_validator.is_valid(candidate)
+                    fast_valid = bool(fast_validator.is_valid(candidate))
+                    self.assertEqual(expected, python_valid)
+                    self.assertEqual(python_valid, fast_valid)
 
     def test_force_python_schema_validation_is_exact_rollback(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
