@@ -232,6 +232,7 @@ are not substituted for hosted evidence.
 | Digest copy elision, admitted source-schema routing, and exact-byte local schema-validator reuse | first exact local fused OS-wide pair, candidate `dc7d8a2f` versus control `6c6d94fe` | 85.851 versus 118.181 s, saving 32.330 s or 27.36 percent; candidate won 1/1, retained 21/21 owners, and reported zero fallback or disagreement | inconclusive: the pair predates the final cold-path commit, does not satisfy the two-win minimum, and is not hosted evidence |
 | Final candidate root-test path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 3/3 while running 431 rather than 425 tests; median wall was 31.860 versus 32.747 s, saving 0.888 s or 2.71 percent; median RSS was 180,292 versus 191,344 KiB | corroborating mechanism evidence only; below the landing benefit gate |
 | Final candidate source-fast path | three interleaved local pairs, candidate `de61d446` versus control `6c6d94fe` | candidate won 2/3; median wall was 42.712 versus 45.211 s, saving 2.498 s or 5.53 percent; all six canonical lanes passed with zero systemd-observed swap | retain for the full OS-wide comparison, but do not land for source-fast benefit alone because the material-saving gate failed |
+| Global rollback testability | run the canonical test runner with `AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION=1` and separately with `AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` | the first attempts exposed two behavior-specific tests per flag that inherited the global override and asserted the opposite path; after isolating those test preconditions, both complete runners passed in 60.737 and 43.381 s with 0 B swap | retain the test isolation as part of the rollback contract; full OS-wide rollback paths remain required before landing |
 | SCC convergence strategy | bounded local regeneration trials on the candidate branch | naive simultaneous/Jacobi regeneration did not converge within four passes plus confirmation; ordered staging of family, coverage/root outputs, then family regeneration reached a clean fixed point and passed final checks | retained mechanism evidence: model the cycle as one atomic ordered SCC node; workflow benefit and exact-head proof remain pending |
 | Fail-closed impact routing | PR 191 terminal hosted corpus plus classifier/summary negative corpus | three eligible owner-local workflows were 198/188/179 s (median 188 s), all kept both local proofs, correctly skipped the full audit, and passed the typed summary; unknown, invalid, empty, mixed, unprovable, and required-full skip cases are rejected by tests | retain the existing router; do not add a duplicate DAG classifier; separately reconfirm the post-PR-198 compatibility canary and do not claim paired causal saving |
 
@@ -262,6 +263,17 @@ tests (5.744 seconds), local KAG validation tests (4.340 seconds), and MCP owner
 review tests (3.256 seconds). This evidence keeps source-fast as a required
 early-failure lane and avoids redesigning it around an effect too small for
 hosted variance.
+
+The rollback flags must also be usable around the complete test command, not
+only around a hand-picked validator call. The first global forced-cold and
+forced-Python source-fast attempts correctly changed runtime behavior but made
+two behavior-specific tests in each run assert the opposite route. Those tests
+now set their own precondition explicitly: cache-reuse tests disable the cold
+override, while accelerator-fallback-cause tests disable the blanket Python
+override. This does not hide or weaken either rollback path; the separate
+forced-path tests remain blocking, and the complete canonical test runner now
+passes under each global override. Full OS-wide forced-path validation is still
+pending.
 
 The first post-`D-0032` cProfile of the fused OS-wide path took 327.898 seconds
 under profiling. It attributed 105.084 cumulative seconds to deep copies,

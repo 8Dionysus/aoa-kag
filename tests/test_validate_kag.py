@@ -31,7 +31,10 @@ class ValidateKagTestCase(unittest.TestCase):
     def test_local_kag_schema_def_validator_is_reused_by_schema_identity(self) -> None:
         payload = load_json(REPO_ROOT / "kag" / "manifest.json")
         local_kag_subtree._cached_local_kag_schema_def_validator.cache_clear()
-        with patch.object(
+        with patch.dict(
+            local_kag_subtree.os.environ,
+            {local_kag_subtree.FORCE_COLD_SCHEMA_COMPILATION_ENV: "0"},
+        ), patch.object(
             local_kag_subtree,
             "_build_local_kag_schema_def_validator",
             wraps=local_kag_subtree._build_local_kag_schema_def_validator,
