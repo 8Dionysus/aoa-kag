@@ -188,6 +188,16 @@ Within each owner scan it reuses the same captured source epoch for source-index
 parity, logical-family reconstruction, counts, and profile derivation. Its
 run-scoped receipt includes owner wall/CPU/RSS and source-reader process, file,
 object, byte, and cache telemetry.
+`scripts/coverage_run.py` also accepts additive typed timings from canonical
+commands, provider-home proofs, and root repo-local index phases. These records
+are observability only: publication degradation is visible but cannot alter the
+blocking proof verdict. `docs/validation/CI_EVIDENCE_DAG.md` owns their
+dependency-graph and comparison interpretation.
+
+`scripts/validators/repo_local_kag_index.py` compiles a repository-family JSON
+Schema once per byte-identical schema input inside a process. This reuses schema
+parse/meta-validation only; payload validation and semantic relations remain
+per-owner blocking work.
 The validator and coverage builder may share only the current process-local,
 run-scoped decoded portable family, bound to the resolved owner root and exact
 family digest. Immediately after provider-home success, coverage builds one

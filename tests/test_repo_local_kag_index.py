@@ -1696,6 +1696,59 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(1, metrics.family_validation_cache_hits)
         self.assertEqual(0, metrics.family_validation_cache_misses)
 
+    def test_repo_local_schema_compilation_reuses_only_exact_schema_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            repo_local_kag_validator._cached_repo_local_schema_validator.cache_clear()
+
+            repo_local_kag_validator.repo_local_kag_validate_payload(
+                {},
+                schema_path=schema_path,
+                label="demo",
+            )
+            repo_local_kag_validator.repo_local_kag_validate_payload(
+                {},
+                schema_path=schema_path,
+                label="demo",
+            )
+            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(1, cache_info.misses)
+            self.assertEqual(1, cache_info.hits)
+
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            with self.assertRaisesRegex(
+                repo_local_kag_validator.ValidationError,
+                "does not match schema",
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+            changed_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(2, changed_info.misses)
+
+    def test_force_cold_schema_compilation_bypasses_same_process_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            repo_local_kag_validator._cached_repo_local_schema_validator.cache_clear()
+            with patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_COLD_SCHEMA_COMPILATION_ENV: "1"},
+            ):
+                for _ in range(2):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+
+            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(0, cache_info.misses)
+            self.assertEqual(0, cache_info.hits)
+
     def test_coverage_validates_family_without_same_run_identity(self) -> None:
         root = Path("/srv/AbyssOS/aoa-demo")
         source_index: dict[str, object] = {}
@@ -2353,6 +2406,77 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(2048, summary["source_snapshot_bytes_read"])
         self.assertEqual(1, summary["family_validation_cache_hit_count"])
         self.assertEqual(0, summary["family_validation_cache_miss_count"])
+
+    def test_validation_timing_is_typed_and_additive_to_coverage_receipt(self) -> None:
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with coverage_run.validation_timing(
+                component_type="provider-home",
+                component_id="aoa-demo",
+                details={"repo_root": "/tmp/aoa-demo"},
+            ):
+                pass
+            summary = coverage_run.coverage_run_summary(run)
+
+        telemetry = summary["validation_telemetry"]
+        self.assertEqual(
+            coverage_run.VALIDATION_TIMING_SCHEMA_VERSION,
+            telemetry["schema_version"],
+        )
+        self.assertEqual(1, telemetry["timing_count"])
+        self.assertEqual(0, telemetry["failed_timing_count"])
+        self.assertEqual(
+            telemetry["timings"][0]["duration_ms"],
+            telemetry["wall_ms_by_component_type"]["provider-home"],
+        )
+        self.assertEqual("aoa-demo", telemetry["timings"][0]["component_id"])
+        self.assertEqual(
+            {"repo_root": "/tmp/aoa-demo"},
+            telemetry["timings"][0]["details"],
+        )
+        self.assertEqual(
+            [
+                {
+                    "component_id": "aoa-demo",
+                    "duration_ms": telemetry["timings"][0]["duration_ms"],
+                    "status": "passed",
+                }
+            ],
+            telemetry["top_slowest_by_component_type"]["provider-home"],
+        )
+
+    def test_failed_validation_timing_preserves_failure_and_records_status(self) -> None:
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with self.assertRaisesRegex(RuntimeError, "proof failed"):
+                with coverage_run.validation_timing(
+                    component_type="repo-local-index-phase",
+                    component_id="semantic-validation",
+                ):
+                    raise RuntimeError("proof failed")
+            summary = coverage_run.coverage_run_summary(run)
+
+        telemetry = summary["validation_telemetry"]
+        self.assertEqual(1, telemetry["failed_timing_count"])
+        self.assertEqual("failed", telemetry["timings"][0]["status"])
+
+    def test_validation_telemetry_publication_failure_is_degraded(self) -> None:
+        stderr = io.StringIO()
+        with patch.object(
+            coverage_run,
+            "record_coverage_event",
+            side_effect=OSError("receipt unavailable"),
+        ), redirect_stderr(stderr):
+            coverage_run.record_validation_timing(
+                component_type="provider-home",
+                component_id="aoa-demo",
+                duration_ms=1,
+                cpu_user_ms=1,
+                cpu_system_ms=0,
+                process_peak_rss_kib=1024,
+                status="passed",
+            )
+
+        self.assertIn("[aoa-kag-validation-telemetry-degraded]", stderr.getvalue())
+        self.assertIn("receipt unavailable", stderr.getvalue())
 
     def test_coverage_run_receipt_appends_bounded_github_step_summary(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

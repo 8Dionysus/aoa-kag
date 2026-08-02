@@ -83,6 +83,20 @@ Each owner timing also reports user/system CPU, process peak RSS, and the
 owner-source snapshot backend, capture wall time, Git invocation count, tracked
 and content-read file counts, unique object count, bytes read, and in-process
 read-cache hits/misses. These are execution telemetry, not proof results.
+The same receipt carries additive `aoa-kag-validation-timing-v1` records for
+canonical commands, provider-home proofs, and root repo-local index phases.
+Each record includes pass/fail status, wall and CPU time, a peak-RSS
+observation, and bounded component identity. Telemetry publication failure is
+reported as degraded and never changes a validation verdict. The dependency
+and experiment interpretation of these records is documented in
+`docs/validation/CI_EVIDENCE_DAG.md`.
+
+Repository-family payload validation may reuse a compiled JSON Schema
+validator only for byte-identical schema content inside the same Python
+process. Every owner payload and semantic cross-reference assertion remains
+blocking, and changed schema bytes compile and meta-validate as a new input.
+`AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION=1` disables this reuse for comparison
+or rollback.
 During one OS-wide process, provider-home validation may pass the exact decoded
 portable family forward only for the current owner. Coverage still proves
 complete rebuilt-family equality and source parity; it removes the second

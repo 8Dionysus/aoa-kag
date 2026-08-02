@@ -5,17 +5,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import resource
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Sequence
 
 try:  # Supports both ``python scripts/ci_gate.py`` and package-style imports.
     from scripts import validation_lanes
-    from scripts.coverage_run import coverage_run_scope
+    from scripts.coverage_run import coverage_run_scope, record_validation_timing
 except ImportError:  # pragma: no cover - exercised by direct script execution
     import validation_lanes  # type: ignore
-    from coverage_run import coverage_run_scope  # type: ignore
+    from coverage_run import coverage_run_scope, record_validation_timing  # type: ignore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -29,18 +31,71 @@ def resolve_command(command: Sequence[str]) -> tuple[str, ...]:
 
 def run_command(command: Sequence[str], repo_root: Path = REPO_ROOT) -> None:
     print(f"[ci-gate] {' '.join(command)}", flush=True)
-    subprocess.run(resolve_command(command), cwd=repo_root, check=True)
+    started = time.perf_counter()
+    before = resource.getrusage(resource.RUSAGE_CHILDREN)
+    status = "passed"
+    return_code: int | None = None
+    try:
+        result = subprocess.run(resolve_command(command), cwd=repo_root, check=True)
+        return_code = result.returncode
+    except BaseException as exc:
+        status = "failed"
+        return_code = getattr(exc, "returncode", None)
+        raise
+    finally:
+        after = resource.getrusage(resource.RUSAGE_CHILDREN)
+        details: dict[str, object] = {"command": list(command)}
+        if isinstance(return_code, int):
+            details["return_code"] = return_code
+        record_validation_timing(
+            component_type="validation-command",
+            component_id=" ".join(command),
+            duration_ms=round((time.perf_counter() - started) * 1000),
+            cpu_user_ms=round((after.ru_utime - before.ru_utime) * 1000),
+            cpu_system_ms=round((after.ru_stime - before.ru_stime) * 1000),
+            process_peak_rss_kib=round(after.ru_maxrss),
+            status=status,
+            details=details,
+        )
 
 
 def capture_command_output(command: Sequence[str], repo_root: Path = REPO_ROOT) -> str:
-    result = subprocess.run(
-        resolve_command(command),
-        cwd=repo_root,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout
+    started = time.perf_counter()
+    before = resource.getrusage(resource.RUSAGE_CHILDREN)
+    status = "passed"
+    return_code: int | None = None
+    try:
+        result = subprocess.run(
+            resolve_command(command),
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return_code = result.returncode
+        return result.stdout
+    except BaseException as exc:
+        status = "failed"
+        return_code = getattr(exc, "returncode", None)
+        raise
+    finally:
+        after = resource.getrusage(resource.RUSAGE_CHILDREN)
+        details: dict[str, object] = {
+            "command": list(command),
+            "captured_output": True,
+        }
+        if isinstance(return_code, int):
+            details["return_code"] = return_code
+        record_validation_timing(
+            component_type="validation-command",
+            component_id=" ".join(command),
+            duration_ms=round((time.perf_counter() - started) * 1000),
+            cpu_user_ms=round((after.ru_utime - before.ru_utime) * 1000),
+            cpu_system_ms=round((after.ru_stime - before.ru_stime) * 1000),
+            process_peak_rss_kib=round(after.ru_maxrss),
+            status=status,
+            details=details,
+        )
 
 
 def run_sequence(commands: Sequence[Sequence[str]]) -> None:

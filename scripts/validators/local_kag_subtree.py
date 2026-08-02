@@ -10,6 +10,11 @@ try:
 except ImportError:  # pragma: no cover - direct script execution
     from provider_registry import configured_provider_roots, provider_roots  # type: ignore
 
+try:
+    from scripts.coverage_run import validation_timing
+except ImportError:  # pragma: no cover - direct script execution
+    from coverage_run import validation_timing  # type: ignore
+
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
@@ -760,7 +765,12 @@ def _validate_provider_ready_surfaces(
         repo_root = PROVIDER_REPO_ROOTS.get(repo, REPO_ROOT.parent / repo)
         if repo == KAG_REPO or repo_root.exists():
             _local_kag_phase(f"provider-home {repo}", progress=progress)
-            _validate_provider_home(repo, repo_root)
+            with validation_timing(
+                component_type="provider-home",
+                component_id=repo,
+                details={"repo_root": repo_root.as_posix()},
+            ):
+                _validate_provider_home(repo, repo_root)
 
 
 def validate_local_kag_subtree_contract_with_progress() -> None:
