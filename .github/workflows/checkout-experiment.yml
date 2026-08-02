@@ -12,13 +12,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  representative_checkout_proof:
-    name: ${{ matrix.mode }} checkout plus owner proof
+  all_provider_checkout_proof:
+    name: ${{ matrix.mode }} checkout plus full release proof
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.head_ref == 'codex/kag-checkout-limit1m-20260802'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -34,9 +34,28 @@ jobs:
             strategy: parallel-git
     env:
       CHECKOUT_MODE: ${{ matrix.mode }}
+      AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
+      AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
+      AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
       AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
       TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+      AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
+      AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+      EIGHT_DIONYSUS_ROOT: ${{ github.workspace }}/.deps/8Dionysus
+      AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
+      AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
+      AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
       ABYSS_STACK_ROOT: ${{ github.workspace }}/.deps/abyss-stack
+      ABYSS_MACHINE_REPO_ROOT: ${{ github.workspace }}/.deps/abyss-machine
+      AOA_SESSION_MEMORY_ROOT: ${{ github.workspace }}/.deps/aoa-session-memory
+      AOA_4PDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-4pda-connector
+      AOA_COURSE_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-course-connector
+      AOA_DISCORD_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-discord-connector
+      AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
+      AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
+      AOA_XDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-xda-connector
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
     steps:
       - name: Checkout aoa-kag experiment code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -73,7 +92,178 @@ jobs:
           fetch-depth: 0
           filter: ${{ matrix.filter }}
 
-      - name: Checkout representative providers in parallel
+      - name: Checkout 8Dionysus
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/8Dionysus
+          ref: aa67908a137a9c9631a439f266d32a8918c7213c
+          path: .deps/8Dionysus
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-memo
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-memo
+          ref: c7c83081b7db0a0e908f14888b7438b5ecdde3bf
+          path: .deps/aoa-memo
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-playbooks
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-playbooks
+          ref: b72ca2d333bcdf516ed6656e34670fa93df88162
+          path: .deps/aoa-playbooks
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-evals
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-evals
+          ref: 58bf49d374b008ef6625a9fd6893c61096777b4d
+          path: .deps/aoa-evals
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-agents
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-agents
+          ref: 92dd79e6c79fef60faedf6b97f2c65ff89477d06
+          path: .deps/aoa-agents
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-techniques
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-techniques
+          ref: 9a5222cc6a6b1fdc52b4df906f49dadfd0383c71
+          path: .deps/aoa-techniques
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-sdk
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-sdk
+          ref: cbf225627f9f28d0470deb8a962ae12d1fe72375
+          path: .deps/aoa-sdk
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-skills
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-skills
+          ref: 5929ad000ff06750ced1c806766138dc11e54e5a
+          path: .deps/aoa-skills
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-stats
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stats
+          ref: 5627c41efe9f766a4b3437da857060847cb4f0f1
+          path: .deps/aoa-stats
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout abyss-machine
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/abyss-machine
+          ref: a70b7f3a029c2dc4e86aa7446e4a058aa9e2e83e
+          path: .deps/abyss-machine
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-4pda-connector
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-4pda-connector
+          ref: a273f71c6fcc30c34759b2ef1e2f08cd8fc6baa3
+          path: .deps/aoa-4pda-connector
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-course-connector
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-course-connector
+          ref: 5a5219ef027df029313fc527c71a8764cfbd193e
+          path: .deps/aoa-course-connector
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-discord-connector
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-discord-connector
+          ref: 2652b1d657cbe5a7888ac979cc07a8f9ec792887
+          path: .deps/aoa-discord-connector
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-stackoverflow-connector
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stackoverflow-connector
+          ref: a239551bd629f59d32b59649eb308245be99c903
+          path: .deps/aoa-stackoverflow-connector
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-telegram-connector
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-telegram-connector
+          ref: 1d7e4157446839dc03f3ec80b687fdbb12dd8a22
+          path: .deps/aoa-telegram-connector
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-xda-connector
+        if: matrix.strategy == 'actions-sequential'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-xda-connector
+          ref: 45dc97667c104f17b71fcd13978de5172e5c4c8d
+          path: .deps/aoa-xda-connector
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+
+      - name: Checkout aoa-session-memory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-session-memory
+          ref: b04c6101b66040b16edc5cdf39b2621aef20765c
+          path: .deps/aoa-session-memory
+          fetch-depth: 0
+          filter: ${{ matrix.filter }}
+          ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
+          persist-credentials: false
+
+      - name: Checkout public providers in bounded parallel wave
         if: matrix.strategy == 'parallel-git'
         run: |
           python - <<'PY'
@@ -84,7 +274,23 @@ jobs:
           repositories = [
               ('Agents-of-Abyss', '66d86b04e685cf06b03a95a3f9c74e7c8d607740'),
               ('Tree-of-Sophia', 'd95a583272acb84dcb5b7e6896801f0364c7b234'),
+              ('8Dionysus', 'aa67908a137a9c9631a439f266d32a8918c7213c'),
+              ('aoa-memo', 'c7c83081b7db0a0e908f14888b7438b5ecdde3bf'),
+              ('aoa-playbooks', 'b72ca2d333bcdf516ed6656e34670fa93df88162'),
+              ('aoa-evals', '58bf49d374b008ef6625a9fd6893c61096777b4d'),
+              ('aoa-agents', '92dd79e6c79fef60faedf6b97f2c65ff89477d06'),
+              ('aoa-techniques', '9a5222cc6a6b1fdc52b4df906f49dadfd0383c71'),
+              ('aoa-sdk', 'cbf225627f9f28d0470deb8a962ae12d1fe72375'),
+              ('aoa-skills', '5929ad000ff06750ced1c806766138dc11e54e5a'),
+              ('aoa-stats', '5627c41efe9f766a4b3437da857060847cb4f0f1'),
               ('abyss-stack', '017210fa2b9b4ba10fe7c3c00ee8d3e63b926298'),
+              ('abyss-machine', 'a70b7f3a029c2dc4e86aa7446e4a058aa9e2e83e'),
+              ('aoa-4pda-connector', 'a273f71c6fcc30c34759b2ef1e2f08cd8fc6baa3'),
+              ('aoa-course-connector', '5a5219ef027df029313fc527c71a8764cfbd193e'),
+              ('aoa-discord-connector', '2652b1d657cbe5a7888ac979cc07a8f9ec792887'),
+              ('aoa-stackoverflow-connector', 'a239551bd629f59d32b59649eb308245be99c903'),
+              ('aoa-telegram-connector', '1d7e4157446839dc03f3ec80b687fdbb12dd8a22'),
+              ('aoa-xda-connector', '45dc97667c104f17b71fcd13978de5172e5c4c8d'),
           ]
 
           def checkout(item):
@@ -119,7 +325,7 @@ jobs:
 
           with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
               results = list(executor.map(checkout, repositories))
-          print('parallel exact full-history checkouts:', sorted(results))
+          print('bounded parallel exact full-history public checkouts:', sorted(results))
           PY
 
       - name: Measure object stores before proof
@@ -132,11 +338,7 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          roots = [
-              Path('.deps/Agents-of-Abyss'),
-              Path('.deps/Tree-of-Sophia'),
-              Path('.deps/abyss-stack'),
-          ]
+          roots = sorted(path for path in Path('.deps').iterdir() if path.is_dir())
           rows = []
           for root in roots:
               git_dir = Path(subprocess.check_output(
@@ -189,41 +391,15 @@ jobs:
       - name: Install validation dependencies
         run: python -m pip install PyYAML jsonschema jsonschema-rs==0.49.2
 
-      - name: Run representative real owner proof
+      - name: Run full release proof
+        run: python scripts/ci_release_check.py
+
+      - name: Check generated outputs are committed
         run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          from scripts.generate_repo_local_kag_coverage import _build_owner_coverage
-
-          roots = {
-              'Agents-of-Abyss': Path(os.environ['AGENTS_OF_ABYSS_ROOT']),
-              'Tree-of-Sophia': Path(os.environ['TREE_OF_SOPHIA_ROOT']),
-              'abyss-stack': Path(os.environ['ABYSS_STACK_ROOT']),
-          }
-          rows = []
-          for owner, root in roots.items():
-              payload, timing = _build_owner_coverage(owner, root, display_root=root)
-              if payload['index_status'] != 'passed':
-                  raise SystemExit(f'{owner}: index_status={payload["index_status"]!r}')
-              rows.append({
-                  'owner': owner,
-                  'index_status': payload['index_status'],
-                  'family_storage': payload['family_storage'],
-                  'portable_digest': payload['portable_family'].get('content_digest', ''),
-                  'timing': timing,
-              })
-          receipt = {
-              'schema_version': 'aoa-kag-hosted-checkout-proof-v1',
-              'mode': os.environ['CHECKOUT_MODE'],
-              'owner_count': len(rows),
-              'owners': rows,
-              'proof_wall_ms': sum(row['timing']['duration_ms'] for row in rows),
-          }
-          print('[aoa-kag-hosted-checkout-proof] ' + json.dumps(receipt, sort_keys=True))
-          PY
+          if [ -n "$(git status --porcelain --untracked-files=all -- generated)" ]; then
+            git status --porcelain --untracked-files=all -- generated
+            exit 1
+          fi
 
       - name: Measure object stores after proof
         env:
@@ -235,11 +411,7 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          roots = [
-              Path('.deps/Agents-of-Abyss'),
-              Path('.deps/Tree-of-Sophia'),
-              Path('.deps/abyss-stack'),
-          ]
+          roots = sorted(path for path in Path('.deps').iterdir() if path.is_dir())
           rows = []
           for root in roots:
               git_dir = Path(subprocess.check_output(
