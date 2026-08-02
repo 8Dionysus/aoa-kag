@@ -81,6 +81,11 @@ Additive `aoa-kag-validation-timing-v1` events measure:
   parity, repository-family build, family parity, semantic validation, portable
   rebuild, and portable parity.
 
+The same run receipt aggregates schema-engine events by exact engine version,
+fast acceptance, Python shadow confirmation, accelerated rejection, typed
+fallback reason, and disagreement. Those counters explain which evaluator ran;
+they never replace a schema or semantic verdict.
+
 Each timing binds a component type and ID, pass/fail status, wall time,
 user/system CPU, process peak RSS observation, and bounded component details.
 The aggregate receipt reports typed records and wall totals by component type.
@@ -96,9 +101,10 @@ hosted comparison evidence.
 
 | Method | Potential saving | Required safety boundary | Current posture |
 | --- | --- | --- | --- |
-| In-process compiled-schema reuse | avoid parsing and meta-validating identical schema bytes for every owner payload | cache key is the complete schema bytes; every payload and semantic assertion still executes; changed bytes compile cold | locally reproducible candidate |
+| In-process compiled-schema reuse | avoid parsing and meta-validating identical schema bytes for every owner payload | cache key is the complete schema bytes; every payload and semantic assertion still executes; changed bytes compile cold | retained bounded primitive; insufficient hosted improvement alone |
+| Bounded accelerated schema evaluation | reduce per-payload JSON Schema interpreter cost | exact engine version, closed vocabulary and local references, first-valid Python shadow, Python-confirmed rejection, typed fallback/disagreement, explicit Python rollback | accepted by `AOA-KAG-D-0032` after two strong paired hosted wins |
 | Exact same-run root-family proof | avoid a later process repeating semantic family assertions already completed in the same lane | run ID/lane, root, portable-family digest, validator/schema/runtime epoch, self-digest, cold fallback | locally effective, but failed the three-pair hosted benefit gate; do not land unchanged |
-| Checkout/history routing | avoid full history where the invoked provider proof does not read it | prove command-by-command history requirements; uncertainty selects full history | compare shallow, partial, and full modes |
+| Checkout/history routing | avoid transferring blobs that the invoked provider proof does not read | retain complete commit history and exact pins; compare checkout plus real owner proof, missing-object fetches, storage, and fallback | `blob:none` rejected for time; `blob:limit=1m` storage-positive but wall-neutral, preserve for separate hosted comparison |
 | Provider validation algorithm | reduce cold scan/decode/build work without caching a verdict | same schemas, source bytes, family parity, coverage row, and final identity barrier | profile dominant providers and subphases |
 | SCC-aware bounded scheduling | overlap independent provider proofs or prefetch without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, cancellation and cold serial fallback | compare serial, resource-class waves, and narrow overlap |
 | Cross-run owner fragments | replace unchanged external-owner proof with admitted prior evidence | owner-admitted artifact class, trusted main producer, provenance, expiry/revocation, exact consumer gate, cold fallback | blocked by `AOA-KAG-D-0029`; preserve feasibility evidence |
@@ -172,6 +178,9 @@ are not substituted for hosted evidence.
 | Exact same-run semantic proof | three paired GitHub-hosted full jobs against exact current main | candidate/main full jobs were 584/606, 577/541, and 577/543 s; release lanes were approximately 447/470, 450/421, and 441/417 s; one win and two losses, candidate median 577 s versus main 543 s | stop unchanged implementation and omit it from landing; reopen only when the proof edge removes a materially larger node or composes with admitted fragments |
 | Exact-byte compiled schema | two complete interleaved OS-wide pairs | cached 198.435/214.097 s versus forced-cold 223.850/239.199 s; cached won both by 25.415/25.102 s; semantic component improved by 17.132/14.366 s | locally material candidate; third pair and hosted proof pending |
 | Exact-byte compiled schema | third pair | cached half completed at 235.570 s; forced-cold admission was blocked by the host hard memory reserve and unknown-demand gate after swap activity | incomplete, do not count as a pair; retry only after resource admission |
+| Bounded `jsonschema-rs==0.49.2` evaluation | current-corpus differential proof | 13 schema/payload pairs with five probes each, 65 cases total, zero disagreement; unknown `propertyNames`, wrong version, errors, and disagreement route to Python | correctness gate passed with closed vocabulary, local refs, shadow, rejection confirmation, and exact rollback |
+| Bounded `jsonschema-rs==0.49.2` evaluation | two paired GitHub-hosted full jobs against exact current main | candidate/main full jobs were 361/583 and 320/583 s; candidate won 2/2 by 222 s (38.1 percent) and 263 s (45.1 percent), with all 21 owners, two typed `propertyNames` fallbacks, and zero disagreement | accepted by `AOA-KAG-D-0032`; two wins above 90 s satisfied the predeclared early stop |
+| Full versus partial-clone checkout | cold exact-pin checkout plus real source snapshot and portable-family proof for Agents-of-Abyss, Tree-of-Sophia, and abyss-stack | aggregate full 95.349 s; `blob:none` 110.910 s (+16.3 percent, one win of three); `blob:limit=1m` 96.274 s (+0.97 percent, two small wins of three) | reject `blob:none` for CI time; retain `blob:limit=1m` as an isolated storage/hosted candidate rather than composing it with the accepted engine change |
 | Whole provider sweep with two workers | local plus hosted experiment recorded by PR 185 | local improved 7.86 percent, hosted lane regressed from 938.768 to 990.153 s | reject that exact scheduler; retain narrower DAG scheduling candidates |
 | Leading-local omission | one hosted candidate recorded by PR 197 | candidate lane 486.930 s versus main 455.497 s with higher CPU | negative but noisy single run; do not generalize to all same-run proof reuse |
 | Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
@@ -188,6 +197,12 @@ cache key inside one Python process. Schema meta-validation is reused, but
 owner. `AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION=1` provides the exact cold
 comparison and rollback route.
 
+The accepted accelerated evaluator changes only the bounded JSON Schema
+execution mechanism. Python remains installed and authoritative for shadow,
+rejection confirmation, fallback, and disagreement. Unknown vocabulary or an
+engine version other than exactly `0.49.2` selects Python, and
+`AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` disables the accelerated path.
+
 ## Related decisions
 
 - `AOA-KAG-D-0021`: run-scoped coverage proof reuse;
@@ -195,4 +210,5 @@ comparison and rollback route.
 - `AOA-KAG-D-0027`: history-bounded source-fast donor checkouts;
 - `AOA-KAG-D-0028`: run-scoped provider coverage fusion;
 - `AOA-KAG-D-0029`: defer cross-run owner proof fragments until artifact
-  admission exists.
+  admission exists;
+- `AOA-KAG-D-0032`: fail-closed accelerated schema validation.

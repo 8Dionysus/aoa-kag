@@ -97,6 +97,15 @@ process. Every owner payload and semantic cross-reference assertion remains
 blocking, and changed schema bytes compile and meta-validate as a new input.
 `AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION=1` disables this reuse for comparison
 or rollback.
+For schemas using only the admitted vocabulary and local references, exactly
+`jsonschema-rs==0.49.2` may evaluate payloads. The first valid instance for an
+exact schema identity is shadowed by Python, accelerated rejections are always
+confirmed by Python, and an unavailable or wrong version, unknown vocabulary,
+non-local reference, engine error, or disagreement falls back to Python.
+`AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION=1` is the exact accelerated-path
+rollback. The coverage receipt reports engine/version, fast, shadow, reject,
+fallback-reason, and disagreement counters; these are execution telemetry and
+cannot alter the blocking schema or semantic verdict.
 During one OS-wide process, provider-home validation may pass the exact decoded
 portable family forward only for the current owner. Coverage still proves
 complete rebuilt-family equality and source parity; it removes the second
