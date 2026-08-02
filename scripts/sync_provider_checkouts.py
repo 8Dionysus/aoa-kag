@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import os
 import shlex
 import subprocess
@@ -26,6 +27,7 @@ except ImportError:  # pragma: no cover - exercised by direct script execution
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+MAX_CHECKOUT_JOBS = 3
 
 
 def run(command: Sequence[str], *, cwd: Path) -> None:
@@ -97,6 +99,11 @@ def sync_checkout(entry: dict[str, object], *, repo_root: Path = REPO_ROOT) -> P
     run(("git", "checkout", "--force", "--detach", pin), cwd=target)
     run(("git", "reset", "--hard", pin), cwd=target)
     run(("git", "clean", "-ffdx"), cwd=target)
+    observed = current_head(target)
+    if observed != pin:
+        raise RuntimeError(f"{repo} checkout must be pinned at {pin}; observed {observed}")
+    if is_shallow_checkout(target):
+        raise RuntimeError(f"{repo} checkout must keep complete Git history")
     return target
 
 
@@ -205,14 +212,48 @@ def resolve_command(command: Sequence[str]) -> tuple[str, ...]:
     return tuple(command)
 
 
-def sync_or_check(*, check: bool, repo_root: Path = REPO_ROOT) -> list[Path]:
-    paths: list[Path] = []
-    for entry in pinned_provider_entries():
+def selected_pinned_provider_entries(
+    *,
+    exclude_secret_checkouts: bool,
+) -> tuple[dict[str, object], ...]:
+    return tuple(
+        entry
+        for entry in pinned_provider_entries()
+        if not (exclude_secret_checkouts and entry.get("checkout_ssh_key_secret"))
+    )
+
+
+def sync_or_check(
+    *,
+    check: bool,
+    jobs: int = 1,
+    exclude_secret_checkouts: bool = False,
+    repo_root: Path = REPO_ROOT,
+) -> list[Path]:
+    if not 1 <= jobs <= MAX_CHECKOUT_JOBS:
+        raise RuntimeError(
+            f"provider checkout jobs must be between 1 and {MAX_CHECKOUT_JOBS}"
+        )
+    entries = selected_pinned_provider_entries(
+        exclude_secret_checkouts=exclude_secret_checkouts
+    )
+
+    def materialize(entry: dict[str, object]) -> tuple[dict[str, object], Path]:
         target = (
             check_checkout(entry, repo_root=repo_root)
             if check
             else sync_checkout(entry, repo_root=repo_root)
         )
+        return entry, target
+
+    if jobs == 1:
+        results = [materialize(entry) for entry in entries]
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
+            results = list(executor.map(materialize, entries))
+
+    paths: list[Path] = []
+    for entry, target in results:
         paths.append(target)
         print(
             f"[provider-checkout] {entry['repo']} {target.relative_to(repo_root).as_posix()} "
@@ -227,6 +268,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         description="Materialize provider registry checkouts and run commands with CI-equivalent provider roots."
     )
     parser.add_argument("--check", action="store_true", help="Verify existing checkouts.")
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help=f"Bounded checkout worker count, 1-{MAX_CHECKOUT_JOBS} (default: 1).",
+    )
+    parser.add_argument(
+        "--exclude-secret-checkouts",
+        action="store_true",
+        help="Leave registry entries with an explicit SSH-key secret to their owner checkout route.",
+    )
     parser.add_argument("--print-env", action="store_true", help="Print shell exports.")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     return parser.parse_args(argv)
@@ -236,7 +288,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     command = strip_separator(args.command)
     try:
-        sync_or_check(check=args.check)
+        sync_or_check(
+            check=args.check,
+            jobs=args.jobs,
+            exclude_secret_checkouts=args.exclude_secret_checkouts,
+        )
         env = provider_env()
         if args.print_env:
             print_env_exports(provider_command_env_overrides(env, repo_root=REPO_ROOT))

@@ -7,7 +7,16 @@ and experiment admission explicit so a faster run remains the same proof.
 
 ## Current baseline
 
-The current-main postmerge run after `AOA-KAG-D-0032`, observed on 2026-08-01,
+The latest exact-main postmerge before the bounded-checkout landing is
+[`30736109206`](https://github.com/8Dionysus/aoa-kag/actions/runs/30736109206)
+at `6e3de285236dfa5952eeb911dec33c602360445f`. Its critical workflow span was
+398 seconds: source-fast and owner-family took 108 seconds, the full OS-wide
+job took 273 seconds, and the summary took 5 seconds. The full job spent about
+114 seconds in checkout fan-in and 148 seconds in the release command. This is
+the production comparison baseline for the bounded public-provider checkout
+wave.
+
+The detailed post-`AOA-KAG-D-0032` component run, observed on 2026-08-01,
 was [`30728022522`](https://github.com/8Dionysus/aoa-kag/actions/runs/30728022522)
 at exact commit `6c6d94fe7963da726f38dba11276fe8208643d33`:
 
@@ -74,13 +83,14 @@ component (SCC). It is therefore useful as a component DAG only after the fixed
 point is collapsed.
 
 ```text
-checkout + command authority
+owner checkout + command authority
         |
         +--> source-fast proof ------------------------+
         |                                              |
         +--> self owner-family proof ------------------+--> landing summary
         |
-        +--> complete provider identity capture
+        +--> bounded public full-history checkout wave --+
+        +--> isolated private pinned checkout ------------+--> complete provider identity capture
                     |
                     +--> provider proof A --+
                     +--> provider proof B --+--> canonical owner composition
@@ -146,7 +156,7 @@ hosted comparison evidence.
 | In-process compiled-schema reuse | avoid parsing and meta-validating identical schema bytes for every owner payload | cache key is the complete schema bytes; every payload and semantic assertion still executes; changed bytes compile cold | retained bounded primitive; insufficient hosted improvement alone |
 | Bounded accelerated schema evaluation | reduce per-payload JSON Schema interpreter cost | exact engine version, closed vocabulary and local references, first-valid Python shadow, Python-confirmed rejection, typed fallback/disagreement, explicit Python rollback | accepted by `AOA-KAG-D-0032` after two strong paired hosted wins |
 | Exact same-run root-family proof | avoid a later process repeating semantic family assertions already completed in the same lane | run ID/lane, root, portable-family digest, validator/schema/runtime epoch, self-digest, cold fallback | locally effective, but failed the three-pair hosted benefit gate; do not land unchanged |
-| Checkout/history routing | avoid transferring blobs that the invoked provider proof does not read | retain complete commit history and exact pins; compare checkout plus real owner proof, missing-object fetches, storage, and fallback | `blob:none` rejected for time; `blob:limit=1m` storage-positive but wall-neutral, preserve for separate hosted comparison |
+| Checkout/history routing | remove independent checkout waits from the critical path without reducing proof inputs | retain complete commit history and exact pins; isolate secret-owned checkout; bound workers; compare checkout plus real owner proof, missing objects, storage, and fallback | bounded three-worker full-history public wave accepted by `AOA-KAG-D-0033`; `blob:none` rejected for time and `blob:limit=1m` rejected after three semantic proof failures |
 | Provider validation algorithm | reduce cold scan/decode/build work without caching a verdict | same schemas, source bytes, family parity, coverage row, and final identity barrier | profile dominant providers and subphases |
 | SCC-aware bounded scheduling | overlap independent provider proofs or prefetch without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, cancellation and cold serial fallback | compare serial, resource-class waves, and narrow overlap |
 | Fail-closed impact routing | avoid the full OS-wide branch for positively admitted owner-local PR changes | source-fast and owner-family always block; mixed, unknown, malformed, empty, unprovable, non-PR, main, and manual inputs route full; required summary rejects an invalid skip | accepted by `AOA-KAG-D-0022`; hosted owner-local cost is measured, while exact-current canary health and a paired counterfactual remain open evidence |
@@ -226,6 +236,8 @@ are not substituted for hosted evidence.
 | Bounded `jsonschema-rs==0.49.2` evaluation | current-corpus differential proof | 13 schema/payload pairs with five probes each, 65 cases total, zero disagreement; unknown `propertyNames`, wrong version, errors, and disagreement route to Python | correctness gate passed with closed vocabulary, local refs, shadow, rejection confirmation, and exact rollback |
 | Bounded `jsonschema-rs==0.49.2` evaluation | two paired GitHub-hosted full jobs against exact current main | candidate/main full jobs were 361/583 and 320/583 s; candidate won 2/2 by 222 s (38.1 percent) and 263 s (45.1 percent), with all 21 owners, two typed `propertyNames` fallbacks, and zero disagreement | accepted by `AOA-KAG-D-0032`; two wins above 90 s satisfied the predeclared early stop |
 | Full versus partial-clone checkout | cold exact-pin checkout plus real source snapshot and portable-family proof for Agents-of-Abyss, Tree-of-Sophia, and abyss-stack | aggregate full 95.349 s; `blob:none` 110.910 s (+16.3 percent, one win of three); `blob:limit=1m` 96.274 s (+0.97 percent, two small wins of three) | reject `blob:none` for CI time; retain `blob:limit=1m` as an isolated storage/hosted candidate rather than composing it with the accepted engine change |
+| All-provider checkout scheduling | three paired hosted attempts on exact commit `d73e1199`, each followed by the identical complete release proof | sequential full jobs 324/317/280 s versus bounded three-worker full-history jobs 255/264/264 s; bounded won 3/3, medians 317 to 264 s, saving 53 s or 16.7 percent; exact pins, complete history, generated cleanliness, and zero missing objects held | accepted by `AOA-KAG-D-0033`; implementation still requires exact-head PR and postmerge proof |
+| All-provider `blob:limit=1m` | the same three hosted attempts and complete release proof | object stores before proof were about one third smaller, but all 3/3 attempts changed `coverage_summary.migration_needed` and failed the blocking proof | reject for the full-audit lane; storage benefit does not establish semantic equivalence |
 | Whole provider sweep with two workers | local plus hosted experiment recorded by PR 185 | local improved 7.86 percent, hosted lane regressed from 938.768 to 990.153 s | reject that exact scheduler; retain narrower DAG scheduling candidates |
 | Leading-local omission | one hosted candidate recorded by PR 197 | candidate lane 486.930 s versus main 455.497 s with higher CPU | negative but noisy single run; do not generalize to all same-run proof reuse |
 | Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
@@ -313,3 +325,5 @@ canonical postmerge proof remain outstanding.
 - `AOA-KAG-D-0029`: defer cross-run owner proof fragments until artifact
   admission exists;
 - `AOA-KAG-D-0032`: fail-closed accelerated schema validation.
+- `AOA-KAG-D-0033`: bounded public provider checkout wave with private checkout
+  isolation and sequential rollback.
