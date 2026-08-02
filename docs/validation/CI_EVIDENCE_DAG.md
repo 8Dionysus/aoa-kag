@@ -28,11 +28,40 @@ at exact commit `6c6d94fe7963da726f38dba11276fe8208643d33`:
 - the release receipt recorded 202 accelerated accepts, 23 Python shadow
   confirmations, two typed `propertyNames` fallbacks, and zero disagreements.
 
+The same run's critical job span was 499 seconds and its three job runtimes
+summed to 491 seconds. The residual source job is not one opaque 113-second
+node: checkout steps consumed 23 seconds, the leading family action 20
+seconds, and source-fast validation 59 seconds. Inside that last step,
+`scripts/run_tests.py` consumed 45.561 seconds, of which the root `tests/`
+discovery occupied approximately 39.778 seconds; the 28 mechanics-part homes
+then completed in approximately 5.751 seconds. Local KAG validation added
+10.715 seconds. This makes the root test corpus, not broad mechanics-test
+parallelism, the first source-fast profiling target.
+
 The pre-acceleration postmerge run
 [`30710043887`](https://github.com/8Dionysus/aoa-kag/actions/runs/30710043887)
 remains the comparison point: source-fast was 115 seconds and the full job was
 606 seconds. The admitted evaluator therefore removed 232 seconds, or 38.3
 percent, from that full hosted job while source-fast remained effectively flat.
+
+Impact routing is already a real bounded saving, not a hypothetical DAG edge.
+PR 191 recorded three first-attempt hosted `owner-local` workflows at one exact
+workflow blob: 198, 188, and 179 seconds (median 188 seconds). Every sample kept
+source-fast and owner-family blocking, reported the OS-wide audit as
+`correctly-not-required`, and ended in the typed required summary. Those runs
+prove routed execution and its absolute cost; they are not a paired
+counterfactual against an otherwise identical full audit, so no causal saving
+is attributed to the difference from the current 499-second full critical
+span.
+
+The floating compatibility canary is supplementary drift detection, not proof
+that makes an owner-local skip valid. Its latest observed scheduled run,
+`30695223927`, failed at pre-fix commit `32a8b6f` because the retired `Dionysus`
+provider had no admitted manifest. `AOA-KAG-D-0031` and PR 198 removed that
+retired provider from the registry and both workflows at `ba780519`; current
+main contains that fix. A scheduled or manual exact-current-main canary has not
+yet reconfirmed the repair, so current hosted canary health remains pending
+rather than green by inference.
 
 These values are an orientation baseline, not a performance guarantee. Hosted
 comparisons must use current paired runs because runner placement and shared
@@ -120,6 +149,7 @@ hosted comparison evidence.
 | Checkout/history routing | avoid transferring blobs that the invoked provider proof does not read | retain complete commit history and exact pins; compare checkout plus real owner proof, missing-object fetches, storage, and fallback | `blob:none` rejected for time; `blob:limit=1m` storage-positive but wall-neutral, preserve for separate hosted comparison |
 | Provider validation algorithm | reduce cold scan/decode/build work without caching a verdict | same schemas, source bytes, family parity, coverage row, and final identity barrier | profile dominant providers and subphases |
 | SCC-aware bounded scheduling | overlap independent provider proofs or prefetch without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, cancellation and cold serial fallback | compare serial, resource-class waves, and narrow overlap |
+| Fail-closed impact routing | avoid the full OS-wide branch for positively admitted owner-local PR changes | source-fast and owner-family always block; mixed, unknown, malformed, empty, unprovable, non-PR, main, and manual inputs route full; required summary rejects an invalid skip | accepted by `AOA-KAG-D-0022`; hosted owner-local cost is measured, while exact-current canary health and a paired counterfactual remain open evidence |
 | Cross-run owner fragments | replace unchanged external-owner proof with admitted prior evidence | owner-admitted artifact class, trusted main producer, provenance, expiry/revocation, exact consumer gate, cold fallback | blocked by `AOA-KAG-D-0029`; preserve feasibility evidence |
 
 The earlier whole-provider `workers=2` experiment remains a valid negative data
@@ -201,6 +231,7 @@ are not substituted for hosted evidence.
 | Cross-run owner fragments | historical feasibility model in `AOA-KAG-D-0029` | optimistic mean gross saving 213.077 s, median zero; no admitted artifact class | deferred, no implementation or bypass |
 | Digest copy elision, admitted source-schema routing, and exact-byte local schema-validator reuse | first exact local fused OS-wide pair, candidate `dc7d8a2f` versus control `6c6d94fe` | 85.851 versus 118.181 s, saving 32.330 s or 27.36 percent; candidate won 1/1, retained 21/21 owners, and reported zero fallback or disagreement | inconclusive: the pair predates the final cold-path commit, does not satisfy the two-win minimum, and is not hosted evidence |
 | SCC convergence strategy | bounded local regeneration trials on the candidate branch | naive simultaneous/Jacobi regeneration did not converge within four passes plus confirmation; ordered staging of family, coverage/root outputs, then family regeneration reached a clean fixed point and passed final checks | retained mechanism evidence: model the cycle as one atomic ordered SCC node; workflow benefit and exact-head proof remain pending |
+| Fail-closed impact routing | PR 191 terminal hosted corpus plus classifier/summary negative corpus | three eligible owner-local workflows were 198/188/179 s (median 188 s), all kept both local proofs, correctly skipped the full audit, and passed the typed summary; unknown, invalid, empty, mixed, unprovable, and required-full skip cases are rejected by tests | retain the existing router; do not add a duplicate DAG classifier; separately reconfirm the post-PR-198 compatibility canary and do not claim paired causal saving |
 
 The exact same-run semantic proof prototype was fail-closed and passed its
 negative identity matrix, but its approximately 3--5 second local saving did
@@ -231,6 +262,7 @@ unprofiled local pairs, forced-cold and forced-Python checks, and hosted A/B.
 ## Related decisions
 
 - `AOA-KAG-D-0021`: run-scoped coverage proof reuse;
+- `AOA-KAG-D-0022`: additive fail-closed impact routing;
 - `AOA-KAG-D-0025`: exact same-run source-fast handoff;
 - `AOA-KAG-D-0027`: history-bounded source-fast donor checkouts;
 - `AOA-KAG-D-0028`: run-scoped provider coverage fusion;
