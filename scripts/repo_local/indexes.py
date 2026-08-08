@@ -434,19 +434,18 @@ def relation_entries(
         for entry in anchors
         if entry["anchor_kind"] == "markdown_heading" and entry["locator"]["fragment"]
     }
+    lineage_by_source: dict[Any, Any] = {}
+    for record in records:
+        lineage_by_source.setdefault(
+            record["identity"]["id"],
+            record["identity"]["lineage_path"],
+        )
     file_entity_by_source = {
         entry["source_record_ids"][0]: entry
         for entry in entities
         if len(entry["source_record_ids"]) == 1
         and entry["semantic_key"]
-        == next(
-            (
-                record["identity"]["lineage_path"]
-                for record in records
-                if record["identity"]["id"] == entry["source_record_ids"][0]
-            ),
-            "",
-        )
+        == lineage_by_source.get(entry["source_record_ids"][0], "")
     }
     entity_by_anchor: dict[str, dict[str, Any]] = {}
     python_entities_by_name: dict[str, list[dict[str, Any]]] = {}
