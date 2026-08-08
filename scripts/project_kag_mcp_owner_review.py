@@ -20,7 +20,9 @@ from review_kag_mcp_result import (
     _assert_content_address,
     _aware_time,
     _digest,
+    _git_revision,
     _require_reviewable_source_revision,
+    _validate_v3_deployment_binding,
     _pinned_sdk_review_schema,
     _read_private_json,
     _write_private_json,
@@ -157,8 +159,22 @@ def project_owner_review(
     receipt_path = _capture_path(capture_root, capture.get("capture_receipt_ref"))
     receipt, _, _ = _read_private_json(receipt_path, "capture receipt")
     _assert_content_address(receipt, "receipt_id", "capture receipt")
-    if receipt.get("schema_version") not in CAPTURE_RECEIPT_SCHEMAS:
+    receipt_schema = receipt.get("schema_version")
+    if receipt_schema not in CAPTURE_RECEIPT_SCHEMAS:
         raise KagOwnerReviewProjectionError("capture receipt schema is unsupported")
+    receipt_observed_at = _aware_time(receipt["observed_at"], "receipt observed_at")
+    if receipt_schema == "abyss_stack_mcp_canary_receipt_v3":
+        try:
+            _validate_v3_deployment_binding(receipt, observed_at=receipt_observed_at)
+        except KagOwnerReviewError as exc:
+            raise KagOwnerReviewProjectionError(str(exc)) from exc
+    if (
+        receipt_schema != "abyss_stack_mcp_canary_receipt_v3"
+        and source_revision != _git_revision(repo_root)
+    ):
+        raise KagOwnerReviewProjectionError(
+            "legacy owner review projection is restricted to current aoa-kag HEAD"
+        )
     expected_receipt = {
         "issuer": "abyss-stack",
         "consumer_id": "abyss-stack-mcp-canary",
@@ -189,7 +205,6 @@ def project_owner_review(
         raise KagOwnerReviewProjectionError(
             "owner review and capture receipt identities differ"
         )
-    receipt_observed_at = _aware_time(receipt["observed_at"], "receipt observed_at")
     receipt_expires_at = _aware_time(receipt["expires_at"], "receipt expires_at")
     if (
         _aware_time(capture["observed_at"], "review capture observed_at")
