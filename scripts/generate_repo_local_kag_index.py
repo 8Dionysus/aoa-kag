@@ -2549,7 +2549,13 @@ def build_repository_indexes(
     effective_event_ref = (
         event_history_ref if event_history_ref is not None else history_ref
     )
-    records = [copy.deepcopy(record) for record in source_index["records"] if isinstance(record, dict)]
+    records: list[dict[str, Any]] = []
+    for record in source_index["records"]:
+        if not isinstance(record, dict):
+            continue
+        mutable_record = dict(record)
+        mutable_record["refs"] = dict(record["refs"])
+        records.append(mutable_record)
     repo = str(source_index["repo"]["name"])
     reusable_structure = previous_structure_refs(source_index, previous_family)
     for record in records:

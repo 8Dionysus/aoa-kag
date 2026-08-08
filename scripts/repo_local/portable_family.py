@@ -759,7 +759,7 @@ def _expanded_parents(
 ) -> list[dict[str, Any]]:
     chunk_kind = f"{parent_kind}_chunk"
     parents = {
-        _row_key(row): copy.deepcopy(row)
+        _row_key(row): dict(row)
         for row in rows
         if _row_kind(row) == parent_kind
     }
@@ -814,7 +814,7 @@ def _expanded_parents(
 
 
 def _strip_portable_fields(row: Mapping[str, Any]) -> dict[str, Any]:
-    payload = copy.deepcopy(dict(row))
+    payload = dict(row)
     payload.pop("_kind", None)
     payload.pop("_key", None)
     payload.pop("_chunked", None)
@@ -834,10 +834,22 @@ def reconstruct_compatibility_family(
     source_header = manifest.get("source_index_header")
     if not isinstance(source_header, dict):
         raise PortableFamilyError("portable family needs source_index_header")
-    source_index = copy.deepcopy(source_header)
+    source_index = dict(source_header)
     source_index["records"] = source_rows
 
-    structure_records = copy.deepcopy(source_rows)
+    structure_records: list[dict[str, Any]] = []
+    for source_record in source_rows:
+        structure_record = dict(source_record)
+        source_refs = source_record.get("refs")
+        if not isinstance(source_refs, dict):
+            raise PortableFamilyError("portable source refs must be an object")
+        structure_refs = dict(source_refs)
+        for field in ("anchor_refs", "outbound_refs"):
+            value = source_refs.get(field)
+            if isinstance(value, list):
+                structure_refs[field] = list(value)
+        structure_record["refs"] = structure_refs
+        structure_records.append(structure_record)
     anchor_rows = _expanded_parents(rows, parent_kind="anchor")
     anchors: list[dict[str, Any]] = []
     records_by_id = {
