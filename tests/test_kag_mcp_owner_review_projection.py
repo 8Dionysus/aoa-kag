@@ -259,6 +259,35 @@ def _case_rejects_legacy_review_after_head_advances(tmp_path: Path) -> None:
         )
 
 
+def _case_rejects_relabelled_v3_without_deployment_binding(tmp_path: Path) -> None:
+    review_path, capture_root = _inputs(tmp_path)
+    review = json.loads(review_path.read_text(encoding="utf-8"))
+    receipt_path = capture_root / review["capture"]["capture_receipt_ref"]
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["schema_version"] = "abyss_stack_mcp_canary_receipt_v3"
+    receipt_body = dict(receipt)
+    receipt_body.pop("receipt_id")
+    receipt_body.pop("attestation")
+    receipt["receipt_id"] = _digest(receipt_body)
+    _write_private_json(receipt_path, receipt)
+
+    review["capture"]["capture_receipt_id"] = receipt["receipt_id"]
+    statement = dict(review)
+    statement.pop("review_id")
+    review["review_id"] = _digest(statement, ensure_ascii=True)
+    _write_private_json(review_path, review)
+
+    with unittest.TestCase().assertRaisesRegex(
+        KagOwnerReviewProjectionError, "deployment service"
+    ):
+        project_owner_review(
+            review_path=review_path,
+            capture_root=capture_root,
+            clock=lambda: NOW + timedelta(seconds=2),
+            schema_loader=lambda _: _schema(),
+        )
+
+
 class KagMcpOwnerReviewProjectionTests(unittest.TestCase):
     def _with_temp_path(self, case) -> None:
         with TemporaryDirectory() as tmp:
@@ -278,3 +307,6 @@ class KagMcpOwnerReviewProjectionTests(unittest.TestCase):
 
     def test_rejects_legacy_review_after_head_advances(self) -> None:
         self._with_temp_path(_case_rejects_legacy_review_after_head_advances)
+
+    def test_rejects_relabelled_v3_without_deployment_binding(self) -> None:
+        self._with_temp_path(_case_rejects_relabelled_v3_without_deployment_binding)

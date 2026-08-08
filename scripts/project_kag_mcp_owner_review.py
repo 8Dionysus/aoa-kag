@@ -22,6 +22,7 @@ from review_kag_mcp_result import (
     _digest,
     _git_revision,
     _require_reviewable_source_revision,
+    _validate_v3_deployment_binding,
     _pinned_sdk_review_schema,
     _read_private_json,
     _write_private_json,
@@ -161,6 +162,12 @@ def project_owner_review(
     receipt_schema = receipt.get("schema_version")
     if receipt_schema not in CAPTURE_RECEIPT_SCHEMAS:
         raise KagOwnerReviewProjectionError("capture receipt schema is unsupported")
+    receipt_observed_at = _aware_time(receipt["observed_at"], "receipt observed_at")
+    if receipt_schema == "abyss_stack_mcp_canary_receipt_v3":
+        try:
+            _validate_v3_deployment_binding(receipt, observed_at=receipt_observed_at)
+        except KagOwnerReviewError as exc:
+            raise KagOwnerReviewProjectionError(str(exc)) from exc
     if (
         receipt_schema != "abyss_stack_mcp_canary_receipt_v3"
         and source_revision != _git_revision(repo_root)
@@ -198,7 +205,6 @@ def project_owner_review(
         raise KagOwnerReviewProjectionError(
             "owner review and capture receipt identities differ"
         )
-    receipt_observed_at = _aware_time(receipt["observed_at"], "receipt observed_at")
     receipt_expires_at = _aware_time(receipt["expires_at"], "receipt expires_at")
     if (
         _aware_time(capture["observed_at"], "review capture observed_at")
