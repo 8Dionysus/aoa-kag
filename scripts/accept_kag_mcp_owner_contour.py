@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta, timezone
@@ -31,6 +32,10 @@ SOURCE_SCHEMA = REPO_ROOT / "schemas" / "kag-mcp-source-identity-receipt.schema.
 SCHEMA_VERSION = "aoa_kag_mcp_owner_acceptance_receipt_v1"
 MAX_ACCEPTANCE_TTL_SECONDS = 300
 MAX_FUTURE_SKEW_SECONDS = 30
+RFC3339_TIMESTAMP = re.compile(
+    r"\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})\Z",
+    re.ASCII | re.IGNORECASE,
+)
 
 
 class KagMcpAcceptanceError(ValueError):
@@ -63,6 +68,21 @@ def _validate_schema(payload: dict[str, Any], path: Path, label: str) -> None:
     )
     if errors:
         raise KagMcpAcceptanceError(f"{label} failed its owner schema")
+
+
+def _rfc3339_time(value: Any, label: str) -> datetime:
+    if not isinstance(value, str) or RFC3339_TIMESTAMP.fullmatch(value) is None:
+        raise KagMcpAcceptanceError(f"{label} is not a valid RFC3339 timestamp")
+    normalized = value[:-1] + "+00:00" if value[-1].lower() == "z" else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except (TypeError, ValueError) as exc:
+        raise KagMcpAcceptanceError(
+            f"{label} is not a valid RFC3339 timestamp"
+        ) from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise KagMcpAcceptanceError(f"{label} must be timezone-aware")
+    return parsed.astimezone(timezone.utc)
 
 
 def _validate_source_receipt(
@@ -182,10 +202,21 @@ def _validate_deployment_bound_capture(
         "result_schema_identity": receipt.get("result_schema_identity"),
         "server_schema_digest": receipt.get("server_schema_digest"),
         "primitive_schema_digest": receipt.get("selected_tool_schema_digest"),
-        "observed_at": receipt.get("observed_at"),
-        "expires_at": receipt.get("expires_at"),
     }
-    if any(capture.get(field) != value for field, value in review_binding.items()):
+    review_time_binding = {
+        "observed_at": _rfc3339_time(
+            receipt.get("observed_at"), "deployment canary observed_at"
+        ),
+        "expires_at": _rfc3339_time(
+            receipt.get("expires_at"), "deployment canary expires_at"
+        ),
+    }
+    if any(
+        capture.get(field) != value for field, value in review_binding.items()
+    ) or any(
+        _rfc3339_time(capture.get(field), f"owner review capture {field}") != value
+        for field, value in review_time_binding.items()
+    ):
         raise KagMcpAcceptanceError(
             "owner review does not bind the exact deployment canary"
         )
@@ -211,13 +242,13 @@ def _validate_deployment_bound_capture(
         raise KagMcpAcceptanceError(
             "deployment-bound canary protocol is absent from runtime endpoint"
         )
-    observed_at = _aware_time(
+    observed_at = _rfc3339_time(
         receipt.get("observed_at"), "deployment canary observed_at"
     )
-    expires_at = _aware_time(
+    expires_at = _rfc3339_time(
         receipt.get("expires_at"), "deployment canary expires_at"
     )
-    deployed_at = _aware_time(
+    deployed_at = _rfc3339_time(
         receipt.get("deployment_deployed_at"), "deployment canary deployed_at"
     )
     if not deployed_at <= observed_at < expires_at:
