@@ -424,6 +424,48 @@ def _case_accepts_equivalent_rfc3339_utc_forms(tmp_path: Path) -> None:
     assert receipt["admission_authorized"] is False
 
 
+def _rewrite_canary_timestamp(
+    paths: dict[str, Path], field: str, value: object
+) -> None:
+    receipt_path = (
+        json.loads(paths["observation"].read_text(encoding="utf-8"))["subjects"][0]
+        ["canary"]["canary_ref"]
+    )
+    receipt = json.loads(Path(receipt_path).read_text(encoding="utf-8"))
+    receipt[field] = value
+    statement = dict(receipt)
+    statement.pop("receipt_id")
+    statement.pop("attestation")
+    receipt["receipt_id"] = _digest(statement)
+    _write_private_json(Path(receipt_path), receipt)
+
+
+def _case_rejects_non_string_canary_timestamp(tmp_path: Path) -> None:
+    paths = _inputs(tmp_path)
+    _rewrite_canary_timestamp(paths, "observed_at", None)
+
+    with unittest.TestCase().assertRaisesRegex(
+        KagMcpAcceptanceError, "valid RFC3339 timestamp"
+    ):
+        _issue(paths)
+
+
+def _case_rejects_non_rfc3339_canary_timestamps(tmp_path: Path) -> None:
+    malformed = (
+        "2026-08-01 04:00:00+00:00",
+        "2026-08-01",
+        "2026-W31-6T04:00:00+00:00",
+        "2026-08-01T04:00:00+00:00:00",
+    )
+    for index, value in enumerate(malformed):
+        paths = _inputs(tmp_path / str(index))
+        _rewrite_canary_timestamp(paths, "observed_at", value)
+        with unittest.TestCase().assertRaisesRegex(
+            KagMcpAcceptanceError, "valid RFC3339 timestamp"
+        ):
+            _issue(paths)
+
+
 def _case_public_example_is_schema_valid_and_content_addressed() -> None:
     receipt = json.loads(ACCEPTANCE_EXAMPLE.read_text(encoding="utf-8"))
     schema = json.loads(ACCEPTANCE_SCHEMA.read_text(encoding="utf-8"))
@@ -530,6 +572,12 @@ class KagMcpOwnerAcceptanceTests(unittest.TestCase):
 
     def test_accepts_equivalent_rfc3339_utc_forms(self) -> None:
         self._with_temp_path(_case_accepts_equivalent_rfc3339_utc_forms)
+
+    def test_rejects_non_string_canary_timestamp(self) -> None:
+        self._with_temp_path(_case_rejects_non_string_canary_timestamp)
+
+    def test_rejects_non_rfc3339_canary_timestamps(self) -> None:
+        self._with_temp_path(_case_rejects_non_rfc3339_canary_timestamps)
 
     def test_outputs_private_acceptance_overlay(self) -> None:
         self._with_temp_path(_case_outputs_private_acceptance_overlay)
