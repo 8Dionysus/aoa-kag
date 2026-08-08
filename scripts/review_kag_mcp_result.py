@@ -448,6 +448,7 @@ def _validate_capture(
         "consumer_id": "abyss-stack-mcp-canary",
         "organ_id": "aoa-kag",
         "policy_family": "read",
+        "service_id": "aoa-kag-mcp",
         "tool_name": "kag_discover",
         "call_succeeded": True,
         "result_contract_matched": True,
@@ -521,10 +522,13 @@ def _validate_capture(
     if expires_at <= observed_at:
         raise KagOwnerReviewError("capture receipt expiry is invalid")
     if receipt_schema == "abyss_stack_mcp_canary_receipt_v3":
-        if receipt.get("deployment_service_id") != receipt.get("service_id"):
+        if receipt.get("deployment_service_id") != "aoa-kag-mcp":
             raise KagOwnerReviewError("capture deployment service does not match")
-        source_revision = receipt.get("deployment_source_revision")
-        if not isinstance(source_revision, str) or not source_revision:
+        deployment_source_revision = receipt.get("deployment_source_revision")
+        if (
+            not isinstance(deployment_source_revision, str)
+            or not deployment_source_revision
+        ):
             raise KagOwnerReviewError("capture deployment source is absent")
         for field in (
             "deployment_manifest_id",
@@ -656,6 +660,10 @@ def _freshness_assessment(
     runtime_digest = freshness.get("runtime_source_digest")
     canonical_digest = freshness.get("canonical_source_digest")
     state = freshness.get("state")
+    # A legacy capture has no immutable runtime-deployment identity, so it may
+    # ground only the current owner source. V3 carries the abyss-stack package
+    # revision separately; KAG owner source remains bound by the canonical
+    # source digest extracted from the captured owner payload below.
     if (
         owner_runtime_digest is not None
         and owner_runtime_digest != runtime_digest
@@ -756,6 +764,13 @@ def review_kag_capture(
         artifact_path,
         "result artifact",
     )
+    if (
+        receipt.get("schema_version") != "abyss_stack_mcp_canary_receipt_v3"
+        and source_revision != _git_revision(REPO_ROOT)
+    ):
+        raise KagOwnerReviewError(
+            "legacy capture review is restricted to aoa-kag HEAD"
+        )
     trusted_signer_id, public_key = _trusted_stack_signer(source_revision)
     (
         owner_payload,

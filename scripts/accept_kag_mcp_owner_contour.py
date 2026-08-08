@@ -95,7 +95,7 @@ def _validate_owner_review(
     *,
     source_revision: str,
     schema_loader: Callable[[str], dict[str, Any]],
-) -> tuple[datetime, str]:
+) -> tuple[datetime, str, dict[str, Any]]:
     errors = sorted(
         Draft202012Validator(
             schema_loader(source_revision), format_checker=FormatChecker()
@@ -130,10 +130,99 @@ def _validate_owner_review(
         or review.get("reason_codes") not in ([], ())
     ):
         raise KagMcpAcceptanceError("owner result review is not exact and bounded")
+    capture = _mapping(review.get("capture"), "owner review capture")
     return (
         _aware_time(review["expires_at"], "owner review expires_at"),
         str(claimed),
+        capture,
     )
+
+
+def _validate_deployment_bound_capture(
+    receipt: dict[str, Any],
+    *,
+    capture: dict[str, Any],
+    package: dict[str, Any],
+    deploy: dict[str, Any],
+    endpoint: dict[str, Any],
+    canary: dict[str, Any],
+) -> datetime:
+    if receipt.get("schema_version") != "abyss_stack_mcp_canary_receipt_v3":
+        raise KagMcpAcceptanceError(
+            "owner acceptance requires a deployment-bound v3 canary receipt"
+        )
+    body = dict(receipt)
+    claimed = body.pop("receipt_id", None)
+    body.pop("attestation", None)
+    if claimed != _digest(body):
+        raise KagMcpAcceptanceError(
+            "deployment-bound canary content address is invalid"
+        )
+    required = {
+        "issuer": "abyss-stack",
+        "consumer_id": "abyss-stack-mcp-canary",
+        "organ_id": "aoa-kag",
+        "policy_family": "read",
+        "service_id": "aoa-kag-mcp",
+        "deployment_service_id": "aoa-kag-mcp",
+        "tool_name": "kag_discover",
+        "call_succeeded": True,
+        "result_contract_matched": True,
+        "contains_secrets": False,
+        "content_trust": "untrusted_data",
+        "instruction_authority": "none",
+    }
+    if any(receipt.get(field) != value for field, value in required.items()):
+        raise KagMcpAcceptanceError("deployment-bound canary is not an exact KAG read")
+    if receipt.get("reason_codes") not in ([], ()):
+        raise KagMcpAcceptanceError("deployment-bound canary carries failure reasons")
+    review_binding = {
+        "capture_receipt_id": claimed,
+        "result_digest": receipt.get("result_digest"),
+        "result_schema_identity": receipt.get("result_schema_identity"),
+        "server_schema_digest": receipt.get("server_schema_digest"),
+        "primitive_schema_digest": receipt.get("selected_tool_schema_digest"),
+        "observed_at": receipt.get("observed_at"),
+        "expires_at": receipt.get("expires_at"),
+    }
+    if any(capture.get(field) != value for field, value in review_binding.items()):
+        raise KagMcpAcceptanceError(
+            "owner review does not bind the exact deployment canary"
+        )
+    runtime_binding = {
+        "deployment_manifest_id": deploy.get("manifest_digest"),
+        # This is the abyss-stack service-package source revision, not the
+        # independently owner-reviewed aoa-kag canonical source revision.
+        "deployment_source_revision": deploy.get("revision"),
+        "deployment_package_digest": package.get("artifact_digest"),
+        "deployment_tree_digest": deploy.get("tree_digest"),
+        "canary_route": canary.get("canary_route"),
+        "server_schema_digest": endpoint.get("server_schema_digest"),
+    }
+    if any(receipt.get(field) != value for field, value in runtime_binding.items()):
+        raise KagMcpAcceptanceError(
+            "deployment-bound canary targets a different runtime deployment"
+        )
+    protocols = endpoint.get("protocol_versions")
+    if (
+        not isinstance(protocols, list)
+        or receipt.get("protocol_version") not in protocols
+    ):
+        raise KagMcpAcceptanceError(
+            "deployment-bound canary protocol is absent from runtime endpoint"
+        )
+    observed_at = _aware_time(
+        receipt.get("observed_at"), "deployment canary observed_at"
+    )
+    expires_at = _aware_time(
+        receipt.get("expires_at"), "deployment canary expires_at"
+    )
+    deployed_at = _aware_time(
+        receipt.get("deployment_deployed_at"), "deployment canary deployed_at"
+    )
+    if not deployed_at <= observed_at < expires_at:
+        raise KagMcpAcceptanceError("deployment-bound canary time window is invalid")
+    return expires_at
 
 
 def _validate_proof_report(
@@ -250,7 +339,7 @@ def issue_acceptance(
     source_expiry, source_receipt_digest = _validate_source_receipt(
         source_receipt, source_revision=source_revision
     )
-    review_expiry, review_id = _validate_owner_review(
+    review_expiry, review_id, review_capture = _validate_owner_review(
         owner_review,
         source_revision=source_revision,
         schema_loader=schema_loader,
@@ -280,6 +369,22 @@ def issue_acceptance(
     canary = _mapping(subject.get("canary"), "runtime canary")
     proof = _mapping(subject.get("proof"), "runtime proof")
     consumers = _list(subject.get("consumers"), "runtime consumers")
+    canary_ref = canary.get("canary_ref")
+    if not isinstance(canary_ref, str) or not canary_ref.startswith("/"):
+        raise KagMcpAcceptanceError(
+            "runtime canary ref must be an absolute private record path"
+        )
+    canary_receipt, _, _ = _read_private_json(
+        Path(canary_ref), "deployment-bound canary receipt"
+    )
+    canary_expiry = _validate_deployment_bound_capture(
+        canary_receipt,
+        capture=review_capture,
+        package=package,
+        deploy=deploy,
+        endpoint=endpoint,
+        canary=canary,
+    )
     if (
         source.get("tree_digest") != source_receipt.get("tree_digest")
         or source.get("expected_sync_tree_digest") != source_receipt.get("tree_digest")
@@ -373,6 +478,7 @@ def issue_acceptance(
     observation_expiry = _aware_time(observation.get("expires_at"), "observation expires_at")
     expiries = [
         observation_expiry,
+        canary_expiry,
         source_expiry,
         review_expiry,
         _exact_link_expiry(_mapping(source.get("evidence"), "source evidence"), "source evidence"),
