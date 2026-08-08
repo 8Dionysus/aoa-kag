@@ -37,6 +37,16 @@ def _source_revision() -> str:
     ).stdout.strip()
 
 
+def _ancestor_revision() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD^"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
 def _schema() -> dict:
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -229,6 +239,26 @@ def _case_rejects_expired_review(tmp_path: Path) -> None:
         )
 
 
+def _case_rejects_legacy_review_after_head_advances(tmp_path: Path) -> None:
+    review_path, capture_root = _inputs(tmp_path)
+    review = json.loads(review_path.read_text(encoding="utf-8"))
+    review["source_revision"]["revision"] = _ancestor_revision()
+    statement = dict(review)
+    statement.pop("review_id")
+    review["review_id"] = _digest(statement, ensure_ascii=True)
+    _write_private_json(review_path, review)
+
+    with unittest.TestCase().assertRaisesRegex(
+        KagOwnerReviewProjectionError, "restricted to current aoa-kag HEAD"
+    ):
+        project_owner_review(
+            review_path=review_path,
+            capture_root=capture_root,
+            clock=lambda: NOW + timedelta(seconds=2),
+            schema_loader=lambda _: _schema(),
+        )
+
+
 class KagMcpOwnerReviewProjectionTests(unittest.TestCase):
     def _with_temp_path(self, case) -> None:
         with TemporaryDirectory() as tmp:
@@ -245,3 +275,6 @@ class KagMcpOwnerReviewProjectionTests(unittest.TestCase):
 
     def test_rejects_expired_review(self) -> None:
         self._with_temp_path(_case_rejects_expired_review)
+
+    def test_rejects_legacy_review_after_head_advances(self) -> None:
+        self._with_temp_path(_case_rejects_legacy_review_after_head_advances)
