@@ -19,6 +19,10 @@
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 
+## atomic SCC
+
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
+
 ## authenticated issuer
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
@@ -131,6 +135,10 @@
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
 
+## exact output parity
+
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
+
 ## exact provider pin
 
 - [AOA-KAG-D-0033 - Bounded Public Provider Checkout Wave](../AOA-KAG-D-0033-bounded-public-provider-checkout-wave.md) (`docs/decisions/AOA-KAG-D-0033-bounded-public-provider-checkout-wave.md`)
@@ -146,6 +154,7 @@
 ## explicit rollback
 
 - [AOA-KAG-D-0032 - Fail-Closed Accelerated Schema Validation](../AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md) (`docs/decisions/AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md`)
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 
 ## extensible kind
 
@@ -311,6 +320,10 @@
 
 - [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
 
+## mutable-reference isolation
+
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
+
 ## no acceptance inference
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
@@ -344,6 +357,7 @@
 
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 
 ## owner namespace
 

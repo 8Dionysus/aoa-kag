@@ -1,0 +1,17 @@
+{
+  "allowed_bytes": 9014349,
+  "allowed_tracked_bytes": 11665727,
+  "approved_by": "repository-owner",
+  "base_ref": "fa6f71eec32c5c3340f3bd086885a9a869162194",
+  "changed_generated_bytes": 9014349,
+  "changed_generated_files": 271,
+  "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
+  "default_limit_bytes": 1048576,
+  "head_family_digest": "13627daf36e95ce6e7ad643fa00548fb33ce23f76d931addd512aacc75e10d5a",
+  "reason": "Accepted D-0034 decision and CI evidence for PR 204 add owner-authored rationale, claim limits, rollback, and generated decision indexes; deterministic self-family refresh exceeds the default delta while remaining below the standing tracked-size ceiling.",
+  "repo": "aoa-kag",
+  "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
+  "scope": "generated_delta",
+  "tracked_bytes": 11665727,
+  "tracked_bytes_max": 12582912
+}

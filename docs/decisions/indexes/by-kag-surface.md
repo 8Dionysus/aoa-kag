@@ -105,6 +105,7 @@
 - [AOA-KAG-D-0021 - Run-Scoped Coverage Proof Reuse](../AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md) (`docs/decisions/AOA-KAG-D-0021-run-scoped-coverage-proof-reuse.md`)
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 
 ## generated indexes
 
@@ -201,6 +202,7 @@
 ## OS-wide release audit
 
 - [AOA-KAG-D-0033 - Bounded Public Provider Checkout Wave](../AOA-KAG-D-0033-bounded-public-provider-checkout-wave.md) (`docs/decisions/AOA-KAG-D-0033-bounded-public-provider-checkout-wave.md`)
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 
 ## owner acceptance
 
@@ -239,6 +241,7 @@
 ## portable family
 
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 
 ## portable record corpus
 
@@ -341,6 +344,7 @@
 ## repository index family
 
 - [AOA-KAG-D-0024 - Immutable Batch Owner Source Scan](../AOA-KAG-D-0024-immutable-batch-owner-source-scan.md) (`docs/decisions/AOA-KAG-D-0024-immutable-batch-owner-source-scan.md`)
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 
 ## result envelope
 
