@@ -182,10 +182,21 @@ def _validate_deployment_bound_capture(
         "result_schema_identity": receipt.get("result_schema_identity"),
         "server_schema_digest": receipt.get("server_schema_digest"),
         "primitive_schema_digest": receipt.get("selected_tool_schema_digest"),
-        "observed_at": receipt.get("observed_at"),
-        "expires_at": receipt.get("expires_at"),
     }
-    if any(capture.get(field) != value for field, value in review_binding.items()):
+    review_time_binding = {
+        "observed_at": _aware_time(
+            receipt.get("observed_at"), "deployment canary observed_at"
+        ),
+        "expires_at": _aware_time(
+            receipt.get("expires_at"), "deployment canary expires_at"
+        ),
+    }
+    if any(
+        capture.get(field) != value for field, value in review_binding.items()
+    ) or any(
+        _aware_time(capture.get(field), f"owner review capture {field}") != value
+        for field, value in review_time_binding.items()
+    ):
         raise KagMcpAcceptanceError(
             "owner review does not bind the exact deployment canary"
         )
