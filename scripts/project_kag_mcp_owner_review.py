@@ -21,8 +21,10 @@ from review_kag_mcp_result import (
     _aware_time,
     _digest,
     _git_revision,
+    _trusted_stack_signer,
     _require_reviewable_source_revision,
     _validate_v3_deployment_binding,
+    _verify_capture_attestation,
     _pinned_sdk_review_schema,
     _read_private_json,
     _write_private_json,
@@ -168,6 +170,17 @@ def project_owner_review(
             _validate_v3_deployment_binding(receipt, observed_at=receipt_observed_at)
         except KagOwnerReviewError as exc:
             raise KagOwnerReviewProjectionError(str(exc)) from exc
+    try:
+        trusted_signer_id, public_key = _trusted_stack_signer(source_revision)
+        _verify_capture_attestation(
+            receipt,
+            identity="receipt_id",
+            label="capture receipt",
+            trusted_signer_id=trusted_signer_id,
+            public_key=public_key,
+        )
+    except KagOwnerReviewError as exc:
+        raise KagOwnerReviewProjectionError(str(exc)) from exc
     if (
         receipt_schema != "abyss_stack_mcp_canary_receipt_v3"
         and source_revision != _git_revision(repo_root)
