@@ -94,3 +94,7 @@
 ## 2026-08-02
 
 - [AOA-KAG-D-0033 - Bounded Public Provider Checkout Wave](../AOA-KAG-D-0033-bounded-public-provider-checkout-wave.md) (`docs/decisions/AOA-KAG-D-0033-bounded-public-provider-checkout-wave.md`)
+
+## 2026-08-08
+
+- [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
