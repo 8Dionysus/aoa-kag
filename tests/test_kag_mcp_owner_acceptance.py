@@ -41,6 +41,16 @@ def _revision() -> str:
     ).stdout.strip()
 
 
+def _ancestor_revision() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD^"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
 def _review_schema() -> dict:
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -71,8 +81,67 @@ def _link(owner: str, ref: str, revision: str) -> dict:
     }
 
 
-def _inputs(root: Path) -> dict[str, Path]:
-    revision = _revision()
+def _inputs(root: Path, *, revision: str | None = None) -> dict[str, Path]:
+    revision = revision or _revision()
+    canary_statement = {
+        "schema_version": "abyss_stack_mcp_canary_receipt_v3",
+        "signer_id": DIGEST_A,
+        "attestation_algorithm": "ed25519",
+        "issuer": "abyss-stack",
+        "consumer_id": "abyss-stack-mcp-canary",
+        "organ_id": "aoa-kag",
+        "policy_family": "read",
+        "service_id": "aoa-kag-mcp",
+        "endpoint_ref": "http://127.0.0.1:5425/mcp",
+        "deployment_manifest_id": DIGEST_C,
+        "deployment_service_id": "aoa-kag-mcp",
+        "deployment_source_revision": "stack-rev-1",
+        "deployment_package_digest": DIGEST_B,
+        "deployment_tree_digest": DIGEST_B,
+        "deployment_deployed_at": (NOW - timedelta(minutes=1)).isoformat(),
+        "canary_route": "runbook://mcp-canary/aoa-kag/read",
+        "tool_name": "kag_discover",
+        "tool_arguments_digest": DIGEST_A,
+        "observed_at": NOW.isoformat(),
+        "expires_at": (NOW + timedelta(minutes=10)).isoformat(),
+        "protocol_version": "2025-11-25",
+        "server_name": "aoa-kag-mcp",
+        "server_version": "0.1.0",
+        "server_schema_digest": DIGEST_D,
+        "selected_tool_schema_digest": DIGEST_C,
+        "inventory_counts": {
+            "tools": 5,
+            "resources": 0,
+            "resource_templates": 9,
+            "prompts": 0,
+        },
+        "call_succeeded": True,
+        "result_contract_matched": True,
+        "result_schema_identity": "aoa_kag_mcp_capability_report_v1",
+        "result_digest": DIGEST_B,
+        "result_artifact_ref": "results/aoa-kag/" + "b" * 64 + ".json",
+        "call_latency_ms": 4,
+        "total_latency_ms": 12,
+        "reason_codes": [],
+        "contains_secrets": False,
+        "content_trust": "untrusted_data",
+        "instruction_authority": "none",
+        "claim_limit": "bounded test capture",
+    }
+    canary_receipt = {
+        "receipt_id": _digest(canary_statement),
+        **canary_statement,
+        "attestation": "test-owner-review-bound-attestation",
+    }
+    canary_path = (
+        root
+        / "private"
+        / "canaries"
+        / "records"
+        / "aoa-kag"
+        / "canary.json"
+    )
+    _write_private_json(canary_path, canary_receipt)
     source_statement = {
         "schema_version": "aoa_kag_mcp_source_identity_receipt_v1",
         "owner": "aoa-kag",
@@ -103,6 +172,12 @@ def _inputs(root: Path) -> dict[str, Path]:
         "capture": {
             "result_digest": DIGEST_B,
             "capture_receipt_ref": "records/aoa-kag/canary.json",
+            "capture_receipt_id": canary_receipt["receipt_id"],
+            "result_schema_identity": canary_receipt["result_schema_identity"],
+            "server_schema_digest": canary_receipt["server_schema_digest"],
+            "primitive_schema_digest": canary_receipt["selected_tool_schema_digest"],
+            "observed_at": canary_receipt["observed_at"],
+            "expires_at": canary_receipt["expires_at"],
         },
         "reviewed_at": NOW.isoformat(),
         "expires_at": (NOW + timedelta(minutes=10)).isoformat(),
@@ -125,7 +200,7 @@ def _inputs(root: Path) -> dict[str, Path]:
     _write_private_json(review_path, review)
 
     registration_ref = "consumer-registration://8Dionysus/codex/aoa_kag/" + "2" * 64
-    canary_ref = "/private/canaries/records/aoa-kag/canary.json"
+    canary_ref = canary_path.absolute().as_posix()
     packet = {
         "schema_version": "organ_access_proof_packet_v1",
         "packet_id": "live.aoa-kag.read.acceptance-test",
@@ -188,7 +263,7 @@ def _inputs(root: Path) -> dict[str, Path]:
     _write_private_json(proof_path, report)
 
     proof_link = _link("aoa-evals", proof_path.absolute().as_posix(), proof_digest)
-    canary_link = _link("abyss-stack", canary_ref, DIGEST_D)
+    canary_link = _link("abyss-stack", canary_ref, canary_receipt["receipt_id"])
     canary_link["evidence_refs"].append(
         {
             "owner": "aoa-kag",
@@ -321,6 +396,17 @@ def _case_accepts_exact_proved_contour_without_admission(tmp_path: Path) -> None
     assert receipt["central_proof"]["proof_digest"].startswith("sha256:")
 
 
+def _case_accepts_exact_deployed_ancestor_without_promoting_head(
+    tmp_path: Path,
+) -> None:
+    deployed_revision = _ancestor_revision()
+    receipt, _ = _issue(_inputs(tmp_path, revision=deployed_revision))
+
+    assert receipt["source"]["revision"] == deployed_revision
+    assert receipt["source"]["revision"] != _revision()
+    assert receipt["admission_authorized"] is False
+
+
 def _case_public_example_is_schema_valid_and_content_addressed() -> None:
     receipt = json.loads(ACCEPTANCE_EXAMPLE.read_text(encoding="utf-8"))
     schema = json.loads(ACCEPTANCE_SCHEMA.read_text(encoding="utf-8"))
@@ -396,6 +482,19 @@ def _case_rejects_future_dated_proof(tmp_path: Path) -> None:
         _issue(paths, NOW - timedelta(minutes=1))
 
 
+def _case_rejects_canary_from_another_runtime_deployment(tmp_path: Path) -> None:
+    paths = _inputs(tmp_path)
+    observation = json.loads(paths["observation"].read_text(encoding="utf-8"))
+    observation["subjects"][0]["deploy"]["revision"] = "stack-rev-2"
+    _write_private_json(paths["observation"], observation)
+
+    with unittest.TestCase().assertRaisesRegex(
+        KagMcpAcceptanceError,
+        "targets a different runtime deployment",
+    ):
+        _issue(paths)
+
+
 class KagMcpOwnerAcceptanceTests(unittest.TestCase):
     def _with_temp_path(self, case) -> None:
         with TemporaryDirectory() as tmp:
@@ -406,6 +505,11 @@ class KagMcpOwnerAcceptanceTests(unittest.TestCase):
 
     def test_public_example_is_schema_valid_and_content_addressed(self) -> None:
         _case_public_example_is_schema_valid_and_content_addressed()
+
+    def test_accepts_exact_deployed_ancestor_without_promoting_head(self) -> None:
+        self._with_temp_path(
+            _case_accepts_exact_deployed_ancestor_without_promoting_head
+        )
 
     def test_outputs_private_acceptance_overlay(self) -> None:
         self._with_temp_path(_case_outputs_private_acceptance_overlay)
@@ -424,3 +528,8 @@ class KagMcpOwnerAcceptanceTests(unittest.TestCase):
 
     def test_rejects_future_dated_proof(self) -> None:
         self._with_temp_path(_case_rejects_future_dated_proof)
+
+    def test_rejects_canary_from_another_runtime_deployment(self) -> None:
+        self._with_temp_path(
+            _case_rejects_canary_from_another_runtime_deployment
+        )

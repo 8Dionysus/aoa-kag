@@ -22,6 +22,13 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Changed
 
+- Accept deployment-bound `abyss_stack_mcp_canary_receipt_v3` captures in the
+  KAG owner review path and validate the exact deployment service, source,
+  manifest, package, tree, and deployed-at bindings before grounding.
+- Review and accept a deployed KAG source revision when it is a committed
+  ancestor of the reviewer checkout, while keeping the source identity,
+  pinned SDK schema, runtime observation, proof packet, and final acceptance
+  bound to that exact deployed revision.
 - Align all eight source-fast dependency checkouts with provider-registry pins
   and avoid repeating source-fast inside a high-impact full-audit job only
   after exact receipt acceptance; standalone release validation remains full.

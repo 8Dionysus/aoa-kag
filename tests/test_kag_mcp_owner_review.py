@@ -111,16 +111,22 @@ def _attested_payload(body: dict, identity: str) -> dict:
     }
 
 
-def _capture(root: Path, payload: dict) -> tuple[Path, Path]:
+def _capture(
+    root: Path,
+    payload: dict,
+    *,
+    receipt_schema: str = "abyss_stack_mcp_canary_receipt_v2",
+    service_id: str = "aoa-kag-mcp",
+) -> tuple[Path, Path]:
     result_digest = _digest(payload)
     result_ref = f"results/aoa-kag/{result_digest.removeprefix('sha256:')}.json"
     receipt_body = {
-        "schema_version": "abyss_stack_mcp_canary_receipt_v2",
+        "schema_version": receipt_schema,
         "issuer": "abyss-stack",
         "consumer_id": "abyss-stack-mcp-canary",
         "organ_id": "aoa-kag",
         "policy_family": "read",
-        "service_id": "aoa-kag-mcp",
+        "service_id": service_id,
         "endpoint_ref": "http://127.0.0.1:5425/mcp",
         "canary_route": "runbook://mcp-canary/aoa-kag/read",
         "tool_name": "kag_discover",
@@ -151,6 +157,17 @@ def _capture(root: Path, payload: dict) -> tuple[Path, Path]:
         "instruction_authority": "none",
         "claim_limit": "stack capture only",
     }
+    if receipt_schema == "abyss_stack_mcp_canary_receipt_v3":
+        receipt_body.update(
+            {
+                "deployment_manifest_id": "sha256:" + ("1" * 64),
+                "deployment_service_id": service_id,
+                "deployment_source_revision": "stack-revision-v3",
+                "deployment_package_digest": "sha256:" + ("2" * 64),
+                "deployment_tree_digest": "sha256:" + ("3" * 64),
+                "deployment_deployed_at": (NOW - timedelta(minutes=1)).isoformat(),
+            }
+        )
     receipt = _attested_payload(receipt_body, "receipt_id")
     artifact_body = {
         "schema_version": "abyss_stack_mcp_canary_result_artifact_v2",
@@ -226,9 +243,97 @@ class KagMcpOwnerReviewTests(unittest.TestCase):
             self.assertTrue(
                 review["provider_watermark"].startswith("aoa-kag-source-index:")
             )
-            self.assertFalse(review["owner_accepted"])
-            self.assertFalse(review["central_proof_asserted"])
-            self.assertFalse(review["admission_asserted"])
+        self.assertFalse(review["owner_accepted"])
+
+    def test_deployment_bound_v3_capture_is_grounded_and_exact(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(
+                root,
+                _capture_payload(),
+                receipt_schema="abyss_stack_mcp_canary_receipt_v3",
+            )
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            with patch(
+                "scripts.review_kag_mcp_result._trusted_stack_signer",
+                return_value=(TEST_SIGNER_ID, TEST_PUBLIC_KEY_RAW),
+            ), patch(
+                "scripts.review_kag_mcp_result._utc_now",
+                return_value=NOW + timedelta(seconds=1),
+            ):
+                review = review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=result_path,
+                    source_revision=revision,
+                )
+
+        self.assertEqual("grounded", review["grounding_state"])
+        self.assertEqual("exact", review["freshness_state"])
+        self.assertFalse(review["owner_accepted"])
+        self.assertFalse(review["central_proof_asserted"])
+        self.assertFalse(review["admission_asserted"])
+
+    def test_rejects_capture_for_another_mcp_service(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(
+                root,
+                _capture_payload(),
+                receipt_schema="abyss_stack_mcp_canary_receipt_v3",
+                service_id="abyss-stack-mcp",
+            )
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            with (
+                patch(
+                    "scripts.review_kag_mcp_result._utc_now",
+                    return_value=NOW + timedelta(seconds=1),
+                ),
+                self.assertRaisesRegex(
+                    KagOwnerReviewError,
+                    "service_id does not match",
+                ),
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=result_path,
+                    source_revision=revision,
+                )
+
+    def test_legacy_capture_cannot_select_an_ancestor_revision(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_path, result_path = _capture(root, _capture_payload())
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD^"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            with self.assertRaisesRegex(
+                KagOwnerReviewError,
+                "legacy capture review is restricted to aoa-kag HEAD",
+            ):
+                review_kag_capture(
+                    capture_root=root,
+                    receipt_path=receipt_path,
+                    artifact_path=result_path,
+                    source_revision=revision,
+                )
 
     def test_actual_review_clock_cannot_authorize_an_expired_capture(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
