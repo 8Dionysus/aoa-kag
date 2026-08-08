@@ -29,7 +29,10 @@ SDK_REVIEW_SCHEMA_REF = (
 MAX_INPUT_BYTES = 2 * 1024 * 1024
 MAX_REVIEW_TTL_SECONDS = 300
 GIT_NO_REPLACE = ("git", "--no-replace-objects")
-CAPTURE_RECEIPT_SCHEMA = "abyss_stack_mcp_canary_receipt_v2"
+CAPTURE_RECEIPT_SCHEMAS = {
+    "abyss_stack_mcp_canary_receipt_v2",
+    "abyss_stack_mcp_canary_receipt_v3",
+}
 RESULT_ARTIFACT_SCHEMA = "abyss_stack_mcp_canary_result_artifact_v2"
 REVIEW_SCHEMA = "aoa_organ_owner_result_review_v1"
 KAG_RESULT_SCHEMA = "aoa-kag-mcp-capabilities-v1"
@@ -437,7 +440,8 @@ def _validate_capture(
     trusted_signer_id: str,
     public_key: bytes,
 ) -> tuple[dict[str, Any], datetime, datetime, str, str]:
-    if receipt.get("schema_version") != CAPTURE_RECEIPT_SCHEMA:
+    receipt_schema = receipt.get("schema_version")
+    if receipt_schema not in CAPTURE_RECEIPT_SCHEMAS:
         raise KagOwnerReviewError("capture receipt schema is unsupported")
     expected_receipt = {
         "issuer": "abyss-stack",
@@ -516,6 +520,31 @@ def _validate_capture(
     expires_at = _aware_time(str(receipt.get("expires_at") or ""), "expires_at")
     if expires_at <= observed_at:
         raise KagOwnerReviewError("capture receipt expiry is invalid")
+    if receipt_schema == "abyss_stack_mcp_canary_receipt_v3":
+        if receipt.get("deployment_service_id") != receipt.get("service_id"):
+            raise KagOwnerReviewError("capture deployment service does not match")
+        source_revision = receipt.get("deployment_source_revision")
+        if not isinstance(source_revision, str) or not source_revision:
+            raise KagOwnerReviewError("capture deployment source is absent")
+        for field in (
+            "deployment_manifest_id",
+            "deployment_package_digest",
+            "deployment_tree_digest",
+        ):
+            value = receipt.get(field)
+            if not (
+                isinstance(value, str)
+                and value.startswith("sha256:")
+                and len(value) == 71
+                and all(char in "0123456789abcdef" for char in value[7:])
+            ):
+                raise KagOwnerReviewError(f"capture {field} is invalid")
+        deployed_at = _aware_time(
+            str(receipt.get("deployment_deployed_at") or ""),
+            "deployment_deployed_at",
+        )
+        if deployed_at > observed_at:
+            raise KagOwnerReviewError("capture predates its exact deployment")
     return owner_payload, observed_at, expires_at, receipt_ref, artifact_ref
 
 
@@ -686,6 +715,31 @@ def _git_revision(repo_root: Path) -> str:
         raise KagOwnerReviewError("aoa-kag source revision is unavailable") from exc
 
 
+def _require_reviewable_source_revision(
+    source_revision: str,
+    *,
+    repo_root: Path = REPO_ROOT,
+) -> None:
+    if not (
+        len(source_revision) == 40
+        and all(char in "0123456789abcdef" for char in source_revision)
+    ):
+        raise KagOwnerReviewError("requested source revision is invalid")
+    try:
+        result = subprocess.run(
+            [*GIT_NO_REPLACE, "merge-base", "--is-ancestor", source_revision, "HEAD"],
+            cwd=repo_root,
+            check=False,
+            capture_output=True,
+        )
+    except OSError as exc:
+        raise KagOwnerReviewError("aoa-kag source ancestry is unavailable") from exc
+    if result.returncode != 0:
+        raise KagOwnerReviewError(
+            "requested source revision is not a committed ancestor of aoa-kag HEAD"
+        )
+
+
 def review_kag_capture(
     *,
     capture_root: Path,
@@ -693,10 +747,7 @@ def review_kag_capture(
     artifact_path: Path,
     source_revision: str,
 ) -> dict[str, Any]:
-    if source_revision != _git_revision(REPO_ROOT):
-        raise KagOwnerReviewError(
-            "requested source revision is not current aoa-kag HEAD"
-        )
+    _require_reviewable_source_revision(source_revision)
     receipt, receipt_raw, receipt_identity = _read_private_json(
         receipt_path,
         "capture receipt",

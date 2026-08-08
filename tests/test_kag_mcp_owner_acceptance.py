@@ -41,6 +41,16 @@ def _revision() -> str:
     ).stdout.strip()
 
 
+def _ancestor_revision() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD^"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
 def _review_schema() -> dict:
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -71,8 +81,8 @@ def _link(owner: str, ref: str, revision: str) -> dict:
     }
 
 
-def _inputs(root: Path) -> dict[str, Path]:
-    revision = _revision()
+def _inputs(root: Path, *, revision: str | None = None) -> dict[str, Path]:
+    revision = revision or _revision()
     source_statement = {
         "schema_version": "aoa_kag_mcp_source_identity_receipt_v1",
         "owner": "aoa-kag",
@@ -321,6 +331,17 @@ def _case_accepts_exact_proved_contour_without_admission(tmp_path: Path) -> None
     assert receipt["central_proof"]["proof_digest"].startswith("sha256:")
 
 
+def _case_accepts_exact_deployed_ancestor_without_promoting_head(
+    tmp_path: Path,
+) -> None:
+    deployed_revision = _ancestor_revision()
+    receipt, _ = _issue(_inputs(tmp_path, revision=deployed_revision))
+
+    assert receipt["source"]["revision"] == deployed_revision
+    assert receipt["source"]["revision"] != _revision()
+    assert receipt["admission_authorized"] is False
+
+
 def _case_public_example_is_schema_valid_and_content_addressed() -> None:
     receipt = json.loads(ACCEPTANCE_EXAMPLE.read_text(encoding="utf-8"))
     schema = json.loads(ACCEPTANCE_SCHEMA.read_text(encoding="utf-8"))
@@ -406,6 +427,11 @@ class KagMcpOwnerAcceptanceTests(unittest.TestCase):
 
     def test_public_example_is_schema_valid_and_content_addressed(self) -> None:
         _case_public_example_is_schema_valid_and_content_addressed()
+
+    def test_accepts_exact_deployed_ancestor_without_promoting_head(self) -> None:
+        self._with_temp_path(
+            _case_accepts_exact_deployed_ancestor_without_promoting_head
+        )
 
     def test_outputs_private_acceptance_overlay(self) -> None:
         self._with_temp_path(_case_outputs_private_acceptance_overlay)

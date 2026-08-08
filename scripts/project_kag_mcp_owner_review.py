@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from collections.abc import Callable, Sequence
 from datetime import datetime, timezone
@@ -14,14 +13,14 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from review_kag_mcp_result import (
-    CAPTURE_RECEIPT_SCHEMA,
+    CAPTURE_RECEIPT_SCHEMAS,
     KAG_RESULT_SCHEMA,
     REVIEW_SCHEMA,
     KagOwnerReviewError,
     _assert_content_address,
     _aware_time,
     _digest,
-    _git_revision,
+    _require_reviewable_source_revision,
     _pinned_sdk_review_schema,
     _read_private_json,
     _write_private_json,
@@ -128,10 +127,14 @@ def project_owner_review(
     review, _, _ = _read_private_json(review_path, "owner review")
     source = review.get("source_revision")
     source_revision = source.get("revision") if isinstance(source, dict) else None
-    if not isinstance(source_revision, str) or source_revision != _git_revision(repo_root):
+    if not isinstance(source_revision, str):
         raise KagOwnerReviewProjectionError(
-            "owner review is not bound to the current KAG source revision"
+            "owner review source revision is unavailable"
         )
+    try:
+        _require_reviewable_source_revision(source_revision, repo_root=repo_root)
+    except KagOwnerReviewError as exc:
+        raise KagOwnerReviewProjectionError(str(exc)) from exc
     _validate_review(
         review,
         source_revision=source_revision,
@@ -154,8 +157,9 @@ def project_owner_review(
     receipt_path = _capture_path(capture_root, capture.get("capture_receipt_ref"))
     receipt, _, _ = _read_private_json(receipt_path, "capture receipt")
     _assert_content_address(receipt, "receipt_id", "capture receipt")
+    if receipt.get("schema_version") not in CAPTURE_RECEIPT_SCHEMAS:
+        raise KagOwnerReviewProjectionError("capture receipt schema is unsupported")
     expected_receipt = {
-        "schema_version": CAPTURE_RECEIPT_SCHEMA,
         "issuer": "abyss-stack",
         "consumer_id": "abyss-stack-mcp-canary",
         "organ_id": "aoa-kag",

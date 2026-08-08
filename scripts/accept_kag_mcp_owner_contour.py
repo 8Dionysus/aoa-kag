@@ -18,9 +18,9 @@ from review_kag_mcp_result import (
     KagOwnerReviewError,
     _aware_time,
     _digest,
-    _git_revision,
     _pinned_sdk_review_schema,
     _read_private_json,
+    _require_reviewable_source_revision,
     _write_private_json,
 )
 
@@ -68,7 +68,7 @@ def _validate_schema(payload: dict[str, Any], path: Path, label: str) -> None:
 def _validate_source_receipt(
     receipt: dict[str, Any],
     *,
-    current_revision: str,
+    source_revision: str,
 ) -> tuple[datetime, str]:
     _validate_schema(receipt, SOURCE_SCHEMA, "source identity receipt")
     unsigned = dict(receipt)
@@ -76,12 +76,14 @@ def _validate_source_receipt(
     if claimed != _digest(unsigned):
         raise KagMcpAcceptanceError("source identity content address is invalid")
     if (
-        receipt.get("revision") != current_revision
+        receipt.get("revision") != source_revision
         or receipt.get("owner") != "aoa-kag"
         or receipt.get("tree_digest") != receipt.get("expected_sync_tree_digest")
         or receipt.get("contains_secrets") is not False
     ):
-        raise KagMcpAcceptanceError("source identity does not name current KAG")
+        raise KagMcpAcceptanceError(
+            "source identity does not name the selected deployed KAG revision"
+        )
     return (
         _aware_time(receipt["expires_at"], "source receipt expires_at"),
         str(claimed),
@@ -91,12 +93,12 @@ def _validate_source_receipt(
 def _validate_owner_review(
     review: dict[str, Any],
     *,
-    current_revision: str,
+    source_revision: str,
     schema_loader: Callable[[str], dict[str, Any]],
 ) -> tuple[datetime, str]:
     errors = sorted(
         Draft202012Validator(
-            schema_loader(current_revision), format_checker=FormatChecker()
+            schema_loader(source_revision), format_checker=FormatChecker()
         ).iter_errors(review),
         key=lambda error: list(error.absolute_path),
     )
@@ -124,7 +126,7 @@ def _validate_owner_review(
     }
     if (
         any(review.get(field) != value for field, value in required.items())
-        or source.get("revision") != current_revision
+        or source.get("revision") != source_revision
         or review.get("reason_codes") not in ([], ())
     ):
         raise KagMcpAcceptanceError("owner result review is not exact and bounded")
@@ -239,13 +241,18 @@ def issue_acceptance(
     owner_review, _, _ = _read_private_json(owner_review_path, "owner result review")
     proof_report, _, _ = _read_private_json(proof_record_path, "central proof record")
     packet, _, _ = _read_private_json(packet_path, "central proof packet")
-    current_revision = _git_revision(repo_root)
+    subject = _select_subject(observation)
+    source = _mapping(subject.get("source"), "runtime source")
+    source_revision = source.get("revision")
+    if not isinstance(source_revision, str):
+        raise KagMcpAcceptanceError("runtime source revision is unavailable")
+    _require_reviewable_source_revision(source_revision, repo_root=repo_root)
     source_expiry, source_receipt_digest = _validate_source_receipt(
-        source_receipt, current_revision=current_revision
+        source_receipt, source_revision=source_revision
     )
     review_expiry, review_id = _validate_owner_review(
         owner_review,
-        current_revision=current_revision,
+        source_revision=source_revision,
         schema_loader=schema_loader,
     )
     proof_time, proof_digest = _validate_proof_report(
@@ -254,7 +261,6 @@ def issue_acceptance(
         report_path=proof_record_path,
         packet_path=packet_path,
     )
-    subject = _select_subject(observation)
     owners = _mapping(subject.get("owners"), "runtime owners")
     expected_owners = {
         "source_owner": "aoa-kag",
@@ -266,7 +272,6 @@ def issue_acceptance(
     if owners != expected_owners:
         raise KagMcpAcceptanceError("runtime owner roles differ from KAG contract")
 
-    source = _mapping(subject.get("source"), "runtime source")
     package = _mapping(subject.get("package"), "runtime package")
     deploy = _mapping(subject.get("deploy"), "runtime deploy")
     process = _mapping(subject.get("process"), "runtime process")
@@ -276,8 +281,7 @@ def issue_acceptance(
     proof = _mapping(subject.get("proof"), "runtime proof")
     consumers = _list(subject.get("consumers"), "runtime consumers")
     if (
-        source.get("revision") != current_revision
-        or source.get("tree_digest") != source_receipt.get("tree_digest")
+        source.get("tree_digest") != source_receipt.get("tree_digest")
         or source.get("expected_sync_tree_digest") != source_receipt.get("tree_digest")
         or package.get("name") != "aoa-kag-mcp"
         or package.get("artifact_digest") != deploy.get("tree_digest")
@@ -411,7 +415,7 @@ def issue_acceptance(
         "accepted_at": accepted_at.isoformat().replace("+00:00", "Z"),
         "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
         "source": {
-            "revision": current_revision,
+            "revision": source_revision,
             "tree_digest": source["tree_digest"],
             "source_ref": source_receipt["source_ref"],
             "source_receipt_digest": source_receipt_digest,
