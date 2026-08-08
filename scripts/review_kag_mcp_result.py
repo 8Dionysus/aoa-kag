@@ -430,6 +430,36 @@ def _assert_content_address(payload: dict[str, Any], identity: str, label: str) 
         raise KagOwnerReviewError(f"{label} content address does not match")
 
 
+def _validate_v3_deployment_binding(
+    receipt: dict[str, Any], *, observed_at: datetime
+) -> None:
+    """Require the complete deployment provenance carried by a v3 capture."""
+    if receipt.get("deployment_service_id") != "aoa-kag-mcp":
+        raise KagOwnerReviewError("capture deployment service does not match")
+    deployment_source_revision = receipt.get("deployment_source_revision")
+    if not isinstance(deployment_source_revision, str) or not deployment_source_revision:
+        raise KagOwnerReviewError("capture deployment source is absent")
+    for field in (
+        "deployment_manifest_id",
+        "deployment_package_digest",
+        "deployment_tree_digest",
+    ):
+        value = receipt.get(field)
+        if not (
+            isinstance(value, str)
+            and value.startswith("sha256:")
+            and len(value) == 71
+            and all(char in "0123456789abcdef" for char in value[7:])
+        ):
+            raise KagOwnerReviewError(f"capture {field} is invalid")
+    deployed_at = _aware_time(
+        str(receipt.get("deployment_deployed_at") or ""),
+        "deployment_deployed_at",
+    )
+    if deployed_at > observed_at:
+        raise KagOwnerReviewError("capture predates its exact deployment")
+
+
 def _validate_capture(
     receipt: dict[str, Any],
     artifact: dict[str, Any],
@@ -522,33 +552,7 @@ def _validate_capture(
     if expires_at <= observed_at:
         raise KagOwnerReviewError("capture receipt expiry is invalid")
     if receipt_schema == "abyss_stack_mcp_canary_receipt_v3":
-        if receipt.get("deployment_service_id") != "aoa-kag-mcp":
-            raise KagOwnerReviewError("capture deployment service does not match")
-        deployment_source_revision = receipt.get("deployment_source_revision")
-        if (
-            not isinstance(deployment_source_revision, str)
-            or not deployment_source_revision
-        ):
-            raise KagOwnerReviewError("capture deployment source is absent")
-        for field in (
-            "deployment_manifest_id",
-            "deployment_package_digest",
-            "deployment_tree_digest",
-        ):
-            value = receipt.get(field)
-            if not (
-                isinstance(value, str)
-                and value.startswith("sha256:")
-                and len(value) == 71
-                and all(char in "0123456789abcdef" for char in value[7:])
-            ):
-                raise KagOwnerReviewError(f"capture {field} is invalid")
-        deployed_at = _aware_time(
-            str(receipt.get("deployment_deployed_at") or ""),
-            "deployment_deployed_at",
-        )
-        if deployed_at > observed_at:
-            raise KagOwnerReviewError("capture predates its exact deployment")
+        _validate_v3_deployment_binding(receipt, observed_at=observed_at)
     return owner_payload, observed_at, expires_at, receipt_ref, artifact_ref
 
 
