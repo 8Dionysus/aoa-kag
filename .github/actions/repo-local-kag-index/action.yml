@@ -1,5 +1,5 @@
 name: Repo-local KAG portable family
-description: Check the content-addressed portable corpus, its budgets, and the deterministic seven-file compatibility view.
+description: Fail fast on drift, then check the complete portable corpus, budgets, contract, and compatibility view through a bounded DAG.
 
 inputs:
   repo-root:
@@ -14,6 +14,9 @@ inputs:
   event-history-ref:
     description: Durable Git history boundary used before the current source snapshot; pull requests default to the base SHA.
     default: ""
+  jobs:
+    description: Maximum bounded fan-out for independent owner-family checks.
+    default: "2"
 
 runs:
   using: composite
@@ -59,31 +62,6 @@ runs:
         printf 'AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF=%s\n' "$event_history_ref" >> "$GITHUB_ENV"
         printf 'ref=%s\n' "$history_ref" >> "$GITHUB_OUTPUT"
         printf 'event-ref=%s\n' "$event_history_ref" >> "$GITHUB_OUTPUT"
-    - name: Check repo-local index family parity
-      shell: bash
-      working-directory: ${{ github.workspace }}
-      run: >-
-        python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py"
-        --repo-root "${{ inputs.repo-root }}"
-        --output "${{ inputs.output }}"
-        --portable-family
-        --history-ref "${{ steps.history.outputs.ref }}"
-        --event-history-ref "${{ steps.history.outputs.event-ref }}"
-        --budget-base-ref "${{ steps.history.outputs.ref }}"
-        --check
-    - name: Check incremental index family parity
-      shell: bash
-      working-directory: ${{ github.workspace }}
-      run: >-
-        python3 "$GITHUB_ACTION_PATH/../../../scripts/generate_repo_local_kag_index.py"
-        --repo-root "${{ inputs.repo-root }}"
-        --output "${{ inputs.output }}"
-        --portable-family
-        --incremental
-        --history-ref "${{ steps.history.outputs.ref }}"
-        --event-history-ref "${{ steps.history.outputs.event-ref }}"
-        --budget-base-ref "${{ steps.history.outputs.ref }}"
-        --check
     - name: Ensure repo-local validation dependencies
       shell: bash
       working-directory: ${{ github.workspace }}
@@ -91,21 +69,15 @@ runs:
         set -euo pipefail
         python3 -c "import jsonschema" || python3 -m pip install --disable-pip-version-check jsonschema
         python3 -c "import importlib.metadata; assert importlib.metadata.version('jsonschema-rs') == '0.49.2'" || python3 -m pip install --disable-pip-version-check jsonschema-rs==0.49.2
-    - name: Validate repo-local index family contract
+    - name: Check repo-local owner family DAG
       shell: bash
       working-directory: ${{ github.workspace }}
       run: >-
-        python3 "$GITHUB_ACTION_PATH/../../../scripts/validate_repo_local_kag_family.py"
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/repo_local_kag_gate.py"
         --repo-root "${{ inputs.repo-root }}"
-        --source-index "${{ inputs.output }}"
-    - name: Assemble deterministic compatibility view
-      shell: bash
-      working-directory: ${{ github.workspace }}
-      run: |
-        set -euo pipefail
-        output_dir="$RUNNER_TEMP/repo-local-kag-family-v2"
-        rm -rf "$output_dir"
-        python3 "$GITHUB_ACTION_PATH/../../../scripts/assemble_repo_local_kag_family.py" \
-          --repo-root "${{ inputs.repo-root }}" \
-          --output-dir "$output_dir"
-        test "$(find "$output_dir" -maxdepth 1 -type f | wc -l)" -eq 7
+        --output "${{ inputs.output }}"
+        --history-ref "${{ steps.history.outputs.ref }}"
+        --event-history-ref "${{ steps.history.outputs.event-ref }}"
+        --budget-base-ref "${{ steps.history.outputs.ref }}"
+        --jobs "${{ inputs.jobs }}"
+        --receipt-output "$RUNNER_TEMP/repo-local-kag-owner-family-receipt.json"

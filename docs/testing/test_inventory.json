@@ -423,6 +423,32 @@
           ]
         },
         {
+          "path": "tests/test_prepare_owner_landing.py",
+          "family": "release/ci-lane",
+          "protects": "Owner-neutral isolated repo-local KAG preparation, exact history and budget boundaries, generated-output scope, and caller-index preservation.",
+          "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_prepare_owner_landing.py",
+          "failure_route": "Route through the owner preparation entrypoint, common owner-family gate, or generated-output authority.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
+          ]
+        },
+        {
+          "path": "tests/test_repo_local_kag_gate.py",
+          "family": "release/ci-lane",
+          "protects": "Fail-fast incremental drift routing, complete canonical owner-family proof fan-out, stable candidate identity, and bounded scheduler receipts for reusable KAG consumers.",
+          "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_repo_local_kag_gate.py",
+          "failure_route": "Route through the common repo-local KAG action, owner-family gate, or exact history and budget boundaries.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
+          ]
+        },
+        {
           "path": "tests/test_validate_semantic_agents.py",
           "family": "AGENTS/route",
           "protects": "Semantic AGENTS route-card requirements.",

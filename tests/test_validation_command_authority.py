@@ -436,13 +436,19 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         authority = (
             REPO_ROOT / "docs" / "validation" / "COMMAND_AUTHORITY.md"
         ).read_text(encoding="utf-8")
+        gate = (REPO_ROOT / "scripts" / "repo_local_kag_gate.py").read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("scripts/generate_repo_local_kag_index.py", action)
+        self.assertIn("scripts/repo_local_kag_gate.py", action)
         self.assertIn('--repo-root "${{ inputs.repo-root }}"', action)
         self.assertIn('--output "${{ inputs.output }}"', action)
-        self.assertIn("--portable-family", action)
         self.assertIn("--budget-base-ref", action)
-        self.assertIn("--incremental", action)
+        self.assertIn('--jobs "${{ inputs.jobs }}"', action)
+        self.assertIn("generate_repo_local_kag_index.py", gate)
+        self.assertIn("--portable-family", gate)
+        self.assertIn("--incremental", gate)
+        self.assertIn("incremental-drift-sentinel", gate)
         self.assertIn("history-ref:", action)
         self.assertIn("event-history-ref:", action)
         self.assertIn("working-directory: ${{ inputs.repo-root }}", action)
@@ -463,16 +469,19 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             '--event-history-ref "${{ steps.history.outputs.event-ref }}"',
             action,
         )
-        self.assertIn("--check", action)
-        self.assertIn("scripts/validate_repo_local_kag_family.py", action)
-        self.assertIn("scripts/assemble_repo_local_kag_family.py", action)
+        self.assertIn("--check", gate)
+        self.assertIn("validate_repo_local_kag_family.py", gate)
+        self.assertIn("assemble_repo_local_kag_family.py", gate)
         self.assertIn("python3 -m pip install", action)
         self.assertLess(
             action.index("python3 -m pip install"),
-            action.index("scripts/validate_repo_local_kag_family.py"),
+            action.index("scripts/repo_local_kag_gate.py"),
         )
-        self.assertIn('--source-index "${{ inputs.output }}"', action)
+        self.assertIn("--source-index", gate)
         self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)
+        self.assertIn("owner_family_workers:", workflow)
+        self.assertIn("jobs: ${{ inputs.owner_family_workers || '2' }}", workflow)
+        self.assertIn('default: "2"', action)
         self.assertIn("source lineage and repository-event history", authority)
         self.assertIn("target `repo-root`", authority)
         self.assertIn("multi-commit branch and its squash-merged", authority)

@@ -19,6 +19,15 @@ on:
         description: Exact commit used as the manual comparison history boundary
         required: false
         type: string
+      owner_family_workers:
+        description: Bounded owner-family gate workers; use 1 as the exact sequential control
+        required: true
+        default: "2"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
 
 permissions:
   contents: read
@@ -144,6 +153,7 @@ jobs:
         with:
           history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}
           event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}
+          jobs: ${{ inputs.owner_family_workers || '2' }}
 
       - name: Run source-fast validation
         run: python scripts/ci_gate.py --mode source-fast

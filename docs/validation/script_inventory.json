@@ -699,6 +699,53 @@
       "disposition": "keep"
     },
     {
+      "path": "scripts/prepare_owner_landing.py",
+      "family": "release_entrypoint",
+      "organ_lane": "release/ci-lane",
+      "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+      "source_truth": [
+        "docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md",
+        "scripts/generate_repo_local_kag_index.py",
+        "scripts/repo_local_kag_gate.py",
+        "docs/validation/CI_EVIDENCE_DAG.md"
+      ],
+      "reads": [
+        "one caller owner repository HEAD, Git index and worktree candidate plus exact history boundaries"
+      ],
+      "writes": [
+        "isolated temporary Git worktree and optional unstaged repo-local KAG family patch in the caller worktree"
+      ],
+      "side_effects": "prepares any owner portable family against the exact staged candidate, runs the canonical owner-family gate, and preserves the caller Git index",
+      "validation_lane": "release",
+      "ci_inclusion": "owner pre-push preparation only; reusable action and all owner/release/OS-wide proof remain blocking",
+      "test_target": "tests/test_prepare_owner_landing.py",
+      "disposition": "keep"
+    },
+    {
+      "path": "scripts/repo_local_kag_gate.py",
+      "family": "release_entrypoint",
+      "organ_lane": "release/ci-lane",
+      "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+      "source_truth": [
+        "docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md",
+        ".github/actions/repo-local-kag-index/action.yml",
+        "scripts/generate_repo_local_kag_index.py",
+        "scripts/validate_repo_local_kag_family.py",
+        "scripts/assemble_repo_local_kag_family.py"
+      ],
+      "reads": [
+        "one owner repository candidate and its explicit source-lineage, event-history, and budget boundaries"
+      ],
+      "writes": [
+        "temporary seven-file compatibility assembly and optional external receipt"
+      ],
+      "side_effects": "runs the unchanged incremental parity proof as a drift sentinel, then schedules the full parity, family contract, and compatibility assembly as a bounded read-only fan-out",
+      "validation_lane": "release",
+      "ci_inclusion": "common reusable owner-family action for every admitted KAG provider repository",
+      "test_target": "tests/test_repo_local_kag_gate.py",
+      "disposition": "keep"
+    },
+    {
       "path": "scripts/run_tests.py",
       "family": "test_runner",
       "organ_lane": "source/topology",

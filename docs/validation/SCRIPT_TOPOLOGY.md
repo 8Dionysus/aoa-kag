@@ -105,6 +105,20 @@ order, canonical roots, and matching portable-manifest identities. It neither
 changes the caller's Git index, reuses an owner-proof verdict, nor grants
 validation or landing authority.
 
+`scripts/prepare_owner_landing.py` extends isolated preparation to every
+provider repository without treating that repository as the root KAG SCC. It
+copies the exact tracked, staged, unstaged, and untracked candidate into a
+detached temporary worktree, regenerates only its portable family and optional
+digest-bound budget receipt, then requires the common owner-family gate. Its
+`--apply` route changes only allowed KAG worktree outputs and preserves the
+caller's Git index.
+
+`scripts/repo_local_kag_gate.py` owns the reusable owner-family component DAG.
+Incremental parity is an early drift sentinel; after it passes, full parity,
+the family contract, and compatibility assembly run with bounded fan-out. The
+default is two workers, one is the sequential rollback, and every canonical
+component remains blocking against one stable candidate identity.
+
 `scripts/ci_preflight_dag.py` is a scheduling-only release preflight. It
 overlaps the seed-only self-coverage sentinel with the already admitted bounded
 provider checkout wave, cancels only the peer processes it launched when one
