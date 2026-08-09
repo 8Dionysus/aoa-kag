@@ -449,8 +449,8 @@ class PrepareLandingTests(unittest.TestCase):
                 git(isolated / ".validator", "symbolic-ref", "--quiet", "HEAD"),
             )
             self.assertEqual(
-                prepare_landing._origin_remote_state(nested),
-                prepare_landing._origin_remote_state(isolated / ".validator"),
+                prepare_landing._git_ref_state(nested),
+                prepare_landing._git_ref_state(isolated / ".validator"),
             )
             self.assertNotEqual(first.identity(), second.identity())
 
@@ -489,8 +489,8 @@ class PrepareLandingTests(unittest.TestCase):
                 git(isolated_nested, "symbolic-ref", "--quiet", "HEAD"),
             )
             self.assertEqual(
-                prepare_landing._origin_remote_state(nested),
-                prepare_landing._origin_remote_state(isolated_nested),
+                prepare_landing._git_ref_state(nested),
+                prepare_landing._git_ref_state(isolated_nested),
             )
             self.assertEqual(
                 main_commit,
@@ -691,6 +691,69 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual(
                 [f"refs/replace/{unmodified_head}"],
                 raised.exception.details["replacement_refs"],
+            )
+
+    def test_snapshot_preserves_nested_shallow_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            source = root / "nested-source"
+            source.mkdir()
+            git(source, "init", "-q")
+            git(source, "config", "user.email", "test@example.invalid")
+            git(source, "config", "user.name", "Nested Validator Test")
+            (source / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(source, "add", ".")
+            git(source, "commit", "-qm", "nested base")
+            (source / "validator.txt").write_text("tip\n", encoding="utf-8")
+            git(source, "commit", "-qam", "nested tip")
+            nested = repo / ".validator"
+            git(
+                repo,
+                "clone",
+                "-q",
+                "--depth",
+                "1",
+                f"file://{source.resolve().as_posix()}",
+                nested.as_posix(),
+            )
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            source_boundaries = prepare_landing._shallow_boundaries(nested)
+            self.assertTrue(source_boundaries)
+            self.assertEqual(
+                source_boundaries,
+                prepare_landing._shallow_boundaries(isolated / ".validator"),
+            )
+
+    def test_snapshot_rejects_nested_history_storage_overrides(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            grafts = Path(git(nested, "rev-parse", "--git-path", "info/grafts").decode().strip())
+            if not grafts.is_absolute():
+                grafts = nested / grafts
+            grafts.parent.mkdir(parents=True, exist_ok=True)
+            grafts.write_text(git(nested, "rev-parse", "HEAD").decode(), encoding="ascii")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["info/grafts"],
+                raised.exception.details["history_storage_overrides"],
             )
 
     def test_snapshot_rejects_dormant_nested_filter_attributes(self) -> None:

@@ -85,7 +85,8 @@ class NestedGitSnapshot:
     root_mode: int
     symbolic_head: str | None
     origin_head: str | None
-    origin_remote_refs: tuple[tuple[str, str], ...]
+    git_refs: tuple[tuple[str, str], ...]
+    shallow_boundaries: tuple[str, ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -96,7 +97,8 @@ class NestedGitSnapshot:
             "root_mode": self.root_mode,
             "symbolic_head": self.symbolic_head,
             "origin_head": self.origin_head,
-            "origin_remote_refs": [list(row) for row in self.origin_remote_refs],
+            "git_refs": [list(row) for row in self.git_refs],
+            "shallow_boundaries": list(self.shallow_boundaries),
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -590,12 +592,12 @@ def _symbolic_head(path: Path) -> str | None:
     return value
 
 
-def _origin_remote_state(path: Path) -> tuple[str | None, tuple[tuple[str, str], ...]]:
+def _git_ref_state(path: Path) -> tuple[str | None, tuple[tuple[str, str], ...]]:
     output = git_text(
         path,
         "for-each-ref",
         "--format=%(refname)%09%(objectname)%09%(symref)%09.",
-        "refs/remotes/origin",
+        "refs",
     )
     origin_head: str | None = None
     direct_refs: list[tuple[str, str]] = []
@@ -626,13 +628,13 @@ def _origin_remote_state(path: Path) -> tuple[str | None, tuple[tuple[str, str],
     return origin_head, tuple(sorted(direct_refs))
 
 
-def _restore_origin_remote_state(path: Path, expected: NestedGitSnapshot) -> None:
-    observed_head, observed_refs = _origin_remote_state(path)
+def _restore_git_ref_state(path: Path, expected: NestedGitSnapshot) -> None:
+    observed_head, observed_refs = _git_ref_state(path)
     if observed_head is not None:
         git_bytes(path, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
     for refname, _object_name in observed_refs:
         git_bytes(path, "update-ref", "-d", refname)
-    for refname, object_name in expected.origin_remote_refs:
+    for refname, object_name in expected.git_refs:
         available = subprocess.run(
             ("git", "cat-file", "-e", f"{object_name}^{{object}}"),
             cwd=path,
@@ -655,8 +657,8 @@ def _restore_origin_remote_state(path: Path, expected: NestedGitSnapshot) -> Non
             "refs/remotes/origin/HEAD",
             expected.origin_head,
         )
-    restored = _origin_remote_state(path)
-    wanted = (expected.origin_head, expected.origin_remote_refs)
+    restored = _git_ref_state(path)
+    wanted = (expected.origin_head, expected.git_refs)
     if restored != wanted:
         raise PreparationFailure(
             "nested checkout remote refs differ after isolation",
@@ -664,6 +666,42 @@ def _restore_origin_remote_state(path: Path, expected: NestedGitSnapshot) -> Non
             action_class="code_fix",
             details={"expected": wanted, "actual": restored},
         )
+
+
+def _shallow_boundaries(path: Path) -> tuple[str, ...]:
+    shallow = git_text(path, "rev-parse", "--is-shallow-repository")
+    if shallow == "false":
+        return ()
+    if shallow != "true":
+        raise PreparationFailure(
+            f"cannot inspect nested checkout shallow state: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    shallow_path = Path(git_text(path, "rev-parse", "--git-path", "shallow"))
+    if not shallow_path.is_absolute():
+        shallow_path = path / shallow_path
+    boundaries = tuple(
+        sorted(line.strip() for line in shallow_path.read_text(encoding="ascii").splitlines() if line.strip())
+    )
+    if not boundaries:
+        raise PreparationFailure(
+            f"nested checkout reports shallow history without boundaries: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    return boundaries
+
+
+def _history_storage_overrides(path: Path) -> tuple[str, ...]:
+    overrides: list[str] = []
+    for raw in ("info/grafts", "objects/info/alternates", "objects/info/http-alternates"):
+        candidate = Path(git_text(path, "rev-parse", "--git-path", raw))
+        if not candidate.is_absolute():
+            candidate = path / candidate
+        if candidate.is_file() and candidate.read_bytes().strip():
+            overrides.append(raw)
+    return tuple(overrides)
 
 
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
@@ -791,6 +829,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"replacement_refs": list(replacement_refs)},
         )
+    history_storage_overrides = _history_storage_overrides(path)
+    if history_storage_overrides:
+        raise PreparationFailure(
+            f"nested checkout contains external history storage state: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"history_storage_overrides": list(history_storage_overrides)},
+        )
     partial_clone_settings = _partial_clone_settings(path)
     if partial_clone_settings:
         raise PreparationFailure(
@@ -874,13 +920,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             details={"filter_attribute_sources": list(filter_attribute_sources)},
         )
     candidate = capture_candidate_snapshot(path)
-    origin_head, origin_remote_refs = _origin_remote_state(path)
+    origin_head, git_refs = _git_ref_state(path)
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
         symbolic_head=_symbolic_head(path),
         origin_head=origin_head,
-        origin_remote_refs=origin_remote_refs,
+        git_refs=git_refs,
+        shallow_boundaries=_shallow_boundaries(path),
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -1177,7 +1224,13 @@ def copy_untracked_candidate(
                     "core.hooksPath",
                     "/dev/null",
                 )
-                _restore_origin_remote_state(destination, nested)
+                _restore_git_ref_state(destination, nested)
+                if _shallow_boundaries(destination) != nested.shallow_boundaries:
+                    raise PreparationFailure(
+                        "nested checkout shallow boundary differs after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
                 _require_effective_checkout_settings_match(source, destination)
                 checkout_args = ["-c", "core.hooksPath=/dev/null", "checkout"]
                 if nested.symbolic_head is None:
