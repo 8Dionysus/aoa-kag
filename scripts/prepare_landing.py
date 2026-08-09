@@ -298,7 +298,7 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
     ):
         settings.append(f"info.attributes {info_attributes}")
     file_mode = subprocess.run(
-        ("git", "config", "--local", "--bool", "--get", "core.filemode"),
+        ("git", "config", "--bool", "--get", "core.filemode"),
         cwd=path,
         check=False,
         capture_output=True,
@@ -313,6 +313,22 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
         )
     if file_mode.returncode == 0 and file_mode.stdout.strip() == "false":
         settings.append("core.filemode false")
+    ignore_case = subprocess.run(
+        ("git", "config", "--bool", "--get", "core.ignorecase"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if ignore_case.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout case-folding setting: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": ignore_case.stderr.strip()},
+        )
+    if ignore_case.returncode == 0 and ignore_case.stdout.strip() == "true":
+        settings.append("core.ignorecase true")
     index_entries = tuple(
         entry.decode("utf-8", errors="surrogateescape")
         for entry in git_bytes(path, "ls-files", "-v", "-z").split(b"\0")
@@ -343,10 +359,18 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     conversion_settings = _nonportable_local_checkout_settings(path)
     if conversion_settings:
         raise PreparationFailure(
-            f"nested checkout has repository-local worktree conversion settings: {path}",
+            f"nested checkout has nonportable worktree settings: {path}",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"conversion_settings": list(conversion_settings)},
+        )
+    symlinks = candidate_symlink_paths(path)
+    if symlinks:
+        raise PreparationFailure(
+            f"nested checkout contains symlinks with unbound target bytes: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"symlinks": list(symlinks)},
         )
     paths = tracked_paths(path)
     return NestedGitSnapshot(
@@ -365,6 +389,15 @@ def tracked_paths(repo_root: Path) -> tuple[str, ...]:
     for item in paths:
         checked_relative_path(item)
     return paths
+
+
+def candidate_symlink_paths(repo_root: Path) -> tuple[str, ...]:
+    paths = (*tracked_paths(repo_root), *untracked_paths(repo_root))
+    return tuple(
+        raw
+        for raw in paths
+        if (repo_root / checked_relative_path(raw)).is_symlink()
+    )
 
 
 def tracked_worktree_digest(repo_root: Path, paths: Sequence[str]) -> str:
@@ -427,6 +460,8 @@ def _update_untracked_path_digest(
     digest.update(raw.encode("utf-8", errors="surrogateescape"))
     digest.update(b"\0")
     digest.update(str(stat.S_IFMT(metadata.st_mode)).encode("ascii"))
+    digest.update(b"\0")
+    digest.update(str(stat.S_IMODE(metadata.st_mode)).encode("ascii"))
     digest.update(b"\0")
     if stat.S_ISLNK(metadata.st_mode):
         digest.update(os.readlink(source).encode("utf-8", errors="surrogateescape"))

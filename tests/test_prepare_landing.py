@@ -250,6 +250,17 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual(("validation-input/receipt.txt",), first.untracked_paths)
             self.assertNotEqual(first.identity(), second.identity())
 
+    def test_snapshot_hashes_untracked_permission_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            untracked = repo / "run-validation.sh"
+            untracked.write_text("#!/bin/sh\n", encoding="utf-8")
+            first = prepare_landing.capture_candidate_snapshot(repo)
+            untracked.chmod(0o755)
+            second = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertNotEqual(first.identity(), second.identity())
+
     def test_snapshot_hashes_nested_untracked_checkout_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
@@ -415,6 +426,42 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing.capture_candidate_snapshot(repo)
 
             self.assertIn("core.filemode false", raised.exception.details["conversion_settings"])
+
+    def test_snapshot_rejects_nested_core_ignorecase_true(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            git(nested, "config", "core.ignorecase", "true")
+            (nested / "File").write_text("tracked\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            (nested / "file").write_text("hidden by case folding\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertIn("core.ignorecase true", raised.exception.details["conversion_settings"])
+
+    def test_snapshot_rejects_symlinks_in_nested_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator-link").symlink_to("../ignored-validator-state")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested symlink")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(["validator-link"], raised.exception.details["symlinks"])
 
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
         prepare_landing.require_preparation_output_scope(
