@@ -24,7 +24,12 @@ def result(component: GATE.Component, returncode: int = 0) -> GATE.ComponentResu
 
 
 class RepoLocalKagGateTests(unittest.TestCase):
-    def gate(self, *, jobs: int = 1) -> tuple[int, dict[str, object]]:
+    def gate(
+        self,
+        *,
+        jobs: int = 1,
+        sentinel_receipt: object | None = None,
+    ) -> tuple[int, dict[str, object]]:
         return GATE.run_gate(
             repo_root=REPO_ROOT,
             output=GATE.DEFAULT_OUTPUT,
@@ -32,7 +37,30 @@ class RepoLocalKagGateTests(unittest.TestCase):
             event_history_ref="HEAD",
             budget_base_ref="HEAD",
             jobs=jobs,
+            sentinel_receipt=sentinel_receipt,
         )
+
+    @staticmethod
+    def sentinel_handoff(identity: dict[str, str]) -> dict[str, object]:
+        component = GATE.sentinel_component(
+            repo_root=REPO_ROOT,
+            output=GATE.DEFAULT_OUTPUT,
+            history_ref="HEAD",
+            event_history_ref="HEAD",
+            budget_base_ref="HEAD",
+        )
+        return {
+            "schema_version": GATE.SENTINEL_SCHEMA_VERSION,
+            "verdict": "verified",
+            "candidate": identity,
+            "candidate_stable": True,
+            "refs": {
+                "history_ref": "HEAD",
+                "event_history_ref": "HEAD",
+                "budget_base_ref": "HEAD",
+            },
+            "components": [result(component).payload()],
+        }
 
     def test_incremental_failure_stops_before_expensive_fanout(self) -> None:
         calls: list[str] = []
@@ -186,6 +214,59 @@ class RepoLocalKagGateTests(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertEqual("owner_family_proof_failed", receipt["failure_type"])
         self.assertEqual("fix_candidate", receipt["action_class"])
+
+    def test_verified_same_run_sentinel_handoff_skips_duplicate_sentinel(self) -> None:
+        identity = {
+            "repo_root": REPO_ROOT.as_posix(),
+            "head": "a" * 40,
+            "index_tree": "b" * 40,
+            "candidate_identity": "sha256:" + "c" * 64,
+        }
+        calls: list[str] = []
+
+        def fake_run(component: GATE.Component, *, repo_root: Path) -> GATE.ComponentResult:
+            self.assertEqual(REPO_ROOT, repo_root)
+            calls.append(component.component_id)
+            return result(component)
+
+        with (
+            mock.patch.object(GATE, "candidate_identity", return_value=identity),
+            mock.patch.object(GATE, "run_component", side_effect=fake_run),
+        ):
+            code, receipt = self.gate(
+                jobs=2,
+                sentinel_receipt=self.sentinel_handoff(identity),
+            )
+
+        self.assertEqual(0, code)
+        self.assertEqual("same-run-handoff", receipt["sentinel_source"])
+        self.assertCountEqual(
+            ["full-parity", "family-contract", "compatibility-assembly"],
+            calls,
+        )
+        self.assertEqual(4, len(receipt["components"]))
+
+    def test_sentinel_handoff_rejects_a_different_candidate_before_fanout(self) -> None:
+        expected = {
+            "repo_root": REPO_ROOT.as_posix(),
+            "head": "a" * 40,
+            "index_tree": "b" * 40,
+            "candidate_identity": "sha256:" + "c" * 64,
+        }
+        observed = dict(expected, candidate_identity="sha256:" + "d" * 64)
+        with (
+            mock.patch.object(GATE, "candidate_identity", return_value=observed),
+            mock.patch.object(GATE, "run_component") as run_component,
+        ):
+            code, receipt = self.gate(
+                jobs=2,
+                sentinel_receipt=self.sentinel_handoff(expected),
+            )
+
+        self.assertEqual(1, code)
+        self.assertEqual("sentinel_handoff_invalid", receipt["failure_type"])
+        self.assertEqual("rerun_stable_candidate", receipt["action_class"])
+        run_component.assert_not_called()
 
     def test_generator_commands_keep_exact_history_and_budget_boundaries(self) -> None:
         command = GATE.generator_command(

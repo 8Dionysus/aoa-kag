@@ -473,9 +473,15 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("validate_repo_local_kag_family.py", gate)
         self.assertIn("assemble_repo_local_kag_family.py", gate)
         self.assertIn("python3 -m pip install", action)
+        self.assertIn("--sentinel-only", action)
+        self.assertIn("--sentinel-receipt", action)
+        self.assertLess(
+            action.index("--sentinel-only"),
+            action.index("python3 -m pip install"),
+        )
         self.assertLess(
             action.index("python3 -m pip install"),
-            action.index("scripts/repo_local_kag_gate.py"),
+            action.index("--sentinel-receipt"),
         )
         self.assertIn("--source-index", gate)
         self.assertIn("uses: ./.github/actions/repo-local-kag-index", workflow)

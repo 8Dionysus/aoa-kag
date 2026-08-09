@@ -62,6 +62,18 @@ runs:
         printf 'AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF=%s\n' "$event_history_ref" >> "$GITHUB_ENV"
         printf 'ref=%s\n' "$history_ref" >> "$GITHUB_OUTPUT"
         printf 'event-ref=%s\n' "$event_history_ref" >> "$GITHUB_OUTPUT"
+    - name: Check incremental repo-local KAG drift sentinel
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: >-
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/repo_local_kag_gate.py"
+        --repo-root "${{ inputs.repo-root }}"
+        --output "${{ inputs.output }}"
+        --history-ref "${{ steps.history.outputs.ref }}"
+        --event-history-ref "${{ steps.history.outputs.event-ref }}"
+        --budget-base-ref "${{ steps.history.outputs.ref }}"
+        --sentinel-only
+        --receipt-output "$RUNNER_TEMP/repo-local-kag-owner-family-sentinel-receipt.json"
     - name: Ensure repo-local validation dependencies
       shell: bash
       working-directory: ${{ github.workspace }}
@@ -80,4 +92,5 @@ runs:
         --event-history-ref "${{ steps.history.outputs.event-ref }}"
         --budget-base-ref "${{ steps.history.outputs.ref }}"
         --jobs "${{ inputs.jobs }}"
+        --sentinel-receipt "$RUNNER_TEMP/repo-local-kag-owner-family-sentinel-receipt.json"
         --receipt-output "$RUNNER_TEMP/repo-local-kag-owner-family-receipt.json"
