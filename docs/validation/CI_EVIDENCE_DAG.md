@@ -104,6 +104,24 @@ and a final-digest budget receipt. This corpus measures retry amplification,
 not runner speed: elapsed spans include the correction loop between runs and
 must not be presented as one CI-command duration.
 
+### Retry policy
+
+The retry unit is an immutable candidate, not an unchanged failed workflow.
+Before another hosted run, a source change that can affect the root KAG family
+must pass `prepare_landing.py --check`; when it reports drift, run `--apply`,
+review and commit only its bounded generated patch, then require a clean
+post-commit `--check`. A `provide_budget_reason` receipt is an owner gate, not
+an infrastructure retry. A typed source, portable-family, coverage, generated,
+or semantic failure requires a changed candidate before another hosted run.
+Only a demonstrated transient infrastructure failure may be retried on the
+same SHA, and its failed receipt remains part of the evidence corpus.
+
+Manual comparisons additionally bind the workflow checkout and both history
+identities to one exact head/base pair. Runs that violate that identity are
+invalid experiment attempts, even if their failure led to a useful wiring fix.
+Do not count them as candidate or control samples, and do not repeatedly
+dispatch until the shared cause is understood.
+
 ## Dependency graph
 
 The graph has independent branches, barriers, and one real strongly connected
@@ -186,7 +204,7 @@ hosted comparison evidence.
 | Exact same-run root-family proof | avoid a later process repeating semantic family assertions already completed in the same lane | run ID/lane, root, portable-family digest, validator/schema/runtime epoch, self-digest, cold fallback | locally effective, but failed the three-pair hosted benefit gate; do not land unchanged |
 | Checkout/history routing | remove independent checkout waits from the critical path without reducing proof inputs | retain complete commit history and exact pins; isolate secret-owned checkout; bound workers; compare checkout plus real owner proof, missing objects, storage, and fallback | bounded three-worker full-history public wave accepted by `AOA-KAG-D-0033`; `blob:none` rejected for time and `blob:limit=1m` rejected after three semantic proof failures |
 | Provider validation algorithm | reduce cold scan/decode/build work without caching a verdict | same schemas, source bytes, family parity, coverage row, and final identity barrier | bounded relation lookup and copy isolation accepted by `AOA-KAG-D-0034`; profile the remaining largest providers before another mechanism |
-| SCC-aware bounded scheduling | overlap independent provider proofs or prefetch without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, cancellation and cold serial fallback | root family/coverage cycle is now modeled as one atomic ordered SCC; resource-class provider waves remain unadmitted |
+| SCC-aware bounded scheduling | overlap independent preparation and checkout without oversubscribing the runner | canonical barrier, deterministic output, bounded workers/RSS, peer-only cancellation and unchanged full proof after successful fan-in | root family/coverage cycle is one atomic ordered SCC; the early sentinel DAG is admitted for typed failure latency after 3/3 failure-path wins, not as a green-path speedup; semantic provider waves remain unadmitted |
 | Fail-closed impact routing | avoid the full OS-wide branch for positively admitted owner-local PR changes | source-fast and owner-family always block; mixed, unknown, malformed, empty, unprovable, non-PR, main, and manual inputs route full; required summary rejects an invalid skip | accepted by `AOA-KAG-D-0022`; hosted owner-local cost is measured, while exact-current canary health and a paired counterfactual remain open evidence |
 | Cross-run owner fragments | replace unchanged external-owner proof with admitted prior evidence | owner-admitted artifact class, trusted main producer, provenance, expiry/revocation, exact consumer gate, cold fallback | blocked by `AOA-KAG-D-0029`; preserve feasibility evidence |
 
@@ -247,6 +265,14 @@ independent nodes conservatively while preserving all current owner coverage.
 It cannot safely turn owner truth into a cache key or remove the fixed-point
 cycle.
 
+The exact-head experiment narrows that answer further. On a clean candidate,
+the sentinel DAG was effectively neutral and slightly slower inside preflight;
+it did not accelerate the unchanged serial semantic audit. On a controlled
+self-coverage drift, it rejected the candidate before provider checkout and
+the full audit, saving a median 123 seconds. The admitted DAG is therefore a
+failure-latency mechanism around the atomic SCC, not a claim that the canonical
+proof itself has become parallel or cheaper.
+
 ## Experiment ledger
 
 All local comparisons below used the same pinned 21-owner registry and the
@@ -289,6 +315,11 @@ are not substituted for hosted evidence.
 | Seed-bounded atomic SCC preparation | exact historical failed heads from PRs 206, 207, and 208, using each PR base as seed | the three staged replays reached final regeneration parity in 80.560/68.371/59.493 s and 3/2/3 iterations, changing 11/5/11 derived paths; every external row stayed seed-bound and all 21 owner rows remained present and passed | mechanism gate passed locally; PR 208 still demonstrates that the final digest-bound budget receipt belongs inside the atomic preparation contract rather than being inferred from regeneration-only replay |
 | Early self-SCC sentinel | original PR 208 failed head `a8faebb2` against base `eb0ce524` | typed self-coverage drift was detected in 6.267 s locally, before provider materialization or full owner proof; hosted run `31280821184` exposed the same correction class only after about 275 s | retain as a fail-fast scheduling candidate; local-versus-hosted timing is orientation, not a paired causal claim |
 | Hardened current atomic preparation check | current candidate with 21 exact, clean, complete-history pinned provider checkouts | isolated fixed point plus final digest-bound receipt and final parity completed in 69.681 s, three iterations, 213.3 MiB process peak RSS, and 0 B swap; `--check` correctly returned drift without changing the caller | local correctness/resource evidence passed; rerun on committed source and require canonical proof plus hosted admission before landing |
+| Final committed atomic preparation | exact head `0f9f75cb`, base `8d4ad756`, and the same 20 pinned external checkouts | source-to-derived `--apply` converged in 76.202 s and three iterations; the post-commit `--check` completed in 40.839 s with one iteration, 21/21 exact owners, an accepted final-digest receipt, zero changed bytes, 219.7 MiB peak RSS, and 0 B swap | atomic preparation gate passed; source changes no longer require speculative hosted retries to discover root-SCC drift |
+| Exact-history experiment wiring | manual runs `31288692216`, `31288701202`, `31288888657`, and `31288889295` | the first two used the dispatch HEAD as history; the second pair supplied an exact base only to expected env fields while the composite action still received HEAD, so all four failed source-family identity/parity before comparison | invalid/incomplete attempts, excluded from A/B; workflow now binds the action inputs and release job to the same exact history identity, with regression tests |
+| Final exact-head PR proof | PR run [`31289220520`](https://github.com/8Dionysus/aoa-kag/actions/runs/31289220520) at `0f9f75cb` | source-fast and exact owner-family passed in 98 s, the unchanged full OS-wide audit passed in 176 s, and the typed required summary passed; all blocking checks were green | hosted correctness gate passed before A/B admission |
+| Early sentinel DAG, clean passing path | three simultaneous exact-head/base hosted pairs: candidate `31289397792`/`31289613243`/`31289825753`, control `31289398589`/`31289612398`/`31289826568` | full-audit jobs were 133/194/178 s versus 180/179/175 s; medians 178 versus 179 s and candidate won 1/3. Machine preflight receipts were 42.210/44.433/43.991 s versus 43.144/43.655/42.944 s; candidate median regressed by 0.847 s (1.96 percent). Every run retained the same checkout command and full release proof | no green-path speed claim; below the benefit gate, with no material regression |
+| Early sentinel DAG, controlled failure path | branch-only probe `c5b1350c` kept its portable family exact but intentionally left OS-wide self coverage stale; candidate runs `31290107462`/`31290288953`/`31290437827` versus controls `31290108238`/`31290287973`/`31290438556` | all six source-fast jobs passed. Candidate typed `self_coverage_drift` in 7.541/7.743/7.683 s, cancelled only its checkout peer, and skipped release audit; full-audit jobs were 32/31/33 s versus 155/125/161 s. Candidate won 3/3; medians 32 versus 155 s, saving 123 s or 79.35 percent. Controls rejected the same coverage parity only after checkout and all 21 provider homes | benefit and fail-closed gates passed; admit the DAG specifically as an early failure detector while retaining the unchanged successful full proof |
 
 The exact same-run semantic proof prototype was fail-closed and passed its
 negative identity matrix, but its approximately 3--5 second local saving did

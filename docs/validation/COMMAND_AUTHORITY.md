@@ -283,6 +283,13 @@ Manual exact-head comparisons also pass the immutable PR-base commit through
 `history_ref`; when it is omitted, the existing event-derived history boundary
 remains unchanged.
 
+The hosted admission evidence distinguishes success latency from failure
+latency. The sentinel is not a green-path proof shortcut: successful fan-in
+always proceeds to the unchanged release continuation. Its admitted benefit is
+typed early rejection of self-coverage drift, with peer-only checkout
+cancellation. The exact-head direct control remains available only for manual
+comparison and never changes the pull-request/default candidate posture.
+
 Impact classification and summary evaluation are support commands rather than
 validation lanes:
 
