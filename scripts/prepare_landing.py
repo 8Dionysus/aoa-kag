@@ -490,6 +490,31 @@ def _effective_external_rule_settings(path: Path) -> tuple[str, ...]:
     return tuple(sorted(line for line in result.stdout.splitlines() if line))
 
 
+def _implicit_rule_sources() -> tuple[str, ...]:
+    xdg_root = os.environ.get("XDG_CONFIG_HOME", "").strip()
+    if xdg_root:
+        config_root = Path(xdg_root)
+    else:
+        home = os.environ.get("HOME", "").strip()
+        config_root = Path(home) / ".config" if home else Path("/nonexistent")
+    candidates = (
+        config_root / "git" / "attributes",
+        config_root / "git" / "ignore",
+        Path("/usr/etc/gitattributes"),
+        Path("/etc/gitattributes"),
+    )
+    active: list[str] = []
+    for candidate in candidates:
+        if not candidate.is_file():
+            continue
+        if any(
+            line.strip() and not line.lstrip().startswith(b"#")
+            for line in candidate.read_bytes().splitlines()
+        ):
+            active.append(candidate.as_posix())
+    return tuple(active)
+
+
 def _partial_clone_settings(path: Path) -> tuple[str, ...]:
     result = subprocess.run(
         (
@@ -844,6 +869,14 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
 def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     if not _is_nested_git_checkout(path):
         return None
+    implicit_rule_sources = _implicit_rule_sources()
+    if implicit_rule_sources:
+        raise PreparationFailure(
+            f"nested checkout is exposed to implicit Git rule sources: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"implicit_rule_sources": list(implicit_rule_sources)},
+        )
     fsmonitor_settings = _effective_fsmonitor_settings(path)
     if fsmonitor_settings:
         raise PreparationFailure(

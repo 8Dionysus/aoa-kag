@@ -1110,6 +1110,35 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual(["validator.txt"], raised.exception.details["filtered_paths"])
 
+    def test_snapshot_rejects_implicit_xdg_attribute_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            xdg_root = root / "xdg"
+            attributes = xdg_root / "git" / "attributes"
+            attributes.parent.mkdir(parents=True)
+            attributes.write_text("*.generated filter=demo\n", encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {"XDG_CONFIG_HOME": xdg_root.as_posix()},
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                [attributes.as_posix()],
+                raised.exception.details["implicit_rule_sources"],
+            )
+
     def test_snapshot_rejects_dirty_filter_before_clean_driver_runs(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             root = Path(repo_tmp)
