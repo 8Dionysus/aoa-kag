@@ -6,6 +6,19 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+    inputs:
+      preflight_mode:
+        description: Exact-head checkout preflight experiment mode
+        required: true
+        default: candidate
+        type: choice
+        options:
+          - candidate
+          - direct-control
+      history_ref:
+        description: Exact commit used as the manual comparison history boundary
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -33,8 +46,8 @@ jobs:
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
-      AOA_KAG_EXPECTED_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
-      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -129,8 +142,8 @@ jobs:
       - name: Check repo-local KAG index family
         uses: ./.github/actions/repo-local-kag-index
         with:
-          history-ref: ${{ github.event.pull_request.base.sha || github.sha }}
-          event-history-ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}
+          event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}
 
       - name: Run source-fast validation
         run: python scripts/ci_gate.py --mode source-fast
@@ -168,8 +181,8 @@ jobs:
       AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
       AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
       AOA_XDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-xda-connector
-      AOA_KAG_EXPECTED_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
-      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
       AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}
     steps:
       - name: Checkout
@@ -187,14 +200,6 @@ jobs:
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
           persist-credentials: false
 
-      - name: Checkout public providers in bounded parallel wave
-        env:
-          AOA_KAG_CHECKOUT_WORKERS: "3"
-        run: >-
-          python scripts/sync_provider_checkouts.py
-          --jobs "$AOA_KAG_CHECKOUT_WORKERS"
-          --exclude-secret-checkouts
-
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -202,6 +207,16 @@ jobs:
 
       - name: Install validation dependencies
         run: python -m pip install PyYAML jsonschema jsonschema-rs==0.49.2
+
+      - name: Checkout providers with early SCC preflight DAG
+        env:
+          AOA_KAG_CHECKOUT_WORKERS: "3"
+          AOA_KAG_PREFLIGHT_MODE: ${{ inputs.preflight_mode || 'candidate' }}
+        run: >-
+          python scripts/ci_preflight_dag.py
+          --base-ref "$AOA_KAG_EXPECTED_HISTORY_REF"
+          --jobs "$AOA_KAG_CHECKOUT_WORKERS"
+          --mode "$AOA_KAG_PREFLIGHT_MODE"
 
       - name: Run release audit
         run: python scripts/ci_release_check.py

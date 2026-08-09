@@ -11,7 +11,11 @@ See also:
 
 1. Keep the release bounded to derived KAG surfaces and bridge contracts.
 2. Update `CHANGELOG.md` in the `Summary / Validation / Notes` shape.
-3. Run the repo-level verifier through the release entry in
+3. Before push, use the isolated landing-preparation entry documented in
+   `docs/validation/COMMAND_AUTHORITY.md`. It converges the root KAG SCC through
+   staged temporary state and preserves the caller's Git index. Its receipt is
+   preparation evidence only and never replaces a validation lane.
+4. Run the repo-level verifier through the release entry in
    `docs/validation/COMMAND_AUTHORITY.md`. The active release command sequence
    lives in `config/validation_lanes.json`; `release_check.py` is the
    entrypoint and worktree stabilizer. It includes source-fast, generated
@@ -20,6 +24,6 @@ See also:
    duplicate source-fast invocation only when the preceding job's exact
    same-run receipt fully matches; otherwise it falls back to this complete
    release sequence.
-4. Run federation preflight:
+5. Run federation preflight:
    - `aoa release audit /srv/AbyssOS --phase preflight --repo aoa-kag --strict --json`
-5. Publish only through `aoa release publish`.
+6. Publish only through `aoa release publish`.

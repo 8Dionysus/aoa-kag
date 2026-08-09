@@ -13,6 +13,7 @@ COMPATIBILITY_WORKFLOW_PATH = (
     REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
 )
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
+CI_PREFLIGHT_DAG_PATH = REPO_ROOT / "scripts" / "ci_preflight_dag.py"
 
 
 class RepoValidationWorkflowTests(unittest.TestCase):
@@ -125,15 +126,39 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
     def test_full_audit_uses_bounded_manifest_owned_public_checkout(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        preflight_text = CI_PREFLIGHT_DAG_PATH.read_text(encoding="utf-8")
         release_audit = workflow_text.split("  release_audit:\n", 1)[1].split(
             "  required_summary:\n",
             1,
         )[0]
 
         self.assertIn('AOA_KAG_CHECKOUT_WORKERS: "3"', release_audit)
-        self.assertIn("python scripts/sync_provider_checkouts.py", release_audit)
+        self.assertIn("inputs.preflight_mode || 'candidate'", release_audit)
+        self.assertIn(
+            "inputs.history_ref || github.event.pull_request.base.sha || github.sha",
+            workflow_text,
+        )
+        source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
+            "  release_audit:\n",
+            1,
+        )[0]
+        self.assertIn(
+            "history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}",
+            source_fast,
+        )
+        self.assertIn(
+            "event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}",
+            source_fast,
+        )
+        self.assertNotIn(
+            "history-ref: ${{ github.event.pull_request.base.sha || github.sha }}",
+            source_fast,
+        )
+        self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
+        self.assertIn('--mode "$AOA_KAG_PREFLIGHT_MODE"', release_audit)
         self.assertIn('--jobs "$AOA_KAG_CHECKOUT_WORKERS"', release_audit)
-        self.assertIn("--exclude-secret-checkouts", release_audit)
+        self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_text)
+        self.assertIn('"--exclude-secret-checkouts"', preflight_text)
         self.assertEqual(1, release_audit.count("          path: .deps/"))
         self.assertIn("repository: 8Dionysus/aoa-session-memory", release_audit)
         self.assertIn("ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}", release_audit)
@@ -204,6 +229,7 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
     def test_workflows_route_current_dependency_pins_through_owned_surfaces(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        preflight_text = CI_PREFLIGHT_DAG_PATH.read_text(encoding="utf-8")
 
         for repo, pin in provider_dependency_pins().items():
             with self.subTest(repo=repo):
@@ -211,7 +237,8 @@ class RepoValidationWorkflowTests(unittest.TestCase):
                 if entry.get("checkout_ssh_key_secret"):
                     self.assertIn(pin, workflow_text)
                 else:
-                    self.assertIn("python scripts/sync_provider_checkouts.py", workflow_text)
+                    self.assertIn("python scripts/ci_preflight_dag.py", workflow_text)
+                    self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_text)
 
 
 if __name__ == "__main__":

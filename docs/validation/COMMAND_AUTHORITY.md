@@ -14,6 +14,8 @@
 | `scripts/release_check.py` | release entrypoint |
 | `scripts/source_fast_handoff.py` | strict same-run source-fast receipt issuer and verifier |
 | `scripts/ci_release_check.py` | CI-only release continuation selector with complete-release fallback |
+| `scripts/ci_preflight_dag.py` | checkout/sentinel scheduler whose result never substitutes for owner proof |
+| `scripts/prepare_landing.py` | isolated pre-push SCC preparation without validation-lane or caller-index authority |
 | `scripts/coverage_run.py` | run-scoped coverage packet, telemetry receipt, and lifecycle boundary shared by lane processes |
 | `scripts/run_tests.py` | unittest discovery for root and active mechanics part tests |
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
@@ -237,6 +239,56 @@ the typed summary while a superseded workflow can actually release its runner.
 | `release-continuation` | `python scripts/ci_release_check.py` (CI-only, exact receipt or full fallback) |
 | `compatibility-canary` | `python scripts/ci_gate.py --mode compatibility-canary` |
 | `advisory` | `python scripts/ci_gate.py --mode advisory` |
+
+## Landing Preparation Entry
+
+Landing preparation is deliberately separate from the blocking validation
+lanes. It generates the root coverage, generated KAG, portable family, and
+final digest-bound budget receipt in an isolated staged worktree, but its
+receipt never substitutes for source-fast, the OS-wide owner proof, release
+audit, or the stable landing verdict. Inside the SCC it rebuilds the `aoa-kag`
+coverage row and reuses external rows only from the resolved history ref when
+the canonical coverage runtime is byte-identical, owner order and roots remain
+canonical, every external checkout matches its exact registry pin, and every
+portable-family identity matches the pinned manifest. Any mismatch rejects the
+shortcut and routes to the unchanged full owner build; no proof verdict is
+reused.
+
+```bash
+python scripts/prepare_landing.py --check
+python scripts/prepare_landing.py --apply
+```
+
+Both modes resolve the local default-branch merge base without a hidden network
+call and require exact, clean, complete-history pinned provider roots. Use
+`scripts/sync_provider_checkouts.py` as the explicit materialization route when
+those roots are absent. `--check` leaves the caller worktree and index unchanged;
+`--apply` changes only worktree files in the generated patch and verifies that
+the caller index stayed byte-identical. A budget exceedance requires an explicit
+`--budget-reason`, and that receipt is created only after the SCC has converged
+to its final family digest.
+
+The CI-only preflight DAG overlaps a seed-only self-coverage sentinel with the
+existing bounded provider checkout wave. A failed sentinel cancels only that
+wave started by the same scheduler; a failed checkout cancels only its sentinel
+peer. After successful fan-in it checks the generated projection, then the
+unchanged release continuation still executes every canonical owner and
+artifact proof. Seed/runtime mismatch is explicitly inapplicable and falls
+through to that full proof rather than becoming success evidence.
+For exact-head hosted admission, manual dispatch exposes `preflight_mode` with
+`candidate` and `direct-control` values. The control retains the same checkout
+command and every downstream proof while omitting only the sentinels; pull
+requests and all non-manual defaults always select `candidate`.
+Manual exact-head comparisons also pass the immutable PR-base commit through
+`history_ref`; when it is omitted, the existing event-derived history boundary
+remains unchanged.
+
+The hosted admission evidence distinguishes success latency from failure
+latency. The sentinel is not a green-path proof shortcut: successful fan-in
+always proceeds to the unchanged release continuation. Its admitted benefit is
+typed early rejection of self-coverage drift, with peer-only checkout
+cancellation. The exact-head direct control remains available only for manual
+comparison and never changes the pull-request/default candidate posture.
 
 Impact classification and summary evaluation are support commands rather than
 validation lanes:

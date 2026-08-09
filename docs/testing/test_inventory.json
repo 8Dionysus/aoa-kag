@@ -69,6 +69,19 @@
           ]
         },
         {
+          "path": "tests/test_ci_preflight_dag.py",
+          "family": "release/ci-dag",
+          "protects": "Bounded checkout/sentinel overlap, peer-only cancellation, and fail-closed outer-DAG scheduling without proof substitution.",
+          "owner_surface": "docs/validation/CI_EVIDENCE_DAG.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_ci_preflight_dag.py",
+          "failure_route": "Route through the CI preflight DAG scheduler, preparation sentinel, or bounded provider checkout command.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
+          ]
+        },
+        {
           "path": "tests/test_downstream_feed_contracts.py",
           "family": "generated/read-model",
           "protects": "Downstream feed contracts, generated KAG outputs, and federation consumer expectations.",
@@ -394,6 +407,19 @@
           "coverage_kinds": [
             "topology/inventory",
             "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_prepare_landing.py",
+          "family": "release/ci-lane",
+          "protects": "Isolated KAG SCC preparation, ordered staging, bounded convergence, final-digest budget receipt handling, caller-index preservation, and concurrent-candidate fail-closed behavior.",
+          "owner_surface": "docs/RELEASING.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_prepare_landing.py",
+          "failure_route": "Route through the prepare-landing entrypoint, D-0034 SCC order, provider identity checks, or release preparation documentation.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
           ]
         },
         {
