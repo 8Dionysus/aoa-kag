@@ -71,7 +71,14 @@ def generator_command(
 
 
 def stage_owner_outputs(repo_root: Path) -> None:
-    isolation.stage_paths(repo_root, OWNER_OUTPUT_PATHS)
+    stageable = tuple(
+        path
+        for path in OWNER_OUTPUT_PATHS
+        if (repo_root / path).exists()
+        or isolation.git_bytes(repo_root, "ls-files", "--", path)
+    )
+    if stageable:
+        isolation.stage_paths(repo_root, stageable)
 
 
 def generate_owner_family(

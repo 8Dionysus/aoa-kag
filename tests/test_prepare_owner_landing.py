@@ -115,6 +115,28 @@ class PrepareOwnerLandingTests(unittest.TestCase):
             PREPARE.require_owner_output_scope(("README.md", "kag/indexes/shards/a.jsonl"))
         self.assertEqual("preparation_output_scope_violation", raised.exception.failure_type)
 
+    def test_stage_outputs_skips_absent_untracked_budget_receipt_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = self.make_repo(Path(raw))
+            shard_dir = repo / "kag" / "indexes" / "shards"
+            shard_dir.mkdir(parents=True)
+            (repo / "kag" / "indexes" / "index_family.manifest.json").write_text(
+                '{"prepared":true}\n', encoding="utf-8"
+            )
+            (shard_dir / "records.jsonl").write_text("{}\n", encoding="utf-8")
+
+            PREPARE.stage_owner_outputs(repo)
+
+            staged = git(repo, "diff", "--cached", "--name-only").decode().splitlines()
+            self.assertEqual(
+                [
+                    "kag/indexes/index_family.manifest.json",
+                    "kag/indexes/shards/records.jsonl",
+                ],
+                staged,
+            )
+            self.assertFalse((repo / "kag" / "receipts" / "index_family_budget").exists())
+
     def test_generator_command_preserves_exact_refs_and_budget_authority(self) -> None:
         refs = PREPARE.isolation.ResolvedRefs("history", "events", "budget")
         command = PREPARE.generator_command(
