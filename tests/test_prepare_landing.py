@@ -444,6 +444,10 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual(b"", git(isolated, "ls-files", "--stage", "--", ".validator"))
             self.assertTrue((isolated / ".validator" / "validator.txt").is_file())
             self.assertFalse((isolated / ".validator" / "ignored.cache").exists())
+            self.assertEqual(
+                git(nested, "symbolic-ref", "--quiet", "HEAD"),
+                git(isolated / ".validator", "symbolic-ref", "--quiet", "HEAD"),
+            )
             self.assertNotEqual(first.identity(), second.identity())
 
     def test_snapshot_rejects_nested_checkout_root_with_outer_tracked_content(self) -> None:
@@ -614,6 +618,31 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertTrue(raised.exception.details["partial_clone_settings"])
+
+    def test_snapshot_rejects_dormant_nested_filter_attributes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / ".gitattributes").write_text(
+                "*.generated filter=demo\n",
+                encoding="utf-8",
+            )
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["HEAD:.gitattributes", "candidate:.gitattributes"],
+                raised.exception.details["filter_attribute_sources"],
+            )
 
     def test_materialization_rejects_path_conditional_nested_conversion_settings(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:

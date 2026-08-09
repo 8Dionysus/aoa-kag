@@ -16,6 +16,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -82,6 +83,7 @@ class CandidateSnapshot:
 class NestedGitSnapshot:
     candidate: CandidateSnapshot
     root_mode: int
+    symbolic_head: str | None
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -90,6 +92,7 @@ class NestedGitSnapshot:
         payload = {
             "candidate_identity": self.candidate.identity(),
             "root_mode": self.root_mode,
+            "symbolic_head": self.symbolic_head,
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -504,6 +507,67 @@ def _active_filter_attribute_paths(
     return tuple(active)
 
 
+def _has_filter_attribute_declaration(content: bytes) -> bool:
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(b"#"):
+            continue
+        for token in re.split(rb"\s+", stripped):
+            attribute = token.lstrip(b"-!")
+            if attribute == b"filter" or attribute.startswith(b"filter="):
+                return True
+    return False
+
+
+def _filter_attribute_sources(
+    path: Path,
+    candidate_paths: Sequence[str],
+    head: str,
+) -> tuple[str, ...]:
+    sources: list[str] = []
+    for raw in candidate_paths:
+        relative = checked_relative_path(raw)
+        if relative.name != ".gitattributes":
+            continue
+        candidate = path / relative
+        if candidate.is_file() and _has_filter_attribute_declaration(candidate.read_bytes()):
+            sources.append(f"candidate:{raw}")
+    for raw in tree_paths(path, head):
+        relative = checked_relative_path(raw)
+        if relative.name != ".gitattributes":
+            continue
+        if _has_filter_attribute_declaration(git_bytes(path, "show", f"{head}:{raw}")):
+            sources.append(f"HEAD:{raw}")
+    return tuple(sorted(set(sources)))
+
+
+def _symbolic_head(path: Path) -> str | None:
+    result = subprocess.run(
+        ("git", "symbolic-ref", "--quiet", "HEAD"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 1:
+        return None
+    if result.returncode != 0:
+        raise PreparationFailure(
+            f"cannot inspect nested checkout symbolic HEAD: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.strip()},
+        )
+    value = result.stdout.strip()
+    if not value.startswith("refs/heads/"):
+        raise PreparationFailure(
+            f"nested checkout has unsupported symbolic HEAD: {value}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    return value
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -691,10 +755,23 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"head_filtered_paths": list(head_filtered_paths)},
         )
+    filter_attribute_sources = _filter_attribute_sources(
+        path,
+        (*paths, *candidate_untracked_paths),
+        head,
+    )
+    if filter_attribute_sources:
+        raise PreparationFailure(
+            f"nested checkout declares Git filter attributes: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"filter_attribute_sources": list(filter_attribute_sources)},
+        )
     candidate = capture_candidate_snapshot(path)
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
+        symbolic_head=_symbolic_head(path),
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -992,15 +1069,13 @@ def copy_untracked_candidate(
                     "/dev/null",
                 )
                 _require_effective_checkout_settings_match(source, destination)
-                git_bytes(
-                    destination,
-                    "-c",
-                    "core.hooksPath=/dev/null",
-                    "checkout",
-                    "--detach",
-                    "-q",
-                    nested.candidate.head,
-                )
+                checkout_args = ["-c", "core.hooksPath=/dev/null", "checkout"]
+                if nested.symbolic_head is None:
+                    checkout_args.append("--detach")
+                else:
+                    checkout_args.extend(("-B", nested.symbolic_head.removeprefix("refs/heads/")))
+                checkout_args.extend(("-q", nested.candidate.head))
+                git_bytes(destination, *checkout_args)
                 _require_effective_checkout_settings_match(source, destination)
                 materialize_nested_candidate(source, destination, nested.candidate)
                 observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
