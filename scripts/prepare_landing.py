@@ -84,6 +84,8 @@ class NestedGitSnapshot:
     candidate: CandidateSnapshot
     root_mode: int
     symbolic_head: str | None
+    origin_head: str | None
+    origin_remote_refs: tuple[tuple[str, str], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -93,6 +95,8 @@ class NestedGitSnapshot:
             "candidate_identity": self.candidate.identity(),
             "root_mode": self.root_mode,
             "symbolic_head": self.symbolic_head,
+            "origin_head": self.origin_head,
+            "origin_remote_refs": [list(row) for row in self.origin_remote_refs],
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -568,6 +572,82 @@ def _symbolic_head(path: Path) -> str | None:
     return value
 
 
+def _origin_remote_state(path: Path) -> tuple[str | None, tuple[tuple[str, str], ...]]:
+    output = git_text(
+        path,
+        "for-each-ref",
+        "--format=%(refname)%09%(objectname)%09%(symref)%09.",
+        "refs/remotes/origin",
+    )
+    origin_head: str | None = None
+    direct_refs: list[tuple[str, str]] = []
+    for line in output.splitlines():
+        refname, object_name, symbolic, marker = line.split("\t", 3)
+        if marker != ".":
+            raise PreparationFailure(
+                f"cannot parse nested checkout remote ref state: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        if symbolic:
+            if refname != "refs/remotes/origin/HEAD":
+                raise PreparationFailure(
+                    f"nested checkout has unsupported symbolic remote ref: {refname}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                )
+            origin_head = symbolic
+            continue
+        direct_refs.append((refname, object_name))
+    if origin_head is not None and not origin_head.startswith("refs/remotes/origin/"):
+        raise PreparationFailure(
+            f"nested checkout origin/HEAD targets an unsupported ref: {origin_head}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    return origin_head, tuple(sorted(direct_refs))
+
+
+def _restore_origin_remote_state(path: Path, expected: NestedGitSnapshot) -> None:
+    observed_head, observed_refs = _origin_remote_state(path)
+    if observed_head is not None:
+        git_bytes(path, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+    for refname, _object_name in observed_refs:
+        git_bytes(path, "update-ref", "-d", refname)
+    for refname, object_name in expected.origin_remote_refs:
+        available = subprocess.run(
+            ("git", "cat-file", "-e", f"{object_name}^{{object}}"),
+            cwd=path,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if available.returncode != 0:
+            raise PreparationFailure(
+                f"nested checkout remote ref object is unavailable after isolation: {refname}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={"ref": refname, "object": object_name},
+            )
+        git_bytes(path, "update-ref", refname, object_name)
+    if expected.origin_head is not None:
+        git_bytes(
+            path,
+            "symbolic-ref",
+            "refs/remotes/origin/HEAD",
+            expected.origin_head,
+        )
+    restored = _origin_remote_state(path)
+    wanted = (expected.origin_head, expected.origin_remote_refs)
+    if restored != wanted:
+        raise PreparationFailure(
+            "nested checkout remote refs differ after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"expected": wanted, "actual": restored},
+        )
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -768,10 +848,13 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             details={"filter_attribute_sources": list(filter_attribute_sources)},
         )
     candidate = capture_candidate_snapshot(path)
+    origin_head, origin_remote_refs = _origin_remote_state(path)
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
         symbolic_head=_symbolic_head(path),
+        origin_head=origin_head,
+        origin_remote_refs=origin_remote_refs,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -1068,6 +1151,7 @@ def copy_untracked_candidate(
                     "core.hooksPath",
                     "/dev/null",
                 )
+                _restore_origin_remote_state(destination, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 checkout_args = ["-c", "core.hooksPath=/dev/null", "checkout"]
                 if nested.symbolic_head is None:

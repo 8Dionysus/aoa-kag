@@ -448,7 +448,56 @@ class PrepareLandingTests(unittest.TestCase):
                 git(nested, "symbolic-ref", "--quiet", "HEAD"),
                 git(isolated / ".validator", "symbolic-ref", "--quiet", "HEAD"),
             )
+            self.assertEqual(
+                prepare_landing._origin_remote_state(nested),
+                prepare_landing._origin_remote_state(isolated / ".validator"),
+            )
             self.assertNotEqual(first.identity(), second.identity())
+
+    def test_snapshot_preserves_nested_origin_default_ref(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("main\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested main")
+            git(nested, "branch", "-M", "main")
+            main_commit = git(nested, "rev-parse", "HEAD").decode().strip()
+            git(nested, "checkout", "-qb", "feature")
+            (nested / "validator.txt").write_text("feature\n", encoding="utf-8")
+            git(nested, "commit", "-qam", "nested feature")
+            git(nested, "update-ref", "refs/remotes/origin/main", main_commit)
+            git(
+                nested,
+                "symbolic-ref",
+                "refs/remotes/origin/HEAD",
+                "refs/remotes/origin/main",
+            )
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+
+            self.assertEqual(
+                b"refs/heads/feature\n",
+                git(isolated_nested, "symbolic-ref", "--quiet", "HEAD"),
+            )
+            self.assertEqual(
+                prepare_landing._origin_remote_state(nested),
+                prepare_landing._origin_remote_state(isolated_nested),
+            )
+            self.assertEqual(
+                main_commit,
+                git(isolated_nested, "rev-parse", "refs/remotes/origin/HEAD")
+                .decode()
+                .strip(),
+            )
 
     def test_snapshot_rejects_nested_checkout_root_with_outer_tracked_content(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
