@@ -297,15 +297,21 @@ def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
     return tuple(value for value in values if value.strip().lower() not in disabled)
 
 
-def _active_filter_attribute_paths(path: Path, paths: Sequence[str]) -> tuple[str, ...]:
+def _active_filter_attribute_paths(
+    path: Path,
+    paths: Sequence[str],
+    *,
+    source: str | None = None,
+) -> tuple[str, ...]:
     if not paths:
         return ()
+    command = ["check-attr"]
+    if source is not None:
+        command.append(f"--source={source}")
+    command.extend(("-z", "--stdin", "filter"))
     raw = git_bytes(
         path,
-        "check-attr",
-        "-z",
-        "--stdin",
-        "filter",
+        *command,
         input_bytes=b"\0".join(
             item.encode("utf-8", errors="surrogateescape") for item in paths
         )
@@ -466,6 +472,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"hook_settings": list(hook_settings)},
         )
+    candidate = capture_candidate_snapshot(path)
     paths = tracked_paths(path)
     filtered_paths = _active_filter_attribute_paths(path, (*paths, *untracked_paths(path)))
     if filtered_paths:
@@ -475,8 +482,21 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"filtered_paths": list(filtered_paths)},
         )
+    head_paths = tree_paths(path, candidate.head)
+    head_filtered_paths = _active_filter_attribute_paths(
+        path,
+        head_paths,
+        source=candidate.head,
+    )
+    if head_filtered_paths:
+        raise PreparationFailure(
+            f"nested checkout HEAD has active filter attributes: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"head_filtered_paths": list(head_filtered_paths)},
+        )
     return NestedGitSnapshot(
-        candidate=capture_candidate_snapshot(path),
+        candidate=candidate,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -487,6 +507,21 @@ def tracked_paths(repo_root: Path) -> tuple[str, ...]:
     decoded = git_bytes(repo_root, "ls-files", "-z").decode(
         "utf-8", errors="surrogateescape"
     )
+    paths = tuple(item for item in decoded.split("\0") if item)
+    for item in paths:
+        checked_relative_path(item)
+    return paths
+
+
+def tree_paths(repo_root: Path, treeish: str) -> tuple[str, ...]:
+    decoded = git_bytes(
+        repo_root,
+        "ls-tree",
+        "-r",
+        "--name-only",
+        "-z",
+        treeish,
+    ).decode("utf-8", errors="surrogateescape")
     paths = tuple(item for item in decoded.split("\0") if item)
     for item in paths:
         checked_relative_path(item)
