@@ -9,6 +9,11 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Added
 
+- Add an AbyssOS-wide owner-family gate that fails fast on incremental drift,
+  then runs the unchanged full parity, family contract, and compatibility
+  commands through a two-worker bounded DAG; add isolated owner-neutral
+  pre-landing preparation while preserving sequential rollback, exact history
+  and budget boundaries, every blocking proof, and the caller Git index.
 - Add isolated fixed-point landing preparation and a fail-closed CI preflight
   scheduler that detects self-SCC drift beside the bounded provider checkout
   wave while retaining the unchanged full owner and release proofs; exact-head

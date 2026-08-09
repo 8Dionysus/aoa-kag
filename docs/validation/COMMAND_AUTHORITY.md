@@ -16,6 +16,8 @@
 | `scripts/ci_release_check.py` | CI-only release continuation selector with complete-release fallback |
 | `scripts/ci_preflight_dag.py` | checkout/sentinel scheduler whose result never substitutes for owner proof |
 | `scripts/prepare_landing.py` | isolated pre-push SCC preparation without validation-lane or caller-index authority |
+| `scripts/prepare_owner_landing.py` | isolated owner-neutral repo-local family preparation without owner/release-proof or caller-index authority |
+| `scripts/repo_local_kag_gate.py` | fail-fast owner-family component DAG with stable-candidate and complete-command receipts |
 | `scripts/coverage_run.py` | run-scoped coverage packet, telemetry receipt, and lifecycle boundary shared by lane processes |
 | `scripts/run_tests.py` | unittest discovery for root and active mechanics part tests |
 | `scripts/run_part_local_checks.py` | discovered part-local builder `--check` and validator checks |
@@ -31,7 +33,7 @@
 | `scripts/query_repo_local_kag.py` | validated exact, lexical, graph, and hybrid repo-local retrieval |
 | `scripts/build_repo_local_kag_federation.py` | validated owner-qualified federation projection builder |
 | `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
-| `.github/actions/repo-local-kag-index/action.yml` | owner-callable full, incremental, and contract check using explicit repo-scoped source-lineage and event-history boundaries across the full owner validation job |
+| `.github/actions/repo-local-kag-index/action.yml` | owner-callable incremental drift sentinel plus bounded full/contract/assembly DAG using explicit repo-scoped source-lineage and event-history boundaries |
 | `.github/workflows/repo-validation.yml` | always-required source-fast and self owner-family proof, conditional full pinned-provider audit, and stable required summary |
 | `.github/workflows/compatibility-canary.yml` | scheduled floating-provider compatibility proof with complete Git history |
 
@@ -44,10 +46,13 @@ that boundary is `HEAD`. The builder combines this durable history with the
 current repository snapshot, keeping a multi-commit branch and its squash-merged
 default-branch snapshot on the same generated index family.
 
-The action checks both full and incremental portable-family parity, the
-changed-generated-bytes budget against that history boundary, the explicit
-receipt route for an exceedance, the family validator, and deterministic v2
-compatibility assembly.
+The action first runs incremental portable-family parity as a drift sentinel.
+Only a clean candidate fans out the full parity check, family validator, and
+deterministic v2 compatibility assembly. Two workers are the default; one is
+the exact sequential rollback and three remains an explicit comparison input.
+Scheduling never makes a command advisory: all four canonical components,
+the changed-generated-bytes budget, and any explicit exceedance receipt remain
+blocking, and a changed candidate identity rejects an otherwise green result.
 
 Explicit caller inputs keep precedence. The action exports the resolved
 repository name and both boundaries through repo-scoped environment variables
@@ -267,6 +272,21 @@ those roots are absent. `--check` leaves the caller worktree and index unchanged
 the caller index stayed byte-identical. A budget exceedance requires an explicit
 `--budget-reason`, and that receipt is created only after the SCC has converged
 to its final family digest.
+
+Every other provider repository uses the owner-neutral preparation route from
+an `aoa-kag` checkout. It copies the target candidate into a detached temporary
+worktree, regenerates only `kag/indexes/` and any explicit family-budget
+receipt, then runs the same canonical owner-family gate before reporting or
+applying a patch. It does not require the target repository to vendor KAG
+implementation code.
+
+```bash
+python scripts/prepare_owner_landing.py --repo-root /path/to/owner --check
+python scripts/prepare_owner_landing.py --repo-root /path/to/owner --apply
+```
+
+Both owner modes preserve the target Git index. A budget exceedance still
+requires `--budget-reason`; preparation never authors that owner judgment.
 
 The CI-only preflight DAG overlaps a seed-only self-coverage sentinel with the
 existing bounded provider checkout wave. A failed sentinel cancels only that
