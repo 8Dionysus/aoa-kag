@@ -452,6 +452,10 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing._git_ref_state(nested),
                 prepare_landing._git_ref_state(isolated / ".validator"),
             )
+            self.assertEqual(
+                prepare_landing._local_remote_config(nested),
+                prepare_landing._local_remote_config(isolated / ".validator"),
+            )
             self.assertNotEqual(first.identity(), second.identity())
 
     def test_snapshot_preserves_nested_origin_default_ref(self) -> None:
@@ -477,6 +481,15 @@ class PrepareLandingTests(unittest.TestCase):
                 "refs/remotes/origin/HEAD",
                 "refs/remotes/origin/main",
             )
+            git(nested, "config", "remote.origin.url", "https://example.invalid/owner.git")
+            git(
+                nested,
+                "config",
+                "remote.origin.fetch",
+                "+refs/heads/main:refs/remotes/origin/main",
+            )
+            git(nested, "config", "branch.feature.remote", "origin")
+            git(nested, "config", "branch.feature.merge", "refs/heads/feature")
 
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
             isolated = Path(work_tmp) / "isolated"
@@ -493,10 +506,49 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing._git_ref_state(isolated_nested),
             )
             self.assertEqual(
+                prepare_landing._local_remote_config(nested),
+                prepare_landing._local_remote_config(isolated_nested),
+            )
+            self.assertEqual(
                 main_commit,
                 git(isolated_nested, "rev-parse", "refs/remotes/origin/HEAD")
                 .decode()
                 .strip(),
+            )
+
+    def test_nested_materialization_preserves_intent_to_add(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            (nested / "new.txt").write_text("candidate\n", encoding="utf-8")
+            git(nested, "add", "--intent-to-add", "new.txt")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+
+            self.assertEqual(
+                git(nested, "status", "--short"),
+                git(isolated_nested, "status", "--short"),
+            )
+            self.assertEqual(
+                git(nested, "diff", "--cached", "--name-only", "--ita-visible-in-index"),
+                git(
+                    isolated_nested,
+                    "diff",
+                    "--cached",
+                    "--name-only",
+                    "--ita-visible-in-index",
+                ),
             )
 
     def test_snapshot_rejects_nested_checkout_root_with_outer_tracked_content(self) -> None:
@@ -513,6 +565,31 @@ class PrepareLandingTests(unittest.TestCase):
             git(nested, "config", "user.name", "Nested Validator Test")
             git(nested, "add", "script.py")
             git(nested, "commit", "-qm", "track validator from nested repository")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["validator"],
+                raised.exception.details["nested_tracked_roots"],
+            )
+
+    def test_snapshot_rejects_tracked_file_replaced_by_nested_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / "validator"
+            nested.write_text("tracked owner file\n", encoding="utf-8")
+            git(repo, "add", "validator")
+            git(repo, "commit", "-qm", "track validator file")
+            nested.unlink()
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "script.py").write_text("print('nested')\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested validator")
 
             with self.assertRaises(prepare_landing.PreparationFailure) as raised:
                 prepare_landing.capture_candidate_snapshot(repo)
@@ -940,6 +1017,48 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing.capture_candidate_snapshot(repo)
 
             self.assertEqual([hook.as_posix()], raised.exception.details["fsmonitor_settings"])
+            self.assertFalse(marker.exists())
+
+    def test_nested_materialization_disables_destination_fsmonitor(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            isolated_nested = isolated / ".validator"
+            marker = root / "destination-fsmonitor-ran"
+            hook = root / "destination-fsmonitor"
+            hook.write_text(f"#!/bin/sh\n: > {marker.as_posix()}\n", encoding="utf-8")
+            hook.chmod(0o755)
+            conditional = root / "conditional.gitconfig"
+            conditional.write_text(
+                f"[core]\n\tfsmonitor = {hook.as_posix()}\n",
+                encoding="utf-8",
+            )
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                f'[includeIf "gitdir:{isolated_nested.resolve().as_posix()}/"]\n'
+                f"\tpath = {conditional.as_posix()}\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
+            ):
+                git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+                prepare_landing.materialize_candidate(repo, isolated, snapshot)
+                self.assertEqual((), prepare_landing._effective_fsmonitor_settings(isolated_nested))
+                git(isolated_nested, "status", "--short")
+
             self.assertFalse(marker.exists())
 
     def test_snapshot_disables_ambient_external_diff(self) -> None:

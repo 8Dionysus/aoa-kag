@@ -64,6 +64,7 @@ class CandidateSnapshot:
     untracked_paths: tuple[str, ...]
     directory_digest: str
     directories: tuple[str, ...]
+    intent_to_add_paths: tuple[str, ...]
 
     def identity(self) -> str:
         payload = {
@@ -75,6 +76,7 @@ class CandidateSnapshot:
             "untracked_paths": list(self.untracked_paths),
             "directory_digest": self.directory_digest,
             "directories": list(self.directories),
+            "intent_to_add_paths": list(self.intent_to_add_paths),
         }
         return sha256_bytes(canonical_json(payload))
 
@@ -87,6 +89,7 @@ class NestedGitSnapshot:
     origin_head: str | None
     git_refs: tuple[tuple[str, str], ...]
     shallow_boundaries: tuple[str, ...]
+    local_remote_config: tuple[tuple[str, str], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -99,6 +102,7 @@ class NestedGitSnapshot:
             "origin_head": self.origin_head,
             "git_refs": [list(row) for row in self.git_refs],
             "shallow_boundaries": list(self.shallow_boundaries),
+            "local_remote_config": [list(row) for row in self.local_remote_config],
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -332,7 +336,7 @@ def _nested_checkout_roots_with_tracked_content(
     candidates: set[Path] = set()
     for raw in paths:
         relative = checked_relative_path(raw)
-        for parent in relative.parents:
+        for parent in (relative, *relative.parents):
             if parent == Path("."):
                 continue
             candidate = repo_root / parent
@@ -407,7 +411,7 @@ def _effective_hook_settings(path: Path) -> tuple[str, ...]:
 
 def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
     result = subprocess.run(
-        ("git", "config", "--null", "--get-all", "core.fsmonitor"),
+        ("git", "config", "--null", "--get", "core.fsmonitor"),
         cwd=path,
         check=False,
         capture_output=True,
@@ -426,6 +430,41 @@ def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
     )
     disabled = {"false", "no", "off", "0"}
     return tuple(value for value in values if value.strip().lower() not in disabled)
+
+
+def _local_remote_config(path: Path) -> tuple[tuple[str, str], ...]:
+    rows: list[tuple[str, str]] = []
+    for entry in git_bytes(path, "config", "--local", "--null", "--list").split(b"\0"):
+        if not entry:
+            continue
+        raw_key, separator, raw_value = entry.partition(b"\n")
+        if not separator:
+            raise PreparationFailure(
+                f"cannot parse nested checkout local config: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        rows.append(
+            (
+                raw_key.decode("utf-8", errors="surrogateescape"),
+                raw_value.decode("utf-8", errors="surrogateescape"),
+            )
+        )
+    return tuple(row for row in rows if row[0].startswith(("remote.", "branch.")))
+
+
+def _restore_local_remote_config(path: Path, expected: NestedGitSnapshot) -> None:
+    observed = _local_remote_config(path)
+    for key in sorted({key for key, _value in observed}):
+        git_bytes(path, "config", "--local", "--unset-all", key)
+    for key, value in expected.local_remote_config:
+        git_bytes(path, "config", "--local", "--add", key, value)
+    if _local_remote_config(path) != expected.local_remote_config:
+        raise PreparationFailure(
+            "nested checkout remote config differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
 
 
 def _effective_external_rule_settings(path: Path) -> tuple[str, ...]:
@@ -928,6 +967,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         origin_head=origin_head,
         git_refs=git_refs,
         shallow_boundaries=_shallow_boundaries(path),
+        local_remote_config=_local_remote_config(path),
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -941,6 +981,34 @@ def tracked_paths(repo_root: Path) -> tuple[str, ...]:
     paths = tuple(item for item in decoded.split("\0") if item)
     for item in paths:
         checked_relative_path(item)
+    return paths
+
+
+def intent_to_add_paths(repo_root: Path) -> tuple[str, ...]:
+    common = ("diff", "--cached", "--name-only", "-z", "--diff-filter=A")
+    visible = set(
+        item
+        for item in git_bytes(repo_root, *common, "--ita-visible-in-index").decode(
+            "utf-8", errors="surrogateescape"
+        ).split("\0")
+        if item
+    )
+    ordinary = set(
+        item
+        for item in git_bytes(repo_root, *common, "--ita-invisible-in-index").decode(
+            "utf-8", errors="surrogateescape"
+        ).split("\0")
+        if item
+    )
+    paths = tuple(sorted(visible - ordinary))
+    for raw in paths:
+        relative = checked_relative_path(raw)
+        if not (repo_root / relative).is_file():
+            raise PreparationFailure(
+                f"intent-to-add path is not a regular candidate file: {raw}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
     return paths
 
 
@@ -1116,6 +1184,7 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
         untracked_paths=paths,
         directory_digest=candidate_directory_digest(repo_root, directories),
         directories=directories,
+        intent_to_add_paths=intent_to_add_paths(repo_root),
     )
 
 
@@ -1224,10 +1293,18 @@ def copy_untracked_candidate(
                     "core.hooksPath",
                     "/dev/null",
                 )
+                git_bytes(destination, "config", "--local", "core.fsmonitor", "false")
+                _restore_local_remote_config(destination, nested)
                 _restore_git_ref_state(destination, nested)
                 if _shallow_boundaries(destination) != nested.shallow_boundaries:
                     raise PreparationFailure(
                         "nested checkout shallow boundary differs after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
+                if _effective_fsmonitor_settings(destination):
+                    raise PreparationFailure(
+                        "nested checkout fsmonitor remains active after isolation",
                         failure_type="candidate_snapshot_invalid",
                         action_class="code_fix",
                     )
@@ -1311,6 +1388,20 @@ def materialize_nested_candidate(
             "--whitespace=nowarn",
             "-",
             input_bytes=unstaged_patch,
+        )
+    for raw in snapshot.intent_to_add_paths:
+        relative = checked_relative_path(raw)
+        source = source_root / relative
+        destination = destination_root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination, follow_symlinks=False)
+        git_bytes(
+            destination_root,
+            "--literal-pathspecs",
+            "add",
+            "--intent-to-add",
+            "--",
+            relative.as_posix(),
         )
     copy_untracked_candidate(source_root, destination_root, snapshot.untracked_paths)
     create_candidate_directories(
