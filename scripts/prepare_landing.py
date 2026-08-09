@@ -174,25 +174,54 @@ def untracked_paths(repo_root: Path) -> tuple[str, ...]:
 def untracked_content_digest(repo_root: Path, paths: Sequence[str]) -> str:
     digest = hashlib.sha256()
     for raw in paths:
-        rel = checked_relative_path(raw)
-        source = repo_root / rel
-        metadata = source.lstat()
-        digest.update(raw.encode("utf-8", errors="surrogateescape"))
-        digest.update(b"\0")
-        digest.update(str(stat.S_IFMT(metadata.st_mode)).encode("ascii"))
-        digest.update(b"\0")
-        if stat.S_ISLNK(metadata.st_mode):
-            digest.update(os.readlink(source).encode("utf-8", errors="surrogateescape"))
-        elif stat.S_ISREG(metadata.st_mode):
-            digest.update(source.read_bytes())
-        else:
-            raise PreparationFailure(
-                f"untracked candidate path is not a regular file or symlink: {raw}",
-                failure_type="candidate_snapshot_invalid",
-                action_class="code_fix",
-            )
-        digest.update(b"\0")
+        _update_untracked_path_digest(digest, repo_root, checked_relative_path(raw))
     return "sha256:" + digest.hexdigest()
+
+
+def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
+    probe = subprocess.run(
+        ("git", "rev-parse", "--show-toplevel"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if probe.returncode != 0 or probe.stdout.strip() != path.resolve().as_posix():
+        return None
+    return capture_candidate_snapshot(path)
+
+
+def _update_untracked_path_digest(
+    digest: Any,
+    repo_root: Path,
+    rel: Path,
+) -> None:
+    source = repo_root / rel
+    metadata = source.lstat()
+    raw = rel.as_posix()
+    digest.update(raw.encode("utf-8", errors="surrogateescape"))
+    digest.update(b"\0")
+    digest.update(str(stat.S_IFMT(metadata.st_mode)).encode("ascii"))
+    digest.update(b"\0")
+    if stat.S_ISLNK(metadata.st_mode):
+        digest.update(os.readlink(source).encode("utf-8", errors="surrogateescape"))
+    elif stat.S_ISREG(metadata.st_mode):
+        digest.update(source.read_bytes())
+    elif stat.S_ISDIR(metadata.st_mode):
+        nested = _nested_git_snapshot(source)
+        if nested is not None:
+            digest.update(b"nested-git-candidate\0")
+            digest.update(nested.identity().encode("ascii"))
+        else:
+            for child in sorted(source.iterdir(), key=lambda item: os.fsencode(item.name)):
+                _update_untracked_path_digest(digest, repo_root, rel / child.name)
+    else:
+        raise PreparationFailure(
+            f"untracked candidate path has unsupported type: {raw}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    digest.update(b"\0")
 
 
 def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
@@ -259,6 +288,8 @@ def copy_untracked_candidate(
             destination.symlink_to(os.readlink(source))
         elif stat.S_ISREG(metadata.st_mode):
             shutil.copy2(source, destination, follow_symlinks=False)
+        elif stat.S_ISDIR(metadata.st_mode):
+            shutil.copytree(source, destination, symlinks=True)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",

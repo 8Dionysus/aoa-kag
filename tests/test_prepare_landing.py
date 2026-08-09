@@ -235,6 +235,39 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual("candidate_snapshot_invalid", receipt["failure_type"])
             self.assertEqual({"state": "unavailable"}, receipt["candidate"])
 
+    def test_snapshot_hashes_untracked_directory_contents(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            untracked = repo / "validation-input"
+            untracked.mkdir()
+            (untracked / "receipt.txt").write_text("first\n", encoding="utf-8")
+
+            first = prepare_landing.capture_candidate_snapshot(repo)
+            (untracked / "receipt.txt").write_text("second\n", encoding="utf-8")
+            second = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(("validation-input/receipt.txt",), first.untracked_paths)
+            self.assertNotEqual(first.identity(), second.identity())
+
+    def test_snapshot_hashes_nested_untracked_checkout_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("clean\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+
+            first = prepare_landing.capture_candidate_snapshot(repo)
+            (nested / "validator.txt").write_text("dirty\n", encoding="utf-8")
+            second = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual((".validator/",), first.untracked_paths)
+            self.assertNotEqual(first.identity(), second.identity())
+
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
         prepare_landing.require_preparation_output_scope(
             ("generated/out.json", "kag/indexes/shards/a.jsonl")
