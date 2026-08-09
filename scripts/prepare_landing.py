@@ -61,6 +61,8 @@ class CandidateSnapshot:
     worktree_diff_digest: str
     untracked_digest: str
     untracked_paths: tuple[str, ...]
+    untracked_directory_digest: str
+    untracked_directories: tuple[str, ...]
 
     def identity(self) -> str:
         payload = {
@@ -70,6 +72,8 @@ class CandidateSnapshot:
             "worktree_diff_digest": self.worktree_diff_digest,
             "untracked_digest": self.untracked_digest,
             "untracked_paths": list(self.untracked_paths),
+            "untracked_directory_digest": self.untracked_directory_digest,
+            "untracked_directories": list(self.untracked_directories),
         }
         return sha256_bytes(canonical_json(payload))
 
@@ -197,6 +201,114 @@ def untracked_content_digest(repo_root: Path, paths: Sequence[str]) -> str:
     digest = hashlib.sha256()
     for raw in paths:
         _update_untracked_path_digest(digest, repo_root, checked_relative_path(raw))
+    return "sha256:" + digest.hexdigest()
+
+
+def _ignored_directory_paths(repo_root: Path, paths: Sequence[str]) -> set[str]:
+    if not paths:
+        return set()
+    result = subprocess.run(
+        ("git", "check-ignore", "--no-index", "-z", "--stdin"),
+        cwd=repo_root,
+        input=b"\0".join(
+            raw.encode("utf-8", errors="surrogateescape") for raw in paths
+        )
+        + b"\0",
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode not in (0, 1):
+        raise PreparationFailure(
+            "cannot inspect candidate directory ignore state",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.decode("utf-8", errors="replace").strip()},
+        )
+    return {
+        item.decode("utf-8", errors="surrogateescape").rstrip("/")
+        for item in result.stdout.split(b"\0")
+        if item
+    }
+
+
+def _ignored_directory_roots(repo_root: Path) -> set[str]:
+    raw = git_bytes(
+        repo_root,
+        "ls-files",
+        "--others",
+        "--ignored",
+        "--exclude-standard",
+        "--directory",
+        "-z",
+    )
+    roots: set[str] = set()
+    for item in raw.decode("utf-8", errors="surrogateescape").split("\0"):
+        if not item:
+            continue
+        relative = checked_relative_path(item.rstrip("/"))
+        candidate = repo_root / relative
+        if candidate.is_dir() and not candidate.is_symlink():
+            roots.add(relative.as_posix())
+    return roots
+
+
+def untracked_directory_paths(
+    repo_root: Path,
+    represented_paths: Sequence[str],
+) -> tuple[str, ...]:
+    """Capture non-ignored directories not implied by represented files."""
+    implied: set[str] = set()
+    for raw in represented_paths:
+        relative = checked_relative_path(raw)
+        if raw.endswith("/"):
+            implied.add(relative.as_posix())
+        implied.update(
+            parent.as_posix()
+            for parent in relative.parents
+            if parent != Path(".")
+        )
+
+    ignored_roots = _ignored_directory_roots(repo_root)
+    discovered: list[str] = []
+    for current, dirnames, _filenames in os.walk(repo_root, topdown=True):
+        current_path = Path(current)
+        retained: list[str] = []
+        for name in sorted(dirnames):
+            child = current_path / name
+            relative = child.relative_to(repo_root)
+            raw = relative.as_posix()
+            if (
+                relative == Path(".git")
+                or raw in ignored_roots
+                or child.is_symlink()
+            ):
+                continue
+            if (child / ".git").exists() and _is_nested_git_checkout(child):
+                continue
+            retained.append(name)
+            if raw not in implied:
+                discovered.append(raw)
+        dirnames[:] = retained
+
+    ignored = _ignored_directory_paths(repo_root, discovered)
+    return tuple(raw for raw in discovered if raw not in ignored)
+
+
+def untracked_directory_digest(repo_root: Path, paths: Sequence[str]) -> str:
+    digest = hashlib.sha256()
+    for raw in paths:
+        relative = checked_relative_path(raw)
+        metadata = (repo_root / relative).lstat()
+        if not stat.S_ISDIR(metadata.st_mode):
+            raise PreparationFailure(
+                f"candidate directory changed type: {raw}",
+                failure_type="candidate_snapshot_changed",
+                action_class="retry_same_candidate",
+            )
+        digest.update(raw.encode("utf-8", errors="surrogateescape"))
+        digest.update(b"\0")
+        digest.update(str(stat.S_IMODE(metadata.st_mode)).encode("ascii"))
+        digest.update(b"\0")
     return "sha256:" + digest.hexdigest()
 
 
@@ -686,6 +798,10 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
             details={"nested_tracked_roots": list(nested_tracked_roots)},
         )
     paths = untracked_paths(repo_root)
+    directories = untracked_directory_paths(
+        repo_root,
+        (*outer_tracked_paths, *paths),
+    )
     return CandidateSnapshot(
         head=git_text(repo_root, "rev-parse", "HEAD"),
         index_tree=git_text(repo_root, "write-tree"),
@@ -713,6 +829,8 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
         ),
         untracked_digest=untracked_content_digest(repo_root, paths),
         untracked_paths=paths,
+        untracked_directory_digest=untracked_directory_digest(repo_root, directories),
+        untracked_directories=directories,
     )
 
 
@@ -830,6 +948,26 @@ def copy_untracked_candidate(
             )
 
 
+def create_candidate_directories(
+    source_root: Path,
+    destination_root: Path,
+    paths: Sequence[str],
+) -> None:
+    for raw in paths:
+        relative = checked_relative_path(raw)
+        source = source_root / relative
+        metadata = source.lstat()
+        if not stat.S_ISDIR(metadata.st_mode):
+            raise PreparationFailure(
+                f"candidate directory changed type during copy: {raw}",
+                failure_type="candidate_snapshot_changed",
+                action_class="retry_same_candidate",
+            )
+        destination = destination_root / relative
+        destination.mkdir(parents=True, exist_ok=True)
+        destination.chmod(stat.S_IMODE(metadata.st_mode))
+
+
 def materialize_candidate(
     source_root: Path,
     temporary_root: Path,
@@ -847,6 +985,11 @@ def materialize_candidate(
             input_bytes=patch,
         )
     copy_untracked_candidate(source_root, temporary_root, snapshot.untracked_paths)
+    create_candidate_directories(
+        source_root,
+        temporary_root,
+        snapshot.untracked_directories,
+    )
     git_bytes(temporary_root, "add", "-A", "--", ".")
     for raw in snapshot.untracked_paths:
         rel = checked_relative_path(raw)

@@ -261,6 +261,52 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertNotEqual(first.identity(), second.identity())
 
+    def test_snapshot_hashes_nonignored_directory_state_and_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            first = prepare_landing.capture_candidate_snapshot(repo)
+            empty = repo / "validation-input" / "empty"
+            empty.mkdir(parents=True)
+            second = prepare_landing.capture_candidate_snapshot(repo)
+            empty.chmod(0o750)
+            third = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual((), first.untracked_directories)
+            self.assertEqual(
+                ("validation-input", "validation-input/empty"),
+                second.untracked_directories,
+            )
+            self.assertNotEqual(first.identity(), second.identity())
+            self.assertNotEqual(second.identity(), third.identity())
+
+    def test_nested_materialization_preserves_nonignored_empty_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / ".gitignore").write_text("ignored-cache/\n", encoding="utf-8")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            (nested / "expected-empty").mkdir()
+            (nested / "ignored-cache").mkdir()
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            materialized_tree = prepare_landing.materialize_candidate(
+                repo,
+                isolated,
+                snapshot,
+            )
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertTrue((isolated / ".validator" / "expected-empty").is_dir())
+            self.assertFalse((isolated / ".validator" / "ignored-cache").exists())
+
     def test_snapshot_hashes_nested_untracked_checkout_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
