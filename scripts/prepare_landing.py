@@ -217,6 +217,47 @@ def _initialized_submodule_status(path: Path) -> tuple[str, ...]:
     )
 
 
+def _local_checkout_conversion_settings(path: Path) -> tuple[str, ...]:
+    result = subprocess.run(
+        (
+            "git",
+            "config",
+            "--local",
+            "--get-regexp",
+            r"^(extensions\.worktreeconfig|core\.(autocrlf|eol|safecrlf|symlinks|attributesfile|sparsecheckout|sparsecheckoutcone|worktree)|filter\..*\.(clean|smudge|process|required))$",
+        ),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout conversion settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.strip()},
+        )
+    settings = [line for line in result.stdout.splitlines() if line]
+    info_attributes_raw = git_text(path, "rev-parse", "--git-path", "info/attributes")
+    info_attributes = Path(info_attributes_raw)
+    if not info_attributes.is_absolute():
+        info_attributes = path / info_attributes
+    if info_attributes.is_file() and any(
+        line.strip() and not line.lstrip().startswith("#")
+        for line in info_attributes.read_text(encoding="utf-8", errors="surrogateescape").splitlines()
+    ):
+        settings.append(f"info.attributes {info_attributes}")
+    skip_worktree_entries = tuple(
+        entry.decode("utf-8", errors="surrogateescape")
+        for entry in git_bytes(path, "ls-files", "-t", "-z").split(b"\0")
+        if entry.startswith(b"S ")
+    )
+    if skip_worktree_entries:
+        settings.append(f"skip-worktree entries={len(skip_worktree_entries)}")
+    return tuple(settings)
+
+
 def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
     if not _is_nested_git_checkout(path):
         return None
@@ -227,6 +268,14 @@ def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"initialized_submodules": list(initialized_submodules)},
+        )
+    conversion_settings = _local_checkout_conversion_settings(path)
+    if conversion_settings:
+        raise PreparationFailure(
+            f"nested checkout has repository-local worktree conversion settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"conversion_settings": list(conversion_settings)},
         )
     return capture_candidate_snapshot(path)
 
