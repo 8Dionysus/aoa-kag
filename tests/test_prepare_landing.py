@@ -588,6 +588,66 @@ class PrepareLandingTests(unittest.TestCase):
                 git(isolated, "--literal-pathspecs", "ls-files", "--stage", "--", ":(glob)**"),
             )
 
+    def test_nested_checkout_does_not_restore_staged_directory_deletion(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            (nested / "old.txt").write_text("old owner source\n", encoding="utf-8")
+            git(repo, "add", ".validator/old.txt")
+            git(repo, "commit", "-qm", "tracked validator predecessor")
+            git(repo, "rm", "-qr", ".validator")
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("replacement\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested replacement")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            materialized_tree = prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertEqual(b"", git(isolated, "ls-tree", "-r", materialized_tree, "--", ".validator"))
+            self.assertTrue((isolated / ".validator" / "validator.txt").is_file())
+
+    def test_nested_materialization_ignores_ambient_git_template_hooks(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            (nested / "validator.txt").write_text("candidate\n", encoding="utf-8")
+            template = root / "template"
+            (template / "hooks").mkdir(parents=True)
+            hook = template / "hooks" / "post-index-change"
+            hook.write_text("#!/bin/sh\n: > hook.cache\n", encoding="utf-8")
+            hook.chmod(0o755)
+            (template / "info").mkdir()
+            (template / "info" / "exclude").write_text("hook.cache\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"GIT_TEMPLATE_DIR": template.as_posix()}):
+                snapshot = prepare_landing.capture_candidate_snapshot(repo)
+                isolated = Path(work_tmp) / "isolated"
+                git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+                materialized_tree = prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertFalse((isolated / ".validator" / "hook.cache").exists())
+            self.assertEqual(
+                b"/dev/null\n",
+                git(isolated / ".validator", "config", "--local", "--get", "core.hooksPath"),
+            )
+
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
         prepare_landing.require_preparation_output_scope(
             ("generated/out.json", "kag/indexes/shards/a.jsonl")

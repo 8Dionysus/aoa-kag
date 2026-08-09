@@ -266,7 +266,12 @@ def _effective_hook_settings(path: Path) -> tuple[str, ...]:
             action_class="code_fix",
             details={"stderr": result.stderr.strip()},
         )
-    return tuple(sorted(line for line in result.stdout.splitlines() if line))
+    settings = tuple(sorted(line for line in result.stdout.splitlines() if line))
+    return tuple(
+        line
+        for line in settings
+        if line.strip().lower() != "core.hookspath /dev/null"
+    )
 
 
 def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
@@ -686,19 +691,31 @@ def copy_untracked_candidate(
                 # candidate instead of copying repository-local ignored state.
                 # Every worktree byte exposed to validation is therefore
                 # represented by the nested CandidateSnapshot identity.
-                subprocess.run(
-                    (
-                        "git",
-                        "clone",
-                        "--quiet",
-                        "--no-checkout",
-                        "--no-hardlinks",
-                        "--",
-                        source.resolve().as_posix(),
-                        destination.as_posix(),
-                    ),
-                    check=True,
-                    capture_output=True,
+                with tempfile.TemporaryDirectory(
+                    prefix=".aoa-kag-empty-git-template-",
+                    dir=destination.parent,
+                ) as empty_template:
+                    subprocess.run(
+                        (
+                            "git",
+                            "clone",
+                            "--quiet",
+                            "--no-checkout",
+                            "--no-hardlinks",
+                            f"--template={empty_template}",
+                            "--",
+                            source.resolve().as_posix(),
+                            destination.as_posix(),
+                        ),
+                        check=True,
+                        capture_output=True,
+                    )
+                git_bytes(
+                    destination,
+                    "config",
+                    "--local",
+                    "core.hooksPath",
+                    "/dev/null",
                 )
                 _require_effective_checkout_settings_match(source, destination)
                 git_bytes(
@@ -755,10 +772,18 @@ def materialize_candidate(
         rel = checked_relative_path(raw)
         if _is_nested_git_checkout(source_root / rel):
             # Validation checkouts are part of stability identity and must remain
-            # available to commands, but they are not owner source.  Reset the
-            # temporary gitlink that `git add -A` creates without deleting the
-            # copied checkout from the isolated worktree.
-            git_bytes(temporary_root, "--literal-pathspecs", "reset", "-q", "--", raw)
+            # available to commands, but they are not owner source.  Remove only
+            # the temporary gitlink that `git add -A` creates: path-form reset
+            # would restore HEAD entries when a staged deletion was replaced by
+            # a nested checkout at the same path.
+            git_bytes(
+                temporary_root,
+                "--literal-pathspecs",
+                "update-index",
+                "--force-remove",
+                "--",
+                rel.as_posix(),
+            )
     return git_text(temporary_root, "write-tree")
 
 
