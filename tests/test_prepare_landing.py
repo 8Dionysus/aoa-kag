@@ -250,7 +250,7 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertNotEqual(first.identity(), second.identity())
 
     def test_snapshot_hashes_nested_untracked_checkout_candidate(self) -> None:
-        with tempfile.TemporaryDirectory() as repo_tmp:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
             nested = repo / ".validator"
             nested.mkdir()
@@ -262,10 +262,20 @@ class PrepareLandingTests(unittest.TestCase):
             git(nested, "commit", "-qm", "nested base")
 
             first = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), first.head)
+            materialized_tree = prepare_landing.materialize_candidate(
+                repo,
+                isolated,
+                first,
+            )
             (nested / "validator.txt").write_text("dirty\n", encoding="utf-8")
             second = prepare_landing.capture_candidate_snapshot(repo)
 
             self.assertEqual((".validator/",), first.untracked_paths)
+            self.assertEqual(first.index_tree, materialized_tree)
+            self.assertEqual(b"", git(isolated, "ls-files", "--stage", "--", ".validator"))
+            self.assertTrue((isolated / ".validator" / "validator.txt").is_file())
             self.assertNotEqual(first.identity(), second.identity())
 
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:

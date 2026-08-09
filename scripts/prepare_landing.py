@@ -178,7 +178,12 @@ def untracked_content_digest(repo_root: Path, paths: Sequence[str]) -> str:
     return "sha256:" + digest.hexdigest()
 
 
-def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
+def _is_nested_git_checkout(path: Path) -> bool:
+    try:
+        if not stat.S_ISDIR(path.lstat().st_mode):
+            return False
+    except FileNotFoundError:
+        return False
     probe = subprocess.run(
         ("git", "rev-parse", "--show-toplevel"),
         cwd=path,
@@ -186,7 +191,11 @@ def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
         capture_output=True,
         text=True,
     )
-    if probe.returncode != 0 or probe.stdout.strip() != path.resolve().as_posix():
+    return probe.returncode == 0 and probe.stdout.strip() == path.resolve().as_posix()
+
+
+def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
+    if not _is_nested_git_checkout(path):
         return None
     return capture_candidate_snapshot(path)
 
@@ -316,6 +325,14 @@ def materialize_candidate(
         )
     copy_untracked_candidate(source_root, temporary_root, snapshot.untracked_paths)
     git_bytes(temporary_root, "add", "-A", "--", ".")
+    for raw in snapshot.untracked_paths:
+        rel = checked_relative_path(raw)
+        if _is_nested_git_checkout(source_root / rel):
+            # Validation checkouts are part of stability identity and must remain
+            # available to commands, but they are not owner source.  Reset the
+            # temporary gitlink that `git add -A` creates without deleting the
+            # copied checkout from the isolated worktree.
+            git_bytes(temporary_root, "reset", "-q", "--", raw)
     return git_text(temporary_root, "write-tree")
 
 
