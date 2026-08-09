@@ -279,6 +279,9 @@ For exact-head hosted admission, manual dispatch exposes `preflight_mode` with
 `candidate` and `direct-control` values. The control retains the same checkout
 command and every downstream proof while omitting only the sentinels; pull
 requests and all non-manual defaults always select `candidate`.
+Manual exact-head comparisons also pass the immutable PR-base commit through
+`history_ref`; when it is omitted, the existing event-derived history boundary
+remains unchanged.
 
 Impact classification and summary evaluation are support commands rather than
 validation lanes:

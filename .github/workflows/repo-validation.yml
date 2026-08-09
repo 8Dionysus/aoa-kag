@@ -15,6 +15,10 @@ on:
         options:
           - candidate
           - direct-control
+      history_ref:
+        description: Exact commit used as the manual comparison history boundary
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -42,8 +46,8 @@ jobs:
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
-      AOA_KAG_EXPECTED_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
-      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -177,8 +181,8 @@ jobs:
       AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
       AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
       AOA_XDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-xda-connector
-      AOA_KAG_EXPECTED_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
-      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.sha }}
       AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}
     steps:
       - name: Checkout

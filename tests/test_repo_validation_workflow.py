@@ -134,6 +134,10 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
         self.assertIn('AOA_KAG_CHECKOUT_WORKERS: "3"', release_audit)
         self.assertIn("inputs.preflight_mode || 'candidate'", release_audit)
+        self.assertIn(
+            "inputs.history_ref || github.event.pull_request.base.sha || github.sha",
+            workflow_text,
+        )
         self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
         self.assertIn('--mode "$AOA_KAG_PREFLIGHT_MODE"', release_audit)
         self.assertIn('--jobs "$AOA_KAG_CHECKOUT_WORKERS"', release_audit)
