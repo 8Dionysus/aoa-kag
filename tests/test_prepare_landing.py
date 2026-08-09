@@ -668,6 +668,31 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertTrue(raised.exception.details["partial_clone_settings"])
 
+    def test_snapshot_rejects_nested_replacement_refs(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            base = git(nested, "rev-parse", "HEAD").decode().strip()
+            git(nested, "commit", "--allow-empty", "-qm", "nested second")
+            unmodified_head = git(nested, "rev-parse", "HEAD").decode().strip()
+            git(nested, "replace", "HEAD", base)
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                [f"refs/replace/{unmodified_head}"],
+                raised.exception.details["replacement_refs"],
+            )
+
     def test_snapshot_rejects_dormant_nested_filter_attributes(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

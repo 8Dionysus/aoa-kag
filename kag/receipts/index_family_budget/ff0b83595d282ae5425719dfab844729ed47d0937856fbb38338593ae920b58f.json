@@ -1,17 +1,17 @@
 {
-  "allowed_bytes": 4720405,
-  "allowed_tracked_bytes": 12340040,
+  "allowed_bytes": 4726712,
+  "allowed_tracked_bytes": 12346347,
   "approved_by": "repository-owner",
   "base_ref": "30ce3b8f33ed27ef3888c214b9e9e5cd0f50f80e",
-  "changed_generated_bytes": 4720405,
+  "changed_generated_bytes": 4726712,
   "changed_generated_files": 123,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "181ced862c080c4c7a10d8310efcaeb93a32325577e1f13058438caab7c258b7",
-  "reason": "Bind nested validation checkout candidate bytes, Git refs, and environment exactly while preserving all canonical OS-wide proof lanes.",
+  "head_family_digest": "ff0b83595d282ae5425719dfab844729ed47d0937856fbb38338593ae920b58f",
+  "reason": "Bind nested validation checkout candidate bytes and environment exactly, rejecting hidden history replacement state, while preserving all canonical OS-wide proof lanes.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
   "scope": "generated_delta",
-  "tracked_bytes": 12340040,
+  "tracked_bytes": 12346347,
   "tracked_bytes_max": 12582912
 }

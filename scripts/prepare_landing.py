@@ -473,6 +473,24 @@ def _partial_clone_settings(path: Path) -> tuple[str, ...]:
     return tuple(sorted(line for line in result.stdout.splitlines() if line))
 
 
+def _replacement_refs(path: Path) -> tuple[str, ...]:
+    bases = {"refs/replace/"}
+    custom_base = os.environ.get("GIT_REPLACE_REF_BASE", "").strip()
+    if custom_base:
+        bases.add(custom_base.rstrip("/") + "/")
+    refs: set[str] = set()
+    for base in bases:
+        if not base.startswith("refs/"):
+            raise PreparationFailure(
+                f"nested checkout has unsupported replacement-ref base: {base}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        output = git_text(path, "for-each-ref", "--format=%(refname)", base)
+        refs.update(line for line in output.splitlines() if line)
+    return tuple(sorted(refs))
+
+
 def _active_filter_attribute_paths(
     path: Path,
     paths: Sequence[str],
@@ -764,6 +782,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"external_rule_settings": list(external_rule_settings)},
+        )
+    replacement_refs = _replacement_refs(path)
+    if replacement_refs:
+        raise PreparationFailure(
+            f"nested checkout contains history-rewriting replacement refs: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"replacement_refs": list(replacement_refs)},
         )
     partial_clone_settings = _partial_clone_settings(path)
     if partial_clone_settings:
