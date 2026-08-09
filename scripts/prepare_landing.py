@@ -248,13 +248,35 @@ def _local_checkout_conversion_settings(path: Path) -> tuple[str, ...]:
         for line in info_attributes.read_text(encoding="utf-8", errors="surrogateescape").splitlines()
     ):
         settings.append(f"info.attributes {info_attributes}")
-    skip_worktree_entries = tuple(
-        entry.decode("utf-8", errors="surrogateescape")
-        for entry in git_bytes(path, "ls-files", "-t", "-z").split(b"\0")
-        if entry.startswith(b"S ")
+    file_mode = subprocess.run(
+        ("git", "config", "--local", "--bool", "--get", "core.filemode"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
     )
+    if file_mode.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout file-mode setting: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": file_mode.stderr.strip()},
+        )
+    if file_mode.returncode == 0 and file_mode.stdout.strip() == "false":
+        settings.append("core.filemode false")
+    index_entries = tuple(
+        entry.decode("utf-8", errors="surrogateescape")
+        for entry in git_bytes(path, "ls-files", "-v", "-z").split(b"\0")
+        if entry
+    )
+    skip_worktree_entries = tuple(entry for entry in index_entries if entry.startswith(("S ", "s ")))
     if skip_worktree_entries:
         settings.append(f"skip-worktree entries={len(skip_worktree_entries)}")
+    assume_unchanged_entries = tuple(
+        entry for entry in index_entries if entry[0].islower()
+    )
+    if assume_unchanged_entries:
+        settings.append(f"assume-unchanged entries={len(assume_unchanged_entries)}")
     return tuple(settings)
 
 
