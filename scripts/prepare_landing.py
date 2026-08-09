@@ -768,6 +768,27 @@ def _history_storage_overrides(path: Path) -> tuple[str, ...]:
     return tuple(overrides)
 
 
+def _in_progress_operation_state(path: Path) -> tuple[str, ...]:
+    markers = (
+        "MERGE_HEAD",
+        "CHERRY_PICK_HEAD",
+        "REVERT_HEAD",
+        "REBASE_HEAD",
+        "rebase-apply",
+        "rebase-merge",
+        "sequencer",
+        "BISECT_START",
+    )
+    active: list[str] = []
+    for marker in markers:
+        candidate = Path(git_text(path, "rev-parse", "--git-path", marker))
+        if not candidate.is_absolute():
+            candidate = path / candidate
+        if candidate.exists():
+            active.append(marker)
+    return tuple(active)
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -876,6 +897,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"implicit_rule_sources": list(implicit_rule_sources)},
+        )
+    operation_state = _in_progress_operation_state(path)
+    if operation_state:
+        raise PreparationFailure(
+            f"nested checkout contains an in-progress Git operation: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"operation_state": list(operation_state)},
         )
     fsmonitor_settings = _effective_fsmonitor_settings(path)
     if fsmonitor_settings:

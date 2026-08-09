@@ -770,6 +770,35 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["replacement_refs"],
             )
 
+    def test_snapshot_rejects_resolved_uncommitted_nested_merge(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "base.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(nested, "branch", "-M", "main")
+            git(nested, "checkout", "-qb", "topic")
+            (nested / "topic.txt").write_text("topic\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested topic")
+            git(nested, "checkout", "-q", "main")
+            (nested / "main.txt").write_text("main\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested main")
+            git(nested, "merge", "--no-commit", "topic")
+            self.assertEqual(b"", git(nested, "ls-files", "-u"))
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertIn("MERGE_HEAD", raised.exception.details["operation_state"])
+
     def test_snapshot_preserves_nested_shallow_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             root = Path(repo_tmp)
