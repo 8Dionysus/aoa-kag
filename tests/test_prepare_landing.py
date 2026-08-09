@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -314,7 +315,15 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing.capture_candidate_snapshot(owner)
 
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
-            self.assertTrue(raised.exception.details["initialized_submodules"])
+            self.assertTrue(raised.exception.details["populated_submodules"])
+
+            git(nested, "submodule", "deinit", "-f", "--", "modules/provider")
+            residual = nested / "modules" / "provider" / "residual.txt"
+            residual.parent.mkdir(parents=True, exist_ok=True)
+            residual.write_text("residual\n", encoding="utf-8")
+            with self.assertRaises(prepare_landing.PreparationFailure) as residual_raised:
+                prepare_landing.capture_candidate_snapshot(owner)
+            self.assertTrue(residual_raised.exception.details["populated_submodules"])
 
     def test_snapshot_rejects_local_nested_checkout_conversion_settings(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
@@ -334,6 +343,38 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertTrue(raised.exception.details["conversion_settings"])
+
+    def test_materialization_rejects_path_conditional_nested_conversion_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            conditional_config = root / "conditional.gitconfig"
+            conditional_config.write_text("[core]\n\tautocrlf = true\n", encoding="utf-8")
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                f'[includeIf "gitdir:{nested.resolve().as_posix()}/"]\n'
+                f"\tpath = {conditional_config.as_posix()}\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                snapshot = prepare_landing.capture_candidate_snapshot(repo)
+                isolated = Path(work_tmp) / "isolated"
+                git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+                prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertIn("source_settings_digest", raised.exception.details)
 
     def test_snapshot_rejects_nested_assume_unchanged_state(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:

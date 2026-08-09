@@ -46,6 +46,11 @@ PREPARATION_OUTPUT_PATHS = (
     *BUDGET_RECEIPT_PATHS,
 )
 SELF_OWNER = "aoa-kag"
+CHECKOUT_CONVERSION_CONFIG_PATTERN = (
+    r"^(extensions\.worktreeconfig|core\."
+    r"(autocrlf|eol|safecrlf|symlinks|attributesfile|sparsecheckout|sparsecheckoutcone|worktree)"
+    r"|filter\..*\.(clean|smudge|process|required))$"
+)
 
 
 @dataclass(frozen=True)
@@ -194,37 +199,64 @@ def _is_nested_git_checkout(path: Path) -> bool:
     return probe.returncode == 0 and probe.stdout.strip() == path.resolve().as_posix()
 
 
-def _initialized_submodule_status(path: Path) -> tuple[str, ...]:
+def _populated_submodule_paths(path: Path) -> tuple[str, ...]:
+    populated: list[str] = []
+    for entry in git_bytes(path, "ls-files", "--stage", "-z").split(b"\0"):
+        if not entry:
+            continue
+        metadata, separator, raw_path = entry.partition(b"\t")
+        if not separator or metadata.split(b" ", 1)[0] != b"160000":
+            continue
+        relative = checked_relative_path(raw_path.decode("utf-8", errors="surrogateescape"))
+        worktree_path = path / relative
+        if worktree_path.is_symlink() or worktree_path.is_file():
+            populated.append(relative.as_posix())
+        elif worktree_path.is_dir() and next(worktree_path.iterdir(), None) is not None:
+            populated.append(relative.as_posix())
+    return tuple(populated)
+
+
+def _effective_checkout_settings(path: Path) -> tuple[str, ...]:
     result = subprocess.run(
-        ("git", "submodule", "status", "--recursive"),
+        ("git", "config", "--get-regexp", CHECKOUT_CONVERSION_CONFIG_PATTERN),
         cwd=path,
         check=False,
         capture_output=True,
         text=True,
     )
-    if result.returncode != 0:
+    if result.returncode not in (0, 1):
         raise PreparationFailure(
-            f"cannot inspect nested checkout submodules: {path}",
+            f"cannot inspect effective nested checkout settings: {path}",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"stderr": result.stderr.strip()},
         )
-    # A leading '-' is Git's explicit uninitialized state.  Any other entry
-    # exposes a populated submodule worktree whose bytes are not yet modeled
-    # by CandidateSnapshot, so fail closed instead of validating other bytes.
-    return tuple(
-        line for line in result.stdout.splitlines() if line and not line.startswith("-")
-    )
+    return tuple(sorted(line for line in result.stdout.splitlines() if line))
 
 
-def _local_checkout_conversion_settings(path: Path) -> tuple[str, ...]:
+def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
+    source_settings = _effective_checkout_settings(source)
+    destination_settings = _effective_checkout_settings(destination)
+    if source_settings != destination_settings:
+        raise PreparationFailure(
+            f"nested checkout conversion settings change in isolation: {source}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "source_settings_digest": sha256_bytes(canonical_json(source_settings)),
+                "destination_settings_digest": sha256_bytes(canonical_json(destination_settings)),
+            },
+        )
+
+
+def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
     result = subprocess.run(
         (
             "git",
             "config",
             "--local",
             "--get-regexp",
-            r"^(extensions\.worktreeconfig|core\.(autocrlf|eol|safecrlf|symlinks|attributesfile|sparsecheckout|sparsecheckoutcone|worktree)|filter\..*\.(clean|smudge|process|required))$",
+            CHECKOUT_CONVERSION_CONFIG_PATTERN,
         ),
         cwd=path,
         check=False,
@@ -283,15 +315,15 @@ def _local_checkout_conversion_settings(path: Path) -> tuple[str, ...]:
 def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
     if not _is_nested_git_checkout(path):
         return None
-    initialized_submodules = _initialized_submodule_status(path)
-    if initialized_submodules:
+    populated_submodules = _populated_submodule_paths(path)
+    if populated_submodules:
         raise PreparationFailure(
-            f"nested checkout contains initialized submodules: {path}",
+            f"nested checkout contains populated submodule worktrees: {path}",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
-            details={"initialized_submodules": list(initialized_submodules)},
+            details={"populated_submodules": list(populated_submodules)},
         )
-    conversion_settings = _local_checkout_conversion_settings(path)
+    conversion_settings = _nonportable_local_checkout_settings(path)
     if conversion_settings:
         raise PreparationFailure(
             f"nested checkout has repository-local worktree conversion settings: {path}",
@@ -423,8 +455,10 @@ def copy_untracked_candidate(
                     capture_output=True,
                 )
                 git_bytes(destination, "checkout", "--detach", "-q", nested.head)
+                _require_effective_checkout_settings_match(source, destination)
                 materialize_candidate(source, destination, nested)
                 require_candidate_unchanged(source, nested)
+                _require_effective_checkout_settings_match(source, destination)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",
