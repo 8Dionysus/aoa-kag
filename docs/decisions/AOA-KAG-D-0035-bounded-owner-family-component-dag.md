@@ -8,7 +8,7 @@
 - KAG surfaces: portable family, repo-local validation action, owner landing preparation
 - Source lanes: aoa-kag, provider repositories
 - Guard families: exact output parity, stable candidate identity, explicit history boundary, bounded scheduling, sequential rollback
-- Posture: proposed
+- Posture: accepted
 
 ## Context
 
@@ -67,11 +67,22 @@ percent. Every valid-boundary run executed all four canonical commands and
 returned a verified, stable-candidate receipt. An intentionally wrong budget
 boundary failed closed at the sentinel rather than being hidden by scheduling.
 
-This is local mechanism and resource evidence. The proposed posture remains
-until three exact-head hosted pairs show the same proof identity, at least two
-wins, and the existing material-benefit threshold without a resource
-regression. The workflow exposes the one-worker control on the same commit so
-that admission does not depend on incomparable branches.
+Three interleaved GitHub-hosted pairs then compared one and two workers at the
+exact candidate `cc7bbee9` and base `4915882d`, with identical history, event,
+and budget refs. The canonical gate took 13.323/15.609/15.456 seconds with one
+worker and 10.535/10.704/8.314 seconds with two. Two workers won 3/3; medians
+fell from 15.456 to 10.535 seconds, saving 4.921 seconds or 31.8 percent. All
+six unchanged full OS-wide audits and typed summaries passed. The hosted
+receipt does not expose runner RSS, so resource admission remains bounded by
+the target-host measurements: two workers added about 147 MiB of typical peak
+memory over sequential execution, while the rejected three-worker default
+added further memory for negligible median benefit. No hosted run showed
+resource failure or proof instability.
+
+This satisfies the predeclared hosted benefit and equivalence gates. The
+one-worker path remains the immediate rollback, and provider rollout remains a
+separate immutable-pin landing obligation rather than evidence retroactively
+attributed to this decision.
 
 ## Consequences
 
@@ -105,7 +116,8 @@ that admission does not depend on incomparable branches.
 
 Run the focused gate, preparation, command-authority, and topology tests; both
 decision validators; root source-fast; isolated real-owner checks; and the
-complete release route. Before changing posture to accepted, run three
-interleaved exact-head hosted pairs with `owner_family_workers=1` and `2`, retain
-all receipts and resource observations, then require a clean PR and postmerge
-workflow. Roll out only the admitted immutable action SHA.
+complete release route. Hosted admission used three interleaved exact-head
+pairs with `owner_family_workers=1` and `2`: runs `31326322051`/`31326425913`,
+`31326517490`/`31326637679`, and `31326733710`/`31326847375`. Require the clean
+PR and postmerge workflow, then roll out only the admitted immutable action
+SHA.
