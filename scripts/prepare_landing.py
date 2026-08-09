@@ -442,6 +442,30 @@ def _effective_external_rule_settings(path: Path) -> tuple[str, ...]:
     return tuple(sorted(line for line in result.stdout.splitlines() if line))
 
 
+def _partial_clone_settings(path: Path) -> tuple[str, ...]:
+    result = subprocess.run(
+        (
+            "git",
+            "config",
+            "--local",
+            "--get-regexp",
+            r"^(extensions\.partialclone|remote\..*\.(promisor|partialclonefilter))$",
+        ),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout partial-clone settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.strip()},
+        )
+    return tuple(sorted(line for line in result.stdout.splitlines() if line))
+
+
 def _active_filter_attribute_paths(
     path: Path,
     paths: Sequence[str],
@@ -596,6 +620,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"external_rule_settings": list(external_rule_settings)},
+        )
+    partial_clone_settings = _partial_clone_settings(path)
+    if partial_clone_settings:
+        raise PreparationFailure(
+            f"nested checkout is a partial or promisor clone: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"partial_clone_settings": list(partial_clone_settings)},
         )
     populated_submodules = _populated_submodule_paths(path)
     if populated_submodules:
@@ -883,6 +915,30 @@ def candidate_patch(repo_root: Path) -> bytes:
     )
 
 
+def candidate_cached_patch(repo_root: Path) -> bytes:
+    return git_bytes(
+        repo_root,
+        "diff",
+        "--cached",
+        "--binary",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+        "HEAD",
+    )
+
+
+def candidate_unstaged_patch(repo_root: Path) -> bytes:
+    return git_bytes(
+        repo_root,
+        "diff",
+        "--binary",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
+
+
 def copy_untracked_candidate(
     source_root: Path,
     destination_root: Path,
@@ -946,7 +1002,7 @@ def copy_untracked_candidate(
                     nested.candidate.head,
                 )
                 _require_effective_checkout_settings_match(source, destination)
-                materialize_candidate(source, destination, nested.candidate)
+                materialize_nested_candidate(source, destination, nested.candidate)
                 observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
                 if observed_digest != nested.tracked_worktree_digest:
                     raise PreparationFailure(
@@ -990,6 +1046,51 @@ def create_candidate_directories(
         captured_modes.append((destination, stat.S_IMODE(metadata.st_mode)))
     for destination, mode in reversed(captured_modes):
         destination.chmod(mode)
+
+
+def materialize_nested_candidate(
+    source_root: Path,
+    destination_root: Path,
+    snapshot: CandidateSnapshot,
+) -> None:
+    cached_patch = candidate_cached_patch(source_root)
+    if cached_patch:
+        git_bytes(
+            destination_root,
+            "apply",
+            "--index",
+            "--binary",
+            "--whitespace=nowarn",
+            "-",
+            input_bytes=cached_patch,
+        )
+    unstaged_patch = candidate_unstaged_patch(source_root)
+    if unstaged_patch:
+        git_bytes(
+            destination_root,
+            "apply",
+            "--binary",
+            "--whitespace=nowarn",
+            "-",
+            input_bytes=unstaged_patch,
+        )
+    copy_untracked_candidate(source_root, destination_root, snapshot.untracked_paths)
+    create_candidate_directories(
+        source_root,
+        destination_root,
+        snapshot.directories,
+    )
+    observed_tree = git_text(destination_root, "write-tree")
+    if observed_tree != snapshot.index_tree:
+        raise PreparationFailure(
+            "nested checkout index differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "expected_index_tree": snapshot.index_tree,
+                "actual_index_tree": observed_tree,
+            },
+        )
 
 
 def materialize_candidate(

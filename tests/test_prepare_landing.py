@@ -374,6 +374,46 @@ class PrepareLandingTests(unittest.TestCase):
                 stat.S_IMODE((isolated / ".validator" / "secret").stat().st_mode),
             )
 
+    def test_nested_materialization_preserves_staged_and_unstaged_split(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            tracked.write_text("staged\n", encoding="utf-8")
+            git(nested, "add", "validator.txt")
+            tracked.write_text("unstaged\n", encoding="utf-8")
+            (nested / "untracked.txt").write_text("untracked\n", encoding="utf-8")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            materialized_tree = prepare_landing.materialize_candidate(
+                repo,
+                isolated,
+                snapshot,
+            )
+            isolated_nested = isolated / ".validator"
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertEqual(b"staged\n", git(isolated_nested, "show", ":validator.txt"))
+            self.assertEqual("unstaged\n", (isolated_nested / "validator.txt").read_text())
+            self.assertEqual(
+                b"validator.txt\n",
+                git(isolated_nested, "diff", "--cached", "--name-only"),
+            )
+            self.assertEqual(
+                b"validator.txt\n",
+                git(isolated_nested, "diff", "--name-only"),
+            )
+            self.assertIn(b"?? untracked.txt\n", git(isolated_nested, "status", "--short"))
+
     def test_snapshot_hashes_nested_untracked_checkout_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
@@ -554,6 +594,26 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertTrue(raised.exception.details["external_rule_settings"])
+
+    def test_snapshot_rejects_nested_promisor_clone_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(nested, "config", "remote.origin.promisor", "true")
+            git(nested, "config", "remote.origin.partialclonefilter", "blob:none")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertTrue(raised.exception.details["partial_clone_settings"])
 
     def test_materialization_rejects_path_conditional_nested_conversion_settings(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
