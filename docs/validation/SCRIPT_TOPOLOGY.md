@@ -111,6 +111,9 @@ provider checkout wave, cancels only the peer processes it launched when one
 fails, and performs a generated sentinel after checkout fan-in. The canonical
 release continuation remains unchanged and blocking; neither sentinel output
 is admitted as owner proof or a landing verdict.
+Its manual-dispatch `direct-control` route is an exact-head measurement and
+rollback surface: it runs the same bounded checkout command without either
+sentinel and still fans into the identical canonical release continuation.
 
 `scripts/validate_kag.py` is the entrypoint. It exposes `local`, `os-wide`, and
 `full` scopes while preserving `full` as the no-argument compatibility

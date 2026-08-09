@@ -275,6 +275,10 @@ peer. After successful fan-in it checks the generated projection, then the
 unchanged release continuation still executes every canonical owner and
 artifact proof. Seed/runtime mismatch is explicitly inapplicable and falls
 through to that full proof rather than becoming success evidence.
+For exact-head hosted admission, manual dispatch exposes `preflight_mode` with
+`candidate` and `direct-control` values. The control retains the same checkout
+command and every downstream proof while omitting only the sentinels; pull
+requests and all non-manual defaults always select `candidate`.
 
 Impact classification and summary evaluation are support commands rather than
 validation lanes:

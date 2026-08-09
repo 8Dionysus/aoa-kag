@@ -499,6 +499,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         )
         self.assertEqual(1, release_audit.count("path: .deps/"))
         self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
+        self.assertIn("inputs.preflight_mode || 'candidate'", release_audit)
         self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_dag)
         self.assertIn('"--exclude-secret-checkouts"', preflight_dag)
         self.assertEqual(

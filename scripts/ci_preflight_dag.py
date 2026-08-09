@@ -185,6 +185,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--base-ref", required=True)
     parser.add_argument("--jobs", type=int, default=3)
+    parser.add_argument(
+        "--mode",
+        choices=("candidate", "direct-control"),
+        default="candidate",
+        help="Exact-head hosted experiment selector; PR/default execution uses candidate.",
+    )
     parser.add_argument("--receipt-output", type=Path)
     return parser.parse_args(argv)
 
@@ -204,6 +210,42 @@ def run_preflight(
         str(args.jobs),
         "--exclude-secret-checkouts",
     )
+    if args.mode == "direct-control":
+        completed = subprocess.run(
+            resolve_command(checkout_command),
+            cwd=REPO_ROOT,
+            check=False,
+        )
+        receipt = {
+            "schema_version": SCHEMA_VERSION,
+            "experiment_mode": "direct-control",
+            "verdict": "passed" if completed.returncode == 0 else "failed",
+            "partial_result_is_green": False,
+            "base_ref": args.base_ref,
+            "checkout": {
+                "command": list(checkout_command),
+                "return_code": completed.returncode,
+            },
+            "proof_boundary": {
+                "claim": "exact-head-direct-checkout-control-only",
+                "does_not_replace": [
+                    "provider-identity-proof",
+                    "full-owner-proof",
+                    "release-audit",
+                    "landing-verdict",
+                ],
+            },
+            "action_class": (
+                "continue_unchanged_full_owner_proof"
+                if completed.returncode == 0
+                else "retry_or_fix_provider_checkout"
+            ),
+            "duration_ms": round((time.perf_counter() - started) * 1000),
+        }
+        if completed.returncode:
+            receipt["failure_type"] = "provider_checkout_failure"
+        write_receipt(args.receipt_output, receipt)
+        return 0 if completed.returncode == 0 else 1
     coverage_command = (
         "python",
         "scripts/prepare_landing.py",
@@ -221,6 +263,7 @@ def run_preflight(
     )
     receipt: dict[str, object] = {
         "schema_version": SCHEMA_VERSION,
+        "experiment_mode": "candidate",
         "verdict": "failed",
         "partial_result_is_green": False,
         "base_ref": args.base_ref,

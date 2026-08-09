@@ -6,6 +6,15 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+    inputs:
+      preflight_mode:
+        description: Exact-head checkout preflight experiment mode
+        required: true
+        default: candidate
+        type: choice
+        options:
+          - candidate
+          - direct-control
 
 permissions:
   contents: read
@@ -198,10 +207,12 @@ jobs:
       - name: Checkout providers with early SCC preflight DAG
         env:
           AOA_KAG_CHECKOUT_WORKERS: "3"
+          AOA_KAG_PREFLIGHT_MODE: ${{ inputs.preflight_mode || 'candidate' }}
         run: >-
           python scripts/ci_preflight_dag.py
           --base-ref "$AOA_KAG_EXPECTED_HISTORY_REF"
           --jobs "$AOA_KAG_CHECKOUT_WORKERS"
+          --mode "$AOA_KAG_PREFLIGHT_MODE"
 
       - name: Run release audit
         run: python scripts/ci_release_check.py

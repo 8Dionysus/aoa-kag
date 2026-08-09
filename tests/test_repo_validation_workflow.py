@@ -133,7 +133,9 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )[0]
 
         self.assertIn('AOA_KAG_CHECKOUT_WORKERS: "3"', release_audit)
+        self.assertIn("inputs.preflight_mode || 'candidate'", release_audit)
         self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
+        self.assertIn('--mode "$AOA_KAG_PREFLIGHT_MODE"', release_audit)
         self.assertIn('--jobs "$AOA_KAG_CHECKOUT_WORKERS"', release_audit)
         self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_text)
         self.assertIn('"--exclude-secret-checkouts"', preflight_text)

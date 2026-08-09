@@ -81,7 +81,9 @@ class CiPreflightDagTests(unittest.TestCase):
         )
 
     def test_successful_child_without_receipt_cannot_pass_scheduler(self) -> None:
-        args = argparse.Namespace(base_ref="base", jobs=3, receipt_output=None)
+        args = argparse.Namespace(
+            base_ref="base", jobs=3, mode="candidate", receipt_output=None
+        )
         success = ci_preflight_dag.ProcessResult(("command",), 0, 1, False)
         with tempfile.TemporaryDirectory() as tmpdir, patch.object(
             ci_preflight_dag,
@@ -96,8 +98,36 @@ class CiPreflightDagTests(unittest.TestCase):
         self.assertEqual(1, code)
         generated.assert_not_called()
 
+    def test_direct_control_runs_only_the_same_bounded_checkout(self) -> None:
+        args = argparse.Namespace(
+            base_ref="base",
+            jobs=3,
+            mode="direct-control",
+            receipt_output=None,
+        )
+        completed = unittest.mock.Mock(returncode=0)
+        with tempfile.TemporaryDirectory() as tmpdir, patch.object(
+            ci_preflight_dag.subprocess,
+            "run",
+            return_value=completed,
+        ) as run, patch.object(ci_preflight_dag, "write_receipt") as write_receipt:
+            code = ci_preflight_dag.run_preflight(
+                args,
+                receipt_parent=Path(tmpdir),
+            )
+
+        self.assertEqual(0, code)
+        command = run.call_args.args[0]
+        self.assertIn("scripts/sync_provider_checkouts.py", command)
+        self.assertIn("--exclude-secret-checkouts", command)
+        aggregate = write_receipt.call_args.args[1]
+        self.assertEqual("direct-control", aggregate["experiment_mode"])
+        self.assertFalse(aggregate["partial_result_is_green"])
+
     def test_sentinel_infrastructure_failure_is_not_misclassified_as_drift(self) -> None:
-        args = argparse.Namespace(base_ref="base", jobs=3, receipt_output=None)
+        args = argparse.Namespace(
+            base_ref="base", jobs=3, mode="candidate", receipt_output=None
+        )
 
         def parallel(_checkout, sentinel, *, repo_root):
             del repo_root
