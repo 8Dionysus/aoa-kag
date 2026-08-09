@@ -293,6 +293,30 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertFalse((isolated / ".validator" / "ignored.cache").exists())
             self.assertNotEqual(first.identity(), second.identity())
 
+    def test_snapshot_rejects_nested_checkout_root_with_outer_tracked_content(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / "validator"
+            nested.mkdir()
+            script = nested / "script.py"
+            script.write_text("print('outer')\n", encoding="utf-8")
+            git(repo, "add", "validator/script.py")
+            git(repo, "commit", "-qm", "track validator from outer repository")
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            git(nested, "add", "script.py")
+            git(nested, "commit", "-qm", "track validator from nested repository")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["validator"],
+                raised.exception.details["nested_tracked_roots"],
+            )
+
     def test_snapshot_rejects_initialized_submodule_in_nested_checkout(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             temp_root = Path(repo_tmp)

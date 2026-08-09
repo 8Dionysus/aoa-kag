@@ -216,6 +216,29 @@ def _is_nested_git_checkout(path: Path) -> bool:
     return probe.returncode == 0 and probe.stdout.strip() == path.resolve().as_posix()
 
 
+def _nested_checkout_roots_with_tracked_content(
+    repo_root: Path,
+    paths: Sequence[str],
+) -> tuple[str, ...]:
+    """Find nested Git roots which overlap the outer repository index."""
+    candidates: set[Path] = set()
+    for raw in paths:
+        relative = checked_relative_path(raw)
+        for parent in relative.parents:
+            if parent == Path("."):
+                continue
+            candidate = repo_root / parent
+            if (candidate / ".git").exists():
+                candidates.add(candidate)
+    return tuple(
+        sorted(
+            candidate.relative_to(repo_root).as_posix()
+            for candidate in candidates
+            if _is_nested_git_checkout(candidate)
+        )
+    )
+
+
 def _populated_submodule_paths(path: Path) -> tuple[str, ...]:
     populated: list[str] = []
     for entry in git_bytes(path, "ls-files", "--stage", "-z").split(b"\0"):
@@ -649,6 +672,18 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
             "candidate contains unmerged Git index entries",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
+        )
+    outer_tracked_paths = tracked_paths(repo_root)
+    nested_tracked_roots = _nested_checkout_roots_with_tracked_content(
+        repo_root,
+        outer_tracked_paths,
+    )
+    if nested_tracked_roots:
+        raise PreparationFailure(
+            "candidate contains a nested Git checkout overlapping outer tracked source",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"nested_tracked_roots": list(nested_tracked_roots)},
         )
     paths = untracked_paths(repo_root)
     return CandidateSnapshot(
