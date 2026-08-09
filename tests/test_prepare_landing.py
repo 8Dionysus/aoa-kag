@@ -319,7 +319,9 @@ class PrepareLandingTests(unittest.TestCase):
             secret = nested / "secret"
             secret.mkdir()
             (secret / "test.txt").write_text("base\n", encoding="utf-8")
-            git(nested, "add", ".")
+            (nested / ".gitignore").write_text("secret/\n", encoding="utf-8")
+            git(nested, "add", ".gitignore")
+            git(nested, "add", "-f", "secret/test.txt")
             git(nested, "commit", "-qm", "nested base")
             secret.chmod(0o700)
 

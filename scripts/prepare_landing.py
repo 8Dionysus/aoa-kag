@@ -208,7 +208,7 @@ def _ignored_directory_paths(repo_root: Path, paths: Sequence[str]) -> set[str]:
     if not paths:
         return set()
     result = subprocess.run(
-        ("git", "check-ignore", "--no-index", "-z", "--stdin"),
+        ("git", "check-ignore", "-z", "--stdin"),
         cwd=repo_root,
         input=b"\0".join(
             raw.encode("utf-8", errors="surrogateescape") for raw in paths
