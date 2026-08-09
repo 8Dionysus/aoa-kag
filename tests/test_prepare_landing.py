@@ -281,6 +281,41 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertFalse((isolated / ".validator" / "ignored.cache").exists())
             self.assertNotEqual(first.identity(), second.identity())
 
+    def test_snapshot_rejects_initialized_submodule_in_nested_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            temp_root = Path(repo_tmp)
+            provider_root = temp_root / "provider-root"
+            provider_root.mkdir()
+            provider = self.make_repo(provider_root)
+            owner_root = temp_root / "owner-root"
+            owner_root.mkdir()
+            owner = self.make_repo(owner_root)
+            nested = owner / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(
+                nested,
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "add",
+                "-q",
+                provider.as_posix(),
+                "modules/provider",
+            )
+            git(nested, "commit", "-qam", "add initialized provider")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(owner)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertTrue(raised.exception.details["initialized_submodules"])
+
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
         prepare_landing.require_preparation_output_scope(
             ("generated/out.json", "kag/indexes/shards/a.jsonl")

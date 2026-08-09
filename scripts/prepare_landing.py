@@ -194,9 +194,40 @@ def _is_nested_git_checkout(path: Path) -> bool:
     return probe.returncode == 0 and probe.stdout.strip() == path.resolve().as_posix()
 
 
+def _initialized_submodule_status(path: Path) -> tuple[str, ...]:
+    result = subprocess.run(
+        ("git", "submodule", "status", "--recursive"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise PreparationFailure(
+            f"cannot inspect nested checkout submodules: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.strip()},
+        )
+    # A leading '-' is Git's explicit uninitialized state.  Any other entry
+    # exposes a populated submodule worktree whose bytes are not yet modeled
+    # by CandidateSnapshot, so fail closed instead of validating other bytes.
+    return tuple(
+        line for line in result.stdout.splitlines() if line and not line.startswith("-")
+    )
+
+
 def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
     if not _is_nested_git_checkout(path):
         return None
+    initialized_submodules = _initialized_submodule_status(path)
+    if initialized_submodules:
+        raise PreparationFailure(
+            f"nested checkout contains initialized submodules: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"initialized_submodules": list(initialized_submodules)},
+        )
     return capture_candidate_snapshot(path)
 
 
