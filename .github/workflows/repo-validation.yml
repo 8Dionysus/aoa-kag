@@ -142,8 +142,8 @@ jobs:
       - name: Check repo-local KAG index family
         uses: ./.github/actions/repo-local-kag-index
         with:
-          history-ref: ${{ github.event.pull_request.base.sha || github.sha }}
-          event-history-ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}
+          event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}
 
       - name: Run source-fast validation
         run: python scripts/ci_gate.py --mode source-fast

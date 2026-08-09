@@ -138,6 +138,22 @@ class RepoValidationWorkflowTests(unittest.TestCase):
             "inputs.history_ref || github.event.pull_request.base.sha || github.sha",
             workflow_text,
         )
+        source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
+            "  release_audit:\n",
+            1,
+        )[0]
+        self.assertIn(
+            "history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}",
+            source_fast,
+        )
+        self.assertIn(
+            "event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}",
+            source_fast,
+        )
+        self.assertNotIn(
+            "history-ref: ${{ github.event.pull_request.base.sha || github.sha }}",
+            source_fast,
+        )
         self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
         self.assertIn('--mode "$AOA_KAG_PREFLIGHT_MODE"', release_audit)
         self.assertIn('--jobs "$AOA_KAG_CHECKOUT_WORKERS"', release_audit)

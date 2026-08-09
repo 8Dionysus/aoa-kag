@@ -196,7 +196,14 @@ class SourceFastHandoffTests(unittest.TestCase):
 
         self.assertIn("source_fast_handoff: ${{ steps.source_fast_handoff.outputs.receipt }}", source_job)
         self.assertIn("python scripts/source_fast_handoff.py issue", source_job)
-        self.assertIn("history-ref: ${{ github.event.pull_request.base.sha || github.sha }}", source_job)
+        self.assertIn(
+            "history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}",
+            source_job,
+        )
+        self.assertIn(
+            "event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}",
+            source_job,
+        )
         self.assertIn("AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}", release_job)
         self.assertIn("python scripts/ci_release_check.py", release_job)
         self.assertNotIn("python scripts/release_check.py", release_job)
