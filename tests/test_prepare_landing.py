@@ -770,6 +770,57 @@ class PrepareLandingTests(unittest.TestCase):
                 git(isolated / ".validator", "config", "--local", "--get", "core.hooksPath"),
             )
 
+    def test_nested_clone_disables_ambient_reference_transaction_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            git(nested, "config", "core.hooksPath", "/dev/null")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            nested_snapshot = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(nested_snapshot)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+
+            hooks = root / "ambient-hooks"
+            hooks.mkdir()
+            marker = root / "reference-transaction-ran"
+            hook = hooks / "reference-transaction"
+            hook.write_text(
+                f"#!/bin/sh\n: > {marker.as_posix()}\n",
+                encoding="utf-8",
+            )
+            hook.chmod(0o755)
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                f"[core]\n\thooksPath = {hooks.as_posix()}\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix()},
+            ), patch.object(
+                prepare_landing,
+                "_nested_git_snapshot",
+                return_value=nested_snapshot,
+            ):
+                materialized_tree = prepare_landing.materialize_candidate(
+                    repo,
+                    isolated,
+                    snapshot,
+                )
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertFalse(marker.exists())
+
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
         prepare_landing.require_preparation_output_scope(
             ("generated/out.json", "kag/indexes/shards/a.jsonl")

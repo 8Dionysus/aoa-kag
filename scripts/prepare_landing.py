@@ -776,6 +776,8 @@ def copy_untracked_candidate(
                     subprocess.run(
                         (
                             "git",
+                            "-c",
+                            "core.hooksPath=/dev/null",
                             "clone",
                             "--quiet",
                             "--no-checkout",
