@@ -489,6 +489,36 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertTrue(raised.exception.details["hook_settings"])
 
+    def test_snapshot_rejects_ambient_filter_driver_before_reconstruction(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / ".gitattributes").write_text(
+                "validator.txt filter=demo\n",
+                encoding="utf-8",
+            )
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                "[filter \"demo\"]\n\tsmudge = cat\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(["validator.txt"], raised.exception.details["filtered_paths"])
+
     def test_nested_checkout_pathspec_magic_is_reset_literally(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

@@ -269,6 +269,38 @@ def _effective_hook_settings(path: Path) -> tuple[str, ...]:
     return tuple(sorted(line for line in result.stdout.splitlines() if line))
 
 
+def _active_filter_attribute_paths(path: Path, paths: Sequence[str]) -> tuple[str, ...]:
+    if not paths:
+        return ()
+    raw = git_bytes(
+        path,
+        "check-attr",
+        "-z",
+        "--stdin",
+        "filter",
+        input_bytes=b"\0".join(
+            item.encode("utf-8", errors="surrogateescape") for item in paths
+        )
+        + b"\0",
+    )
+    fields = raw.split(b"\0")
+    if fields and fields[-1] == b"":
+        fields.pop()
+    if len(fields) % 3:
+        raise PreparationFailure(
+            f"cannot inspect nested checkout filter attributes: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    active: list[str] = []
+    for offset in range(0, len(fields), 3):
+        raw_path, attribute, value = fields[offset : offset + 3]
+        if attribute != b"filter" or value in (b"unspecified", b"unset"):
+            continue
+        active.append(raw_path.decode("utf-8", errors="surrogateescape"))
+    return tuple(active)
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -399,6 +431,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             details={"hook_settings": list(hook_settings)},
         )
     paths = tracked_paths(path)
+    filtered_paths = _active_filter_attribute_paths(path, (*paths, *untracked_paths(path)))
+    if filtered_paths:
+        raise PreparationFailure(
+            f"nested checkout has active filter attributes: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"filtered_paths": list(filtered_paths)},
+        )
     return NestedGitSnapshot(
         candidate=capture_candidate_snapshot(path),
         tracked_paths=paths,
@@ -597,6 +637,7 @@ def copy_untracked_candidate(
                     check=True,
                     capture_output=True,
                 )
+                _require_effective_checkout_settings_match(source, destination)
                 git_bytes(
                     destination,
                     "-c",
