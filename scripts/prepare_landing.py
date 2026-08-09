@@ -472,9 +472,13 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"hook_settings": list(hook_settings)},
         )
-    candidate = capture_candidate_snapshot(path)
+    head = git_text(path, "rev-parse", "HEAD")
     paths = tracked_paths(path)
-    filtered_paths = _active_filter_attribute_paths(path, (*paths, *untracked_paths(path)))
+    candidate_untracked_paths = untracked_paths(path)
+    filtered_paths = _active_filter_attribute_paths(
+        path,
+        (*paths, *candidate_untracked_paths),
+    )
     if filtered_paths:
         raise PreparationFailure(
             f"nested checkout has active filter attributes: {path}",
@@ -482,14 +486,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"filtered_paths": list(filtered_paths)},
         )
-    head_paths = tree_paths(path, candidate.head)
+    head_paths = tree_paths(path, head)
     paths_exposed_during_materialization = tuple(
-        sorted({*head_paths, *paths, *candidate.untracked_paths})
+        sorted({*head_paths, *paths, *candidate_untracked_paths})
     )
     head_filtered_paths = _active_filter_attribute_paths(
         path,
         paths_exposed_during_materialization,
-        source=candidate.head,
+        source=head,
     )
     if head_filtered_paths:
         raise PreparationFailure(
@@ -498,6 +502,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"head_filtered_paths": list(head_filtered_paths)},
         )
+    candidate = capture_candidate_snapshot(path)
     return NestedGitSnapshot(
         candidate=candidate,
         tracked_paths=paths,

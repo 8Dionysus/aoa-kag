@@ -565,6 +565,45 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual(["validator.txt"], raised.exception.details["filtered_paths"])
 
+    def test_snapshot_rejects_dirty_filter_before_clean_driver_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / ".gitattributes").write_text(
+                "validator.txt filter=demo\n",
+                encoding="utf-8",
+            )
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested filtered base")
+            (nested / "validator.txt").write_text("dirty\n", encoding="utf-8")
+            marker = root / "clean-filter-ran"
+            clean_filter = root / "clean-filter"
+            clean_filter.write_text(
+                f"#!/bin/sh\n: > {marker.as_posix()}\ncat\n",
+                encoding="utf-8",
+            )
+            clean_filter.chmod(0o755)
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                f"[filter \"demo\"]\n\tclean = {clean_filter.as_posix()}\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(["validator.txt"], raised.exception.details["filtered_paths"])
+            self.assertFalse(marker.exists())
+
     def test_snapshot_rejects_filter_removed_only_from_nested_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             root = Path(repo_tmp)
