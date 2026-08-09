@@ -81,6 +81,7 @@ class CandidateSnapshot:
 @dataclass(frozen=True)
 class NestedGitSnapshot:
     candidate: CandidateSnapshot
+    root_mode: int
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -88,6 +89,7 @@ class NestedGitSnapshot:
     def identity(self) -> str:
         payload = {
             "candidate_identity": self.candidate.identity(),
+            "root_mode": self.root_mode,
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -629,6 +631,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     candidate = capture_candidate_snapshot(path)
     return NestedGitSnapshot(
         candidate=candidate,
+        root_mode=stat.S_IMODE(path.lstat().st_mode),
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -926,6 +929,7 @@ def copy_untracked_candidate(
                     )
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
+                destination.chmod(nested.root_mode)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",
@@ -939,6 +943,7 @@ def create_candidate_directories(
     destination_root: Path,
     paths: Sequence[str],
 ) -> None:
+    captured_modes: list[tuple[Path, int]] = []
     for raw in paths:
         relative = checked_relative_path(raw)
         source = source_root / relative
@@ -951,7 +956,9 @@ def create_candidate_directories(
             )
         destination = destination_root / relative
         destination.mkdir(parents=True, exist_ok=True)
-        destination.chmod(stat.S_IMODE(metadata.st_mode))
+        captured_modes.append((destination, stat.S_IMODE(metadata.st_mode)))
+    for destination, mode in reversed(captured_modes):
+        destination.chmod(mode)
 
 
 def materialize_candidate(

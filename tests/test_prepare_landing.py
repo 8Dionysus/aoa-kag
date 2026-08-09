@@ -308,6 +308,40 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertTrue((isolated / ".validator" / "expected-empty").is_dir())
             self.assertFalse((isolated / ".validator" / "ignored-cache").exists())
 
+    def test_nested_materialization_preserves_root_and_restrictive_parent_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            parent = nested / "readonly-parent"
+            (parent / "empty-child").mkdir(parents=True)
+            parent.chmod(0o555)
+            nested.chmod(0o555)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            materialized_tree = prepare_landing.materialize_candidate(
+                repo,
+                isolated,
+                snapshot,
+            )
+
+            isolated_nested = isolated / ".validator"
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertTrue((isolated_nested / "readonly-parent" / "empty-child").is_dir())
+            self.assertEqual(0o555, stat.S_IMODE(isolated_nested.stat().st_mode))
+            self.assertEqual(
+                0o555,
+                stat.S_IMODE((isolated_nested / "readonly-parent").stat().st_mode),
+            )
+
     def test_nested_materialization_preserves_tracked_parent_directory_mode(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
