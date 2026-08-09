@@ -419,6 +419,29 @@ def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
     return tuple(value for value in values if value.strip().lower() not in disabled)
 
 
+def _effective_external_rule_settings(path: Path) -> tuple[str, ...]:
+    result = subprocess.run(
+        (
+            "git",
+            "config",
+            "--get-regexp",
+            r"^(core\.excludesfile|core\.attributesfile)$",
+        ),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout external rule settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.strip()},
+        )
+    return tuple(sorted(line for line in result.stdout.splitlines() if line))
+
+
 def _active_filter_attribute_paths(
     path: Path,
     paths: Sequence[str],
@@ -565,6 +588,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"fsmonitor_settings": list(fsmonitor_settings)},
+        )
+    external_rule_settings = _effective_external_rule_settings(path)
+    if external_rule_settings:
+        raise PreparationFailure(
+            f"nested checkout has external ignore or attribute rules: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"external_rule_settings": list(external_rule_settings)},
         )
     populated_submodules = _populated_submodule_paths(path)
     if populated_submodules:

@@ -520,6 +520,41 @@ class PrepareLandingTests(unittest.TestCase):
                 )
             )
 
+    def test_snapshot_rejects_path_conditional_nested_exclude_file(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            excludes = root / "nested.exclude"
+            excludes.write_text("build.cache\n", encoding="utf-8")
+            conditional = root / "conditional.gitconfig"
+            conditional.write_text(
+                f"[core]\n\texcludesFile = {excludes.as_posix()}\n",
+                encoding="utf-8",
+            )
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                f'[includeIf "gitdir:{nested.resolve().as_posix()}/"]\n'
+                f"\tpath = {conditional.as_posix()}\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertTrue(raised.exception.details["external_rule_settings"])
+
     def test_materialization_rejects_path_conditional_nested_conversion_settings(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             root = Path(repo_tmp)
