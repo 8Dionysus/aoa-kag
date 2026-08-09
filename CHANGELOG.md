@@ -9,6 +9,9 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Added
 
+- Add isolated fixed-point landing preparation and a fail-closed CI preflight
+  scheduler that detects self-SCC drift beside the bounded provider checkout
+  wave while retaining the unchanged full owner and release proofs.
 - Add an exact same-run source-fast handoff receipt and CI-only release
   continuation with strict SHA/tree/authority/input/donor/family/workflow
   binding and complete-release fallback.

@@ -93,6 +93,25 @@ exact local, donor, command, builder, family, and GitHub workflow identities.
 after complete receipt recomputation; otherwise it executes the original full
 release lane through `scripts/release_check.py`.
 
+`scripts/prepare_landing.py` is the explicit pre-push preparation entrypoint.
+It copies the caller's final tracked and untracked candidate into a detached
+temporary worktree, stages only inside that worktree, and converges the atomic
+coverage/generated-root/portable-family SCC through ordered Gauss-Seidel
+regeneration. It verifies exact provider pins and final parity, emits a typed
+receipt, and applies only the resulting generated patch when explicitly asked.
+Its preparation-only coverage step rebuilds self while admitting external rows
+from the history seed only under unchanged canonical runtime, exact pins, owner
+order, canonical roots, and matching portable-manifest identities. It neither
+changes the caller's Git index, reuses an owner-proof verdict, nor grants
+validation or landing authority.
+
+`scripts/ci_preflight_dag.py` is a scheduling-only release preflight. It
+overlaps the seed-only self-coverage sentinel with the already admitted bounded
+provider checkout wave, cancels only the peer processes it launched when one
+fails, and performs a generated sentinel after checkout fan-in. The canonical
+release continuation remains unchanged and blocking; neither sentinel output
+is admitted as owner proof or a landing verdict.
+
 `scripts/validate_kag.py` is the entrypoint. It exposes `local`, `os-wide`, and
 `full` scopes while preserving `full` as the no-argument compatibility
 behavior. The local scope never loads every provider family. The explicit

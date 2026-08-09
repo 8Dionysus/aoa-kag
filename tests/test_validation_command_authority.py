@@ -488,6 +488,9 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             "  required_summary:\n",
             1,
         )[0]
+        preflight_dag = (
+            REPO_ROOT / "scripts" / "ci_preflight_dag.py"
+        ).read_text(encoding="utf-8")
 
         expected_sibling_providers = provider_ready_repos_from_manifest() - {"aoa-kag"}
         self.assertEqual(
@@ -495,8 +498,9 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             set(CANARY_PROVIDER_ROOT_ENVS),
         )
         self.assertEqual(1, release_audit.count("path: .deps/"))
-        self.assertIn("python scripts/sync_provider_checkouts.py", release_audit)
-        self.assertIn("--exclude-secret-checkouts", release_audit)
+        self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
+        self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_dag)
+        self.assertIn('"--exclude-secret-checkouts"', preflight_dag)
         self.assertEqual(
             len(expected_sibling_providers),
             canary.count("path: .deps/"),

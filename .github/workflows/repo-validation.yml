@@ -187,14 +187,6 @@ jobs:
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
           persist-credentials: false
 
-      - name: Checkout public providers in bounded parallel wave
-        env:
-          AOA_KAG_CHECKOUT_WORKERS: "3"
-        run: >-
-          python scripts/sync_provider_checkouts.py
-          --jobs "$AOA_KAG_CHECKOUT_WORKERS"
-          --exclude-secret-checkouts
-
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -202,6 +194,14 @@ jobs:
 
       - name: Install validation dependencies
         run: python -m pip install PyYAML jsonschema jsonschema-rs==0.49.2
+
+      - name: Checkout providers with early SCC preflight DAG
+        env:
+          AOA_KAG_CHECKOUT_WORKERS: "3"
+        run: >-
+          python scripts/ci_preflight_dag.py
+          --base-ref "$AOA_KAG_EXPECTED_HISTORY_REF"
+          --jobs "$AOA_KAG_CHECKOUT_WORKERS"
 
       - name: Run release audit
         run: python scripts/ci_release_check.py

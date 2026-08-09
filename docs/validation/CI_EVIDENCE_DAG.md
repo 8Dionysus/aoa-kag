@@ -76,6 +76,34 @@ These values are an orientation baseline, not a performance guarantee. Hosted
 comparisons must use current paired runs because runner placement and shared
 host load are noisy.
 
+### Retry-amplification baseline
+
+The 2026-08-08 terminal histories of PRs 206--208 expose a different cost from
+one green workflow: repeated late generated-family failures caused another
+commit and another complete workflow. PR 206 recorded six failed and two
+successful workflows from
+[`31267461011`](https://github.com/8Dionysus/aoa-kag/actions/runs/31267461011)
+through
+[`31272085404`](https://github.com/8Dionysus/aoa-kag/actions/runs/31272085404),
+spanning about 116 minutes. PR 207 recorded four failed and two successful
+workflows, including late generated drift in
+[`31274983397`](https://github.com/8Dionysus/aoa-kag/actions/runs/31274983397),
+before terminal run
+[`31275500052`](https://github.com/8Dionysus/aoa-kag/actions/runs/31275500052),
+spanning about 53 minutes. PR 208 recorded three failed and two successful
+workflows from
+[`31280733658`](https://github.com/8Dionysus/aoa-kag/actions/runs/31280733658)
+through
+[`31282925286`](https://github.com/8Dionysus/aoa-kag/actions/runs/31282925286),
+spanning about 62 minutes.
+
+Across that bounded corpus, 13 failed workflows and six successful workflows
+were consumed by three ultimately merged changes. The recurring causes were
+portable-family drift, late aggregate coverage drift, generated-root drift,
+and a final-digest budget receipt. This corpus measures retry amplification,
+not runner speed: elapsed spans include the correction loop between runs and
+must not be presented as one CI-command duration.
+
 ## Dependency graph
 
 The graph has independent branches, barriers, and one real strongly connected
@@ -257,6 +285,10 @@ are not substituted for hosted evidence.
 | Combined bounded reconstruction | three interleaved local full-path pairs, candidate `304ce44f` versus control `cc74651e` | candidate won 3/3; medians 90.752 to 73.040 s, saving 17.712 s or 19.52 percent; 21/21 owners, stable payloads, zero failed timings, zero swap, lower median RSS | local gate passed; admitted to immutable hosted comparison |
 | Combined bounded reconstruction | three exact-head hosted `workflow_dispatch` pairs, candidate `304ce44f` versus control `cc74651e` | candidate won 3/3: 111.452/114.733/72.632 s versus 143.473/140.350/103.691 s; medians 140.350 to 111.452 s, saving 28.898 s or 20.59 percent; all six runs retained 21/21 owners, 76/76 timings, exact pins, stable per-head payloads, and zero disagreement | accepted by `AOA-KAG-D-0034`; median RSS also fell from 513,292 to 510,036 KiB |
 | Combined bounded reconstruction postmerge | canonical push run `31250935353` at `fa6f71ee` | full proof passed in 112.382 s with 21/21 owners, 76/76 timings, zero reject/failure/disagreement, committed fixed point, and 509,820 KiB peak RSS | landed by PR 204; 19.93 percent faster than hosted control median and within 0.83 percent of candidate median |
+| Pre-landing full external coverage rebuild | bounded local attempt before the preparation accelerator | the first iteration exceeded seven minutes and approximately 1 GiB peak RSS before being stopped; it produced no completed verdict | retain as negative evidence against using a full 21-owner rebuild inside every preparation iteration; it does not bound canonical release-proof time |
+| Seed-bounded atomic SCC preparation | exact historical failed heads from PRs 206, 207, and 208, using each PR base as seed | the three staged replays reached final regeneration parity in 80.560/68.371/59.493 s and 3/2/3 iterations, changing 11/5/11 derived paths; every external row stayed seed-bound and all 21 owner rows remained present and passed | mechanism gate passed locally; PR 208 still demonstrates that the final digest-bound budget receipt belongs inside the atomic preparation contract rather than being inferred from regeneration-only replay |
+| Early self-SCC sentinel | original PR 208 failed head `a8faebb2` against base `eb0ce524` | typed self-coverage drift was detected in 6.267 s locally, before provider materialization or full owner proof; hosted run `31280821184` exposed the same correction class only after about 275 s | retain as a fail-fast scheduling candidate; local-versus-hosted timing is orientation, not a paired causal claim |
+| Hardened current atomic preparation check | current candidate with 21 exact, clean, complete-history pinned provider checkouts | isolated fixed point plus final digest-bound receipt and final parity completed in 69.681 s, three iterations, 213.3 MiB process peak RSS, and 0 B swap; `--check` correctly returned drift without changing the caller | local correctness/resource evidence passed; rerun on committed source and require canonical proof plus hosted admission before landing |
 
 The exact same-run semantic proof prototype was fail-closed and passed its
 negative identity matrix, but its approximately 3--5 second local saving did

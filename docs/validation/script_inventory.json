@@ -69,6 +69,20 @@
       "disposition": "keep"
     },
     {
+      "path": "scripts/ci_preflight_dag.py",
+      "family": "release_entrypoint",
+      "organ_lane": "release/ci-lane",
+      "owner_surface": "docs/validation/CI_EVIDENCE_DAG.md",
+      "source_truth": ["manifests/provider_registry.json", "docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md"],
+      "reads": ["exact history seed, preparation-only self coverage, and provider checkout command result"],
+      "writes": ["temporary sentinel receipts outside the repository and optional aggregate DAG receipt"],
+      "side_effects": "overlaps only the seed-only self-coverage sentinel with the bounded provider checkout wave, cancels only its own peer on failure, and runs a generated sentinel after checkout fan-in",
+      "validation_lane": "release",
+      "ci_inclusion": "experimental release-audit preflight; the unchanged full owner proof and release continuation remain blocking",
+      "test_target": "tests/test_ci_preflight_dag.py",
+      "disposition": "keep"
+    },
+    {
       "path": "scripts/ci_release_check.py",
       "family": "release_entrypoint",
       "organ_lane": "release/ci-lane",
@@ -668,6 +682,20 @@
       "validation_lane": "release",
       "ci_inclusion": "Repo Validation workflow entrypoint",
       "test_target": "tests/test_validation_command_authority.py",
+      "disposition": "keep"
+    },
+    {
+      "path": "scripts/prepare_landing.py",
+      "family": "release_entrypoint",
+      "organ_lane": "release/ci-lane",
+      "owner_surface": "docs/RELEASING.md",
+      "source_truth": ["docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md", "manifests/provider_registry.json", "config/validation_lanes.json"],
+      "reads": ["caller HEAD, Git index and worktree candidate, exact provider pins, KAG generated and portable-family inputs"],
+      "writes": ["isolated temporary Git worktree and optional unstaged generated patch in the caller worktree"],
+      "side_effects": "converges the atomic KAG SCC through isolated ordered staging; --check never changes the caller and --apply preserves its Git index",
+      "validation_lane": "release",
+      "ci_inclusion": "pre-push preparation only; focused tests protect isolation and ordering while all canonical validation lanes remain blocking",
+      "test_target": "tests/test_prepare_landing.py",
       "disposition": "keep"
     },
     {

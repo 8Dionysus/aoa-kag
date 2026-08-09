@@ -29,6 +29,11 @@ BOUNDED_PUBLIC_CHECKOUT = (
     "          --jobs \"$AOA_KAG_CHECKOUT_WORKERS\"\n"
     "          --exclude-secret-checkouts"
 )
+PREFLIGHT_DAG_COMMAND = "python scripts/ci_preflight_dag.py"
+PREFLIGHT_DAG_CHECKOUT_MARKERS = (
+    '"scripts/sync_provider_checkouts.py"',
+    '"--exclude-secret-checkouts"',
+)
 
 
 def _validate_provider_registry_schema() -> None:
@@ -113,10 +118,18 @@ def _validate_workflow_provider_routes() -> None:
     canary = (REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml").read_text(
         encoding="utf-8"
     )
+    preflight_dag = (REPO_ROOT / "scripts" / "ci_preflight_dag.py").read_text(
+        encoding="utf-8"
+    )
     entries = provider_entries()
     envs = provider_ci_envs()
     pins = provider_dependency_pins()
-    if BOUNDED_PUBLIC_CHECKOUT not in repo_validation:
+    direct_checkout = BOUNDED_PUBLIC_CHECKOUT in repo_validation
+    scheduled_checkout = (
+        PREFLIGHT_DAG_COMMAND in repo_validation
+        and all(marker in preflight_dag for marker in PREFLIGHT_DAG_CHECKOUT_MARKERS)
+    )
+    if not direct_checkout and not scheduled_checkout:
         fail("repo validation workflow must use the bounded public provider checkout")
     if 'AOA_KAG_CHECKOUT_WORKERS: "3"' not in repo_validation:
         fail("repo validation workflow must cap the public provider checkout at three workers")
