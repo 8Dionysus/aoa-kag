@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
+import tempfile
 from unittest import mock
 import unittest
 
@@ -127,6 +129,63 @@ class RepoLocalKagGateTests(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertEqual("candidate_identity_changed", receipt["failure_type"])
         self.assertFalse(receipt["candidate_stable"])
+
+    def test_candidate_identity_hashes_dirty_tracked_and_untracked_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = Path(raw)
+            subprocess.run(("git", "init", "-q"), cwd=repo, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "test@example.invalid"),
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.name", "Owner Gate Test"),
+                cwd=repo,
+                check=True,
+            )
+            tracked = repo / "tracked.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            subprocess.run(("git", "add", "tracked.txt"), cwd=repo, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=repo, check=True)
+
+            tracked.write_text("first\n", encoding="utf-8")
+            untracked = repo / "untracked.txt"
+            untracked.write_text("one\n", encoding="utf-8")
+            first = GATE.candidate_identity(repo)
+
+            tracked.write_text("second\n", encoding="utf-8")
+            second = GATE.candidate_identity(repo)
+            self.assertNotEqual(first, second)
+
+            untracked.write_text("two\n", encoding="utf-8")
+            third = GATE.candidate_identity(repo)
+            self.assertNotEqual(second, third)
+
+    def test_component_failure_requires_a_changed_candidate(self) -> None:
+        identity = {
+            "repo_root": REPO_ROOT.as_posix(),
+            "head": "a" * 40,
+            "index_tree": "b" * 40,
+            "candidate_identity": "sha256:" + "c" * 64,
+        }
+
+        def fake_run(component: GATE.Component, *, repo_root: Path) -> GATE.ComponentResult:
+            self.assertEqual(REPO_ROOT, repo_root)
+            return result(
+                component,
+                returncode=1 if component.component_id == "family-contract" else 0,
+            )
+
+        with (
+            mock.patch.object(GATE, "candidate_identity", return_value=identity),
+            mock.patch.object(GATE, "run_component", side_effect=fake_run),
+        ):
+            code, receipt = self.gate(jobs=2)
+
+        self.assertEqual(1, code)
+        self.assertEqual("owner_family_proof_failed", receipt["failure_type"])
+        self.assertEqual("fix_candidate", receipt["action_class"])
 
     def test_generator_commands_keep_exact_history_and_budget_boundaries(self) -> None:
         command = GATE.generator_command(

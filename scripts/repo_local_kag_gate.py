@@ -22,6 +22,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
+try:
+    from scripts import prepare_landing as isolation
+except ImportError:  # pragma: no cover - direct script execution
+    import prepare_landing as isolation  # type: ignore
+
 
 KAG_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "aoa-kag-owner-family-gate-receipt-v1"
@@ -82,12 +87,18 @@ def git_text(repo_root: Path, *args: str) -> str:
 
 
 def candidate_identity(repo_root: Path) -> dict[str, str]:
-    status = git_bytes(repo_root, "status", "--porcelain=v1", "-z")
+    snapshot = isolation.capture_candidate_snapshot(repo_root)
     return {
         "repo_root": repo_root.as_posix(),
-        "head": git_text(repo_root, "rev-parse", "HEAD"),
-        "index_tree": git_text(repo_root, "write-tree"),
-        "status_digest": sha256_bytes(status),
+        "head": snapshot.head,
+        "index_tree": snapshot.index_tree,
+        "candidate_identity": snapshot.identity(),
+        "cached_diff_digest": snapshot.cached_diff_digest,
+        "worktree_diff_digest": snapshot.worktree_diff_digest,
+        "untracked_digest": snapshot.untracked_digest,
+        "untracked_paths_digest": sha256_bytes(
+            canonical_json(list(snapshot.untracked_paths))
+        ),
     }
 
 
@@ -284,7 +295,7 @@ def run_gate(
         receipt["action_class"] = "regenerate_owner_family"
     elif not successful or not complete:
         receipt["failure_type"] = "owner_family_proof_failed"
-        receipt["action_class"] = "fix_or_retry_same_candidate"
+        receipt["action_class"] = "fix_candidate"
     return (0 if receipt["verdict"] == "verified" else 1), receipt
 
 

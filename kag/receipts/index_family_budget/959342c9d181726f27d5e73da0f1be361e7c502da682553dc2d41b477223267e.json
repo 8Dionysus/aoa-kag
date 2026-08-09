@@ -1,0 +1,17 @@
+{
+  "allowed_bytes": 9582528,
+  "allowed_tracked_bytes": 12100336,
+  "approved_by": "repository-owner",
+  "base_ref": "4915882d121b7dcd324c04066bc905d0b056e8f8",
+  "changed_generated_bytes": 9582528,
+  "changed_generated_files": 284,
+  "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
+  "default_limit_bytes": 1048576,
+  "head_family_digest": "959342c9d181726f27d5e73da0f1be361e7c502da682553dc2d41b477223267e",
+  "reason": "The common owner gate now binds dirty and untracked content bytes and routes semantic failures to candidate repair, preserving same-candidate proof across the D0035 DAG.",
+  "repo": "aoa-kag",
+  "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
+  "scope": "generated_delta",
+  "tracked_bytes": 12100336,
+  "tracked_bytes_max": 12582912
+}
