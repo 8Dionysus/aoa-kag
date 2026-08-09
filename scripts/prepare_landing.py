@@ -298,7 +298,31 @@ def copy_untracked_candidate(
         elif stat.S_ISREG(metadata.st_mode):
             shutil.copy2(source, destination, follow_symlinks=False)
         elif stat.S_ISDIR(metadata.st_mode):
-            shutil.copytree(source, destination, symlinks=True)
+            nested = _nested_git_snapshot(source)
+            if nested is None:
+                shutil.copytree(source, destination, symlinks=True)
+            else:
+                # Rebuild a nested validation checkout from its captured Git
+                # candidate instead of copying repository-local ignored state.
+                # Every worktree byte exposed to validation is therefore
+                # represented by the nested CandidateSnapshot identity.
+                subprocess.run(
+                    (
+                        "git",
+                        "clone",
+                        "--quiet",
+                        "--no-checkout",
+                        "--no-hardlinks",
+                        "--",
+                        source.resolve().as_posix(),
+                        destination.as_posix(),
+                    ),
+                    check=True,
+                    capture_output=True,
+                )
+                git_bytes(destination, "checkout", "--detach", "-q", nested.head)
+                materialize_candidate(source, destination, nested)
+                require_candidate_unchanged(source, nested)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",

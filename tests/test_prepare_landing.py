@@ -258,8 +258,10 @@ class PrepareLandingTests(unittest.TestCase):
             git(nested, "config", "user.email", "test@example.invalid")
             git(nested, "config", "user.name", "Nested Validator Test")
             (nested / "validator.txt").write_text("clean\n", encoding="utf-8")
+            (nested / ".gitignore").write_text("ignored.cache\n", encoding="utf-8")
             git(nested, "add", ".")
             git(nested, "commit", "-qm", "nested base")
+            (nested / "ignored.cache").write_text("not candidate state\n", encoding="utf-8")
 
             first = prepare_landing.capture_candidate_snapshot(repo)
             isolated = Path(work_tmp) / "isolated"
@@ -276,6 +278,7 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual(first.index_tree, materialized_tree)
             self.assertEqual(b"", git(isolated, "ls-files", "--stage", "--", ".validator"))
             self.assertTrue((isolated / ".validator" / "validator.txt").is_file())
+            self.assertFalse((isolated / ".validator" / "ignored.cache").exists())
             self.assertNotEqual(first.identity(), second.identity())
 
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
