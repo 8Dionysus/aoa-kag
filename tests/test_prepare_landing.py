@@ -600,6 +600,30 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["head_filtered_paths"],
             )
 
+    def test_snapshot_checks_head_filters_against_candidate_added_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / ".gitattributes").write_text("*.dat filter=demo\n", encoding="utf-8")
+            git(nested, "add", ".gitattributes")
+            git(nested, "commit", "-qm", "nested filter policy")
+            (nested / ".gitattributes").write_text("", encoding="utf-8")
+            (nested / "candidate.dat").write_text("candidate\n", encoding="utf-8")
+            git(nested, "add", ".gitattributes", "candidate.dat")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(
+                ["candidate.dat"],
+                raised.exception.details["head_filtered_paths"],
+            )
+
     def test_nested_checkout_pathspec_magic_is_reset_literally(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

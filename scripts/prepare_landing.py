@@ -483,9 +483,12 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             details={"filtered_paths": list(filtered_paths)},
         )
     head_paths = tree_paths(path, candidate.head)
+    paths_exposed_during_materialization = tuple(
+        sorted({*head_paths, *paths, *candidate.untracked_paths})
+    )
     head_filtered_paths = _active_filter_attribute_paths(
         path,
-        head_paths,
+        paths_exposed_during_materialization,
         source=candidate.head,
     )
     if head_filtered_paths:
