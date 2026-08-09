@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -271,10 +272,10 @@ class PrepareLandingTests(unittest.TestCase):
             empty.chmod(0o750)
             third = prepare_landing.capture_candidate_snapshot(repo)
 
-            self.assertEqual((), first.untracked_directories)
+            self.assertEqual(("generated",), first.directories)
             self.assertEqual(
-                ("validation-input", "validation-input/empty"),
-                second.untracked_directories,
+                ("generated", "validation-input", "validation-input/empty"),
+                second.directories,
             )
             self.assertNotEqual(first.identity(), second.identity())
             self.assertNotEqual(second.identity(), third.identity())
@@ -306,6 +307,36 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual(snapshot.index_tree, materialized_tree)
             self.assertTrue((isolated / ".validator" / "expected-empty").is_dir())
             self.assertFalse((isolated / ".validator" / "ignored-cache").exists())
+
+    def test_nested_materialization_preserves_tracked_parent_directory_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            secret = nested / "secret"
+            secret.mkdir()
+            (secret / "test.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            secret.chmod(0o700)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            materialized_tree = prepare_landing.materialize_candidate(
+                repo,
+                isolated,
+                snapshot,
+            )
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertEqual(
+                0o700,
+                stat.S_IMODE((isolated / ".validator" / "secret").stat().st_mode),
+            )
 
     def test_snapshot_hashes_nested_untracked_checkout_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
@@ -424,6 +455,34 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertTrue(raised.exception.details["conversion_settings"])
+
+    def test_snapshot_rejects_nested_repository_local_exclude_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            exclude_raw = git(nested, "rev-parse", "--git-path", "info/exclude")
+            exclude = Path(exclude_raw.decode("utf-8").strip())
+            if not exclude.is_absolute():
+                exclude = nested / exclude
+            exclude.write_text("local.cache\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertTrue(
+                any(
+                    setting.startswith("info.exclude ")
+                    for setting in raised.exception.details["conversion_settings"]
+                )
+            )
 
     def test_materialization_rejects_path_conditional_nested_conversion_settings(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:

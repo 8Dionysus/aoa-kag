@@ -61,8 +61,8 @@ class CandidateSnapshot:
     worktree_diff_digest: str
     untracked_digest: str
     untracked_paths: tuple[str, ...]
-    untracked_directory_digest: str
-    untracked_directories: tuple[str, ...]
+    directory_digest: str
+    directories: tuple[str, ...]
 
     def identity(self) -> str:
         payload = {
@@ -72,8 +72,8 @@ class CandidateSnapshot:
             "worktree_diff_digest": self.worktree_diff_digest,
             "untracked_digest": self.untracked_digest,
             "untracked_paths": list(self.untracked_paths),
-            "untracked_directory_digest": self.untracked_directory_digest,
-            "untracked_directories": list(self.untracked_directories),
+            "directory_digest": self.directory_digest,
+            "directories": list(self.directories),
         }
         return sha256_bytes(canonical_json(payload))
 
@@ -252,22 +252,8 @@ def _ignored_directory_roots(repo_root: Path) -> set[str]:
     return roots
 
 
-def untracked_directory_paths(
-    repo_root: Path,
-    represented_paths: Sequence[str],
-) -> tuple[str, ...]:
-    """Capture non-ignored directories not implied by represented files."""
-    implied: set[str] = set()
-    for raw in represented_paths:
-        relative = checked_relative_path(raw)
-        if raw.endswith("/"):
-            implied.add(relative.as_posix())
-        implied.update(
-            parent.as_posix()
-            for parent in relative.parents
-            if parent != Path(".")
-        )
-
+def candidate_directory_paths(repo_root: Path) -> tuple[str, ...]:
+    """Capture every non-ignored directory exposed to candidate validation."""
     ignored_roots = _ignored_directory_roots(repo_root)
     discovered: list[str] = []
     for current, dirnames, _filenames in os.walk(repo_root, topdown=True):
@@ -286,15 +272,14 @@ def untracked_directory_paths(
             if (child / ".git").exists() and _is_nested_git_checkout(child):
                 continue
             retained.append(name)
-            if raw not in implied:
-                discovered.append(raw)
+            discovered.append(raw)
         dirnames[:] = retained
 
     ignored = _ignored_directory_paths(repo_root, discovered)
     return tuple(raw for raw in discovered if raw not in ignored)
 
 
-def untracked_directory_digest(repo_root: Path, paths: Sequence[str]) -> str:
+def candidate_directory_digest(repo_root: Path, paths: Sequence[str]) -> str:
     digest = hashlib.sha256()
     for raw in paths:
         relative = checked_relative_path(raw)
@@ -507,15 +492,19 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
             details={"stderr": result.stderr.strip()},
         )
     settings = [line for line in result.stdout.splitlines() if line]
-    info_attributes_raw = git_text(path, "rev-parse", "--git-path", "info/attributes")
-    info_attributes = Path(info_attributes_raw)
-    if not info_attributes.is_absolute():
-        info_attributes = path / info_attributes
-    if info_attributes.is_file() and any(
-        line.strip() and not line.lstrip().startswith("#")
-        for line in info_attributes.read_text(encoding="utf-8", errors="surrogateescape").splitlines()
-    ):
-        settings.append(f"info.attributes {info_attributes}")
+    for info_name in ("attributes", "exclude"):
+        info_raw = git_text(path, "rev-parse", "--git-path", f"info/{info_name}")
+        info_path = Path(info_raw)
+        if not info_path.is_absolute():
+            info_path = path / info_path
+        if info_path.is_file() and any(
+            line.strip() and not line.lstrip().startswith("#")
+            for line in info_path.read_text(
+                encoding="utf-8",
+                errors="surrogateescape",
+            ).splitlines()
+        ):
+            settings.append(f"info.{info_name} {info_path}")
     file_mode = subprocess.run(
         ("git", "config", "--bool", "--get", "core.filemode"),
         cwd=path,
@@ -798,10 +787,7 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
             details={"nested_tracked_roots": list(nested_tracked_roots)},
         )
     paths = untracked_paths(repo_root)
-    directories = untracked_directory_paths(
-        repo_root,
-        (*outer_tracked_paths, *paths),
-    )
+    directories = candidate_directory_paths(repo_root)
     return CandidateSnapshot(
         head=git_text(repo_root, "rev-parse", "HEAD"),
         index_tree=git_text(repo_root, "write-tree"),
@@ -829,8 +815,8 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
         ),
         untracked_digest=untracked_content_digest(repo_root, paths),
         untracked_paths=paths,
-        untracked_directory_digest=untracked_directory_digest(repo_root, directories),
-        untracked_directories=directories,
+        directory_digest=candidate_directory_digest(repo_root, directories),
+        directories=directories,
     )
 
 
@@ -988,7 +974,7 @@ def materialize_candidate(
     create_candidate_directories(
         source_root,
         temporary_root,
-        snapshot.untracked_directories,
+        snapshot.directories,
     )
     git_bytes(temporary_root, "add", "-A", "--", ".")
     for raw in snapshot.untracked_paths:
