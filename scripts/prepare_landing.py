@@ -75,6 +75,23 @@ class CandidateSnapshot:
 
 
 @dataclass(frozen=True)
+class NestedGitSnapshot:
+    candidate: CandidateSnapshot
+    tracked_paths: tuple[str, ...]
+    tracked_worktree_digest: str
+    effective_checkout_settings: tuple[str, ...]
+
+    def identity(self) -> str:
+        payload = {
+            "candidate_identity": self.candidate.identity(),
+            "tracked_paths": list(self.tracked_paths),
+            "tracked_worktree_digest": self.tracked_worktree_digest,
+            "effective_checkout_settings": list(self.effective_checkout_settings),
+        }
+        return sha256_bytes(canonical_json(payload))
+
+
+@dataclass(frozen=True)
 class ResolvedRefs:
     history_ref: str
     event_history_ref: str
@@ -312,7 +329,7 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
     return tuple(settings)
 
 
-def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
+def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     if not _is_nested_git_checkout(path):
         return None
     populated_submodules = _populated_submodule_paths(path)
@@ -331,7 +348,72 @@ def _nested_git_snapshot(path: Path) -> CandidateSnapshot | None:
             action_class="code_fix",
             details={"conversion_settings": list(conversion_settings)},
         )
-    return capture_candidate_snapshot(path)
+    paths = tracked_paths(path)
+    return NestedGitSnapshot(
+        candidate=capture_candidate_snapshot(path),
+        tracked_paths=paths,
+        tracked_worktree_digest=tracked_worktree_digest(path, paths),
+        effective_checkout_settings=_effective_checkout_settings(path),
+    )
+
+
+def tracked_paths(repo_root: Path) -> tuple[str, ...]:
+    decoded = git_bytes(repo_root, "ls-files", "-z").decode(
+        "utf-8", errors="surrogateescape"
+    )
+    paths = tuple(item for item in decoded.split("\0") if item)
+    for item in paths:
+        checked_relative_path(item)
+    return paths
+
+
+def tracked_worktree_digest(repo_root: Path, paths: Sequence[str]) -> str:
+    digest = hashlib.sha256()
+    for raw in paths:
+        relative = checked_relative_path(raw)
+        source = repo_root / relative
+        digest.update(raw.encode("utf-8", errors="surrogateescape"))
+        digest.update(b"\0")
+        try:
+            metadata = source.lstat()
+        except FileNotFoundError:
+            digest.update(b"missing\0")
+            continue
+        digest.update(str(stat.S_IFMT(metadata.st_mode)).encode("ascii"))
+        digest.update(b"\0")
+        digest.update(str(stat.S_IMODE(metadata.st_mode)).encode("ascii"))
+        digest.update(b"\0")
+        if stat.S_ISLNK(metadata.st_mode):
+            digest.update(os.readlink(source).encode("utf-8", errors="surrogateescape"))
+        elif stat.S_ISREG(metadata.st_mode):
+            digest.update(source.read_bytes())
+        elif stat.S_ISDIR(metadata.st_mode):
+            digest.update(b"directory")
+        else:
+            raise PreparationFailure(
+                f"tracked nested checkout path has unsupported type: {raw}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        digest.update(b"\0")
+    return "sha256:" + digest.hexdigest()
+
+
+def require_nested_git_snapshot_unchanged(
+    repo_root: Path,
+    expected: NestedGitSnapshot,
+) -> None:
+    observed = _nested_git_snapshot(repo_root)
+    if observed != expected:
+        raise PreparationFailure(
+            "nested checkout candidate changed during isolated preparation",
+            failure_type="candidate_snapshot_changed",
+            action_class="retry_same_candidate",
+            details={
+                "expected_identity": expected.identity(),
+                "actual_identity": observed.identity() if observed is not None else None,
+            },
+        )
 
 
 def _update_untracked_path_digest(
@@ -454,10 +536,21 @@ def copy_untracked_candidate(
                     check=True,
                     capture_output=True,
                 )
-                git_bytes(destination, "checkout", "--detach", "-q", nested.head)
+                git_bytes(destination, "checkout", "--detach", "-q", nested.candidate.head)
                 _require_effective_checkout_settings_match(source, destination)
-                materialize_candidate(source, destination, nested)
-                require_candidate_unchanged(source, nested)
+                materialize_candidate(source, destination, nested.candidate)
+                observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
+                if observed_digest != nested.tracked_worktree_digest:
+                    raise PreparationFailure(
+                        "nested checkout tracked worktree differs after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                        details={
+                            "expected_digest": nested.tracked_worktree_digest,
+                            "actual_digest": observed_digest,
+                        },
+                    )
+                require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
