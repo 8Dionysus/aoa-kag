@@ -489,6 +489,52 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertTrue(raised.exception.details["hook_settings"])
 
+    def test_snapshot_rejects_fsmonitor_before_candidate_git_reads(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            marker = root / "fsmonitor-ran"
+            hook = root / "fsmonitor-hook"
+            hook.write_text(
+                f"#!/bin/sh\n: > {marker.as_posix()}\n",
+                encoding="utf-8",
+            )
+            hook.chmod(0o755)
+            git(nested, "config", "core.fsmonitor", hook.as_posix())
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual([hook.as_posix()], raised.exception.details["fsmonitor_settings"])
+            self.assertFalse(marker.exists())
+
+    def test_snapshot_disables_ambient_external_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            marker = root / "external-diff-ran"
+            external_diff = root / "external-diff"
+            external_diff.write_text(
+                f"#!/bin/sh\n: > {marker.as_posix()}\nexit 1\n",
+                encoding="utf-8",
+            )
+            external_diff.chmod(0o755)
+            git(repo, "config", "diff.external", external_diff.as_posix())
+            (repo / "source.txt").write_text("candidate\n", encoding="utf-8")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertTrue(snapshot.worktree_diff_digest.startswith("sha256:"))
+            self.assertFalse(marker.exists())
+
     def test_snapshot_rejects_ambient_filter_driver_before_reconstruction(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             root = Path(repo_tmp)

@@ -269,6 +269,29 @@ def _effective_hook_settings(path: Path) -> tuple[str, ...]:
     return tuple(sorted(line for line in result.stdout.splitlines() if line))
 
 
+def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
+    result = subprocess.run(
+        ("git", "config", "--null", "--get-all", "core.fsmonitor"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout fsmonitor setting: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.decode("utf-8", errors="replace").strip()},
+        )
+    values = tuple(
+        value.decode("utf-8", errors="surrogateescape")
+        for value in result.stdout.split(b"\0")
+        if value
+    )
+    disabled = {"false", "no", "off", "0"}
+    return tuple(value for value in values if value.strip().lower() not in disabled)
+
+
 def _active_filter_attribute_paths(path: Path, paths: Sequence[str]) -> tuple[str, ...]:
     if not paths:
         return ()
@@ -398,6 +421,14 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
 def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     if not _is_nested_git_checkout(path):
         return None
+    fsmonitor_settings = _effective_fsmonitor_settings(path)
+    if fsmonitor_settings:
+        raise PreparationFailure(
+            f"nested checkout has active fsmonitor settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"fsmonitor_settings": list(fsmonitor_settings)},
+        )
     populated_submodules = _populated_submodule_paths(path)
     if populated_submodules:
         raise PreparationFailure(
@@ -557,6 +588,14 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
+    fsmonitor_settings = _effective_fsmonitor_settings(repo_root)
+    if fsmonitor_settings:
+        raise PreparationFailure(
+            f"candidate checkout has active fsmonitor settings: {repo_root}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"fsmonitor_settings": list(fsmonitor_settings)},
+        )
     if git_bytes(repo_root, "ls-files", "-u", "-z"):
         raise PreparationFailure(
             "candidate contains unmerged Git index entries",
@@ -568,10 +607,26 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
         head=git_text(repo_root, "rev-parse", "HEAD"),
         index_tree=git_text(repo_root, "write-tree"),
         cached_diff_digest=sha256_bytes(
-            git_bytes(repo_root, "diff", "--cached", "--binary", "--full-index")
+            git_bytes(
+                repo_root,
+                "diff",
+                "--cached",
+                "--binary",
+                "--full-index",
+                "--no-ext-diff",
+                "--no-textconv",
+            )
         ),
         worktree_diff_digest=sha256_bytes(
-            git_bytes(repo_root, "diff", "--binary", "--full-index", "HEAD")
+            git_bytes(
+                repo_root,
+                "diff",
+                "--binary",
+                "--full-index",
+                "--no-ext-diff",
+                "--no-textconv",
+                "HEAD",
+            )
         ),
         untracked_digest=untracked_content_digest(repo_root, paths),
         untracked_paths=paths,
@@ -596,7 +651,15 @@ def require_candidate_unchanged(
 
 
 def candidate_patch(repo_root: Path) -> bytes:
-    return git_bytes(repo_root, "diff", "--binary", "--full-index", "HEAD")
+    return git_bytes(
+        repo_root,
+        "diff",
+        "--binary",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+        "HEAD",
+    )
 
 
 def copy_untracked_candidate(
@@ -1457,7 +1520,7 @@ def final_confirmation(repo_root: Path, refs: ResolvedRefs) -> None:
         ("python", "scripts/validate_kag.py", "--scope", "local"),
         repo_root=repo_root,
     )
-    if git_bytes(repo_root, "diff", "--binary", "--no-ext-diff"):
+    if git_bytes(repo_root, "diff", "--binary", "--no-ext-diff", "--no-textconv"):
         raise PreparationFailure(
             "final confirmation left unstaged worktree drift in the isolated candidate",
             failure_type="generated_cleanliness_failure",
@@ -1471,6 +1534,8 @@ def tree_patch(repo_root: Path, before_tree: str, after_tree: str) -> bytes:
         "diff",
         "--binary",
         "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
         before_tree,
         after_tree,
     )
@@ -1519,7 +1584,15 @@ def apply_generated_patch(
     expected_snapshot: CandidateSnapshot,
 ) -> None:
     require_candidate_unchanged(source_root, expected_snapshot)
-    cached_before = git_bytes(source_root, "diff", "--cached", "--binary", "--full-index")
+    cached_before = git_bytes(
+        source_root,
+        "diff",
+        "--cached",
+        "--binary",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
     git_bytes(
         source_root,
         "apply",
@@ -1537,7 +1610,15 @@ def apply_generated_patch(
         "-",
         input_bytes=patch,
     )
-    cached_after = git_bytes(source_root, "diff", "--cached", "--binary", "--full-index")
+    cached_after = git_bytes(
+        source_root,
+        "diff",
+        "--cached",
+        "--binary",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
     if cached_after != cached_before:
         raise PreparationFailure(
             "prepare-landing changed the caller Git index",
