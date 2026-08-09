@@ -251,6 +251,24 @@ def _effective_checkout_settings(path: Path) -> tuple[str, ...]:
     return tuple(sorted(line for line in result.stdout.splitlines() if line))
 
 
+def _effective_hook_settings(path: Path) -> tuple[str, ...]:
+    result = subprocess.run(
+        ("git", "config", "--get-regexp", r"^(core\.hookspath|init\.templatedir)$"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout hook settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": result.stderr.strip()},
+        )
+    return tuple(sorted(line for line in result.stdout.splitlines() if line))
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -371,6 +389,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"symlinks": list(symlinks)},
+        )
+    hook_settings = _effective_hook_settings(path)
+    if hook_settings:
+        raise PreparationFailure(
+            f"nested checkout has ambient hook or template settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"hook_settings": list(hook_settings)},
         )
     paths = tracked_paths(path)
     return NestedGitSnapshot(
@@ -571,7 +597,15 @@ def copy_untracked_candidate(
                     check=True,
                     capture_output=True,
                 )
-                git_bytes(destination, "checkout", "--detach", "-q", nested.candidate.head)
+                git_bytes(
+                    destination,
+                    "-c",
+                    "core.hooksPath=/dev/null",
+                    "checkout",
+                    "--detach",
+                    "-q",
+                    nested.candidate.head,
+                )
                 _require_effective_checkout_settings_match(source, destination)
                 materialize_candidate(source, destination, nested.candidate)
                 observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
@@ -620,7 +654,7 @@ def materialize_candidate(
             # available to commands, but they are not owner source.  Reset the
             # temporary gitlink that `git add -A` creates without deleting the
             # copied checkout from the isolated worktree.
-            git_bytes(temporary_root, "reset", "-q", "--", raw)
+            git_bytes(temporary_root, "--literal-pathspecs", "reset", "-q", "--", raw)
     return git_text(temporary_root, "write-tree")
 
 

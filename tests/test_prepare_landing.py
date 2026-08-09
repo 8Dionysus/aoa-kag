@@ -463,6 +463,55 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual(["validator-link"], raised.exception.details["symlinks"])
 
+    def test_snapshot_rejects_ambient_nested_hook_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                f"[core]\n\thooksPath = {(root / 'hooks').as_posix()}\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertTrue(raised.exception.details["hook_settings"])
+
+    def test_nested_checkout_pathspec_magic_is_reset_literally(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ":(glob)**"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            materialized_tree = prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertEqual(
+                b"",
+                git(isolated, "--literal-pathspecs", "ls-files", "--stage", "--", ":(glob)**"),
+            )
+
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
         prepare_landing.require_preparation_output_scope(
             ("generated/out.json", "kag/indexes/shards/a.jsonl")
