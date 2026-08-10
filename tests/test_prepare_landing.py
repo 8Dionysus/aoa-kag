@@ -391,7 +391,7 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["sparse_worktree_paths"],
             )
 
-    def test_outer_materialization_preserves_directory_mtimes(self) -> None:
+    def test_outer_materialization_preserves_directory_times(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
             candidate = repo / "validation-input"
@@ -405,13 +405,18 @@ class PrepareLandingTests(unittest.TestCase):
             )
 
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            expected_atime = candidate.lstat().st_atime_ns
             isolated = Path(work_tmp) / "isolated"
             git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
             prepare_landing.materialize_candidate(repo, isolated, snapshot)
 
             self.assertIn(
-                ("validation-input", expected_mtime),
-                snapshot.directory_mtimes,
+                ("validation-input", expected_atime, expected_mtime),
+                snapshot.worktree_times,
+            )
+            self.assertEqual(
+                expected_atime,
+                (isolated / "validation-input").lstat().st_atime_ns,
             )
             self.assertEqual(
                 expected_mtime,
@@ -470,11 +475,19 @@ class PrepareLandingTests(unittest.TestCase):
             os.utime(tracked, ns=(metadata.st_atime_ns, expected_mtime))
 
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            expected_atime = tracked.lstat().st_atime_ns
             isolated = Path(work_tmp) / "isolated"
             git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
             prepare_landing.materialize_candidate(repo, isolated, snapshot)
 
-            self.assertIn(("dated.txt", expected_mtime), snapshot.directory_mtimes)
+            self.assertIn(
+                ("dated.txt", expected_atime, expected_mtime),
+                snapshot.worktree_times,
+            )
+            self.assertEqual(
+                expected_atime,
+                (isolated / "dated.txt").lstat().st_atime_ns,
+            )
             self.assertEqual(
                 expected_mtime,
                 (isolated / "dated.txt").lstat().st_mtime_ns,
@@ -634,10 +647,13 @@ class PrepareLandingTests(unittest.TestCase):
             os.utime(vendor, ns=(vendor_mtime_ns, vendor_mtime_ns))
 
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
-            self.assertIn((".cache", cache_mtime_ns), snapshot.directory_mtimes)
             self.assertIn(
-                (".cache/vendor", vendor_mtime_ns),
-                snapshot.directory_mtimes,
+                (".cache", cache.lstat().st_atime_ns, cache_mtime_ns),
+                snapshot.worktree_times,
+            )
+            self.assertIn(
+                (".cache/vendor", vendor.lstat().st_atime_ns, vendor_mtime_ns),
+                snapshot.worktree_times,
             )
             isolated = Path(work_tmp) / "isolated"
             git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
@@ -1954,7 +1970,7 @@ class PrepareLandingTests(unittest.TestCase):
                     (isolated_readonly / "validator.txt").chmod(0o644)
                     isolated_readonly.chmod(0o755)
 
-    def test_nested_materialization_preserves_modification_times(self) -> None:
+    def test_nested_materialization_preserves_access_and_modification_times(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
             nested = repo / ".validator"
@@ -1966,25 +1982,39 @@ class PrepareLandingTests(unittest.TestCase):
             tracked.write_text("base\n", encoding="utf-8")
             git(nested, "add", ".")
             git(nested, "commit", "-qm", "nested base")
-            historical_ns = 946684800_000_000_000
+            historical_atime_ns = 915148800_000_000_000
+            historical_mtime_ns = 946684800_000_000_000
             os.utime(
                 tracked,
-                ns=(tracked.lstat().st_atime_ns, historical_ns),
+                ns=(historical_atime_ns, historical_mtime_ns),
             )
             os.utime(
                 nested,
-                ns=(nested.lstat().st_atime_ns, historical_ns),
+                ns=(historical_atime_ns, historical_mtime_ns),
             )
 
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            expected_nested_atime_ns = nested.lstat().st_atime_ns
+            expected_tracked_atime_ns = tracked.lstat().st_atime_ns
             isolated = Path(work_tmp) / "isolated"
             git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
             prepare_landing.materialize_candidate(repo, isolated, snapshot)
             isolated_nested = isolated / ".validator"
 
-            self.assertEqual(historical_ns, isolated_nested.lstat().st_mtime_ns)
             self.assertEqual(
-                historical_ns,
+                expected_nested_atime_ns,
+                isolated_nested.lstat().st_atime_ns,
+            )
+            self.assertEqual(
+                expected_tracked_atime_ns,
+                (isolated_nested / "validator.txt").lstat().st_atime_ns,
+            )
+            self.assertEqual(
+                historical_mtime_ns,
+                isolated_nested.lstat().st_mtime_ns,
+            )
+            self.assertEqual(
+                historical_mtime_ns,
                 (isolated_nested / "validator.txt").lstat().st_mtime_ns,
             )
 

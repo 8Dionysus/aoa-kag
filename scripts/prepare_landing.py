@@ -88,7 +88,7 @@ class CandidateSnapshot:
     directories: tuple[str, ...]
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
     tracked_file_modes: tuple[tuple[str, int], ...]
-    directory_mtimes: tuple[tuple[str, int], ...]
+    worktree_times: tuple[tuple[str, int, int], ...]
     worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
     intent_to_add_paths: tuple[str, ...]
 
@@ -122,7 +122,7 @@ class CandidateSnapshot:
                 list(group) for group in self.worktree_hardlink_groups
             ],
             "tracked_file_modes": [list(row) for row in self.tracked_file_modes],
-            "directory_mtimes": [list(row) for row in self.directory_mtimes],
+            "worktree_times": [list(row) for row in self.worktree_times],
             "worktree_xattrs": [
                 [
                     path,
@@ -170,7 +170,7 @@ class NestedGitSnapshot:
     object_inventory_digest: str
     object_storage_state: tuple[tuple[str, str, int, int, int, str], ...]
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
-    worktree_mtimes: tuple[tuple[str, int], ...]
+    worktree_times: tuple[tuple[str, int, int], ...]
     worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
@@ -244,7 +244,7 @@ class NestedGitSnapshot:
             "worktree_hardlink_groups": [
                 list(group) for group in self.worktree_hardlink_groups
             ],
-            "worktree_mtimes": [list(row) for row in self.worktree_mtimes],
+            "worktree_times": [list(row) for row in self.worktree_times],
             "worktree_xattrs": [
                 [
                     path,
@@ -2145,43 +2145,43 @@ def _worktree_xattr_state(
     return tuple(state)
 
 
-def _worktree_mtime_state(
+def _worktree_time_state(
     path: Path,
     candidate_paths: Sequence[str],
     directory_paths: Sequence[str],
-) -> tuple[tuple[str, int], ...]:
-    state: list[tuple[str, int]] = []
+) -> tuple[tuple[str, int, int], ...]:
+    state: list[tuple[str, int, int]] = []
     for raw in (".", *sorted(set((*candidate_paths, *directory_paths)))):
         candidate = path if raw == "." else path / checked_relative_path(raw)
         try:
             metadata = candidate.lstat()
         except FileNotFoundError:
             continue
-        state.append((raw, metadata.st_mtime_ns))
+        state.append((raw, metadata.st_atime_ns, metadata.st_mtime_ns))
     return tuple(state)
 
 
-def _restore_worktree_mtimes(
+def _restore_worktree_times(
     path: Path,
-    expected_state: Sequence[tuple[str, int]],
+    expected_state: Sequence[tuple[str, int, int]],
 ) -> None:
     ordered = sorted(
         expected_state,
         key=lambda row: (row[0].count("/"), row[0]),
         reverse=True,
     )
-    for raw, mtime_ns in ordered:
+    for raw, atime_ns, mtime_ns in ordered:
         candidate = path if raw == "." else path / checked_relative_path(raw)
         try:
-            metadata = candidate.lstat()
+            candidate.lstat()
             os.utime(
                 candidate,
-                ns=(metadata.st_atime_ns, mtime_ns),
+                ns=(atime_ns, mtime_ns),
                 follow_symlinks=False,
             )
         except OSError as exc:
             raise PreparationFailure(
-                f"cannot restore candidate modification time: {candidate}",
+                f"cannot restore candidate access and modification times: {candidate}",
                 failure_type="candidate_snapshot_invalid",
                 action_class="code_fix",
                 details={"path": raw, "error": str(exc)},
@@ -3254,11 +3254,6 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         (*paths, *candidate_untracked_paths),
         candidate_directories,
     )
-    worktree_mtimes = _worktree_mtime_state(
-        path,
-        (*paths, *candidate_untracked_paths),
-        candidate_directories,
-    )
     origin_head, git_refs = _git_ref_state(path)
     (
         ref_root_mode,
@@ -3304,6 +3299,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     # while answering those reads; the final bound state must be the one that
     # materialization and the unchanged check are required to reproduce.
     git_admin_directories, git_admin_files = _git_admin_state(path)
+    # Bind worktree times only after every content read above. Reads may advance
+    # access times under relatime or strictatime; isolation must reproduce the
+    # final source state rather than a stale pre-digest value.
+    worktree_times = _worktree_time_state(
+        path,
+        (*paths, *candidate_untracked_paths),
+        candidate_directories,
+    )
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
@@ -3335,7 +3338,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         object_inventory_digest=object_inventory_digest,
         object_storage_state=object_storage_state,
         worktree_hardlink_groups=worktree_hardlink_groups,
-        worktree_mtimes=worktree_mtimes,
+        worktree_times=worktree_times,
         worktree_xattrs=worktree_xattrs,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_digest,
@@ -3695,11 +3698,6 @@ def capture_candidate_snapshot(
         repo_root,
         outer_tracked_paths,
     )
-    directory_mtimes = _worktree_mtime_state(
-        repo_root,
-        worktree_paths,
-        directories,
-    )
     worktree_xattrs = _worktree_xattr_state(
         repo_root,
         worktree_paths,
@@ -3750,6 +3748,13 @@ def capture_candidate_snapshot(
             failure_type="candidate_snapshot_changed",
             action_class="retry_same_candidate",
         )
+    # Candidate diff and digest construction above may advance access times.
+    # Capture both timestamps at the final bound source state.
+    worktree_times = _worktree_time_state(
+        repo_root,
+        worktree_paths,
+        directories,
+    )
     return CandidateSnapshot(
         head=head,
         root_mode=stat.S_IMODE(repo_root.lstat().st_mode),
@@ -3768,7 +3773,7 @@ def capture_candidate_snapshot(
         directories=directories,
         worktree_hardlink_groups=worktree_hardlink_groups,
         tracked_file_modes=tracked_file_modes,
-        directory_mtimes=directory_mtimes,
+        worktree_times=worktree_times,
         worktree_xattrs=worktree_xattrs,
         intent_to_add_paths=candidate_intent_to_add_paths,
     )
@@ -4007,18 +4012,6 @@ def copy_untracked_candidate(
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
-                _restore_worktree_mtimes(destination, nested.worktree_mtimes)
-                observed_mtimes = _worktree_mtime_state(
-                    destination,
-                    (*nested.tracked_paths, *nested.candidate.untracked_paths),
-                    nested.candidate.directories,
-                )
-                if observed_mtimes != nested.worktree_mtimes:
-                    raise PreparationFailure(
-                        "nested checkout modification times differ after isolation",
-                        failure_type="candidate_snapshot_invalid",
-                        action_class="code_fix",
-                    )
                 _restore_git_index_state(
                     destination,
                     nested.index_mode,
@@ -4047,6 +4040,18 @@ def copy_untracked_candidate(
                 _require_local_config_state_match(destination, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
+                _restore_worktree_times(destination, nested.worktree_times)
+                observed_times = _worktree_time_state(
+                    destination,
+                    (*nested.tracked_paths, *nested.candidate.untracked_paths),
+                    nested.candidate.directories,
+                )
+                if observed_times != nested.worktree_times:
+                    raise PreparationFailure(
+                        "nested checkout access or modification times differ after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",
@@ -4299,15 +4304,15 @@ def materialize_candidate(
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
-    _restore_worktree_mtimes(temporary_root, snapshot.directory_mtimes)
-    observed_mtimes = _worktree_mtime_state(
+    _restore_worktree_times(temporary_root, snapshot.worktree_times)
+    observed_times = _worktree_time_state(
         temporary_root,
         worktree_paths,
         snapshot.directories,
     )
-    if observed_mtimes != snapshot.directory_mtimes:
+    if observed_times != snapshot.worktree_times:
         raise PreparationFailure(
-            "candidate modification times differ after isolation",
+            "candidate access or modification times differ after isolation",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
