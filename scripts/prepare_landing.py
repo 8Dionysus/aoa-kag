@@ -2944,6 +2944,22 @@ def capture_candidate_snapshot(
     untracked_digest = untracked_content_digest(repo_root, paths)
     directory_digest = candidate_directory_digest(repo_root, directories)
     worktree_paths = (*outer_tracked_paths, *paths)
+    nonportable_worktree_ownership = _nonportable_worktree_ownership(
+        repo_root,
+        worktree_paths,
+        directories,
+    )
+    if nonportable_worktree_ownership:
+        raise PreparationFailure(
+            f"candidate contains worktree ownership isolation cannot preserve: {repo_root}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "nonportable_worktree_ownership": list(
+                    nonportable_worktree_ownership
+                )
+            },
+        )
     sparse_worktree_paths = _sparse_worktree_paths(repo_root, worktree_paths)
     if sparse_worktree_paths:
         raise PreparationFailure(

@@ -479,6 +479,37 @@ class PrepareLandingTests(unittest.TestCase):
                 ),
             )
 
+    def test_outer_snapshot_rejects_nonportable_directory_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            foreign = repo / "foreign-directory"
+            foreign.mkdir()
+            real_lstat = Path.lstat
+
+            def foreign_owned_lstat(candidate: Path):
+                metadata = real_lstat(candidate)
+                if candidate != foreign:
+                    return metadata
+                return type(
+                    "ForeignOwnedOuterDirectoryStat",
+                    (),
+                    {
+                        "st_mode": metadata.st_mode,
+                        "st_uid": metadata.st_uid + 1,
+                        "st_gid": metadata.st_gid,
+                    },
+                )()
+
+            with patch.object(Path, "lstat", foreign_owned_lstat):
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertIn(
+                "foreign-directory uid=",
+                raised.exception.details["nonportable_worktree_ownership"][0],
+            )
+
     def test_outer_snapshot_includes_only_ignored_nested_checkout_roots(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
