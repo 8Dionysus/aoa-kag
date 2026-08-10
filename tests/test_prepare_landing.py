@@ -934,6 +934,54 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["submodule_transport_sources"],
             )
 
+    def test_snapshot_rejects_effective_ambient_submodule_transport(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            dependency_commit = git(nested, "rev-parse", "HEAD").decode().strip()
+            (nested / ".gitmodules").write_text(
+                '[submodule "dependency"]\n\tpath = dependency\n',
+                encoding="utf-8",
+            )
+            git(nested, "add", ".gitmodules")
+            git(
+                nested,
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"160000,{dependency_commit},dependency",
+            )
+            git(nested, "commit", "-qm", "add ambient dependency")
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                '[submodule "dependency"]\n'
+                "\turl = https://example.invalid/dependency.git\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {
+                    "GIT_CONFIG_GLOBAL": global_config.as_posix(),
+                    "GIT_CONFIG_NOSYSTEM": "1",
+                },
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                [["global", "submodule.dependency.url"]],
+                raised.exception.details["effective_submodule_transport"],
+            )
+
     def test_snapshot_rejects_local_nested_checkout_conversion_settings(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

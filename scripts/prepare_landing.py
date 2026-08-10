@@ -647,6 +647,22 @@ def _effective_url_rewrite_settings(path: Path) -> tuple[tuple[str, str], ...]:
     )
 
 
+def _effective_submodule_transport_settings(
+    path: Path,
+) -> tuple[tuple[str, str], ...]:
+    return tuple(
+        sorted(
+            {
+                (scope, key)
+                for scope, key, _value in _effective_git_config(
+                    path, include_remote=True
+                )
+                if key.startswith("submodule.") and key.endswith(".url")
+            }
+        )
+    )
+
+
 def _require_effective_git_config_match(
     destination: Path,
     expected: NestedGitSnapshot,
@@ -1594,6 +1610,18 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"populated_submodules": list(populated_submodules)},
+        )
+    effective_submodule_transport = _effective_submodule_transport_settings(path)
+    if effective_submodule_transport:
+        raise PreparationFailure(
+            f"nested checkout is exposed to effective submodule transport: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "effective_submodule_transport": [
+                    list(row) for row in effective_submodule_transport
+                ]
+            },
         )
     conversion_settings = _nonportable_local_checkout_settings(path)
     if conversion_settings:
