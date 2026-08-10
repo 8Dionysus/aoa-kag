@@ -1025,6 +1025,108 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["unsupported_local_config_keys"],
             )
 
+    def test_materialization_rejects_path_conditional_effective_git_config(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            (nested / "untracked.txt").write_text("candidate\n", encoding="utf-8")
+
+            included = root / "included.gitconfig"
+            included.write_text(
+                "[status]\n\tshowUntrackedFiles = no\n",
+                encoding="utf-8",
+            )
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                f'[includeIf "gitdir:{nested.resolve().as_posix()}/"]\n'
+                f"\tpath = {included.as_posix()}\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
+            ):
+                snapshot = prepare_landing.capture_candidate_snapshot(repo)
+                isolated = Path(work_tmp) / "isolated"
+                git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertIn("effective Git configuration", str(raised.exception))
+            self.assertNotEqual(
+                raised.exception.details["source_config_digest"],
+                raised.exception.details["destination_config_digest"],
+            )
+
+    def test_snapshot_rejects_nested_fetch_head(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(nested, "fetch", "-q", ".", "HEAD")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(["FETCH_HEAD"], raised.exception.details["pseudo_ref_state"])
+
+    def test_snapshot_rejects_nested_resolve_undo_state(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            base_branch = git(nested, "symbolic-ref", "--short", "HEAD").decode().strip()
+            git(nested, "checkout", "-qb", "conflict")
+            tracked.write_text("branch\n", encoding="utf-8")
+            git(nested, "commit", "-qam", "branch change")
+            git(nested, "checkout", "-q", base_branch)
+            tracked.write_text("base branch\n", encoding="utf-8")
+            git(nested, "commit", "-qam", "base branch change")
+            merge = subprocess.run(
+                ("git", "merge", "--no-edit", "conflict"),
+                cwd=nested,
+                check=False,
+                capture_output=True,
+            )
+            self.assertNotEqual(0, merge.returncode)
+            tracked.write_text("resolved\n", encoding="utf-8")
+            git(nested, "add", "validator.txt")
+            git(nested, "merge", "--quit")
+            orig_head = Path(
+                git(nested, "rev-parse", "--git-path", "ORIG_HEAD").decode().strip()
+            )
+            if not orig_head.is_absolute():
+                orig_head = nested / orig_head
+            orig_head.unlink(missing_ok=True)
+            self.assertTrue(prepare_landing._resolve_undo_entries(nested))
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertTrue(raised.exception.details["resolve_undo_entries"])
+
     def test_snapshot_rejects_symlinks_in_nested_checkout(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
@@ -1437,14 +1539,10 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing,
                 "_nested_git_snapshot",
                 return_value=nested_snapshot,
-            ):
-                materialized_tree = prepare_landing.materialize_candidate(
-                    repo,
-                    isolated,
-                    snapshot,
-                )
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.materialize_candidate(repo, isolated, snapshot)
 
-            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertIn("effective Git configuration", str(raised.exception))
             self.assertFalse(marker.exists())
 
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:

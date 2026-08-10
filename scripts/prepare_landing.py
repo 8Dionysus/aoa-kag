@@ -105,6 +105,7 @@ class NestedGitSnapshot:
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
+    effective_git_config: tuple[tuple[str, str, str], ...]
 
     def identity(self) -> str:
         payload = {
@@ -118,6 +119,7 @@ class NestedGitSnapshot:
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
+            "effective_git_config": [list(row) for row in self.effective_git_config],
         }
         return sha256_bytes(canonical_json(payload))
 
@@ -497,6 +499,53 @@ def _restore_portable_local_config(path: Path, expected: NestedGitSnapshot) -> N
         )
 
 
+def _effective_git_config(path: Path) -> tuple[tuple[str, str, str], ...]:
+    parts = git_bytes(path, "config", "--null", "--show-scope", "--list").split(b"\0")
+    if parts and not parts[-1]:
+        parts.pop()
+    if len(parts) % 2:
+        raise PreparationFailure(
+            f"cannot parse effective nested checkout config: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    rows: list[tuple[str, str, str]] = []
+    for offset in range(0, len(parts), 2):
+        scope = parts[offset].decode("utf-8", errors="surrogateescape")
+        raw_key, separator, raw_value = parts[offset + 1].partition(b"\n")
+        if not separator:
+            raise PreparationFailure(
+                f"cannot parse effective nested checkout config: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        key = raw_key.decode("utf-8", errors="surrogateescape")
+        value = raw_value.decode("utf-8", errors="surrogateescape")
+        if key in ISOLATION_LOCAL_CONFIG_KEYS:
+            continue
+        rows.append((scope, key, value))
+    return tuple(rows)
+
+
+def _require_effective_git_config_match(
+    destination: Path,
+    expected: NestedGitSnapshot,
+) -> None:
+    observed = _effective_git_config(destination)
+    if observed != expected.effective_git_config:
+        raise PreparationFailure(
+            "nested checkout effective Git configuration differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "source_config_digest": sha256_bytes(
+                    canonical_json(expected.effective_git_config)
+                ),
+                "destination_config_digest": sha256_bytes(canonical_json(observed)),
+            },
+        )
+
+
 def _effective_external_rule_settings(path: Path) -> tuple[str, ...]:
     result = subprocess.run(
         (
@@ -819,6 +868,32 @@ def _in_progress_operation_state(path: Path) -> tuple[str, ...]:
     return tuple(active)
 
 
+def _unsupported_pseudo_ref_state(path: Path) -> tuple[str, ...]:
+    names = (
+        "FETCH_HEAD",
+        "ORIG_HEAD",
+        "AUTO_MERGE",
+        "MERGE_AUTOSTASH",
+        "BISECT_HEAD",
+    )
+    active: list[str] = []
+    for name in names:
+        candidate = Path(git_text(path, "rev-parse", "--git-path", name))
+        if not candidate.is_absolute():
+            candidate = path / candidate
+        if candidate.is_file() and candidate.read_bytes().strip():
+            active.append(name)
+    return tuple(active)
+
+
+def _resolve_undo_entries(path: Path) -> tuple[str, ...]:
+    return tuple(
+        entry.decode("utf-8", errors="surrogateescape")
+        for entry in git_bytes(path, "ls-files", "--resolve-undo", "-z").split(b"\0")
+        if entry
+    )
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -936,6 +1011,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"operation_state": list(operation_state)},
         )
+    pseudo_ref_state = _unsupported_pseudo_ref_state(path)
+    if pseudo_ref_state:
+        raise PreparationFailure(
+            f"nested checkout contains unsupported pseudo-ref state: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"pseudo_ref_state": list(pseudo_ref_state)},
+        )
     fsmonitor_settings = _effective_fsmonitor_settings(path)
     if fsmonitor_settings:
         raise PreparationFailure(
@@ -943,6 +1026,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"fsmonitor_settings": list(fsmonitor_settings)},
+        )
+    resolve_undo_entries = _resolve_undo_entries(path)
+    if resolve_undo_entries:
+        raise PreparationFailure(
+            f"nested checkout index contains resolve-undo state: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"resolve_undo_entries": list(resolve_undo_entries)},
         )
     external_rule_settings = _effective_external_rule_settings(path)
     if external_rule_settings:
@@ -1063,6 +1154,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
+        effective_git_config=_effective_git_config(path),
     )
 
 
@@ -1401,6 +1493,7 @@ def copy_untracked_candidate(
                         action_class="code_fix",
                     )
                 _require_effective_checkout_settings_match(source, destination)
+                _require_effective_git_config_match(destination, nested)
                 checkout_args = ["-c", "core.hooksPath=/dev/null", "checkout"]
                 if nested.symbolic_head is None:
                     checkout_args.append("--detach")
@@ -1409,6 +1502,7 @@ def copy_untracked_candidate(
                 checkout_args.extend(("-q", nested.candidate.head))
                 git_bytes(destination, *checkout_args)
                 _require_effective_checkout_settings_match(source, destination)
+                _require_effective_git_config_match(destination, nested)
                 materialize_nested_candidate(source, destination, nested.candidate)
                 restore_tracked_worktree_modes(source, destination, nested.tracked_paths)
                 observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
@@ -1424,6 +1518,7 @@ def copy_untracked_candidate(
                     )
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
+                _require_effective_git_config_match(destination, nested)
                 destination.chmod(nested.root_mode)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
