@@ -92,8 +92,8 @@ class CandidateSnapshot:
     worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
     intent_to_add_paths: tuple[str, ...]
 
-    def identity(self) -> str:
-        payload = {
+    def _identity_payload(self, *, include_access_times: bool) -> dict[str, object]:
+        return {
             "head": self.head,
             "root_mode": self.root_mode,
             "index_tree": self.index_tree,
@@ -122,7 +122,12 @@ class CandidateSnapshot:
                 list(group) for group in self.worktree_hardlink_groups
             ],
             "tracked_file_modes": [list(row) for row in self.tracked_file_modes],
-            "worktree_times": [list(row) for row in self.worktree_times],
+            "worktree_times": [
+                [path, atime_ns, mtime_ns]
+                if include_access_times
+                else [path, mtime_ns]
+                for path, atime_ns, mtime_ns in self.worktree_times
+            ],
             "worktree_xattrs": [
                 [
                     path,
@@ -135,7 +140,17 @@ class CandidateSnapshot:
             ],
             "intent_to_add_paths": list(self.intent_to_add_paths),
         }
-        return sha256_bytes(canonical_json(payload))
+
+    def identity(self) -> str:
+        return sha256_bytes(
+            canonical_json(self._identity_payload(include_access_times=True))
+        )
+
+    def mutation_identity(self) -> str:
+        """Bind candidate mutations while ignoring access times changed by reads."""
+        return sha256_bytes(
+            canonical_json(self._identity_payload(include_access_times=False))
+        )
 
 
 @dataclass(frozen=True)

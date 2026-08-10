@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 from unittest import mock
 import unittest
 
@@ -189,6 +191,54 @@ class RepoLocalKagGateTests(unittest.TestCase):
             untracked.write_text("two\n", encoding="utf-8")
             third = GATE.candidate_identity(repo)
             self.assertNotEqual(second, third)
+
+            metadata = tracked.lstat()
+            os.utime(
+                tracked,
+                ns=(metadata.st_atime_ns, metadata.st_mtime_ns + 1_000_000_000),
+            )
+            fourth = GATE.candidate_identity(repo)
+            self.assertNotEqual(third, fourth)
+
+    def test_candidate_mutation_identity_ignores_only_access_times(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = Path(raw)
+            subprocess.run(("git", "init", "-q"), cwd=repo, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "test@example.invalid"),
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.name", "Owner Gate Test"),
+                cwd=repo,
+                check=True,
+            )
+            tracked = repo / "tracked.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            subprocess.run(("git", "add", "tracked.txt"), cwd=repo, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=repo, check=True)
+
+            gate_before = GATE.candidate_identity(repo)
+            full_before = GATE.isolation.capture_candidate_snapshot(repo)
+            metadata = tracked.lstat()
+            future_atime_ns = max(
+                metadata.st_atime_ns + 1_000_000_000,
+                time.time_ns() + 86_400_000_000_000,
+            )
+            os.utime(
+                tracked,
+                ns=(future_atime_ns, metadata.st_mtime_ns),
+            )
+            gate_after = GATE.candidate_identity(repo)
+            full_after = GATE.isolation.capture_candidate_snapshot(repo)
+
+            self.assertEqual(gate_before, gate_after)
+            self.assertEqual(
+                full_before.mutation_identity(),
+                full_after.mutation_identity(),
+            )
+            self.assertNotEqual(full_before.identity(), full_after.identity())
 
     def test_component_failure_requires_a_changed_candidate(self) -> None:
         identity = {

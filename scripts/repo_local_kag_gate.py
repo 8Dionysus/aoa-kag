@@ -93,7 +93,11 @@ def candidate_identity(repo_root: Path) -> dict[str, str]:
         "repo_root": repo_root.as_posix(),
         "head": snapshot.head,
         "index_tree": snapshot.index_tree,
-        "candidate_identity": snapshot.identity(),
+        # A read-only validator can advance access times merely by observing
+        # candidate bytes. Full isolation still binds and restores atime via
+        # CandidateSnapshot.identity and equality; same-candidate scheduling
+        # must distinguish those observations from actual candidate mutation.
+        "candidate_identity": snapshot.mutation_identity(),
         "cached_diff_digest": snapshot.cached_diff_digest,
         "worktree_diff_digest": snapshot.worktree_diff_digest,
         "untracked_digest": snapshot.untracked_digest,
