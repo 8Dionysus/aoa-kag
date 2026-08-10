@@ -107,6 +107,9 @@ class NestedGitSnapshot:
     reflog_root_mode: int | None
     reflog_directories: tuple[tuple[str, int], ...]
     reflog_files: tuple[tuple[str, int, bytes], ...]
+    index_version: int
+    object_inventory_count: int
+    object_inventory_digest: str
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -128,6 +131,9 @@ class NestedGitSnapshot:
                 [path, mode, len(content), sha256_bytes(content)]
                 for path, mode, content in self.reflog_files
             ],
+            "index_version": self.index_version,
+            "object_inventory_count": self.object_inventory_count,
+            "object_inventory_digest": self.object_inventory_digest,
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -809,6 +815,27 @@ def _filter_attribute_sources(
         candidate = path / relative
         if candidate.is_file() and _has_filter_attribute_declaration(candidate.read_bytes()):
             sources.append(f"candidate:{raw}")
+        index_blob = subprocess.run(
+            ("git", "show", f":{raw}"),
+            cwd=path,
+            check=False,
+            capture_output=True,
+        )
+        if index_blob.returncode == 0 and _has_filter_attribute_declaration(
+            index_blob.stdout
+        ):
+            sources.append(f"index:{raw}")
+        if index_blob.returncode not in (0, 128):
+            raise PreparationFailure(
+                f"cannot inspect nested checkout index attributes: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={
+                    "stderr": index_blob.stderr.decode(
+                        "utf-8", errors="replace"
+                    ).strip()
+                },
+            )
     for raw in tree_paths(path, head):
         relative = checked_relative_path(raw)
         if relative.name != ".gitattributes":
@@ -816,6 +843,140 @@ def _filter_attribute_sources(
         if _has_filter_attribute_declaration(git_bytes(path, "show", f"{head}:{raw}")):
             sources.append(f"HEAD:{raw}")
     return tuple(sorted(set(sources)))
+
+
+def _has_submodule_url(content: bytes, path: Path) -> bool:
+    result = subprocess.run(
+        (
+            "git",
+            "config",
+            "--file",
+            "-",
+            "--get-regexp",
+            r"^submodule\..*\.url$",
+        ),
+        cwd=path,
+        input=content,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout submodule transport config: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "stderr": result.stderr.decode("utf-8", errors="replace").strip()
+            },
+        )
+    return result.returncode == 0
+
+
+def _submodule_transport_sources(path: Path, head: str) -> tuple[str, ...]:
+    sources: list[str] = []
+    candidate = path / ".gitmodules"
+    if candidate.is_file() and _has_submodule_url(candidate.read_bytes(), path):
+        sources.append("candidate:.gitmodules")
+    for label, spec in (("index", ":.gitmodules"), ("HEAD", f"{head}:.gitmodules")):
+        blob = subprocess.run(
+            ("git", "show", spec),
+            cwd=path,
+            check=False,
+            capture_output=True,
+        )
+        if blob.returncode == 0 and _has_submodule_url(blob.stdout, path):
+            sources.append(f"{label}:.gitmodules")
+        if blob.returncode not in (0, 128):
+            raise PreparationFailure(
+                f"cannot inspect nested checkout submodule config: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={
+                    "stderr": blob.stderr.decode("utf-8", errors="replace").strip()
+                },
+            )
+    return tuple(sources)
+
+
+def _index_version(path: Path) -> int:
+    raw = git_text(path, "update-index", "--show-index-version")
+    try:
+        version = int(raw)
+    except ValueError as exc:
+        raise PreparationFailure(
+            f"cannot inspect nested checkout index version: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"index_version": raw},
+        ) from exc
+    if version not in (2, 3, 4):
+        raise PreparationFailure(
+            f"nested checkout has unsupported index version: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"index_version": version},
+        )
+    return version
+
+
+def _git_object_inventory(path: Path) -> tuple[int, str]:
+    output = git_text(
+        path,
+        "cat-file",
+        "--batch-all-objects",
+        "--batch-check=%(objectname) %(objecttype) %(objectsize)",
+    )
+    rows: list[tuple[str, str, int]] = []
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) != 3:
+            raise PreparationFailure(
+                f"cannot inspect nested checkout object inventory: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        object_name, object_type, raw_size = fields
+        if (
+            len(object_name) not in (40, 64)
+            or any(character not in "0123456789abcdef" for character in object_name)
+            or object_type not in {"blob", "commit", "tag", "tree"}
+        ):
+            raise PreparationFailure(
+                f"cannot parse nested checkout object inventory: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        try:
+            size = int(raw_size)
+        except ValueError as exc:
+            raise PreparationFailure(
+                f"cannot parse nested checkout object size: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            ) from exc
+        rows.append((object_name, object_type, size))
+    ordered = tuple(sorted(rows))
+    return len(ordered), sha256_bytes(canonical_json(ordered))
+
+
+def _require_git_object_inventory_match(
+    path: Path,
+    expected_count: int,
+    expected_digest: str,
+) -> None:
+    observed_count, observed_digest = _git_object_inventory(path)
+    if (observed_count, observed_digest) != (expected_count, expected_digest):
+        raise PreparationFailure(
+            f"nested checkout object inventory differs after isolation: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "expected_count": expected_count,
+                "actual_count": observed_count,
+                "expected_digest": expected_digest,
+                "actual_digest": observed_digest,
+            },
+        )
 
 
 def _symbolic_head(path: Path) -> str | None:
@@ -1356,6 +1517,16 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             details={"hook_settings": list(hook_settings)},
         )
     head = git_text(path, "rev-parse", "HEAD")
+    submodule_transport_sources = _submodule_transport_sources(path, head)
+    if submodule_transport_sources:
+        raise PreparationFailure(
+            f"nested checkout declares external submodule transport: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "submodule_transport_sources": list(submodule_transport_sources)
+            },
+        )
     paths = tracked_paths(path)
     candidate_untracked_paths = untracked_paths(path)
     filtered_paths = _active_filter_attribute_paths(
@@ -1400,6 +1571,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     candidate = capture_candidate_snapshot(path)
     origin_head, git_refs = _git_ref_state(path)
     reflog_root_mode, reflog_directories, reflog_files = _reflog_state(path)
+    object_inventory_count, object_inventory_digest = _git_object_inventory(path)
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
@@ -1412,6 +1584,9 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         reflog_root_mode=reflog_root_mode,
         reflog_directories=reflog_directories,
         reflog_files=reflog_files,
+        index_version=_index_version(path),
+        object_inventory_count=object_inventory_count,
+        object_inventory_digest=object_inventory_digest,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -1731,6 +1906,11 @@ def copy_untracked_candidate(
                         check=True,
                         capture_output=True,
                     )
+                _require_git_object_inventory_match(
+                    destination,
+                    nested.object_inventory_count,
+                    nested.object_inventory_digest,
+                )
                 git_bytes(
                     destination,
                     "config",
@@ -1765,6 +1945,18 @@ def copy_untracked_candidate(
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
                 materialize_nested_candidate(source, destination, nested.candidate)
+                git_bytes(
+                    destination,
+                    "update-index",
+                    "--index-version",
+                    str(nested.index_version),
+                )
+                if _index_version(destination) != nested.index_version:
+                    raise PreparationFailure(
+                        "nested checkout index version differs after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
                 restore_tracked_worktree_modes(source, destination, nested.tracked_paths)
                 observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
                 if observed_digest != nested.tracked_worktree_digest:

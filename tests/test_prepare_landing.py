@@ -773,6 +773,47 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing.capture_candidate_snapshot(owner)
             self.assertTrue(residual_raised.exception.details["populated_submodules"])
 
+    def test_snapshot_rejects_uninitialized_submodule_transport(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            dependency_commit = git(nested, "rev-parse", "HEAD").decode().strip()
+            (nested / ".gitmodules").write_text(
+                '[submodule "dependency"]\n'
+                "\tpath = dependency\n"
+                "\turl = https://example.invalid/dependency.git\n",
+                encoding="utf-8",
+            )
+            git(nested, "add", ".gitmodules")
+            git(
+                nested,
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"160000,{dependency_commit},dependency",
+            )
+            git(nested, "commit", "-qm", "add uninitialized dependency")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                [
+                    "candidate:.gitmodules",
+                    "index:.gitmodules",
+                    "HEAD:.gitmodules",
+                ],
+                raised.exception.details["submodule_transport_sources"],
+            )
+
     def test_snapshot_rejects_local_nested_checkout_conversion_settings(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
@@ -1014,7 +1055,37 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertEqual(
-                ["HEAD:.gitattributes", "candidate:.gitattributes"],
+                [
+                    "HEAD:.gitattributes",
+                    "candidate:.gitattributes",
+                    "index:.gitattributes",
+                ],
+                raised.exception.details["filter_attribute_sources"],
+            )
+
+    def test_snapshot_rejects_staged_only_nested_filter_attributes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            attributes = nested / ".gitattributes"
+            attributes.write_text("# no filters\n", encoding="utf-8")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            attributes.write_text("*.generated filter=demo\n", encoding="utf-8")
+            git(nested, "add", ".gitattributes")
+            attributes.write_text("# no filters\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["index:.gitattributes"],
                 raised.exception.details["filter_attribute_sources"],
             )
 
@@ -1111,6 +1182,65 @@ class PrepareLandingTests(unittest.TestCase):
                     setting.startswith("split-index ")
                     for setting in raised.exception.details["conversion_settings"]
                 )
+            )
+
+    def test_nested_materialization_preserves_index_version_four(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(nested, "update-index", "--index-version", "4")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(
+                b"4",
+                git(
+                    isolated / ".validator",
+                    "update-index",
+                    "--show-index-version",
+                ).strip(),
+            )
+
+    def test_nested_materialization_binds_unreachable_objects(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            unreachable = git(
+                nested,
+                "hash-object",
+                "-w",
+                "--stdin",
+                input_bytes=b"unreachable validator evidence\n",
+            ).decode().strip()
+            expected_inventory = prepare_landing._git_object_inventory(nested)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+
+            git(isolated_nested, "cat-file", "-e", f"{unreachable}^{{object}}")
+            self.assertEqual(
+                expected_inventory,
+                prepare_landing._git_object_inventory(isolated_nested),
             )
 
     def test_snapshot_rejects_nested_linked_worktrees(self) -> None:
