@@ -42,7 +42,13 @@ class PrepareLandingTests(unittest.TestCase):
         return repo
 
     @staticmethod
-    def fake_converge(repo_root: Path, _refs: object, *, max_iterations: int) -> tuple[int, str]:
+    def fake_converge(
+        repo_root: Path,
+        _refs: object,
+        *,
+        max_iterations: int,
+        full_coverage_cache: Path | None = None,
+    ) -> tuple[int, str]:
         assert max_iterations > 0
         source = git(repo_root, "show", ":source.txt").decode("utf-8")
         note = git(repo_root, "show", ":note.txt").decode("utf-8")
@@ -134,11 +140,13 @@ class PrepareLandingTests(unittest.TestCase):
                 refs: object,
                 *,
                 max_iterations: int,
+                full_coverage_cache: Path | None = None,
             ) -> tuple[int, str]:
                 result = self.fake_converge(
                     temporary_root,
                     refs,
                     max_iterations=max_iterations,
+                    full_coverage_cache=full_coverage_cache,
                 )
                 (repo / "source.txt").write_text("concurrent\n", encoding="utf-8")
                 return result
@@ -180,11 +188,13 @@ class PrepareLandingTests(unittest.TestCase):
                 refs: object,
                 *,
                 max_iterations: int,
+                full_coverage_cache: Path | None = None,
             ) -> tuple[int, str]:
                 result = self.fake_converge(
                     temporary_root,
                     refs,
                     max_iterations=max_iterations,
+                    full_coverage_cache=full_coverage_cache,
                 )
                 (repo / "source.txt").write_text("concurrent\n", encoding="utf-8")
                 return result
@@ -707,6 +717,50 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertIn(
                 "refs/heads mode=0555",
                 raised.exception.details["restrictive_git_admin_directory_modes"],
+            )
+
+    def test_snapshot_rejects_nonportable_git_admin_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            refs_heads = Path(
+                git(nested, "rev-parse", "--git-path", "refs/heads")
+                .decode()
+                .strip()
+            )
+            if not refs_heads.is_absolute():
+                refs_heads = nested / refs_heads
+            real_lstat = Path.lstat
+
+            def foreign_owned_lstat(candidate: Path):
+                metadata = real_lstat(candidate)
+                if candidate != refs_heads:
+                    return metadata
+                return type(
+                    "ForeignOwnedGitAdminStat",
+                    (),
+                    {
+                        "st_mode": metadata.st_mode,
+                        "st_uid": metadata.st_uid + 1,
+                        "st_gid": metadata.st_gid,
+                    },
+                )()
+
+            with patch.object(Path, "lstat", foreign_owned_lstat):
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertIn(
+                "refs/heads uid=",
+                raised.exception.details["git_admin_ownership"][0],
             )
 
     def test_nested_materialization_preserves_worktree_hardlinks(self) -> None:
@@ -2205,6 +2259,34 @@ class PrepareLandingTests(unittest.TestCase):
 
         self.assertEqual("fixed_point_non_convergence", raised.exception.failure_type)
 
+    def test_budget_receipt_mutation_reenters_scc_until_stable(self) -> None:
+        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        with patch.object(
+            prepare_landing,
+            "converge_scc",
+            side_effect=((2, "family-1"), (2, "family-2"), (1, "family-2")),
+        ) as converge, patch.object(
+            prepare_landing,
+            "ensure_budget_receipt",
+            side_effect=("created", "created", "accepted"),
+        ) as ensure, patch.object(
+            prepare_landing,
+            "git_text",
+            side_effect=("a", "b", "c", "d", "e", "e"),
+        ):
+            iterations, tree, receipt = prepare_landing.converge_budgeted_scc(
+                Path("/candidate"),
+                refs,
+                max_iterations=3,
+                budget_reason="bounded growth",
+            )
+
+        self.assertEqual(5, iterations)
+        self.assertEqual("e", tree)
+        self.assertEqual("created", receipt)
+        self.assertEqual(3, converge.call_count)
+        self.assertEqual(3, ensure.call_count)
+
     def test_external_seed_reuse_rejects_changed_canonical_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo = Path(tmpdir)
@@ -2277,6 +2359,10 @@ class PrepareLandingTests(unittest.TestCase):
             "_build_owner_coverage",
             return_value=(self_row, {"owner": "aoa-kag"}),
         ) as build_self, patch.object(
+            coverage_generation,
+            "load_portable_family",
+            return_value=(self_row, {}, {}),
+        ) as load_self_family, patch.object(
             prepare_landing,
             "expected_external_portable_family",
             side_effect=lambda owner, _root: next(
@@ -2289,6 +2375,14 @@ class PrepareLandingTests(unittest.TestCase):
             )
 
         self.assertEqual(1, build_self.call_count)
+        load_self_family.assert_called_once_with(
+            REPO_ROOT,
+            require_budget_receipt=False,
+        )
+        self.assertEqual(
+            (self_row, {}, {}),
+            build_self.call_args.kwargs["portable_bundle"],
+        )
         rebuilt = next(row for row in payload["owners"] if row["repo"] == "aoa-kag")
         self.assertEqual(self_row, rebuilt)
         self.assertEqual(len(order), payload["coverage_summary"]["owner_count"])
@@ -2393,6 +2487,107 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertEqual(len(order), payload["coverage_summary"]["owner_count"])
         git_head.assert_not_called()
         external_family.assert_not_called()
+
+    def test_prepare_coverage_rebuilds_every_owner_when_seed_runtime_drifted(self) -> None:
+        coverage = unittest.mock.Mock()
+        coverage.DEFAULT_OUTPUT = Path("coverage.json")
+        coverage.DEFAULT_MIN_OUTPUT = Path("coverage.min.json")
+        payload = {"owners": []}
+        with patch.object(
+            prepare_landing,
+            "coverage_generation_module",
+            return_value=coverage,
+        ), patch.object(
+            prepare_landing,
+            "build_preparation_coverage",
+            side_effect=prepare_landing.PreparationSeedInapplicable("runtime changed"),
+        ), patch.object(
+            prepare_landing,
+            "build_full_preparation_coverage",
+            return_value=payload,
+        ) as full_build:
+            result = prepare_landing.prepare_self_coverage(
+                Path("/candidate"),
+                external_seed_ref="base",
+                check=False,
+                verify_external_manifests=True,
+            )
+
+        self.assertEqual(0, result)
+        full_build.assert_called_once_with(Path("/candidate"))
+        coverage.write_outputs.assert_called_once_with(
+            coverage.DEFAULT_OUTPUT,
+            coverage.DEFAULT_MIN_OUTPUT,
+            payload,
+        )
+
+    def test_prepare_coverage_reuses_verified_full_owner_cache_within_scc(self) -> None:
+        coverage = unittest.mock.Mock()
+        coverage.DEFAULT_OUTPUT = Path("coverage.json")
+        coverage.DEFAULT_MIN_OUTPUT = Path("coverage.min.json")
+        payload = {"owners": []}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache = Path(tmpdir) / "full-owner.json"
+            cache.write_text("cached\n", encoding="utf-8")
+            with patch.object(
+                prepare_landing,
+                "coverage_generation_module",
+                return_value=coverage,
+            ), patch.object(
+                prepare_landing,
+                "build_preparation_coverage",
+                side_effect=prepare_landing.PreparationSeedInapplicable(
+                    "runtime changed"
+                ),
+            ), patch.object(
+                prepare_landing,
+                "load_preparation_coverage_cache",
+                return_value=payload,
+            ) as load_cache, patch.object(
+                prepare_landing,
+                "build_full_preparation_coverage",
+            ) as full_build:
+                result = prepare_landing.prepare_self_coverage(
+                    Path("/candidate"),
+                    external_seed_ref="base",
+                    check=False,
+                    verify_external_manifests=True,
+                    full_coverage_cache=cache,
+                )
+
+        self.assertEqual(0, result)
+        load_cache.assert_called_once_with(Path("/candidate"), cache)
+        full_build.assert_not_called()
+
+    def test_full_owner_cache_is_private_runtime_bound_and_reverified(self) -> None:
+        coverage = unittest.mock.Mock()
+        coverage._coverage_runtime_inputs_digest.return_value = "sha256:runtime"
+        cached = {"owners": [{"repo": "external"}]}
+        rebuilt = {"owners": [{"repo": "aoa-kag"}]}
+        with tempfile.TemporaryDirectory() as tmpdir, patch.object(
+            prepare_landing,
+            "coverage_generation_module",
+            return_value=coverage,
+        ), patch.object(
+            prepare_landing,
+            "build_preparation_coverage_from_payload",
+            return_value=rebuilt,
+        ) as verify_cache:
+            cache = Path(tmpdir) / "full-owner.json"
+            prepare_landing.write_preparation_coverage_cache(cache, cached)
+            loaded = prepare_landing.load_preparation_coverage_cache(
+                Path("/candidate"),
+                cache,
+            )
+
+            self.assertEqual(0o600, stat.S_IMODE(cache.stat().st_mode))
+
+        self.assertEqual(rebuilt, loaded)
+        verify_cache.assert_called_once_with(
+            Path("/candidate"),
+            cached,
+            verify_external_manifests=True,
+        )
 
     def test_sentinel_stops_on_coverage_drift_before_generated_check(self) -> None:
         coverage = unittest.mock.Mock()
@@ -2549,7 +2744,10 @@ class PrepareLandingTests(unittest.TestCase):
             prepare_landing,
             "run_command",
             side_effect=(failure, success, success),
-        ) as run_command, patch.object(prepare_landing, "stage_paths"):
+        ) as run_command, patch.object(
+            prepare_landing,
+            "prune_obsolete_budget_receipts",
+        ) as prune, patch.object(prepare_landing, "stage_paths"):
             result = prepare_landing.ensure_budget_receipt(
                 Path("/candidate"),
                 refs,
@@ -2559,6 +2757,7 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertEqual("created", result)
         self.assertTrue(run_command.call_args_list[1].args[0].count("--write-budget-receipt"))
         self.assertTrue(run_command.call_args_list[2].args[0].count("--check"))
+        prune.assert_called_once_with(Path("/candidate"), refs)
 
 
 if __name__ == "__main__":

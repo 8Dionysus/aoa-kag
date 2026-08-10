@@ -30,6 +30,7 @@ from typing import Any, Mapping, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "aoa-kag-prepare-landing-receipt-v1"
+PREPARATION_COVERAGE_CACHE_SCHEMA = "aoa-kag-preparation-coverage-cache-v1"
 DEFAULT_MAX_ITERATIONS = 6
 GENERATED_PATHS = ("generated",)
 COVERAGE_PATHS = (
@@ -1076,6 +1077,40 @@ def _restrictive_git_admin_directory_modes(path: Path) -> tuple[str, ...]:
     return tuple(restrictive)
 
 
+def _git_admin_portability_issues(
+    path: Path,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    expected_uid = os.geteuid()
+    expected_gid = os.getegid()
+    ownership: list[str] = []
+    symlinks: list[str] = []
+    pending = [git_dir]
+    while pending:
+        candidate = pending.pop()
+        metadata = candidate.lstat()
+        relative = candidate.relative_to(git_dir)
+        label = "." if relative == Path(".") else relative.as_posix()
+        if metadata.st_uid != expected_uid or metadata.st_gid != expected_gid:
+            ownership.append(
+                f"{label} uid={metadata.st_uid} gid={metadata.st_gid} "
+                f"expected_uid={expected_uid} expected_gid={expected_gid}"
+            )
+        if stat.S_ISLNK(metadata.st_mode):
+            symlinks.append(label)
+            continue
+        if stat.S_ISDIR(metadata.st_mode):
+            pending.extend(
+                reversed(
+                    sorted(
+                        candidate.iterdir(),
+                        key=lambda item: os.fsencode(item.name),
+                    )
+                )
+            )
+    return tuple(ownership), tuple(symlinks)
+
+
 def _worktree_hardlink_groups(
     path: Path,
     candidate_paths: Sequence[str],
@@ -1714,6 +1749,21 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
                     restrictive_git_admin_modes
                 )
             },
+        )
+    git_admin_ownership, git_admin_symlinks = _git_admin_portability_issues(path)
+    if git_admin_ownership:
+        raise PreparationFailure(
+            f"nested checkout has nonportable Git administration ownership: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"git_admin_ownership": list(git_admin_ownership)},
+        )
+    if git_admin_symlinks:
+        raise PreparationFailure(
+            f"nested checkout has symlinked Git administration state: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"git_admin_symlinks": list(git_admin_symlinks)},
         )
     implicit_rule_sources = _implicit_rule_sources()
     if implicit_rule_sources:
@@ -2900,10 +2950,23 @@ def build_preparation_coverage(
     owner lane.
     """
 
-    coverage_generation = coverage_generation_module()
-
     require_seed_compatible_runtime(repo_root, external_seed_ref)
     seed = load_external_coverage_seed(repo_root, external_seed_ref)
+    return build_preparation_coverage_from_payload(
+        repo_root,
+        seed,
+        verify_external_manifests=verify_external_manifests,
+    )
+
+
+def build_preparation_coverage_from_payload(
+    repo_root: Path,
+    seed: dict[str, Any],
+    *,
+    verify_external_manifests: bool,
+) -> dict[str, Any]:
+    coverage_generation = coverage_generation_module()
+
     coverage_generation._validate_coverage_payload_schema(seed)
     if seed.get("root") != coverage_generation.DEFAULT_OS_ROOT.as_posix():
         raise RuntimeError("preparation coverage seed has a non-canonical OS root")
@@ -2935,10 +2998,15 @@ def build_preparation_coverage(
             owner,
         )
         if owner == SELF_OWNER:
+            preparation_family = coverage_generation.load_portable_family(
+                repo_root,
+                require_budget_receipt=False,
+            )
             rebuilt, _timing = coverage_generation._build_owner_coverage(
                 owner,
                 repo_root,
                 display_root=display_root,
+                portable_bundle=preparation_family,
             )
             owners.append(rebuilt)
             continue
@@ -2978,24 +3046,154 @@ def build_preparation_coverage(
     return payload
 
 
+def build_full_preparation_coverage(repo_root: Path) -> dict[str, Any]:
+    """Rebuild every owner when the pinned coverage runtime cannot be reused.
+
+    The self portable family is admitted structurally here because its final
+    digest-bound budget receipt is produced only after the generated SCC is
+    stable. All ordinary portable-family loads still require that receipt.
+    """
+    coverage_generation = coverage_generation_module()
+    expected_order = tuple(coverage_generation.provider_repo_order())
+    configured = coverage_generation.configured_owner_roots()
+    if tuple(owner for owner, _root in configured) != expected_order:
+        raise RuntimeError("configured owner roots differ from the provider registry")
+    provider_entries = coverage_generation.provider_by_repo()
+    owners: list[dict[str, Any]] = []
+    coverage_generation._portable_bundle_from_disk.cache_clear()
+    for owner, owner_root in configured:
+        if owner == SELF_OWNER:
+            if owner_root.resolve() != repo_root.resolve():
+                raise RuntimeError("full preparation coverage self root drifted")
+            portable_bundle = coverage_generation.load_portable_family(
+                repo_root,
+                require_budget_receipt=False,
+            )
+        else:
+            expected_ref = str(provider_entries.get(owner, {}).get("pinned_ref", ""))
+            observed_ref = coverage_generation._git_head(owner, owner_root)
+            if not expected_ref or observed_ref != expected_ref:
+                raise RuntimeError(
+                    f"full preparation coverage external pin mismatch for {owner}: "
+                    f"expected {expected_ref or '<missing>'}, got {observed_ref}"
+                )
+            portable_bundle = None
+        rebuilt, _timing = coverage_generation._build_owner_coverage(
+            owner,
+            owner_root,
+            display_root=coverage_generation.canonical_owner_root(
+                coverage_generation.DEFAULT_OS_ROOT,
+                owner,
+            ),
+            portable_bundle=portable_bundle,
+        )
+        owners.append(rebuilt)
+    payload = coverage_generation._assemble_coverage(
+        coverage_generation.DEFAULT_OS_ROOT,
+        owners,
+    )
+    coverage_generation._validate_coverage_payload_schema(payload)
+    return payload
+
+
+def write_preparation_coverage_cache(
+    path: Path,
+    payload: dict[str, Any],
+) -> None:
+    if path.exists() or path.is_symlink():
+        raise RuntimeError("preparation coverage cache path already exists")
+    coverage_generation = coverage_generation_module()
+    envelope = {
+        "schema_version": PREPARATION_COVERAGE_CACHE_SCHEMA,
+        "runtime_inputs_digest": coverage_generation._coverage_runtime_inputs_digest(),
+        "coverage": payload,
+    }
+    descriptor = os.open(
+        path,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+        0o600,
+    )
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(envelope, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def load_preparation_coverage_cache(
+    repo_root: Path,
+    path: Path,
+) -> dict[str, Any]:
+    coverage_generation = coverage_generation_module()
+    metadata = path.lstat()
+    if (
+        not stat.S_ISREG(metadata.st_mode)
+        or stat.S_ISLNK(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or metadata.st_gid != os.getegid()
+        or stat.S_IMODE(metadata.st_mode) != 0o600
+    ):
+        raise RuntimeError("preparation coverage cache metadata is nonportable")
+    try:
+        envelope = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("preparation coverage cache is unreadable") from exc
+    if not isinstance(envelope, dict):
+        raise RuntimeError("preparation coverage cache is not an object")
+    if envelope.get("schema_version") != PREPARATION_COVERAGE_CACHE_SCHEMA:
+        raise RuntimeError("preparation coverage cache schema drifted")
+    if (
+        envelope.get("runtime_inputs_digest")
+        != coverage_generation._coverage_runtime_inputs_digest()
+    ):
+        raise RuntimeError("preparation coverage cache runtime identity drifted")
+    payload = envelope.get("coverage")
+    if not isinstance(payload, dict):
+        raise RuntimeError("preparation coverage cache payload is invalid")
+    return build_preparation_coverage_from_payload(
+        repo_root,
+        payload,
+        verify_external_manifests=True,
+    )
+
+
 def prepare_self_coverage(
     repo_root: Path,
     *,
     external_seed_ref: str,
     check: bool,
     verify_external_manifests: bool,
+    full_coverage_cache: Path | None = None,
 ) -> int:
     coverage_generation = coverage_generation_module()
 
-    payload = build_preparation_coverage(
-        repo_root,
-        external_seed_ref=external_seed_ref,
-        verify_external_manifests=verify_external_manifests,
-    )
+    try:
+        payload = build_preparation_coverage(
+            repo_root,
+            external_seed_ref=external_seed_ref,
+            verify_external_manifests=verify_external_manifests,
+        )
+        strategy = (
+            "verified-external-seed"
+            if verify_external_manifests
+            else "seed-only-sentinel"
+        ) + "+self-rebuild"
+    except PreparationSeedInapplicable as exc:
+        if full_coverage_cache is not None and full_coverage_cache.is_file():
+            payload = load_preparation_coverage_cache(
+                repo_root,
+                full_coverage_cache,
+            )
+            strategy = "verified-full-owner-cache+self-rebuild"
+        else:
+            print(
+                "[prepare-landing] pinned coverage reuse inapplicable; "
+                f"rebuilding every owner: {exc}",
+                file=sys.stderr,
+            )
+            payload = build_full_preparation_coverage(repo_root)
+            if full_coverage_cache is not None:
+                write_preparation_coverage_cache(full_coverage_cache, payload)
+            strategy = "full-owner-rebuild+self-budget-deferred"
     print(
-        "[prepare-landing] coverage strategy="
-        f"{'verified-external-seed' if verify_external_manifests else 'seed-only-sentinel'}"
-        "+self-rebuild "
+        f"[prepare-landing] coverage strategy={strategy} "
         "proof=preparation-only",
         file=sys.stderr,
     )
@@ -3155,6 +3353,7 @@ def coverage_command(
     refs: ResolvedRefs,
     *,
     check: bool = False,
+    full_coverage_cache: Path | None = None,
 ) -> tuple[str, ...]:
     command = [
         "python",
@@ -3163,6 +3362,8 @@ def coverage_command(
         "--external-seed-ref",
         refs.history_ref,
     ]
+    if full_coverage_cache is not None:
+        command.extend(("--full-coverage-cache", full_coverage_cache.as_posix()))
     if check:
         command.append("--coverage-check")
     return tuple(command)
@@ -3211,10 +3412,14 @@ def converge_scc(
     refs: ResolvedRefs,
     *,
     max_iterations: int,
+    full_coverage_cache: Path | None = None,
 ) -> tuple[int, str]:
     for iteration in range(1, max_iterations + 1):
         before_tree = git_text(repo_root, "write-tree")
-        run_command(coverage_command(refs), repo_root=repo_root)
+        run_command(
+            coverage_command(refs, full_coverage_cache=full_coverage_cache),
+            repo_root=repo_root,
+        )
         stage_paths(repo_root, COVERAGE_PATHS)
         run_command(generated_command(), repo_root=repo_root)
         stage_paths(repo_root, GENERATED_PATHS)
@@ -3234,6 +3439,61 @@ def converge_scc(
         action_class="code_fix",
         details={"max_iterations": max_iterations},
     )
+
+
+def _current_budget_receipt_path(repo_root: Path) -> Path:
+    manifest_path = repo_root / PORTABLE_FAMILY_PATHS[0]
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        digest = manifest["family_identity"]["content_digest"]
+    except (FileNotFoundError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise PreparationFailure(
+            "cannot resolve the current portable-family budget receipt path",
+            failure_type="budget_receipt_generation_failure",
+            action_class="code_fix",
+        ) from exc
+    if (
+        not isinstance(digest, str)
+        or len(digest) != 64
+        or any(char not in "0123456789abcdef" for char in digest)
+    ):
+        raise PreparationFailure(
+            "current portable-family digest is invalid for a budget receipt",
+            failure_type="budget_receipt_generation_failure",
+            action_class="code_fix",
+        )
+    return Path(BUDGET_RECEIPT_PATHS[0]) / f"{digest}.json"
+
+
+def prune_obsolete_budget_receipts(
+    repo_root: Path,
+    refs: ResolvedRefs,
+) -> None:
+    keep = _current_budget_receipt_path(repo_root)
+    root = Path(BUDGET_RECEIPT_PATHS[0])
+    base_rows = git_bytes(
+        repo_root,
+        "ls-tree",
+        "-r",
+        "--name-only",
+        "-z",
+        refs.budget_base_ref,
+        "--",
+        root.as_posix(),
+    )
+    base_paths = {
+        Path(raw.decode("utf-8", errors="surrogateescape"))
+        for raw in base_rows.split(b"\0")
+        if raw
+    }
+    receipt_root = repo_root / root
+    if not receipt_root.is_dir():
+        return
+    for candidate in sorted(receipt_root.glob("*.json")):
+        relative = candidate.relative_to(repo_root)
+        if relative == keep or relative in base_paths:
+            continue
+        candidate.unlink()
 
 
 def ensure_budget_receipt(
@@ -3284,6 +3544,7 @@ def ensure_budget_receipt(
         failure_type="budget_receipt_generation_failure",
         action_class="code_fix",
     )
+    prune_obsolete_budget_receipts(repo_root, refs)
     stage_paths(repo_root, (*PORTABLE_FAMILY_PATHS, *BUDGET_RECEIPT_PATHS))
     run_command(
         portable_family_command(refs, check=True, enforce_budget=True),
@@ -3294,8 +3555,67 @@ def ensure_budget_receipt(
     return "created"
 
 
-def final_confirmation(repo_root: Path, refs: ResolvedRefs) -> None:
-    run_command(coverage_command(refs, check=True), repo_root=repo_root)
+def converge_budgeted_scc(
+    repo_root: Path,
+    refs: ResolvedRefs,
+    *,
+    max_iterations: int,
+    budget_reason: str | None,
+    full_coverage_cache: Path | None = None,
+) -> tuple[int, str, str]:
+    iterations, fixed_point_tree = converge_scc(
+        repo_root,
+        refs,
+        max_iterations=max_iterations,
+        full_coverage_cache=full_coverage_cache,
+    )
+    budget_receipt = "not_required"
+    for receipt_round in range(1, max_iterations + 1):
+        before_receipt = git_text(repo_root, "write-tree")
+        observed = ensure_budget_receipt(
+            repo_root,
+            refs,
+            budget_reason=budget_reason,
+        )
+        if observed == "created" or budget_receipt != "created":
+            budget_receipt = observed
+        after_receipt = git_text(repo_root, "write-tree")
+        if after_receipt == before_receipt:
+            return iterations, after_receipt, budget_receipt
+        print(
+            f"[prepare-landing] budget stabilization round={receipt_round} "
+            f"before={before_receipt} after={after_receipt}",
+            file=sys.stderr,
+        )
+        added_iterations, fixed_point_tree = converge_scc(
+            repo_root,
+            refs,
+            max_iterations=max_iterations,
+            full_coverage_cache=full_coverage_cache,
+        )
+        iterations += added_iterations
+    raise PreparationFailure(
+        "KAG budget receipt did not stabilize with the generated SCC",
+        failure_type="fixed_point_non_convergence",
+        action_class="code_fix",
+        details={"max_receipt_rounds": max_iterations},
+    )
+
+
+def final_confirmation(
+    repo_root: Path,
+    refs: ResolvedRefs,
+    *,
+    full_coverage_cache: Path | None = None,
+) -> None:
+    run_command(
+        coverage_command(
+            refs,
+            check=True,
+            full_coverage_cache=full_coverage_cache,
+        ),
+        repo_root=repo_root,
+    )
     run_command(
         portable_family_command(refs, check=True, enforce_budget=True),
         repo_root=repo_root,
@@ -3499,18 +3819,19 @@ def prepare_landing(
         )
         require_candidate_unchanged(source_root, snapshot)
         providers = verify_provider_identities(temporary_worktree)
-        iterations, fixed_point_tree = converge_scc(
+        full_coverage_cache = temporary_parent / "full-owner-coverage-cache.json"
+        iterations, fixed_point_tree, budget_receipt = converge_budgeted_scc(
             temporary_worktree,
             refs,
             max_iterations=max_iterations,
+            budget_reason=budget_reason,
+            full_coverage_cache=full_coverage_cache,
         )
-        budget_receipt = ensure_budget_receipt(
+        final_confirmation(
             temporary_worktree,
             refs,
-            budget_reason=budget_reason,
+            full_coverage_cache=full_coverage_cache,
         )
-        fixed_point_tree = git_text(temporary_worktree, "write-tree")
-        final_confirmation(temporary_worktree, refs)
         require_candidate_unchanged(source_root, snapshot)
         changed_paths = changed_tree_paths(
             temporary_worktree,
@@ -3644,6 +3965,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--external-seed-ref", help=argparse.SUPPRESS)
     parser.add_argument("--coverage-check", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
+        "--full-coverage-cache",
+        type=Path,
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
         "--seed-only-external",
         action="store_true",
         help=argparse.SUPPRESS,
@@ -3694,6 +4020,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 external_seed_ref=args.external_seed_ref,
                 check=args.coverage_check,
                 verify_external_manifests=not args.seed_only_external,
+                full_coverage_cache=args.full_coverage_cache,
             )
         except PreparationSeedInapplicable as exc:
             print(f"[prepare-landing] preparation coverage inapplicable: {exc}", file=sys.stderr)

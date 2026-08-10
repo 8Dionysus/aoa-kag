@@ -679,6 +679,8 @@ def _validate_manifest_shape(manifest: object) -> dict[str, Any]:
 def _load_rows(
     repo_root: Path,
     manifest: Mapping[str, Any],
+    *,
+    require_budget_receipt: bool,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     shards = manifest.get("shards")
@@ -747,7 +749,10 @@ def _load_rows(
         raise PortableFamilyError("portable family needs budgets")
     if budgets.get("global_tracked_bytes_max") != GLOBAL_TRACKED_BYTES_MAX:
         raise PortableFamilyError("portable global tracked byte budget drifted")
-    if summary["tracked_bytes"] > budgets.get("tracked_bytes_max", -1):
+    if (
+        require_budget_receipt
+        and summary["tracked_bytes"] > budgets.get("tracked_bytes_max", -1)
+    ):
         _validate_tracked_size_receipt(repo_root, manifest)
     return rows
 
@@ -1006,6 +1011,7 @@ def load_portable_family(
     repo_root: Path,
     *,
     manifest_path: Path = MANIFEST_RELATIVE_PATH,
+    require_budget_receipt: bool = True,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
     root = repo_root.resolve()
     path = manifest_path if manifest_path.is_absolute() else root / manifest_path
@@ -1016,7 +1022,11 @@ def load_portable_family(
             f"cannot read portable family manifest {path}"
         ) from exc
     validated = _validate_manifest_shape(manifest)
-    rows = _load_rows(root, validated)
+    rows = _load_rows(
+        root,
+        validated,
+        require_budget_receipt=require_budget_receipt,
+    )
     source, family = reconstruct_compatibility_family(validated, rows)
     return source, family, validated
 
