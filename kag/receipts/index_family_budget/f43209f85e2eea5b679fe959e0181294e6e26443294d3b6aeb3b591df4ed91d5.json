@@ -1,17 +1,17 @@
 {
-  "allowed_bytes": 7183334,
-  "allowed_tracked_bytes": 12710579,
+  "allowed_bytes": 7187807,
+  "allowed_tracked_bytes": 12715052,
   "approved_by": "repository-owner",
   "base_ref": "30ce3b8f33ed27ef3888c214b9e9e5cd0f50f80e",
-  "changed_generated_bytes": 7183334,
+  "changed_generated_bytes": 7187807,
   "changed_generated_files": 191,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "d04bd487c155fd8d8ee9c15b19db7ee6e6c89c9948b49993e1df1ad3035bd56b",
-  "reason": "Reject nonportable sparse extents and active nested Git locks while retaining all canonical OS-wide proof lanes.",
+  "head_family_digest": "f43209f85e2eea5b679fe959e0181294e6e26443294d3b6aeb3b591df4ed91d5",
+  "reason": "Reject inherited Git object stores and dormant nested hooks while retaining all canonical OS-wide proof lanes.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
   "scope": "generated_delta_and_tracked_size",
-  "tracked_bytes": 12710579,
+  "tracked_bytes": 12715052,
   "tracked_bytes_max": 12582912
 }

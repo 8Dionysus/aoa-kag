@@ -1459,7 +1459,7 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertTrue(raised.exception.details["conversion_settings"])
 
-    def test_snapshot_rejects_executable_default_directory_hooks(self) -> None:
+    def test_snapshot_rejects_dormant_default_directory_hooks(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
             nested = repo / ".validator"
@@ -1476,7 +1476,7 @@ class PrepareLandingTests(unittest.TestCase):
                 hooks = nested / hooks
             pre_commit = hooks / "pre-commit"
             pre_commit.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
-            pre_commit.chmod(0o755)
+            pre_commit.chmod(0o644)
 
             with self.assertRaises(prepare_landing.PreparationFailure) as raised:
                 prepare_landing.capture_candidate_snapshot(repo)
@@ -1484,7 +1484,36 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertEqual(
                 ["pre-commit"],
-                raised.exception.details["active_default_hooks"],
+                raised.exception.details["default_hooks"],
+            )
+
+    def test_snapshot_rejects_external_git_object_storage_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            external_objects = Path(repo_tmp) / "external-objects"
+            external_objects.mkdir()
+
+            with patch.dict(
+                os.environ,
+                {
+                    "GIT_OBJECT_DIRECTORY": external_objects.as_posix(),
+                    "GIT_ALTERNATE_OBJECT_DIRECTORIES": external_objects.as_posix(),
+                },
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing._nested_git_snapshot(nested)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES"],
+                raised.exception.details["git_object_storage_environment"],
             )
 
     def test_snapshot_rejects_nested_repository_local_exclude_rules(self) -> None:

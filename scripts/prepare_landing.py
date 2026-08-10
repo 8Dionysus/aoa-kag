@@ -414,10 +414,30 @@ def candidate_directory_digest(repo_root: Path, paths: Sequence[str]) -> str:
 
 def _is_nested_git_checkout(path: Path) -> bool:
     try:
-        if not stat.S_ISDIR(path.lstat().st_mode):
+        if (
+            not stat.S_ISDIR(path.lstat().st_mode)
+            or not (path / ".git").exists()
+        ):
             return False
     except FileNotFoundError:
         return False
+    object_storage_environment = tuple(
+        name
+        for name in (
+            "GIT_OBJECT_DIRECTORY",
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        )
+        if os.environ.get(name, "").strip()
+    )
+    if object_storage_environment:
+        raise PreparationFailure(
+            f"nested checkout is exposed to external Git object storage: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "git_object_storage_environment": list(object_storage_environment)
+            },
+        )
     probe = subprocess.run(
         ("git", "rev-parse", "--show-toplevel"),
         cwd=path,
@@ -509,7 +529,7 @@ def _effective_hook_settings(path: Path) -> tuple[str, ...]:
     )
 
 
-def _active_default_hook_paths(path: Path) -> tuple[str, ...]:
+def _default_hook_paths(path: Path) -> tuple[str, ...]:
     configured = subprocess.run(
         ("git", "config", "--path", "--get", "core.hooksPath"),
         cwd=path,
@@ -542,8 +562,6 @@ def _active_default_hook_paths(path: Path) -> tuple[str, ...]:
         child.name
         for child in sorted(hooks.iterdir(), key=lambda item: os.fsencode(item.name))
         if not child.name.endswith(".sample")
-        and child.is_file()
-        and os.access(child, os.X_OK)
     )
 
 
@@ -2310,13 +2328,13 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"hook_settings": list(hook_settings)},
         )
-    active_default_hooks = _active_default_hook_paths(path)
-    if active_default_hooks:
+    default_hooks = _default_hook_paths(path)
+    if default_hooks:
         raise PreparationFailure(
-            f"nested checkout has executable default-directory hooks: {path}",
+            f"nested checkout has custom default-directory hooks: {path}",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
-            details={"active_default_hooks": list(active_default_hooks)},
+            details={"default_hooks": list(default_hooks)},
         )
     head = git_text(path, "rev-parse", "HEAD")
     submodule_transport_sources = _submodule_transport_sources(path, head)
