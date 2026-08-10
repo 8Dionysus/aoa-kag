@@ -1288,6 +1288,41 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["git_admin_ownership"][0],
             )
 
+    def test_snapshot_rejects_git_admin_extended_attributes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            config_path = Path(
+                git(nested, "rev-parse", "--git-path", "config").decode().strip()
+            )
+            if not config_path.is_absolute():
+                config_path = nested / config_path
+            try:
+                os.setxattr(
+                    config_path,
+                    "user.aoa-kag-admin-test",
+                    b"bound admin metadata",
+                    follow_symlinks=False,
+                )
+            except OSError as exc:
+                self.skipTest(f"extended attributes unavailable: {exc}")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["config attribute=user.aoa-kag-admin-test"],
+                raised.exception.details["git_admin_xattrs"],
+            )
+
     def test_nested_materialization_preserves_worktree_hardlinks(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

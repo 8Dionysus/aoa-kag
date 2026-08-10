@@ -121,6 +121,7 @@ class CandidateSnapshot:
 class NestedGitSnapshot:
     candidate: CandidateSnapshot
     root_mode: int
+    git_admin_security_label: bytes | None
     symbolic_head: str | None
     origin_head: str | None
     git_refs: tuple[tuple[str, str], ...]
@@ -153,6 +154,14 @@ class NestedGitSnapshot:
         payload = {
             "candidate_identity": self.candidate.identity(),
             "root_mode": self.root_mode,
+            "git_admin_security_label": (
+                None
+                if self.git_admin_security_label is None
+                else [
+                    len(self.git_admin_security_label),
+                    sha256_bytes(self.git_admin_security_label),
+                ]
+            ),
             "symbolic_head": self.symbolic_head,
             "origin_head": self.origin_head,
             "git_refs": [list(row) for row in self.git_refs],
@@ -1423,12 +1432,21 @@ def _restrictive_git_admin_file_modes(path: Path) -> tuple[str, ...]:
 
 def _git_admin_portability_issues(
     path: Path,
-) -> tuple[tuple[str, ...], tuple[str, ...]]:
+) -> tuple[
+    tuple[str, ...],
+    tuple[str, ...],
+    tuple[str, ...],
+    tuple[str, ...],
+    bytes | None,
+]:
     git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
     expected_uid = os.geteuid()
     expected_gid = os.getegid()
     ownership: list[str] = []
     symlinks: list[str] = []
+    xattrs: list[str] = []
+    security_label_issues: list[str] = []
+    root_security_label: bytes | None = None
     pending = [git_dir]
     while pending:
         candidate = pending.pop()
@@ -1443,6 +1461,42 @@ def _git_admin_portability_issues(
         if stat.S_ISLNK(metadata.st_mode):
             symlinks.append(label)
             continue
+        try:
+            attribute_names = sorted(
+                os.listxattr(candidate, follow_symlinks=False),
+                key=os.fsencode,
+            )
+        except OSError as exc:
+            raise PreparationFailure(
+                f"cannot inspect nested Git administration attributes: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={"git_admin_path": label, "error": str(exc)},
+            ) from exc
+        xattrs.extend(
+            f"{label} attribute={name}"
+            for name in attribute_names
+            if name != "security.selinux"
+        )
+        security_label = None
+        if "security.selinux" in attribute_names:
+            try:
+                security_label = os.getxattr(
+                    candidate,
+                    "security.selinux",
+                    follow_symlinks=False,
+                )
+            except OSError as exc:
+                raise PreparationFailure(
+                    f"cannot read nested Git administration security label: {candidate}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={"git_admin_path": label, "error": str(exc)},
+                ) from exc
+        if label == ".":
+            root_security_label = security_label
+        elif security_label != root_security_label:
+            security_label_issues.append(label)
         if stat.S_ISDIR(metadata.st_mode):
             pending.extend(
                 reversed(
@@ -1452,7 +1506,44 @@ def _git_admin_portability_issues(
                     )
                 )
             )
-    return tuple(ownership), tuple(symlinks)
+    return (
+        tuple(ownership),
+        tuple(symlinks),
+        tuple(xattrs),
+        tuple(security_label_issues),
+        root_security_label,
+    )
+
+
+def _require_git_admin_portability_match(
+    path: Path,
+    expected_security_label: bytes | None,
+) -> None:
+    (
+        ownership,
+        symlinks,
+        xattrs,
+        security_label_issues,
+        security_label,
+    ) = _git_admin_portability_issues(path)
+    if ownership or symlinks or xattrs or security_label_issues:
+        raise PreparationFailure(
+            "nested Git administration metadata differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "git_admin_ownership": list(ownership),
+                "git_admin_symlinks": list(symlinks),
+                "git_admin_xattrs": list(xattrs),
+                "git_admin_security_label_issues": list(security_label_issues),
+            },
+        )
+    if security_label != expected_security_label:
+        raise PreparationFailure(
+            "nested Git administration security label differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
 
 
 def _git_admin_lock_paths(path: Path) -> tuple[str, ...]:
@@ -2427,7 +2518,13 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
                 )
             },
         )
-    git_admin_ownership, git_admin_symlinks = _git_admin_portability_issues(path)
+    (
+        git_admin_ownership,
+        git_admin_symlinks,
+        git_admin_xattrs,
+        git_admin_security_label_issues,
+        git_admin_security_label,
+    ) = _git_admin_portability_issues(path)
     if git_admin_ownership:
         raise PreparationFailure(
             f"nested checkout has nonportable Git administration ownership: {path}",
@@ -2441,6 +2538,24 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"git_admin_symlinks": list(git_admin_symlinks)},
+        )
+    if git_admin_xattrs:
+        raise PreparationFailure(
+            f"nested checkout has extended Git administration attributes: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"git_admin_xattrs": list(git_admin_xattrs)},
+        )
+    if git_admin_security_label_issues:
+        raise PreparationFailure(
+            f"nested checkout has inconsistent Git administration security labels: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "git_admin_security_label_issues": list(
+                    git_admin_security_label_issues
+                )
+            },
         )
     git_admin_locks = _git_admin_lock_paths(path)
     if git_admin_locks:
@@ -2712,6 +2827,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
+        git_admin_security_label=git_admin_security_label,
         symbolic_head=_symbolic_head(path),
         origin_head=origin_head,
         git_refs=git_refs,
@@ -3240,6 +3356,10 @@ def copy_untracked_candidate(
                             "actual_digest": observed_digest,
                         },
                     )
+                _require_git_admin_portability_match(
+                    destination,
+                    nested.git_admin_security_label,
+                )
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
