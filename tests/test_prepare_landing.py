@@ -610,6 +610,50 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertFalse((isolated / "ordinary.cache").exists())
             self.assertNotEqual(first.identity(), second.identity())
 
+    def test_outer_snapshot_preserves_ignored_nested_checkout_ancestors(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            (repo / ".gitignore").write_text(".cache/\n", encoding="utf-8")
+            git(repo, "add", ".gitignore")
+            git(repo, "commit", "-qm", "ignore nested validation cache")
+            cache = repo / ".cache"
+            vendor = cache / "vendor"
+            nested = vendor / "repo"
+            nested.mkdir(parents=True)
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "needed").write_text("first\n", encoding="utf-8")
+            git(nested, "add", "needed")
+            git(nested, "commit", "-qm", "nested base")
+            cache.chmod(0o700)
+            vendor.chmod(0o711)
+            cache_mtime_ns = 946_684_800_123_456_789
+            vendor_mtime_ns = 978_307_200_987_654_321
+            os.utime(cache, ns=(cache_mtime_ns, cache_mtime_ns))
+            os.utime(vendor, ns=(vendor_mtime_ns, vendor_mtime_ns))
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            self.assertIn((".cache", cache_mtime_ns), snapshot.directory_mtimes)
+            self.assertIn(
+                (".cache/vendor", vendor_mtime_ns),
+                snapshot.directory_mtimes,
+            )
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(
+                (".cache", ".cache/vendor", "generated"),
+                snapshot.directories,
+            )
+            isolated_cache = isolated / ".cache"
+            isolated_vendor = isolated_cache / "vendor"
+            self.assertEqual(0o700, stat.S_IMODE(isolated_cache.stat().st_mode))
+            self.assertEqual(0o711, stat.S_IMODE(isolated_vendor.stat().st_mode))
+            self.assertEqual(cache_mtime_ns, isolated_cache.stat().st_mtime_ns)
+            self.assertEqual(vendor_mtime_ns, isolated_vendor.stat().st_mtime_ns)
+
     def test_nested_materialization_preserves_ignored_empty_directories(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
@@ -1058,6 +1102,27 @@ class PrepareLandingTests(unittest.TestCase):
                     nested_snapshot,
                 )
             self.assertEqual("candidate_snapshot_changed", raised.exception.failure_type)
+
+    def test_nested_snapshot_rejects_hardlinked_local_config(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as peer_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", "validator.txt")
+            git(nested, "commit", "-qm", "nested base")
+            config = nested / ".git" / "config"
+            peer = Path(peer_tmp) / "config-peer"
+            os.link(config, peer)
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(2, raised.exception.details["link_count"])
 
     def test_nested_snapshot_preserves_remaining_git_admin_files(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:

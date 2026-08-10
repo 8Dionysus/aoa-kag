@@ -484,6 +484,15 @@ def candidate_directory_paths(
 ) -> tuple[str, ...]:
     """Capture directories exposed to validation, including ignored nested state."""
     ignored_roots = set() if include_ignored else _ignored_directory_roots(repo_root)
+    required_ignored_ancestors: set[str] = set()
+    if not include_ignored:
+        for raw in _ignored_nested_checkout_paths(repo_root):
+            root = checked_relative_path(raw.rstrip("/"))
+            required_ignored_ancestors.update(
+                parent.as_posix()
+                for parent in root.parents
+                if parent != Path(".")
+            )
     discovered: list[str] = []
     for current, dirnames, _filenames in os.walk(repo_root, topdown=True):
         current_path = Path(current)
@@ -505,7 +514,14 @@ def candidate_directory_paths(
         dirnames[:] = retained
 
     ignored = set() if include_ignored else _ignored_directory_paths(repo_root, discovered)
-    return tuple(raw for raw in discovered if raw not in ignored)
+    return tuple(
+        sorted(
+            {
+                *(raw for raw in discovered if raw not in ignored),
+                *required_ignored_ancestors,
+            }
+        )
+    )
 
 
 def candidate_directory_digest(repo_root: Path, paths: Sequence[str]) -> str:
@@ -864,6 +880,16 @@ def _git_local_config_state(path: Path) -> tuple[int, bytes]:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"config_path": config_path.as_posix()},
+        )
+    if metadata.st_nlink != 1:
+        raise PreparationFailure(
+            f"nested checkout config has external hardlinks: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "config_path": config_path.as_posix(),
+                "link_count": metadata.st_nlink,
+            },
         )
     return stat.S_IMODE(metadata.st_mode), config_path.read_bytes()
 
@@ -3513,7 +3539,6 @@ def capture_candidate_snapshot(
     index_mode, index_bytes = _git_index_state(repo_root)
     with tempfile.TemporaryDirectory(
         prefix=".aoa-kag-candidate-index-",
-        dir=repo_root.parent,
     ) as temp_dir:
         isolated_index = Path(temp_dir) / "index"
         isolated_index.write_bytes(index_bytes)
@@ -4108,7 +4133,6 @@ def materialize_candidate(
     )
     with tempfile.TemporaryDirectory(
         prefix=".aoa-kag-verify-index-",
-        dir=temporary_root.parent,
     ) as temp_dir:
         verification_index = Path(temp_dir) / "index"
         verification_index.write_bytes(snapshot.index_bytes)

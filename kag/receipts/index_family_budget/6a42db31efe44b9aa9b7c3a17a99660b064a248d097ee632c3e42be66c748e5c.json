@@ -1,17 +1,17 @@
 {
-  "allowed_bytes": 7767809,
-  "allowed_tracked_bytes": 12865636,
+  "allowed_bytes": 7780819,
+  "allowed_tracked_bytes": 12878646,
   "approved_by": "repository-owner",
   "base_ref": "30ce3b8f33ed27ef3888c214b9e9e5cd0f50f80e",
-  "changed_generated_bytes": 7767809,
+  "changed_generated_bytes": 7780819,
   "changed_generated_files": 204,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "12aa515f5f7a58215f3cf0e8112d1aeb1d185ecb5aa0ad480a24531503ae7281",
-  "reason": "Bind and preserve nested Git administration file modification times without mutating candidate index state.",
+  "head_family_digest": "6a42db31efe44b9aa9b7c3a17a99660b064a248d097ee632c3e42be66c748e5c",
+  "reason": "Preserve ignored nested checkout ancestor metadata and reject hardlinked Git configuration.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
   "scope": "generated_delta_and_tracked_size",
-  "tracked_bytes": 12865636,
+  "tracked_bytes": 12878646,
   "tracked_bytes_max": 12582912
 }
