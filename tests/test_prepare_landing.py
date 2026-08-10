@@ -1511,8 +1511,12 @@ class PrepareLandingTests(unittest.TestCase):
             (nested / "validator.txt").write_text("base\n", encoding="utf-8")
             git(nested, "add", ".")
             git(nested, "commit", "-qm", "nested base")
-            snapshot = prepare_landing.capture_candidate_snapshot(repo)
-            nested_snapshot = prepare_landing._nested_git_snapshot(nested)
+            with patch.dict(
+                os.environ,
+                {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"},
+            ):
+                snapshot = prepare_landing.capture_candidate_snapshot(repo)
+                nested_snapshot = prepare_landing._nested_git_snapshot(nested)
             self.assertIsNotNone(nested_snapshot)
             isolated = Path(work_tmp) / "isolated"
             git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
@@ -1534,15 +1538,19 @@ class PrepareLandingTests(unittest.TestCase):
 
             with patch.dict(
                 os.environ,
-                {"GIT_CONFIG_GLOBAL": global_config.as_posix()},
+                {"GIT_CONFIG_GLOBAL": global_config.as_posix(), "GIT_CONFIG_NOSYSTEM": "1"},
             ), patch.object(
                 prepare_landing,
                 "_nested_git_snapshot",
                 return_value=nested_snapshot,
-            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
-                prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            ):
+                materialized_tree = prepare_landing.materialize_candidate(
+                    repo,
+                    isolated,
+                    snapshot,
+                )
 
-            self.assertIn("effective Git configuration", str(raised.exception))
+            self.assertEqual(snapshot.index_tree, materialized_tree)
             self.assertFalse(marker.exists())
 
     def test_preparation_patch_rejects_paths_outside_generated_authority(self) -> None:
