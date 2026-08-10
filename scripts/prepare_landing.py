@@ -138,6 +138,7 @@ class NestedGitSnapshot:
     index_bytes: bytes
     object_inventory_count: int
     object_inventory_digest: str
+    object_storage_state: tuple[tuple[str, str, int, int, str], ...]
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
     worktree_mtimes: tuple[tuple[str, int], ...]
     worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
@@ -182,6 +183,9 @@ class NestedGitSnapshot:
             "index_bytes": [len(self.index_bytes), sha256_bytes(self.index_bytes)],
             "object_inventory_count": self.object_inventory_count,
             "object_inventory_digest": self.object_inventory_digest,
+            "object_storage_digest": sha256_bytes(
+                canonical_json(self.object_storage_state)
+            ),
             "worktree_hardlink_groups": [
                 list(group) for group in self.worktree_hardlink_groups
             ],
@@ -1235,6 +1239,66 @@ def _git_object_inventory(path: Path) -> tuple[int, str]:
     return len(ordered), sha256_bytes(canonical_json(ordered))
 
 
+def _git_object_storage_state(
+    path: Path,
+) -> tuple[tuple[str, str, int, int, str], ...]:
+    objects_raw = git_text(path, "rev-parse", "--git-path", "objects")
+    objects = Path(objects_raw)
+    if not objects.is_absolute():
+        objects = path / objects
+    rows: list[tuple[str, str, int, int, str]] = []
+    for current, dirnames, filenames in os.walk(objects, topdown=True):
+        directory = Path(current)
+        relative_directory = directory.relative_to(objects)
+        directory_metadata = directory.lstat()
+        if not stat.S_ISDIR(directory_metadata.st_mode):
+            raise PreparationFailure(
+                f"nested checkout object storage has unsupported directory: {directory}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        directory_label = "." if relative_directory == Path(".") else relative_directory.as_posix()
+        rows.append(
+            (
+                "directory",
+                directory_label,
+                stat.S_IMODE(directory_metadata.st_mode),
+                0,
+                "",
+            )
+        )
+        dirnames[:] = sorted(dirnames, key=os.fsencode)
+        for name in sorted(filenames, key=os.fsencode):
+            candidate = directory / name
+            metadata = candidate.lstat()
+            relative = candidate.relative_to(objects).as_posix()
+            if not stat.S_ISREG(metadata.st_mode):
+                raise PreparationFailure(
+                    f"nested checkout object storage has unsupported file: {candidate}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={"path": relative},
+                )
+            if metadata.st_nlink != 1:
+                raise PreparationFailure(
+                    f"nested checkout object storage has external hardlinks: {candidate}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={"path": relative, "link_count": metadata.st_nlink},
+                )
+            content = candidate.read_bytes()
+            rows.append(
+                (
+                    "file",
+                    relative,
+                    stat.S_IMODE(metadata.st_mode),
+                    len(content),
+                    sha256_bytes(content),
+                )
+            )
+    return tuple(rows)
+
+
 def _require_git_object_inventory_match(
     path: Path,
     expected_count: int,
@@ -1253,6 +1317,59 @@ def _require_git_object_inventory_match(
                 "actual_digest": observed_digest,
             },
         )
+
+
+def _require_git_object_storage_match(
+    path: Path,
+    expected_state: Sequence[tuple[str, str, int, int, str]],
+) -> None:
+    observed_state = _git_object_storage_state(path)
+    if tuple(observed_state) != tuple(expected_state):
+        expected_only = sorted(set(expected_state) - set(observed_state))[:20]
+        observed_only = sorted(set(observed_state) - set(expected_state))[:20]
+        raise PreparationFailure(
+            f"nested checkout physical object storage differs after isolation: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "expected_digest": sha256_bytes(canonical_json(tuple(expected_state))),
+                "actual_digest": sha256_bytes(canonical_json(observed_state)),
+                "expected_only": [list(row) for row in expected_only],
+                "observed_only": [list(row) for row in observed_only],
+            },
+        )
+
+
+def _restore_git_object_storage_modes(
+    path: Path,
+    expected_state: Sequence[tuple[str, str, int, int, str]],
+) -> None:
+    objects_raw = git_text(path, "rev-parse", "--git-path", "objects")
+    objects = Path(objects_raw)
+    if not objects.is_absolute():
+        objects = path / objects
+    for kind, raw, mode, _size, _digest in sorted(
+        expected_state,
+        key=lambda row: (row[1].count("/"), row[1]),
+        reverse=True,
+    ):
+        candidate = objects if raw == "." else objects / checked_relative_path(raw)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError as exc:
+            raise PreparationFailure(
+                f"nested checkout physical object storage path is absent: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            ) from exc
+        expected_type = stat.S_IFDIR if kind == "directory" else stat.S_IFREG
+        if stat.S_IFMT(metadata.st_mode) != expected_type:
+            raise PreparationFailure(
+                f"nested checkout physical object storage path changed type: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        candidate.chmod(mode)
 
 
 def _restrictive_git_admin_directory_modes(path: Path) -> tuple[str, ...]:
@@ -2589,6 +2706,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     index_version = _index_version(path)
     index_mode, index_bytes = _git_index_state(path)
     object_inventory_count, object_inventory_digest = _git_object_inventory(path)
+    object_storage_state = _git_object_storage_state(path)
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
@@ -2611,6 +2729,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         index_bytes=index_bytes,
         object_inventory_count=object_inventory_count,
         object_inventory_digest=object_inventory_digest,
+        object_storage_state=object_storage_state,
         worktree_hardlink_groups=worktree_hardlink_groups,
         worktree_mtimes=worktree_mtimes,
         worktree_xattrs=worktree_xattrs,
@@ -2990,6 +3109,14 @@ def copy_untracked_candidate(
                     destination,
                     nested.object_inventory_count,
                     nested.object_inventory_digest,
+                )
+                _restore_git_object_storage_modes(
+                    destination,
+                    nested.object_storage_state,
+                )
+                _require_git_object_storage_match(
+                    destination,
+                    nested.object_storage_state,
                 )
                 git_bytes(
                     destination,

@@ -724,6 +724,44 @@ class PrepareLandingTests(unittest.TestCase):
             )
             self.assertNotEqual(first.identity(), second.identity())
 
+    def test_nested_snapshot_binds_physical_object_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            for index in range(8):
+                (nested / f"object-{index}.txt").write_text(
+                    f"object {index}\n",
+                    encoding="utf-8",
+                )
+                git(nested, "add", ".")
+                git(nested, "commit", "-qm", f"nested object {index}")
+
+            snapshot = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(snapshot)
+            logical_before = (
+                snapshot.object_inventory_count,
+                snapshot.object_inventory_digest,
+            )
+            git(nested, "repack", "-ad")
+            repacked = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(repacked)
+
+            self.assertEqual(
+                logical_before,
+                (repacked.object_inventory_count, repacked.object_inventory_digest),
+            )
+            self.assertNotEqual(
+                snapshot.object_storage_state,
+                repacked.object_storage_state,
+            )
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.require_nested_git_snapshot_unchanged(nested, snapshot)
+            self.assertEqual("candidate_snapshot_changed", raised.exception.failure_type)
+
     def test_snapshot_preserves_nested_origin_default_ref(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
