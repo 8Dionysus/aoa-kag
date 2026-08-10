@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 from unittest import mock
 import unittest
 
@@ -190,6 +192,54 @@ class RepoLocalKagGateTests(unittest.TestCase):
             third = GATE.candidate_identity(repo)
             self.assertNotEqual(second, third)
 
+            metadata = tracked.lstat()
+            os.utime(
+                tracked,
+                ns=(metadata.st_atime_ns, metadata.st_mtime_ns + 1_000_000_000),
+            )
+            fourth = GATE.candidate_identity(repo)
+            self.assertNotEqual(third, fourth)
+
+    def test_candidate_mutation_identity_ignores_only_access_times(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = Path(raw)
+            subprocess.run(("git", "init", "-q"), cwd=repo, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "test@example.invalid"),
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.name", "Owner Gate Test"),
+                cwd=repo,
+                check=True,
+            )
+            tracked = repo / "tracked.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            subprocess.run(("git", "add", "tracked.txt"), cwd=repo, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=repo, check=True)
+
+            gate_before = GATE.candidate_identity(repo)
+            full_before = GATE.isolation.capture_candidate_snapshot(repo)
+            metadata = tracked.lstat()
+            future_atime_ns = max(
+                metadata.st_atime_ns + 1_000_000_000,
+                time.time_ns() + 86_400_000_000_000,
+            )
+            os.utime(
+                tracked,
+                ns=(future_atime_ns, metadata.st_mtime_ns),
+            )
+            gate_after = GATE.candidate_identity(repo)
+            full_after = GATE.isolation.capture_candidate_snapshot(repo)
+
+            self.assertEqual(gate_before, gate_after)
+            self.assertEqual(
+                full_before.mutation_identity(),
+                full_after.mutation_identity(),
+            )
+            self.assertNotEqual(full_before.identity(), full_after.identity())
+
     def test_component_failure_requires_a_changed_candidate(self) -> None:
         identity = {
             "repo_root": REPO_ROOT.as_posix(),
@@ -284,6 +334,32 @@ class RepoLocalKagGateTests(unittest.TestCase):
         self.assertEqual("history", command[command.index("--history-ref") + 1])
         self.assertEqual("events", command[command.index("--event-history-ref") + 1])
         self.assertEqual("budget", command[command.index("--budget-base-ref") + 1])
+
+    def test_component_disables_python_bytecode_side_effects(self) -> None:
+        component = GATE.Component("check", ("python", "check.py"))
+        completed = subprocess.CompletedProcess(component.command, 0, "ok", "")
+
+        with mock.patch.object(GATE.subprocess, "run", return_value=completed) as run:
+            observed = GATE.run_component(component, repo_root=REPO_ROOT)
+
+        self.assertEqual(0, observed.returncode)
+        self.assertEqual("1", run.call_args.kwargs["env"]["PYTHONDONTWRITEBYTECODE"])
+
+    def test_component_keeps_fresh_python_checkout_metadata_stable(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = Path(raw)
+            (repo / "fresh_import.py").write_text("VALUE = 1\n", encoding="utf-8")
+            initial_mtime = repo.lstat().st_mtime_ns
+            component = GATE.Component(
+                "fresh-python-check",
+                (GATE.sys.executable, "-c", "import fresh_import"),
+            )
+
+            observed = GATE.run_component(component, repo_root=repo)
+
+            self.assertEqual(0, observed.returncode)
+            self.assertFalse((repo / "__pycache__").exists())
+            self.assertEqual(initial_mtime, repo.lstat().st_mtime_ns)
 
 
 if __name__ == "__main__":

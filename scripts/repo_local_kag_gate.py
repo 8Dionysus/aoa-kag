@@ -93,7 +93,11 @@ def candidate_identity(repo_root: Path) -> dict[str, str]:
         "repo_root": repo_root.as_posix(),
         "head": snapshot.head,
         "index_tree": snapshot.index_tree,
-        "candidate_identity": snapshot.identity(),
+        # A read-only validator can advance access times merely by observing
+        # candidate bytes. Full isolation still binds and restores atime via
+        # CandidateSnapshot.identity and equality; same-candidate scheduling
+        # must distinguish those observations from actual candidate mutation.
+        "candidate_identity": snapshot.mutation_identity(),
         "cached_diff_digest": snapshot.cached_diff_digest,
         "worktree_diff_digest": snapshot.worktree_diff_digest,
         "untracked_digest": snapshot.untracked_digest,
@@ -105,9 +109,15 @@ def candidate_identity(repo_root: Path) -> dict[str, str]:
 
 def run_component(component: Component, *, repo_root: Path) -> ComponentResult:
     started = time.perf_counter()
+    environment = dict(os.environ)
+    # Fresh Python checkouts otherwise create ignored __pycache__ directories.
+    # Their creation changes protected parent-directory mtimes and violates the
+    # same-candidate contract even though every canonical command is --check.
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
     process = subprocess.run(
         component.command,
         cwd=repo_root,
+        env=environment,
         check=False,
         capture_output=True,
         text=True,

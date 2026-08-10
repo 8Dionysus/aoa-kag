@@ -281,6 +281,34 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     manifest=raised_manifest,
                 )
 
+    def test_portable_family_budget_admission_can_only_be_deferred_explicitly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            manifest, shards = build_portable_family(
+                source_index,
+                family,
+                previous_manifest={"budgets": {"tracked_bytes_max": 1}},
+            )
+            write_portable_output(root, manifest, shards)
+
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "without a matching digest-bound receipt",
+            ):
+                load_portable_family(root)
+
+            loaded_source, loaded_family, loaded_manifest = load_portable_family(
+                root,
+                require_budget_receipt=False,
+            )
+
+        self.assertEqual(source_index, loaded_source)
+        self.assertEqual(family, loaded_family)
+        self.assertEqual(manifest, loaded_manifest)
+
     def test_portable_family_paths_do_not_amplify_repository_event_delta(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
