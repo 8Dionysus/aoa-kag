@@ -290,7 +290,7 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertNotEqual(first.identity(), second.identity())
             self.assertNotEqual(second.identity(), third.identity())
 
-    def test_nested_materialization_preserves_nonignored_empty_directories(self) -> None:
+    def test_nested_materialization_preserves_ignored_empty_directories(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
             nested = repo / ".validator"
@@ -316,7 +316,7 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual(snapshot.index_tree, materialized_tree)
             self.assertTrue((isolated / ".validator" / "expected-empty").is_dir())
-            self.assertFalse((isolated / ".validator" / "ignored-cache").exists())
+            self.assertTrue((isolated / ".validator" / "ignored-cache").is_dir())
 
     def test_nested_materialization_preserves_root_and_restrictive_parent_modes(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
@@ -471,14 +471,17 @@ class PrepareLandingTests(unittest.TestCase):
                 isolated,
                 first,
             )
-            (nested / "validator.txt").write_text("dirty\n", encoding="utf-8")
+            (nested / "ignored.cache").write_text("changed ignored state\n", encoding="utf-8")
             second = prepare_landing.capture_candidate_snapshot(repo)
 
             self.assertEqual((".validator/",), first.untracked_paths)
             self.assertEqual(first.index_tree, materialized_tree)
             self.assertEqual(b"", git(isolated, "ls-files", "--stage", "--", ".validator"))
             self.assertTrue((isolated / ".validator" / "validator.txt").is_file())
-            self.assertFalse((isolated / ".validator" / "ignored.cache").exists())
+            self.assertEqual(
+                "not candidate state\n",
+                (isolated / ".validator" / "ignored.cache").read_text(encoding="utf-8"),
+            )
             self.assertEqual(
                 git(nested, "symbolic-ref", "--quiet", "HEAD"),
                 git(isolated / ".validator", "symbolic-ref", "--quiet", "HEAD"),
@@ -543,6 +546,66 @@ class PrepareLandingTests(unittest.TestCase):
                 git(isolated_nested, "rev-parse", "refs/remotes/origin/HEAD")
                 .decode()
                 .strip(),
+            )
+
+    def test_nested_materialization_preserves_packed_ref_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("main\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested main")
+            git(nested, "branch", "packed-only")
+            git(nested, "branch", "loose-only")
+            git(nested, "tag", "-a", "packed-tag", "-m", "packed tag")
+            before_packing = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(before_packing)
+            loose_commit = (
+                git(nested, "rev-parse", "refs/heads/loose-only").decode().strip()
+            )
+            git(nested, "pack-refs", "--all", "--prune")
+            loose_ref = Path(
+                git(nested, "rev-parse", "--git-path", "refs/heads/loose-only")
+                .decode()
+                .strip()
+            )
+            if not loose_ref.is_absolute():
+                loose_ref = nested / loose_ref
+            loose_ref.parent.mkdir(parents=True, exist_ok=True)
+            loose_ref.write_text(f"{loose_commit}\n", encoding="ascii")
+            source_storage = prepare_landing._git_ref_storage_state(nested)
+            self.assertIsNotNone(source_storage[3])
+            self.assertIsNotNone(source_storage[4])
+            self.assertTrue(
+                any(
+                    path == "heads/loose-only"
+                    for path, _mode, _content in source_storage[2]
+                )
+            )
+
+            after_packing = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(after_packing)
+            assert before_packing is not None
+            assert after_packing is not None
+            self.assertEqual(before_packing.git_refs, after_packing.git_refs)
+            self.assertNotEqual(before_packing.identity(), after_packing.identity())
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+
+            self.assertEqual(
+                prepare_landing._git_ref_state(nested),
+                prepare_landing._git_ref_state(isolated_nested),
+            )
+            self.assertEqual(
+                source_storage,
+                prepare_landing._git_ref_storage_state(isolated_nested),
             )
 
     def test_materialization_neutralizes_nested_remote_transport(self) -> None:

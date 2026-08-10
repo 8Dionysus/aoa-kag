@@ -102,6 +102,11 @@ class NestedGitSnapshot:
     symbolic_head: str | None
     origin_head: str | None
     git_refs: tuple[tuple[str, str], ...]
+    ref_root_mode: int | None
+    ref_directories: tuple[tuple[str, int], ...]
+    loose_ref_files: tuple[tuple[str, int, bytes], ...]
+    packed_refs_mode: int | None
+    packed_refs_bytes: bytes | None
     shallow_boundaries: tuple[str, ...]
     local_config: tuple[tuple[str, str], ...]
     remote_config: tuple[tuple[str, str], ...]
@@ -128,6 +133,21 @@ class NestedGitSnapshot:
             "symbolic_head": self.symbolic_head,
             "origin_head": self.origin_head,
             "git_refs": [list(row) for row in self.git_refs],
+            "ref_root_mode": self.ref_root_mode,
+            "ref_directories": [list(row) for row in self.ref_directories],
+            "loose_ref_files": [
+                [path, mode, len(content), sha256_bytes(content)]
+                for path, mode, content in self.loose_ref_files
+            ],
+            "packed_refs_mode": self.packed_refs_mode,
+            "packed_refs_bytes": (
+                None
+                if self.packed_refs_bytes is None
+                else [
+                    len(self.packed_refs_bytes),
+                    sha256_bytes(self.packed_refs_bytes),
+                ]
+            ),
             "shallow_boundaries": list(self.shallow_boundaries),
             "local_config": [list(row) for row in self.local_config],
             "remote_config": [list(row) for row in self.remote_config],
@@ -251,16 +271,37 @@ def checked_relative_path(raw: str) -> Path:
     return path
 
 
-def untracked_paths(repo_root: Path) -> tuple[str, ...]:
-    raw = git_bytes(
-        repo_root,
-        "ls-files",
-        "--others",
-        "--exclude-standard",
-        "-z",
-    )
-    decoded = raw.decode("utf-8", errors="surrogateescape")
-    paths = tuple(item for item in decoded.split("\0") if item)
+def untracked_paths(
+    repo_root: Path,
+    *,
+    include_ignored: bool = False,
+) -> tuple[str, ...]:
+    outputs = [
+        git_bytes(
+            repo_root,
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        )
+    ]
+    if include_ignored:
+        outputs.append(
+            git_bytes(
+                repo_root,
+                "ls-files",
+                "--others",
+                "--ignored",
+                "--exclude-standard",
+                "-z",
+            )
+        )
+    paths = {
+        item
+        for raw in outputs
+        for item in raw.decode("utf-8", errors="surrogateescape").split("\0")
+        if item
+    }
     for item in paths:
         checked_relative_path(item)
     return tuple(sorted(paths))
@@ -321,9 +362,13 @@ def _ignored_directory_roots(repo_root: Path) -> set[str]:
     return roots
 
 
-def candidate_directory_paths(repo_root: Path) -> tuple[str, ...]:
-    """Capture every non-ignored directory exposed to candidate validation."""
-    ignored_roots = _ignored_directory_roots(repo_root)
+def candidate_directory_paths(
+    repo_root: Path,
+    *,
+    include_ignored: bool = False,
+) -> tuple[str, ...]:
+    """Capture directories exposed to validation, including ignored nested state."""
+    ignored_roots = set() if include_ignored else _ignored_directory_roots(repo_root)
     discovered: list[str] = []
     for current, dirnames, _filenames in os.walk(repo_root, topdown=True):
         current_path = Path(current)
@@ -344,7 +389,7 @@ def candidate_directory_paths(repo_root: Path) -> tuple[str, ...]:
             discovered.append(raw)
         dirnames[:] = retained
 
-    ignored = _ignored_directory_paths(repo_root, discovered)
+    ignored = set() if include_ignored else _ignored_directory_paths(repo_root, discovered)
     return tuple(raw for raw in discovered if raw not in ignored)
 
 
@@ -1474,6 +1519,108 @@ def _git_ref_state(path: Path) -> tuple[str | None, tuple[tuple[str, str], ...]]
     return origin_head, tuple(sorted(direct_refs))
 
 
+def _git_ref_storage_paths(path: Path) -> tuple[Path, Path]:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    raw_refs = Path(git_text(path, "rev-parse", "--git-path", "refs"))
+    refs_root = raw_refs if raw_refs.is_absolute() else path / raw_refs
+    raw_packed = Path(git_text(path, "rev-parse", "--git-path", "packed-refs"))
+    packed_refs = raw_packed if raw_packed.is_absolute() else path / raw_packed
+    if refs_root.resolve(strict=False) != git_dir / "refs":
+        raise PreparationFailure(
+            f"nested checkout ref storage escapes its Git directory: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"refs_root": refs_root.as_posix()},
+        )
+    if packed_refs.resolve(strict=False) != git_dir / "packed-refs":
+        raise PreparationFailure(
+            f"nested checkout packed-ref storage escapes its Git directory: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"packed_refs": packed_refs.as_posix()},
+        )
+    return refs_root, packed_refs
+
+
+def _git_ref_storage_state(
+    path: Path,
+) -> tuple[
+    int | None,
+    tuple[tuple[str, int], ...],
+    tuple[tuple[str, int, bytes], ...],
+    int | None,
+    bytes | None,
+]:
+    refs_root, packed_refs = _git_ref_storage_paths(path)
+    root_mode: int | None = None
+    directories: list[tuple[str, int]] = []
+    files: list[tuple[str, int, bytes]] = []
+    if refs_root.exists() or refs_root.is_symlink():
+        root_metadata = refs_root.lstat()
+        if not stat.S_ISDIR(root_metadata.st_mode) or stat.S_ISLNK(
+            root_metadata.st_mode
+        ):
+            raise PreparationFailure(
+                f"nested checkout has unsupported loose-ref root: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        root_mode = stat.S_IMODE(root_metadata.st_mode)
+
+        def visit(directory: Path) -> None:
+            for child in sorted(
+                directory.iterdir(),
+                key=lambda item: os.fsencode(item.name),
+            ):
+                relative = child.relative_to(refs_root).as_posix()
+                checked_relative_path(relative)
+                metadata = child.lstat()
+                if stat.S_ISLNK(metadata.st_mode):
+                    raise PreparationFailure(
+                        f"nested checkout loose-ref tree contains a symlink: {path}",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                        details={"ref_path": relative},
+                    )
+                mode = stat.S_IMODE(metadata.st_mode)
+                if stat.S_ISDIR(metadata.st_mode):
+                    directories.append((relative, mode))
+                    visit(child)
+                elif stat.S_ISREG(metadata.st_mode):
+                    files.append((relative, mode, child.read_bytes()))
+                else:
+                    raise PreparationFailure(
+                        f"nested checkout loose-ref tree has an unsupported entry: {path}",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                        details={"ref_path": relative},
+                    )
+
+        visit(refs_root)
+
+    packed_mode: int | None = None
+    packed_bytes: bytes | None = None
+    if packed_refs.exists() or packed_refs.is_symlink():
+        packed_metadata = packed_refs.lstat()
+        if not stat.S_ISREG(packed_metadata.st_mode) or stat.S_ISLNK(
+            packed_metadata.st_mode
+        ):
+            raise PreparationFailure(
+                f"nested checkout has unsupported packed-ref storage: {path}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        packed_mode = stat.S_IMODE(packed_metadata.st_mode)
+        packed_bytes = packed_refs.read_bytes()
+    return (
+        root_mode,
+        tuple(directories),
+        tuple(files),
+        packed_mode,
+        packed_bytes,
+    )
+
+
 def _restore_git_ref_state(path: Path, expected: NestedGitSnapshot) -> None:
     observed_head, observed_refs = _git_ref_state(path)
     if observed_head is not None:
@@ -1511,6 +1658,82 @@ def _restore_git_ref_state(path: Path, expected: NestedGitSnapshot) -> None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"expected": wanted, "actual": restored},
+        )
+
+
+def _restore_git_ref_storage(path: Path, expected: NestedGitSnapshot) -> None:
+    refs_root, packed_refs = _git_ref_storage_paths(path)
+    if refs_root.exists() or refs_root.is_symlink():
+        metadata = refs_root.lstat()
+        if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+            raise PreparationFailure(
+                "nested checkout loose-ref root changed type during isolation",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        shutil.rmtree(refs_root)
+    if expected.ref_root_mode is not None:
+        refs_root.mkdir(mode=0o700)
+        refs_root.chmod(0o700)
+        for relative, _mode in expected.ref_directories:
+            directory = refs_root / checked_relative_path(relative)
+            directory.mkdir(mode=0o700, parents=True, exist_ok=False)
+            directory.chmod(0o700)
+        for relative, mode, content in expected.loose_ref_files:
+            destination = refs_root / checked_relative_path(relative)
+            destination.write_bytes(content)
+            destination.chmod(mode)
+        for relative, mode in reversed(expected.ref_directories):
+            (refs_root / checked_relative_path(relative)).chmod(mode)
+        refs_root.chmod(expected.ref_root_mode)
+
+    if packed_refs.exists() or packed_refs.is_symlink():
+        metadata = packed_refs.lstat()
+        if not stat.S_ISREG(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+            raise PreparationFailure(
+                "nested checkout packed-ref storage changed type during isolation",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        packed_refs.unlink()
+    if expected.packed_refs_mode is not None:
+        if expected.packed_refs_bytes is None:
+            raise PreparationFailure(
+                "nested checkout packed-ref snapshot is internally inconsistent",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        packed_refs.write_bytes(expected.packed_refs_bytes)
+        packed_refs.chmod(expected.packed_refs_mode)
+    elif expected.packed_refs_bytes is not None:
+        raise PreparationFailure(
+            "nested checkout packed-ref snapshot is internally inconsistent",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+
+    restored = _git_ref_storage_state(path)
+    wanted = (
+        expected.ref_root_mode,
+        expected.ref_directories,
+        expected.loose_ref_files,
+        expected.packed_refs_mode,
+        expected.packed_refs_bytes,
+    )
+    if restored != wanted:
+        raise PreparationFailure(
+            "nested checkout ref storage differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    logical = _git_ref_state(path)
+    expected_logical = (expected.origin_head, expected.git_refs)
+    if logical != expected_logical:
+        raise PreparationFailure(
+            "nested checkout refs differ after exact storage restoration",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"expected": expected_logical, "actual": logical},
         )
 
 
@@ -1973,7 +2196,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"conversion_settings": list(conversion_settings)},
         )
-    symlinks = candidate_symlink_paths(path)
+    symlinks = candidate_symlink_paths(path, include_ignored=True)
     if symlinks:
         raise PreparationFailure(
             f"nested checkout contains symlinks with unbound target bytes: {path}",
@@ -2009,8 +2232,8 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             },
         )
     paths = tracked_paths(path)
-    candidate_untracked_paths = untracked_paths(path)
-    candidate_directories = candidate_directory_paths(path)
+    candidate_untracked_paths = untracked_paths(path, include_ignored=True)
+    candidate_directories = candidate_directory_paths(path, include_ignored=True)
     nonportable_worktree_ownership = _nonportable_worktree_ownership(
         path,
         (*paths, *candidate_untracked_paths),
@@ -2070,7 +2293,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"filter_attribute_sources": list(filter_attribute_sources)},
         )
-    candidate = capture_candidate_snapshot(path)
+    candidate = capture_candidate_snapshot(path, include_ignored=True)
     if (
         candidate.untracked_paths != candidate_untracked_paths
         or candidate.directories != candidate_directories
@@ -2091,6 +2314,13 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         candidate_directories,
     )
     origin_head, git_refs = _git_ref_state(path)
+    (
+        ref_root_mode,
+        ref_directories,
+        loose_ref_files,
+        packed_refs_mode,
+        packed_refs_bytes,
+    ) = _git_ref_storage_state(path)
     reflog_root_mode, reflog_directories, reflog_files = _reflog_state(path)
     index_version = _index_version(path)
     index_mode, index_bytes = _git_index_state(path)
@@ -2101,6 +2331,11 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         symbolic_head=_symbolic_head(path),
         origin_head=origin_head,
         git_refs=git_refs,
+        ref_root_mode=ref_root_mode,
+        ref_directories=ref_directories,
+        loose_ref_files=loose_ref_files,
+        packed_refs_mode=packed_refs_mode,
+        packed_refs_bytes=packed_refs_bytes,
         shallow_boundaries=_shallow_boundaries(path),
         local_config=_portable_local_config(path),
         remote_config=_remote_local_config(path),
@@ -2175,8 +2410,15 @@ def tree_paths(repo_root: Path, treeish: str) -> tuple[str, ...]:
     return paths
 
 
-def candidate_symlink_paths(repo_root: Path) -> tuple[str, ...]:
-    paths = (*tracked_paths(repo_root), *untracked_paths(repo_root))
+def candidate_symlink_paths(
+    repo_root: Path,
+    *,
+    include_ignored: bool = False,
+) -> tuple[str, ...]:
+    paths = (
+        *tracked_paths(repo_root),
+        *untracked_paths(repo_root, include_ignored=include_ignored),
+    )
     return tuple(
         raw
         for raw in paths
@@ -2268,7 +2510,11 @@ def _update_untracked_path_digest(
     digest.update(b"\0")
 
 
-def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
+def capture_candidate_snapshot(
+    repo_root: Path,
+    *,
+    include_ignored: bool = False,
+) -> CandidateSnapshot:
     if git_text(repo_root, "rev-parse", "--show-toplevel") != repo_root.resolve().as_posix():
         raise PreparationFailure(
             "prepare-landing must run at the Git top level",
@@ -2301,8 +2547,11 @@ def capture_candidate_snapshot(repo_root: Path) -> CandidateSnapshot:
             action_class="code_fix",
             details={"nested_tracked_roots": list(nested_tracked_roots)},
         )
-    paths = untracked_paths(repo_root)
-    directories = candidate_directory_paths(repo_root)
+    paths = untracked_paths(repo_root, include_ignored=include_ignored)
+    directories = candidate_directory_paths(
+        repo_root,
+        include_ignored=include_ignored,
+    )
     return CandidateSnapshot(
         head=git_text(repo_root, "rev-parse", "HEAD"),
         index_tree=git_text(repo_root, "write-tree"),
@@ -2410,9 +2659,9 @@ def copy_untracked_candidate(
                 shutil.copytree(source, destination, symlinks=True)
             else:
                 # Rebuild a nested validation checkout from its captured Git
-                # candidate instead of copying repository-local ignored state.
-                # Every worktree byte exposed to validation is therefore
-                # represented by the nested CandidateSnapshot identity.
+                # candidate. Every worktree byte exposed to validation,
+                # including ignored validator state, is represented by the
+                # nested CandidateSnapshot identity.
                 with tempfile.TemporaryDirectory(
                     prefix=".aoa-kag-empty-git-template-",
                     dir=destination.parent,
@@ -2568,6 +2817,7 @@ def copy_untracked_candidate(
                         failure_type="candidate_snapshot_invalid",
                         action_class="code_fix",
                     )
+                _restore_git_ref_storage(destination, nested)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",
