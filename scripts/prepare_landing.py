@@ -109,6 +109,8 @@ class NestedGitSnapshot:
     reflog_directories: tuple[tuple[str, int], ...]
     reflog_files: tuple[tuple[str, int, bytes], ...]
     index_version: int
+    index_mode: int
+    index_bytes: bytes
     object_inventory_count: int
     object_inventory_digest: str
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
@@ -136,6 +138,8 @@ class NestedGitSnapshot:
                 for path, mode, content in self.reflog_files
             ],
             "index_version": self.index_version,
+            "index_mode": self.index_mode,
+            "index_bytes": [len(self.index_bytes), sha256_bytes(self.index_bytes)],
             "object_inventory_count": self.object_inventory_count,
             "object_inventory_digest": self.object_inventory_digest,
             "worktree_hardlink_groups": [
@@ -989,6 +993,58 @@ def _index_version(path: Path) -> int:
             details={"index_version": version},
         )
     return version
+
+
+def _git_index_state(path: Path) -> tuple[int, bytes]:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    raw_index_path = Path(git_text(path, "rev-parse", "--git-path", "index"))
+    if not raw_index_path.is_absolute():
+        raw_index_path = path / raw_index_path
+    index_path = Path(os.path.abspath(raw_index_path))
+    try:
+        index_path.relative_to(git_dir)
+    except ValueError as exc:
+        raise PreparationFailure(
+            f"nested checkout index is outside its Git directory: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"index_path": index_path.as_posix()},
+        ) from exc
+    try:
+        metadata = index_path.lstat()
+    except FileNotFoundError as exc:
+        raise PreparationFailure(
+            f"nested checkout index is missing: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        ) from exc
+    if not stat.S_ISREG(metadata.st_mode):
+        raise PreparationFailure(
+            f"nested checkout index is not a regular file: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"index_path": index_path.as_posix()},
+        )
+    return stat.S_IMODE(metadata.st_mode), index_path.read_bytes()
+
+
+def _restore_git_index_state(
+    path: Path,
+    expected_mode: int,
+    expected_bytes: bytes,
+) -> None:
+    index_path = Path(git_text(path, "rev-parse", "--git-path", "index"))
+    if not index_path.is_absolute():
+        index_path = path / index_path
+    index_path.write_bytes(expected_bytes)
+    index_path.chmod(expected_mode)
+    observed = _git_index_state(path)
+    if observed != (expected_mode, expected_bytes):
+        raise PreparationFailure(
+            "nested checkout index state differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
 
 
 def _git_object_inventory(path: Path) -> tuple[int, str]:
@@ -1994,6 +2050,8 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     )
     origin_head, git_refs = _git_ref_state(path)
     reflog_root_mode, reflog_directories, reflog_files = _reflog_state(path)
+    index_version = _index_version(path)
+    index_mode, index_bytes = _git_index_state(path)
     object_inventory_count, object_inventory_digest = _git_object_inventory(path)
     return NestedGitSnapshot(
         candidate=candidate,
@@ -2007,7 +2065,9 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         reflog_root_mode=reflog_root_mode,
         reflog_directories=reflog_directories,
         reflog_files=reflog_files,
-        index_version=_index_version(path),
+        index_version=index_version,
+        index_mode=index_mode,
+        index_bytes=index_bytes,
         object_inventory_count=object_inventory_count,
         object_inventory_digest=object_inventory_digest,
         worktree_hardlink_groups=worktree_hardlink_groups,
@@ -2446,6 +2506,17 @@ def copy_untracked_candidate(
                 if observed_mtimes != nested.worktree_mtimes:
                     raise PreparationFailure(
                         "nested checkout modification times differ after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
+                _restore_git_index_state(
+                    destination,
+                    nested.index_mode,
+                    nested.index_bytes,
+                )
+                if _index_version(destination) != nested.index_version:
+                    raise PreparationFailure(
+                        "nested checkout index version differs after exact restoration",
                         failure_type="candidate_snapshot_invalid",
                         action_class="code_fix",
                     )

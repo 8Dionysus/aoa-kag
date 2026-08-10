@@ -1606,6 +1606,31 @@ class PrepareLandingTests(unittest.TestCase):
                 ).strip(),
             )
 
+    def test_nested_materialization_preserves_index_stat_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            os.utime(tracked, ns=(1_577_836_800_000_000_000, 1_577_836_800_000_000_000))
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            expected_debug = git(nested, "ls-files", "--debug")
+            expected_index = prepare_landing._git_index_state(nested)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+
+            self.assertEqual(expected_debug, git(isolated_nested, "ls-files", "--debug"))
+            self.assertEqual(expected_index, prepare_landing._git_index_state(isolated_nested))
+
     def test_nested_materialization_binds_unreachable_objects(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
