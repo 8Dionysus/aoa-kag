@@ -1137,6 +1137,8 @@ class PrepareLandingTests(unittest.TestCase):
                 config.read_bytes() + b"\n# validator-visible raw config comment\n"
             )
             raw_config = config.read_bytes()
+            source_mtime_ns = 946_684_800_123_456_789
+            os.utime(config, ns=(source_mtime_ns, source_mtime_ns))
             nested_snapshot = prepare_landing._nested_git_snapshot(nested)
             self.assertIsNotNone(nested_snapshot)
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
@@ -1146,10 +1148,21 @@ class PrepareLandingTests(unittest.TestCase):
 
             isolated_config = (isolated / ".validator" / ".git" / "config").read_bytes()
             assert nested_snapshot is not None
+            self.assertEqual(source_mtime_ns, nested_snapshot.local_config_mtime_ns)
             self.assertEqual(raw_config, nested_snapshot.local_config_bytes)
             self.assertEqual(nested_snapshot.isolated_config_bytes, isolated_config)
+            self.assertEqual(
+                source_mtime_ns,
+                (isolated / ".validator" / ".git" / "config").stat().st_mtime_ns,
+            )
             self.assertIn(b"# validator-visible raw config comment\n", isolated_config)
-            config.write_bytes(raw_config + b"# concurrent comment-only change\n")
+            os.utime(
+                config,
+                ns=(
+                    source_mtime_ns + 1_000_000_000,
+                    source_mtime_ns + 1_000_000_000,
+                ),
+            )
             changed = prepare_landing._nested_git_snapshot(nested)
             self.assertIsNotNone(changed)
             assert changed is not None

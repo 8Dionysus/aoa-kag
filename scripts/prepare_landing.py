@@ -157,6 +157,7 @@ class NestedGitSnapshot:
     local_config: tuple[tuple[str, str], ...]
     remote_config: tuple[tuple[str, str], ...]
     local_config_mode: int
+    local_config_mtime_ns: int
     local_config_bytes: bytes
     isolated_config_bytes: bytes
     reflog_root_mode: int | None
@@ -217,6 +218,7 @@ class NestedGitSnapshot:
             "local_config": [list(row) for row in self.local_config],
             "remote_config": [list(row) for row in self.remote_config],
             "local_config_mode": self.local_config_mode,
+            "local_config_mtime_ns": self.local_config_mtime_ns,
             "local_config_bytes": [
                 len(self.local_config_bytes),
                 sha256_bytes(self.local_config_bytes),
@@ -851,7 +853,7 @@ def _neutralized_remote_config(
     )
 
 
-def _git_local_config_state(path: Path) -> tuple[int, bytes]:
+def _git_local_config_state(path: Path) -> tuple[int, int, bytes]:
     git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
     raw_config_path = Path(git_text(path, "rev-parse", "--git-path", "config"))
     if not raw_config_path.is_absolute():
@@ -891,7 +893,11 @@ def _git_local_config_state(path: Path) -> tuple[int, bytes]:
                 "link_count": metadata.st_nlink,
             },
         )
-    return stat.S_IMODE(metadata.st_mode), config_path.read_bytes()
+    return (
+        stat.S_IMODE(metadata.st_mode),
+        metadata.st_mtime_ns,
+        config_path.read_bytes(),
+    )
 
 
 def _neutralized_local_config_bytes(
@@ -945,7 +951,11 @@ def _require_local_config_state_match(
     expected: NestedGitSnapshot,
 ) -> None:
     observed = _git_local_config_state(path)
-    wanted = (expected.local_config_mode, expected.isolated_config_bytes)
+    wanted = (
+        expected.local_config_mode,
+        expected.local_config_mtime_ns,
+        expected.isolated_config_bytes,
+    )
     if observed != wanted:
         raise PreparationFailure(
             "nested checkout raw local config differs after isolation",
@@ -953,7 +963,7 @@ def _require_local_config_state_match(
             action_class="code_fix",
             details={
                 "expected_digest": sha256_bytes(expected.isolated_config_bytes),
-                "actual_digest": sha256_bytes(observed[1]),
+                "actual_digest": sha256_bytes(observed[2]),
             },
         )
 
@@ -965,6 +975,11 @@ def _restore_local_config_state(path: Path, expected: NestedGitSnapshot) -> None
     config_path = Path(os.path.abspath(raw_config_path))
     config_path.write_bytes(expected.isolated_config_bytes)
     config_path.chmod(expected.local_config_mode)
+    os.utime(
+        config_path,
+        ns=(config_path.stat().st_atime_ns, expected.local_config_mtime_ns),
+        follow_symlinks=False,
+    )
     _require_local_config_state_match(path, expected)
     if _portable_local_config(path) != expected.local_config:
         raise PreparationFailure(
@@ -3189,10 +3204,18 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     index_mode, index_bytes = _git_index_state(path)
     object_inventory_count, object_inventory_digest = _git_object_inventory(path)
     object_storage_state = _git_object_storage_state(path)
-    local_config_mode, local_config_bytes = _git_local_config_state(path)
+    (
+        local_config_mode,
+        local_config_mtime_ns,
+        local_config_bytes,
+    ) = _git_local_config_state(path)
     local_config = _portable_local_config(path)
     remote_config = _remote_local_config(path)
-    if _git_local_config_state(path) != (local_config_mode, local_config_bytes):
+    if _git_local_config_state(path) != (
+        local_config_mode,
+        local_config_mtime_ns,
+        local_config_bytes,
+    ):
         raise PreparationFailure(
             "nested checkout local config changed during snapshot capture",
             failure_type="candidate_snapshot_changed",
@@ -3231,6 +3254,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         local_config=local_config,
         remote_config=remote_config,
         local_config_mode=local_config_mode,
+        local_config_mtime_ns=local_config_mtime_ns,
         local_config_bytes=local_config_bytes,
         isolated_config_bytes=isolated_config_bytes,
         reflog_root_mode=reflog_root_mode,
