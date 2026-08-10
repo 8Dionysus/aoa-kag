@@ -79,6 +79,8 @@ class CandidateSnapshot:
     untracked_paths: tuple[str, ...]
     directory_digest: str
     directories: tuple[str, ...]
+    worktree_hardlink_groups: tuple[tuple[str, ...], ...]
+    directory_mtimes: tuple[tuple[str, int], ...]
     intent_to_add_paths: tuple[str, ...]
 
     def identity(self) -> str:
@@ -91,6 +93,10 @@ class CandidateSnapshot:
             "untracked_paths": list(self.untracked_paths),
             "directory_digest": self.directory_digest,
             "directories": list(self.directories),
+            "worktree_hardlink_groups": [
+                list(group) for group in self.worktree_hardlink_groups
+            ],
+            "directory_mtimes": [list(row) for row in self.directory_mtimes],
             "intent_to_add_paths": list(self.intent_to_add_paths),
         }
         return sha256_bytes(canonical_json(payload))
@@ -1314,7 +1320,7 @@ def _worktree_hardlink_groups(
             groups.append(ordered)
     if external:
         raise PreparationFailure(
-            f"nested checkout contains worktree hardlinks outside candidate identity: {path}",
+            f"candidate contains worktree hardlinks outside its identity: {path}",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"external_hardlink_paths": sorted(external)},
@@ -1515,7 +1521,7 @@ def _restore_worktree_hardlinks(
         anchor = path / checked_relative_path(group[0])
         if not stat.S_ISREG(anchor.lstat().st_mode):
             raise PreparationFailure(
-                "nested checkout hardlink anchor changed type during isolation",
+                "candidate hardlink anchor changed type during isolation",
                 failure_type="candidate_snapshot_invalid",
                 action_class="code_fix",
             )
@@ -1523,7 +1529,7 @@ def _restore_worktree_hardlinks(
             destination = path / checked_relative_path(raw)
             if not stat.S_ISREG(destination.lstat().st_mode):
                 raise PreparationFailure(
-                    "nested checkout hardlink target changed type during isolation",
+                    "candidate hardlink target changed type during isolation",
                     failure_type="candidate_snapshot_invalid",
                     action_class="code_fix",
                 )
@@ -2679,6 +2685,24 @@ def capture_candidate_snapshot(
         repo_root,
         include_ignored=include_ignored,
     )
+    # Resolve nested candidate identity before outer topology checks so a
+    # nested violation retains its precise path and typed failure details.
+    untracked_digest = untracked_content_digest(repo_root, paths)
+    directory_digest = candidate_directory_digest(repo_root, directories)
+    worktree_paths = (*outer_tracked_paths, *paths)
+    sparse_worktree_paths = _sparse_worktree_paths(repo_root, worktree_paths)
+    if sparse_worktree_paths:
+        raise PreparationFailure(
+            f"candidate contains sparse file extents isolation cannot preserve: {repo_root}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"sparse_worktree_paths": list(sparse_worktree_paths)},
+        )
+    worktree_hardlink_groups = _worktree_hardlink_groups(
+        repo_root,
+        worktree_paths,
+    )
+    directory_mtimes = _worktree_mtime_state(repo_root, (), directories)
     return CandidateSnapshot(
         head=git_text(repo_root, "rev-parse", "HEAD"),
         index_tree=git_text(repo_root, "write-tree"),
@@ -2704,10 +2728,12 @@ def capture_candidate_snapshot(
                 "HEAD",
             )
         ),
-        untracked_digest=untracked_content_digest(repo_root, paths),
+        untracked_digest=untracked_digest,
         untracked_paths=paths,
-        directory_digest=candidate_directory_digest(repo_root, directories),
+        directory_digest=directory_digest,
         directories=directories,
+        worktree_hardlink_groups=worktree_hardlink_groups,
+        directory_mtimes=directory_mtimes,
         intent_to_add_paths=intent_to_add_paths(repo_root),
     )
 
@@ -3089,11 +3115,17 @@ def materialize_candidate(
             input_bytes=patch,
         )
     copy_untracked_candidate(source_root, temporary_root, snapshot.untracked_paths)
-    create_candidate_directories(
+    directory_modes = create_candidate_directories(
         source_root,
         temporary_root,
         snapshot.directories,
+        restore_modes=False,
     )
+    _restore_worktree_hardlinks(
+        temporary_root,
+        snapshot.worktree_hardlink_groups,
+    )
+    restore_candidate_directory_modes(directory_modes)
     git_bytes(temporary_root, "add", "-A", "--", ".")
     for raw in snapshot.untracked_paths:
         rel = checked_relative_path(raw)
@@ -3111,6 +3143,17 @@ def materialize_candidate(
                 "--",
                 rel.as_posix(),
             )
+    observed_hardlinks = _worktree_hardlink_groups(
+        temporary_root,
+        (*tracked_paths(temporary_root), *snapshot.untracked_paths),
+    )
+    if observed_hardlinks != snapshot.worktree_hardlink_groups:
+        raise PreparationFailure(
+            "candidate hardlink topology differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    _restore_worktree_mtimes(temporary_root, snapshot.directory_mtimes)
     return git_text(temporary_root, "write-tree")
 
 

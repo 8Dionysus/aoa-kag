@@ -335,6 +335,77 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertNotEqual(first.identity(), second.identity())
             self.assertNotEqual(second.identity(), third.identity())
 
+    def test_outer_materialization_preserves_untracked_hardlinks(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            first = repo / "first.txt"
+            second = repo / "second.txt"
+            first.write_text("shared\n", encoding="utf-8")
+            os.link(first, second)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(
+                repo,
+                isolated,
+                snapshot,
+            )
+
+            self.assertEqual(
+                (isolated / "first.txt").lstat().st_ino,
+                (isolated / "second.txt").lstat().st_ino,
+            )
+            (isolated / "first.txt").write_text("changed\n", encoding="utf-8")
+            self.assertEqual(
+                "changed\n",
+                (isolated / "second.txt").read_text(encoding="utf-8"),
+            )
+
+    def test_outer_snapshot_rejects_sparse_untracked_file(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            sparse = repo / "candidate.sparse"
+            with sparse.open("wb") as handle:
+                handle.seek(8 * 1024 * 1024 - 1)
+                handle.write(b"\0")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["candidate.sparse"],
+                raised.exception.details["sparse_worktree_paths"],
+            )
+
+    def test_outer_materialization_preserves_directory_mtimes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            candidate = repo / "validation-input"
+            candidate.mkdir()
+            (candidate / "input.txt").write_text("input\n", encoding="utf-8")
+            expected_mtime = 1_700_000_000_123_456_789
+            candidate_metadata = candidate.lstat()
+            os.utime(
+                candidate,
+                ns=(candidate_metadata.st_atime_ns, expected_mtime),
+            )
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertIn(
+                ("validation-input", expected_mtime),
+                snapshot.directory_mtimes,
+            )
+            self.assertEqual(
+                expected_mtime,
+                (isolated / "validation-input").lstat().st_mtime_ns,
+            )
+
     def test_nested_materialization_preserves_ignored_empty_directories(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
