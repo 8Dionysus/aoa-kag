@@ -766,6 +766,47 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["external_hardlink_paths"],
             )
 
+    def test_snapshot_rejects_nonportable_nested_worktree_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            real_lstat = Path.lstat
+
+            def foreign_owned_lstat(candidate: Path):
+                metadata = real_lstat(candidate)
+                if candidate != tracked:
+                    return metadata
+                return type(
+                    "ForeignOwnedStat",
+                    (),
+                    {
+                        "st_mode": metadata.st_mode,
+                        "st_uid": metadata.st_uid + 1,
+                        "st_gid": metadata.st_gid,
+                        "st_dev": metadata.st_dev,
+                        "st_ino": metadata.st_ino,
+                        "st_nlink": metadata.st_nlink,
+                    },
+                )()
+
+            with patch.object(Path, "lstat", foreign_owned_lstat):
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertIn(
+                "validator.txt uid=",
+                raised.exception.details["nonportable_worktree_ownership"][0],
+            )
+
     def test_nested_materialization_preserves_intent_to_add(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

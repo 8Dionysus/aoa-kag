@@ -1098,6 +1098,30 @@ def _worktree_hardlink_groups(
     return tuple(sorted(groups))
 
 
+def _nonportable_worktree_ownership(
+    path: Path,
+    candidate_paths: Sequence[str],
+    directory_paths: Sequence[str],
+) -> tuple[str, ...]:
+    """Reject ownership which a non-privileged isolated clone cannot preserve."""
+    expected_uid = os.geteuid()
+    expected_gid = os.getegid()
+    mismatches: list[str] = []
+    for raw in (".", *sorted(set((*candidate_paths, *directory_paths)))):
+        candidate = path if raw == "." else path / checked_relative_path(raw)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        if metadata.st_uid == expected_uid and metadata.st_gid == expected_gid:
+            continue
+        mismatches.append(
+            f"{raw} uid={metadata.st_uid} gid={metadata.st_gid} "
+            f"expected_uid={expected_uid} expected_gid={expected_gid}"
+        )
+    return tuple(mismatches)
+
+
 def _restore_worktree_hardlinks(
     path: Path,
     groups: Sequence[Sequence[str]],
@@ -1706,6 +1730,22 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         )
     paths = tracked_paths(path)
     candidate_untracked_paths = untracked_paths(path)
+    nonportable_worktree_ownership = _nonportable_worktree_ownership(
+        path,
+        (*paths, *candidate_untracked_paths),
+        candidate_directory_paths(path),
+    )
+    if nonportable_worktree_ownership:
+        raise PreparationFailure(
+            f"nested checkout has ownership isolation cannot preserve: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "nonportable_worktree_ownership": list(
+                    nonportable_worktree_ownership
+                )
+            },
+        )
     worktree_hardlink_groups = _worktree_hardlink_groups(
         path,
         (*paths, *candidate_untracked_paths),
