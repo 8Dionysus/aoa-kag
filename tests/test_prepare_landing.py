@@ -902,6 +902,64 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing.require_nested_git_snapshot_unchanged(nested, snapshot)
             self.assertEqual("candidate_snapshot_changed", raised.exception.failure_type)
 
+    def test_nested_snapshot_preserves_object_storage_mtimes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            objects = nested / ".git" / "objects"
+            tree_oid = git(nested, "write-tree").decode("ascii").strip()
+            loose_object = objects / tree_oid[:2] / tree_oid[2:]
+            self.assertTrue(loose_object.is_file())
+            relative_object = loose_object.relative_to(objects)
+            source_file_mtime_ns = 946_684_800_123_456_789
+            source_dir_mtime_ns = 946_684_801_987_654_321
+            os.utime(
+                loose_object,
+                ns=(source_file_mtime_ns, source_file_mtime_ns),
+            )
+            os.utime(
+                loose_object.parent,
+                ns=(source_dir_mtime_ns, source_dir_mtime_ns),
+            )
+            nested_snapshot = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(nested_snapshot)
+            self.assertEqual(source_file_mtime_ns, loose_object.stat().st_mtime_ns)
+            self.assertEqual(source_dir_mtime_ns, loose_object.parent.stat().st_mtime_ns)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            isolated_object = isolated / ".validator" / ".git" / "objects" / relative_object
+            self.assertEqual(source_file_mtime_ns, isolated_object.stat().st_mtime_ns)
+            self.assertEqual(source_dir_mtime_ns, isolated_object.parent.stat().st_mtime_ns)
+            os.utime(
+                loose_object,
+                ns=(
+                    source_file_mtime_ns + 1_000_000_000,
+                    source_file_mtime_ns + 1_000_000_000,
+                ),
+            )
+            changed = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(changed)
+            assert nested_snapshot is not None
+            assert changed is not None
+            self.assertNotEqual(nested_snapshot.identity(), changed.identity())
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.require_nested_git_snapshot_unchanged(
+                    nested,
+                    nested_snapshot,
+                )
+            self.assertEqual("candidate_snapshot_changed", raised.exception.failure_type)
+
     def test_snapshot_preserves_nested_origin_default_ref(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

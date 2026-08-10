@@ -167,7 +167,7 @@ class NestedGitSnapshot:
     index_bytes: bytes
     object_inventory_count: int
     object_inventory_digest: str
-    object_storage_state: tuple[tuple[str, str, int, int, str], ...]
+    object_storage_state: tuple[tuple[str, str, int, int, int, str], ...]
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
     worktree_mtimes: tuple[tuple[str, int], ...]
     worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
@@ -1437,12 +1437,12 @@ def _git_object_inventory(path: Path) -> tuple[int, str]:
 
 def _git_object_storage_state(
     path: Path,
-) -> tuple[tuple[str, str, int, int, str], ...]:
+) -> tuple[tuple[str, str, int, int, int, str], ...]:
     objects_raw = git_text(path, "rev-parse", "--git-path", "objects")
     objects = Path(objects_raw)
     if not objects.is_absolute():
         objects = path / objects
-    rows: list[tuple[str, str, int, int, str]] = []
+    rows: list[tuple[str, str, int, int, int, str]] = []
     for current, dirnames, filenames in os.walk(objects, topdown=True):
         directory = Path(current)
         relative_directory = directory.relative_to(objects)
@@ -1459,6 +1459,7 @@ def _git_object_storage_state(
                 "directory",
                 directory_label,
                 stat.S_IMODE(directory_metadata.st_mode),
+                directory_metadata.st_mtime_ns,
                 0,
                 "",
             )
@@ -1488,6 +1489,7 @@ def _git_object_storage_state(
                     "file",
                     relative,
                     stat.S_IMODE(metadata.st_mode),
+                    metadata.st_mtime_ns,
                     len(content),
                     sha256_bytes(content),
                 )
@@ -1517,7 +1519,7 @@ def _require_git_object_inventory_match(
 
 def _require_git_object_storage_match(
     path: Path,
-    expected_state: Sequence[tuple[str, str, int, int, str]],
+    expected_state: Sequence[tuple[str, str, int, int, int, str]],
 ) -> None:
     observed_state = _git_object_storage_state(path)
     if tuple(observed_state) != tuple(expected_state):
@@ -1536,19 +1538,21 @@ def _require_git_object_storage_match(
         )
 
 
-def _restore_git_object_storage_modes(
+def _restore_git_object_storage_state(
     path: Path,
-    expected_state: Sequence[tuple[str, str, int, int, str]],
+    expected_state: Sequence[tuple[str, str, int, int, int, str]],
 ) -> None:
     objects_raw = git_text(path, "rev-parse", "--git-path", "objects")
     objects = Path(objects_raw)
     if not objects.is_absolute():
         objects = path / objects
-    for kind, raw, mode, _size, _digest in sorted(
+    ordered = sorted(
         expected_state,
-        key=lambda row: (row[1].count("/"), row[1]),
+        key=lambda row: (row[1].count("/"), row[0] == "file", row[1]),
         reverse=True,
-    ):
+    )
+    paths: list[tuple[Path, int]] = []
+    for kind, raw, mode, mtime_ns, _size, _digest in ordered:
         candidate = objects if raw == "." else objects / checked_relative_path(raw)
         try:
             metadata = candidate.lstat()
@@ -1566,6 +1570,13 @@ def _restore_git_object_storage_modes(
                 action_class="code_fix",
             )
         candidate.chmod(mode)
+        paths.append((candidate, mtime_ns))
+    for candidate, mtime_ns in paths:
+        os.utime(
+            candidate,
+            ns=(candidate.stat().st_atime_ns, mtime_ns),
+            follow_symlinks=False,
+        )
 
 
 def _restrictive_git_admin_directory_modes(path: Path) -> tuple[str, ...]:
@@ -3398,6 +3409,22 @@ def require_nested_git_snapshot_unchanged(
             if expected_git_admin_directories.get(path)
             != observed_git_admin_directories.get(path)
         )
+        expected_object_storage = {
+            row[1]: (row[0], *row[2:]) for row in expected.object_storage_state
+        }
+        observed_object_storage = (
+            {}
+            if observed is None
+            else {
+                row[1]: (row[0], *row[2:])
+                for row in observed.object_storage_state
+            }
+        )
+        changed_object_storage_paths = sorted(
+            path
+            for path in expected_object_storage.keys() | observed_object_storage.keys()
+            if expected_object_storage.get(path) != observed_object_storage.get(path)
+        )
         raise PreparationFailure(
             "nested checkout candidate changed during isolated preparation: "
             + ", ".join(changed_components)
@@ -3412,6 +3439,13 @@ def require_nested_git_snapshot_unchanged(
                 + ")"
                 if changed_git_admin_directories
                 else ""
+            )
+            + (
+                " (Git object storage: "
+                + ", ".join(changed_object_storage_paths[:20])
+                + ")"
+                if changed_object_storage_paths
+                else ""
             ),
             failure_type="candidate_snapshot_changed",
             action_class="retry_same_candidate",
@@ -3421,6 +3455,7 @@ def require_nested_git_snapshot_unchanged(
                 "changed_components": changed_components,
                 "changed_git_admin_paths": changed_git_admin_paths,
                 "changed_git_admin_directories": changed_git_admin_directories,
+                "changed_object_storage_paths": changed_object_storage_paths,
             },
         )
 
@@ -3586,12 +3621,19 @@ def capture_candidate_snapshot(
         isolated_index = Path(temp_dir) / "index"
         isolated_index.write_bytes(index_bytes)
         isolated_index.chmod(index_mode)
+        isolated_objects = Path(temp_dir) / "objects"
+        isolated_objects.mkdir()
         isolated_index_env = os.environ.copy()
         isolated_index_env["GIT_INDEX_FILE"] = isolated_index.as_posix()
+        isolated_write_tree_env = isolated_index_env.copy()
+        isolated_write_tree_env["GIT_OBJECT_DIRECTORY"] = (
+            isolated_objects.as_posix()
+        )
         index_tree = git_bytes(
             repo_root,
             "write-tree",
-            env=isolated_index_env,
+            "--missing-ok",
+            env=isolated_write_tree_env,
         ).decode("utf-8", errors="strict").strip()
         cached_patch_bytes = candidate_cached_patch(
             repo_root,
@@ -3758,7 +3800,7 @@ def copy_untracked_candidate(
                     nested.object_inventory_count,
                     nested.object_inventory_digest,
                 )
-                _restore_git_object_storage_modes(
+                _restore_git_object_storage_state(
                     destination,
                     nested.object_storage_state,
                 )
