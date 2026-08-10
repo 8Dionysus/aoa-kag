@@ -369,6 +369,42 @@ def _ignored_directory_roots(repo_root: Path) -> set[str]:
     return roots
 
 
+def _ignored_nested_checkout_paths(repo_root: Path) -> tuple[str, ...]:
+    """Discover ignored Git roots without admitting ordinary ignored artifacts."""
+    raw = git_bytes(
+        repo_root,
+        "ls-files",
+        "--others",
+        "--ignored",
+        "--exclude-standard",
+        "-z",
+    )
+    inspected: set[str] = set()
+    roots: set[str] = set()
+    for item in raw.decode("utf-8", errors="surrogateescape").split("\0"):
+        if not item:
+            continue
+        relative = checked_relative_path(item.rstrip("/"))
+        # Repo-local provider checkouts are separately pinned and verified by
+        # verify_provider_identities(); they are inputs, not candidate state.
+        if relative.parts[0] == ".deps":
+            continue
+        for parent in (relative, *relative.parents):
+            if parent == Path("."):
+                continue
+            label = parent.as_posix()
+            if label in roots:
+                break
+            if label in inspected:
+                continue
+            inspected.add(label)
+            candidate = repo_root / parent
+            if (candidate / ".git").exists() and _is_nested_git_checkout(candidate):
+                roots.add(label)
+                break
+    return tuple(f"{label}/" for label in sorted(roots))
+
+
 def candidate_directory_paths(
     repo_root: Path,
     *,
@@ -2681,6 +2717,10 @@ def capture_candidate_snapshot(
             details={"nested_tracked_roots": list(nested_tracked_roots)},
         )
     paths = untracked_paths(repo_root, include_ignored=include_ignored)
+    if not include_ignored:
+        paths = tuple(
+            sorted({*paths, *_ignored_nested_checkout_paths(repo_root)})
+        )
     directories = candidate_directory_paths(
         repo_root,
         include_ignored=include_ignored,

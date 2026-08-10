@@ -406,6 +406,41 @@ class PrepareLandingTests(unittest.TestCase):
                 (isolated / "validation-input").lstat().st_mtime_ns,
             )
 
+    def test_outer_snapshot_includes_only_ignored_nested_checkout_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            (repo / ".gitignore").write_text(
+                ".deps/\n.validator/\nordinary.cache\n",
+                encoding="utf-8",
+            )
+            git(repo, "add", ".gitignore")
+            git(repo, "commit", "-qm", "ignore validation checkout")
+            (repo / "ordinary.cache").write_text("excluded\n", encoding="utf-8")
+            provider = repo / ".deps" / "provider"
+            provider.mkdir(parents=True)
+            git(provider, "init", "-q")
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "needed").write_text("first\n", encoding="utf-8")
+            git(nested, "add", "needed")
+            git(nested, "commit", "-qm", "nested base")
+
+            first = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), first.head)
+            prepare_landing.materialize_candidate(repo, isolated, first)
+            (nested / "needed").write_text("second\n", encoding="utf-8")
+            second = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual((".validator/",), first.untracked_paths)
+            self.assertTrue((isolated / ".validator" / "needed").is_file())
+            self.assertFalse((isolated / ".deps").exists())
+            self.assertFalse((isolated / "ordinary.cache").exists())
+            self.assertNotEqual(first.identity(), second.identity())
+
     def test_nested_materialization_preserves_ignored_empty_directories(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
