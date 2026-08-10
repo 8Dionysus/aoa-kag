@@ -588,6 +588,39 @@ class PrepareLandingTests(unittest.TestCase):
                 ).returncode,
             )
 
+    def test_snapshot_rejects_effective_url_rewrites(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            root = Path(repo_tmp)
+            repo = self.make_repo(root)
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(nested, "config", "remote.origin.url", ".")
+            global_config = root / "global.gitconfig"
+            global_config.write_text(
+                '[url "file:///mutable-external/"]\n\tinsteadOf = .\n',
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {
+                    "GIT_CONFIG_GLOBAL": global_config.as_posix(),
+                    "GIT_CONFIG_NOSYSTEM": "1",
+                },
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(
+                [["global", "url.file:///mutable-external/.insteadof"]],
+                raised.exception.details["url_rewrite_settings"],
+            )
+
     def test_nested_materialization_preserves_reflogs(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

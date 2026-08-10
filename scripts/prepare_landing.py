@@ -622,6 +622,21 @@ def _effective_git_config(
     return tuple(rows)
 
 
+def _effective_url_rewrite_settings(path: Path) -> tuple[tuple[str, str], ...]:
+    return tuple(
+        sorted(
+            {
+                (scope, key)
+                for scope, key, _value in _effective_git_config(
+                    path, include_remote=True
+                )
+                if key.startswith("url.")
+                and key.endswith((".insteadof", ".pushinsteadof"))
+            }
+        )
+    )
+
+
 def _require_effective_git_config_match(
     destination: Path,
     expected: NestedGitSnapshot,
@@ -1233,6 +1248,16 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"implicit_rule_sources": list(implicit_rule_sources)},
+        )
+    url_rewrite_settings = _effective_url_rewrite_settings(path)
+    if url_rewrite_settings:
+        raise PreparationFailure(
+            f"nested checkout is exposed to URL rewrite settings: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "url_rewrite_settings": [list(row) for row in url_rewrite_settings]
+            },
         )
     operation_state = _in_progress_operation_state(path)
     if operation_state:
