@@ -105,9 +105,15 @@ def candidate_identity(repo_root: Path) -> dict[str, str]:
 
 def run_component(component: Component, *, repo_root: Path) -> ComponentResult:
     started = time.perf_counter()
+    environment = dict(os.environ)
+    # Fresh Python checkouts otherwise create ignored __pycache__ directories.
+    # Their creation changes protected parent-directory mtimes and violates the
+    # same-candidate contract even though every canonical command is --check.
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
     process = subprocess.run(
         component.command,
         cwd=repo_root,
+        env=environment,
         check=False,
         capture_output=True,
         text=True,

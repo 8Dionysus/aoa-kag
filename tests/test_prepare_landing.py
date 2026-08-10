@@ -426,6 +426,26 @@ class PrepareLandingTests(unittest.TestCase):
                 stat.S_IMODE((isolated / "readonly.txt").lstat().st_mode),
             )
 
+    def test_outer_materialization_preserves_checkout_root_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            isolated = Path(work_tmp) / "isolated"
+            repo.chmod(0o555)
+            try:
+                snapshot = prepare_landing.capture_candidate_snapshot(repo)
+                git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+                prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+                self.assertEqual(0o555, snapshot.root_mode)
+                self.assertEqual(
+                    0o555,
+                    stat.S_IMODE(isolated.lstat().st_mode),
+                )
+            finally:
+                repo.chmod(0o755)
+                if isolated.exists():
+                    isolated.chmod(0o755)
+
     def test_outer_materialization_preserves_tracked_file_mtimes(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
@@ -507,6 +527,39 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertIn(
                 "foreign-directory uid=",
+                raised.exception.details["nonportable_worktree_ownership"][0],
+            )
+
+    def test_outer_snapshot_rejects_nonportable_tracked_file_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            foreign = repo / "foreign-owned.txt"
+            foreign.write_text("owned elsewhere\n", encoding="utf-8")
+            git(repo, "add", foreign.name)
+            git(repo, "commit", "-qm", "add foreign-owned input")
+            real_lstat = Path.lstat
+
+            def foreign_owned_lstat(candidate: Path):
+                metadata = real_lstat(candidate)
+                if candidate != foreign:
+                    return metadata
+                return type(
+                    "ForeignOwnedOuterFileStat",
+                    (),
+                    {
+                        "st_mode": metadata.st_mode,
+                        "st_uid": metadata.st_uid + 1,
+                        "st_gid": metadata.st_gid,
+                    },
+                )()
+
+            with patch.object(Path, "lstat", foreign_owned_lstat):
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertIn(
+                "foreign-owned.txt uid=",
                 raised.exception.details["nonportable_worktree_ownership"][0],
             )
 

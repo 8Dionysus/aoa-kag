@@ -285,6 +285,32 @@ class RepoLocalKagGateTests(unittest.TestCase):
         self.assertEqual("events", command[command.index("--event-history-ref") + 1])
         self.assertEqual("budget", command[command.index("--budget-base-ref") + 1])
 
+    def test_component_disables_python_bytecode_side_effects(self) -> None:
+        component = GATE.Component("check", ("python", "check.py"))
+        completed = subprocess.CompletedProcess(component.command, 0, "ok", "")
+
+        with mock.patch.object(GATE.subprocess, "run", return_value=completed) as run:
+            observed = GATE.run_component(component, repo_root=REPO_ROOT)
+
+        self.assertEqual(0, observed.returncode)
+        self.assertEqual("1", run.call_args.kwargs["env"]["PYTHONDONTWRITEBYTECODE"])
+
+    def test_component_keeps_fresh_python_checkout_metadata_stable(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = Path(raw)
+            (repo / "fresh_import.py").write_text("VALUE = 1\n", encoding="utf-8")
+            initial_mtime = repo.lstat().st_mtime_ns
+            component = GATE.Component(
+                "fresh-python-check",
+                (GATE.sys.executable, "-c", "import fresh_import"),
+            )
+
+            observed = GATE.run_component(component, repo_root=repo)
+
+            self.assertEqual(0, observed.returncode)
+            self.assertFalse((repo / "__pycache__").exists())
+            self.assertEqual(initial_mtime, repo.lstat().st_mtime_ns)
+
 
 if __name__ == "__main__":
     unittest.main()

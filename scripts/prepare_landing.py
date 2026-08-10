@@ -72,6 +72,7 @@ PORTABLE_REMOTE_CONFIG_SUFFIXES = (".url", ".fetch")
 @dataclass(frozen=True)
 class CandidateSnapshot:
     head: str
+    root_mode: int
     index_tree: str
     cached_diff_digest: str
     worktree_diff_digest: str
@@ -88,6 +89,7 @@ class CandidateSnapshot:
     def identity(self) -> str:
         payload = {
             "head": self.head,
+            "root_mode": self.root_mode,
             "index_tree": self.index_tree,
             "cached_diff_digest": self.cached_diff_digest,
             "worktree_diff_digest": self.worktree_diff_digest,
@@ -2988,6 +2990,7 @@ def capture_candidate_snapshot(
     )
     return CandidateSnapshot(
         head=git_text(repo_root, "rev-parse", "HEAD"),
+        root_mode=stat.S_IMODE(repo_root.lstat().st_mode),
         index_tree=git_text(repo_root, "write-tree"),
         cached_diff_digest=sha256_bytes(
             git_bytes(
@@ -3487,6 +3490,7 @@ def materialize_candidate(
         snapshot.tracked_file_modes,
     )
     restore_candidate_directory_modes(directory_modes)
+    temporary_root.chmod(snapshot.root_mode)
     observed_modes = _regular_worktree_mode_state(
         temporary_root,
         tuple(raw for raw, _mode in snapshot.tracked_file_modes),
@@ -3494,6 +3498,13 @@ def materialize_candidate(
     if observed_modes != snapshot.tracked_file_modes:
         raise PreparationFailure(
             "candidate tracked-file modes differ after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    observed_root_mode = stat.S_IMODE(temporary_root.lstat().st_mode)
+    if observed_root_mode != snapshot.root_mode:
+        raise PreparationFailure(
+            "candidate root mode differs after isolation",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
