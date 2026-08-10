@@ -1239,6 +1239,27 @@ def _restrictive_git_admin_directory_modes(path: Path) -> tuple[str, ...]:
     return tuple(restrictive)
 
 
+def _restrictive_git_admin_file_modes(path: Path) -> tuple[str, ...]:
+    """Reject mutable administration files whose owner-write posture clone loses."""
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    restrictive: list[str] = []
+    for candidate in sorted(
+        git_dir.rglob("*"),
+        key=lambda item: os.fsencode(item.relative_to(git_dir).as_posix()),
+    ):
+        relative = candidate.relative_to(git_dir)
+        if "objects" in relative.parts:
+            # Git object files are immutable storage and are normally read-only.
+            continue
+        metadata = candidate.lstat()
+        if not stat.S_ISREG(metadata.st_mode):
+            continue
+        mode = stat.S_IMODE(metadata.st_mode)
+        if mode & (stat.S_IRUSR | stat.S_IWUSR) != (stat.S_IRUSR | stat.S_IWUSR):
+            restrictive.append(f"{relative.as_posix()} mode={mode:04o}")
+    return tuple(restrictive)
+
+
 def _git_admin_portability_issues(
     path: Path,
 ) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -2210,6 +2231,18 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             details={
                 "restrictive_git_admin_directory_modes": list(
                     restrictive_git_admin_modes
+                )
+            },
+        )
+    restrictive_git_admin_files = _restrictive_git_admin_file_modes(path)
+    if restrictive_git_admin_files:
+        raise PreparationFailure(
+            f"nested checkout has restrictive Git administration files: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "restrictive_git_admin_file_modes": list(
+                    restrictive_git_admin_files
                 )
             },
         )

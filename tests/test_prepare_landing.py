@@ -933,6 +933,35 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["restrictive_git_admin_directory_modes"],
             )
 
+    def test_snapshot_rejects_restrictive_git_admin_file_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            config_path = Path(
+                git(nested, "rev-parse", "--git-path", "config").decode().strip()
+            )
+            if not config_path.is_absolute():
+                config_path = nested / config_path
+            config_path.chmod(0o444)
+            try:
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.capture_candidate_snapshot(repo)
+            finally:
+                config_path.chmod(0o644)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["config mode=0444"],
+                raised.exception.details["restrictive_git_admin_file_modes"],
+            )
+
     def test_snapshot_rejects_nested_git_administration_lock(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
