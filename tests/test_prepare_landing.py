@@ -406,6 +406,79 @@ class PrepareLandingTests(unittest.TestCase):
                 (isolated / "validation-input").lstat().st_mtime_ns,
             )
 
+    def test_outer_materialization_preserves_tracked_file_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            tracked = repo / "readonly.txt"
+            tracked.write_text("bound mode\n", encoding="utf-8")
+            git(repo, "add", "readonly.txt")
+            git(repo, "commit", "-qm", "add readonly input")
+            tracked.chmod(0o400)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertIn(("readonly.txt", 0o400), snapshot.tracked_file_modes)
+            self.assertEqual(
+                0o400,
+                stat.S_IMODE((isolated / "readonly.txt").lstat().st_mode),
+            )
+
+    def test_outer_materialization_preserves_tracked_file_mtimes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            tracked = repo / "dated.txt"
+            tracked.write_text("bound timestamp\n", encoding="utf-8")
+            git(repo, "add", "dated.txt")
+            git(repo, "commit", "-qm", "add dated input")
+            expected_mtime = 946_684_800_123_456_789
+            metadata = tracked.lstat()
+            os.utime(tracked, ns=(metadata.st_atime_ns, expected_mtime))
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertIn(("dated.txt", expected_mtime), snapshot.directory_mtimes)
+            self.assertEqual(
+                expected_mtime,
+                (isolated / "dated.txt").lstat().st_mtime_ns,
+            )
+
+    def test_outer_materialization_preserves_tracked_file_xattrs(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            tracked = repo / "labeled.txt"
+            tracked.write_text("bound metadata\n", encoding="utf-8")
+            git(repo, "add", "labeled.txt")
+            git(repo, "commit", "-qm", "add labeled input")
+            try:
+                os.setxattr(
+                    tracked,
+                    "user.aoa-kag-outer-test",
+                    b"bound outer metadata",
+                    follow_symlinks=False,
+                )
+            except OSError as exc:
+                self.skipTest(f"extended attributes unavailable: {exc}")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(
+                b"bound outer metadata",
+                os.getxattr(
+                    isolated / "labeled.txt",
+                    "user.aoa-kag-outer-test",
+                    follow_symlinks=False,
+                ),
+            )
+
     def test_outer_snapshot_includes_only_ignored_nested_checkout_roots(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

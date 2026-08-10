@@ -80,7 +80,9 @@ class CandidateSnapshot:
     directory_digest: str
     directories: tuple[str, ...]
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
+    tracked_file_modes: tuple[tuple[str, int], ...]
     directory_mtimes: tuple[tuple[str, int], ...]
+    worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
     intent_to_add_paths: tuple[str, ...]
 
     def identity(self) -> str:
@@ -96,7 +98,18 @@ class CandidateSnapshot:
             "worktree_hardlink_groups": [
                 list(group) for group in self.worktree_hardlink_groups
             ],
+            "tracked_file_modes": [list(row) for row in self.tracked_file_modes],
             "directory_mtimes": [list(row) for row in self.directory_mtimes],
+            "worktree_xattrs": [
+                [
+                    path,
+                    [
+                        [name, len(value), sha256_bytes(value)]
+                        for name, value in attributes
+                    ],
+                ]
+                for path, attributes in self.worktree_xattrs
+            ],
             "intent_to_add_paths": list(self.intent_to_add_paths),
         }
         return sha256_bytes(canonical_json(payload))
@@ -1414,6 +1427,22 @@ def _worktree_hardlink_groups(
     return tuple(sorted(groups))
 
 
+def _regular_worktree_mode_state(
+    path: Path,
+    candidate_paths: Sequence[str],
+) -> tuple[tuple[str, int], ...]:
+    state: list[tuple[str, int]] = []
+    for raw in sorted(set(candidate_paths)):
+        candidate = path / checked_relative_path(raw)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISREG(metadata.st_mode):
+            state.append((raw, stat.S_IMODE(metadata.st_mode)))
+    return tuple(state)
+
+
 def _nonportable_worktree_ownership(
     path: Path,
     candidate_paths: Sequence[str],
@@ -1455,7 +1484,7 @@ def _worktree_xattr_state(
             continue
         except OSError as exc:
             raise PreparationFailure(
-                f"cannot inspect nested checkout extended attributes: {candidate}",
+                f"cannot inspect candidate extended attributes: {candidate}",
                 failure_type="candidate_snapshot_invalid",
                 action_class="code_fix",
                 details={"path": raw, "error": str(exc)},
@@ -1470,7 +1499,7 @@ def _worktree_xattr_state(
                 )
             except OSError as exc:
                 raise PreparationFailure(
-                    f"cannot read nested checkout extended attribute: {candidate}",
+                    f"cannot read candidate extended attribute: {candidate}",
                     failure_type="candidate_snapshot_invalid",
                     action_class="code_fix",
                     details={"path": raw, "attribute": name, "error": str(exc)},
@@ -1517,7 +1546,7 @@ def _restore_worktree_mtimes(
             )
         except OSError as exc:
             raise PreparationFailure(
-                f"cannot restore nested checkout modification time: {candidate}",
+                f"cannot restore candidate modification time: {candidate}",
                 failure_type="candidate_snapshot_invalid",
                 action_class="code_fix",
                 details={"path": raw, "error": str(exc)},
@@ -1535,7 +1564,9 @@ def _restore_worktree_xattrs(
     }
     for raw in (".", *sorted(set((*candidate_paths, *directory_paths)))):
         candidate = path if raw == "." else path / checked_relative_path(raw)
-        if not candidate.exists():
+        try:
+            candidate.lstat()
+        except FileNotFoundError:
             continue
         expected = expected_by_path.get(raw, {})
         try:
@@ -1550,7 +1581,7 @@ def _restore_worktree_xattrs(
                     os.setxattr(candidate, name, value, follow_symlinks=False)
         except OSError as exc:
             raise PreparationFailure(
-                f"cannot restore nested checkout extended attributes: {candidate}",
+                f"cannot restore candidate extended attributes: {candidate}",
                 failure_type="candidate_snapshot_invalid",
                 action_class="code_fix",
                 details={"path": raw, "error": str(exc)},
@@ -1586,9 +1617,11 @@ def _make_worktree_owner_writable(
             writable_mode = mode | stat.S_IWUSR | stat.S_IXUSR
         elif stat.S_ISREG(metadata.st_mode):
             writable_mode = mode | stat.S_IWUSR
+        elif stat.S_ISLNK(metadata.st_mode):
+            continue
         else:
             raise PreparationFailure(
-                f"nested checkout xattr path has unsupported type: {candidate}",
+                f"candidate xattr path has unsupported type: {candidate}",
                 failure_type="candidate_snapshot_invalid",
                 action_class="code_fix",
                 details={"path": raw},
@@ -2804,7 +2837,20 @@ def capture_candidate_snapshot(
         repo_root,
         worktree_paths,
     )
-    directory_mtimes = _worktree_mtime_state(repo_root, (), directories)
+    tracked_file_modes = _regular_worktree_mode_state(
+        repo_root,
+        outer_tracked_paths,
+    )
+    directory_mtimes = _worktree_mtime_state(
+        repo_root,
+        worktree_paths,
+        directories,
+    )
+    worktree_xattrs = _worktree_xattr_state(
+        repo_root,
+        worktree_paths,
+        directories,
+    )
     return CandidateSnapshot(
         head=git_text(repo_root, "rev-parse", "HEAD"),
         index_tree=git_text(repo_root, "write-tree"),
@@ -2835,7 +2881,9 @@ def capture_candidate_snapshot(
         directory_digest=directory_digest,
         directories=directories,
         worktree_hardlink_groups=worktree_hardlink_groups,
+        tracked_file_modes=tracked_file_modes,
         directory_mtimes=directory_mtimes,
+        worktree_xattrs=worktree_xattrs,
         intent_to_add_paths=intent_to_add_paths(repo_root),
     )
 
@@ -3200,6 +3248,29 @@ def restore_tracked_worktree_modes(
         destination.chmod(stat.S_IMODE(source_metadata.st_mode))
 
 
+def restore_regular_worktree_modes(
+    destination_root: Path,
+    expected_modes: Sequence[tuple[str, int]],
+) -> None:
+    for raw, mode in expected_modes:
+        destination = destination_root / checked_relative_path(raw)
+        try:
+            metadata = destination.lstat()
+        except FileNotFoundError as exc:
+            raise PreparationFailure(
+                f"tracked candidate file disappeared during isolation: {raw}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            ) from exc
+        if not stat.S_ISREG(metadata.st_mode):
+            raise PreparationFailure(
+                f"tracked candidate file changed type during isolation: {raw}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        destination.chmod(mode)
+
+
 def materialize_candidate(
     source_root: Path,
     temporary_root: Path,
@@ -3255,7 +3326,57 @@ def materialize_candidate(
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
+    worktree_paths = (*tracked_paths(temporary_root), *snapshot.untracked_paths)
+    writable_modes = _make_worktree_owner_writable(
+        temporary_root,
+        worktree_paths,
+        snapshot.directories,
+    )
+    _restore_worktree_xattrs(
+        temporary_root,
+        worktree_paths,
+        snapshot.directories,
+        snapshot.worktree_xattrs,
+    )
+    restore_candidate_directory_modes(writable_modes)
+    restore_regular_worktree_modes(
+        temporary_root,
+        snapshot.tracked_file_modes,
+    )
+    restore_candidate_directory_modes(directory_modes)
+    observed_modes = _regular_worktree_mode_state(
+        temporary_root,
+        tuple(raw for raw, _mode in snapshot.tracked_file_modes),
+    )
+    if observed_modes != snapshot.tracked_file_modes:
+        raise PreparationFailure(
+            "candidate tracked-file modes differ after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    observed_xattrs = _worktree_xattr_state(
+        temporary_root,
+        worktree_paths,
+        snapshot.directories,
+    )
+    if observed_xattrs != snapshot.worktree_xattrs:
+        raise PreparationFailure(
+            "candidate extended attributes differ after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
     _restore_worktree_mtimes(temporary_root, snapshot.directory_mtimes)
+    observed_mtimes = _worktree_mtime_state(
+        temporary_root,
+        worktree_paths,
+        snapshot.directories,
+    )
+    if observed_mtimes != snapshot.directory_mtimes:
+        raise PreparationFailure(
+            "candidate modification times differ after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
     return git_text(temporary_root, "write-tree")
 
 
