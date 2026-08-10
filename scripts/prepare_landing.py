@@ -111,6 +111,7 @@ class NestedGitSnapshot:
     object_inventory_count: int
     object_inventory_digest: str
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
+    worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -137,6 +138,16 @@ class NestedGitSnapshot:
             "object_inventory_digest": self.object_inventory_digest,
             "worktree_hardlink_groups": [
                 list(group) for group in self.worktree_hardlink_groups
+            ],
+            "worktree_xattrs": [
+                [
+                    path,
+                    [
+                        [name, len(value), sha256_bytes(value)]
+                        for name, value in attributes
+                    ],
+                ]
+                for path, attributes in self.worktree_xattrs
             ],
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
@@ -1122,6 +1133,82 @@ def _nonportable_worktree_ownership(
     return tuple(mismatches)
 
 
+def _worktree_xattr_state(
+    path: Path,
+    candidate_paths: Sequence[str],
+    directory_paths: Sequence[str],
+) -> tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]:
+    state: list[tuple[str, tuple[tuple[str, bytes], ...]]] = []
+    for raw in (".", *sorted(set((*candidate_paths, *directory_paths)))):
+        candidate = path if raw == "." else path / checked_relative_path(raw)
+        try:
+            names = sorted(
+                os.listxattr(candidate, follow_symlinks=False),
+                key=os.fsencode,
+            )
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise PreparationFailure(
+                f"cannot inspect nested checkout extended attributes: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={"path": raw, "error": str(exc)},
+            ) from exc
+        attributes: list[tuple[str, bytes]] = []
+        for name in names:
+            try:
+                value = os.getxattr(
+                    candidate,
+                    name,
+                    follow_symlinks=False,
+                )
+            except OSError as exc:
+                raise PreparationFailure(
+                    f"cannot read nested checkout extended attribute: {candidate}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={"path": raw, "attribute": name, "error": str(exc)},
+                ) from exc
+            attributes.append((name, value))
+        if attributes:
+            state.append((raw, tuple(attributes)))
+    return tuple(state)
+
+
+def _restore_worktree_xattrs(
+    path: Path,
+    candidate_paths: Sequence[str],
+    directory_paths: Sequence[str],
+    expected_state: Sequence[tuple[str, Sequence[tuple[str, bytes]]]],
+) -> None:
+    expected_by_path = {
+        raw: dict(attributes) for raw, attributes in expected_state
+    }
+    for raw in (".", *sorted(set((*candidate_paths, *directory_paths)))):
+        candidate = path if raw == "." else path / checked_relative_path(raw)
+        if not candidate.exists():
+            continue
+        expected = expected_by_path.get(raw, {})
+        try:
+            observed_names = set(os.listxattr(candidate, follow_symlinks=False))
+            for name in sorted(observed_names - expected.keys(), key=os.fsencode):
+                os.removexattr(candidate, name, follow_symlinks=False)
+            for name, value in sorted(expected.items(), key=lambda row: os.fsencode(row[0])):
+                if (
+                    name not in observed_names
+                    or os.getxattr(candidate, name, follow_symlinks=False) != value
+                ):
+                    os.setxattr(candidate, name, value, follow_symlinks=False)
+        except OSError as exc:
+            raise PreparationFailure(
+                f"cannot restore nested checkout extended attributes: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={"path": raw, "error": str(exc)},
+            ) from exc
+
+
 def _restore_worktree_hardlinks(
     path: Path,
     groups: Sequence[Sequence[str]],
@@ -1730,10 +1817,11 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         )
     paths = tracked_paths(path)
     candidate_untracked_paths = untracked_paths(path)
+    candidate_directories = candidate_directory_paths(path)
     nonportable_worktree_ownership = _nonportable_worktree_ownership(
         path,
         (*paths, *candidate_untracked_paths),
-        candidate_directory_paths(path),
+        candidate_directories,
     )
     if nonportable_worktree_ownership:
         raise PreparationFailure(
@@ -1790,6 +1878,20 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             details={"filter_attribute_sources": list(filter_attribute_sources)},
         )
     candidate = capture_candidate_snapshot(path)
+    if (
+        candidate.untracked_paths != candidate_untracked_paths
+        or candidate.directories != candidate_directories
+    ):
+        raise PreparationFailure(
+            "nested checkout candidate changed during snapshot capture",
+            failure_type="candidate_snapshot_changed",
+            action_class="retry_same_candidate",
+        )
+    worktree_xattrs = _worktree_xattr_state(
+        path,
+        (*paths, *candidate_untracked_paths),
+        candidate_directories,
+    )
     origin_head, git_refs = _git_ref_state(path)
     reflog_root_mode, reflog_directories, reflog_files = _reflog_state(path)
     object_inventory_count, object_inventory_digest = _git_object_inventory(path)
@@ -1809,6 +1911,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         object_inventory_count=object_inventory_count,
         object_inventory_digest=object_inventory_digest,
         worktree_hardlink_groups=worktree_hardlink_groups,
+        worktree_xattrs=worktree_xattrs,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -2194,6 +2297,25 @@ def copy_untracked_candidate(
                         action_class="code_fix",
                     )
                 restore_tracked_worktree_modes(source, destination, nested.tracked_paths)
+                _restore_reflog_state(destination, nested)
+                destination.chmod(nested.root_mode)
+                _restore_worktree_xattrs(
+                    destination,
+                    (*nested.tracked_paths, *nested.candidate.untracked_paths),
+                    nested.candidate.directories,
+                    nested.worktree_xattrs,
+                )
+                observed_xattrs = _worktree_xattr_state(
+                    destination,
+                    (*nested.tracked_paths, *nested.candidate.untracked_paths),
+                    nested.candidate.directories,
+                )
+                if observed_xattrs != nested.worktree_xattrs:
+                    raise PreparationFailure(
+                        "nested checkout extended attributes differ after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
                 observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
                 if observed_digest != nested.tracked_worktree_digest:
                     raise PreparationFailure(
@@ -2208,8 +2330,6 @@ def copy_untracked_candidate(
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
-                _restore_reflog_state(destination, nested)
-                destination.chmod(nested.root_mode)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",

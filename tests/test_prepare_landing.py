@@ -807,6 +807,43 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["nonportable_worktree_ownership"][0],
             )
 
+    def test_nested_materialization_preserves_extended_attributes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            try:
+                os.setxattr(
+                    tracked,
+                    "user.aoa-kag-test",
+                    b"bound metadata",
+                    follow_symlinks=False,
+                )
+            except OSError as exc:
+                self.skipTest(f"extended attributes unavailable: {exc}")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_tracked = isolated / ".validator" / "validator.txt"
+
+            self.assertEqual(
+                b"bound metadata",
+                os.getxattr(
+                    isolated_tracked,
+                    "user.aoa-kag-test",
+                    follow_symlinks=False,
+                ),
+            )
+
     def test_nested_materialization_preserves_intent_to_add(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
