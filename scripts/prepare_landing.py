@@ -1264,10 +1264,12 @@ def _restore_reflog_state(path: Path, expected: NestedGitSnapshot) -> None:
             )
         shutil.rmtree(root)
     if expected.reflog_root_mode is not None:
-        root.mkdir(mode=expected.reflog_root_mode)
-        for relative, mode in expected.reflog_directories:
+        root.mkdir(mode=0o700)
+        root.chmod(0o700)
+        for relative, _mode in expected.reflog_directories:
             directory = root / checked_relative_path(relative)
-            directory.mkdir(mode=mode, parents=True, exist_ok=False)
+            directory.mkdir(mode=0o700, parents=True, exist_ok=False)
+            directory.chmod(0o700)
         for relative, mode, content in expected.reflog_files:
             destination = root / checked_relative_path(relative)
             destination.write_bytes(content)

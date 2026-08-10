@@ -646,6 +646,38 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing._reflog_state(isolated / ".validator"),
             )
 
+    def test_nested_materialization_defers_restrictive_reflog_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            source_refs = prepare_landing._reflog_root(nested) / "refs"
+            source_refs.chmod(0o555)
+            isolated_refs: Path | None = None
+            try:
+                snapshot = prepare_landing.capture_candidate_snapshot(repo)
+                isolated = Path(work_tmp) / "isolated"
+                git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+                prepare_landing.materialize_candidate(repo, isolated, snapshot)
+                isolated_nested = isolated / ".validator"
+                isolated_refs = prepare_landing._reflog_root(isolated_nested) / "refs"
+
+                self.assertEqual(
+                    prepare_landing._reflog_state(nested),
+                    prepare_landing._reflog_state(isolated_nested),
+                )
+                self.assertEqual(0o555, stat.S_IMODE(isolated_refs.lstat().st_mode))
+            finally:
+                source_refs.chmod(0o755)
+                if isolated_refs is not None and isolated_refs.exists():
+                    isolated_refs.chmod(0o755)
+
     def test_nested_materialization_preserves_intent_to_add(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
