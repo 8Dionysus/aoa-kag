@@ -1007,6 +1007,46 @@ class PrepareLandingTests(unittest.TestCase):
                 ).returncode,
             )
 
+    def test_nested_snapshot_preserves_raw_local_config(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            config = nested / ".git" / "config"
+            config.write_bytes(
+                config.read_bytes() + b"\n# validator-visible raw config comment\n"
+            )
+            raw_config = config.read_bytes()
+            nested_snapshot = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(nested_snapshot)
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            isolated_config = (isolated / ".validator" / ".git" / "config").read_bytes()
+            assert nested_snapshot is not None
+            self.assertEqual(raw_config, nested_snapshot.local_config_bytes)
+            self.assertEqual(nested_snapshot.isolated_config_bytes, isolated_config)
+            self.assertIn(b"# validator-visible raw config comment\n", isolated_config)
+            config.write_bytes(raw_config + b"# concurrent comment-only change\n")
+            changed = prepare_landing._nested_git_snapshot(nested)
+            self.assertIsNotNone(changed)
+            assert changed is not None
+            self.assertNotEqual(nested_snapshot.identity(), changed.identity())
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.require_nested_git_snapshot_unchanged(
+                    nested,
+                    nested_snapshot,
+                )
+            self.assertEqual("candidate_snapshot_changed", raised.exception.failure_type)
+
     def test_snapshot_rejects_effective_url_rewrites(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             root = Path(repo_tmp)

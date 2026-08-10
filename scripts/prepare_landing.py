@@ -133,6 +133,9 @@ class NestedGitSnapshot:
     shallow_boundaries: tuple[str, ...]
     local_config: tuple[tuple[str, str], ...]
     remote_config: tuple[tuple[str, str], ...]
+    local_config_mode: int
+    local_config_bytes: bytes
+    isolated_config_bytes: bytes
     reflog_root_mode: int | None
     reflog_directories: tuple[tuple[str, int], ...]
     reflog_files: tuple[tuple[str, int, bytes], ...]
@@ -183,6 +186,15 @@ class NestedGitSnapshot:
             "shallow_boundaries": list(self.shallow_boundaries),
             "local_config": [list(row) for row in self.local_config],
             "remote_config": [list(row) for row in self.remote_config],
+            "local_config_mode": self.local_config_mode,
+            "local_config_bytes": [
+                len(self.local_config_bytes),
+                sha256_bytes(self.local_config_bytes),
+            ],
+            "isolated_config_bytes": [
+                len(self.isolated_config_bytes),
+                sha256_bytes(self.isolated_config_bytes),
+            ],
             "reflog_root_mode": self.reflog_root_mode,
             "reflog_directories": [list(row) for row in self.reflog_directories],
             "reflog_files": [
@@ -791,20 +803,111 @@ def _neutralized_remote_config(
     )
 
 
-def _restore_portable_local_config(path: Path, expected: NestedGitSnapshot) -> None:
-    observed = _local_config_rows(path)
-    for key in sorted(
-        {
-            key
-            for key, _value in observed
-            if key not in ISOLATION_LOCAL_CONFIG_KEYS
-        }
-    ):
-        git_bytes(path, "config", "--local", "--unset-all", key)
-    for key, value in expected.local_config:
-        git_bytes(path, "config", "--local", "--add", key, value)
-    for key, value in _neutralized_remote_config(expected.remote_config):
-        git_bytes(path, "config", "--local", "--add", key, value)
+def _git_local_config_state(path: Path) -> tuple[int, bytes]:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    raw_config_path = Path(git_text(path, "rev-parse", "--git-path", "config"))
+    if not raw_config_path.is_absolute():
+        raw_config_path = path / raw_config_path
+    config_path = Path(os.path.abspath(raw_config_path))
+    try:
+        config_path.relative_to(git_dir)
+    except ValueError as exc:
+        raise PreparationFailure(
+            f"nested checkout config is outside its Git directory: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"config_path": config_path.as_posix()},
+        ) from exc
+    try:
+        metadata = config_path.lstat()
+    except FileNotFoundError as exc:
+        raise PreparationFailure(
+            f"nested checkout config is missing: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        ) from exc
+    if not stat.S_ISREG(metadata.st_mode):
+        raise PreparationFailure(
+            f"nested checkout config is not a regular file: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"config_path": config_path.as_posix()},
+        )
+    return stat.S_IMODE(metadata.st_mode), config_path.read_bytes()
+
+
+def _neutralized_local_config_bytes(
+    path: Path,
+    config_bytes: bytes,
+    remote_config: Sequence[tuple[str, str]],
+) -> bytes:
+    url_keys = tuple(
+        sorted({key for key, _value in remote_config if key.endswith(".url")})
+    )
+    with tempfile.TemporaryDirectory(prefix=".aoa-kag-neutral-config-") as temp_dir:
+        config_path = Path(temp_dir) / "config"
+        config_path.write_bytes(config_bytes)
+        replacements = (
+            *((key, ".") for key in url_keys),
+            ("core.hookspath", "/dev/null"),
+            ("core.fsmonitor", "false"),
+        )
+        for key, value in replacements:
+            result = subprocess.run(
+                (
+                    "git",
+                    "config",
+                    "--file",
+                    config_path.as_posix(),
+                    "--replace-all",
+                    key,
+                    value,
+                ),
+                cwd=path,
+                check=False,
+                capture_output=True,
+            )
+            if result.returncode != 0:
+                raise PreparationFailure(
+                    f"cannot isolate nested checkout local config: {path}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={
+                        "config_key": key,
+                        "stderr": result.stderr.decode(
+                            "utf-8", errors="replace"
+                        ).strip(),
+                    },
+                )
+        return config_path.read_bytes()
+
+
+def _require_local_config_state_match(
+    path: Path,
+    expected: NestedGitSnapshot,
+) -> None:
+    observed = _git_local_config_state(path)
+    wanted = (expected.local_config_mode, expected.isolated_config_bytes)
+    if observed != wanted:
+        raise PreparationFailure(
+            "nested checkout raw local config differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "expected_digest": sha256_bytes(expected.isolated_config_bytes),
+                "actual_digest": sha256_bytes(observed[1]),
+            },
+        )
+
+
+def _restore_local_config_state(path: Path, expected: NestedGitSnapshot) -> None:
+    raw_config_path = Path(git_text(path, "rev-parse", "--git-path", "config"))
+    if not raw_config_path.is_absolute():
+        raw_config_path = path / raw_config_path
+    config_path = Path(os.path.abspath(raw_config_path))
+    config_path.write_bytes(expected.isolated_config_bytes)
+    config_path.chmod(expected.local_config_mode)
+    _require_local_config_state_match(path, expected)
     if _portable_local_config(path) != expected.local_config:
         raise PreparationFailure(
             "nested checkout portable local config differs after isolation",
@@ -2828,6 +2931,20 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     index_mode, index_bytes = _git_index_state(path)
     object_inventory_count, object_inventory_digest = _git_object_inventory(path)
     object_storage_state = _git_object_storage_state(path)
+    local_config_mode, local_config_bytes = _git_local_config_state(path)
+    local_config = _portable_local_config(path)
+    remote_config = _remote_local_config(path)
+    if _git_local_config_state(path) != (local_config_mode, local_config_bytes):
+        raise PreparationFailure(
+            "nested checkout local config changed during snapshot capture",
+            failure_type="candidate_snapshot_changed",
+            action_class="retry_same_candidate",
+        )
+    isolated_config_bytes = _neutralized_local_config_bytes(
+        path,
+        local_config_bytes,
+        remote_config,
+    )
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
@@ -2841,8 +2958,11 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         packed_refs_mode=packed_refs_mode,
         packed_refs_bytes=packed_refs_bytes,
         shallow_boundaries=_shallow_boundaries(path),
-        local_config=_portable_local_config(path),
-        remote_config=_remote_local_config(path),
+        local_config=local_config,
+        remote_config=remote_config,
+        local_config_mode=local_config_mode,
+        local_config_bytes=local_config_bytes,
+        isolated_config_bytes=isolated_config_bytes,
         reflog_root_mode=reflog_root_mode,
         reflog_directories=reflog_directories,
         reflog_files=reflog_files,
@@ -3261,15 +3381,7 @@ def copy_untracked_candidate(
                     destination,
                     nested.object_storage_state,
                 )
-                git_bytes(
-                    destination,
-                    "config",
-                    "--local",
-                    "core.hooksPath",
-                    "/dev/null",
-                )
-                git_bytes(destination, "config", "--local", "core.fsmonitor", "false")
-                _restore_portable_local_config(destination, nested)
+                _restore_local_config_state(destination, nested)
                 _restore_git_ref_state(destination, nested)
                 if _shallow_boundaries(destination) != nested.shallow_boundaries:
                     raise PreparationFailure(
@@ -3368,6 +3480,7 @@ def copy_untracked_candidate(
                     destination,
                     nested.git_admin_security_label,
                 )
+                _require_local_config_state_match(destination, nested)
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
