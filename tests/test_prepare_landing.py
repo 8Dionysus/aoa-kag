@@ -797,6 +797,39 @@ class PrepareLandingTests(unittest.TestCase):
                 (isolated_nested / "second.txt").read_text(encoding="utf-8"),
             )
 
+    def test_nested_hardlinks_are_rebuilt_before_readonly_directory_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            readonly = nested / "readonly"
+            readonly.mkdir()
+            first = readonly / "first.txt"
+            second = readonly / "second.txt"
+            candidate = readonly / "candidate.txt"
+            first.write_text("shared\n", encoding="utf-8")
+            os.link(first, second)
+            git(nested, "add", "readonly/first.txt", "readonly/second.txt")
+            git(nested, "commit", "-qm", "nested readonly hardlinks")
+            os.link(first, candidate)
+            readonly.chmod(0o555)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_readonly = isolated / ".validator" / "readonly"
+            inodes = {
+                (isolated_readonly / name).lstat().st_ino
+                for name in ("candidate.txt", "first.txt", "second.txt")
+            }
+
+            self.assertEqual(1, len(inodes))
+            self.assertEqual(0o555, stat.S_IMODE(isolated_readonly.stat().st_mode))
+
     def test_snapshot_rejects_worktree_hardlinks_outside_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

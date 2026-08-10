@@ -2370,7 +2370,12 @@ def copy_untracked_candidate(
                 git_bytes(destination, *checkout_args)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
-                materialize_nested_candidate(source, destination, nested.candidate)
+                directory_modes = materialize_nested_candidate(
+                    source,
+                    destination,
+                    nested.candidate,
+                    restore_directory_modes=False,
+                )
                 _restore_worktree_hardlinks(
                     destination,
                     nested.worktree_hardlink_groups,
@@ -2385,6 +2390,7 @@ def copy_untracked_candidate(
                         failure_type="candidate_snapshot_invalid",
                         action_class="code_fix",
                     )
+                restore_candidate_directory_modes(directory_modes)
                 git_bytes(
                     destination,
                     "update-index",
@@ -2455,7 +2461,9 @@ def create_candidate_directories(
     source_root: Path,
     destination_root: Path,
     paths: Sequence[str],
-) -> None:
+    *,
+    restore_modes: bool = True,
+) -> tuple[tuple[Path, int], ...]:
     captured_modes: list[tuple[Path, int]] = []
     for raw in paths:
         relative = checked_relative_path(raw)
@@ -2470,6 +2478,15 @@ def create_candidate_directories(
         destination = destination_root / relative
         destination.mkdir(parents=True, exist_ok=True)
         captured_modes.append((destination, stat.S_IMODE(metadata.st_mode)))
+    captured = tuple(captured_modes)
+    if restore_modes:
+        restore_candidate_directory_modes(captured)
+    return captured
+
+
+def restore_candidate_directory_modes(
+    captured_modes: Sequence[tuple[Path, int]],
+) -> None:
     for destination, mode in reversed(captured_modes):
         destination.chmod(mode)
 
@@ -2478,7 +2495,9 @@ def materialize_nested_candidate(
     source_root: Path,
     destination_root: Path,
     snapshot: CandidateSnapshot,
-) -> None:
+    *,
+    restore_directory_modes: bool = True,
+) -> tuple[tuple[Path, int], ...]:
     cached_patch = candidate_cached_patch(source_root)
     if cached_patch:
         git_bytes(
@@ -2515,10 +2534,11 @@ def materialize_nested_candidate(
             relative.as_posix(),
         )
     copy_untracked_candidate(source_root, destination_root, snapshot.untracked_paths)
-    create_candidate_directories(
+    directory_modes = create_candidate_directories(
         source_root,
         destination_root,
         snapshot.directories,
+        restore_modes=restore_directory_modes,
     )
     observed_tree = git_text(destination_root, "write-tree")
     if observed_tree != snapshot.index_tree:
@@ -2531,6 +2551,7 @@ def materialize_nested_candidate(
                 "actual_index_tree": observed_tree,
             },
         )
+    return directory_modes
 
 
 def restore_tracked_worktree_modes(
