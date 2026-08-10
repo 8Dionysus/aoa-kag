@@ -134,10 +134,11 @@ class RepoValidationWorkflowTests(unittest.TestCase):
 
         self.assertIn('AOA_KAG_CHECKOUT_WORKERS: "3"', release_audit)
         self.assertIn("inputs.preflight_mode || 'candidate'", release_audit)
-        self.assertIn(
-            "inputs.history_ref || github.event.pull_request.base.sha || github.sha",
-            workflow_text,
+        history_ref_expression = (
+            "inputs.history_ref || github.event.pull_request.base.sha || "
+            "github.event.before || github.sha"
         )
+        self.assertEqual(4, workflow_text.count(history_ref_expression))
         source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
             "  release_audit:\n",
             1,
