@@ -481,6 +481,10 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing._portable_local_config(nested),
                 prepare_landing._portable_local_config(isolated / ".validator"),
             )
+            self.assertEqual(
+                prepare_landing._reflog_state(nested),
+                prepare_landing._reflog_state(isolated / ".validator"),
+            )
             self.assertNotEqual(first.identity(), second.identity())
 
     def test_snapshot_preserves_nested_origin_default_ref(self) -> None:
@@ -506,16 +510,6 @@ class PrepareLandingTests(unittest.TestCase):
                 "refs/remotes/origin/HEAD",
                 "refs/remotes/origin/main",
             )
-            git(nested, "config", "remote.origin.url", "https://example.invalid/owner.git")
-            git(
-                nested,
-                "config",
-                "remote.origin.fetch",
-                "+refs/heads/main:refs/remotes/origin/main",
-            )
-            git(nested, "config", "branch.feature.remote", "origin")
-            git(nested, "config", "branch.feature.merge", "refs/heads/feature")
-
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
             isolated = Path(work_tmp) / "isolated"
             git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
@@ -539,6 +533,84 @@ class PrepareLandingTests(unittest.TestCase):
                 git(isolated_nested, "rev-parse", "refs/remotes/origin/HEAD")
                 .decode()
                 .strip(),
+            )
+
+    def test_materialization_neutralizes_nested_remote_transport(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(nested, "branch", "-M", "main")
+            remote = Path(work_tmp) / "remote"
+            remote.mkdir()
+            git(remote, "init", "-q")
+            git(remote, "config", "user.email", "test@example.invalid")
+            git(remote, "config", "user.name", "Remote Test")
+            (remote / "remote.txt").write_text("base\n", encoding="utf-8")
+            git(remote, "add", ".")
+            git(remote, "commit", "-qm", "remote base")
+            git(remote, "branch", "-M", "main")
+            git(nested, "config", "remote.origin.url", remote.as_posix())
+            git(
+                nested,
+                "config",
+                "remote.origin.fetch",
+                "+refs/heads/main:refs/remotes/origin/main",
+            )
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            (remote / "remote.txt").write_text("after snapshot\n", encoding="utf-8")
+            git(remote, "commit", "-qam", "remote after snapshot")
+            external_commit = git(remote, "rev-parse", "HEAD").decode().strip()
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+            git(isolated_nested, "fetch", "origin")
+
+            self.assertEqual(
+                b".\n",
+                git(isolated_nested, "config", "--local", "remote.origin.url"),
+            )
+            self.assertNotEqual(
+                0,
+                subprocess.run(
+                    ("git", "cat-file", "-e", f"{external_commit}^{{commit}}"),
+                    cwd=isolated_nested,
+                    check=False,
+                    capture_output=True,
+                ).returncode,
+            )
+
+    def test_nested_materialization_preserves_reflogs(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("first\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested first")
+            tracked.write_text("second\n", encoding="utf-8")
+            git(nested, "commit", "-qam", "nested second")
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(
+                prepare_landing._reflog_state(nested),
+                prepare_landing._reflog_state(isolated / ".validator"),
             )
 
     def test_nested_materialization_preserves_intent_to_add(self) -> None:
@@ -848,6 +920,7 @@ class PrepareLandingTests(unittest.TestCase):
                 f"file://{source.resolve().as_posix()}",
                 nested.as_posix(),
             )
+            git(nested, "remote", "remove", "origin")
 
             snapshot = prepare_landing.capture_candidate_snapshot(repo)
             isolated = Path(work_tmp) / "isolated"

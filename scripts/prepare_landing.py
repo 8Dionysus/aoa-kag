@@ -62,8 +62,9 @@ PORTABLE_LOCAL_CONFIG_KEYS = frozenset(
         "user.name",
     }
 )
-PORTABLE_LOCAL_CONFIG_PREFIXES = ("branch.", "remote.")
+PORTABLE_LOCAL_CONFIG_PREFIXES = ("branch.",)
 ISOLATION_LOCAL_CONFIG_KEYS = frozenset({"core.fsmonitor", "core.hookspath"})
+PORTABLE_REMOTE_CONFIG_SUFFIXES = (".url", ".fetch")
 
 
 @dataclass(frozen=True)
@@ -102,6 +103,10 @@ class NestedGitSnapshot:
     git_refs: tuple[tuple[str, str], ...]
     shallow_boundaries: tuple[str, ...]
     local_config: tuple[tuple[str, str], ...]
+    remote_config: tuple[tuple[str, str], ...]
+    reflog_root_mode: int | None
+    reflog_directories: tuple[tuple[str, int], ...]
+    reflog_files: tuple[tuple[str, int, bytes], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -116,6 +121,13 @@ class NestedGitSnapshot:
             "git_refs": [list(row) for row in self.git_refs],
             "shallow_boundaries": list(self.shallow_boundaries),
             "local_config": [list(row) for row in self.local_config],
+            "remote_config": [list(row) for row in self.remote_config],
+            "reflog_root_mode": self.reflog_root_mode,
+            "reflog_directories": [list(row) for row in self.reflog_directories],
+            "reflog_files": [
+                [path, mode, len(content), sha256_bytes(content)]
+                for path, mode, content in self.reflog_files
+            ],
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -446,7 +458,7 @@ def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
     return tuple(value for value in values if value.strip().lower() not in disabled)
 
 
-def _portable_local_config(path: Path) -> tuple[tuple[str, str], ...]:
+def _local_config_rows(path: Path) -> tuple[tuple[str, str], ...]:
     rows: list[tuple[str, str]] = []
     for entry in git_bytes(path, "config", "--local", "--null", "--list").split(b"\0"):
         if not entry:
@@ -464,6 +476,11 @@ def _portable_local_config(path: Path) -> tuple[tuple[str, str], ...]:
                 raw_value.decode("utf-8", errors="surrogateescape"),
             )
         )
+    return tuple(rows)
+
+
+def _portable_local_config(path: Path) -> tuple[tuple[str, str], ...]:
+    rows = _local_config_rows(path)
     unsupported = tuple(
         sorted(
             {
@@ -471,6 +488,7 @@ def _portable_local_config(path: Path) -> tuple[tuple[str, str], ...]:
                 for key, _value in rows
                 if key not in PORTABLE_LOCAL_CONFIG_KEYS
                 and key not in ISOLATION_LOCAL_CONFIG_KEYS
+                and not key.startswith("remote.")
                 and not key.startswith(PORTABLE_LOCAL_CONFIG_PREFIXES)
             }
         )
@@ -482,14 +500,77 @@ def _portable_local_config(path: Path) -> tuple[tuple[str, str], ...]:
             action_class="code_fix",
             details={"unsupported_local_config_keys": list(unsupported)},
         )
-    return tuple(row for row in rows if row[0] not in ISOLATION_LOCAL_CONFIG_KEYS)
+    return tuple(
+        row
+        for row in rows
+        if row[0] not in ISOLATION_LOCAL_CONFIG_KEYS
+        and not row[0].startswith("remote.")
+    )
+
+
+def _remote_local_config(path: Path) -> tuple[tuple[str, str], ...]:
+    rows = tuple(
+        row for row in _local_config_rows(path) if row[0].startswith("remote.")
+    )
+    unsupported = tuple(
+        sorted(
+            {
+                key
+                for key, _value in rows
+                if not key.endswith(PORTABLE_REMOTE_CONFIG_SUFFIXES)
+            }
+        )
+    )
+    if unsupported:
+        raise PreparationFailure(
+            f"nested checkout has unsupported remote Git configuration: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"unsupported_remote_config_keys": list(unsupported)},
+        )
+    nonlocal_remote = tuple(
+        sorted(
+            {
+                (scope, key)
+                for scope, key, _value in _effective_git_config(
+                    path, include_remote=True
+                )
+                if key.startswith("remote.") and scope != "local"
+            }
+        )
+    )
+    if nonlocal_remote:
+        raise PreparationFailure(
+            f"nested checkout has nonlocal remote Git configuration: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"nonlocal_remote_config": [list(row) for row in nonlocal_remote]},
+        )
+    return rows
+
+
+def _neutralized_remote_config(
+    remote_config: Sequence[tuple[str, str]],
+) -> tuple[tuple[str, str], ...]:
+    return tuple(
+        (key, "." if key.endswith(".url") else value)
+        for key, value in remote_config
+    )
 
 
 def _restore_portable_local_config(path: Path, expected: NestedGitSnapshot) -> None:
-    observed = _portable_local_config(path)
-    for key in sorted({key for key, _value in observed}):
+    observed = _local_config_rows(path)
+    for key in sorted(
+        {
+            key
+            for key, _value in observed
+            if key not in ISOLATION_LOCAL_CONFIG_KEYS
+        }
+    ):
         git_bytes(path, "config", "--local", "--unset-all", key)
     for key, value in expected.local_config:
+        git_bytes(path, "config", "--local", "--add", key, value)
+    for key, value in _neutralized_remote_config(expected.remote_config):
         git_bytes(path, "config", "--local", "--add", key, value)
     if _portable_local_config(path) != expected.local_config:
         raise PreparationFailure(
@@ -497,9 +578,21 @@ def _restore_portable_local_config(path: Path, expected: NestedGitSnapshot) -> N
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
+    observed_remote = _remote_local_config(path)
+    wanted_remote = _neutralized_remote_config(expected.remote_config)
+    if observed_remote != wanted_remote:
+        raise PreparationFailure(
+            "nested checkout remote config is not neutralized after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
 
 
-def _effective_git_config(path: Path) -> tuple[tuple[str, str, str], ...]:
+def _effective_git_config(
+    path: Path,
+    *,
+    include_remote: bool = False,
+) -> tuple[tuple[str, str, str], ...]:
     parts = git_bytes(path, "config", "--null", "--show-scope", "--list").split(b"\0")
     if parts and not parts[-1]:
         parts.pop()
@@ -522,6 +615,8 @@ def _effective_git_config(path: Path) -> tuple[tuple[str, str, str], ...]:
         key = raw_key.decode("utf-8", errors="surrogateescape")
         value = raw_value.decode("utf-8", errors="surrogateescape")
         if key in ISOLATION_LOCAL_CONFIG_KEYS:
+            continue
+        if key.startswith("remote.") and not include_remote:
             continue
         rows.append((scope, key, value))
     return tuple(rows)
@@ -912,6 +1007,112 @@ def _registered_worktree_paths(path: Path) -> tuple[str, ...]:
     return worktrees
 
 
+def _reflog_root(path: Path) -> Path:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    raw_root = Path(git_text(path, "rev-parse", "--git-path", "logs"))
+    root = raw_root if raw_root.is_absolute() else path / raw_root
+    resolved = root.resolve(strict=False)
+    if resolved != git_dir / "logs":
+        raise PreparationFailure(
+            f"nested checkout reflog storage escapes its Git directory: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"reflog_root": root.as_posix()},
+        )
+    return root
+
+
+def _reflog_state(
+    path: Path,
+) -> tuple[
+    int | None,
+    tuple[tuple[str, int], ...],
+    tuple[tuple[str, int, bytes], ...],
+]:
+    root = _reflog_root(path)
+    if not root.exists() and not root.is_symlink():
+        return None, (), ()
+    root_metadata = root.lstat()
+    if not stat.S_ISDIR(root_metadata.st_mode) or stat.S_ISLNK(root_metadata.st_mode):
+        raise PreparationFailure(
+            f"nested checkout has unsupported reflog root: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    directories: list[tuple[str, int]] = []
+    files: list[tuple[str, int, bytes]] = []
+
+    def visit(directory: Path) -> None:
+        for child in sorted(directory.iterdir(), key=lambda item: os.fsencode(item.name)):
+            relative = child.relative_to(root).as_posix()
+            checked_relative_path(relative)
+            metadata = child.lstat()
+            if stat.S_ISLNK(metadata.st_mode):
+                raise PreparationFailure(
+                    f"nested checkout reflog tree contains a symlink: {path}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={"reflog_path": relative},
+                )
+            mode = stat.S_IMODE(metadata.st_mode)
+            if stat.S_ISDIR(metadata.st_mode):
+                directories.append((relative, mode))
+                visit(child)
+            elif stat.S_ISREG(metadata.st_mode):
+                files.append((relative, mode, child.read_bytes()))
+            else:
+                raise PreparationFailure(
+                    f"nested checkout reflog tree has an unsupported entry: {path}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={"reflog_path": relative},
+                )
+
+    visit(root)
+    return (
+        stat.S_IMODE(root_metadata.st_mode),
+        tuple(directories),
+        tuple(files),
+    )
+
+
+def _restore_reflog_state(path: Path, expected: NestedGitSnapshot) -> None:
+    root = _reflog_root(path)
+    if root.exists() or root.is_symlink():
+        metadata = root.lstat()
+        if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+            raise PreparationFailure(
+                "nested checkout reflog root changed type during isolation",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        shutil.rmtree(root)
+    if expected.reflog_root_mode is not None:
+        root.mkdir(mode=expected.reflog_root_mode)
+        for relative, mode in expected.reflog_directories:
+            directory = root / checked_relative_path(relative)
+            directory.mkdir(mode=mode, parents=True, exist_ok=False)
+        for relative, mode, content in expected.reflog_files:
+            destination = root / checked_relative_path(relative)
+            destination.write_bytes(content)
+            destination.chmod(mode)
+        for relative, mode in reversed(expected.reflog_directories):
+            (root / checked_relative_path(relative)).chmod(mode)
+        root.chmod(expected.reflog_root_mode)
+    restored = _reflog_state(path)
+    wanted = (
+        expected.reflog_root_mode,
+        expected.reflog_directories,
+        expected.reflog_files,
+    )
+    if restored != wanted:
+        raise PreparationFailure(
+            "nested checkout reflogs differ after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -1173,6 +1374,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         )
     candidate = capture_candidate_snapshot(path)
     origin_head, git_refs = _git_ref_state(path)
+    reflog_root_mode, reflog_directories, reflog_files = _reflog_state(path)
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
@@ -1181,6 +1383,10 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         git_refs=git_refs,
         shallow_boundaries=_shallow_boundaries(path),
         local_config=_portable_local_config(path),
+        remote_config=_remote_local_config(path),
+        reflog_root_mode=reflog_root_mode,
+        reflog_directories=reflog_directories,
+        reflog_files=reflog_files,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -1549,6 +1755,7 @@ def copy_untracked_candidate(
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
+                _restore_reflog_state(destination, nested)
                 destination.chmod(nested.root_mode)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
