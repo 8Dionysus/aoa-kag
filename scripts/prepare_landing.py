@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import errno
 import hashlib
 import json
 import os
@@ -1212,6 +1213,62 @@ def _git_admin_portability_issues(
     return tuple(ownership), tuple(symlinks)
 
 
+def _git_admin_lock_paths(path: Path) -> tuple[str, ...]:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    locks: list[str] = []
+    for candidate in sorted(
+        git_dir.rglob("*"),
+        key=lambda item: os.fsencode(item.relative_to(git_dir).as_posix()),
+    ):
+        if candidate.name.endswith(".lock"):
+            locks.append(candidate.relative_to(git_dir).as_posix())
+    return tuple(locks)
+
+
+def _file_has_sparse_extents(path: Path, metadata: os.stat_result) -> bool:
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_size == 0:
+        return False
+    if metadata.st_blocks * 512 < metadata.st_size:
+        return True
+    if not hasattr(os, "SEEK_DATA") or not hasattr(os, "SEEK_HOLE"):
+        return False
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        try:
+            first_data = os.lseek(descriptor, 0, os.SEEK_DATA)
+        except OSError as exc:
+            if exc.errno == errno.ENXIO:
+                return True
+            if exc.errno in (errno.EINVAL, errno.ENOTSUP, errno.ENOSYS, errno.ENODEV):
+                return False
+            raise
+        try:
+            first_hole = os.lseek(descriptor, 0, os.SEEK_HOLE)
+        except OSError as exc:
+            if exc.errno in (errno.EINVAL, errno.ENOTSUP, errno.ENOSYS, errno.ENODEV):
+                return False
+            raise
+        return first_data > 0 or first_hole < metadata.st_size
+    finally:
+        os.close(descriptor)
+
+
+def _sparse_worktree_paths(
+    path: Path,
+    candidate_paths: Sequence[str],
+) -> tuple[str, ...]:
+    sparse: list[str] = []
+    for raw in sorted(set(candidate_paths)):
+        candidate = path / checked_relative_path(raw)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        if _file_has_sparse_extents(candidate, metadata):
+            sparse.append(raw)
+    return tuple(sparse)
+
+
 def _worktree_hardlink_groups(
     path: Path,
     candidate_paths: Sequence[str],
@@ -2111,6 +2168,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"git_admin_symlinks": list(git_admin_symlinks)},
         )
+    git_admin_locks = _git_admin_lock_paths(path)
+    if git_admin_locks:
+        raise PreparationFailure(
+            f"nested checkout contains active Git administration locks: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"git_admin_lock_paths": list(git_admin_locks)},
+        )
     implicit_rule_sources = _implicit_rule_sources()
     if implicit_rule_sources:
         raise PreparationFailure(
@@ -2282,6 +2347,17 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
                     nonportable_worktree_ownership
                 )
             },
+        )
+    sparse_worktree_paths = _sparse_worktree_paths(
+        path,
+        (*paths, *candidate_untracked_paths),
+    )
+    if sparse_worktree_paths:
+        raise PreparationFailure(
+            f"nested checkout contains sparse file extents isolation cannot preserve: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"sparse_worktree_paths": list(sparse_worktree_paths)},
         )
     worktree_hardlink_groups = _worktree_hardlink_groups(
         path,

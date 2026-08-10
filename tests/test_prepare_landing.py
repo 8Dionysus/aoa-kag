@@ -827,6 +827,63 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["restrictive_git_admin_directory_modes"],
             )
 
+    def test_snapshot_rejects_nested_git_administration_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            config_path = Path(
+                git(nested, "rev-parse", "--git-path", "config").decode().strip()
+            )
+            if not config_path.is_absolute():
+                config_path = nested / config_path
+            lock = config_path.with_name(config_path.name + ".lock")
+            lock.write_text("active\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["config.lock"],
+                raised.exception.details["git_admin_lock_paths"],
+            )
+
+    def test_snapshot_rejects_sparse_tracked_and_ignored_files(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / ".gitignore").write_text("ignored.sparse\n", encoding="utf-8")
+            tracked = nested / "tracked.sparse"
+            with tracked.open("wb") as handle:
+                handle.seek(8 * 1024 * 1024 - 1)
+                handle.write(b"\0")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested sparse base")
+            ignored = nested / "ignored.sparse"
+            with ignored.open("wb") as handle:
+                handle.seek(4 * 1024 * 1024 - 1)
+                handle.write(b"\0")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["ignored.sparse", "tracked.sparse"],
+                raised.exception.details["sparse_worktree_paths"],
+            )
+
     def test_snapshot_rejects_nested_rerere_cache_state(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
