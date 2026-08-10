@@ -143,7 +143,7 @@ class NestedGitSnapshot:
     candidate: CandidateSnapshot
     root_mode: int
     git_admin_security_label: bytes | None
-    git_admin_directories: tuple[tuple[str, int], ...]
+    git_admin_directories: tuple[tuple[str, int, int], ...]
     git_admin_files: tuple[tuple[str, int, int, bytes], ...]
     symbolic_head: str | None
     origin_head: str | None
@@ -1307,6 +1307,17 @@ def _index_version(
     *,
     env: Mapping[str, str] | None = None,
 ) -> int:
+    if env is None:
+        index_mode, index_bytes = _git_index_state(path)
+        with tempfile.TemporaryDirectory(
+            prefix=".aoa-kag-index-version-",
+        ) as temp_dir:
+            isolated_index = Path(temp_dir) / "index"
+            isolated_index.write_bytes(index_bytes)
+            isolated_index.chmod(index_mode)
+            isolated_env = os.environ.copy()
+            isolated_env["GIT_INDEX_FILE"] = isolated_index.as_posix()
+            return _index_version(path, env=isolated_env)
     raw = git_bytes(
         path,
         "update-index",
@@ -1723,12 +1734,12 @@ def _require_git_admin_portability_match(
 def _git_admin_state(
     path: Path,
 ) -> tuple[
-    tuple[tuple[str, int], ...],
+    tuple[tuple[str, int, int], ...],
     tuple[tuple[str, int, int, bytes], ...],
 ]:
     """Capture all Git-admin state not intentionally isolated elsewhere."""
     git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
-    directories: list[tuple[str, int]] = []
+    directories: list[tuple[str, int, int]] = []
     files: list[tuple[str, int, int, bytes]] = []
     for current, dirnames, filenames in os.walk(git_dir, topdown=True):
         directory = Path(current)
@@ -1745,7 +1756,9 @@ def _git_admin_state(
                 action_class="code_fix",
             )
         label = "." if relative_directory == Path(".") else relative_directory.as_posix()
-        directories.append((label, stat.S_IMODE(metadata.st_mode)))
+        directories.append(
+            (label, stat.S_IMODE(metadata.st_mode), metadata.st_mtime_ns)
+        )
         for name in sorted(filenames, key=os.fsencode):
             candidate = directory / name
             file_metadata = candidate.lstat()
@@ -1780,7 +1793,7 @@ def _git_admin_state(
 
 def _restore_git_admin_state(
     path: Path,
-    expected_directories: Sequence[tuple[str, int]],
+    expected_directories: Sequence[tuple[str, int, int]],
     expected_files: Sequence[tuple[str, int, int, bytes]],
 ) -> None:
     git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
@@ -1811,7 +1824,7 @@ def _restore_git_admin_state(
         else:
             candidate.rmdir()
 
-    for relative, _mode in expected_directories:
+    for relative, _mode, _mtime_ns in expected_directories:
         if relative != ".":
             (git_dir / checked_relative_path(relative)).mkdir(parents=True, exist_ok=True)
     for relative, mode, mtime_ns, content in expected_files:
@@ -1824,16 +1837,21 @@ def _restore_git_admin_state(
             ns=(destination.stat().st_atime_ns, mtime_ns),
             follow_symlinks=False,
         )
-    for relative, mode in reversed(tuple(expected_directories)):
+    for relative, mode, mtime_ns in reversed(tuple(expected_directories)):
         destination = git_dir if relative == "." else git_dir / checked_relative_path(relative)
         destination.chmod(mode)
+        os.utime(
+            destination,
+            ns=(destination.stat().st_atime_ns, mtime_ns),
+            follow_symlinks=False,
+        )
 
     observed = _git_admin_state(path)
     expected = (tuple(expected_directories), tuple(expected_files))
     if observed != expected:
         def state_digest(
             state: tuple[
-                tuple[tuple[str, int], ...],
+                tuple[tuple[str, int, int], ...],
                 tuple[tuple[str, int, int, bytes], ...],
             ],
         ) -> str:
@@ -3363,12 +3381,36 @@ def require_nested_git_snapshot_unchanged(
             for path in expected_git_admin.keys() | observed_git_admin.keys()
             if expected_git_admin.get(path) != observed_git_admin.get(path)
         )
+        expected_git_admin_directories = {
+            row[0]: row[1:] for row in expected.git_admin_directories
+        }
+        observed_git_admin_directories = (
+            {}
+            if observed is None
+            else {row[0]: row[1:] for row in observed.git_admin_directories}
+        )
+        changed_git_admin_directories = sorted(
+            path
+            for path in (
+                expected_git_admin_directories.keys()
+                | observed_git_admin_directories.keys()
+            )
+            if expected_git_admin_directories.get(path)
+            != observed_git_admin_directories.get(path)
+        )
         raise PreparationFailure(
             "nested checkout candidate changed during isolated preparation: "
             + ", ".join(changed_components)
             + (
                 " (Git administration: " + ", ".join(changed_git_admin_paths) + ")"
                 if changed_git_admin_paths
+                else ""
+            )
+            + (
+                " (Git administration directories: "
+                + ", ".join(changed_git_admin_directories)
+                + ")"
+                if changed_git_admin_directories
                 else ""
             ),
             failure_type="candidate_snapshot_changed",
@@ -3378,6 +3420,7 @@ def require_nested_git_snapshot_unchanged(
                 "actual_identity": observed.identity() if observed is not None else None,
                 "changed_components": changed_components,
                 "changed_git_admin_paths": changed_git_admin_paths,
+                "changed_git_admin_directories": changed_git_admin_directories,
             },
         )
 
