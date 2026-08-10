@@ -131,6 +131,51 @@ class PrepareLandingTests(unittest.TestCase):
                 git(repo, "diff", "--name-only"),
             )
 
+    def test_prepare_rejects_provider_identity_change_at_closeout(self) -> None:
+        before = (
+            {
+                "owner": "external",
+                "head": "a" * 40,
+                "head_tree": "b" * 40,
+                "posture": "pinned",
+            },
+        )
+        after = (
+            {
+                "owner": "external",
+                "head": "a" * 40,
+                "head_tree": "c" * 40,
+                "posture": "pinned",
+            },
+        )
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))
+            with patch.object(
+                prepare_landing,
+                "verify_provider_identities",
+                side_effect=(before, after),
+            ), patch.object(
+                prepare_landing,
+                "converge_budgeted_scc",
+                return_value=(1, git(repo, "write-tree").decode("ascii").strip(), "not_required"),
+            ), patch.object(
+                prepare_landing,
+                "final_confirmation",
+            ):
+                code, receipt = prepare_landing.prepare_landing(
+                    repo,
+                    mode="check",
+                    max_iterations=3,
+                    history_ref=head,
+                    event_history_ref=head,
+                    budget_base_ref=head,
+                    budget_reason=None,
+                    temp_root=Path(work_tmp),
+                )
+
+        self.assertEqual(1, code)
+        self.assertEqual("provider_identity_mismatch", receipt["failure_type"])
+
     def test_apply_fails_closed_when_candidate_changes_during_preparation(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))
@@ -2779,17 +2824,33 @@ class PrepareLandingTests(unittest.TestCase):
         coverage._coverage_runtime_inputs_digest.return_value = "sha256:runtime"
         cached = {"owners": [{"repo": "external"}]}
         rebuilt = {"owners": [{"repo": "aoa-kag"}]}
+        provider_identity = (
+            {
+                "owner": "external",
+                "head": "a" * 40,
+                "head_tree": "b" * 40,
+                "posture": "pinned",
+            },
+        )
         with tempfile.TemporaryDirectory() as tmpdir, patch.object(
             prepare_landing,
             "coverage_generation_module",
             return_value=coverage,
         ), patch.object(
             prepare_landing,
+            "verify_provider_identities",
+            return_value=provider_identity,
+        ), patch.object(
+            prepare_landing,
             "build_preparation_coverage_from_payload",
             return_value=rebuilt,
         ) as verify_cache:
             cache = Path(tmpdir) / "full-owner.json"
-            prepare_landing.write_preparation_coverage_cache(cache, cached)
+            prepare_landing.write_preparation_coverage_cache(
+                Path("/candidate"),
+                cache,
+                cached,
+            )
             loaded = prepare_landing.load_preparation_coverage_cache(
                 Path("/candidate"),
                 cache,
@@ -2803,6 +2864,62 @@ class PrepareLandingTests(unittest.TestCase):
             cached,
             verify_external_manifests=True,
         )
+
+    def test_full_owner_cache_rejects_provider_edit_without_head_move(self) -> None:
+        coverage = unittest.mock.Mock()
+        coverage._coverage_runtime_inputs_digest.return_value = "sha256:runtime"
+        cached = {"owners": [{"repo": "external"}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            candidate = root / "candidate"
+            provider_parent = root / "provider-parent"
+            provider_parent.mkdir()
+            provider = self.make_repo(provider_parent)
+            candidate.mkdir()
+            (candidate / "manifests").mkdir()
+            head = git(provider, "rev-parse", "HEAD").decode("ascii").strip()
+            (candidate / "manifests" / "provider_registry.json").write_text(
+                json.dumps(
+                    {
+                        "providers": [
+                            {
+                                "repo": "external",
+                                "root_kind": "direct",
+                                "env": "TEST_PREPARE_PROVIDER_ROOT",
+                                "checkout_mode": "pinned",
+                                "pinned_ref": head,
+                            }
+                        ]
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            cache = root / "full-owner.json"
+            with patch.object(
+                prepare_landing,
+                "coverage_generation_module",
+                return_value=coverage,
+            ), patch.dict(
+                os.environ,
+                {"TEST_PREPARE_PROVIDER_ROOT": provider.as_posix()},
+            ):
+                prepare_landing.write_preparation_coverage_cache(
+                    candidate,
+                    cache,
+                    cached,
+                )
+                (provider / "source.txt").write_text(
+                    "concurrent edit\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.load_preparation_coverage_cache(
+                        candidate,
+                        cache,
+                    )
+
+        self.assertEqual("provider_identity_mismatch", raised.exception.failure_type)
 
     def test_sentinel_stops_on_coverage_drift_before_generated_check(self) -> None:
         coverage = unittest.mock.Mock()

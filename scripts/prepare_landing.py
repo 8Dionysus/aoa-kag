@@ -30,7 +30,7 @@ from typing import Any, Mapping, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "aoa-kag-prepare-landing-receipt-v1"
-PREPARATION_COVERAGE_CACHE_SCHEMA = "aoa-kag-preparation-coverage-cache-v1"
+PREPARATION_COVERAGE_CACHE_SCHEMA = "aoa-kag-preparation-coverage-cache-v2"
 DEFAULT_MAX_ITERATIONS = 6
 GENERATED_PATHS = ("generated",)
 COVERAGE_PATHS = (
@@ -3152,6 +3152,7 @@ def verify_provider_identities(temporary_root: Path) -> tuple[dict[str, str], ..
                 details={"owner": repo, "root": root.as_posix()},
             )
         observed = git_text(root, "rev-parse", "HEAD")
+        observed_tree = git_text(root, "rev-parse", "HEAD^{tree}")
         expected = str(entry.get("pinned_ref") or "")
         if entry.get("checkout_mode") == "pinned" and observed != expected:
             raise PreparationFailure(
@@ -3184,6 +3185,7 @@ def verify_provider_identities(temporary_root: Path) -> tuple[dict[str, str], ..
             {
                 "owner": repo,
                 "head": observed,
+                "head_tree": observed_tree,
                 "posture": str(entry.get("checkout_mode") or ""),
             }
         )
@@ -3520,6 +3522,7 @@ def build_full_preparation_coverage(repo_root: Path) -> dict[str, Any]:
 
 
 def write_preparation_coverage_cache(
+    repo_root: Path,
     path: Path,
     payload: dict[str, Any],
 ) -> None:
@@ -3529,6 +3532,7 @@ def write_preparation_coverage_cache(
     envelope = {
         "schema_version": PREPARATION_COVERAGE_CACHE_SCHEMA,
         "runtime_inputs_digest": coverage_generation._coverage_runtime_inputs_digest(),
+        "provider_identity": list(verify_provider_identities(repo_root)),
         "coverage": payload,
     }
     descriptor = os.open(
@@ -3567,6 +3571,12 @@ def load_preparation_coverage_cache(
         != coverage_generation._coverage_runtime_inputs_digest()
     ):
         raise RuntimeError("preparation coverage cache runtime identity drifted")
+    cached_provider_identity = envelope.get("provider_identity")
+    if not isinstance(cached_provider_identity, list):
+        raise RuntimeError("preparation coverage cache provider identity is invalid")
+    observed_provider_identity = list(verify_provider_identities(repo_root))
+    if observed_provider_identity != cached_provider_identity:
+        raise RuntimeError("preparation coverage cache provider identity drifted")
     payload = envelope.get("coverage")
     if not isinstance(payload, dict):
         raise RuntimeError("preparation coverage cache payload is invalid")
@@ -3613,7 +3623,7 @@ def prepare_self_coverage(
             )
             payload = build_full_preparation_coverage(repo_root)
             if full_coverage_cache is not None:
-                write_preparation_coverage_cache(full_coverage_cache, payload)
+                write_preparation_coverage_cache(repo_root, full_coverage_cache, payload)
             strategy = "full-owner-rebuild+self-budget-deferred"
     print(
         f"[prepare-landing] coverage strategy={strategy} "
@@ -4255,6 +4265,17 @@ def prepare_landing(
             refs,
             full_coverage_cache=full_coverage_cache,
         )
+        final_providers = verify_provider_identities(temporary_worktree)
+        if final_providers != providers:
+            raise PreparationFailure(
+                "provider identity changed during landing preparation",
+                failure_type="provider_identity_mismatch",
+                action_class="materialize_provider_checkouts",
+                details={
+                    "before": list(providers),
+                    "after": list(final_providers),
+                },
+            )
         require_candidate_unchanged(source_root, snapshot)
         changed_paths = changed_tree_paths(
             temporary_worktree,
