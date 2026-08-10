@@ -931,6 +931,70 @@ class PrepareLandingTests(unittest.TestCase):
                 ),
             )
 
+    def test_nested_xattrs_are_restored_before_readonly_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            readonly = nested / "readonly"
+            readonly.mkdir()
+            tracked = readonly / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            try:
+                os.setxattr(
+                    tracked,
+                    "user.aoa-kag-file",
+                    b"readonly file metadata",
+                    follow_symlinks=False,
+                )
+                os.setxattr(
+                    readonly,
+                    "user.aoa-kag-directory",
+                    b"readonly directory metadata",
+                    follow_symlinks=False,
+                )
+            except OSError as exc:
+                self.skipTest(f"extended attributes unavailable: {exc}")
+            tracked.chmod(0o444)
+            readonly.chmod(0o555)
+            isolated_readonly = Path(work_tmp) / "isolated" / ".validator" / "readonly"
+            try:
+                snapshot = prepare_landing.capture_candidate_snapshot(repo)
+                isolated = Path(work_tmp) / "isolated"
+                git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+                prepare_landing.materialize_candidate(repo, isolated, snapshot)
+                isolated_tracked = isolated_readonly / "validator.txt"
+
+                self.assertEqual(0o444, stat.S_IMODE(isolated_tracked.stat().st_mode))
+                self.assertEqual(0o555, stat.S_IMODE(isolated_readonly.stat().st_mode))
+                self.assertEqual(
+                    b"readonly file metadata",
+                    os.getxattr(
+                        isolated_tracked,
+                        "user.aoa-kag-file",
+                        follow_symlinks=False,
+                    ),
+                )
+                self.assertEqual(
+                    b"readonly directory metadata",
+                    os.getxattr(
+                        isolated_readonly,
+                        "user.aoa-kag-directory",
+                        follow_symlinks=False,
+                    ),
+                )
+            finally:
+                tracked.chmod(0o644)
+                readonly.chmod(0o755)
+                if isolated_readonly.exists():
+                    (isolated_readonly / "validator.txt").chmod(0o644)
+                    isolated_readonly.chmod(0o755)
+
     def test_nested_materialization_preserves_modification_times(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

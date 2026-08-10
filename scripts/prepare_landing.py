@@ -1345,6 +1345,48 @@ def _restore_worktree_xattrs(
             ) from exc
 
 
+def _make_worktree_owner_writable(
+    path: Path,
+    candidate_paths: Sequence[str],
+    directory_paths: Sequence[str],
+) -> tuple[tuple[Path, int], ...]:
+    captured: list[tuple[Path, int]] = []
+    raw_paths = (
+        ".",
+        *sorted(
+            set(directory_paths),
+            key=lambda raw: (raw.count("/"), raw),
+        ),
+        *sorted(set(candidate_paths)),
+    )
+    visited: set[Path] = set()
+    for raw in raw_paths:
+        candidate = path if raw == "." else path / checked_relative_path(raw)
+        if candidate in visited:
+            continue
+        visited.add(candidate)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        mode = stat.S_IMODE(metadata.st_mode)
+        if stat.S_ISDIR(metadata.st_mode):
+            writable_mode = mode | stat.S_IWUSR | stat.S_IXUSR
+        elif stat.S_ISREG(metadata.st_mode):
+            writable_mode = mode | stat.S_IWUSR
+        else:
+            raise PreparationFailure(
+                f"nested checkout xattr path has unsupported type: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={"path": raw},
+            )
+        captured.append((candidate, mode))
+        if writable_mode != mode:
+            candidate.chmod(writable_mode)
+    return tuple(captured)
+
+
 def _restore_worktree_hardlinks(
     path: Path,
     groups: Sequence[Sequence[str]],
@@ -2450,7 +2492,6 @@ def copy_untracked_candidate(
                         failure_type="candidate_snapshot_invalid",
                         action_class="code_fix",
                     )
-                restore_candidate_directory_modes(directory_modes)
                 git_bytes(
                     destination,
                     "update-index",
@@ -2463,15 +2504,22 @@ def copy_untracked_candidate(
                         failure_type="candidate_snapshot_invalid",
                         action_class="code_fix",
                     )
-                restore_tracked_worktree_modes(source, destination, nested.tracked_paths)
                 _restore_reflog_state(destination, nested)
-                destination.chmod(nested.root_mode)
+                writable_modes = _make_worktree_owner_writable(
+                    destination,
+                    (*nested.tracked_paths, *nested.candidate.untracked_paths),
+                    nested.candidate.directories,
+                )
                 _restore_worktree_xattrs(
                     destination,
                     (*nested.tracked_paths, *nested.candidate.untracked_paths),
                     nested.candidate.directories,
                     nested.worktree_xattrs,
                 )
+                restore_candidate_directory_modes(writable_modes)
+                restore_tracked_worktree_modes(source, destination, nested.tracked_paths)
+                restore_candidate_directory_modes(directory_modes)
+                destination.chmod(nested.root_mode)
                 observed_xattrs = _worktree_xattr_state(
                     destination,
                     (*nested.tracked_paths, *nested.candidate.untracked_paths),
