@@ -1757,6 +1757,48 @@ def _require_git_admin_portability_match(
         )
 
 
+def _restore_git_admin_security_label(
+    path: Path,
+    expected_security_label: bytes | None,
+) -> None:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    candidates = (git_dir, *sorted(
+        git_dir.rglob("*"),
+        key=lambda item: os.fsencode(item.relative_to(git_dir).as_posix()),
+    ))
+    missing_attribute_errors = {errno.ENODATA}
+    if hasattr(errno, "ENOATTR"):
+        missing_attribute_errors.add(errno.ENOATTR)
+    for candidate in candidates:
+        relative = candidate.relative_to(git_dir)
+        label = "." if relative == Path(".") else relative.as_posix()
+        try:
+            if expected_security_label is None:
+                try:
+                    os.removexattr(
+                        candidate,
+                        "security.selinux",
+                        follow_symlinks=False,
+                    )
+                except OSError as exc:
+                    if exc.errno not in missing_attribute_errors:
+                        raise
+            else:
+                os.setxattr(
+                    candidate,
+                    "security.selinux",
+                    expected_security_label,
+                    follow_symlinks=False,
+                )
+        except OSError as exc:
+            raise PreparationFailure(
+                f"cannot restore nested Git administration security label: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={"git_admin_path": label, "error": str(exc)},
+            ) from exc
+
+
 def _git_admin_state(
     path: Path,
 ) -> tuple[
@@ -1964,6 +2006,21 @@ def _sparse_worktree_paths(
             continue
         if _file_has_sparse_extents(candidate, metadata):
             sparse.append(raw)
+    return tuple(sparse)
+
+
+def _sparse_git_admin_paths(path: Path) -> tuple[str, ...]:
+    """Return sparse regular files anywhere in the physical Git directory."""
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    sparse: list[str] = []
+    for current, dirnames, filenames in os.walk(git_dir, topdown=True):
+        directory = Path(current)
+        dirnames[:] = sorted(dirnames, key=os.fsencode)
+        for name in sorted(filenames, key=os.fsencode):
+            candidate = directory / name
+            metadata = candidate.lstat()
+            if _file_has_sparse_extents(candidate, metadata):
+                sparse.append(candidate.relative_to(git_dir).as_posix())
     return tuple(sparse)
 
 
@@ -2936,6 +2993,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
                     git_admin_security_label_issues
                 )
             },
+        )
+    sparse_git_admin_paths = _sparse_git_admin_paths(path)
+    if sparse_git_admin_paths:
+        raise PreparationFailure(
+            f"nested checkout contains sparse Git administration files isolation cannot preserve: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"sparse_git_admin_paths": list(sparse_git_admin_paths)},
         )
     git_admin_locks = _git_admin_lock_paths(path)
     if git_admin_locks:
@@ -3927,6 +3992,10 @@ def copy_untracked_candidate(
                             "actual_digest": observed_digest,
                         },
                     )
+                _restore_git_admin_security_label(
+                    destination,
+                    nested.git_admin_security_label,
+                )
                 _require_git_admin_portability_match(
                     destination,
                     nested.git_admin_security_label,
@@ -3963,6 +4032,10 @@ def copy_untracked_candidate(
                     destination,
                     nested.git_admin_directories,
                     nested.git_admin_files,
+                )
+                _restore_git_admin_security_label(
+                    destination,
+                    nested.git_admin_security_label,
                 )
                 _require_git_admin_portability_match(
                     destination,

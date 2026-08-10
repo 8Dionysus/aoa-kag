@@ -1507,6 +1507,93 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["sparse_worktree_paths"],
             )
 
+    def test_snapshot_rejects_sparse_git_object_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested sparse object base")
+            tree_oid = git(nested, "write-tree").decode("ascii").strip()
+            loose_object = nested / ".git" / "objects" / tree_oid[:2] / tree_oid[2:]
+            source_mode = stat.S_IMODE(loose_object.stat().st_mode)
+            loose_object.chmod(source_mode | stat.S_IWUSR)
+            with loose_object.open("r+b") as handle:
+                handle.seek(8 * 1024 * 1024, os.SEEK_END)
+                handle.write(b"\0")
+            loose_object.chmod(source_mode)
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                [f"objects/{tree_oid[:2]}/{tree_oid[2:]}"],
+                raised.exception.details["sparse_git_admin_paths"],
+            )
+
+    def test_snapshot_rejects_sparse_residual_git_admin_file(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested sparse admin base")
+            description = nested / ".git" / "description"
+            with description.open("wb") as handle:
+                handle.write(b"validator\n")
+                handle.seek(8 * 1024 * 1024 - 1)
+                handle.write(b"\0")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["description"],
+                raised.exception.details["sparse_git_admin_paths"],
+            )
+
+    def test_restore_git_admin_security_label_applies_uniform_label(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested security label base")
+            security_label = b"system_u:object_r:git_content_t:s0"
+            git_dir = nested / ".git"
+
+            with patch.object(
+                prepare_landing.os,
+                "setxattr",
+            ) as setxattr:
+                prepare_landing._restore_git_admin_security_label(
+                    nested,
+                    security_label,
+                )
+
+            expected_paths = (git_dir, *git_dir.rglob("*"))
+            self.assertEqual(len(expected_paths), setxattr.call_count)
+            setxattr.assert_any_call(
+                git_dir.resolve(),
+                "security.selinux",
+                security_label,
+                follow_symlinks=False,
+            )
+
     def test_snapshot_rejects_nested_rerere_cache_state(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
