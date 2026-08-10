@@ -144,7 +144,7 @@ class NestedGitSnapshot:
     root_mode: int
     git_admin_security_label: bytes | None
     git_admin_directories: tuple[tuple[str, int], ...]
-    git_admin_files: tuple[tuple[str, int, bytes], ...]
+    git_admin_files: tuple[tuple[str, int, int, bytes], ...]
     symbolic_head: str | None
     origin_head: str | None
     git_refs: tuple[tuple[str, str], ...]
@@ -192,8 +192,8 @@ class NestedGitSnapshot:
                 list(row) for row in self.git_admin_directories
             ],
             "git_admin_files": [
-                [path, mode, len(content), sha256_bytes(content)]
-                for path, mode, content in self.git_admin_files
+                [path, mode, mtime_ns, len(content), sha256_bytes(content)]
+                for path, mode, mtime_ns, content in self.git_admin_files
             ],
             "symbolic_head": self.symbolic_head,
             "origin_head": self.origin_head,
@@ -322,6 +322,7 @@ def git_bytes(
     *args: str,
     input_bytes: bytes | None = None,
     check: bool = True,
+    env: Mapping[str, str] | None = None,
 ) -> bytes:
     result = subprocess.run(
         ("git", *args),
@@ -329,6 +330,7 @@ def git_bytes(
         input=input_bytes,
         check=check,
         capture_output=True,
+        env=env,
     )
     return result.stdout
 
@@ -1274,8 +1276,17 @@ def _submodule_transport_sources(path: Path, head: str) -> tuple[str, ...]:
     return tuple(sources)
 
 
-def _index_version(path: Path) -> int:
-    raw = git_text(path, "update-index", "--show-index-version")
+def _index_version(
+    path: Path,
+    *,
+    env: Mapping[str, str] | None = None,
+) -> int:
+    raw = git_bytes(
+        path,
+        "update-index",
+        "--show-index-version",
+        env=env,
+    ).decode("utf-8", errors="strict").strip()
     try:
         version = int(raw)
     except ValueError as exc:
@@ -1687,12 +1698,12 @@ def _git_admin_state(
     path: Path,
 ) -> tuple[
     tuple[tuple[str, int], ...],
-    tuple[tuple[str, int, bytes], ...],
+    tuple[tuple[str, int, int, bytes], ...],
 ]:
     """Capture all Git-admin state not intentionally isolated elsewhere."""
     git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
     directories: list[tuple[str, int]] = []
-    files: list[tuple[str, int, bytes]] = []
+    files: list[tuple[str, int, int, bytes]] = []
     for current, dirnames, filenames in os.walk(git_dir, topdown=True):
         directory = Path(current)
         relative_directory = directory.relative_to(git_dir)
@@ -1734,6 +1745,7 @@ def _git_admin_state(
                 (
                     relative,
                     stat.S_IMODE(file_metadata.st_mode),
+                    file_metadata.st_mtime_ns,
                     candidate.read_bytes(),
                 )
             )
@@ -1743,7 +1755,7 @@ def _git_admin_state(
 def _restore_git_admin_state(
     path: Path,
     expected_directories: Sequence[tuple[str, int]],
-    expected_files: Sequence[tuple[str, int, bytes]],
+    expected_files: Sequence[tuple[str, int, int, bytes]],
 ) -> None:
     git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
     existing_files: list[Path] = []
@@ -1776,11 +1788,16 @@ def _restore_git_admin_state(
     for relative, _mode in expected_directories:
         if relative != ".":
             (git_dir / checked_relative_path(relative)).mkdir(parents=True, exist_ok=True)
-    for relative, mode, content in expected_files:
+    for relative, mode, mtime_ns, content in expected_files:
         destination = git_dir / checked_relative_path(relative)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(content)
         destination.chmod(mode)
+        os.utime(
+            destination,
+            ns=(destination.stat().st_atime_ns, mtime_ns),
+            follow_symlinks=False,
+        )
     for relative, mode in reversed(tuple(expected_directories)):
         destination = git_dir if relative == "." else git_dir / checked_relative_path(relative)
         destination.chmod(mode)
@@ -1791,7 +1808,7 @@ def _restore_git_admin_state(
         def state_digest(
             state: tuple[
                 tuple[tuple[str, int], ...],
-                tuple[tuple[str, int, bytes], ...],
+                tuple[tuple[str, int, int, bytes], ...],
             ],
         ) -> str:
             directories, files_state = state
@@ -1800,8 +1817,14 @@ def _restore_git_admin_state(
                     {
                         "directories": [list(row) for row in directories],
                         "files": [
-                            [name, mode, len(content), sha256_bytes(content)]
-                            for name, mode, content in files_state
+                            [
+                                name,
+                                mode,
+                                mtime_ns,
+                                len(content),
+                                sha256_bytes(content),
+                            ]
+                            for name, mode, mtime_ns, content in files_state
                         ],
                     }
                 )
@@ -3184,18 +3207,32 @@ def tracked_paths(repo_root: Path) -> tuple[str, ...]:
     return paths
 
 
-def intent_to_add_paths(repo_root: Path) -> tuple[str, ...]:
+def intent_to_add_paths(
+    repo_root: Path,
+    *,
+    env: Mapping[str, str] | None = None,
+) -> tuple[str, ...]:
     common = ("diff", "--cached", "--name-only", "-z", "--diff-filter=A")
     visible = set(
         item
-        for item in git_bytes(repo_root, *common, "--ita-visible-in-index").decode(
+        for item in git_bytes(
+            repo_root,
+            *common,
+            "--ita-visible-in-index",
+            env=env,
+        ).decode(
             "utf-8", errors="surrogateescape"
         ).split("\0")
         if item
     )
     ordinary = set(
         item
-        for item in git_bytes(repo_root, *common, "--ita-invisible-in-index").decode(
+        for item in git_bytes(
+            repo_root,
+            *common,
+            "--ita-invisible-in-index",
+            env=env,
+        ).decode(
             "utf-8", errors="surrogateescape"
         ).split("\0")
         if item
@@ -3289,15 +3326,32 @@ def require_nested_git_snapshot_unchanged(
                 or getattr(observed, field.name) != getattr(expected, field.name)
             ]
         )
+        expected_git_admin = {row[0]: row[1:] for row in expected.git_admin_files}
+        observed_git_admin = (
+            {}
+            if observed is None
+            else {row[0]: row[1:] for row in observed.git_admin_files}
+        )
+        changed_git_admin_paths = sorted(
+            path
+            for path in expected_git_admin.keys() | observed_git_admin.keys()
+            if expected_git_admin.get(path) != observed_git_admin.get(path)
+        )
         raise PreparationFailure(
             "nested checkout candidate changed during isolated preparation: "
-            + ", ".join(changed_components),
+            + ", ".join(changed_components)
+            + (
+                " (Git administration: " + ", ".join(changed_git_admin_paths) + ")"
+                if changed_git_admin_paths
+                else ""
+            ),
             failure_type="candidate_snapshot_changed",
             action_class="retry_same_candidate",
             details={
                 "expected_identity": expected.identity(),
                 "actual_identity": observed.identity() if observed is not None else None,
                 "changed_components": changed_components,
+                "changed_git_admin_paths": changed_git_admin_paths,
             },
         )
 
@@ -3456,13 +3510,44 @@ def capture_candidate_snapshot(
         directories,
     )
     head = git_text(repo_root, "rev-parse", "HEAD")
-    index_tree = git_text(repo_root, "write-tree")
-    cached_patch_bytes = candidate_cached_patch(repo_root)
-    unstaged_patch_bytes = candidate_unstaged_patch(repo_root)
-    candidate_patch_bytes = candidate_patch(repo_root)
-    candidate_intent_to_add_paths = intent_to_add_paths(repo_root)
-    index_version = _index_version(repo_root)
     index_mode, index_bytes = _git_index_state(repo_root)
+    with tempfile.TemporaryDirectory(
+        prefix=".aoa-kag-candidate-index-",
+        dir=repo_root.parent,
+    ) as temp_dir:
+        isolated_index = Path(temp_dir) / "index"
+        isolated_index.write_bytes(index_bytes)
+        isolated_index.chmod(index_mode)
+        isolated_index_env = os.environ.copy()
+        isolated_index_env["GIT_INDEX_FILE"] = isolated_index.as_posix()
+        index_tree = git_bytes(
+            repo_root,
+            "write-tree",
+            env=isolated_index_env,
+        ).decode("utf-8", errors="strict").strip()
+        cached_patch_bytes = candidate_cached_patch(
+            repo_root,
+            env=isolated_index_env,
+        )
+        unstaged_patch_bytes = candidate_unstaged_patch(
+            repo_root,
+            env=isolated_index_env,
+        )
+        candidate_patch_bytes = candidate_patch(
+            repo_root,
+            env=isolated_index_env,
+        )
+        candidate_intent_to_add_paths = intent_to_add_paths(
+            repo_root,
+            env=isolated_index_env,
+        )
+        index_version = _index_version(repo_root, env=isolated_index_env)
+    if _git_index_state(repo_root) != (index_mode, index_bytes):
+        raise PreparationFailure(
+            "candidate index changed during snapshot capture",
+            failure_type="candidate_snapshot_changed",
+            action_class="retry_same_candidate",
+        )
     return CandidateSnapshot(
         head=head,
         root_mode=stat.S_IMODE(repo_root.lstat().st_mode),
@@ -3504,7 +3589,11 @@ def require_candidate_unchanged(
         )
 
 
-def candidate_patch(repo_root: Path) -> bytes:
+def candidate_patch(
+    repo_root: Path,
+    *,
+    env: Mapping[str, str] | None = None,
+) -> bytes:
     return git_bytes(
         repo_root,
         "diff",
@@ -3513,10 +3602,15 @@ def candidate_patch(repo_root: Path) -> bytes:
         "--no-ext-diff",
         "--no-textconv",
         "HEAD",
+        env=env,
     )
 
 
-def candidate_cached_patch(repo_root: Path) -> bytes:
+def candidate_cached_patch(
+    repo_root: Path,
+    *,
+    env: Mapping[str, str] | None = None,
+) -> bytes:
     return git_bytes(
         repo_root,
         "diff",
@@ -3526,10 +3620,15 @@ def candidate_cached_patch(repo_root: Path) -> bytes:
         "--no-ext-diff",
         "--no-textconv",
         "HEAD",
+        env=env,
     )
 
 
-def candidate_unstaged_patch(repo_root: Path) -> bytes:
+def candidate_unstaged_patch(
+    repo_root: Path,
+    *,
+    env: Mapping[str, str] | None = None,
+) -> bytes:
     return git_bytes(
         repo_root,
         "diff",
@@ -3537,6 +3636,7 @@ def candidate_unstaged_patch(repo_root: Path) -> bytes:
         "--full-index",
         "--no-ext-diff",
         "--no-textconv",
+        env=env,
     )
 
 
@@ -4006,13 +4106,26 @@ def materialize_candidate(
         snapshot.index_mode,
         snapshot.index_bytes,
     )
-    if _index_version(temporary_root) != snapshot.index_version:
-        raise PreparationFailure(
-            "candidate index version differs after isolation",
-            failure_type="candidate_snapshot_invalid",
-            action_class="code_fix",
-        )
-    observed_tree = git_text(temporary_root, "write-tree")
+    with tempfile.TemporaryDirectory(
+        prefix=".aoa-kag-verify-index-",
+        dir=temporary_root.parent,
+    ) as temp_dir:
+        verification_index = Path(temp_dir) / "index"
+        verification_index.write_bytes(snapshot.index_bytes)
+        verification_index.chmod(snapshot.index_mode)
+        verification_env = os.environ.copy()
+        verification_env["GIT_INDEX_FILE"] = verification_index.as_posix()
+        if _index_version(temporary_root, env=verification_env) != snapshot.index_version:
+            raise PreparationFailure(
+                "candidate index version differs after isolation",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        observed_tree = git_bytes(
+            temporary_root,
+            "write-tree",
+            env=verification_env,
+        ).decode("utf-8", errors="strict").strip()
     if observed_tree != snapshot.index_tree:
         raise PreparationFailure(
             "candidate index tree differs after exact restoration",

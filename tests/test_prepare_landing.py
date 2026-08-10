@@ -1073,6 +1073,11 @@ class PrepareLandingTests(unittest.TestCase):
             description = nested / ".git" / "description"
             description.write_bytes(b"validator-visible description\n")
             description.chmod(0o640)
+            source_mtime_ns = 946_684_800_123_456_789
+            os.utime(
+                description,
+                ns=(source_mtime_ns, source_mtime_ns),
+            )
             source_state = prepare_landing._git_admin_state(nested)
             nested_snapshot = prepare_landing._nested_git_snapshot(nested)
             self.assertIsNotNone(nested_snapshot)
@@ -1096,7 +1101,11 @@ class PrepareLandingTests(unittest.TestCase):
                 0o640,
                 stat.S_IMODE(isolated_description.stat().st_mode),
             )
-            description.write_bytes(b"concurrent description change\n")
+            self.assertEqual(source_mtime_ns, isolated_description.stat().st_mtime_ns)
+            os.utime(
+                description,
+                ns=(source_mtime_ns + 1_000_000_000, source_mtime_ns + 1_000_000_000),
+            )
             changed = prepare_landing._nested_git_snapshot(nested)
             self.assertIsNotNone(changed)
             assert nested_snapshot is not None

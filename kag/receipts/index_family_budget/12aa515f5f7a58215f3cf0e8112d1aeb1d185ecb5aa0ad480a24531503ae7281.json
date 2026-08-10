@@ -1,17 +1,17 @@
 {
-  "allowed_bytes": 7763965,
-  "allowed_tracked_bytes": 12861792,
+  "allowed_bytes": 7767809,
+  "allowed_tracked_bytes": 12865636,
   "approved_by": "repository-owner",
   "base_ref": "30ce3b8f33ed27ef3888c214b9e9e5cd0f50f80e",
-  "changed_generated_bytes": 7763965,
+  "changed_generated_bytes": 7767809,
   "changed_generated_files": 204,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "cf3bca7a5e58f1221cbdd3c712ae2fde58a0e9c702ddb5dda64b40cfee24ed21",
-  "reason": "Bind and preserve the exact outer candidate index and patch bytes.",
+  "head_family_digest": "12aa515f5f7a58215f3cf0e8112d1aeb1d185ecb5aa0ad480a24531503ae7281",
+  "reason": "Bind and preserve nested Git administration file modification times without mutating candidate index state.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
   "scope": "generated_delta_and_tracked_size",
-  "tracked_bytes": 12861792,
+  "tracked_bytes": 12865636,
   "tracked_bytes_max": 12582912
 }
