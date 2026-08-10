@@ -844,6 +844,40 @@ class PrepareLandingTests(unittest.TestCase):
                 ),
             )
 
+    def test_nested_materialization_preserves_modification_times(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            historical_ns = 946684800_000_000_000
+            os.utime(
+                tracked,
+                ns=(tracked.lstat().st_atime_ns, historical_ns),
+            )
+            os.utime(
+                nested,
+                ns=(nested.lstat().st_atime_ns, historical_ns),
+            )
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+
+            self.assertEqual(historical_ns, isolated_nested.lstat().st_mtime_ns)
+            self.assertEqual(
+                historical_ns,
+                (isolated_nested / "validator.txt").lstat().st_mtime_ns,
+            )
+
     def test_nested_materialization_preserves_intent_to_add(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

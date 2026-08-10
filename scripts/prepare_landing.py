@@ -111,6 +111,7 @@ class NestedGitSnapshot:
     object_inventory_count: int
     object_inventory_digest: str
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
+    worktree_mtimes: tuple[tuple[str, int], ...]
     worktree_xattrs: tuple[tuple[str, tuple[tuple[str, bytes], ...]], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
@@ -139,6 +140,7 @@ class NestedGitSnapshot:
             "worktree_hardlink_groups": [
                 list(group) for group in self.worktree_hardlink_groups
             ],
+            "worktree_mtimes": [list(row) for row in self.worktree_mtimes],
             "worktree_xattrs": [
                 [
                     path,
@@ -1176,6 +1178,49 @@ def _worktree_xattr_state(
     return tuple(state)
 
 
+def _worktree_mtime_state(
+    path: Path,
+    candidate_paths: Sequence[str],
+    directory_paths: Sequence[str],
+) -> tuple[tuple[str, int], ...]:
+    state: list[tuple[str, int]] = []
+    for raw in (".", *sorted(set((*candidate_paths, *directory_paths)))):
+        candidate = path if raw == "." else path / checked_relative_path(raw)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        state.append((raw, metadata.st_mtime_ns))
+    return tuple(state)
+
+
+def _restore_worktree_mtimes(
+    path: Path,
+    expected_state: Sequence[tuple[str, int]],
+) -> None:
+    ordered = sorted(
+        expected_state,
+        key=lambda row: (row[0].count("/"), row[0]),
+        reverse=True,
+    )
+    for raw, mtime_ns in ordered:
+        candidate = path if raw == "." else path / checked_relative_path(raw)
+        try:
+            metadata = candidate.lstat()
+            os.utime(
+                candidate,
+                ns=(metadata.st_atime_ns, mtime_ns),
+                follow_symlinks=False,
+            )
+        except OSError as exc:
+            raise PreparationFailure(
+                f"cannot restore nested checkout modification time: {candidate}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+                details={"path": raw, "error": str(exc)},
+            ) from exc
+
+
 def _restore_worktree_xattrs(
     path: Path,
     candidate_paths: Sequence[str],
@@ -1892,6 +1937,11 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         (*paths, *candidate_untracked_paths),
         candidate_directories,
     )
+    worktree_mtimes = _worktree_mtime_state(
+        path,
+        (*paths, *candidate_untracked_paths),
+        candidate_directories,
+    )
     origin_head, git_refs = _git_ref_state(path)
     reflog_root_mode, reflog_directories, reflog_files = _reflog_state(path)
     object_inventory_count, object_inventory_digest = _git_object_inventory(path)
@@ -1911,6 +1961,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         object_inventory_count=object_inventory_count,
         object_inventory_digest=object_inventory_digest,
         worktree_hardlink_groups=worktree_hardlink_groups,
+        worktree_mtimes=worktree_mtimes,
         worktree_xattrs=worktree_xattrs,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
@@ -2330,6 +2381,18 @@ def copy_untracked_candidate(
                 require_nested_git_snapshot_unchanged(source, nested)
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
+                _restore_worktree_mtimes(destination, nested.worktree_mtimes)
+                observed_mtimes = _worktree_mtime_state(
+                    destination,
+                    (*nested.tracked_paths, *nested.candidate.untracked_paths),
+                    nested.candidate.directories,
+                )
+                if observed_mtimes != nested.worktree_mtimes:
+                    raise PreparationFailure(
+                        "nested checkout modification times differ after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",
