@@ -782,6 +782,36 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["restrictive_git_admin_directory_modes"],
             )
 
+    def test_snapshot_rejects_nested_rerere_cache_state(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            rr_cache = Path(
+                git(nested, "rev-parse", "--git-path", "rr-cache").decode().strip()
+            )
+            if not rr_cache.is_absolute():
+                rr_cache = nested / rr_cache
+            resolution = rr_cache / ("a" * 40)
+            resolution.mkdir(parents=True)
+            (resolution / "preimage").write_text("conflict\n", encoding="utf-8")
+            (resolution / "postimage").write_text("resolved\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                [".", f"{'a' * 40}", f"{'a' * 40}/postimage", f"{'a' * 40}/preimage"],
+                raised.exception.details["rerere_cache_state"],
+            )
+
     def test_snapshot_rejects_nonportable_git_admin_ownership(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

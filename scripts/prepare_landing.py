@@ -1794,6 +1794,31 @@ def _in_progress_operation_state(path: Path) -> tuple[str, ...]:
     return tuple(active)
 
 
+def _rerere_cache_state(path: Path) -> tuple[str, ...]:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    raw_root = Path(git_text(path, "rev-parse", "--git-path", "rr-cache"))
+    root = raw_root if raw_root.is_absolute() else path / raw_root
+    if root.resolve(strict=False) != git_dir / "rr-cache":
+        raise PreparationFailure(
+            f"nested checkout rerere cache escapes its Git directory: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"rerere_cache_root": root.as_posix()},
+        )
+    if not root.exists() and not root.is_symlink():
+        return ()
+    paths = ["."]
+    if root.is_dir() and not root.is_symlink():
+        paths.extend(
+            child.relative_to(root).as_posix()
+            for child in sorted(
+                root.rglob("*"),
+                key=lambda item: os.fsencode(item.relative_to(root).as_posix()),
+            )
+        )
+    return tuple(paths)
+
+
 def _unsupported_pseudo_ref_state(path: Path) -> tuple[str, ...]:
     names = (
         "FETCH_HEAD",
@@ -2111,6 +2136,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"operation_state": list(operation_state)},
+        )
+    rerere_cache_state = _rerere_cache_state(path)
+    if rerere_cache_state:
+        raise PreparationFailure(
+            f"nested checkout contains unsupported rerere cache state: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"rerere_cache_state": list(rerere_cache_state)},
         )
     pseudo_ref_state = _unsupported_pseudo_ref_state(path)
     if pseudo_ref_state:
