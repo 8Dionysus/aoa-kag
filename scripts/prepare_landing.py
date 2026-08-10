@@ -110,6 +110,7 @@ class NestedGitSnapshot:
     index_version: int
     object_inventory_count: int
     object_inventory_digest: str
+    worktree_hardlink_groups: tuple[tuple[str, ...], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -134,6 +135,9 @@ class NestedGitSnapshot:
             "index_version": self.index_version,
             "object_inventory_count": self.object_inventory_count,
             "object_inventory_digest": self.object_inventory_digest,
+            "worktree_hardlink_groups": [
+                list(group) for group in self.worktree_hardlink_groups
+            ],
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -979,6 +983,91 @@ def _require_git_object_inventory_match(
         )
 
 
+def _restrictive_git_admin_directory_modes(path: Path) -> tuple[str, ...]:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    restrictive: list[str] = []
+
+    def visit(directory: Path, relative: Path) -> None:
+        metadata = directory.lstat()
+        mode = stat.S_IMODE(metadata.st_mode)
+        if mode & stat.S_IRWXU != stat.S_IRWXU:
+            label = "." if relative == Path(".") else relative.as_posix()
+            restrictive.append(f"{label} mode={mode:04o}")
+        for child in sorted(directory.iterdir(), key=lambda item: os.fsencode(item.name)):
+            child_relative = child.relative_to(git_dir)
+            child_metadata = child.lstat()
+            if not stat.S_ISDIR(child_metadata.st_mode) or stat.S_ISLNK(
+                child_metadata.st_mode
+            ):
+                continue
+            if child_relative.parts[0] == "logs":
+                # Reflog directory modes are captured and restored explicitly.
+                continue
+            visit(child, child_relative)
+
+    visit(git_dir, Path("."))
+    return tuple(restrictive)
+
+
+def _worktree_hardlink_groups(
+    path: Path,
+    candidate_paths: Sequence[str],
+) -> tuple[tuple[str, ...], ...]:
+    inode_paths: dict[tuple[int, int], list[str]] = {}
+    inode_links: dict[tuple[int, int], int] = {}
+    for raw in sorted(set(candidate_paths)):
+        candidate = path / checked_relative_path(raw)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        if not stat.S_ISREG(metadata.st_mode):
+            continue
+        inode = (metadata.st_dev, metadata.st_ino)
+        inode_paths.setdefault(inode, []).append(raw)
+        inode_links[inode] = metadata.st_nlink
+    external: list[str] = []
+    groups: list[tuple[str, ...]] = []
+    for inode, paths in inode_paths.items():
+        ordered = tuple(sorted(paths))
+        if inode_links[inode] != len(ordered):
+            external.extend(ordered)
+        elif len(ordered) > 1:
+            groups.append(ordered)
+    if external:
+        raise PreparationFailure(
+            f"nested checkout contains worktree hardlinks outside candidate identity: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"external_hardlink_paths": sorted(external)},
+        )
+    return tuple(sorted(groups))
+
+
+def _restore_worktree_hardlinks(
+    path: Path,
+    groups: Sequence[Sequence[str]],
+) -> None:
+    for group in groups:
+        anchor = path / checked_relative_path(group[0])
+        if not stat.S_ISREG(anchor.lstat().st_mode):
+            raise PreparationFailure(
+                "nested checkout hardlink anchor changed type during isolation",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        for raw in group[1:]:
+            destination = path / checked_relative_path(raw)
+            if not stat.S_ISREG(destination.lstat().st_mode):
+                raise PreparationFailure(
+                    "nested checkout hardlink target changed type during isolation",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                )
+            destination.unlink()
+            os.link(anchor, destination)
+
+
 def _symbolic_head(path: Path) -> str | None:
     result = subprocess.run(
         ("git", "symbolic-ref", "--quiet", "HEAD"),
@@ -1404,6 +1493,18 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             action_class="code_fix",
             details={"registered_worktrees": list(registered_worktrees)},
         )
+    restrictive_git_admin_modes = _restrictive_git_admin_directory_modes(path)
+    if restrictive_git_admin_modes:
+        raise PreparationFailure(
+            f"nested checkout has restrictive Git administration directories: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "restrictive_git_admin_directory_modes": list(
+                    restrictive_git_admin_modes
+                )
+            },
+        )
     implicit_rule_sources = _implicit_rule_sources()
     if implicit_rule_sources:
         raise PreparationFailure(
@@ -1531,6 +1632,10 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         )
     paths = tracked_paths(path)
     candidate_untracked_paths = untracked_paths(path)
+    worktree_hardlink_groups = _worktree_hardlink_groups(
+        path,
+        (*paths, *candidate_untracked_paths),
+    )
     filtered_paths = _active_filter_attribute_paths(
         path,
         (*paths, *candidate_untracked_paths),
@@ -1589,6 +1694,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         index_version=_index_version(path),
         object_inventory_count=object_inventory_count,
         object_inventory_digest=object_inventory_digest,
+        worktree_hardlink_groups=worktree_hardlink_groups,
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -1947,6 +2053,20 @@ def copy_untracked_candidate(
                 _require_effective_checkout_settings_match(source, destination)
                 _require_effective_git_config_match(destination, nested)
                 materialize_nested_candidate(source, destination, nested.candidate)
+                _restore_worktree_hardlinks(
+                    destination,
+                    nested.worktree_hardlink_groups,
+                )
+                observed_hardlinks = _worktree_hardlink_groups(
+                    destination,
+                    (*nested.tracked_paths, *nested.candidate.untracked_paths),
+                )
+                if observed_hardlinks != nested.worktree_hardlink_groups:
+                    raise PreparationFailure(
+                        "nested checkout hardlink topology differs after isolation",
+                        failure_type="candidate_snapshot_invalid",
+                        action_class="code_fix",
+                    )
                 git_bytes(
                     destination,
                     "update-index",

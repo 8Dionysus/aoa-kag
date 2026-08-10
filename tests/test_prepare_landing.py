@@ -678,6 +678,94 @@ class PrepareLandingTests(unittest.TestCase):
                 if isolated_refs is not None and isolated_refs.exists():
                     isolated_refs.chmod(0o755)
 
+    def test_snapshot_rejects_restrictive_git_admin_directory_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            refs_heads = Path(
+                git(nested, "rev-parse", "--git-path", "refs/heads")
+                .decode()
+                .strip()
+            )
+            if not refs_heads.is_absolute():
+                refs_heads = nested / refs_heads
+            refs_heads.chmod(0o555)
+            try:
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.capture_candidate_snapshot(repo)
+            finally:
+                refs_heads.chmod(0o755)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertIn(
+                "refs/heads mode=0555",
+                raised.exception.details["restrictive_git_admin_directory_modes"],
+            )
+
+    def test_nested_materialization_preserves_worktree_hardlinks(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            first = nested / "first.txt"
+            second = nested / "second.txt"
+            candidate = nested / "candidate.txt"
+            first.write_text("shared\n", encoding="utf-8")
+            os.link(first, second)
+            git(nested, "add", "first.txt", "second.txt")
+            git(nested, "commit", "-qm", "nested hardlinks")
+            os.link(first, candidate)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+            isolated_nested = isolated / ".validator"
+            inodes = {
+                (isolated_nested / name).lstat().st_ino
+                for name in ("candidate.txt", "first.txt", "second.txt")
+            }
+
+            self.assertEqual(1, len(inodes))
+            (isolated_nested / "first.txt").write_text("changed\n", encoding="utf-8")
+            self.assertEqual(
+                "changed\n",
+                (isolated_nested / "second.txt").read_text(encoding="utf-8"),
+            )
+
+    def test_snapshot_rejects_worktree_hardlinks_outside_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            outside = repo / "outside.txt"
+            outside.write_text("shared\n", encoding="utf-8")
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            os.link(outside, nested / "validator.txt")
+            git(nested, "add", "validator.txt")
+            git(nested, "commit", "-qm", "nested external hardlink")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["validator.txt"],
+                raised.exception.details["external_hardlink_paths"],
+            )
+
     def test_nested_materialization_preserves_intent_to_add(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))
