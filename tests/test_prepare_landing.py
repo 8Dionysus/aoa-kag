@@ -1007,6 +1007,29 @@ class PrepareLandingTests(unittest.TestCase):
                 )
             )
 
+    def test_snapshot_rejects_nested_linked_worktrees(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            linked = Path(work_tmp) / "linked"
+            git(nested, "worktree", "add", "--detach", linked.as_posix(), "HEAD")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                {nested.resolve().as_posix(), linked.resolve().as_posix()},
+                set(raised.exception.details["registered_worktrees"]),
+            )
+
     def test_snapshot_rejects_nested_core_ignorecase_true(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

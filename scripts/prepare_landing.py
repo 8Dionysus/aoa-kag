@@ -894,6 +894,24 @@ def _resolve_undo_entries(path: Path) -> tuple[str, ...]:
     )
 
 
+def _registered_worktree_paths(path: Path) -> tuple[str, ...]:
+    fields = git_bytes(path, "worktree", "list", "--porcelain", "-z").split(b"\0")
+    worktrees = tuple(
+        field.removeprefix(b"worktree ").decode(
+            "utf-8", errors="surrogateescape"
+        )
+        for field in fields
+        if field.startswith(b"worktree ")
+    )
+    if not worktrees:
+        raise PreparationFailure(
+            f"cannot inspect nested checkout worktree registrations: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    return worktrees
+
+
 def _require_effective_checkout_settings_match(source: Path, destination: Path) -> None:
     source_settings = _effective_checkout_settings(source)
     destination_settings = _effective_checkout_settings(destination)
@@ -998,6 +1016,15 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
 def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
     if not _is_nested_git_checkout(path):
         return None
+    registered_worktrees = _registered_worktree_paths(path)
+    source_worktree = path.resolve()
+    if len(registered_worktrees) != 1 or Path(registered_worktrees[0]).resolve() != source_worktree:
+        raise PreparationFailure(
+            f"nested checkout has additional linked worktrees: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"registered_worktrees": list(registered_worktrees)},
+        )
     implicit_rule_sources = _implicit_rule_sources()
     if implicit_rule_sources:
         raise PreparationFailure(
