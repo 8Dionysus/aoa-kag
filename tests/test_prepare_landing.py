@@ -1919,6 +1919,32 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual(config_before, source_config.read_bytes())
             self.assertFalse((destination / ".validator").exists())
 
+    def test_snapshot_rejects_ambient_git_repository_routing_before_git(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            index = repo / ".git" / "index"
+            index_before = index.read_bytes()
+
+            with patch.dict(
+                os.environ,
+                {
+                    "GIT_DIR": (repo / ".git").as_posix(),
+                    "GIT_WORK_TREE": repo.as_posix(),
+                    "GIT_COMMON_DIR": (repo / ".git").as_posix(),
+                },
+            ), patch.object(prepare_landing, "git_text") as git_text_mock, self.assertRaises(
+                prepare_landing.PreparationFailure
+            ) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR"],
+                raised.exception.details["git_repository_environment"],
+            )
+            git_text_mock.assert_not_called()
+            self.assertEqual(index_before, index.read_bytes())
+
     def test_snapshot_rejects_nested_repository_local_exclude_rules(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

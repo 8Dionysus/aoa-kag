@@ -482,15 +482,7 @@ def candidate_directory_digest(repo_root: Path, paths: Sequence[str]) -> str:
     return "sha256:" + digest.hexdigest()
 
 
-def _is_nested_git_checkout(path: Path) -> bool:
-    try:
-        if (
-            not stat.S_ISDIR(path.lstat().st_mode)
-            or not (path / ".git").exists()
-        ):
-            return False
-    except FileNotFoundError:
-        return False
+def _require_isolated_git_environment(path: Path, *, subject: str) -> None:
     object_storage_environment = tuple(
         name
         for name in (
@@ -501,7 +493,7 @@ def _is_nested_git_checkout(path: Path) -> bool:
     )
     if object_storage_environment:
         raise PreparationFailure(
-            f"nested checkout is exposed to external Git object storage: {path}",
+            f"{subject} is exposed to external Git object storage: {path}",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={
@@ -530,13 +522,25 @@ def _is_nested_git_checkout(path: Path) -> bool:
     )
     if repository_routing_environment:
         raise PreparationFailure(
-            f"nested checkout is exposed to ambient Git repository state: {path}",
+            f"{subject} is exposed to ambient Git repository state: {path}",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={
                 "git_repository_environment": list(repository_routing_environment)
             },
         )
+
+
+def _is_nested_git_checkout(path: Path) -> bool:
+    try:
+        if (
+            not stat.S_ISDIR(path.lstat().st_mode)
+            or not (path / ".git").exists()
+        ):
+            return False
+    except FileNotFoundError:
+        return False
+    _require_isolated_git_environment(path, subject="nested checkout")
     probe = subprocess.run(
         ("git", "rev-parse", "--show-toplevel"),
         cwd=path,
@@ -3016,6 +3020,10 @@ def capture_candidate_snapshot(
     *,
     include_ignored: bool = False,
 ) -> CandidateSnapshot:
+    # Reject routing before the first Git subprocess. Otherwise an exported
+    # GIT_DIR/GIT_WORK_TREE pair can make the temporary validation lane inspect
+    # or mutate the source repository rather than the isolated candidate.
+    _require_isolated_git_environment(repo_root, subject="candidate checkout")
     if git_text(repo_root, "rev-parse", "--show-toplevel") != repo_root.resolve().as_posix():
         raise PreparationFailure(
             "prepare-landing must run at the Git top level",
