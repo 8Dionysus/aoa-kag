@@ -51,7 +51,7 @@ class PrepareLandingTests(unittest.TestCase):
     ) -> tuple[int, str]:
         assert max_iterations > 0
         source = git(repo_root, "show", ":source.txt").decode("utf-8")
-        note = git(repo_root, "show", ":note.txt").decode("utf-8")
+        note = (repo_root / "note.txt").read_text(encoding="utf-8")
         (repo_root / "generated" / "out.txt").write_text(source + note, encoding="utf-8")
         git(repo_root, "add", "generated/out.txt")
         return 2, git(repo_root, "write-tree").decode("ascii").strip()
@@ -101,7 +101,7 @@ class PrepareLandingTests(unittest.TestCase):
             code, receipt = self.run_isolated(repo, Path(work_tmp), head, mode="check")
 
             self.assertEqual(1, code)
-            self.assertEqual("drift", receipt["verdict"])
+            self.assertEqual("drift", receipt["verdict"], receipt)
             self.assertTrue(receipt["fixed_point"]["drift_detected"])
             self.assertEqual(generated_before, (repo / "generated" / "out.txt").read_bytes())
             self.assertEqual(
@@ -2469,6 +2469,23 @@ class PrepareLandingTests(unittest.TestCase):
 
             self.assertEqual(expected_debug, git(isolated_nested, "ls-files", "--debug"))
             self.assertEqual(expected_index, prepare_landing._git_index_state(isolated_nested))
+
+    def test_materialization_preserves_outer_index_stat_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            tracked = repo / "source.txt"
+            old_mtime_ns = 978_307_200_000_000_000
+            os.utime(tracked, ns=(old_mtime_ns, old_mtime_ns))
+            git(repo, "add", "source.txt")
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            expected_debug = git(repo, "ls-files", "--debug")
+            expected_index = (snapshot.index_mode, snapshot.index_bytes)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(expected_debug, git(isolated, "ls-files", "--debug"))
+            self.assertEqual(expected_index, prepare_landing._git_index_state(isolated))
 
     def test_nested_materialization_binds_unreachable_objects(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:

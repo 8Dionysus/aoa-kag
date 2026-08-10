@@ -74,6 +74,12 @@ class CandidateSnapshot:
     head: str
     root_mode: int
     index_tree: str
+    index_version: int
+    index_mode: int
+    index_bytes: bytes
+    cached_patch_bytes: bytes
+    unstaged_patch_bytes: bytes
+    candidate_patch_bytes: bytes
     cached_diff_digest: str
     worktree_diff_digest: str
     untracked_digest: str
@@ -91,6 +97,21 @@ class CandidateSnapshot:
             "head": self.head,
             "root_mode": self.root_mode,
             "index_tree": self.index_tree,
+            "index_version": self.index_version,
+            "index_mode": self.index_mode,
+            "index_bytes": [len(self.index_bytes), sha256_bytes(self.index_bytes)],
+            "cached_patch_bytes": [
+                len(self.cached_patch_bytes),
+                sha256_bytes(self.cached_patch_bytes),
+            ],
+            "unstaged_patch_bytes": [
+                len(self.unstaged_patch_bytes),
+                sha256_bytes(self.unstaged_patch_bytes),
+            ],
+            "candidate_patch_bytes": [
+                len(self.candidate_patch_bytes),
+                sha256_bytes(self.candidate_patch_bytes),
+            ],
             "cached_diff_digest": self.cached_diff_digest,
             "worktree_diff_digest": self.worktree_diff_digest,
             "untracked_digest": self.untracked_digest,
@@ -3358,6 +3379,14 @@ def capture_candidate_snapshot(
                 "assume_unchanged_paths": list(assume_unchanged_paths),
             },
         )
+    shared_index_path = git_text(repo_root, "rev-parse", "--shared-index-path")
+    if shared_index_path:
+        raise PreparationFailure(
+            "candidate index uses external split-index storage",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"shared_index_path": shared_index_path},
+        )
     outer_tracked_paths = tracked_paths(repo_root)
     nested_tracked_roots = _nested_checkout_roots_with_tracked_content(
         repo_root,
@@ -3426,32 +3455,26 @@ def capture_candidate_snapshot(
         worktree_paths,
         directories,
     )
+    head = git_text(repo_root, "rev-parse", "HEAD")
+    index_tree = git_text(repo_root, "write-tree")
+    cached_patch_bytes = candidate_cached_patch(repo_root)
+    unstaged_patch_bytes = candidate_unstaged_patch(repo_root)
+    candidate_patch_bytes = candidate_patch(repo_root)
+    candidate_intent_to_add_paths = intent_to_add_paths(repo_root)
+    index_version = _index_version(repo_root)
+    index_mode, index_bytes = _git_index_state(repo_root)
     return CandidateSnapshot(
-        head=git_text(repo_root, "rev-parse", "HEAD"),
+        head=head,
         root_mode=stat.S_IMODE(repo_root.lstat().st_mode),
-        index_tree=git_text(repo_root, "write-tree"),
-        cached_diff_digest=sha256_bytes(
-            git_bytes(
-                repo_root,
-                "diff",
-                "--cached",
-                "--binary",
-                "--full-index",
-                "--no-ext-diff",
-                "--no-textconv",
-            )
-        ),
-        worktree_diff_digest=sha256_bytes(
-            git_bytes(
-                repo_root,
-                "diff",
-                "--binary",
-                "--full-index",
-                "--no-ext-diff",
-                "--no-textconv",
-                "HEAD",
-            )
-        ),
+        index_tree=index_tree,
+        index_version=index_version,
+        index_mode=index_mode,
+        index_bytes=index_bytes,
+        cached_patch_bytes=cached_patch_bytes,
+        unstaged_patch_bytes=unstaged_patch_bytes,
+        candidate_patch_bytes=candidate_patch_bytes,
+        cached_diff_digest=sha256_bytes(cached_patch_bytes),
+        worktree_diff_digest=sha256_bytes(candidate_patch_bytes),
         untracked_digest=untracked_digest,
         untracked_paths=paths,
         directory_digest=directory_digest,
@@ -3460,7 +3483,7 @@ def capture_candidate_snapshot(
         tracked_file_modes=tracked_file_modes,
         directory_mtimes=directory_mtimes,
         worktree_xattrs=worktree_xattrs,
-        intent_to_add_paths=intent_to_add_paths(repo_root),
+        intent_to_add_paths=candidate_intent_to_add_paths,
     )
 
 
@@ -3763,7 +3786,7 @@ def materialize_nested_candidate(
     *,
     restore_directory_modes: bool = True,
 ) -> tuple[tuple[Path, int], ...]:
-    cached_patch = candidate_cached_patch(source_root)
+    cached_patch = snapshot.cached_patch_bytes
     if cached_patch:
         git_bytes(
             destination_root,
@@ -3774,7 +3797,7 @@ def materialize_nested_candidate(
             "-",
             input_bytes=cached_patch,
         )
-    unstaged_patch = candidate_unstaged_patch(source_root)
+    unstaged_patch = snapshot.unstaged_patch_bytes
     if unstaged_patch:
         git_bytes(
             destination_root,
@@ -3869,7 +3892,7 @@ def materialize_candidate(
     temporary_root: Path,
     snapshot: CandidateSnapshot,
 ) -> str:
-    patch = candidate_patch(source_root)
+    patch = snapshot.candidate_patch_bytes
     if patch:
         git_bytes(
             temporary_root,
@@ -3978,7 +4001,29 @@ def materialize_candidate(
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
-    return git_text(temporary_root, "write-tree")
+    _restore_git_index_state(
+        temporary_root,
+        snapshot.index_mode,
+        snapshot.index_bytes,
+    )
+    if _index_version(temporary_root) != snapshot.index_version:
+        raise PreparationFailure(
+            "candidate index version differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    observed_tree = git_text(temporary_root, "write-tree")
+    if observed_tree != snapshot.index_tree:
+        raise PreparationFailure(
+            "candidate index tree differs after exact restoration",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "expected_index_tree": snapshot.index_tree,
+                "actual_index_tree": observed_tree,
+            },
+        )
+    return observed_tree
 
 
 def resolve_ref(repo_root: Path, value: str, label: str) -> str:
