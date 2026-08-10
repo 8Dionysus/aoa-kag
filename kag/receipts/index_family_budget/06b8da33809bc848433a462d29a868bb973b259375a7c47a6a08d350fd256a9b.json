@@ -1,17 +1,17 @@
 {
-  "allowed_bytes": 5239323,
-  "allowed_tracked_bytes": 12406301,
+  "allowed_bytes": 5224515,
+  "allowed_tracked_bytes": 12410277,
   "approved_by": "repository-owner",
   "base_ref": "30ce3b8f33ed27ef3888c214b9e9e5cd0f50f80e",
-  "changed_generated_bytes": 5239323,
+  "changed_generated_bytes": 5224515,
   "changed_generated_files": 134,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "85c8a675eff51ba2a37ba74a106314b8ddd80133c5cbd2d197681bdf18217dc7",
-  "reason": "Preserve exact nested tracked worktree permissions before identity comparison while retaining all canonical OS-wide proof lanes.",
+  "head_family_digest": "06b8da33809bc848433a462d29a868bb973b259375a7c47a6a08d350fd256a9b",
+  "reason": "Reject unsupported nested local Git configuration while preserving portable config and all canonical OS-wide proof lanes.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
   "scope": "generated_delta",
-  "tracked_bytes": 12406301,
+  "tracked_bytes": 12410277,
   "tracked_bytes_max": 12582912
 }

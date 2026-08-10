@@ -52,6 +52,18 @@ CHECKOUT_CONVERSION_CONFIG_PATTERN = (
     r"(autocrlf|eol|safecrlf|symlinks|attributesfile|sparsecheckout|sparsecheckoutcone|worktree)"
     r"|filter\..*\.(clean|smudge|process|required))$"
 )
+PORTABLE_LOCAL_CONFIG_KEYS = frozenset(
+    {
+        "core.bare",
+        "core.filemode",
+        "core.logallrefupdates",
+        "core.repositoryformatversion",
+        "user.email",
+        "user.name",
+    }
+)
+PORTABLE_LOCAL_CONFIG_PREFIXES = ("branch.", "remote.")
+ISOLATION_LOCAL_CONFIG_KEYS = frozenset({"core.fsmonitor", "core.hookspath"})
 
 
 @dataclass(frozen=True)
@@ -89,7 +101,7 @@ class NestedGitSnapshot:
     origin_head: str | None
     git_refs: tuple[tuple[str, str], ...]
     shallow_boundaries: tuple[str, ...]
-    local_remote_config: tuple[tuple[str, str], ...]
+    local_config: tuple[tuple[str, str], ...]
     tracked_paths: tuple[str, ...]
     tracked_worktree_digest: str
     effective_checkout_settings: tuple[str, ...]
@@ -102,7 +114,7 @@ class NestedGitSnapshot:
             "origin_head": self.origin_head,
             "git_refs": [list(row) for row in self.git_refs],
             "shallow_boundaries": list(self.shallow_boundaries),
-            "local_remote_config": [list(row) for row in self.local_remote_config],
+            "local_config": [list(row) for row in self.local_config],
             "tracked_paths": list(self.tracked_paths),
             "tracked_worktree_digest": self.tracked_worktree_digest,
             "effective_checkout_settings": list(self.effective_checkout_settings),
@@ -432,7 +444,7 @@ def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
     return tuple(value for value in values if value.strip().lower() not in disabled)
 
 
-def _local_remote_config(path: Path) -> tuple[tuple[str, str], ...]:
+def _portable_local_config(path: Path) -> tuple[tuple[str, str], ...]:
     rows: list[tuple[str, str]] = []
     for entry in git_bytes(path, "config", "--local", "--null", "--list").split(b"\0"):
         if not entry:
@@ -450,18 +462,36 @@ def _local_remote_config(path: Path) -> tuple[tuple[str, str], ...]:
                 raw_value.decode("utf-8", errors="surrogateescape"),
             )
         )
-    return tuple(row for row in rows if row[0].startswith(("remote.", "branch.")))
+    unsupported = tuple(
+        sorted(
+            {
+                key
+                for key, _value in rows
+                if key not in PORTABLE_LOCAL_CONFIG_KEYS
+                and key not in ISOLATION_LOCAL_CONFIG_KEYS
+                and not key.startswith(PORTABLE_LOCAL_CONFIG_PREFIXES)
+            }
+        )
+    )
+    if unsupported:
+        raise PreparationFailure(
+            f"nested checkout has unsupported local Git configuration: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"unsupported_local_config_keys": list(unsupported)},
+        )
+    return tuple(row for row in rows if row[0] not in ISOLATION_LOCAL_CONFIG_KEYS)
 
 
-def _restore_local_remote_config(path: Path, expected: NestedGitSnapshot) -> None:
-    observed = _local_remote_config(path)
+def _restore_portable_local_config(path: Path, expected: NestedGitSnapshot) -> None:
+    observed = _portable_local_config(path)
     for key in sorted({key for key, _value in observed}):
         git_bytes(path, "config", "--local", "--unset-all", key)
-    for key, value in expected.local_remote_config:
+    for key, value in expected.local_config:
         git_bytes(path, "config", "--local", "--add", key, value)
-    if _local_remote_config(path) != expected.local_remote_config:
+    if _portable_local_config(path) != expected.local_config:
         raise PreparationFailure(
-            "nested checkout remote config differs after isolation",
+            "nested checkout portable local config differs after isolation",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
         )
@@ -1029,7 +1059,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         origin_head=origin_head,
         git_refs=git_refs,
         shallow_boundaries=_shallow_boundaries(path),
-        local_remote_config=_local_remote_config(path),
+        local_config=_portable_local_config(path),
         tracked_paths=paths,
         tracked_worktree_digest=tracked_worktree_digest(path, paths),
         effective_checkout_settings=_effective_checkout_settings(path),
@@ -1356,7 +1386,7 @@ def copy_untracked_candidate(
                     "/dev/null",
                 )
                 git_bytes(destination, "config", "--local", "core.fsmonitor", "false")
-                _restore_local_remote_config(destination, nested)
+                _restore_portable_local_config(destination, nested)
                 _restore_git_ref_state(destination, nested)
                 if _shallow_boundaries(destination) != nested.shallow_boundaries:
                     raise PreparationFailure(

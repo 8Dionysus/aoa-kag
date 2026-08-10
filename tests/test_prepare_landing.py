@@ -478,8 +478,8 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing._git_ref_state(isolated / ".validator"),
             )
             self.assertEqual(
-                prepare_landing._local_remote_config(nested),
-                prepare_landing._local_remote_config(isolated / ".validator"),
+                prepare_landing._portable_local_config(nested),
+                prepare_landing._portable_local_config(isolated / ".validator"),
             )
             self.assertNotEqual(first.identity(), second.identity())
 
@@ -531,8 +531,8 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing._git_ref_state(isolated_nested),
             )
             self.assertEqual(
-                prepare_landing._local_remote_config(nested),
-                prepare_landing._local_remote_config(isolated_nested),
+                prepare_landing._portable_local_config(nested),
+                prepare_landing._portable_local_config(isolated_nested),
             )
             self.assertEqual(
                 main_commit,
@@ -1002,6 +1002,28 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing.capture_candidate_snapshot(repo)
 
             self.assertIn("core.ignorecase true", raised.exception.details["conversion_settings"])
+
+    def test_snapshot_rejects_unsupported_nested_local_config(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            git(nested, "config", "status.showUntrackedFiles", "no")
+            (nested / "untracked.txt").write_text("candidate\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual(
+                ["status.showuntrackedfiles"],
+                raised.exception.details["unsupported_local_config_keys"],
+            )
 
     def test_snapshot_rejects_symlinks_in_nested_checkout(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
