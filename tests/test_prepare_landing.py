@@ -1651,6 +1651,44 @@ class PrepareLandingTests(unittest.TestCase):
                 raised.exception.details["git_object_storage_environment"],
             )
 
+    def test_materialization_rejects_ambient_git_repository_routing(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            source_config = nested / ".git" / "config"
+            config_before = source_config.read_bytes()
+            destination = Path(work_tmp) / "candidate"
+            destination.mkdir()
+
+            with patch.dict(
+                os.environ,
+                {
+                    "GIT_DIR": (nested / ".git").as_posix(),
+                    "GIT_WORK_TREE": nested.as_posix(),
+                    "GIT_COMMON_DIR": (nested / ".git").as_posix(),
+                },
+            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.copy_untracked_candidate(
+                    repo,
+                    destination,
+                    [".validator"],
+                )
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR"],
+                raised.exception.details["git_repository_environment"],
+            )
+            self.assertEqual(config_before, source_config.read_bytes())
+            self.assertFalse((destination / ".validator").exists())
+
     def test_snapshot_rejects_nested_repository_local_exclude_rules(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

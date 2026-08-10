@@ -480,6 +480,35 @@ def _is_nested_git_checkout(path: Path) -> bool:
                 "git_object_storage_environment": list(object_storage_environment)
             },
         )
+    repository_routing_environment = tuple(
+        name
+        for name in (
+            "GIT_DIR",
+            "GIT_WORK_TREE",
+            "GIT_COMMON_DIR",
+            "GIT_IMPLICIT_WORK_TREE",
+            "GIT_INDEX_FILE",
+            "GIT_GRAFT_FILE",
+            "GIT_SHALLOW_FILE",
+            "GIT_REPLACE_REF_BASE",
+            "GIT_NO_REPLACE_OBJECTS",
+            "GIT_NAMESPACE",
+            "GIT_CONFIG",
+            "GIT_CONFIG_PARAMETERS",
+            "GIT_CONFIG_COUNT",
+            "GIT_PREFIX",
+        )
+        if os.environ.get(name, "").strip()
+    )
+    if repository_routing_environment:
+        raise PreparationFailure(
+            f"nested checkout is exposed to ambient Git repository state: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "git_repository_environment": list(repository_routing_environment)
+            },
+        )
     probe = subprocess.run(
         ("git", "rev-parse", "--show-toplevel"),
         cwd=path,
