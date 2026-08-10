@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import subprocess
 import tempfile
 import unittest
@@ -207,12 +208,30 @@ class SourceFastHandoffTests(unittest.TestCase):
         self.assertIn("AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}", release_job)
         self.assertIn("python scripts/ci_release_check.py", release_job)
         self.assertNotIn("python scripts/release_check.py", release_job)
-        for pin in (
-            "c7c83081b7db0a0e908f14888b7438b5ecdde3bf",
-            "58bf49d374b008ef6625a9fd6893c61096777b4d",
-            "5627c41efe9f766a4b3437da857060847cb4f0f1",
-        ):
-            self.assertIn(pin, source_job)
+        provider_registry = json.loads(
+            (REPO_ROOT / "manifests" / "provider_registry.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        source_fast_repos = {
+            "Tree-of-Sophia",
+            "aoa-agents",
+            "aoa-evals",
+            "aoa-memo",
+            "aoa-playbooks",
+            "aoa-sdk",
+            "aoa-stats",
+            "aoa-techniques",
+        }
+        registry_pins = {
+            provider["repo"]: provider["pinned_ref"]
+            for provider in provider_registry["providers"]
+            if provider["repo"] in source_fast_repos
+        }
+        self.assertEqual(source_fast_repos, set(registry_pins))
+        for repo, pin in registry_pins.items():
+            self.assertIn(f"repository: 8Dionysus/{repo}", source_job)
+            self.assertIn(f"ref: {pin}", source_job)
 
 
 if __name__ == "__main__":

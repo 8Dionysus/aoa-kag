@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/Tree-of-Sophia
-          ref: d95a583272acb84dcb5b7e6896801f0364c7b234
+          ref: 77f0cef4dfc64183ab6bdc76121c5242ca1472f0
           path: .deps/Tree-of-Sophia
           fetch-depth: 1
 
@@ -75,7 +75,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-memo
-          ref: c7c83081b7db0a0e908f14888b7438b5ecdde3bf
+          ref: 41fd7a647982d907464179e8d20a12d6398bfb4c
           path: .deps/aoa-memo
           fetch-depth: 1
 
@@ -83,7 +83,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-playbooks
-          ref: b72ca2d333bcdf516ed6656e34670fa93df88162
+          ref: 41f10f29b61d9f697d3e2537e3dd89b0e2d19f4d
           path: .deps/aoa-playbooks
           fetch-depth: 1
 
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-evals
-          ref: 58bf49d374b008ef6625a9fd6893c61096777b4d
+          ref: 1b531f51691fd0d655e50850a4ee1dca42f9aff5
           path: .deps/aoa-evals
           fetch-depth: 1
 
@@ -99,7 +99,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-agents
-          ref: 92dd79e6c79fef60faedf6b97f2c65ff89477d06
+          ref: 4b4dcbf22c166e18db6e3e2eb05c2eb4661941b0
           path: .deps/aoa-agents
           fetch-depth: 1
 
@@ -115,7 +115,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-sdk
-          ref: cbf225627f9f28d0470deb8a962ae12d1fe72375
+          ref: 459231bc69f39ca0e16e30849bc8e5237068e950
           path: .deps/aoa-sdk
           fetch-depth: 1
 
@@ -123,7 +123,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stats
-          ref: 5627c41efe9f766a4b3437da857060847cb4f0f1
+          ref: 326d56e9108b51728ce334da2ed49d53252bd81d
           path: .deps/aoa-stats
           fetch-depth: 1
 
