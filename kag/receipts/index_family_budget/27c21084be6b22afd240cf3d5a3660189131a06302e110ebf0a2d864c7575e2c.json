@@ -1,17 +1,17 @@
 {
-  "allowed_bytes": 7851616,
-  "allowed_tracked_bytes": 12917772,
+  "allowed_bytes": 7854357,
+  "allowed_tracked_bytes": 12920513,
   "approved_by": "repository-owner",
   "base_ref": "30ce3b8f33ed27ef3888c214b9e9e5cd0f50f80e",
-  "changed_generated_bytes": 7851616,
+  "changed_generated_bytes": 7854357,
   "changed_generated_files": 205,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "914a0b16ce1d6486a733ead50387657fe496db2d53ee7fea6f71ac54593f5f2e",
-  "reason": "Reject sparse nested Git admin files and preserve SELinux labels.",
+  "head_family_digest": "27c21084be6b22afd240cf3d5a3660189131a06302e110ebf0a2d864c7575e2c",
+  "reason": "Preserve SELinux labels portably across absent-label hosts.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
   "scope": "generated_delta_and_tracked_size",
-  "tracked_bytes": 12917772,
+  "tracked_bytes": 12920513,
   "tracked_bytes_max": 12582912
 }

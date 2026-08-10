@@ -1774,6 +1774,9 @@ def _restore_git_admin_security_label(
         label = "." if relative == Path(".") else relative.as_posix()
         try:
             if expected_security_label is None:
+                attribute_names = os.listxattr(candidate, follow_symlinks=False)
+                if "security.selinux" not in attribute_names:
+                    continue
                 try:
                     os.removexattr(
                         candidate,

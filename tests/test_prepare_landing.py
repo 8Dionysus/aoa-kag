@@ -1594,6 +1594,25 @@ class PrepareLandingTests(unittest.TestCase):
                 follow_symlinks=False,
             )
 
+    def test_restore_missing_git_admin_security_label_avoids_removal(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+
+            with patch.object(
+                prepare_landing.os,
+                "listxattr",
+                return_value=[],
+            ), patch.object(
+                prepare_landing.os,
+                "removexattr",
+            ) as removexattr:
+                prepare_landing._restore_git_admin_security_label(nested, None)
+
+            removexattr.assert_not_called()
+
     def test_snapshot_rejects_nested_rerere_cache_state(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
