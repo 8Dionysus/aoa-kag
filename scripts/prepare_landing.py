@@ -2503,6 +2503,29 @@ def _require_effective_checkout_settings_match(source: Path, destination: Path) 
         )
 
 
+def _nonportable_index_flag_paths(path: Path) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    entries = tuple(
+        entry.decode("utf-8", errors="surrogateescape")
+        for entry in git_bytes(path, "ls-files", "-v", "-z").split(b"\0")
+        if entry
+    )
+    malformed = tuple(entry for entry in entries if len(entry) < 3 or entry[1] != " ")
+    if malformed:
+        raise PreparationFailure(
+            f"cannot parse checkout index flags: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"malformed_index_flag_entries": list(malformed)},
+        )
+    skip_worktree_paths = tuple(
+        entry[2:] for entry in entries if entry[0] in ("S", "s")
+    )
+    assume_unchanged_paths = tuple(
+        entry[2:] for entry in entries if entry[0].islower()
+    )
+    return skip_worktree_paths, assume_unchanged_paths
+
+
 def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
     result = subprocess.run(
         (
@@ -2570,19 +2593,11 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
         )
     if ignore_case.returncode == 0 and ignore_case.stdout.strip() == "true":
         settings.append("core.ignorecase true")
-    index_entries = tuple(
-        entry.decode("utf-8", errors="surrogateescape")
-        for entry in git_bytes(path, "ls-files", "-v", "-z").split(b"\0")
-        if entry
-    )
-    skip_worktree_entries = tuple(entry for entry in index_entries if entry.startswith(("S ", "s ")))
-    if skip_worktree_entries:
-        settings.append(f"skip-worktree entries={len(skip_worktree_entries)}")
-    assume_unchanged_entries = tuple(
-        entry for entry in index_entries if entry[0].islower()
-    )
-    if assume_unchanged_entries:
-        settings.append(f"assume-unchanged entries={len(assume_unchanged_entries)}")
+    skip_worktree_paths, assume_unchanged_paths = _nonportable_index_flag_paths(path)
+    if skip_worktree_paths:
+        settings.append(f"skip-worktree entries={len(skip_worktree_paths)}")
+    if assume_unchanged_paths:
+        settings.append(f"assume-unchanged entries={len(assume_unchanged_paths)}")
     shared_index_path = git_text(path, "rev-parse", "--shared-index-path")
     if shared_index_path:
         settings.append(f"split-index {shared_index_path}")
@@ -3163,6 +3178,19 @@ def capture_candidate_snapshot(
             "candidate contains unmerged Git index entries",
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
+        )
+    skip_worktree_paths, assume_unchanged_paths = _nonportable_index_flag_paths(
+        repo_root
+    )
+    if skip_worktree_paths or assume_unchanged_paths:
+        raise PreparationFailure(
+            "candidate index contains worktree-hiding path flags",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "skip_worktree_paths": list(skip_worktree_paths),
+                "assume_unchanged_paths": list(assume_unchanged_paths),
+            },
         )
     outer_tracked_paths = tracked_paths(repo_root)
     nested_tracked_roots = _nested_checkout_roots_with_tracked_content(
@@ -4842,6 +4870,7 @@ def changed_tree_paths(
     raw = git_bytes(
         repo_root,
         "diff",
+        "--no-renames",
         "--name-only",
         "-z",
         before_tree,

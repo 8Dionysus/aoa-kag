@@ -131,6 +131,18 @@ class PrepareLandingTests(unittest.TestCase):
                 git(repo, "diff", "--name-only"),
             )
 
+    def test_changed_tree_paths_reports_both_sides_of_a_rename(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            before_tree = git(repo, "write-tree").decode("ascii").strip()
+            git(repo, "mv", "generated/out.txt", "generated/renamed.txt")
+            after_tree = git(repo, "write-tree").decode("ascii").strip()
+
+            self.assertEqual(
+                {"generated/out.txt", "generated/renamed.txt"},
+                set(prepare_landing.changed_tree_paths(repo, before_tree, after_tree)),
+            )
+
     def test_prepare_rejects_provider_identity_change_at_closeout(self) -> None:
         before = (
             {
@@ -2292,6 +2304,26 @@ class PrepareLandingTests(unittest.TestCase):
                 prepare_landing.capture_candidate_snapshot(repo)
 
             self.assertIn("assume-unchanged", raised.exception.details["conversion_settings"][-1])
+
+    def test_snapshot_rejects_outer_worktree_hiding_index_flags(self) -> None:
+        for flag, detail_key in (
+            ("--assume-unchanged", "assume_unchanged_paths"),
+            ("--skip-worktree", "skip_worktree_paths"),
+        ):
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as repo_tmp:
+                repo = self.make_repo(Path(repo_tmp))
+                tracked = repo / "source.txt"
+                git(repo, "update-index", flag, "source.txt")
+                tracked.write_text("hidden candidate bytes\n", encoding="utf-8")
+
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.capture_candidate_snapshot(repo)
+
+                self.assertEqual(
+                    "candidate_snapshot_invalid",
+                    raised.exception.failure_type,
+                )
+                self.assertEqual(["source.txt"], raised.exception.details[detail_key])
 
     def test_snapshot_rejects_nested_core_filemode_false(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
