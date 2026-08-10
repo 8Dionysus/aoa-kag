@@ -989,6 +989,9 @@ def _nonportable_local_checkout_settings(path: Path) -> tuple[str, ...]:
     )
     if assume_unchanged_entries:
         settings.append(f"assume-unchanged entries={len(assume_unchanged_entries)}")
+    shared_index_path = git_text(path, "rev-parse", "--shared-index-path")
+    if shared_index_path:
+        settings.append(f"split-index {shared_index_path}")
     return tuple(settings)
 
 
