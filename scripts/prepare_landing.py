@@ -24,7 +24,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -122,6 +122,8 @@ class NestedGitSnapshot:
     candidate: CandidateSnapshot
     root_mode: int
     git_admin_security_label: bytes | None
+    git_admin_directories: tuple[tuple[str, int], ...]
+    git_admin_files: tuple[tuple[str, int, bytes], ...]
     symbolic_head: str | None
     origin_head: str | None
     git_refs: tuple[tuple[str, str], ...]
@@ -165,6 +167,13 @@ class NestedGitSnapshot:
                     sha256_bytes(self.git_admin_security_label),
                 ]
             ),
+            "git_admin_directories": [
+                list(row) for row in self.git_admin_directories
+            ],
+            "git_admin_files": [
+                [path, mode, len(content), sha256_bytes(content)]
+                for path, mode, content in self.git_admin_files
+            ],
             "symbolic_head": self.symbolic_head,
             "origin_head": self.origin_head,
             "git_refs": [list(row) for row in self.git_refs],
@@ -1653,6 +1662,141 @@ def _require_git_admin_portability_match(
         )
 
 
+def _git_admin_state(
+    path: Path,
+) -> tuple[
+    tuple[tuple[str, int], ...],
+    tuple[tuple[str, int, bytes], ...],
+]:
+    """Capture all Git-admin state not intentionally isolated elsewhere."""
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    directories: list[tuple[str, int]] = []
+    files: list[tuple[str, int, bytes]] = []
+    for current, dirnames, filenames in os.walk(git_dir, topdown=True):
+        directory = Path(current)
+        relative_directory = directory.relative_to(git_dir)
+        if relative_directory == Path("."):
+            dirnames[:] = [name for name in dirnames if name != "objects"]
+            filenames = [name for name in filenames if name != "config"]
+        dirnames[:] = sorted(dirnames, key=os.fsencode)
+        metadata = directory.lstat()
+        if not stat.S_ISDIR(metadata.st_mode):
+            raise PreparationFailure(
+                f"nested Git administration has unsupported directory: {directory}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        label = "." if relative_directory == Path(".") else relative_directory.as_posix()
+        directories.append((label, stat.S_IMODE(metadata.st_mode)))
+        for name in sorted(filenames, key=os.fsencode):
+            candidate = directory / name
+            file_metadata = candidate.lstat()
+            relative = candidate.relative_to(git_dir).as_posix()
+            if not stat.S_ISREG(file_metadata.st_mode):
+                raise PreparationFailure(
+                    f"nested Git administration has unsupported file: {candidate}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={"git_admin_path": relative},
+                )
+            if file_metadata.st_nlink != 1:
+                raise PreparationFailure(
+                    f"nested Git administration has external hardlinks: {candidate}",
+                    failure_type="candidate_snapshot_invalid",
+                    action_class="code_fix",
+                    details={
+                        "git_admin_path": relative,
+                        "link_count": file_metadata.st_nlink,
+                    },
+                )
+            files.append(
+                (
+                    relative,
+                    stat.S_IMODE(file_metadata.st_mode),
+                    candidate.read_bytes(),
+                )
+            )
+    return tuple(directories), tuple(files)
+
+
+def _restore_git_admin_state(
+    path: Path,
+    expected_directories: Sequence[tuple[str, int]],
+    expected_files: Sequence[tuple[str, int, bytes]],
+) -> None:
+    git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
+    existing_files: list[Path] = []
+    existing_directories: list[Path] = []
+    for current, dirnames, filenames in os.walk(git_dir, topdown=True):
+        directory = Path(current)
+        if directory == git_dir:
+            dirnames[:] = [name for name in dirnames if name != "objects"]
+            filenames = [name for name in filenames if name != "config"]
+        dirnames[:] = sorted(dirnames, key=os.fsencode)
+        for name in filenames:
+            existing_files.append(directory / name)
+        for name in dirnames:
+            existing_directories.append(directory / name)
+    for candidate in existing_directories:
+        if not candidate.is_symlink():
+            candidate.chmod(stat.S_IMODE(candidate.lstat().st_mode) | stat.S_IRWXU)
+    for candidate in existing_files:
+        candidate.unlink()
+    for candidate in sorted(
+        existing_directories,
+        key=lambda item: len(item.relative_to(git_dir).parts),
+        reverse=True,
+    ):
+        if candidate.is_symlink():
+            candidate.unlink()
+        else:
+            candidate.rmdir()
+
+    for relative, _mode in expected_directories:
+        if relative != ".":
+            (git_dir / checked_relative_path(relative)).mkdir(parents=True, exist_ok=True)
+    for relative, mode, content in expected_files:
+        destination = git_dir / checked_relative_path(relative)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(content)
+        destination.chmod(mode)
+    for relative, mode in reversed(tuple(expected_directories)):
+        destination = git_dir if relative == "." else git_dir / checked_relative_path(relative)
+        destination.chmod(mode)
+
+    observed = _git_admin_state(path)
+    expected = (tuple(expected_directories), tuple(expected_files))
+    if observed != expected:
+        def state_digest(
+            state: tuple[
+                tuple[tuple[str, int], ...],
+                tuple[tuple[str, int, bytes], ...],
+            ],
+        ) -> str:
+            directories, files_state = state
+            return sha256_bytes(
+                canonical_json(
+                    {
+                        "directories": [list(row) for row in directories],
+                        "files": [
+                            [name, mode, len(content), sha256_bytes(content)]
+                            for name, mode, content in files_state
+                        ],
+                    }
+                )
+            )
+
+        raise PreparationFailure(
+            "nested Git administration state differs after isolation",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={
+                "expected_digest": state_digest(expected),
+                "actual_digest": state_digest(observed),
+            },
+        )
+
+
 def _git_admin_lock_paths(path: Path) -> tuple[str, ...]:
     git_dir = Path(git_text(path, "rev-parse", "--absolute-git-dir")).resolve()
     locks: list[str] = []
@@ -2960,11 +3104,23 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         local_config_bytes,
         remote_config,
     )
+    symbolic_head = _symbolic_head(path)
+    shallow_boundaries = _shallow_boundaries(path)
+    effective_checkout_settings = _effective_checkout_settings(path)
+    effective_git_config = _effective_git_config(path)
+    tracked_digest = tracked_worktree_digest(path, paths)
+    # Capture the residual administration tree only after all Git reads used
+    # to form the snapshot. Some Git versions may refresh administrative state
+    # while answering those reads; the final bound state must be the one that
+    # materialization and the unchanged check are required to reproduce.
+    git_admin_directories, git_admin_files = _git_admin_state(path)
     return NestedGitSnapshot(
         candidate=candidate,
         root_mode=stat.S_IMODE(path.lstat().st_mode),
         git_admin_security_label=git_admin_security_label,
-        symbolic_head=_symbolic_head(path),
+        git_admin_directories=git_admin_directories,
+        git_admin_files=git_admin_files,
+        symbolic_head=symbolic_head,
         origin_head=origin_head,
         git_refs=git_refs,
         ref_root_mode=ref_root_mode,
@@ -2972,7 +3128,7 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         loose_ref_files=loose_ref_files,
         packed_refs_mode=packed_refs_mode,
         packed_refs_bytes=packed_refs_bytes,
-        shallow_boundaries=_shallow_boundaries(path),
+        shallow_boundaries=shallow_boundaries,
         local_config=local_config,
         remote_config=remote_config,
         local_config_mode=local_config_mode,
@@ -2991,9 +3147,9 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
         worktree_mtimes=worktree_mtimes,
         worktree_xattrs=worktree_xattrs,
         tracked_paths=paths,
-        tracked_worktree_digest=tracked_worktree_digest(path, paths),
-        effective_checkout_settings=_effective_checkout_settings(path),
-        effective_git_config=_effective_git_config(path),
+        tracked_worktree_digest=tracked_digest,
+        effective_checkout_settings=effective_checkout_settings,
+        effective_git_config=effective_git_config,
     )
 
 
@@ -3104,13 +3260,23 @@ def require_nested_git_snapshot_unchanged(
 ) -> None:
     observed = _nested_git_snapshot(repo_root)
     if observed != expected:
+        changed_components = (
+            [
+                field.name
+                for field in fields(expected)
+                if observed is None
+                or getattr(observed, field.name) != getattr(expected, field.name)
+            ]
+        )
         raise PreparationFailure(
-            "nested checkout candidate changed during isolated preparation",
+            "nested checkout candidate changed during isolated preparation: "
+            + ", ".join(changed_components),
             failure_type="candidate_snapshot_changed",
             action_class="retry_same_candidate",
             details={
                 "expected_identity": expected.identity(),
                 "actual_identity": observed.identity() if observed is not None else None,
+                "changed_components": changed_components,
             },
         )
 
@@ -3536,6 +3702,18 @@ def copy_untracked_candidate(
                         action_class="code_fix",
                     )
                 _restore_git_ref_storage(destination, nested)
+                _restore_git_admin_state(
+                    destination,
+                    nested.git_admin_directories,
+                    nested.git_admin_files,
+                )
+                _require_git_admin_portability_match(
+                    destination,
+                    nested.git_admin_security_label,
+                )
+                _require_local_config_state_match(destination, nested)
+                _require_effective_checkout_settings_match(source, destination)
+                _require_effective_git_config_match(destination, nested)
         else:  # capture_candidate_snapshot already rejects this; retain fail-closed symmetry.
             raise PreparationFailure(
                 f"untracked candidate path changed type during copy: {raw}",
