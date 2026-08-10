@@ -1001,6 +1001,34 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
             self.assertTrue(raised.exception.details["conversion_settings"])
 
+    def test_snapshot_rejects_executable_default_directory_hooks(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            (nested / "validator.txt").write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            hooks_raw = git(nested, "rev-parse", "--git-path", "hooks").decode().strip()
+            hooks = Path(hooks_raw)
+            if not hooks.is_absolute():
+                hooks = nested / hooks
+            pre_commit = hooks / "pre-commit"
+            pre_commit.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+            pre_commit.chmod(0o755)
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertEqual("candidate_snapshot_invalid", raised.exception.failure_type)
+            self.assertEqual(
+                ["pre-commit"],
+                raised.exception.details["active_default_hooks"],
+            )
+
     def test_snapshot_rejects_nested_repository_local_exclude_rules(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))

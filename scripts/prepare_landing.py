@@ -445,6 +445,44 @@ def _effective_hook_settings(path: Path) -> tuple[str, ...]:
     )
 
 
+def _active_default_hook_paths(path: Path) -> tuple[str, ...]:
+    configured = subprocess.run(
+        ("git", "config", "--path", "--get", "core.hooksPath"),
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if configured.returncode not in (0, 1):
+        raise PreparationFailure(
+            f"cannot inspect nested checkout hook path: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"stderr": configured.stderr.strip()},
+        )
+    if configured.returncode == 0:
+        return ()
+    hooks_raw = git_text(path, "rev-parse", "--git-path", "hooks")
+    hooks = Path(hooks_raw)
+    if not hooks.is_absolute():
+        hooks = path / hooks
+    if not hooks.exists():
+        return ()
+    if not hooks.is_dir() or hooks.is_symlink():
+        raise PreparationFailure(
+            f"nested checkout has unsupported default hooks path: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+        )
+    return tuple(
+        child.name
+        for child in sorted(hooks.iterdir(), key=lambda item: os.fsencode(item.name))
+        if not child.name.endswith(".sample")
+        and child.is_file()
+        and os.access(child, os.X_OK)
+    )
+
+
 def _effective_fsmonitor_settings(path: Path) -> tuple[str, ...]:
     result = subprocess.run(
         ("git", "config", "--null", "--get", "core.fsmonitor"),
@@ -1646,6 +1684,14 @@ def _nested_git_snapshot(path: Path) -> NestedGitSnapshot | None:
             failure_type="candidate_snapshot_invalid",
             action_class="code_fix",
             details={"hook_settings": list(hook_settings)},
+        )
+    active_default_hooks = _active_default_hook_paths(path)
+    if active_default_hooks:
+        raise PreparationFailure(
+            f"nested checkout has executable default-directory hooks: {path}",
+            failure_type="candidate_snapshot_invalid",
+            action_class="code_fix",
+            details={"active_default_hooks": list(active_default_hooks)},
         )
     head = git_text(path, "rev-parse", "HEAD")
     submodule_transport_sources = _submodule_transport_sources(path, head)
