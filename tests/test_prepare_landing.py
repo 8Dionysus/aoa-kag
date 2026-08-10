@@ -374,6 +374,31 @@ class PrepareLandingTests(unittest.TestCase):
                 stat.S_IMODE((isolated / ".validator" / "secret").stat().st_mode),
             )
 
+    def test_nested_materialization_preserves_tracked_file_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            nested = repo / ".validator"
+            nested.mkdir()
+            git(nested, "init", "-q")
+            git(nested, "config", "user.email", "test@example.invalid")
+            git(nested, "config", "user.name", "Nested Validator Test")
+            tracked = nested / "validator.txt"
+            tracked.write_text("base\n", encoding="utf-8")
+            git(nested, "add", ".")
+            git(nested, "commit", "-qm", "nested base")
+            tracked.chmod(0o600)
+
+            snapshot = prepare_landing.capture_candidate_snapshot(repo)
+            isolated = Path(work_tmp) / "isolated"
+            git(repo, "worktree", "add", "--detach", isolated.as_posix(), snapshot.head)
+            materialized_tree = prepare_landing.materialize_candidate(repo, isolated, snapshot)
+
+            self.assertEqual(snapshot.index_tree, materialized_tree)
+            self.assertEqual(
+                0o600,
+                stat.S_IMODE((isolated / ".validator" / "validator.txt").stat().st_mode),
+            )
+
     def test_nested_materialization_preserves_staged_and_unstaged_split(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo = self.make_repo(Path(repo_tmp))

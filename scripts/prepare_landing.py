@@ -1380,6 +1380,7 @@ def copy_untracked_candidate(
                 git_bytes(destination, *checkout_args)
                 _require_effective_checkout_settings_match(source, destination)
                 materialize_nested_candidate(source, destination, nested.candidate)
+                restore_tracked_worktree_modes(source, destination, nested.tracked_paths)
                 observed_digest = tracked_worktree_digest(destination, nested.tracked_paths)
                 if observed_digest != nested.tracked_worktree_digest:
                     raise PreparationFailure(
@@ -1482,6 +1483,28 @@ def materialize_nested_candidate(
                 "actual_index_tree": observed_tree,
             },
         )
+
+
+def restore_tracked_worktree_modes(
+    source_root: Path,
+    destination_root: Path,
+    paths: Sequence[str],
+) -> None:
+    for raw in paths:
+        relative = checked_relative_path(raw)
+        source = source_root / relative
+        destination = destination_root / relative
+        if not source.exists() and not destination.exists():
+            continue
+        source_metadata = source.lstat()
+        destination_metadata = destination.lstat()
+        if stat.S_IFMT(source_metadata.st_mode) != stat.S_IFMT(destination_metadata.st_mode):
+            raise PreparationFailure(
+                f"tracked nested checkout path changed type during isolation: {raw}",
+                failure_type="candidate_snapshot_invalid",
+                action_class="code_fix",
+            )
+        destination.chmod(stat.S_IMODE(source_metadata.st_mode))
 
 
 def materialize_candidate(
