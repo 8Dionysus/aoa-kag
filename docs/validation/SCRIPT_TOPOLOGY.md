@@ -99,6 +99,11 @@ temporary worktree, stages only inside that worktree, and converges the atomic
 coverage/generated-root/portable-family SCC through ordered Gauss-Seidel
 regeneration. It verifies exact provider pins and final parity, emits a typed
 receipt, and applies only the resulting generated patch when explicitly asked.
+The apply route then restores the caller's exact Git index inside the already
+validated isolated candidate and issues a final content seal only when the
+actual caller result matches that proved content across bytes and portable
+filesystem identity. This removes the immediate duplicate zero-drift sweep in
+a real repair session without persisting or reusing an owner-proof verdict.
 Its preparation-only coverage step rebuilds self while admitting external rows
 from the history seed only under unchanged canonical runtime, exact pins, owner
 order, canonical roots, and matching portable-manifest identities. It neither

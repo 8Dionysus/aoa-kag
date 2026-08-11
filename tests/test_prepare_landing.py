@@ -130,6 +130,72 @@ class PrepareLandingTests(unittest.TestCase):
                 b"generated/out.txt",
                 git(repo, "diff", "--name-only"),
             )
+            self.assertEqual("verified", receipt["candidate_seal"]["status"])
+            self.assertEqual(
+                receipt["candidate_seal"]["content_identity"],
+                receipt["candidate_seal"]["validated_content_identity"],
+            )
+            self.assertFalse(
+                receipt["candidate_seal"]["immediate_zero_drift_check_required"]
+            )
+
+    def test_content_identity_ignores_times_but_not_candidate_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            first = prepare_landing.capture_candidate_snapshot(repo)
+            source = repo / "source.txt"
+            metadata = source.lstat()
+            os.utime(
+                source,
+                ns=(metadata.st_atime_ns, metadata.st_mtime_ns + 1_000_000),
+            )
+            retimed = prepare_landing.capture_candidate_snapshot(repo)
+            source.write_text("changed\n", encoding="utf-8")
+            changed = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertNotEqual(first.identity(), retimed.identity())
+            self.assertEqual(first.content_identity(), retimed.content_identity())
+            self.assertNotEqual(retimed.content_identity(), changed.content_identity())
+
+    def test_apply_seal_rejects_post_apply_content_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))
+            real_apply = prepare_landing.apply_generated_patch
+
+            def corrupt_after_apply(
+                source_root: Path,
+                patch_bytes: bytes,
+                *,
+                expected_snapshot: prepare_landing.CandidateSnapshot,
+            ) -> None:
+                real_apply(
+                    source_root,
+                    patch_bytes,
+                    expected_snapshot=expected_snapshot,
+                )
+                (source_root / "generated" / "out.txt").write_text(
+                    "tampered after apply\n",
+                    encoding="utf-8",
+                )
+
+            with patch.object(
+                prepare_landing,
+                "apply_generated_patch",
+                side_effect=corrupt_after_apply,
+            ):
+                code, receipt = self.run_isolated(
+                    repo,
+                    Path(work_tmp),
+                    head,
+                    mode="apply",
+                )
+
+            self.assertEqual(1, code)
+            self.assertEqual(
+                "applied_candidate_seal_mismatch",
+                receipt["failure_type"],
+            )
+            self.assertEqual("rollback_generated_patch", receipt["action_class"])
 
     def test_changed_tree_paths_reports_both_sides_of_a_rename(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
