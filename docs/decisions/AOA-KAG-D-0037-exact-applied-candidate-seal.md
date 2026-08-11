@@ -8,7 +8,7 @@
 - KAG surfaces: generated fixed point, landing preparation receipt, caller candidate
 - Source lanes: aoa-kag, provider repositories
 - Guard families: exact caller index, content identity, provider identity, mutation invalidation, no cross-run proof reuse
-- Posture: proposed
+- Posture: accepted
 
 ## Context
 
@@ -33,6 +33,10 @@ already validated isolated worktree and capture the complete final candidate
 content identity. Apply only the bounded generated patch to the caller, capture
 the caller again, and return success only when the two content identities and
 provider identities match and the caller remains stable through closeout.
+After the caller stages only the receipt-listed generated paths, a cheap
+verification command must confirm that the worktree content and provider
+identities remain unchanged and that the staged tree equals the already proved
+fixed-point tree. Only that exact index-only transition preserves the seal.
 
 The content identity binds bytes, staged and unstaged candidate diffs, index
 bytes and tree, modes, directory topology, hardlinks, extended attributes,
@@ -53,29 +57,33 @@ guards against mutation before apply and around final caller capture.
   the caller index, original source delta, untracked inputs, filesystem
   identity, nested validation checkouts, or provider epoch.
 - Compare the complete applied caller with the already proved isolated
-  candidate before the first process returns: selected because it closes the
-  only gap the immediate second check was being used to test.
+  candidate before the first process returns, then verify the exact staged-tree
+  transition without rebuilding KAG: selected because it closes both gaps the
+  immediate second check was being used to test.
 
 ## Rationale
 
 The seal does not cache or import a validation verdict. It is issued inside the
 same process that performed the full proof and only after exact equality with
-the proved content is established. Any later candidate or provider mutation
-invalidates it. Source-fast, full owner proof, release audit, hosted CI, and the
+the proved content is established. A later index-only staging transition is
+accepted only when its worktree identity remains exact and its tree equals the
+proved fixed point; any other candidate, index, or provider mutation
+invalidates the seal. Source-fast, full owner proof, release audit, hosted CI, and the
 stable landing verdict remain separate blocking authorities.
 
 This changes the retry unit from two full preparations of one immutable
-candidate to one full preparation plus an exact in-process equality barrier.
+candidate to one full preparation, an exact in-process equality barrier, and a
+cheap staged-tree verification.
 The expected real-session saving is the complete duration of the immediate
 unchanged check, not a reduction in assertions or owners.
 
 ## Consequences
 
-- A successful root `--apply` receipt can state that no immediate unchanged
-  `--check` is required.
+- A successful root `--apply` plus exact `--verify-applied-seal` result can
+  state that no immediate unchanged full `--check` is required.
 - Repair sessions still rerun preparation after every proof-relevant mutation.
-- Provider roots, caller content, or index drift fail closed before a seal is
-  issued.
+- Provider roots, caller content, or unapproved index drift fail closed before
+  or after the seal is issued.
 - The seal has no cross-run, cross-process, source-fast, release, or landing
   authority.
 - Non-root owner preparation remains governed by its own stable-candidate
@@ -94,7 +102,13 @@ unchanged check, not a reduction in assertions or owners.
 
 ## Validation
 
-Run the complete `prepare_landing` test module, command-authority and topology
+The complete `prepare_landing` test module, command-authority and topology
 tests, decision generation and validation, source-fast, one real staged apply,
-and the full release route. Require a clean hosted PR and postmerge main run
-before changing the posture from proposed to accepted.
+and the full release route passed. The real 21-owner apply completed in 99.785
+seconds, issued an exact verified candidate seal, and did not require the
+immediate unchanged check. PR #215 passed source-fast and owner-family proof in
+2 minutes 18 seconds, the full OS-wide release audit in 2 minutes 20 seconds,
+and the stable landing verdict. Merge commit `2f3651c1` then passed postmerge
+source-fast and owner-family proof in 2 minutes 29 seconds, the full OS-wide
+release audit in 2 minutes 34 seconds, and the stable landing verdict in run
+`31512635998`.
