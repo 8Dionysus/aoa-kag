@@ -107,19 +107,24 @@ must not be presented as one CI-command duration.
 ### Retry policy
 
 The retry unit is an immutable candidate, not an unchanged failed workflow.
-Before another hosted run, a source change that can affect the root KAG family
-must pass `prepare_landing.py --check`; when it reports drift, run `--apply`,
-review and commit only its bounded generated patch, then require a clean
-post-commit `--check`. A `provide_budget_reason` receipt is an owner gate, not
-an infrastructure retry. A typed source, portable-family, coverage, generated,
-or semantic failure requires a changed candidate before another hosted run.
+During repair, use the cheap sentinel and focused checks; do not repeatedly run
+the complete owner proof on intermediate states. Before another hosted run, a
+source change that can affect the root KAG family must pass
+`prepare_landing.py --check`; when it reports drift, run `--apply` and review
+and commit only its bounded generated patch. A successful apply receipt now
+seals the returned caller candidate against the exact content already proved in
+the isolated worktree, so an immediate unchanged `--check` is redundant. Any
+subsequent candidate or provider mutation invalidates that seal and requires a
+new preparation. A `provide_budget_reason` receipt is an owner gate, not an
+infrastructure retry. A typed source, portable-family, coverage, generated, or
+semantic failure requires a changed candidate before another hosted run.
 Only a demonstrated transient infrastructure failure may be retried on the
 same SHA, and its failed receipt remains part of the evidence corpus.
 
 For every non-root provider, use the owner-family preparation authority in
 `COMMAND_AUTHORITY.md` in check mode against the final candidate. Drift routes
-to its explicit apply mode, owner review of the bounded `kag/` patch, and a
-clean post-commit check.
+to its explicit apply mode and owner review of the bounded `kag/` patch. Its
+own stable-candidate receipt remains separate from the root apply seal.
 This removes speculative CI retries across AbyssOS without pretending that an
 owner-family preparation receipt is source-fast, release, OS-wide, or landing
 authority.

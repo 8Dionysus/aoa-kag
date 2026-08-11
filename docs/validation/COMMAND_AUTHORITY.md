@@ -269,7 +269,16 @@ call and require exact, clean, complete-history pinned provider roots. Use
 `scripts/sync_provider_checkouts.py` as the explicit materialization route when
 those roots are absent. `--check` leaves the caller worktree and index unchanged;
 `--apply` changes only worktree files in the generated patch and verifies that
-the caller index stayed byte-identical. A budget exceedance requires an explicit
+the caller index stayed byte-identical. Before returning success, apply restores
+the caller's exact index partition in the already validated isolated candidate
+and compares it with the actual caller result by byte, mode, directory,
+hardlink, xattr, index, untracked, and nested-checkout identity. Filesystem
+times are excluded from that final comparison because applying the patch must
+change them; the caller is still checked for full-identity stability around
+the comparison. A verified `candidate_seal` therefore replaces only an
+immediate unchanged second preparation check. It is invalid after any caller
+or provider mutation and never replaces source-fast, OS-wide proof, release,
+or landing authority. A budget exceedance requires an explicit
 `--budget-reason`, and that receipt is created only after the SCC has converged
 to its final family digest.
 
