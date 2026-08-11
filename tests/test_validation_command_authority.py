@@ -473,14 +473,20 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
         self.assertIn("validate_repo_local_kag_family.py", gate)
         self.assertIn("assemble_repo_local_kag_family.py", gate)
         self.assertIn("python3 -m pip install", action)
+        self.assertIn('python3 -c "import yaml"', action)
+        self.assertIn('python3 -c "import jsonschema"', action)
         self.assertIn("--sentinel-only", action)
         self.assertIn("--sentinel-receipt", action)
         self.assertLess(
+            action.index('python3 -c "import yaml"'),
             action.index("--sentinel-only"),
-            action.index("python3 -m pip install"),
         )
         self.assertLess(
-            action.index("python3 -m pip install"),
+            action.index("--sentinel-only"),
+            action.index('python3 -c "import jsonschema"'),
+        )
+        self.assertLess(
+            action.index('python3 -c "import jsonschema"'),
             action.index("--sentinel-receipt"),
         )
         self.assertIn("--source-index", gate)

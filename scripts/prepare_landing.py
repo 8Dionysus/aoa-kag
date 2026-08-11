@@ -3620,9 +3620,18 @@ def _update_untracked_path_digest(
     digest: Any,
     repo_root: Path,
     rel: Path,
+    *,
+    allow_missing: bool = False,
 ) -> None:
     source = repo_root / rel
-    metadata = source.lstat()
+    try:
+        metadata = source.lstat()
+    except FileNotFoundError:
+        if allow_missing:
+            # A known tracked path may be intentionally absent when its
+            # deletion is staged. Its absence belongs to the index identity.
+            return
+        raise
     raw = rel.as_posix()
     digest.update(raw.encode("utf-8", errors="surrogateescape"))
     digest.update(b"\0")
@@ -3654,11 +3663,19 @@ def _update_untracked_path_digest(
 def candidate_worktree_content_digest(
     repo_root: Path,
     paths: Sequence[str],
+    *,
+    tracked: Sequence[str] = (),
 ) -> str:
     """Hash candidate filesystem content without Git partition semantics."""
     digest = hashlib.sha256()
+    tracked_set = set(tracked)
     for raw in sorted(set(paths), key=os.fsencode):
-        _update_untracked_path_digest(digest, repo_root, Path(raw))
+        _update_untracked_path_digest(
+            digest,
+            repo_root,
+            Path(raw),
+            allow_missing=raw in tracked_set,
+        )
     return f"sha256:{digest.hexdigest()}"
 
 
@@ -3741,6 +3758,7 @@ def capture_candidate_snapshot(
     worktree_content_digest = candidate_worktree_content_digest(
         repo_root,
         worktree_paths,
+        tracked=outer_tracked_paths,
     )
     nonportable_worktree_ownership = _nonportable_worktree_ownership(
         repo_root,

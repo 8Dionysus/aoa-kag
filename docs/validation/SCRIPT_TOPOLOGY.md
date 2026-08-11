@@ -199,6 +199,11 @@ builder also preserves canonical skill source versus generated host projection
 provenance instead of inferring authority from `.agents/skills/` placement, and
 rebuilds declared projections during incremental migration so old authority
 claims cannot survive an unchanged copied blob.
+When an owner publishes the common capability-home manifest, the builder gives
+all declared capability read models the same source-first treatment: generated
+classification, exact builder and validator provenance, authored family
+returns, and deterministic `derives_from` relations regardless of directory
+placement.
 The builder's owner-source reader captures one strict staged Git-index epoch,
 batch-loads unique blobs, and shares immutable path/mode/object/byte maps across
 source and structural builders. Missing or malformed Git state fails closed;

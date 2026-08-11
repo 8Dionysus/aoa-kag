@@ -17,6 +17,7 @@
 ## artifact index
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
 ## callable KAG procedure
 
@@ -34,6 +35,10 @@
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
+
+## capability projection provenance
+
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
 ## capability retrieval
 
@@ -334,6 +339,7 @@
 ## relation index
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
 ## repo-local coverage
 
@@ -349,6 +355,7 @@
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
 ## repo-local validation action
 

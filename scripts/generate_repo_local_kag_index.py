@@ -174,6 +174,17 @@ HOME_SKILL_PROJECTION_BUILDER_ROUTE = (
 HOME_SKILL_PROJECTION_VALIDATOR_ROUTE = (
     "aoa-skills:scripts/validate_home_skill_port.py"
 )
+CAPABILITY_HOME_PORT_MANIFEST = Path("capabilities/port.manifest.json")
+CAPABILITY_HOME_PORT_SCHEMA_VERSION = "aoa_capability_home_port_v1"
+CAPABILITY_PROJECTION_FIELDS = (
+    "graph_json",
+    "graph_markdown",
+    "router_markdown",
+)
+CAPABILITY_PROJECTION_VALIDATOR_ROUTE = (
+    "aoa-skills:scripts/validate_capability_home_port.py"
+)
+CAPABILITY_ID_RE = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
 BASELINE_TOOLS = (
     "git",
@@ -313,11 +324,21 @@ def git_file_paths(repo_root: Path) -> list[Path]:
     return sorted(git_file_modes(repo_root))
 
 
-def manifest_repo_name(repo_root: Path) -> str:
-    manifest_path = repo_root / "kag" / "manifest.json"
+def manifest_repo_name(
+    repo_root: Path,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> str:
     try:
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
+        if source_snapshot is not None:
+            manifest_rel = Path("kag/manifest.json")
+            if manifest_rel not in source_snapshot.contents:
+                return ""
+            raw = source_snapshot.read_bytes(manifest_rel).decode("utf-8")
+        else:
+            raw = (repo_root / "kag" / "manifest.json").read_text(encoding="utf-8")
+        payload = json.loads(raw)
+    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError, SourceSnapshotError):
         return ""
     if not isinstance(payload, dict):
         return ""
@@ -327,8 +348,12 @@ def manifest_repo_name(repo_root: Path) -> str:
     return ""
 
 
-def repo_name(repo_root: Path) -> str:
-    manifest_name = manifest_repo_name(repo_root)
+def repo_name(
+    repo_root: Path,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> str:
+    manifest_name = manifest_repo_name(repo_root, source_snapshot=source_snapshot)
     if manifest_name:
         return manifest_name
     try:
@@ -338,12 +363,17 @@ def repo_name(repo_root: Path) -> str:
         return repo_root.name
 
 
-def effective_history_ref(repo_root: Path, history_ref: str | None = None) -> str | None:
+def effective_history_ref(
+    repo_root: Path,
+    history_ref: str | None = None,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> str | None:
     if history_ref:
         return history_ref
     env_ref = os.environ.get(HISTORY_REF_ENV, "").strip()
     env_repo = os.environ.get(HISTORY_REPO_ENV, "").strip()
-    if env_ref and env_repo == repo_name(repo_root):
+    if env_ref and env_repo == repo_name(repo_root, source_snapshot=source_snapshot):
         return env_ref
     return local_default_history_ref(repo_root)
 
@@ -353,12 +383,13 @@ def effective_event_history_ref(
     event_history_ref: str | None = None,
     *,
     fallback: str | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> str | None:
     if event_history_ref:
         return event_history_ref
     env_ref = os.environ.get(EVENT_HISTORY_REF_ENV, "").strip()
     env_repo = os.environ.get(HISTORY_REPO_ENV, "").strip()
-    if env_ref and env_repo == repo_name(repo_root):
+    if env_ref and env_repo == repo_name(repo_root, source_snapshot=source_snapshot):
         return env_ref
     return fallback
 
@@ -813,6 +844,154 @@ def manifest_relative_path(value: Any, *, field: str) -> Path:
     if candidate.is_absolute() or ".." in candidate.parts or candidate.as_posix() == ".":
         raise ValueError(f"{field} must stay inside the owner repository")
     return candidate
+
+
+def capability_family_node_ids(content: bytes) -> set[str]:
+    """Read declared node IDs from a capability-family YAML contract."""
+
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("capability family contract must be UTF-8") from exc
+
+    try:
+        import yaml
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "PyYAML is required to validate capability family contracts"
+        ) from exc
+
+    try:
+        payload = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ValueError("capability family contract must be valid YAML") from exc
+    if not isinstance(payload, dict):
+        return set()
+    nodes = payload.get("nodes")
+    if not isinstance(nodes, list):
+        return set()
+    node_ids: set[str] = set()
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        node_id = node.get("id")
+        if isinstance(node_id, str) and CAPABILITY_ID_RE.fullmatch(node_id):
+            node_ids.add(node_id)
+    return node_ids
+
+
+def capability_projection_sources(
+    repo_root: Path,
+    repo: str,
+    tracked_entries: Mapping[Path, Mapping[str, str]],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> dict[Path, dict[str, Any]]:
+    """Resolve every declared capability read model to authored family sources."""
+
+    if CAPABILITY_HOME_PORT_MANIFEST not in tracked_entries:
+        return {}
+    payload = json_object(
+        source_bytes(
+            repo_root,
+            CAPABILITY_HOME_PORT_MANIFEST,
+            repo_root / CAPABILITY_HOME_PORT_MANIFEST,
+            source_snapshot=source_snapshot,
+        )
+    )
+    if payload is None:
+        raise ValueError(f"{CAPABILITY_HOME_PORT_MANIFEST} must be a JSON object")
+    if payload.get("schema_version") != CAPABILITY_HOME_PORT_SCHEMA_VERSION:
+        return {}
+    if payload.get("owner_repo") != repo:
+        raise ValueError(
+            f"{CAPABILITY_HOME_PORT_MANIFEST} owner_repo must match repository {repo!r}"
+        )
+
+    source = payload.get("source")
+    if not isinstance(source, dict):
+        raise ValueError(
+            f"{CAPABILITY_HOME_PORT_MANIFEST} must declare source"
+        )
+    family_root = manifest_relative_path(
+        source.get("family_root"),
+        field="capability home source.family_root",
+    )
+    family_paths = tuple(
+        sorted(
+            path
+            for path in tracked_entries
+            if family_root in path.parents and path.suffix in {".yaml", ".yml"}
+        )
+    )
+    if not family_paths:
+        raise ValueError(
+            "capability home source.family_root has no tracked family contracts: "
+            f"{family_root.as_posix()}"
+        )
+    root_id = source.get("root_id")
+    if not isinstance(root_id, str) or not CAPABILITY_ID_RE.fullmatch(root_id):
+        raise ValueError("capability home source.root_id must be a capability id")
+    root_family_paths = tuple(
+        path
+        for path in family_paths
+        if root_id
+        in capability_family_node_ids(
+            source_bytes(
+                repo_root,
+                path,
+                repo_root / path,
+                source_snapshot=source_snapshot,
+            )
+        )
+    )
+    if len(root_family_paths) != 1:
+        raise ValueError(
+            "capability home source.root_id must resolve to exactly one tracked "
+            f"family contract: {root_id!r} matched {len(root_family_paths)}"
+        )
+    root_family_path = root_family_paths[0]
+    ordered_family_paths = (
+        root_family_path,
+        *(path for path in family_paths if path != root_family_path),
+    )
+
+    projection = payload.get("projection")
+    if not isinstance(projection, dict) or projection.get("authority") is not False:
+        raise ValueError(
+            f"{CAPABILITY_HOME_PORT_MANIFEST} must declare a non-authoritative projection"
+        )
+    builder = projection.get("generated_by")
+    if not isinstance(builder, str) or not builder.strip():
+        raise ValueError(
+            "capability home projection.generated_by must be a non-empty route"
+        )
+
+    resolved: dict[Path, dict[str, Any]] = {}
+    for field in CAPABILITY_PROJECTION_FIELDS:
+        projection_path = manifest_relative_path(
+            projection.get(field),
+            field=f"capability home projection.{field}",
+        )
+        if projection_path not in tracked_entries:
+            raise ValueError(
+                f"declared capability projection is not tracked: {projection_path.as_posix()}"
+            )
+        if projection_path in resolved:
+            raise ValueError(
+                f"capability projection paths must be distinct: {projection_path.as_posix()}"
+            )
+        if projection_path == CAPABILITY_HOME_PORT_MANIFEST or projection_path in family_paths:
+            raise ValueError(
+                "capability projection must not alias an authored capability source: "
+                f"{projection_path.as_posix()}"
+            )
+        resolved[projection_path] = {
+            "sources": ordered_family_paths,
+            "manifest": CAPABILITY_HOME_PORT_MANIFEST,
+            "builder": builder.strip(),
+        }
+    return resolved
 
 
 def home_skill_projection_sources(
@@ -1764,6 +1943,7 @@ def build_record(
     git_blob_id: str,
     git_mode: str = "",
     skill_projection: dict[str, Path] | None = None,
+    capability_projection: dict[str, Any] | None = None,
     source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, Any]:
     rel_path = rel.as_posix()
@@ -1791,43 +1971,82 @@ def build_record(
         kind,
         repo=repo,
         declared_generated=declared_generated,
-        generated_projection=skill_projection is not None,
+        generated_projection=(
+            skill_projection is not None or capability_projection is not None
+        ),
     )
     headings = heading_refs(content, rel_path) if doc_role != "none" else []
     line_refs = [f"{rel_path}:1"] if content else []
-    source_rel = skill_projection["source"] if skill_projection else rel
-    authority = "authored_source" if skill_projection else source_authority(state)
-    provenance_source_ref = {
-        "repo": repo,
-        "path": source_rel.as_posix(),
-        "role": "primary",
-        "authority": authority,
-    }
+    if skill_projection:
+        source_rel = skill_projection["source"]
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_rel.as_posix(),
+                "role": "primary",
+                "authority": "authored_source",
+            }
+        ]
+    elif capability_projection:
+        capability_sources = capability_projection["sources"]
+        source_rel = capability_sources[0]
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_path.as_posix(),
+                "role": "primary" if index == 0 else "supporting",
+                "authority": "authored_source",
+            }
+            for index, source_path in enumerate(capability_sources)
+        ]
+    else:
+        source_rel = rel
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_rel.as_posix(),
+                "role": "primary",
+                "authority": source_authority(state),
+            }
+        ]
+    projection_manifest = (
+        skill_projection["manifest"]
+        if skill_projection
+        else capability_projection["manifest"]
+        if capability_projection
+        else None
+    )
     provenance_materials = (
         [
             {
                 "repo": repo,
-                "path": skill_projection["manifest"].as_posix(),
+                "path": projection_manifest.as_posix(),
                 "role": "material",
                 "authority": "authored_source",
             }
         ]
-        if skill_projection
+        if projection_manifest
         else []
     )
-    generated_by = generated_by_for(
-        rel,
-        state,
-        tracked_paths,
-        source_builders,
-        content,
-        repo_root=repo_root,
+    generated_by = (
+        capability_projection["builder"]
+        if capability_projection
+        else generated_by_for(
+            rel,
+            state,
+            tracked_paths,
+            source_builders,
+            content,
+            repo_root=repo_root,
+        )
     )
     observed_by = index_generator_route(repo)
     validated_by = kag_validator_route(repo_root, repo, tracked_paths)
     provenance_validators = [validated_by]
     if skill_projection:
         provenance_validators.append(HOME_SKILL_PROJECTION_VALIDATOR_ROUTE)
+    if capability_projection:
+        provenance_validators.append(CAPABILITY_PROJECTION_VALIDATOR_ROUTE)
     mime = mime_for(path, content, git_mode=git_mode)
     required_tools = []
     if rel.suffix == ".py":
@@ -1879,7 +2098,7 @@ def build_record(
             "observed_by": observed_by,
             "generated_by": generated_by,
             "validated_by": provenance_validators,
-            "source_refs": [provenance_source_ref],
+            "source_refs": provenance_source_refs,
             "materials": provenance_materials,
         },
         "toolchain": {
@@ -1906,7 +2125,11 @@ def build_record(
         "owner_return_route": {
             "repo": repo,
             "surface": source_rel.as_posix(),
-            "route_kind": route_kind_for(kind, doc_role, command),
+            "route_kind": (
+                "source_owner"
+                if capability_projection
+                else route_kind_for(kind, doc_role, command)
+            ),
         },
         "validator_route": {
             "repo": "aoa-kag" if validated_by.startswith("aoa-kag:") else repo,
@@ -1987,8 +2210,12 @@ def build_index(
     source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(repo_root)
     if source_snapshot.repo_root != repo_root:
         raise SourceSnapshotError("source snapshot belongs to a different owner root")
-    history_ref = effective_history_ref(repo_root, history_ref)
-    name = repo_name(repo_root)
+    name = repo_name(repo_root, source_snapshot=source_snapshot)
+    history_ref = effective_history_ref(
+        repo_root,
+        history_ref,
+        source_snapshot=source_snapshot,
+    )
     snapshot_ref = source_snapshot.source_ref
     excluded_paths = {CANONICAL_SELF_INDEX, *CANONICAL_REPOSITORY_INDEX_PATHS}
     selected_outputs = (*excluded_outputs, *((output,) if output is not None else ()))
@@ -2007,6 +2234,12 @@ def build_index(
     tracked_paths = set(tracked_entries)
     skill_projections = home_skill_projection_sources(
         repo_root,
+        tracked_entries,
+        source_snapshot=source_snapshot,
+    )
+    capability_projections = capability_projection_sources(
+        repo_root,
+        name,
         tracked_entries,
         source_snapshot=source_snapshot,
     )
@@ -2038,6 +2271,7 @@ def build_index(
             for path in indexed_paths
             if path == Path("kag/manifest.json")
             or path == HOME_SKILL_PORT_MANIFEST
+            or path == CAPABILITY_HOME_PORT_MANIFEST
             or path in REPO_LOCAL_GENERATOR_HELPER_PATHS
             or path.name.startswith(("build_", "generate_"))
             or "builders" in path.parts
@@ -2061,6 +2295,7 @@ def build_index(
                 # small declared projection set so an incremental migration
                 # cannot preserve older authored-source provenance.
                 and rel not in skill_projections
+                and rel not in capability_projections
                 and str(previous["identity"].get("git_blob_id") or "")
                 == tracked_entries[rel]["blob_id"]
                 and str(previous["identity"].get("lineage_path") or "")
@@ -2081,6 +2316,7 @@ def build_index(
                     git_blob_id=tracked_entries[rel]["blob_id"],
                     git_mode=tracked_entries[rel]["mode"],
                     skill_projection=skill_projections.get(rel),
+                    capability_projection=capability_projections.get(rel),
                     source_snapshot=source_snapshot,
                 )
             )
@@ -2540,11 +2776,16 @@ def build_repository_indexes(
         source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(resolved_root)
         if source_snapshot.repo_root != resolved_root:
             raise SourceSnapshotError("source snapshot belongs to a different owner root")
-        history_ref = effective_history_ref(resolved_root, history_ref)
+        history_ref = effective_history_ref(
+            resolved_root,
+            history_ref,
+            source_snapshot=source_snapshot,
+        )
         event_history_ref = effective_event_history_ref(
             resolved_root,
             event_history_ref,
             fallback=history_ref,
+            source_snapshot=source_snapshot,
         )
     effective_event_ref = (
         event_history_ref if event_history_ref is not None else history_ref
@@ -2823,11 +3064,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     repo_root = Path(args.repo_root).resolve()
     output = Path(args.output)
     output_path = repo_root / output
-    history_ref = effective_history_ref(repo_root, args.history_ref)
+    source_snapshot = OwnerSourceSnapshot.capture(repo_root)
+    history_ref = effective_history_ref(
+        repo_root,
+        args.history_ref,
+        source_snapshot=source_snapshot,
+    )
     event_history_ref = effective_event_history_ref(
         repo_root,
         args.event_history_ref,
         fallback=history_ref,
+        source_snapshot=source_snapshot,
     )
     family_paths = repository_index_output_paths(output_path)
     previous_index: dict[str, Any] | None = None
@@ -2887,6 +3134,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
         previous_index=previous_index,
         history_ref=history_ref,
+        source_snapshot=source_snapshot,
     )
     if args.index_family or args.portable_family:
         try:
@@ -2900,6 +3148,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             previous_family=previous_family,
             history_ref=history_ref,
             event_history_ref=event_history_ref,
+            source_snapshot=source_snapshot,
         )
     else:
         family = {}

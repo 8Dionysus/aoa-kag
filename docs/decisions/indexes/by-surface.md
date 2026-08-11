@@ -108,6 +108,7 @@
 ## generated projection
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
 ## generated readmodel
 
@@ -151,6 +152,7 @@
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
 - [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
 ## landing preparation
 
@@ -200,6 +202,7 @@
 ## owner return
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
 ## owner route
 
@@ -358,3 +361,4 @@
 - [AOA-KAG-D-0035 - Bounded Owner-Family Component DAG](../AOA-KAG-D-0035-bounded-owner-family-component-dag.md) (`docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md`)
 - [AOA-KAG-D-0036 - Bounded Process Provider Audit Wave](../AOA-KAG-D-0036-bounded-process-provider-audit-wave.md) (`docs/decisions/AOA-KAG-D-0036-bounded-process-provider-audit-wave.md`)
 - [AOA-KAG-D-0037 - Exact Applied Candidate Seal](../AOA-KAG-D-0037-exact-applied-candidate-seal.md) (`docs/decisions/AOA-KAG-D-0037-exact-applied-candidate-seal.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)

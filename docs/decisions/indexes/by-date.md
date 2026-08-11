@@ -110,3 +110,4 @@
 ## 2026-08-11
 
 - [AOA-KAG-D-0037 - Exact Applied Candidate Seal](../AOA-KAG-D-0037-exact-applied-candidate-seal.md) (`docs/decisions/AOA-KAG-D-0037-exact-applied-candidate-seal.md`)
+- [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
