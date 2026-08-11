@@ -133,6 +133,13 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )[0]
 
         self.assertIn('AOA_KAG_CHECKOUT_WORKERS: "3"', release_audit)
+        self.assertIn(
+            "AOA_KAG_PROVIDER_AUDIT_WORKERS: ${{ inputs.provider_audit_workers || '1' }}",
+            release_audit,
+        )
+        workflow_header = workflow_text.split("jobs:\n", 1)[0]
+        self.assertIn("provider_audit_workers:", workflow_header)
+        self.assertIn("Experimental OS-wide provider process workers", workflow_header)
         self.assertIn("inputs.preflight_mode || 'candidate'", release_audit)
         history_ref_expression = (
             "inputs.history_ref || github.event.pull_request.base.sha || "

@@ -10,7 +10,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator
 
 
 COVERAGE_PACKET_ENV = "AOA_KAG_COVERAGE_PACKET"
@@ -27,6 +27,7 @@ VALIDATION_ARTIFACT_PARENT_ENV = "AOA_KAG_VALIDATION_ARTIFACT_PARENT"
 GITHUB_STEP_SUMMARY_ENV = "GITHUB_STEP_SUMMARY"
 GITHUB_STEP_SUMMARY_RECEIPT_MAX_BYTES = 64 * 1024
 REPO_ROOT = Path(__file__).resolve().parents[1]
+_VALIDATION_TIMING_SINK: Callable[[dict[str, Any]], None] | None = None
 
 _SCOPE_ENV_NAMES = (
     COVERAGE_PACKET_ENV,
@@ -185,7 +186,27 @@ def record_validation_timing(
     }
     if details:
         event["details"] = details
+    sink = _VALIDATION_TIMING_SINK
+    if sink is not None:
+        sink(dict(event))
+        return
     record_validation_event(event)
+
+
+@contextmanager
+def validation_timing_sink(
+    sink: Callable[[dict[str, Any]], None],
+) -> Iterator[None]:
+    """Capture child-process timings for ordered publication by the parent."""
+
+    global _VALIDATION_TIMING_SINK
+    if _VALIDATION_TIMING_SINK is not None:
+        raise RuntimeError("validation timing sink cannot be nested")
+    _VALIDATION_TIMING_SINK = sink
+    try:
+        yield
+    finally:
+        _VALIDATION_TIMING_SINK = None
 
 
 @contextmanager

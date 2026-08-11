@@ -2497,6 +2497,103 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         self.assertEqual(len(roots), summary["prebuilt_owner_count"])
         self.assertEqual(len(roots), summary["owner_scan_count"])
 
+    def test_provider_process_results_keep_exact_canonical_fan_in(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        owners = payload["owners"]
+        assert isinstance(snapshots, list)
+        assert isinstance(owners, list)
+        for snapshot, owner_payload in zip(snapshots, owners):
+            content_digest = owner_payload["portable_family"]["content_digest"]
+            if content_digest:
+                snapshot["family_content_digest"] = content_digest
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                side_effect=(identity, identity),
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ), patch.object(
+                coverage_generation,
+                "build_coverage",
+            ) as cold_build:
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    for snapshot, (owner, owner_root), owner_payload in zip(
+                        snapshots,
+                        roots,
+                        owners,
+                    ):
+                        coverage_generation.prebuild_provider_coverage_owner_result(
+                            owner,
+                            owner_root,
+                            family_content_digest=snapshot["family_content_digest"],
+                            owner_payload=copy.deepcopy(owner_payload),
+                            owner_timing={
+                                "owner": owner,
+                                "duration_ms": 1,
+                                "cpu_user_ms": 1,
+                                "cpu_system_ms": 0,
+                                "process_peak_rss_kib": 1024,
+                                "source_snapshot": {},
+                            },
+                        )
+                    actual = coverage_generation.build_provider_coverage()
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(payload, actual)
+        cold_build.assert_not_called()
+        self.assertEqual(
+            ["provider-home-fused-process"],
+            summary["build_strategies"],
+        )
+        self.assertEqual(len(roots), summary["prebuilt_owner_count"])
+
+    def test_provider_process_result_rejects_row_identity_mismatch(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        owners = payload["owners"]
+        assert isinstance(snapshots, list)
+        assert isinstance(owners, list)
+        for snapshot, owner_payload in zip(snapshots, owners):
+            content_digest = owner_payload["portable_family"]["content_digest"]
+            if content_digest:
+                snapshot["family_content_digest"] = content_digest
+        first = snapshots[0]
+        wrong_row = copy.deepcopy(owners[0])
+        wrong_row["repo"] = "wrong-owner"
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    with self.assertRaisesRegex(RuntimeError, "result identity"):
+                        coverage_generation.prebuild_provider_coverage_owner_result(
+                            first["owner"],
+                            Path(first["root"]),
+                            family_content_digest=first["family_content_digest"],
+                            owner_payload=wrong_row,
+                            owner_timing={"owner": first["owner"]},
+                        )
+
     def test_provider_home_fusion_rejects_incomplete_owner_set_without_packet(self) -> None:
         payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
         assert isinstance(payload, dict)
@@ -2836,6 +2933,21 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             ],
             telemetry["top_slowest_by_component_type"]["provider-home"],
         )
+
+    def test_validation_timing_sink_defers_child_publication(self) -> None:
+        captured: list[dict[str, object]] = []
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with coverage_run.validation_timing_sink(captured.append):
+                with coverage_run.validation_timing(
+                    component_type="provider-home",
+                    component_id="aoa-demo",
+                ):
+                    pass
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(1, len(captured))
+        self.assertEqual("validation-timing", captured[0]["event"])
+        self.assertEqual(0, summary["validation_telemetry"]["timing_count"])
 
     def test_failed_validation_timing_preserves_failure_and_records_status(self) -> None:
         with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:

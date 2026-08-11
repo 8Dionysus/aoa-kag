@@ -28,6 +28,102 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
+    def test_provider_audit_workers_fail_closed_outside_bounded_choices(self) -> None:
+        for value in ("", "0", "4", "many"):
+            with self.subTest(value=value), patch.dict(
+                local_kag_subtree.os.environ,
+                {local_kag_subtree.PROVIDER_AUDIT_WORKERS_ENV: value},
+            ):
+                with self.assertRaisesRegex(
+                    local_kag_subtree.ValidationError,
+                    "must be 1, 2, or 3",
+                ):
+                    local_kag_subtree._provider_audit_workers()
+
+    def test_parallel_provider_audit_keeps_canonical_parent_fan_in(self) -> None:
+        owner_root = REPO_ROOT.resolve()
+        result = {
+            "ok": True,
+            "owner": "aoa-kag",
+            "owner_root": owner_root.as_posix(),
+            "family_content_digest": "a" * 64,
+            "owner_payload": {"repo": "aoa-kag"},
+            "owner_timing": {"owner": "aoa-kag"},
+            "nested_timings": [],
+            "provider_timing": {
+                "event": "validation-timing",
+                "timing_schema_version": "aoa-kag-validation-timing-v1",
+                "component_type": "provider-home",
+                "component_id": "aoa-kag",
+                "duration_ms": 1,
+                "cpu_user_ms": 1,
+                "cpu_system_ms": 0,
+                "process_peak_rss_kib": 1,
+                "status": "passed",
+            },
+            "error": "",
+        }
+
+        class FakeExecutor:
+            def __init__(self, *, max_workers: int, mp_context: object) -> None:
+                self.max_workers = max_workers
+                self.mp_context = mp_context
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def map(self, _function, tasks, *, chunksize: int):
+                self.assert_equal(chunksize, 1)
+                self.assert_equal(list(tasks)[0][0], "aoa-kag")
+                return [copy.deepcopy(result)]
+
+            @staticmethod
+            def assert_equal(left: object, right: object) -> None:
+                if left != right:
+                    raise AssertionError(f"{left!r} != {right!r}")
+
+        readiness = {
+            "repos": [{"repo": "aoa-kag", "provider_status": "provider_ready"}]
+        }
+        with patch.dict(
+            local_kag_subtree.os.environ,
+            {local_kag_subtree.PROVIDER_AUDIT_WORKERS_ENV: "2"},
+        ), patch.object(
+            local_kag_subtree,
+            "PROVIDER_REPO_ROOTS",
+            {"aoa-kag": owner_root},
+        ), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_all_start_methods",
+            return_value=["fork"],
+        ), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_context",
+            return_value=object(),
+        ), patch.object(
+            local_kag_subtree,
+            "ProcessPoolExecutor",
+            FakeExecutor,
+        ), patch.object(
+            local_kag_subtree,
+            "_publish_process_validation_timing",
+        ) as publish, patch(
+            "scripts.generate_repo_local_kag_coverage.prebuild_provider_coverage_owner_result"
+        ) as prebuild:
+            local_kag_subtree._validate_provider_ready_surfaces(readiness)
+
+        publish.assert_called_once_with(result["provider_timing"])
+        prebuild.assert_called_once_with(
+            "aoa-kag",
+            owner_root,
+            family_content_digest="a" * 64,
+            owner_payload={"repo": "aoa-kag"},
+            owner_timing={"owner": "aoa-kag"},
+        )
+
     def test_local_kag_schema_def_validator_is_reused_by_schema_identity(self) -> None:
         payload = load_json(REPO_ROOT / "kag" / "manifest.json")
         local_kag_subtree._cached_local_kag_schema_def_validator.cache_clear()
