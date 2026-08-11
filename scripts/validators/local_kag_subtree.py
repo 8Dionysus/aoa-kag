@@ -806,7 +806,10 @@ def _validate_provider_home(
 
 
 def _provider_audit_workers() -> int:
-    raw = os.environ.get(PROVIDER_AUDIT_WORKERS_ENV, "1").strip()
+    configured = os.environ.get(PROVIDER_AUDIT_WORKERS_ENV)
+    if configured is None:
+        return 3 if "fork" in multiprocessing.get_all_start_methods() else 1
+    raw = configured.strip()
     try:
         workers = int(raw)
     except ValueError:

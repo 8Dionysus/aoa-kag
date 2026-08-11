@@ -28,6 +28,22 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
+    def test_provider_audit_workers_default_to_three_on_fork_hosts(self) -> None:
+        with patch.dict(local_kag_subtree.os.environ, {}, clear=True), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_all_start_methods",
+            return_value=["fork", "spawn"],
+        ):
+            self.assertEqual(3, local_kag_subtree._provider_audit_workers())
+
+    def test_provider_audit_workers_default_to_serial_without_fork(self) -> None:
+        with patch.dict(local_kag_subtree.os.environ, {}, clear=True), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_all_start_methods",
+            return_value=["spawn"],
+        ):
+            self.assertEqual(1, local_kag_subtree._provider_audit_workers())
+
     def test_provider_audit_workers_fail_closed_outside_bounded_choices(self) -> None:
         for value in ("", "0", "4", "many"):
             with self.subTest(value=value), patch.dict(
