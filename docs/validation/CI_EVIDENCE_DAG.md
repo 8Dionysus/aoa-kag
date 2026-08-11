@@ -113,9 +113,11 @@ source change that can affect the root KAG family must pass
 `prepare_landing.py --check`; when it reports drift, run `--apply` and review
 and commit only its bounded generated patch. A successful apply receipt now
 seals the returned caller candidate against the exact content already proved in
-the isolated worktree, so an immediate unchanged `--check` is redundant. Any
-subsequent candidate or provider mutation invalidates that seal and requires a
-new preparation. A `provide_budget_reason` receipt is an owner gate, not an
+the isolated worktree. Stage only its listed generated paths and run
+`--verify-applied-seal` against that receipt; exact worktree/provider identity
+plus staged-tree equality then makes an immediate unchanged full `--check`
+redundant. Any other candidate, index, or provider mutation invalidates that
+seal and requires a new preparation. A `provide_budget_reason` receipt is an owner gate, not an
 infrastructure retry. A typed source, portable-family, coverage, generated, or
 semantic failure requires a changed candidate before another hosted run.
 Only a demonstrated transient infrastructure failure may be retried on the

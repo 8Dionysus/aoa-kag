@@ -157,6 +157,110 @@ class PrepareLandingTests(unittest.TestCase):
             self.assertEqual(first.content_identity(), retimed.content_identity())
             self.assertNotEqual(retimed.content_identity(), changed.content_identity())
 
+    def test_worktree_content_identity_survives_only_staging(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo, _head, _cached_before = self.candidate_repo(Path(repo_tmp))
+            before = prepare_landing.capture_candidate_snapshot(repo)
+            git(repo, "add", "note.txt")
+            after = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertNotEqual(before.content_identity(), after.content_identity())
+            self.assertEqual(
+                before.worktree_content_identity(),
+                after.worktree_content_identity(),
+            )
+
+    def test_applied_seal_accepts_exact_staging_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))
+            code, apply_receipt = self.run_isolated(
+                repo,
+                Path(work_tmp),
+                head,
+                mode="apply",
+            )
+            self.assertEqual(0, code, apply_receipt)
+            git(repo, "add", *apply_receipt["fixed_point"]["changed_paths"])
+
+            with patch.object(
+                prepare_landing,
+                "verify_provider_identities",
+                return_value=(),
+            ):
+                verify_code, verify_receipt = prepare_landing.verify_applied_seal(
+                    repo,
+                    apply_receipt,
+                )
+
+            self.assertEqual(0, verify_code, verify_receipt)
+            self.assertEqual("verified", verify_receipt["verdict"])
+            self.assertEqual(
+                apply_receipt["candidate_seal"]["fixed_point_tree"],
+                verify_receipt["fixed_point_tree"],
+            )
+            self.assertFalse(
+                verify_receipt["immediate_zero_drift_check_required"]
+            )
+
+    def test_applied_seal_rejects_unstaged_generated_patch(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))
+            code, apply_receipt = self.run_isolated(
+                repo,
+                Path(work_tmp),
+                head,
+                mode="apply",
+            )
+            self.assertEqual(0, code, apply_receipt)
+
+            with patch.object(
+                prepare_landing,
+                "verify_provider_identities",
+                return_value=(),
+            ):
+                verify_code, verify_receipt = prepare_landing.verify_applied_seal(
+                    repo,
+                    apply_receipt,
+                )
+
+            self.assertEqual(1, verify_code)
+            self.assertEqual(
+                "applied_seal_index_tree_mismatch",
+                verify_receipt["failure_type"],
+            )
+
+    def test_applied_seal_rejects_post_staging_worktree_tamper(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
+            repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))
+            code, apply_receipt = self.run_isolated(
+                repo,
+                Path(work_tmp),
+                head,
+                mode="apply",
+            )
+            self.assertEqual(0, code, apply_receipt)
+            git(repo, "add", *apply_receipt["fixed_point"]["changed_paths"])
+            (repo / "generated" / "out.txt").write_text(
+                "tampered after staging\n",
+                encoding="utf-8",
+            )
+
+            with patch.object(
+                prepare_landing,
+                "verify_provider_identities",
+                return_value=(),
+            ):
+                verify_code, verify_receipt = prepare_landing.verify_applied_seal(
+                    repo,
+                    apply_receipt,
+                )
+
+            self.assertEqual(1, verify_code)
+            self.assertEqual(
+                "applied_seal_worktree_mismatch",
+                verify_receipt["failure_type"],
+            )
+
     def test_apply_seal_rejects_post_apply_content_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))

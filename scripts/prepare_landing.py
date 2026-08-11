@@ -84,6 +84,7 @@ class CandidateSnapshot:
     worktree_diff_digest: str
     untracked_digest: str
     untracked_paths: tuple[str, ...]
+    worktree_content_digest: str
     directory_digest: str
     directories: tuple[str, ...]
     worktree_hardlink_groups: tuple[tuple[str, ...], ...]
@@ -116,6 +117,7 @@ class CandidateSnapshot:
             "worktree_diff_digest": self.worktree_diff_digest,
             "untracked_digest": self.untracked_digest,
             "untracked_paths": list(self.untracked_paths),
+            "worktree_content_digest": self.worktree_content_digest,
             "directory_digest": self.directory_digest,
             "directories": list(self.directories),
             "worktree_hardlink_groups": [
@@ -163,6 +165,37 @@ class CandidateSnapshot:
         """
         payload = self._identity_payload(include_access_times=False)
         payload.pop("worktree_times")
+        return sha256_bytes(canonical_json(payload))
+
+    def worktree_content_identity(self) -> str:
+        """Bind candidate content independently of its staged partition.
+
+        A successful ``--apply`` deliberately preserves the caller index.  The
+        caller may then stage the receipt-listed generated paths.  That exact
+        index-only transition must retain every worktree byte and filesystem
+        property while moving the index to the already proved fixed-point
+        tree.
+        """
+        payload = {
+            "head": self.head,
+            "root_mode": self.root_mode,
+            "worktree_content_digest": self.worktree_content_digest,
+            "directory_digest": self.directory_digest,
+            "directories": list(self.directories),
+            "worktree_hardlink_groups": [
+                list(group) for group in self.worktree_hardlink_groups
+            ],
+            "worktree_xattrs": [
+                [
+                    path,
+                    [
+                        [name, len(value), sha256_bytes(value)]
+                        for name, value in attributes
+                    ],
+                ]
+                for path, attributes in self.worktree_xattrs
+            ],
+        }
         return sha256_bytes(canonical_json(payload))
 
 
@@ -3618,6 +3651,17 @@ def _update_untracked_path_digest(
     digest.update(b"\0")
 
 
+def candidate_worktree_content_digest(
+    repo_root: Path,
+    paths: Sequence[str],
+) -> str:
+    """Hash candidate filesystem content without Git partition semantics."""
+    digest = hashlib.sha256()
+    for raw in sorted(set(paths), key=os.fsencode):
+        _update_untracked_path_digest(digest, repo_root, Path(raw))
+    return f"sha256:{digest.hexdigest()}"
+
+
 def capture_candidate_snapshot(
     repo_root: Path,
     *,
@@ -3694,6 +3738,10 @@ def capture_candidate_snapshot(
     untracked_digest = untracked_content_digest(repo_root, paths)
     directory_digest = candidate_directory_digest(repo_root, directories)
     worktree_paths = (*outer_tracked_paths, *paths)
+    worktree_content_digest = candidate_worktree_content_digest(
+        repo_root,
+        worktree_paths,
+    )
     nonportable_worktree_ownership = _nonportable_worktree_ownership(
         repo_root,
         worktree_paths,
@@ -3797,6 +3845,7 @@ def capture_candidate_snapshot(
         worktree_diff_digest=sha256_bytes(candidate_patch_bytes),
         untracked_digest=untracked_digest,
         untracked_paths=paths,
+        worktree_content_digest=worktree_content_digest,
         directory_digest=directory_digest,
         directories=directories,
         worktree_hardlink_groups=worktree_hardlink_groups,
@@ -5720,10 +5769,19 @@ def prepare_landing(
                         "candidate_identity": applied_snapshot.identity(),
                         "content_identity": applied_snapshot.content_identity(),
                         "validated_content_identity": sealed_snapshot.content_identity(),
+                        "worktree_content_identity": applied_snapshot.worktree_content_identity(),
                         "fixed_point_tree": fixed_point_tree,
                         "provider_identity_verified": True,
                         "immediate_zero_drift_check_required": False,
-                        "invalidated_by": "any subsequent candidate or provider mutation",
+                        "post_apply_staging_verification_required": bool(patch),
+                        "staging_verification_command": (
+                            "python scripts/prepare_landing.py "
+                            "--verify-applied-seal <apply-receipt>"
+                        ),
+                        "invalidated_by": (
+                            "any worktree or provider mutation, or an index change "
+                            "not accepted by staged-seal verification"
+                        ),
                     }
                     if applied_snapshot is not None and sealed_snapshot is not None
                     else {"status": "not_issued"}
@@ -5793,6 +5851,123 @@ def prepare_landing(
             shutil.rmtree(temporary_parent, ignore_errors=True)
 
 
+def verify_applied_seal(
+    source_root: Path,
+    apply_receipt: Mapping[str, object],
+) -> tuple[int, dict[str, object]]:
+    """Accept only the exact index-only staging transition after ``--apply``."""
+    started = time.perf_counter()
+    snapshot: CandidateSnapshot | None = None
+    try:
+        if (
+            apply_receipt.get("schema_version") != SCHEMA_VERSION
+            or apply_receipt.get("mode") != "apply"
+            or apply_receipt.get("verdict") != "prepared"
+        ):
+            raise PreparationFailure(
+                "apply receipt is not an accepted preparation receipt",
+                failure_type="applied_seal_receipt_invalid",
+                action_class="rerun_prepare_landing_apply",
+            )
+        raw_seal = apply_receipt.get("candidate_seal")
+        raw_provider_identity = apply_receipt.get("provider_identity")
+        if not isinstance(raw_seal, Mapping) or raw_seal.get("status") != "verified":
+            raise PreparationFailure(
+                "apply receipt does not contain a verified candidate seal",
+                failure_type="applied_seal_receipt_invalid",
+                action_class="rerun_prepare_landing_apply",
+            )
+        if not isinstance(raw_provider_identity, Mapping):
+            raise PreparationFailure(
+                "apply receipt does not contain provider identity",
+                failure_type="applied_seal_receipt_invalid",
+                action_class="rerun_prepare_landing_apply",
+            )
+        expected_worktree_identity = raw_seal.get("worktree_content_identity")
+        expected_tree = raw_seal.get("fixed_point_tree")
+        expected_providers = raw_provider_identity.get("owners")
+        if (
+            not isinstance(expected_worktree_identity, str)
+            or not isinstance(expected_tree, str)
+            or not isinstance(expected_providers, list)
+        ):
+            raise PreparationFailure(
+                "apply receipt seal fields are malformed",
+                failure_type="applied_seal_receipt_invalid",
+                action_class="rerun_prepare_landing_apply",
+            )
+
+        snapshot = capture_candidate_snapshot(source_root)
+        actual_worktree_identity = snapshot.worktree_content_identity()
+        if actual_worktree_identity != expected_worktree_identity:
+            raise PreparationFailure(
+                "candidate worktree changed after the applied seal was issued",
+                failure_type="applied_seal_worktree_mismatch",
+                action_class="rerun_prepare_landing_apply",
+                details={
+                    "expected_worktree_content_identity": expected_worktree_identity,
+                    "actual_worktree_content_identity": actual_worktree_identity,
+                },
+            )
+        if snapshot.index_tree != expected_tree:
+            raise PreparationFailure(
+                "staged candidate tree differs from the proved fixed-point tree",
+                failure_type="applied_seal_index_tree_mismatch",
+                action_class="stage_receipt_changed_paths",
+                details={
+                    "expected_index_tree": expected_tree,
+                    "actual_index_tree": snapshot.index_tree,
+                },
+            )
+        providers = verify_provider_identities(source_root)
+        if list(providers) != expected_providers:
+            raise PreparationFailure(
+                "provider identity changed after the applied seal was issued",
+                failure_type="provider_identity_mismatch",
+                action_class="rerun_prepare_landing_apply",
+                details={
+                    "expected": expected_providers,
+                    "actual": list(providers),
+                },
+            )
+        require_candidate_unchanged(source_root, snapshot)
+        return 0, {
+            "schema_version": SCHEMA_VERSION,
+            "mode": "verify-applied-seal",
+            "verdict": "verified",
+            "partial_result_is_green": False,
+            "apply_receipt_digest": sha256_bytes(canonical_json(apply_receipt)),
+            "candidate_identity": snapshot.identity(),
+            "worktree_content_identity": actual_worktree_identity,
+            "fixed_point_tree": expected_tree,
+            "provider_identity_verified": True,
+            "immediate_zero_drift_check_required": False,
+            "proof_boundary": {
+                "claim": "exact-post-apply-staging-transition",
+                "does_not_replace": [
+                    "source-fast",
+                    "full-owner-proof",
+                    "release-audit",
+                    "landing-verdict",
+                ],
+            },
+            "duration_ms": round((time.perf_counter() - started) * 1000),
+        }
+    except PreparationFailure as exc:
+        return 1, {
+            "schema_version": SCHEMA_VERSION,
+            "mode": "verify-applied-seal",
+            "verdict": "failed",
+            "partial_result_is_green": False,
+            "candidate_identity": snapshot.identity() if snapshot is not None else None,
+            "failure_type": exc.failure_type,
+            "action_class": exc.action_class,
+            "message": str(exc),
+            "details": exc.details,
+            "duration_ms": round((time.perf_counter() - started) * 1000),
+        }
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Converge the KAG landing SCC in an isolated staged worktree."
@@ -5817,6 +5992,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--sentinel",
         action="store_true",
         help="Run the seed-only early SCC drift sentinel; full proof remains required.",
+    )
+    mode.add_argument(
+        "--verify-applied-seal",
+        type=Path,
+        metavar="APPLY_RECEIPT",
+        help=(
+            "Verify the exact index-only staging transition against a successful "
+            "apply receipt without repeating the KAG proof."
+        ),
     )
     parser.add_argument("--external-seed-ref", help=argparse.SUPPRESS)
     parser.add_argument("--coverage-check", action="store_true", help=argparse.SUPPRESS)
@@ -5908,6 +6092,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             temporary.write_text(encoded + "\n", encoding="utf-8")
             os.replace(temporary, args.receipt_output)
         print(encoded)
+        return code
+    if args.verify_applied_seal is not None:
+        try:
+            apply_receipt = json.loads(
+                args.verify_applied_seal.read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"cannot read apply receipt: {exc}") from exc
+        if not isinstance(apply_receipt, dict):
+            raise SystemExit("apply receipt must be a JSON object")
+        code, receipt = verify_applied_seal(REPO_ROOT, apply_receipt)
+        encoded_receipt = json.dumps(receipt, ensure_ascii=False, sort_keys=True)
+        if args.receipt_output is not None:
+            args.receipt_output.parent.mkdir(parents=True, exist_ok=True)
+            temporary = args.receipt_output.with_name(
+                f".{args.receipt_output.name}.{os.getpid()}.tmp"
+            )
+            temporary.write_text(encoded_receipt + "\n", encoding="utf-8")
+            os.replace(temporary, args.receipt_output)
+        print(encoded_receipt)
         return code
     if args.max_iterations < 1:
         raise SystemExit("--max-iterations must be positive")

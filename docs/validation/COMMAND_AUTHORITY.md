@@ -262,6 +262,7 @@ reused.
 ```bash
 python scripts/prepare_landing.py --check
 python scripts/prepare_landing.py --apply
+python scripts/prepare_landing.py --verify-applied-seal <apply-receipt>
 ```
 
 Both modes resolve the local default-branch merge base without a hidden network
@@ -275,10 +276,14 @@ and compares it with the actual caller result by byte, mode, directory,
 hardlink, xattr, index, untracked, and nested-checkout identity. Filesystem
 times are excluded from that final comparison because applying the patch must
 change them; the caller is still checked for full-identity stability around
-the comparison. A verified `candidate_seal` therefore replaces only an
-immediate unchanged second preparation check. It is invalid after any caller
-or provider mutation and never replaces source-fast, OS-wide proof, release,
-or landing authority. A budget exceedance requires an explicit
+the comparison. After staging only the receipt-listed generated paths, run
+`--verify-applied-seal` against that apply receipt. This cheap route requires
+the worktree content and provider identities to remain exact and the staged
+tree to equal the already proved fixed-point tree. A verified staging
+transition therefore replaces only an immediate unchanged second preparation
+check. Worktree or provider mutation, or any other index transition,
+invalidates it; it never replaces source-fast, OS-wide proof, release, or
+landing authority. A budget exceedance requires an explicit
 `--budget-reason`, and that receipt is created only after the SCC has converged
 to its final family digest.
 

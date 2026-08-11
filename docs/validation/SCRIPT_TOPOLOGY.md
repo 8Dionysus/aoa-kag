@@ -102,8 +102,11 @@ receipt, and applies only the resulting generated patch when explicitly asked.
 The apply route then restores the caller's exact Git index inside the already
 validated isolated candidate and issues a final content seal only when the
 actual caller result matches that proved content across bytes and portable
-filesystem identity. This removes the immediate duplicate zero-drift sweep in
-a real repair session without persisting or reusing an owner-proof verdict.
+filesystem identity. Its `--verify-applied-seal` route then accepts the normal
+post-apply staging step only when worktree and provider identity remain exact
+and the staged tree equals the already proved fixed-point tree. This removes
+the immediate duplicate zero-drift sweep in a real repair session without
+persisting or reusing an owner-proof verdict.
 Its preparation-only coverage step rebuilds self while admitting external rows
 from the history seed only under unchanged canonical runtime, exact pins, owner
 order, canonical roots, and matching portable-manifest identities. It neither
