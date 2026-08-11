@@ -5389,25 +5389,6 @@ def final_confirmation(
     *,
     full_coverage_cache: Path | None = None,
 ) -> None:
-    initial_worktree_diff = git_bytes(
-        repo_root,
-        "diff",
-        "--binary",
-        "--no-ext-diff",
-        "--no-textconv",
-    )
-    initial_changed_paths = tuple(
-        raw.decode("utf-8", errors="surrogateescape")
-        for raw in git_bytes(
-            repo_root,
-            "diff",
-            "--name-only",
-            "-z",
-            "--no-ext-diff",
-            "--no-textconv",
-        ).split(b"\0")
-        if raw
-    )
     run_command(
         coverage_command(
             refs,
@@ -5425,36 +5406,11 @@ def final_confirmation(
         ("python", "scripts/validate_kag.py", "--scope", "local"),
         repo_root=repo_root,
     )
-    final_worktree_diff = git_bytes(
-        repo_root,
-        "diff",
-        "--binary",
-        "--no-ext-diff",
-        "--no-textconv",
-    )
-    if final_worktree_diff != initial_worktree_diff:
-        final_changed_paths = tuple(
-            raw.decode("utf-8", errors="surrogateescape")
-            for raw in git_bytes(
-                repo_root,
-                "diff",
-                "--name-only",
-                "-z",
-                "--no-ext-diff",
-                "--no-textconv",
-            ).split(b"\0")
-            if raw
-        )
+    if git_bytes(repo_root, "diff", "--binary", "--no-ext-diff", "--no-textconv"):
         raise PreparationFailure(
             "final confirmation left unstaged worktree drift in the isolated candidate",
             failure_type="generated_cleanliness_failure",
             action_class="code_fix",
-            details={
-                "initial_changed_paths": list(initial_changed_paths),
-                "final_changed_paths": list(final_changed_paths),
-                "initial_worktree_diff_digest": sha256_bytes(initial_worktree_diff),
-                "final_worktree_diff_digest": sha256_bytes(final_worktree_diff),
-            },
         )
 
 

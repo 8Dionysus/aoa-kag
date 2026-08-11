@@ -131,53 +131,6 @@ class PrepareLandingTests(unittest.TestCase):
                 git(repo, "diff", "--name-only"),
             )
 
-    def test_final_confirmation_preserves_existing_unstaged_candidate_diff(self) -> None:
-        with tempfile.TemporaryDirectory() as repo_tmp:
-            repo = self.make_repo(Path(repo_tmp))
-            (repo / "source.txt").write_text("candidate\n", encoding="utf-8")
-            before = git(repo, "diff", "--binary", "--no-ext-diff", "--no-textconv")
-
-            with patch.object(prepare_landing, "run_command"):
-                prepare_landing.final_confirmation(
-                    repo,
-                    prepare_landing.ResolvedRefs("h", "e", "b"),
-                )
-
-            self.assertEqual(
-                before,
-                git(repo, "diff", "--binary", "--no-ext-diff", "--no-textconv"),
-            )
-
-    def test_final_confirmation_rejects_new_unstaged_drift(self) -> None:
-        with tempfile.TemporaryDirectory() as repo_tmp:
-            repo = self.make_repo(Path(repo_tmp))
-            (repo / "source.txt").write_text("candidate\n", encoding="utf-8")
-            calls = 0
-
-            def mutate_on_final_command(*_args: object, **_kwargs: object) -> None:
-                nonlocal calls
-                calls += 1
-                if calls == 4:
-                    (repo / "source.txt").write_text("drift\n", encoding="utf-8")
-
-            with patch.object(
-                prepare_landing,
-                "run_command",
-                side_effect=mutate_on_final_command,
-            ), self.assertRaises(prepare_landing.PreparationFailure) as raised:
-                prepare_landing.final_confirmation(
-                    repo,
-                    prepare_landing.ResolvedRefs("h", "e", "b"),
-            )
-
-            self.assertEqual("generated_cleanliness_failure", raised.exception.failure_type)
-            self.assertEqual(["source.txt"], raised.exception.details["initial_changed_paths"])
-            self.assertEqual(["source.txt"], raised.exception.details["final_changed_paths"])
-            self.assertNotEqual(
-                raised.exception.details["initial_worktree_diff_digest"],
-                raised.exception.details["final_worktree_diff_digest"],
-            )
-
     def test_changed_tree_paths_reports_both_sides_of_a_rename(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp:
             repo = self.make_repo(Path(repo_tmp))
