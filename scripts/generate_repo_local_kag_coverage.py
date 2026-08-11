@@ -214,6 +214,7 @@ class _ProviderCoveragePrebuild:
     owner_roots: tuple[tuple[str, Path], ...]
     owners: dict[str, dict[str, Any]] = field(default_factory=dict)
     owner_timings: dict[str, dict[str, Any]] = field(default_factory=dict)
+    strategy: str = "provider-home-fused"
 
 
 _ACTIVE_PROVIDER_COVERAGE_PREBUILD: _ProviderCoveragePrebuild | None = None
@@ -1810,6 +1811,76 @@ def prebuild_provider_coverage_owner(
     prebuild.owner_timings[owner] = owner_timing
 
 
+def prebuild_provider_coverage_owner_result(
+    owner: str,
+    owner_root: Path,
+    *,
+    family_content_digest: str,
+    owner_payload: dict[str, Any],
+    owner_timing: dict[str, Any],
+) -> None:
+    """Admit one same-run process result into the active canonical fan-in."""
+
+    prebuild = _ACTIVE_PROVIDER_COVERAGE_PREBUILD
+    if prebuild is None:
+        return
+    run = current_coverage_run(required=True)
+    assert run is not None
+    if run.run_scope_id != prebuild.run_scope_id:
+        raise RuntimeError("provider coverage prebuild crossed run scopes")
+    expected_roots = dict(prebuild.owner_roots)
+    resolved_root = owner_root.resolve()
+    if owner not in expected_roots or expected_roots[owner] != resolved_root:
+        raise RuntimeError(
+            f"provider coverage prebuild received an unexpected owner root: {owner}"
+        )
+    if owner in prebuild.owners:
+        raise RuntimeError(
+            f"provider coverage prebuild received duplicate owner: {owner}"
+        )
+    if prebuild.owners and prebuild.strategy != "provider-home-fused-process":
+        raise RuntimeError("provider coverage prebuild mixed execution strategies")
+    prebuild.strategy = "provider-home-fused-process"
+    snapshot = next(
+        (
+            item
+            for item in prebuild.identity["owner_snapshots"]
+            if item.get("owner") == owner
+        ),
+        None,
+    )
+    portable_family = owner_payload.get("portable_family")
+    self_manifest_row = (
+        owner == "aoa-kag"
+        and isinstance(portable_family, dict)
+        and portable_family.get("digest_state") == "self-manifest"
+        and portable_family.get("content_digest") == ""
+    )
+    if (
+        not isinstance(snapshot, dict)
+        or snapshot.get("family_content_digest") != family_content_digest
+        or not isinstance(portable_family, dict)
+        or (
+            portable_family.get("content_digest") != family_content_digest
+            and not self_manifest_row
+        )
+    ):
+        raise RuntimeError(
+            f"provider coverage prebuild family identity mismatch for {owner}"
+        )
+    expected_display_root = canonical_owner_root(prebuild.os_root, owner).as_posix()
+    if (
+        owner_payload.get("repo") != owner
+        or owner_payload.get("root") != expected_display_root
+        or owner_timing.get("owner") != owner
+    ):
+        raise RuntimeError(
+            f"provider coverage prebuild process result identity mismatch for {owner}"
+        )
+    prebuild.owners[owner] = copy.deepcopy(owner_payload)
+    prebuild.owner_timings[owner] = copy.deepcopy(owner_timing)
+
+
 def _active_provider_coverage_prebuild(
     os_root: Path,
 ) -> _ProviderCoveragePrebuild | None:
@@ -1938,7 +2009,11 @@ def build_provider_coverage(
         if use_prebuild and prebuild is not None
         else []
     )
-    build_strategy = "provider-home-fused" if use_prebuild else "cold"
+    build_strategy = (
+        prebuild.strategy
+        if use_prebuild and prebuild is not None
+        else "cold"
+    )
     started = time.perf_counter()
     try:
         if use_prebuild and prebuild is not None:

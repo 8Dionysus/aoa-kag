@@ -28,6 +28,15 @@ on:
           - "1"
           - "2"
           - "3"
+      provider_audit_workers:
+        description: Bounded OS-wide provider process workers; use 1 as the exact rollback
+        required: true
+        default: "3"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
 
 permissions:
   contents: read
@@ -171,6 +180,7 @@ jobs:
       needs.source_fast.outputs.full-audit-required == 'true'
     runs-on: ubuntu-latest
     env:
+      AOA_KAG_PROVIDER_AUDIT_WORKERS: ${{ inputs.provider_audit_workers || '3' }}
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
       AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
       AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals

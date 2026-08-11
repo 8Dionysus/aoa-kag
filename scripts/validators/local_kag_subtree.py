@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import multiprocessing
+import resource
 import sys
+import time
+from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
 
 from .common import *
@@ -12,14 +16,26 @@ except ImportError:  # pragma: no cover - direct script execution
     from provider_registry import configured_provider_roots, provider_roots  # type: ignore
 
 try:
-    from scripts.coverage_run import validation_timing
+    from scripts.coverage_run import (
+        VALIDATION_TIMING_SCHEMA_VERSION,
+        record_validation_event,
+        validation_timing,
+        validation_timing_sink,
+    )
 except ImportError:  # pragma: no cover - direct script execution
-    from coverage_run import validation_timing  # type: ignore
+    from coverage_run import (  # type: ignore
+        VALIDATION_TIMING_SCHEMA_VERSION,
+        record_validation_event,
+        validation_timing,
+        validation_timing_sink,
+    )
 
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
 FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
+PROVIDER_AUDIT_WORKERS_ENV = "AOA_KAG_PROVIDER_AUDIT_WORKERS"
+PROVIDER_AUDIT_WORKER_CHOICES = {1, 2, 3}
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
 RETIRED_REFERENCE_REPOS = {"Dionysus", "aoa-routing"}
@@ -595,7 +611,16 @@ def _source_refs_in(payload: object):
             yield from _source_refs_in(item)
 
 
-def _validate_provider_home(repo: str, repo_root: Path) -> None:
+def _validate_provider_home(
+    repo: str,
+    repo_root: Path,
+    *,
+    prebuild: bool = True,
+) -> tuple[
+    dict[str, object],
+    dict[str, dict[str, object]],
+    dict[str, object],
+] | None:
     kag_root = repo_root / "kag"
     label = f"{repo} local KAG provider"
     for filename in ("AGENTS.md", "README.md", "manifest.json"):
@@ -760,7 +785,7 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
         groups[group_name] = records
 
     _validate_record_links({"records": groups})
-    if validated_portable_bundle is not None:
+    if validated_portable_bundle is not None and prebuild:
         try:
             from scripts.generate_repo_local_kag_coverage import (
                 prebuild_provider_coverage_owner,
@@ -777,6 +802,120 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
             )
         except RuntimeError as exc:
             fail(str(exc))
+    return validated_portable_bundle
+
+
+def _provider_audit_workers() -> int:
+    configured = os.environ.get(PROVIDER_AUDIT_WORKERS_ENV)
+    if configured is None:
+        return 3 if "fork" in multiprocessing.get_all_start_methods() else 1
+    raw = configured.strip()
+    try:
+        workers = int(raw)
+    except ValueError:
+        fail(f"{PROVIDER_AUDIT_WORKERS_ENV} must be 1, 2, or 3")
+    if workers not in PROVIDER_AUDIT_WORKER_CHOICES:
+        fail(f"{PROVIDER_AUDIT_WORKERS_ENV} must be 1, 2, or 3")
+    return workers
+
+
+def _validate_provider_home_process_task(
+    task: tuple[str, str, str],
+) -> dict[str, object]:
+    repo, repo_root_text, os_root_text = task
+    repo_root = Path(repo_root_text)
+    os_root = Path(os_root_text)
+    started = time.perf_counter()
+    usage_before = resource.getrusage(resource.RUSAGE_SELF)
+    nested_timings: list[dict[str, object]] = []
+
+    try:
+        try:
+            from scripts.generate_repo_local_kag_coverage import (
+                _build_owner_coverage,
+                canonical_owner_root,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from generate_repo_local_kag_coverage import (  # type: ignore
+                _build_owner_coverage,
+                canonical_owner_root,
+            )
+
+        with validation_timing_sink(nested_timings.append):
+            portable_bundle = _validate_provider_home(
+                repo,
+                repo_root,
+                prebuild=False,
+            )
+            if portable_bundle is None:
+                raise RuntimeError(
+                    f"{repo} local KAG provider did not yield a portable family"
+                )
+            manifest = portable_bundle[2]
+            family_identity = manifest.get("family_identity")
+            family_content_digest = (
+                family_identity.get("content_digest")
+                if isinstance(family_identity, dict)
+                else None
+            )
+            if not isinstance(family_content_digest, str):
+                raise RuntimeError(
+                    f"{repo} local KAG provider family identity is unavailable"
+                )
+            owner_payload, owner_timing = _build_owner_coverage(
+                repo,
+                repo_root,
+                display_root=canonical_owner_root(os_root, repo),
+                portable_bundle=portable_bundle,
+            )
+        ok = True
+        error = ""
+    except Exception as exc:
+        ok = False
+        error = f"{type(exc).__name__}: {exc}"
+        family_content_digest = ""
+        owner_payload = {}
+        owner_timing = {}
+
+    usage_after = resource.getrusage(resource.RUSAGE_SELF)
+    provider_timing = {
+        "event": "validation-timing",
+        "timing_schema_version": VALIDATION_TIMING_SCHEMA_VERSION,
+        "component_type": "provider-home",
+        "component_id": repo,
+        "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
+        "cpu_user_ms": max(
+            0,
+            round((usage_after.ru_utime - usage_before.ru_utime) * 1000),
+        ),
+        "cpu_system_ms": max(
+            0,
+            round((usage_after.ru_stime - usage_before.ru_stime) * 1000),
+        ),
+        "process_peak_rss_kib": max(0, int(usage_after.ru_maxrss)),
+        "status": "passed" if ok else "failed",
+        "details": {
+            "repo_root": repo_root.as_posix(),
+            "execution_model": "process",
+        },
+    }
+    return {
+        "ok": ok,
+        "owner": repo,
+        "owner_root": repo_root.resolve().as_posix(),
+        "family_content_digest": family_content_digest,
+        "owner_payload": owner_payload,
+        "owner_timing": owner_timing,
+        "nested_timings": nested_timings,
+        "provider_timing": provider_timing,
+        "error": error,
+    }
+
+
+def _publish_process_validation_timing(event: object) -> None:
+    if not isinstance(event, dict):
+        fail("provider process returned malformed validation timing")
+    record_validation_event(event)
 
 
 def _validate_provider_ready_surfaces(
@@ -787,12 +926,20 @@ def _validate_provider_ready_surfaces(
     repos = readiness.get("repos")
     if not isinstance(repos, list):
         fail("local KAG readiness matrix repos must be a list")
+    surfaces: list[tuple[str, Path]] = []
     for entry in repos:
         if not isinstance(entry, dict) or entry.get("provider_status") != "provider_ready":
             continue
         repo = str(entry.get("repo"))
         repo_root = PROVIDER_REPO_ROOTS.get(repo, REPO_ROOT.parent / repo)
         if repo == KAG_REPO or repo_root.exists():
+            surfaces.append((repo, repo_root.resolve()))
+
+    if not surfaces:
+        return
+    workers = _provider_audit_workers()
+    if workers == 1:
+        for repo, repo_root in surfaces:
             _local_kag_phase(f"provider-home {repo}", progress=progress)
             with validation_timing(
                 component_type="provider-home",
@@ -800,6 +947,81 @@ def _validate_provider_ready_surfaces(
                 details={"repo_root": repo_root.as_posix()},
             ):
                 _validate_provider_home(repo, repo_root)
+        return
+
+    if "fork" not in multiprocessing.get_all_start_methods():
+        fail("parallel provider audit requires the supported fork start method")
+    tasks = [
+        (repo, repo_root.as_posix(), OS_ABYSS_ROOT.resolve().as_posix())
+        for repo, repo_root in surfaces
+    ]
+    for repo, _repo_root in surfaces:
+        _local_kag_phase(f"provider-home {repo}", progress=progress)
+    try:
+        context = multiprocessing.get_context("fork")
+        with ProcessPoolExecutor(
+            max_workers=min(workers, len(tasks)),
+            mp_context=context,
+        ) as executor:
+            results = list(
+                executor.map(
+                    _validate_provider_home_process_task,
+                    tasks,
+                    chunksize=1,
+                )
+            )
+    except Exception as exc:
+        fail(f"parallel provider audit failed closed: {exc}")
+
+    if len(results) != len(surfaces):
+        fail("parallel provider audit returned an incomplete owner set")
+    for (expected_owner, expected_root), result in zip(surfaces, results):
+        if (
+            not isinstance(result, dict)
+            or result.get("owner") != expected_owner
+            or result.get("owner_root") != expected_root.as_posix()
+        ):
+            fail("parallel provider audit result identity mismatch")
+        nested_timings = result.get("nested_timings")
+        if not isinstance(nested_timings, list):
+            fail("parallel provider audit returned malformed nested timings")
+        for event in nested_timings:
+            _publish_process_validation_timing(event)
+        _publish_process_validation_timing(result.get("provider_timing"))
+        if result.get("ok") is not True:
+            fail(
+                f"parallel provider audit failed for {expected_owner}: "
+                f"{result.get('error', 'unknown child failure')}"
+            )
+
+    try:
+        from scripts.generate_repo_local_kag_coverage import (
+            prebuild_provider_coverage_owner_result,
+        )
+    except ImportError:  # pragma: no cover - direct script execution
+        from generate_repo_local_kag_coverage import (  # type: ignore
+            prebuild_provider_coverage_owner_result,
+        )
+    for (owner, owner_root), result in zip(surfaces, results):
+        family_content_digest = result.get("family_content_digest")
+        owner_payload = result.get("owner_payload")
+        owner_timing = result.get("owner_timing")
+        if (
+            not isinstance(family_content_digest, str)
+            or not isinstance(owner_payload, dict)
+            or not isinstance(owner_timing, dict)
+        ):
+            fail(f"parallel provider audit returned malformed proof data for {owner}")
+        try:
+            prebuild_provider_coverage_owner_result(
+                owner,
+                owner_root,
+                family_content_digest=family_content_digest,
+                owner_payload=owner_payload,
+                owner_timing=owner_timing,
+            )
+        except RuntimeError as exc:
+            fail(str(exc))
 
 
 def validate_local_kag_subtree_contract_with_progress() -> None:
