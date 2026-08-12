@@ -352,7 +352,7 @@ def source_index_matches_owner(
     source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> bool:
     source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(owner_root)
-    repo = repo_name(owner_root)
+    repo = repo_name(owner_root, source_snapshot=source_snapshot)
     repo_payload = payload.get("repo")
     if not isinstance(repo_payload, dict) or repo_payload.get("name") != repo:
         return False
@@ -759,7 +759,10 @@ def common_surface_profile(
             "has_record_classes": _record_classes_present(owner_root),
             "has_source_index": source == "source_surface_index",
             "has_owner_commands": _records_have_owner_commands(records),
-            "has_generated_readmodels": int(summary.get("generated_count", 0)) > 0,
+            "has_generated_readmodels": any(
+                int(counts.get("surface_state", {}).get(state, 0)) > 0
+                for state in ("generated_projection", "generated_readmodel")
+            ),
             "has_validation_route": (
                 int(summary.get("validator_count", 0)) > 0
                 or bool(manifest_validation_route(owner_root, "local-kag"))

@@ -170,6 +170,28 @@ class PrepareLandingTests(unittest.TestCase):
                 after.worktree_content_identity(),
             )
 
+    def test_content_identity_binds_staged_tracked_deletion(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            source = repo / "source.txt"
+            before = prepare_landing.capture_candidate_snapshot(repo)
+
+            source.unlink()
+            unstaged = prepare_landing.capture_candidate_snapshot(repo)
+            git(repo, "add", "source.txt")
+            deleted = prepare_landing.capture_candidate_snapshot(repo)
+
+            self.assertNotEqual(
+                before.worktree_content_identity(),
+                deleted.worktree_content_identity(),
+            )
+            self.assertEqual(
+                unstaged.worktree_content_identity(),
+                deleted.worktree_content_identity(),
+            )
+            self.assertNotEqual(unstaged.content_identity(), deleted.content_identity())
+            self.assertIn(b"source.txt", deleted.cached_patch_bytes)
+
     def test_applied_seal_accepts_exact_staging_transition(self) -> None:
         with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as work_tmp:
             repo, head, _cached_before = self.candidate_repo(Path(repo_tmp))

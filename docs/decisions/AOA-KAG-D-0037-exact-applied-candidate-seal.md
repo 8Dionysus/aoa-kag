@@ -44,6 +44,11 @@ untracked content, and nested-checkout identities. It excludes filesystem
 access and modification times because validation reads and patch application
 necessarily change them. Full candidate identity, including times, still
 guards against mutation before apply and around final caller capture.
+An intentionally absent tracked worktree path is bound by the index and diff
+identity but omitted from the worktree-only content digest. This keeps a
+staged deletion distinguishable in the complete candidate while preserving
+the same filesystem identity across the exact staging transition used during
+receipt replacement.
 
 ## Options Considered
 

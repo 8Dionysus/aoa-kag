@@ -33,6 +33,7 @@ from scripts.generate_repo_local_kag_index import (
     SourceSnapshotError,
     TEXT_ARTIFACT_SUFFIXES,
     TEXT_WRAPPER_SUFFIXES,
+    capability_family_node_ids,
     build_index,
     build_repository_indexes,
     mime_for,
@@ -969,6 +970,241 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             )
         )
 
+    def test_generator_returns_all_capability_projections_to_owner_contracts(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-owner"
+            family = root / "capabilities" / "families" / "central-proof.yaml"
+            graph_json = root / "read-models" / "capability_graph.json"
+            graph_markdown = root / "read-models" / "capability_graph.md"
+            router = root / "skills" / "aoa-owner" / "references" / "capability-router.md"
+            family.parent.mkdir(parents=True)
+            graph_json.parent.mkdir(parents=True)
+            router.parent.mkdir(parents=True)
+            kag_manifest = root / "kag" / "manifest.json"
+            kag_manifest.parent.mkdir(parents=True)
+            kag_manifest.write_text(
+                json.dumps({"repo": "aoa-owner"}) + "\n",
+                encoding="utf-8",
+            )
+            family.write_text(
+                "schema_version: aoa-capability-family-v1\n"
+                "family_id: central-proof\n"
+                "nodes: [{title: Central proof, id: central-proof}]\n"
+                "relations: []\n",
+                encoding="utf-8",
+            )
+            graph_json.write_text(
+                '{"schema_version":"aoa-capability-graph-v1","authority":false}\n',
+                encoding="utf-8",
+            )
+            graph_markdown.write_text("# Capability graph\n", encoding="utf-8")
+            router.write_text("# Capability router\n", encoding="utf-8")
+            (root / "capabilities" / "port.manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa_capability_home_port_v1",
+                        "owner_repo": "aoa-owner",
+                        "source": {
+                            "family_root": "capabilities/families",
+                            "root_id": "central-proof",
+                        },
+                        "projection": {
+                            "authority": False,
+                            "graph_json": "read-models/capability_graph.json",
+                            "graph_markdown": "read-models/capability_graph.md",
+                            "router_markdown": "skills/aoa-owner/references/capability-router.md",
+                            "generated_by": "aoa-skills:scripts/build_capability_home_projection.py",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            payload = build_index(root)
+            self.assertEqual(0, payload["coverage_summary"]["generated_count"])
+            self.assertTrue(
+                coverage_generation.common_surface_profile(
+                    root,
+                    index_status="missing",
+                )["quality"]["has_generated_readmodels"]
+            )
+            family.write_text(
+                "schema_version: aoa-capability-family-v1\n"
+                "family_id: central-proof\n"
+                "nodes: [\n"
+                "  {title: Central proof, id: central-proof}\n"
+                "]\n"
+                "relations: []\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", family), cwd=root, check=True)
+            payload = build_index(root)
+            kag_manifest.write_text(
+                json.dumps({"repo": "unstaged-wrong-owner"}) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(payload, build_index(root))
+            staged_snapshot = OwnerSourceSnapshot.capture(root)
+            with patch.dict(
+                os.environ,
+                {
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "aoa-owner",
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REF": "staged-history-ref",
+                },
+                clear=False,
+            ), patch(
+                "scripts.generate_repo_local_kag_index.git_lineage_paths",
+                side_effect=lambda _root, paths, *, history_ref: {
+                    path: path for path in paths
+                },
+            ) as lineage_paths:
+                build_index(root, source_snapshot=staged_snapshot)
+            self.assertEqual(
+                "staged-history-ref",
+                lineage_paths.call_args.kwargs["history_ref"],
+            )
+            kag_manifest.write_text(
+                json.dumps({"repo": "aoa-owner"}) + "\n",
+                encoding="utf-8",
+            )
+            previous_payload = json.loads(json.dumps(payload))
+            projection_paths = {
+                "read-models/capability_graph.json",
+                "read-models/capability_graph.md",
+                "skills/aoa-owner/references/capability-router.md",
+            }
+            for record in previous_payload["records"]:
+                if record["identity"]["path"] not in projection_paths:
+                    continue
+                record["surface_state"] = "authored_source"
+                record["provenance"]["source_refs"] = [
+                    {
+                        "repo": "aoa-owner",
+                        "path": record["identity"]["path"],
+                        "role": "primary",
+                        "authority": "authored_source",
+                    }
+                ]
+                record["provenance"]["materials"] = []
+                record["provenance"]["generated_by"] = ""
+                record["owner_return_route"]["surface"] = record["identity"]["path"]
+            incremental_payload = build_index(root, previous_index=previous_payload)
+            repository_family = build_repository_indexes(payload, repo_root=root)
+
+            manifest_path = root / "capabilities" / "port.manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["owner_repo"] = "wrong-owner"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            with self.assertRaisesRegex(ValueError, "owner_repo must match"):
+                build_index(root)
+
+            manifest["owner_repo"] = "aoa-owner"
+            manifest["source"]["root_id"] = "missing-root"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            with self.assertRaisesRegex(ValueError, "must resolve to exactly one"):
+                build_index(root)
+
+            manifest["source"]["root_id"] = "central-proof"
+            for authored_path in (
+                "capabilities/port.manifest.json",
+                "capabilities/families/central-proof.yaml",
+            ):
+                manifest["projection"]["graph_json"] = authored_path
+                manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                subprocess.run(("git", "add", "."), cwd=root, check=True)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "must not alias an authored capability source",
+                ):
+                    build_index(root)
+
+        self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
+        records_by_path = {
+            record["identity"]["path"]: record for record in payload["records"]
+        }
+        expected_source_refs = [
+            {
+                "repo": "aoa-owner",
+                "path": "capabilities/families/central-proof.yaml",
+                "role": "primary",
+                "authority": "authored_source",
+            }
+        ]
+        expected_materials = [
+            {
+                "repo": "aoa-owner",
+                "path": "capabilities/port.manifest.json",
+                "role": "material",
+                "authority": "authored_source",
+            }
+        ]
+        for path in projection_paths:
+            record = records_by_path[path]
+            self.assertEqual("generated_projection", record["surface_state"])
+            self.assertEqual("generated_output", record["observed_form"])
+            self.assertEqual("generated", record["abi"]["compatibility"])
+            self.assertEqual(expected_source_refs, record["provenance"]["source_refs"])
+            self.assertEqual(expected_materials, record["provenance"]["materials"])
+            self.assertEqual(
+                "aoa-skills:scripts/build_capability_home_projection.py",
+                record["provenance"]["generated_by"],
+            )
+            self.assertIn(
+                "aoa-skills:scripts/validate_capability_home_port.py",
+                record["provenance"]["validated_by"],
+            )
+            self.assertEqual(
+                {
+                    "repo": "aoa-owner",
+                    "surface": "capabilities/families/central-proof.yaml",
+                    "route_kind": "source_owner",
+                },
+                record["owner_return_route"],
+            )
+        self.assertEqual(payload, incremental_payload)
+
+        artifact_by_path = {
+            artifact["path"]: artifact
+            for artifact in repository_family["artifact"]["entries"]
+        }
+        source_artifact = artifact_by_path["capabilities/families/central-proof.yaml"]
+        derived_pairs = {
+            (relation["from_id"], relation["to_id"])
+            for relation in repository_family["relation"]["entries"]
+            if relation["relation_kind"] == "derives_from"
+        }
+        for path in projection_paths:
+            self.assertIn(
+                (artifact_by_path[path]["id"], source_artifact["id"]),
+                derived_pairs,
+            )
+
+    def test_capability_parser_fails_closed_without_pyyaml(self) -> None:
+        real_import = __import__
+
+        def import_without_yaml(name: str, *args: object, **kwargs: object) -> object:
+            if name == "yaml":
+                raise ModuleNotFoundError("No module named 'yaml'")
+            return real_import(name, *args, **kwargs)
+
+        contract = (
+            b"schema_version: aoa-capability-family-v1\n"
+            b"nodes:\n"
+            b"  - id: root\n"
+            b"relations: []\n"
+        )
+        with patch("builtins.__import__", side_effect=import_without_yaml):
+            with self.assertRaisesRegex(RuntimeError, "PyYAML is required"):
+                capability_family_node_ids(contract)
+
     def test_generator_rejects_divergent_owner_skill_projection(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir) / "aoa-owner"
@@ -1469,6 +1705,20 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             )
 
             payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
+            self.assertTrue(coverage_generation.source_index_matches_owner(root, payload))
+            (root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "unstaged-wrong-owner"}),
+                encoding="utf-8",
+            )
+            staged_snapshot = OwnerSourceSnapshot.capture(root)
+            self.assertTrue(
+                coverage_generation.source_index_matches_owner(
+                    root,
+                    payload,
+                    source_snapshot=staged_snapshot,
+                )
+            )
+            self.assertEqual("unstaged-wrong-owner", coverage_generation.repo_name(root))
             self.assertTrue(coverage_generation.source_index_matches_owner(root, payload))
 
         self.assertEqual("aoa-kag", payload["repo"]["name"])
