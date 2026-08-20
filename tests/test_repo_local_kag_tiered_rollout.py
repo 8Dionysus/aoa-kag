@@ -305,7 +305,33 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
             phase="rollout",
             owners=owners,
             composition=composition,
-            composition_proof={"inner_signature": "passed"},
+            composition_proof={
+                "inner_signature": "passed",
+                "trust": {
+                    "sidecars_ok": True,
+                    "outer_signature_ok": True,
+                    "bundle_verification_ok": True,
+                    "materialized_ok": True,
+                    "trust_gate_verdict": "allow",
+                },
+            },
+        )
+        blocked = build_rollout_evidence(
+            phase="rollout",
+            owners=owners,
+            composition=composition,
+            composition_proof={
+                "inner_signature": "passed",
+                "trust": {
+                    "materialized_ok": False,
+                    "trust_gate_verdict": "allow",
+                },
+            },
+        )
+        self.assertEqual("blocked", blocked["status"])
+        self.assertIn(
+            "composition_trust_failed:materialized_ok",
+            blocked["blocking_obligations"],
         )
         schema = json.loads(
             (

@@ -1191,6 +1191,28 @@ def build_rollout_evidence(
         )
     if composition is None:
         blocking.append("signed_os_composition_missing")
+    else:
+        if not isinstance(composition_proof, Mapping):
+            blocking.append("composition_proof_missing")
+        else:
+            if composition_proof.get("inner_signature") != "passed":
+                blocking.append("composition_inner_signature_failed")
+            composition_trust = composition_proof.get("trust")
+            if not isinstance(composition_trust, Mapping):
+                blocking.append("composition_trust_missing")
+            else:
+                if composition_trust.get("trust_gate_verdict") != "allow":
+                    blocking.append("composition_trust_denied")
+                failed_trust_fields = sorted(
+                    str(field)
+                    for field, value in composition_trust.items()
+                    if str(field).endswith("_ok") and value is False
+                )
+                if failed_trust_fields:
+                    blocking.append(
+                        "composition_trust_failed:"
+                        + ",".join(failed_trust_fields)
+                    )
     for owner in owners:
         owner_name = str(owner.get("owner") or "unknown")
         trust = owner.get("trust")

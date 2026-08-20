@@ -169,6 +169,11 @@ class TieredKagGovernanceTests(unittest.TestCase):
         )
         self.assertTrue(receipt["changed_record_keys"])
         self.assertTrue(receipt["changed_shards"])
+        self.assertEqual(1, receipt["changed_files"])
+        self.assertEqual(
+            receipt["changed_files"],
+            len(set(receipt["changed_shards"])),
+        )
         self.assertGreater(metrics["metrics"]["byte_amplification"], 0)
         self.assertEqual(1, metrics["metrics"]["owner_fanout"])
 

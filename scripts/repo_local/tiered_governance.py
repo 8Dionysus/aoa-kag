@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 from .tiered_family import (
     DECISION_REF,
     OS_GIT_HOT_TARGET_BYTES,
+    SHARD_ROOT_RELATIVE_PATH,
     TieredFamilyBuild,
     TieredFamilyError,
     canonical_json_bytes,
@@ -420,6 +421,25 @@ def _record_map(build: TieredFamilyBuild) -> dict[str, bytes]:
     return records
 
 
+def _shard_map(build: TieredFamilyBuild) -> dict[tuple[str, str], bytes]:
+    shards: dict[tuple[str, str], bytes] = {}
+    for descriptor in build.corpus_manifest["objects"]:
+        coordinate = (str(descriptor["kind"]), str(descriptor["range"]))
+        digest = str(descriptor["content_digest"])
+        content = build.object_bytes.get(digest)
+        if content is None:
+            raise TieredFamilyError(
+                f"missing object bytes for shard coordinate: {coordinate}"
+            )
+        previous = shards.get(coordinate)
+        if previous is not None and previous != content:
+            raise TieredFamilyError(
+                f"duplicate shard coordinate has different content: {coordinate}"
+            )
+        shards[coordinate] = content
+    return shards
+
+
 def _compatibility_digests(build: TieredFamilyBuild) -> dict[str, str]:
     return {
         str(item["kind"]): str(item["content_digest"])
@@ -445,13 +465,19 @@ def build_owner_change_receipt(
         for key in set(base_records) | set(head_records)
         if base_records.get(key) != head_records.get(key)
     )
+    base_shards = _shard_map(base)
+    head_shards = _shard_map(head)
+    changed_coordinates = sorted(
+        coordinate
+        for coordinate in set(base_shards) | set(head_shards)
+        if base_shards.get(coordinate) != head_shards.get(coordinate)
+    )
+    changed_shards = [
+        str(SHARD_ROOT_RELATIVE_PATH / kind / f"{hash_range}.jsonl")
+        for kind, hash_range in changed_coordinates
+    ]
     base_objects = base.object_bytes
     head_objects = head.object_bytes
-    changed_shards = sorted(
-        digest
-        for digest in set(base_objects) | set(head_objects)
-        if base_objects.get(digest) != head_objects.get(digest)
-    )
     added = sorted(set(head_objects) - set(base_objects))
     reused = sorted(set(head_objects) & set(base_objects))
     base_compatibility = _compatibility_digests(base)
@@ -487,10 +513,10 @@ def build_owner_change_receipt(
         "changed_shards": changed_shards,
         "changed_bytes": sum(
             max(
-                len(base_objects.get(digest, b"")),
-                len(head_objects.get(digest, b"")),
+                len(base_shards.get(coordinate, b"")),
+                len(head_shards.get(coordinate, b"")),
             )
-            for digest in changed_shards
+            for coordinate in changed_coordinates
         ),
         "changed_files": len(changed_shards),
         "affected_compatibility_views": [
