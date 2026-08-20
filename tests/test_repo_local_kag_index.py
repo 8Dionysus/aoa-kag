@@ -3525,6 +3525,36 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "portable family manifest"):
                 coverage_generation._portable_manifest_identity("aoa-demo", root)
 
+    def test_coverage_packet_identity_accepts_v4_owner_manifest(self) -> None:
+        manifest = load_json(REPO_ROOT / "kag" / "indexes" / "index_family.manifest.json")
+        corpus = load_json(REPO_ROOT / "kag" / "indexes" / "corpus.manifest.json")
+        assert isinstance(manifest, dict)
+        assert isinstance(corpus, dict)
+        identity = coverage_generation._portable_manifest_identity("aoa-kag", REPO_ROOT)
+
+        self.assertEqual(
+            corpus["corpus_identity"]["content_digest"].removeprefix("sha256:"),
+            identity["family_content_digest"],
+        )
+        self.assertEqual(
+            corpus["corpus_identity"]["source_snapshot"],
+            identity["source_snapshot"],
+        )
+        self.assertEqual(
+            next(
+                item["content_digest"]
+                for item in corpus["compatibility"]["files"]
+                if item["kind"] == "event"
+            ),
+            identity["event_content_digest"],
+        )
+        self.assertEqual(
+            coverage_generation._file_digest(
+                REPO_ROOT / "kag" / "indexes" / "index_family.manifest.json"
+            ),
+            identity["manifest_digest"],
+        )
+
     def test_provider_coverage_keeps_invalid_common_index_visible(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

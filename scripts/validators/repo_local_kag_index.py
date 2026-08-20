@@ -30,6 +30,7 @@ except ImportError:  # pragma: no cover - direct script import fallback
 
 try:
     from scripts.generate_repo_local_kag_coverage import build_provider_coverage
+    from scripts.repo_local.portable_family import OS_AGGREGATE_TRACKED_BYTES_MAX
     from scripts.generate_repo_local_kag_index import (
         REPOSITORY_INDEX_FILENAMES,
         build_index,
@@ -41,6 +42,7 @@ try:
     )
 except ImportError:  # pragma: no cover - direct script import fallback
     from generate_repo_local_kag_coverage import build_provider_coverage  # type: ignore
+    from repo_local.portable_family import OS_AGGREGATE_TRACKED_BYTES_MAX  # type: ignore
     from generate_repo_local_kag_index import (  # type: ignore
         REPOSITORY_INDEX_FILENAMES,
         build_index,
@@ -169,12 +171,22 @@ def _portable_family_validation_identity(
     run = current_coverage_run()
     if run is None or not isinstance(manifest, dict):
         return None
-    family_identity = manifest.get("family_identity")
-    family_digest = (
-        family_identity.get("content_digest")
-        if isinstance(family_identity, dict)
-        else None
-    )
+    if manifest.get("schema_version") == "aoa-repo-local-kag-distribution-manifest-v1":
+        distribution_identity = manifest.get("distribution_identity")
+        family_digest = (
+            distribution_identity.get("corpus_digest")
+            if isinstance(distribution_identity, dict)
+            else None
+        )
+        if isinstance(family_digest, str):
+            family_digest = family_digest.removeprefix("sha256:")
+    else:
+        family_identity = manifest.get("family_identity")
+        family_digest = (
+            family_identity.get("content_digest")
+            if isinstance(family_identity, dict)
+            else None
+        )
     if not isinstance(family_digest, str) or not family_digest:
         return None
     return run.run_scope_id, repo_root.resolve().as_posix(), family_digest

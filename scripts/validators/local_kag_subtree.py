@@ -112,6 +112,9 @@ REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
 EXPECTED_PROVIDER_READY_REPOS = set(PROVIDER_REPO_ROOTS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
 REPO_LOCAL_FAMILY_MANIFEST_NAME = "index_family.manifest.json"
+REPO_LOCAL_TIERED_DISTRIBUTION_SCHEMA_VERSION = (
+    "aoa-repo-local-kag-distribution-manifest-v1"
+)
 REPO_LOCAL_TIERED_CONTROL_SCHEMAS = {
     "corpus.manifest.json": REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH,
     "hot_profile.json": REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH,
@@ -127,6 +130,29 @@ REPO_LOCAL_REPOSITORY_INDEX_NAMES = {
 }
 DOMAIN_INDEX_CATALOG_NAME = "domain_index_catalog.json"
 LOCAL_KAG_CONTROL_REFS = {"kag/manifest.json"}
+
+
+def _provider_family_content_digest(manifest: object) -> str | None:
+    if not isinstance(manifest, dict):
+        return None
+    if (
+        manifest.get("schema_version")
+        == REPO_LOCAL_TIERED_DISTRIBUTION_SCHEMA_VERSION
+    ):
+        distribution_identity = manifest.get("distribution_identity")
+        digest = (
+            distribution_identity.get("corpus_digest")
+            if isinstance(distribution_identity, dict)
+            else None
+        )
+        return digest.removeprefix("sha256:") if isinstance(digest, str) else None
+    family_identity = manifest.get("family_identity")
+    digest = (
+        family_identity.get("content_digest")
+        if isinstance(family_identity, dict)
+        else None
+    )
+    return digest if isinstance(digest, str) else None
 
 PROVIDER_RECORD_DIRS = {
     "nodes": "nodeRecord",
@@ -882,12 +908,7 @@ def _validate_provider_home_process_task(
                     f"{repo} local KAG provider did not yield a portable family"
                 )
             manifest = portable_bundle[2]
-            family_identity = manifest.get("family_identity")
-            family_content_digest = (
-                family_identity.get("content_digest")
-                if isinstance(family_identity, dict)
-                else None
-            )
+            family_content_digest = _provider_family_content_digest(manifest)
             if not isinstance(family_content_digest, str):
                 raise RuntimeError(
                     f"{repo} local KAG provider family identity is unavailable"

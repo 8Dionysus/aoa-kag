@@ -795,6 +795,29 @@ def _portable_bundle(
 _portable_bundle.cache_clear = _portable_bundle_from_disk.cache_clear  # type: ignore[attr-defined]
 
 
+def _portable_bundle_family_content_digest(
+    portable_bundle: PortableBundle,
+) -> str | None:
+    """Return the compatibility family digest for either manifest era."""
+
+    manifest = portable_bundle[2]
+    if manifest.get("schema_version") == DISTRIBUTION_SCHEMA_VERSION:
+        distribution_identity = manifest.get("distribution_identity")
+        digest = (
+            distribution_identity.get("corpus_digest")
+            if isinstance(distribution_identity, dict)
+            else None
+        )
+        return digest.removeprefix("sha256:") if isinstance(digest, str) else None
+    family_identity = manifest.get("family_identity")
+    digest = (
+        family_identity.get("content_digest")
+        if isinstance(family_identity, dict)
+        else None
+    )
+    return digest if isinstance(digest, str) else None
+
+
 @contextmanager
 def _transient_portable_bundle(
     owner_root: Path,
@@ -1833,8 +1856,48 @@ def _portable_manifest_identity(owner: str, owner_root: Path) -> dict[str, str]:
         raise RuntimeError(
             f"coverage packet portable family manifest owner mismatch for {owner}"
         )
-    family_identity = payload.get("family_identity")
-    compatibility = payload.get("compatibility")
+    if payload.get("schema_version") == DISTRIBUTION_SCHEMA_VERSION:
+        corpus_manifest_path = owner_root / "kag" / "indexes" / "corpus.manifest.json"
+        try:
+            corpus_payload = json.loads(
+                corpus_manifest_path.read_text(encoding="utf-8")
+            )
+        except (
+            FileNotFoundError,
+            IsADirectoryError,
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+        ) as exc:
+            raise RuntimeError(
+                f"coverage packet cannot read the v4 corpus manifest for {owner}"
+            ) from exc
+        corpus_repo_identity = (
+            corpus_payload.get("repo")
+            if isinstance(corpus_payload, dict)
+            else None
+        )
+        if (
+            not isinstance(corpus_repo_identity, dict)
+            or corpus_repo_identity.get("name") != owner
+        ):
+            raise RuntimeError(
+                f"coverage packet portable corpus manifest owner mismatch for {owner}"
+            )
+        family_identity = (
+            corpus_payload.get("corpus_identity")
+            if isinstance(corpus_payload, dict)
+            else None
+        )
+        compatibility = (
+            corpus_payload.get("compatibility")
+            if isinstance(corpus_payload, dict)
+            else None
+        )
+        family_digest_prefix = "sha256:"
+    else:
+        family_identity = payload.get("family_identity")
+        compatibility = payload.get("compatibility")
+        family_digest_prefix = ""
     files = compatibility.get("files") if isinstance(compatibility, dict) else None
     if not isinstance(family_identity, dict) or not isinstance(files, list):
         raise RuntimeError(
@@ -1850,7 +1913,9 @@ def _portable_manifest_identity(owner: str, owner_root: Path) -> dict[str, str]:
     )
     values = {
         "manifest_digest": _file_digest(manifest_path),
-        "family_content_digest": str(family_identity.get("content_digest", "")),
+        "family_content_digest": str(
+            family_identity.get("content_digest", "")
+        ).removeprefix(family_digest_prefix),
         "source_snapshot": str(family_identity.get("source_snapshot", "")),
         "event_content_digest": (
             str(event_entry.get("content_digest", ""))
@@ -2288,13 +2353,7 @@ def prebuild_provider_coverage_owner(
         raise RuntimeError(
             f"provider coverage prebuild received duplicate owner: {owner}"
         )
-    manifest = portable_bundle[2]
-    family_identity = manifest.get("family_identity")
-    family_digest = (
-        family_identity.get("content_digest")
-        if isinstance(family_identity, dict)
-        else None
-    )
+    family_digest = _portable_bundle_family_content_digest(portable_bundle)
     snapshot = next(
         (
             item
