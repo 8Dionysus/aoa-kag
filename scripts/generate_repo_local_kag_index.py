@@ -12,6 +12,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass
 from functools import lru_cache
@@ -3139,7 +3140,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help=(
             "Generate or check the content-addressed portable v3 record corpus "
-            "and its deterministic v2 compatibility contract."
+            "and its deterministic v2 compatibility contract. If the current "
+            "manifest is v4, preserve that tiered family as a compatibility "
+            "route instead."
         ),
     )
     parser.add_argument(
@@ -3214,8 +3217,51 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _route_legacy_portable_invocation(
+    args: argparse.Namespace,
+    repo_root: Path,
+) -> None:
+    """Keep old generated-lane commands compatible with a current v4 family."""
+
+    if not args.portable_family or args.keep_v2:
+        return
+    manifest_path = repo_root / PORTABLE_FAMILY_MANIFEST
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, IsADirectoryError, json.JSONDecodeError, UnicodeDecodeError):
+        return
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != (
+        "aoa-repo-local-kag-distribution-manifest-v1"
+    ):
+        return
+
+    args.portable_family = False
+    args.tiered_family = True
+    if not args.artifact_root:
+        parent = Path(
+            os.environ.get("RUNNER_TEMP")
+            or os.environ.get("TMPDIR")
+            or tempfile.gettempdir()
+        )
+        head = subprocess.run(
+            ("git", "rev-parse", "HEAD"),
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        args.artifact_root = (parent / f"aoa-kag-tiered-family-{head}").as_posix()
+    if args.check:
+        args.materialize_artifact_on_check = True
+    placement = manifest.get("placement")
+    if not args.externalize_cold and isinstance(placement, dict):
+        args.externalize_cold = placement.get("state") == "externalized"
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
+    repo_root = Path(args.repo_root).resolve()
+    _route_legacy_portable_invocation(args, repo_root)
     selected_family_modes = sum(
         bool(value)
         for value in (
@@ -3251,7 +3297,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             "--write-budget-receipt requires a write-mode portable or tiered family run "
             "with --budget-base-ref and --budget-reason"
         )
-    repo_root = Path(args.repo_root).resolve()
     output = Path(args.output)
     output_path = repo_root / output
     source_snapshot = OwnerSourceSnapshot.capture(repo_root)

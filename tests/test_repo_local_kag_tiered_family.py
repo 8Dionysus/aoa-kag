@@ -421,6 +421,49 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
         self.assertEqual("complete", materialized_receipt["state"])
         self.assertEqual("unsigned-candidate", receipt["signature_state"])
 
+    def test_legacy_portable_invocation_routes_to_current_tiered_family(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as repo_tmp,
+            tempfile.TemporaryDirectory() as artifact_tmp,
+        ):
+            root = Path(repo_tmp)
+            artifact_root = Path(artifact_tmp)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.name", "Tiered Family Test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.email", "tiered-family@example.invalid"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "fixture source"), cwd=root, check=True)
+
+            write_result = generate_main(
+                [
+                    "--repo-root",
+                    str(root),
+                    "--tiered-family",
+                    "--artifact-root",
+                    str(artifact_root),
+                ]
+            )
+            legacy_check_result = generate_main(
+                [
+                    "--repo-root",
+                    str(root),
+                    "--portable-family",
+                    "--check",
+                ]
+            )
+
+        self.assertEqual(0, write_result)
+        self.assertEqual(0, legacy_check_result)
+
     def test_tiered_generator_rejects_edited_migration_provenance(self) -> None:
         with (
             tempfile.TemporaryDirectory() as repo_tmp,
