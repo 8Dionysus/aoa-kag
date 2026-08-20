@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-portable-family-bundle.schema.json",
+  "title": "AoA KAG offline portable owner-family bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "bundle_identity", "summary", "network_required", "decision_ref"],
+  "properties": {
+    "schema_version": {"const": "aoa-kag-portable-family-bundle-v1"},
+    "bundle_identity": {"type": "object", "additionalProperties": false, "required": ["content_digest", "corpus_digest", "distribution_digest", "release_digest"], "properties": {"content_digest": {"$ref": "#/$defs/digest"}, "corpus_digest": {"$ref": "#/$defs/digest"}, "distribution_digest": {"$ref": "#/$defs/digest"}, "release_digest": {"$ref": "#/$defs/digest"}}},
+    "summary": {"type": "object", "additionalProperties": false, "required": ["objects", "packs", "bytes"], "properties": {"objects": {"type": "integer", "minimum": 1}, "packs": {"type": "integer", "minimum": 0}, "bytes": {"type": "integer", "minimum": 1}}},
+    "network_required": {"const": false},
+    "decision_ref": {"type": "string", "minLength": 1}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

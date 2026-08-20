@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-tiered-metrics.schema.json",
+  "title": "AoA KAG tiered owner metrics report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "owner",
+    "corpus_digest",
+    "distribution_digest",
+    "metrics",
+    "control"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-tiered-metrics-v1"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "corpus_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "distribution_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "git_hot_bytes",
+        "corpus_total_bytes",
+        "artifact_stored_bytes",
+        "artifact_unique_bytes",
+        "unique_kag_blob_bytes_added",
+        "generated_delta_bytes",
+        "authored_delta_bytes",
+        "byte_amplification",
+        "record_amplification",
+        "history_amplification",
+        "changed_shards",
+        "changed_records",
+        "owner_fanout",
+        "receipt_count",
+        "receipt_rate",
+        "CI_bytes_scanned",
+        "CI_wall_time",
+        "CI_worker_minutes",
+        "artifact_cache_hit_rate",
+        "artifact_fetch_bytes",
+        "artifact_hydration_latency",
+        "shard_split_rate",
+        "shard_fill_distribution",
+        "growth_velocity",
+        "estimated_time_to_ceiling"
+      ]
+    },
+    "control": {
+      "type": "object",
+      "required": [
+        "current_value",
+        "rolling_window",
+        "baseline",
+        "threshold",
+        "trend",
+        "top_contributors",
+        "forecast",
+        "owner_refs",
+        "next_action"
+      ]
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

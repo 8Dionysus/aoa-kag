@@ -166,6 +166,8 @@ class RepoKagProjectionTests(unittest.TestCase):
         self.assertEqual(plan, repeated)
         digest_material = copy.deepcopy(plan)
         digest_material["projection_identity"]["content_digest"] = "0" * 64
+        for item in digest_material["canonical_inputs"]:
+            item.pop("distribution_identity")
         expected_digest = hashlib.sha256(
             json.dumps(
                 digest_material,
@@ -186,6 +188,58 @@ class RepoKagProjectionTests(unittest.TestCase):
         self.assertEqual(
             {"exact", "lexical", "vector", "hybrid", "graph"},
             set(plan["projection_lanes"]),
+        )
+
+    def test_distribution_relocation_does_not_change_projection_identity(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+            owner = root.name
+            bundle = {owner: (source, family)}
+            owner_roots = {owner: root}
+            delivery = {
+                owner: {
+                    "corpus_digest": "sha256:" + ("a" * 64),
+                    "distribution_digest": "sha256:" + ("b" * 64),
+                    "delivery_state": "complete",
+                    "complete": True,
+                    "manifest_schema": (
+                        "aoa-repo-local-kag-distribution-manifest-v1"
+                    ),
+                    "routes": {"local_cas": 10},
+                }
+            }
+            first = build_federated_retrieval_plan(
+                owner_roots,
+                bundle,
+                owner_delivery=delivery,
+                embedding_profile=EMBEDDING_PROFILE,
+            )
+            relocated = copy.deepcopy(delivery)
+            relocated[owner].update(
+                {
+                    "distribution_digest": "sha256:" + ("c" * 64),
+                    "routes": {"artifact_cold": 10},
+                }
+            )
+            second = build_federated_retrieval_plan(
+                owner_roots,
+                bundle,
+                owner_delivery=relocated,
+                embedding_profile=EMBEDDING_PROFILE,
+            )
+
+        self.assertEqual(
+            first["projection_identity"],
+            second["projection_identity"],
+        )
+        self.assertNotEqual(
+            first["canonical_inputs"][0]["distribution_identity"],
+            second["canonical_inputs"][0]["distribution_identity"],
         )
 
     def test_vector_materialization_keeps_profile_and_source_payloads(self) -> None:

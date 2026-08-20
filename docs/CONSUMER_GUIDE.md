@@ -6,6 +6,18 @@ surfaces in `aoa-kag`.
 Read these surfaces as bounded guides to source-owned meaning, not as
 replacements for that meaning.
 
+For repo-local family delivery, first inspect the distribution manifest. Read
+Git-hot records directly, then use a verified local CAS or trusted artifact
+route for cold objects. A consumer must expose the corpus and projection
+identity, freshness, selected adapter, degradation, and owner-return evidence.
+It must not label a hot-only or unavailable result as complete. Operational
+routes live in [KAG_TIERED_OPERATIONS](KAG_TIERED_OPERATIONS.md).
+Federation and retrieval-plan consumers bind externalized owners with repeated
+`--owner-artifact-root OWNER=PATH` coordinates and use `--no-shadow-git` when
+proving artifact-only completeness. A distribution-only relocation may change
+the bundle identity, but not the logical corpus or retrieval projection
+identity.
+
 If you want the current machine-readable package for this path, start with
 `mechanics/boundary-bridge/parts/tiny-consumer-bundle/generated/tiny_consumer_bundle.min.json`.
 

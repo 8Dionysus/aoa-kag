@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-query-unavailable.schema.json",
+  "title": "AoA bounded repo-local KAG unavailable query result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "state",
+    "complete",
+    "corpus_digest",
+    "distribution_digest",
+    "missing_object_count",
+    "missing_objects",
+    "missing_objects_truncated",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-query-unavailable-v1"
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "enum": [
+        "hot_only",
+        "artifact_required",
+        "artifact_unavailable",
+        "rebuild_available",
+        "rebuild_required",
+        "stale",
+        "digest_mismatch",
+        "revoked",
+        "access_denied"
+      ]
+    },
+    "complete": {
+      "const": false
+    },
+    "corpus_digest": {
+      "type": "string",
+      "pattern": "^(|sha256:[a-f0-9]{64})$"
+    },
+    "distribution_digest": {
+      "type": "string",
+      "pattern": "^(|sha256:[a-f0-9]{64})$"
+    },
+    "missing_object_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "missing_objects": {
+      "type": "array",
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[a-f0-9]{64}$"
+      }
+    },
+    "missing_objects_truncated": {
+      "type": "boolean"
+    },
+    "next_action": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "missing_objects_truncated": {
+            "const": false
+          }
+        },
+        "required": ["missing_objects_truncated"]
+      },
+      "then": {
+        "properties": {
+          "missing_object_count": {
+            "maximum": 16
+          }
+        }
+      }
+    }
+  ]
+}

@@ -27,6 +27,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--artifact-root")
+    parser.add_argument("--no-shadow-git", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -35,7 +37,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     repo_root = Path(args.repo_root).resolve()
     output_dir = Path(args.output_dir).resolve()
     try:
-        source, family, manifest = load_portable_family(repo_root)
+        source, family, manifest = load_portable_family(
+            repo_root,
+            artifact_root=(
+                Path(args.artifact_root).resolve()
+                if args.artifact_root
+                else None
+            ),
+            allow_shadow_git=not args.no_shadow_git,
+        )
     except PortableFamilyError as exc:
         raise SystemExit(str(exc)) from exc
     write_compatibility_view(
@@ -44,9 +54,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         family,
         normalized_json=normalized_json,
     )
+    identity = manifest.get("family_identity")
+    if not isinstance(identity, dict):
+        identity = manifest.get("distribution_identity")
+    digest = identity.get("content_digest") if isinstance(identity, dict) else "unknown"
     print(
         "[repo-local-kag-family] assembled "
-        f"{output_dir} digest={manifest['family_identity']['content_digest']}"
+        f"{output_dir} digest={digest}"
     )
     return 0
 

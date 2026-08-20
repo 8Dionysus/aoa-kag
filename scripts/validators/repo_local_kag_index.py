@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import importlib.metadata
 import os
 import sys
@@ -29,19 +30,27 @@ except ImportError:  # pragma: no cover - direct script import fallback
 
 try:
     from scripts.generate_repo_local_kag_coverage import build_provider_coverage
+    from scripts.repo_local.portable_family import OS_AGGREGATE_TRACKED_BYTES_MAX
     from scripts.generate_repo_local_kag_index import (
         REPOSITORY_INDEX_FILENAMES,
         build_index,
         build_repository_indexes,
         classification_summary,
+        effective_history_ref,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
 except ImportError:  # pragma: no cover - direct script import fallback
     from generate_repo_local_kag_coverage import build_provider_coverage  # type: ignore
+    from repo_local.portable_family import OS_AGGREGATE_TRACKED_BYTES_MAX  # type: ignore
     from generate_repo_local_kag_index import (  # type: ignore
         REPOSITORY_INDEX_FILENAMES,
         build_index,
         build_repository_indexes,
         classification_summary,
+        effective_history_ref,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
 
 
@@ -53,6 +62,24 @@ REPOSITORY_INDEX_FAMILY_REFS = {
     },
 }
 DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
+OS_GIT_HOT_TARGET_BYTES = 234_881_024
+
+
+def _empty_family_coordinates() -> dict[str, object]:
+    """Return the v2/non-portable compatibility coordinate shape."""
+
+    return {
+        "manifest_ref": "",
+        "content_digest": "",
+        "digest_state": "not-applicable",
+        "tracked_bytes": 0,
+        "tracked_bytes_max": 0,
+        "shards": 0,
+        "budget_state": "not-applicable",
+        "receipt_ref": "",
+    }
+
+
 _RUN_VALIDATED_PORTABLE_FAMILIES: set[tuple[str, str, str]] = set()
 FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
 FORCE_PYTHON_SCHEMA_VALIDATION_ENV = "AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION"
@@ -144,12 +171,22 @@ def _portable_family_validation_identity(
     run = current_coverage_run()
     if run is None or not isinstance(manifest, dict):
         return None
-    family_identity = manifest.get("family_identity")
-    family_digest = (
-        family_identity.get("content_digest")
-        if isinstance(family_identity, dict)
-        else None
-    )
+    if manifest.get("schema_version") == "aoa-repo-local-kag-distribution-manifest-v1":
+        distribution_identity = manifest.get("distribution_identity")
+        family_digest = (
+            distribution_identity.get("corpus_digest")
+            if isinstance(distribution_identity, dict)
+            else None
+        )
+        if isinstance(family_digest, str):
+            family_digest = family_digest.removeprefix("sha256:")
+    else:
+        family_identity = manifest.get("family_identity")
+        family_digest = (
+            family_identity.get("content_digest")
+            if isinstance(family_identity, dict)
+            else None
+        )
     if not isinstance(family_digest, str) or not family_digest:
         return None
     return run.run_scope_id, repo_root.resolve().as_posix(), family_digest
@@ -881,6 +918,8 @@ def load_repo_local_kag_repository_index_family_with_manifest(
     *,
     source_index: Path = Path("kag/indexes/source_surface_index.json"),
     label: str | None = None,
+    artifact_root: Path | None = None,
+    allow_shadow_git: bool = True,
 ) -> tuple[
     dict[str, object],
     dict[str, dict[str, object]],
@@ -898,6 +937,8 @@ def load_repo_local_kag_repository_index_family_with_manifest(
             source_payload, family, portable_manifest = load_portable_family(
                 repo_root,
                 manifest_path=portable_manifest_path.relative_to(repo_root),
+                artifact_root=artifact_root,
+                allow_shadow_git=allow_shadow_git,
             )
         except ValueError as exc:
             fail(str(exc))
@@ -928,12 +969,16 @@ def load_repo_local_kag_repository_index_family(
     *,
     source_index: Path = Path("kag/indexes/source_surface_index.json"),
     label: str | None = None,
+    artifact_root: Path | None = None,
+    allow_shadow_git: bool = True,
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
     source_payload, validated, _portable_manifest = (
         load_repo_local_kag_repository_index_family_with_manifest(
             repo_root,
             source_index=source_index,
             label=label,
+            artifact_root=artifact_root,
+            allow_shadow_git=allow_shadow_git,
         )
     )
     return source_payload, validated
@@ -941,27 +986,153 @@ def load_repo_local_kag_repository_index_family(
 
 def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-index-read", progress=progress)
+    payload: dict[str, object] | None = None
+    actual_family: dict[str, dict[str, object]] | None = None
     portable_manifest: dict[str, object] | None = None
-    with validation_timing(
-        component_type="repo-local-index-phase",
-        component_id="generated-index-read",
-    ):
-        if REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH.is_file():
+    tiered_context: dict[str, object] | None = None
+    if REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH.is_file():
+        try:
+            from scripts.repo_local.portable_family import (
+                build_portable_family,
+                check_portable_output,
+                load_portable_family,
+            )
+        except ImportError:  # pragma: no cover
+            from repo_local.portable_family import (  # type: ignore
+                build_portable_family,
+                check_portable_output,
+                load_portable_family,
+            )
+        raw_manifest = read_json(REPO_LOCAL_KAG_FAMILY_MANIFEST_PATH)
+        is_tiered = (
+            isinstance(raw_manifest, dict)
+            and raw_manifest.get("schema_version")
+            == "aoa-repo-local-kag-distribution-manifest-v1"
+        )
+        artifact_root_value = os.environ.get("KAG_ARTIFACT_ROOT")
+        artifact_root = (
+            Path(artifact_root_value).expanduser().resolve()
+            if artifact_root_value
+            else None
+        )
+        if is_tiered:
             try:
-                from scripts.repo_local.portable_family import (
-                    build_portable_family,
-                    check_portable_output,
-                    load_portable_family,
+                from scripts.repo_local.tiered_family import (
+                    CORPUS_MANIFEST_RELATIVE_PATH,
+                    HOT_PROFILE_RELATIVE_PATH,
+                    LOCATOR_MANIFEST_RELATIVE_PATH,
+                    build_tiered_family,
+                    check_tiered_artifact,
+                    check_tiered_git_surface,
+                    load_tiered_manifests,
+                    load_tiered_rows,
                 )
             except ImportError:  # pragma: no cover
-                from repo_local.portable_family import (  # type: ignore
-                    build_portable_family,
-                    check_portable_output,
-                    load_portable_family,
+                from repo_local.tiered_family import (  # type: ignore
+                    CORPUS_MANIFEST_RELATIVE_PATH,
+                    HOT_PROFILE_RELATIVE_PATH,
+                    LOCATOR_MANIFEST_RELATIVE_PATH,
+                    build_tiered_family,
+                    check_tiered_artifact,
+                    check_tiered_git_surface,
+                    load_tiered_manifests,
+                    load_tiered_rows,
                 )
+            placement = raw_manifest.get("placement")
+            externalized_without_artifact = (
+                isinstance(placement, dict)
+                and placement.get("state") == "externalized"
+                and artifact_root is None
+            )
             try:
-                payload, actual_family, portable_manifest = load_portable_family(
-                    REPO_ROOT
+                if externalized_without_artifact:
+                    (
+                        portable_manifest,
+                        corpus_manifest,
+                        hot_profile,
+                        locator_manifest,
+                        _,
+                    ) = load_tiered_manifests(REPO_ROOT)
+                    _, delivery_state = load_tiered_rows(
+                        REPO_ROOT,
+                        artifact_root=None,
+                        allow_shadow_git=False,
+                        allow_hot_only=True,
+                    )
+                    if (
+                        portable_manifest["summary"][
+                            "artifact_cold_objects"
+                        ]
+                        and delivery_state.get("state") != "hot_only"
+                    ):
+                        fail(
+                            "externalized KAG validation must remain "
+                            "explicitly hot_only without an artifact root"
+                        )
+                else:
+                    (
+                        payload,
+                        actual_family,
+                        portable_manifest,
+                    ) = load_portable_family(
+                        REPO_ROOT,
+                        artifact_root=artifact_root,
+                    )
+                    corpus_manifest = read_json(
+                        REPO_ROOT / CORPUS_MANIFEST_RELATIVE_PATH
+                    )
+                    hot_profile = read_json(
+                        REPO_ROOT / HOT_PROFILE_RELATIVE_PATH
+                    )
+                    locator_manifest = read_json(
+                        REPO_ROOT / LOCATOR_MANIFEST_RELATIVE_PATH
+                    )
+            except ValueError as exc:
+                fail(str(exc))
+            for contract, schema_path, label in (
+                (
+                    portable_manifest,
+                    REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH,
+                    "repo-local KAG distribution manifest",
+                ),
+                (
+                    corpus_manifest,
+                    REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH,
+                    "repo-local KAG corpus manifest",
+                ),
+                (
+                    hot_profile,
+                    REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH,
+                    "repo-local KAG hot profile",
+                ),
+                (
+                    locator_manifest,
+                    KAG_ARTIFACT_LOCATOR_SCHEMA_PATH,
+                    "repo-local KAG artifact locators",
+                ),
+            ):
+                repo_local_kag_validate_payload(
+                    contract,
+                    schema_path=schema_path,
+                    label=label,
+                )
+            tiered_context = {
+                "artifact_root": artifact_root,
+                "build_tiered_family": build_tiered_family,
+                "check_tiered_artifact": check_tiered_artifact,
+                "check_tiered_git_surface": check_tiered_git_surface,
+                "corpus_manifest": corpus_manifest,
+                "hot_profile": hot_profile,
+                "locator_manifest": locator_manifest,
+                "manifest_only": externalized_without_artifact,
+            }
+        else:
+            try:
+                payload, actual_family, portable_manifest = (
+                    load_portable_family(
+                        REPO_ROOT,
+                        artifact_root=artifact_root,
+                    )
                 )
             except ValueError as exc:
                 fail(str(exc))
@@ -970,79 +1141,117 @@ def validate_repo_local_kag_index_generated_payload(*, progress: bool = False) -
                 schema_path=REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
                 label="repo-local KAG portable family manifest",
             )
-        else:
-            payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
-            actual_family = {
-                index_kind: read_json(
-                    REPO_ROOT / "kag" / "indexes" / filename
-                )
-                for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
-            }
-    _repo_local_index_phase("generated-index-payload", progress=progress)
-    with validation_timing(
-        component_type="repo-local-index-phase",
-        component_id="generated-index-payload",
-    ):
-        validate_repo_local_kag_index_payload(payload, label="repo-local KAG generated index")
+    else:
+        payload = read_json(REPO_LOCAL_KAG_INDEX_PATH)
+        actual_family = {
+            index_kind: read_json(
+                REPO_ROOT / "kag" / "indexes" / filename
+            )
+            for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items()
+        }
     _repo_local_index_phase("generated-index-rebuild", progress=progress)
-    with validation_timing(
-        component_type="repo-local-index-phase",
-        component_id="generated-index-rebuild",
-    ):
-        expected = build_index(REPO_ROOT, output=Path("kag/indexes/source_surface_index.json"))
-    _repo_local_index_phase("generated-index-parity", progress=progress)
-    with validation_timing(
-        component_type="repo-local-index-phase",
-        component_id="generated-index-parity",
-    ):
+    expected = build_index(REPO_ROOT, output=Path("kag/indexes/source_surface_index.json"))
+    _repo_local_index_phase("generated-repository-index-family", progress=progress)
+    expected_family = build_repository_indexes(expected, repo_root=REPO_ROOT)
+    if payload is None:
+        _repo_local_index_phase(
+            "generated-index-manifest-only",
+            progress=progress,
+        )
+        validate_repo_local_kag_index_payload(
+            expected,
+            label="repo-local KAG rebuilt index",
+        )
+        validate_repo_local_kag_repository_index_family(
+            expected_family,
+            source_payload=expected,
+            label="repo-local KAG rebuilt repository family",
+        )
+    else:
+        assert actual_family is not None
+        _repo_local_index_phase("generated-index-payload", progress=progress)
+        validate_repo_local_kag_index_payload(
+            payload,
+            label="repo-local KAG generated index",
+        )
+        _repo_local_index_phase("generated-index-parity", progress=progress)
         if payload != expected:
             fail("repo-local KAG generated index drifted from generator")
-
-    _repo_local_index_phase("generated-repository-index-family", progress=progress)
-    with validation_timing(
-        component_type="repo-local-index-phase",
-        component_id="repository-family-build",
-    ):
-        expected_family = build_repository_indexes(expected, repo_root=REPO_ROOT)
-    with validation_timing(
-        component_type="repo-local-index-phase",
-        component_id="repository-family-parity",
-    ):
         for index_kind in REPOSITORY_INDEX_FILENAMES:
             if actual_family[index_kind] != expected_family[index_kind]:
-                fail(f"repo-local KAG {index_kind} index drifted from generator")
-    with validation_timing(
-        component_type="repo-local-index-phase",
-        component_id="repository-family-semantic-validation",
-    ):
+                fail(
+                    f"repo-local KAG {index_kind} index drifted from generator"
+                )
         validate_repo_local_kag_repository_index_family(
             actual_family,
             source_payload=payload,
             label="repo-local KAG repository family",
         )
-    if portable_manifest is not None:
-        with validation_timing(
-            component_type="repo-local-index-phase",
-            component_id="portable-family-rebuild",
-        ):
-            try:
-                expected_manifest, expected_shards = build_portable_family(
-                    expected,
-                    expected_family,
-                    previous_manifest=portable_manifest,
-                )
-            except ValueError as exc:
-                fail(str(exc))
-        with validation_timing(
-            component_type="repo-local-index-phase",
-            component_id="portable-family-parity",
-        ):
-            if not check_portable_output(
+    if tiered_context is not None:
+        corpus_manifest = tiered_context["corpus_manifest"]
+        hot_profile = tiered_context["hot_profile"]
+        locator_manifest = tiered_context["locator_manifest"]
+        assert isinstance(corpus_manifest, dict)
+        assert isinstance(hot_profile, dict)
+        assert isinstance(locator_manifest, dict)
+        try:
+            provenance_base_ref = effective_history_ref(REPO_ROOT)
+            previous_manifest = tiered_previous_portable_manifest(
                 REPO_ROOT,
+                base_ref=provenance_base_ref,
+                corpus_manifest=corpus_manifest,
+                fallback=None,
+            )
+            expected_manifest, expected_shards = build_portable_family(
+                expected,
+                expected_family,
+                previous_manifest=previous_manifest,
+            )
+            build_tiered_family = tiered_context["build_tiered_family"]
+            expected_tiered = build_tiered_family(
                 expected_manifest,
                 expected_shards,
-            ):
-                fail("repo-local KAG portable family drifted from generator")
+                hot_kinds=hot_profile["selection"]["include_record_kinds"],
+                max_pack_bytes=portable_manifest["transport"]["max_pack_bytes"],
+                shadow_mode=portable_manifest["placement"]["state"] == "shadow",
+                mirrors=locator_manifest["locators"],
+                migration=tiered_migration_provenance(
+                    REPO_ROOT,
+                    expected_manifest,
+                    base_ref=provenance_base_ref,
+                    fallback_corpus=corpus_manifest,
+                ),
+            )
+        except ValueError as exc:
+            fail(str(exc))
+        check_tiered_git_surface = tiered_context["check_tiered_git_surface"]
+        externalized = portable_manifest["placement"]["state"] == "externalized"
+        if not check_tiered_git_surface(
+            REPO_ROOT,
+            expected_tiered,
+            externalized=externalized,
+        ):
+            fail("repo-local KAG tiered Git surface drifted from generator")
+        artifact_root = tiered_context["artifact_root"]
+        if artifact_root is not None:
+            check_tiered_artifact = tiered_context["check_tiered_artifact"]
+            if not check_tiered_artifact(artifact_root, expected_tiered):
+                fail("repo-local KAG tiered artifact surface drifted from generator")
+    elif portable_manifest is not None:
+        try:
+            expected_manifest, expected_shards = build_portable_family(
+                expected,
+                expected_family,
+                previous_manifest=portable_manifest,
+            )
+        except ValueError as exc:
+            fail(str(exc))
+        if not check_portable_output(
+            REPO_ROOT,
+            expected_manifest,
+            expected_shards,
+        ):
+            fail("repo-local KAG portable family drifted from generator")
 
 
 def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> dict[str, object]:
@@ -1062,6 +1271,20 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
     repo_names = [owner.get("repo") for owner in owners if isinstance(owner, dict)]
     if "aoa-kag" not in repo_names:
         fail(f"{label} must include aoa-kag")
+    family_owners = [
+        owner
+        for owner in owners
+        if isinstance(owner, dict)
+        and owner.get("family_storage")
+        in {
+            "v3-portable-shards",
+            "v4-tiered-content-addressed",
+        }
+    ]
+    if len(family_owners) != len(owners):
+        fail(
+            f"{label} must keep complete v3/v4 family coverage for every owner"
+        )
     for owner in owners:
         if not isinstance(owner, dict):
             continue
@@ -1078,7 +1301,11 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
         ):
             fail(f"{label} owner {repo} must expose repository index family routes")
         if (
-            family_storage != "v3-portable-shards"
+            family_storage
+            not in {
+                "v3-portable-shards",
+                "v4-tiered-content-addressed",
+            }
             and any(
                 path not in index_files
                 for path in repository_index_family.values()
@@ -1104,7 +1331,7 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
                 "kag/receipts/index_family_budget/"
                 f"{content_digest}.json"
             )
-            if (
+            coordinates_invalid = (
                 portable_family.get("manifest_ref")
                 != "kag/indexes/index_family.manifest.json"
                 or portable_family["manifest_ref"] not in index_files
@@ -1117,6 +1344,7 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
                 )
                 or tracked_bytes <= 0
                 or portable_family.get("shards", 0) <= 0
+                or tracked_bytes_max <= 0
                 or (
                     tracked_bytes <= tracked_bytes_max
                     and (
@@ -1139,20 +1367,116 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
                         )
                     )
                 )
-            ):
+            )
+            if coordinates_invalid:
                 fail(
                     f"{label} owner {repo} portable family coordinates are invalid"
                 )
-        elif portable_family != {
-            "manifest_ref": "",
-            "content_digest": "",
-            "digest_state": "not-applicable",
-            "tracked_bytes": 0,
-            "tracked_bytes_max": 0,
-            "shards": 0,
-            "budget_state": "not-applicable",
-            "receipt_ref": "",
-        }:
+        elif family_storage == "v4-tiered-content-addressed":
+            tracked_bytes = portable_family.get("tracked_bytes", 0)
+            tracked_bytes_max = portable_family.get("tracked_bytes_max", -1)
+            content_digest = portable_family.get("content_digest")
+            corpus_digest = portable_family.get("corpus_digest")
+            distribution_digest = portable_family.get("distribution_digest")
+            digest_state = portable_family.get("digest_state")
+            measurement_state = portable_family.get("measurement_state")
+            measurement_ref = portable_family.get("measurement_ref")
+            self_manifest = (
+                repo == "aoa-kag"
+                and digest_state == "self-manifest"
+                and content_digest == ""
+                and corpus_digest == ""
+                and distribution_digest == ""
+                and measurement_state == "self-excluded"
+                and measurement_ref
+                == "owner-family-release.json#/measurements"
+            )
+            expected_receipt = (
+                "kag/receipts/index_family_budget/"
+                f"{content_digest}.json"
+            )
+            identity_invalid = (
+                not self_manifest
+                and (
+                    not isinstance(content_digest, str)
+                    or not isinstance(corpus_digest, str)
+                    or not isinstance(distribution_digest, str)
+                    or corpus_digest != f"sha256:{content_digest}"
+                    or not distribution_digest.startswith("sha256:")
+                    or digest_state != "published"
+                    or measurement_state != "measured"
+                    or measurement_ref != ""
+                )
+            )
+            if self_manifest:
+                budget_invalid = (
+                    tracked_bytes != 0
+                    or tracked_bytes_max <= 0
+                    or portable_family.get("shards") != 0
+                    or portable_family.get("budget_state") != "self-excluded"
+                    or portable_family.get("receipt_ref") != ""
+                )
+            else:
+                budget_invalid = (
+                    tracked_bytes <= 0
+                    or tracked_bytes_max <= 0
+                    or (
+                        tracked_bytes <= tracked_bytes_max
+                        and (
+                            portable_family.get("budget_state") != "passed"
+                            or portable_family.get("receipt_ref") != ""
+                        )
+                    )
+                    or (
+                        tracked_bytes > tracked_bytes_max
+                        and (
+                            portable_family.get("budget_state") != "receipted"
+                            or portable_family.get("receipt_ref")
+                            != expected_receipt
+                        )
+                    )
+                )
+            physical_invalid = (
+                portable_family.get("manifest_ref")
+                != "kag/indexes/index_family.manifest.json"
+                or portable_family["manifest_ref"] not in index_files
+                or portable_family.get("git_hot_bytes") != tracked_bytes
+                or (
+                    self_manifest
+                    and (
+                        portable_family.get("corpus_total_bytes") != 0
+                        or portable_family.get("artifact_cold_bytes") != 0
+                        or portable_family.get("git_hot_objects") != 0
+                        or portable_family.get("artifact_cold_objects") != 0
+                    )
+                )
+                or (
+                    not self_manifest
+                    and (
+                        portable_family.get("corpus_total_bytes", 0) <= 0
+                        or portable_family.get("artifact_cold_bytes", -1) < 0
+                        or portable_family.get("shards", 0) <= 0
+                    )
+                )
+                or portable_family.get("git_hot_objects", -1)
+                + portable_family.get("artifact_cold_objects", -1)
+                != portable_family.get("shards")
+                or portable_family.get("placement_state")
+                not in {"shadow", "externalized"}
+                or portable_family.get("hot_profile_ref")
+                != "kag/indexes/hot_profile.json"
+                or portable_family.get("artifact_locator_ref")
+                != "kag/indexes/artifact_locators.json"
+                or portable_family.get("os_git_hot_target_bytes")
+                != OS_GIT_HOT_TARGET_BYTES
+                or portable_family.get(
+                    "aggregate_ceiling_receiptable_by_owner"
+                )
+                is not False
+            )
+            if identity_invalid or budget_invalid or physical_invalid:
+                fail(f"{label} owner {repo} tiered family coordinates are invalid")
+        elif portable_family != _empty_family_coordinates():
             fail(
                 f"{label} owner {repo} non-portable family must keep empty portable coordinates"
             )
@@ -1197,6 +1521,25 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
     summary = payload.get("coverage_summary")
     if not isinstance(summary, dict):
         fail(f"{label} coverage_summary must be an object")
+    if "tiered_v4" not in summary:
+        portable_owners = [
+            owner
+            for owner in owners
+            if isinstance(owner, dict)
+            and owner.get("family_storage") == "v3-portable-shards"
+        ]
+        portable_bytes = sum(
+            int(owner["portable_family"]["tracked_bytes"])
+            for owner in portable_owners
+        )
+        if (
+            summary.get("portable_v3") != len(portable_owners)
+            or len(portable_owners) != len(owners)
+            or summary.get("portable_tracked_bytes") != portable_bytes
+            or summary.get("aggregate_budget_state") != "passed"
+        ):
+            fail(f"{label} portable aggregate budget summary is invalid")
+        return payload
     portable_owners = [
         owner
         for owner in owners
@@ -1206,12 +1549,69 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
     portable_bytes = sum(
         int(owner["portable_family"]["tracked_bytes"])
         for owner in portable_owners
+        if owner["portable_family"]["measurement_state"] == "measured"
+    )
+    tiered_owners = [
+        owner
+        for owner in owners
+        if isinstance(owner, dict)
+        and owner.get("family_storage") == "v4-tiered-content-addressed"
+    ]
+    measured_family_owners = [
+        owner
+        for owner in family_owners
+        if owner["portable_family"]["measurement_state"] == "measured"
+    ]
+    self_excluded_owners = [
+        owner
+        for owner in family_owners
+        if owner["portable_family"]["measurement_state"] == "self-excluded"
+    ]
+    git_hot_bytes = sum(
+        int(owner["portable_family"]["git_hot_bytes"])
+        for owner in measured_family_owners
+    )
+    corpus_total_bytes = sum(
+        int(owner["portable_family"]["corpus_total_bytes"])
+        for owner in measured_family_owners
+    )
+    artifact_cold_bytes = sum(
+        int(owner["portable_family"]["artifact_cold_bytes"])
+        for owner in measured_family_owners
+        if owner["family_storage"] == "v4-tiered-content-addressed"
+    )
+    aggregate_state = (
+        "exceeded"
+        if git_hot_bytes > OS_AGGREGATE_TRACKED_BYTES_MAX
+        else "passed" if len(measured_family_owners) == len(owners) else "partial"
+    )
+    target_state = (
+        "exceeded"
+        if git_hot_bytes > OS_GIT_HOT_TARGET_BYTES
+        else (
+            "passed"
+            if (
+                len(tiered_owners) == len(owners)
+                and len(measured_family_owners) == len(owners)
+            )
+            else "partial"
+        )
     )
     if (
         summary.get("portable_v3") != len(portable_owners)
-        or len(portable_owners) != len(owners)
+        or summary.get("tiered_v4") != len(tiered_owners)
+        or summary.get("measured_owner_count") != len(measured_family_owners)
+        or summary.get("self_excluded_owner_count") != len(self_excluded_owners)
         or summary.get("portable_tracked_bytes") != portable_bytes
-        or summary.get("aggregate_budget_state") != "passed"
+        or summary.get("git_hot_bytes") != git_hot_bytes
+        or summary.get("corpus_total_bytes") != corpus_total_bytes
+        or summary.get("artifact_cold_bytes") != artifact_cold_bytes
+        or summary.get("os_aggregate_tracked_bytes_max")
+        != OS_AGGREGATE_TRACKED_BYTES_MAX
+        or summary.get("os_git_hot_target_bytes")
+        != OS_GIT_HOT_TARGET_BYTES
+        or summary.get("aggregate_budget_state") != aggregate_state
+        or summary.get("target_budget_state") != target_state
     ):
         fail(f"{label} portable aggregate budget summary is invalid")
     return payload

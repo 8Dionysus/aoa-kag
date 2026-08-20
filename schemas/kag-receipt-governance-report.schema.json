@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-receipt-governance-report.schema.json",
+  "title": "AoA KAG recurring receipt aggregate report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "window",
+    "groups",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-receipt-governance-report-v1"
+    },
+    "window": {
+      "type": "object",
+      "required": [
+        "unit",
+        "value",
+        "receipts_observed"
+      ]
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "owner",
+          "scope",
+          "reason_class",
+          "count",
+          "changed_bytes",
+          "state",
+          "next_route"
+        ]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "receipt_count",
+        "receipt_bytes",
+        "topology_reviews_required",
+        "blocked_groups"
+      ]
+    }
+  }
+}

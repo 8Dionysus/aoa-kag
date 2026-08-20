@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-tiered-baseline-evidence.schema.json",
+  "title": "AoA KAG immutable 24-owner tiered migration baseline evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "captured_on",
+    "authority",
+    "claimed",
+    "observed",
+    "drift",
+    "owners"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-kag-tiered-baseline-evidence-v1"
+    },
+    "captured_on": {
+      "type": "string",
+      "pattern": "^20[0-9]{2}-[0-9]{2}-[0-9]{2}$"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot",
+        "manifest_ref",
+        "claimed_coverage_ref",
+        "capture_route"
+      ],
+      "properties": {
+        "snapshot": {"type": "string", "minLength": 1},
+        "manifest_ref": {
+          "const": "kag/indexes/index_family.manifest.json"
+        },
+        "claimed_coverage_ref": {"type": "string", "minLength": 1},
+        "capture_route": {"type": "string", "minLength": 1}
+      }
+    },
+    "claimed": {"$ref": "#/$defs/totals"},
+    "observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owners",
+        "portable_v3",
+        "tracked_bytes",
+        "shards",
+        "hard_ceiling_bytes",
+        "headroom_bytes",
+        "utilization_basis_points"
+      ],
+      "properties": {
+        "owners": {"const": 24},
+        "portable_v3": {"const": 24},
+        "tracked_bytes": {"type": "integer", "minimum": 1},
+        "shards": {"type": "integer", "minimum": 1},
+        "hard_ceiling_bytes": {"const": 335544320},
+        "headroom_bytes": {"type": "integer", "minimum": 0},
+        "utilization_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    },
+    "drift": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tracked_bytes", "explanation", "owners"],
+      "properties": {
+        "tracked_bytes": {"type": "integer"},
+        "explanation": {"type": "string", "minLength": 1},
+        "owners": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/driftOwner"}
+        }
+      }
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 24,
+      "maxItems": 24,
+      "items": {"$ref": "#/$defs/owner"}
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "gitRef": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "ownerName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owners", "tracked_bytes", "shards"],
+      "properties": {
+        "owners": {"const": 24},
+        "tracked_bytes": {"type": "integer", "minimum": 1},
+        "shards": {"type": "integer", "minimum": 1}
+      }
+    },
+    "driftOwner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "claimed_tracked_bytes",
+        "observed_tracked_bytes",
+        "delta_bytes"
+      ],
+      "properties": {
+        "owner": {"$ref": "#/$defs/ownerName"},
+        "claimed_tracked_bytes": {"type": "integer", "minimum": 0},
+        "observed_tracked_bytes": {"type": "integer", "minimum": 0},
+        "delta_bytes": {"type": "integer"}
+      }
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "source_ref",
+        "manifest_schema",
+        "family_digest",
+        "tracked_bytes",
+        "shards",
+        "tracked_bytes_max"
+      ],
+      "properties": {
+        "owner": {"$ref": "#/$defs/ownerName"},
+        "source_ref": {"$ref": "#/$defs/gitRef"},
+        "manifest_schema": {
+          "const": "aoa-repo-local-kag-family-manifest-v3"
+        },
+        "family_digest": {"$ref": "#/$defs/digest"},
+        "tracked_bytes": {"type": "integer", "minimum": 1},
+        "shards": {"type": "integer", "minimum": 1},
+        "tracked_bytes_max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50331648
+        }
+      }
+    }
+  }
+}

@@ -17,6 +17,7 @@
     "mode": {"type": "string", "enum": ["exact", "lexical", "graph", "hybrid"]},
     "query": {"type": "string"},
     "source_index": {"$ref": "#/$defs/sourceIndex"},
+    "delivery": {"$ref": "#/$defs/delivery"},
     "federation_digest": {"$ref": "#/$defs/digest"},
     "owners": {
       "type": "array",
@@ -71,6 +72,49 @@
         "local_id": {"const": "index:repo-local:source-surfaces"},
         "content_digest": {"$ref": "#/$defs/digest"},
         "git_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family_storage",
+        "corpus_digest",
+        "distribution_digest",
+        "state",
+        "complete",
+        "routes",
+        "manifest_ref"
+      ],
+      "properties": {
+        "family_storage": {
+          "enum": ["v3-portable-shards", "v4-tiered-content-addressed"]
+        },
+        "corpus_digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "distribution_digest": {
+          "type": "string",
+          "pattern": "^(|sha256:[a-f0-9]{64})$"
+        },
+        "state": {
+          "enum": ["complete", "git_hot_complete"]
+        },
+        "complete": {"const": true},
+        "routes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["git_hot", "local_cas", "shadow_git"],
+          "properties": {
+            "git_hot": {"type": "integer", "minimum": 0},
+            "local_cas": {"type": "integer", "minimum": 0},
+            "shadow_git": {"type": "integer", "minimum": 0}
+          }
+        },
+        "manifest_ref": {
+          "const": "kag/indexes/index_family.manifest.json"
+        }
       }
     },
     "evidence": {

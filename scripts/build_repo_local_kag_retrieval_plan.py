@@ -13,7 +13,11 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 try:
-    from scripts.build_repo_local_kag_federation import load_owner_bundle, read_json
+    from scripts.build_repo_local_kag_federation import (
+        load_owner_bundle_with_delivery,
+        parse_owner_artifact_roots,
+        read_json,
+    )
     from scripts.provider_registry import configured_provider_roots
     from scripts.repo_local.bundle import (
         retrieval_bundle_matches,
@@ -26,7 +30,11 @@ try:
     )
     from scripts.validators.repo_local_kag_index import repo_local_kag_validate_payload
 except ImportError:  # pragma: no cover - direct script execution
-    from build_repo_local_kag_federation import load_owner_bundle, read_json  # type: ignore
+    from build_repo_local_kag_federation import (  # type: ignore
+        load_owner_bundle_with_delivery,
+        parse_owner_artifact_roots,
+        read_json,
+    )
     from provider_registry import configured_provider_roots  # type: ignore
     from repo_local.bundle import (  # type: ignore
         retrieval_bundle_matches,
@@ -48,6 +56,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--os-root", type=Path, default=Path("/srv/AbyssOS"))
     parser.add_argument("--home-src-root", type=Path, default=Path("/home/dionysus/src"))
     parser.add_argument("--repo", action="append", dest="repos")
+    parser.add_argument(
+        "--owner-artifact-root",
+        action="append",
+        default=[],
+        metavar="OWNER=PATH",
+    )
+    parser.add_argument(
+        "--no-shadow-git",
+        action="store_true",
+        help="Require cold objects from the supplied owner artifact roots.",
+    )
     parser.add_argument("--max-chunk-chars", type=int, default=1800)
     parser.add_argument("--overlap-chars", type=int, default=180)
     parser.add_argument("--output", default="-", help="Plan path or '-' for stdout.")
@@ -116,13 +135,30 @@ def main(argv: Sequence[str] | None = None) -> int:
     if unknown:
         raise SystemExit(f"unknown provider repos: {', '.join(unknown)}")
     selected_roots = {repo: roots[repo] for repo in sorted(selected)}
-    bundles = {
-        repo: load_owner_bundle(selected_roots[repo])
+    artifact_roots = parse_owner_artifact_roots(
+        args.owner_artifact_root,
+        known_owners=set(roots),
+    )
+    loaded = {
+        repo: load_owner_bundle_with_delivery(
+            selected_roots[repo],
+            artifact_root=artifact_roots.get(repo),
+            allow_shadow_git=not args.no_shadow_git,
+        )
         for repo in sorted(selected_roots)
+    }
+    bundles = {
+        repo: (source, family)
+        for repo, (source, family, _) in loaded.items()
+    }
+    owner_delivery = {
+        repo: delivery
+        for repo, (_, _, delivery) in loaded.items()
     }
     plan = build_federated_retrieval_plan(
         selected_roots,
         bundles,
+        owner_delivery=owner_delivery,
         embedding_profile=_embedding_profile(args.embedding_profile),
         max_chunk_chars=args.max_chunk_chars,
         overlap=args.overlap_chars,

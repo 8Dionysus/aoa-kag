@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-os-composition.schema.json",
+  "title": "OS Abyss KAG owner-release composition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "composition_identity", "federation", "owners", "aggregate", "unresolved_references", "provenance", "signature"],
+  "properties": {
+    "schema_version": {"const": "aoa-kag-os-composition-v1"},
+    "composition_identity": {"type": "object", "required": ["artifact_class", "abi_epoch", "content_digest", "schema_epoch", "canonicalization_epoch"], "properties": {"artifact_class": {"const": "kag_os_composition"}, "abi_epoch": {"const": "aoa-kag-os-composition-v1"}, "content_digest": {"$ref": "#/$defs/digest"}, "schema_epoch": {"type": "string"}, "canonicalization_epoch": {"type": "string"}}},
+    "federation": {"type": "object", "required": ["owner_count", "membership_digest"], "properties": {"owner_count": {"const": 24}, "membership_digest": {"$ref": "#/$defs/digest"}}},
+    "owners": {"type": "array", "minItems": 24, "maxItems": 24, "items": {"type": "object", "required": ["owner", "source_ref", "corpus_digest", "release_digest", "distribution_digest", "verification_state"], "properties": {"owner": {"type": "string", "minLength": 1}, "source_ref": {"type": "string", "minLength": 1}, "corpus_digest": {"$ref": "#/$defs/digest"}, "release_digest": {"$ref": "#/$defs/digest"}, "distribution_digest": {"$ref": "#/$defs/digest"}, "verification_state": {"const": "verified"}}}},
+    "aggregate": {"type": "object", "required": ["git_hot_bytes", "corpus_total_bytes", "artifact_unique_bytes"], "properties": {"git_hot_bytes": {"type": "integer", "maximum": 234881024}, "corpus_total_bytes": {"type": "integer", "minimum": 1}, "artifact_unique_bytes": {"type": "integer", "minimum": 1}}},
+    "unresolved_references": {"type": "object"},
+    "provenance": {"type": "object"},
+    "signature": {"type": "object"}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

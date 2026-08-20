@@ -1,0 +1,266 @@
+{
+  "authority": {
+    "capture_route": "git show <owner-ref>:kag/indexes/index_family.manifest.json",
+    "claimed_coverage_ref": "aoa-kag@47e7587154ee2828b913b4a5ca4b20ba646587dc:generated/repo_local_kag_coverage.json",
+    "manifest_ref": "kag/indexes/index_family.manifest.json",
+    "snapshot": "24 immutable owner origin/main refs"
+  },
+  "captured_on": "2026-07-18",
+  "claimed": {
+    "owners": 24,
+    "shards": 9726,
+    "tracked_bytes": 283751563
+  },
+  "drift": {
+    "explanation": "The central coverage snapshot preceded the final owner-manifest bytes now present at the same owners origin/main refs.",
+    "owners": [
+      {
+        "claimed_tracked_bytes": 21724495,
+        "delta_bytes": 122621,
+        "observed_tracked_bytes": 21847116,
+        "owner": "abyss-stack"
+      },
+      {
+        "claimed_tracked_bytes": 8477033,
+        "delta_bytes": 949999,
+        "observed_tracked_bytes": 9427032,
+        "owner": "aoa-skills"
+      },
+      {
+        "claimed_tracked_bytes": 8072226,
+        "delta_bytes": 66026,
+        "observed_tracked_bytes": 8138252,
+        "owner": "aoa-stats"
+      }
+    ],
+    "tracked_bytes": 1138646
+  },
+  "observed": {
+    "hard_ceiling_bytes": 335544320,
+    "headroom_bytes": 50654111,
+    "owners": 24,
+    "portable_v3": 24,
+    "shards": 9726,
+    "tracked_bytes": 284890209,
+    "utilization_basis_points": 8490
+  },
+  "owners": [
+    {
+      "family_digest": "5c0267bfa2ea2364567a0719392bc3608fc839c320c3f2097d17d088c69c43bd",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "8Dionysus",
+      "shards": 288,
+      "source_ref": "8c547f73e55d62b5eaac0ee116cd4dbadff03fc7",
+      "tracked_bytes": 3897324,
+      "tracked_bytes_max": 5242880
+    },
+    {
+      "family_digest": "630ac15884c953446e7ab2832222142514d34f501504cdde6a4ccf60e5e5d56a",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "ATM10-Agent",
+      "shards": 288,
+      "source_ref": "482a8fc7cb23e33742f7440168c231779d74c5c3",
+      "tracked_bytes": 9012924,
+      "tracked_bytes_max": 10485760
+    },
+    {
+      "family_digest": "4ff1a4094c5b1b7e4da1649faeff0fd2bc096355e1e009222a3c8b404d2af10c",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "Agents-of-Abyss",
+      "shards": 652,
+      "source_ref": "bfeb4bfb447b437f1360b814bbf4f1def5e62859",
+      "tracked_bytes": 21935013,
+      "tracked_bytes_max": 25165824
+    },
+    {
+      "family_digest": "d49b36f6c9a673100fbe04c3648db1ca103d2397e0729207ef6f2f5a14607563",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "Dionysus",
+      "shards": 526,
+      "source_ref": "8529c00c731ce560c0d8d2719fabbaf9dcbe222e",
+      "tracked_bytes": 21290750,
+      "tracked_bytes_max": 24117248
+    },
+    {
+      "family_digest": "0308578bcf72413acb8dab3eec5e5d8d01cb0f9993613b63921627ebf0e719f7",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "Tree-of-Sophia",
+      "shards": 543,
+      "source_ref": "8126cc379a759990358728bbcedadbd3b24a7b6d",
+      "tracked_bytes": 10329132,
+      "tracked_bytes_max": 11534336
+    },
+    {
+      "family_digest": "4aff3a5f0f9c60dbb84e1782f56b48cbb60d100d3937e5958712fec87bf2ffcc",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "abyss-machine",
+      "shards": 520,
+      "source_ref": "227b88157890d37663f75548485fedd08bd0abae",
+      "tracked_bytes": 24675273,
+      "tracked_bytes_max": 27262976
+    },
+    {
+      "family_digest": "7b571d4ca6601a61318062a47961222503e7fbca6a9a97f14e889c3e25042ae5",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "abyss-stack",
+      "shards": 715,
+      "source_ref": "c6aafb050cdfc721c583018c7d4dd0b7b68d16eb",
+      "tracked_bytes": 21847116,
+      "tracked_bytes_max": 24117248
+    },
+    {
+      "family_digest": "ad0a1168114a971b7149556e807170524eacd5db80588aba8f5253999e540023",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-4pda-connector",
+      "shards": 213,
+      "source_ref": "a273f71c6fcc30c34759b2ef1e2f08cd8fc6baa3",
+      "tracked_bytes": 3198708,
+      "tracked_bytes_max": 4194304
+    },
+    {
+      "family_digest": "43fb735342f751c7e163fd317db6168c18d50e292ffa40f4df84e93419cb48ca",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-agents",
+      "shards": 601,
+      "source_ref": "ab5229bcb08f3ea0253ec6bb3aa7e8a854028f93",
+      "tracked_bytes": 14996893,
+      "tracked_bytes_max": 16777216
+    },
+    {
+      "family_digest": "06d32aaee149182b1aeee0f7cc64297c387ecdcd9d23f389117d2152e977ca25",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-course-connector",
+      "shards": 288,
+      "source_ref": "346254a134f6f7dd14c6edc0a519a2681d8813a9",
+      "tracked_bytes": 5057329,
+      "tracked_bytes_max": 6291456
+    },
+    {
+      "family_digest": "484b8204bef41546fa3f644322af445e8869b106b60103cd44c52a9ed81eb9d2",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-discord-connector",
+      "shards": 44,
+      "source_ref": "2652b1d657cbe5a7888ac979cc07a8f9ec792887",
+      "tracked_bytes": 933765,
+      "tracked_bytes_max": 4194304
+    },
+    {
+      "family_digest": "68876bcaab7ea7fb97d5166efb94caba07c99d946e8711f38d406b77d93543cd",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-evals",
+      "shards": 659,
+      "source_ref": "347cf5b6c9b149f17371346e721bb047e15cb482",
+      "tracked_bytes": 23577276,
+      "tracked_bytes_max": 26214400
+    },
+    {
+      "family_digest": "e88b07d65dcb0cb1cad7984f77d2897c7e85a457efb1a0d13de1e4d487b365bb",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-kag",
+      "shards": 486,
+      "source_ref": "47e7587154ee2828b913b4a5ca4b20ba646587dc",
+      "tracked_bytes": 11325755,
+      "tracked_bytes_max": 12582912
+    },
+    {
+      "family_digest": "ef8a12bd0894a45b955f9e0c30fa9be04a0e752e69231c58bc526268b6a9f032",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-memo",
+      "shards": 646,
+      "source_ref": "d5f813c5eea2f430f59c0aad291315ca6c66b0f0",
+      "tracked_bytes": 16545073,
+      "tracked_bytes_max": 18874368
+    },
+    {
+      "family_digest": "52b75ff3b4b0dc65eaac5fa3ccaf6ebf35023d626b21c4bec57eca6b989369bd",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-playbooks",
+      "shards": 366,
+      "source_ref": "a15866ec867209288533850cc34939ad81829947",
+      "tracked_bytes": 8603664,
+      "tracked_bytes_max": 10485760
+    },
+    {
+      "family_digest": "ffa30bf9ceaa58627679a9b0541f8b25cd2abeacd5bde060c152492937fa4043",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-routing",
+      "shards": 394,
+      "source_ref": "cde31e568e49c5a50afbd89071cf72abd9733d99",
+      "tracked_bytes": 7964006,
+      "tracked_bytes_max": 9437184
+    },
+    {
+      "family_digest": "9ae369913caaae1726fd174846781c0e4434a36814b82279493c66c00ae06149",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-sdk",
+      "shards": 558,
+      "source_ref": "6364ecddf8238b20b90eed08045f89a0288f8b1b",
+      "tracked_bytes": 13812671,
+      "tracked_bytes_max": 15728640
+    },
+    {
+      "family_digest": "c6a8cd608690e08ca87ab429f2184508eb46a6d5e4b1dd1caa8d0994689a6985",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-session-memory",
+      "shards": 314,
+      "source_ref": "b04c6101b66040b16edc5cdf39b2621aef20765c",
+      "tracked_bytes": 11921424,
+      "tracked_bytes_max": 13631488
+    },
+    {
+      "family_digest": "9ea9e8843d799c75f29a014d9794d9dbe25f1baee6db45d38492a90bd7ae083a",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-skills",
+      "shards": 357,
+      "source_ref": "42c6afa8c817ac3732e9a6710fd0ddf251cd4a97",
+      "tracked_bytes": 9427032,
+      "tracked_bytes_max": 9437184
+    },
+    {
+      "family_digest": "588c5f8970d6d4ed9ecb498017ffa46500d4247af04d27ff9cf6a9e9f0ef26b2",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-stackoverflow-connector",
+      "shards": 43,
+      "source_ref": "a239551bd629f59d32b59649eb308245be99c903",
+      "tracked_bytes": 1103445,
+      "tracked_bytes_max": 4194304
+    },
+    {
+      "family_digest": "87bf66240fabce40f29f960f8289f4c1128fc42870917101034f77df535b1577",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-stats",
+      "shards": 395,
+      "source_ref": "177410ec748b5b58582af039ce082a45609a0782",
+      "tracked_bytes": 8138252,
+      "tracked_bytes_max": 9437184
+    },
+    {
+      "family_digest": "23f28c077642d7b3b710d74265a7354af0e374a0260132b85330745ae3b6edd0",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-techniques",
+      "shards": 743,
+      "source_ref": "e842c0d0156c58cfb9020b636e81134e96fc8cfb",
+      "tracked_bytes": 33249508,
+      "tracked_bytes_max": 36700160
+    },
+    {
+      "family_digest": "0aecf1d7172450f4dba13730bf59b3e69426c5b727c973a9530e18bfb84fed78",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-telegram-connector",
+      "shards": 43,
+      "source_ref": "1d7e4157446839dc03f3ec80b687fdbb12dd8a22",
+      "tracked_bytes": 1058389,
+      "tracked_bytes_max": 4194304
+    },
+    {
+      "family_digest": "52593169e259b2f695542a6b9edc9a44d2001e125b776dbf7c4270392b82c7f2",
+      "manifest_schema": "aoa-repo-local-kag-family-manifest-v3",
+      "owner": "aoa-xda-connector",
+      "shards": 44,
+      "source_ref": "45dc97667c104f17b71fcd13978de5172e5c4c8d",
+      "tracked_bytes": 989487,
+      "tracked_bytes_max": 4194304
+    }
+  ],
+  "schema_version": "aoa-kag-tiered-baseline-evidence-v1"
+}

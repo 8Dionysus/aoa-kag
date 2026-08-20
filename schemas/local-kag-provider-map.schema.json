@@ -247,12 +247,43 @@
           "enum": [
             "passed",
             "receipted",
+            "self-excluded",
             "not-applicable"
           ]
         },
         "receipt_ref": {
           "type": "string",
           "pattern": "^(|kag/receipts/index_family_budget/[a-f0-9]{64}\\.json)$"
+        },
+        "corpus_digest": {
+          "type": "string",
+          "pattern": "^(|sha256:[a-f0-9]{64})$"
+        },
+        "distribution_digest": {
+          "type": "string",
+          "pattern": "^(|sha256:[a-f0-9]{64})$"
+        },
+        "git_hot_bytes": {"type": "integer", "minimum": 0},
+        "corpus_total_bytes": {"type": "integer", "minimum": 0},
+        "artifact_cold_bytes": {"type": "integer", "minimum": 0},
+        "git_hot_objects": {"type": "integer", "minimum": 0},
+        "artifact_cold_objects": {"type": "integer", "minimum": 0},
+        "placement_state": {
+          "enum": ["not-applicable", "git-full", "shadow", "externalized"]
+        },
+        "hot_profile_ref": {
+          "enum": ["", "kag/indexes/hot_profile.json"]
+        },
+        "artifact_locator_ref": {
+          "enum": ["", "kag/indexes/artifact_locators.json"]
+        },
+        "os_git_hot_target_bytes": {"const": 234881024},
+        "aggregate_ceiling_receiptable_by_owner": {"const": false},
+        "measurement_state": {
+          "enum": ["measured", "self-excluded", "not-applicable"]
+        },
+        "measurement_ref": {
+          "enum": ["", "owner-family-release.json#/measurements"]
         }
       }
     },
@@ -280,6 +311,7 @@
           "enum": [
             "v2-monoliths",
             "v3-portable-shards",
+            "v4-tiered-content-addressed",
             "none"
           ]
         },

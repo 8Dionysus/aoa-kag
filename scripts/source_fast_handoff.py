@@ -25,10 +25,18 @@ try:  # Supports direct and package-style execution.
     from scripts import validation_lanes
     from scripts.provider_registry import provider_by_repo
     from scripts.repo_local.portable_family import manifest_digest
+    from scripts.repo_local.tiered_family import (
+        DISTRIBUTION_SCHEMA_VERSION,
+        _identity_digest,
+    )
 except ImportError:  # pragma: no cover - direct script execution
     import validation_lanes  # type: ignore
     from provider_registry import provider_by_repo  # type: ignore
     from repo_local.portable_family import manifest_digest  # type: ignore
+    from repo_local.tiered_family import (  # type: ignore
+        DISTRIBUTION_SCHEMA_VERSION,
+        _identity_digest,
+    )
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +46,7 @@ EXPECTED_HISTORY_ENV = "AOA_KAG_EXPECTED_HISTORY_REF"
 EXPECTED_EVENT_HISTORY_ENV = "AOA_KAG_EXPECTED_EVENT_HISTORY_REF"
 PRODUCER_JOB = "source_fast"
 FAMILY_MANIFEST_PATH = Path("kag/indexes/index_family.manifest.json")
+CORPUS_MANIFEST_PATH = Path("kag/indexes/corpus.manifest.json")
 ACTION_PATH = Path(".github/actions/repo-local-kag-index/action.yml")
 HEX_40 = re.compile(r"^[0-9a-f]{40}$")
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
@@ -201,6 +210,50 @@ def _owner_family_identity(
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise HandoffError("owner-family manifest is not an object")
+    if payload.get("schema_version") == DISTRIBUTION_SCHEMA_VERSION:
+        corpus = json.loads(
+            (repo_root / CORPUS_MANIFEST_PATH).read_text(encoding="utf-8")
+        )
+        if not isinstance(corpus, dict):
+            raise HandoffError("owner-family corpus manifest is not an object")
+        distribution_identity = payload.get("distribution_identity")
+        corpus_identity = corpus.get("corpus_identity")
+        source_header = corpus.get("source_index_header")
+        source_identity = (
+            source_header.get("index_identity")
+            if isinstance(source_header, dict)
+            else None
+        )
+        if not isinstance(distribution_identity, dict):
+            raise HandoffError("owner-family distribution identity is incomplete")
+        if not isinstance(corpus_identity, dict) or not isinstance(source_identity, dict):
+            raise HandoffError("owner-family corpus identity is incomplete")
+        if corpus.get("schema_version") != "aoa-repo-local-kag-corpus-manifest-v1":
+            raise HandoffError("owner-family corpus schema version is unsupported")
+        content_digest = str(distribution_identity.get("content_digest") or "")
+        source_digest = str(source_identity.get("content_digest") or "")
+        source_snapshot = str(corpus_identity.get("source_snapshot") or "")
+        if content_digest.startswith("sha256:"):
+            content_digest = content_digest.removeprefix("sha256:")
+        if source_snapshot.startswith("sha256:"):
+            source_snapshot = source_snapshot.removeprefix("sha256:")
+        if (
+            not HEX_64.fullmatch(content_digest)
+            or not HEX_64.fullmatch(source_digest)
+            or source_digest != source_snapshot
+        ):
+            raise HandoffError("owner-family v4 source identity is malformed")
+        if content_digest != _identity_digest(payload, "distribution_identity").removeprefix(
+            "sha256:"
+        ):
+            raise HandoffError("owner-family distribution digest does not verify")
+        return {
+            "result": "verified",
+            "manifest_schema_version": str(payload.get("schema_version") or ""),
+            "family_content_digest": content_digest,
+            "source_index_content_digest": source_digest,
+            **_history_identity(repo_root, env),
+        }
     identity = payload.get("family_identity")
     source_header = payload.get("source_index_header")
     if not isinstance(identity, dict) or not isinstance(source_header, dict):

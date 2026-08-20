@@ -52,6 +52,16 @@ def _canonical_digest(payload: dict[str, Any], identity_key: str) -> str:
     return digest.hexdigest()
 
 
+def _retrieval_projection_digest(payload: dict[str, Any]) -> str:
+    """Hash logical retrieval content without transport/delivery coordinates."""
+
+    material = copy.deepcopy(payload)
+    for item in material.get("canonical_inputs", []):
+        if isinstance(item, dict):
+            item.pop("distribution_identity", None)
+    return _canonical_digest(material, "projection_identity")
+
+
 def _verified_source_bytes(repo_root: Path, record: dict[str, Any]) -> bytes:
     identity = record["identity"]
     rel_path = str(identity["path"])
@@ -503,16 +513,89 @@ def _vector_point_id(document: Mapping[str, Any], profile_id: str) -> str:
     )
 
 
+def _delivery_identity(
+    owner: str,
+    source: Mapping[str, Any],
+    family: Mapping[str, Mapping[str, Any]],
+    delivery: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if delivery is None:
+        logical = "sha256:" + _sha256(
+            json.dumps(
+                {"source": source, "family": family},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        )
+        delivery = {
+            "corpus_digest": logical,
+            "distribution_digest": "sha256:"
+            + _sha256(f"legacy-git-full:{logical}".encode("utf-8")),
+            "delivery_state": "legacy_git_full",
+            "complete": True,
+            "manifest_schema": "legacy-monolith",
+            "routes": {"git_hot": len(family) + 1},
+        }
+    corpus_digest = delivery.get("corpus_digest")
+    distribution_digest = delivery.get("distribution_digest")
+    for label, value in (
+        ("corpus", corpus_digest),
+        ("distribution", distribution_digest),
+    ):
+        if (
+            not isinstance(value, str)
+            or not value.startswith("sha256:")
+            or len(value) != 71
+            or any(character not in "0123456789abcdef" for character in value[7:])
+        ):
+            raise ValueError(f"{owner} {label} digest must be sha256:<64 hex>")
+    delivery_state = delivery.get("delivery_state")
+    if not isinstance(delivery_state, str) or not delivery_state:
+        raise ValueError(f"{owner} delivery state must be non-empty")
+    routes = delivery.get("routes")
+    if not isinstance(routes, Mapping) or any(
+        not isinstance(key, str)
+        or not isinstance(value, int)
+        or isinstance(value, bool)
+        or value < 0
+        for key, value in routes.items()
+    ):
+        raise ValueError(f"{owner} delivery routes must be non-negative counts")
+    corpus_identity = {"content_digest": corpus_digest}
+    distribution_identity: dict[str, Any] = {
+        "content_digest": distribution_digest,
+        "delivery_state": delivery_state,
+        "complete": delivery.get("complete") is True,
+        "manifest_schema": str(delivery.get("manifest_schema") or ""),
+        "routes": {key: routes[key] for key in sorted(routes)},
+    }
+    for field in ("hot_profile_digest", "locator_digest", "pack_index_digest"):
+        value = delivery.get(field)
+        if value:
+            if (
+                not isinstance(value, str)
+                or not value.startswith("sha256:")
+                or len(value) != 71
+            ):
+                raise ValueError(f"{owner} {field} must be sha256:<64 hex>")
+            distribution_identity[field] = value
+    return corpus_identity, distribution_identity
+
+
 def build_federated_retrieval_plan(
     owner_roots: Mapping[str, Path],
     bundles: Mapping[str, tuple[dict[str, Any], dict[str, dict[str, Any]]]],
     *,
+    owner_delivery: Mapping[str, Mapping[str, Any]] | None = None,
     embedding_profile: Mapping[str, Any],
     max_chunk_chars: int = 1800,
     overlap: int = 180,
 ) -> dict[str, Any]:
     if set(owner_roots) != set(bundles):
         raise ValueError("owner roots and bundle owners must match")
+    if owner_delivery is not None and set(owner_delivery) != set(bundles):
+        raise ValueError("owner delivery identities and bundle owners must match")
     federation = RepoKagFederation(
         bundles,
         github_refs_by_repo=github_ref_names_by_repo(owner_roots),
@@ -530,6 +613,12 @@ def build_federated_retrieval_plan(
                 overlap=overlap,
             )
         )
+        corpus_identity, distribution_identity = _delivery_identity(
+            owner,
+            source,
+            family,
+            owner_delivery.get(owner) if owner_delivery is not None else None,
+        )
         canonical_inputs.append(
             {
                 "repo": copy.deepcopy(source["repo"]),
@@ -538,6 +627,8 @@ def build_federated_retrieval_plan(
                     kind: str(payload["index_identity"]["content_digest"])
                     for kind, payload in sorted(family.items())
                 },
+                "corpus_identity": corpus_identity,
+                "distribution_identity": distribution_identity,
             }
         )
     documents.sort(key=lambda item: (item["repo"], item["path"], item["id"]))
@@ -574,8 +665,8 @@ def build_federated_retrieval_plan(
         },
         "documents": documents,
     }
-    payload["projection_identity"]["content_digest"] = _canonical_digest(
-        payload, "projection_identity"
+    payload["projection_identity"]["content_digest"] = (
+        _retrieval_projection_digest(payload)
     )
     return payload
 

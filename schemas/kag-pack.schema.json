@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/kag-pack.schema.json",
+  "title": "AoA KAG deterministic transport pack descriptor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pack_digest", "object_key", "bytes", "objects"],
+  "properties": {
+    "pack_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "object_key": {"type": "string", "pattern": "^packs/sha256/[0-9a-f]{2}/[0-9a-f]{64}\\.pack$"},
+    "bytes": {"type": "integer", "minimum": 1},
+    "objects": {"type": "integer", "minimum": 1}
+  }
+}

@@ -33,6 +33,33 @@ SCHEMA_VERSION = "aoa-kag-owner-family-gate-receipt-v1"
 SENTINEL_SCHEMA_VERSION = "aoa-kag-owner-family-sentinel-receipt-v1"
 DEFAULT_OUTPUT = "kag/indexes/source_surface_index.json"
 MAX_OUTPUT_CHARS = 4_000
+TIERED_FAMILY_SCHEMA = "aoa-repo-local-kag-distribution-manifest-v1"
+
+
+def family_route(repo_root: Path) -> tuple[bool, bool]:
+    """Return (tiered, externalized) for the checked-in family manifest."""
+    manifest_path = repo_root / "kag" / "indexes" / "index_family.manifest.json"
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, IsADirectoryError, json.JSONDecodeError, UnicodeDecodeError):
+        return False, False
+    if not isinstance(payload, dict) or payload.get("schema_version") != TIERED_FAMILY_SCHEMA:
+        return False, False
+    placement = payload.get("placement")
+    return (
+        True,
+        isinstance(placement, dict) and placement.get("state") == "externalized",
+    )
+
+
+def tiered_artifact_root(repo_root: Path) -> Path:
+    parent = Path(
+        os.environ.get("RUNNER_TEMP")
+        or os.environ.get("TMPDIR")
+        or tempfile.gettempdir()
+    )
+    head = git_text(repo_root, "rev-parse", "HEAD")
+    return parent / f"aoa-kag-owner-family-artifacts-{head}"
 
 
 @dataclass(frozen=True)
@@ -140,6 +167,9 @@ def generator_command(
     event_history_ref: str,
     budget_base_ref: str,
     incremental: bool,
+    tiered: bool = False,
+    externalized: bool = False,
+    artifact_root: Path | None = None,
 ) -> tuple[str, ...]:
     command = [
         sys.executable,
@@ -148,8 +178,17 @@ def generator_command(
         repo_root.as_posix(),
         "--output",
         output,
-        "--portable-family",
     ]
+    if tiered:
+        command.append("--tiered-family")
+        if artifact_root is None:
+            raise ValueError("tiered owner-family commands require an artifact root")
+        command.extend(("--artifact-root", artifact_root.as_posix()))
+        command.append("--materialize-artifact-on-check")
+        if externalized:
+            command.append("--externalize-cold")
+    else:
+        command.append("--portable-family")
     if incremental:
         command.append("--incremental")
     command.extend(
@@ -174,7 +213,26 @@ def downstream_components(
     event_history_ref: str,
     budget_base_ref: str,
     compatibility_output: Path,
+    tiered: bool = False,
+    externalized: bool = False,
+    artifact_root: Path | None = None,
 ) -> tuple[Component, ...]:
+    validator_args = [
+        "--source-index",
+        output,
+    ]
+    assembly_args = [
+        "--output-dir",
+        compatibility_output.as_posix(),
+    ]
+    if tiered:
+        if artifact_root is None:
+            raise ValueError("tiered owner-family commands require an artifact root")
+        validator_args.extend(("--artifact-root", artifact_root.as_posix()))
+        assembly_args.extend(("--artifact-root", artifact_root.as_posix()))
+        if externalized:
+            validator_args.append("--no-shadow-git")
+            assembly_args.append("--no-shadow-git")
     return (
         Component(
             "full-parity",
@@ -185,6 +243,9 @@ def downstream_components(
                 event_history_ref=event_history_ref,
                 budget_base_ref=budget_base_ref,
                 incremental=False,
+                tiered=tiered,
+                externalized=externalized,
+                artifact_root=artifact_root,
             ),
         ),
         Component(
@@ -194,8 +255,7 @@ def downstream_components(
                 (KAG_ROOT / "scripts" / "validate_repo_local_kag_family.py").as_posix(),
                 "--repo-root",
                 repo_root.as_posix(),
-                "--source-index",
-                output,
+                *validator_args,
             ),
         ),
         Component(
@@ -205,8 +265,7 @@ def downstream_components(
                 (KAG_ROOT / "scripts" / "assemble_repo_local_kag_family.py").as_posix(),
                 "--repo-root",
                 repo_root.as_posix(),
-                "--output-dir",
-                compatibility_output.as_posix(),
+                *assembly_args,
             ),
         ),
     )
@@ -219,7 +278,18 @@ def sentinel_component(
     history_ref: str,
     event_history_ref: str,
     budget_base_ref: str,
+    tiered: bool | None = None,
+    externalized: bool | None = None,
+    artifact_root: Path | None = None,
 ) -> Component:
+    if tiered is None:
+        tiered, detected_externalized = family_route(repo_root)
+        if externalized is None:
+            externalized = detected_externalized
+    elif externalized is None:
+        externalized = False
+    if tiered and artifact_root is None:
+        artifact_root = tiered_artifact_root(repo_root)
     return Component(
         "incremental-drift-sentinel",
         generator_command(
@@ -229,6 +299,9 @@ def sentinel_component(
             event_history_ref=event_history_ref,
             budget_base_ref=budget_base_ref,
             incremental=True,
+            tiered=tiered,
+            externalized=externalized,
+            artifact_root=artifact_root,
         ),
     )
 
@@ -243,12 +316,17 @@ def run_sentinel_gate(
 ) -> tuple[int, dict[str, object]]:
     started = time.perf_counter()
     initial_identity = candidate_identity(repo_root)
+    tiered, externalized = family_route(repo_root)
+    artifact_root = tiered_artifact_root(repo_root) if tiered else None
     sentinel = sentinel_component(
         repo_root=repo_root,
         output=output,
         history_ref=history_ref,
         event_history_ref=event_history_ref,
         budget_base_ref=budget_base_ref,
+        tiered=tiered,
+        externalized=externalized,
+        artifact_root=artifact_root,
     )
     result = run_component(sentinel, repo_root=repo_root)
     identity_stable = candidate_identity(repo_root) == initial_identity
@@ -340,12 +418,17 @@ def run_gate(
         "event_history_ref": event_history_ref,
         "budget_base_ref": budget_base_ref,
     }
+    tiered, externalized = family_route(repo_root)
+    artifact_root = tiered_artifact_root(repo_root) if tiered else None
     sentinel = sentinel_component(
         repo_root=repo_root,
         output=output,
         history_ref=history_ref,
         event_history_ref=event_history_ref,
         budget_base_ref=budget_base_ref,
+        tiered=tiered,
+        externalized=externalized,
+        artifact_root=artifact_root,
     )
     handoff_error: str | None = None
     if sentinel_receipt is None:
@@ -380,8 +463,40 @@ def run_gate(
                 event_history_ref=event_history_ref,
                 budget_base_ref=budget_base_ref,
                 compatibility_output=Path(temp_dir) / "compatibility",
+                tiered=tiered,
+                externalized=externalized,
+                artifact_root=artifact_root,
             )
-            if jobs == 1:
+            if tiered:
+                # The tiered generator materializes the deterministic artifact
+                # root consumed by the validator and compatibility assembler.
+                # Keep that producer ahead of the readers even when the caller
+                # requested fan-out; otherwise a clean CI run can race its own
+                # generated distribution.
+                producer, *readers = components
+                results.append(run_component(producer, repo_root=repo_root))
+                if jobs == 1:
+                    results.extend(
+                        run_component(component, repo_root=repo_root)
+                        for component in readers
+                    )
+                else:
+                    with concurrent.futures.ThreadPoolExecutor(
+                        max_workers=min(jobs, len(readers))
+                    ) as pool:
+                        futures = {
+                            component.component_id: pool.submit(
+                                run_component,
+                                component,
+                                repo_root=repo_root,
+                            )
+                            for component in readers
+                        }
+                        results.extend(
+                            futures[component.component_id].result()
+                            for component in readers
+                        )
+            elif jobs == 1:
                 results.extend(
                     run_component(component, repo_root=repo_root)
                     for component in components

@@ -32,6 +32,7 @@ try:
         build_repository_indexes,
         classification_summary,
         coverage_summary,
+        effective_history_ref,
         git_file_paths,
         is_portable_family_control_path,
         manifest_validation_route,
@@ -41,13 +42,26 @@ try:
         repo_name,
         sha256_bytes,
         source_bytes,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
     from scripts.generation.context import KNOWN_REPO_ROOTS
     from scripts.repo_local.portable_family import (
         MANIFEST_RELATIVE_PATH,
         OS_AGGREGATE_TRACKED_BYTES_MAX,
+        build_portable_family,
         load_portable_family,
+        reconstruct_source_index,
         receipt_path_for,
+    )
+    from scripts.repo_local.tiered_family import (
+        DISTRIBUTION_SCHEMA_VERSION,
+        OS_GIT_HOT_TARGET_BYTES,
+        TieredFamilyUnavailable,
+        build_tiered_family,
+        check_tiered_git_surface,
+        load_tiered_manifests,
+        load_tiered_rows,
     )
     from scripts.provider_registry import (
         connector_repos,
@@ -67,6 +81,7 @@ except ImportError:  # pragma: no cover - direct script execution
         build_repository_indexes,
         classification_summary,
         coverage_summary,
+        effective_history_ref,
         git_file_paths,
         is_portable_family_control_path,
         manifest_validation_route,
@@ -76,13 +91,26 @@ except ImportError:  # pragma: no cover - direct script execution
         repo_name,
         sha256_bytes,
         source_bytes,
+        tiered_migration_provenance,
+        tiered_previous_portable_manifest,
     )
     from generation.context import KNOWN_REPO_ROOTS  # type: ignore
     from repo_local.portable_family import (  # type: ignore
         MANIFEST_RELATIVE_PATH,
         OS_AGGREGATE_TRACKED_BYTES_MAX,
+        build_portable_family,
         load_portable_family,
+        reconstruct_source_index,
         receipt_path_for,
+    )
+    from repo_local.tiered_family import (  # type: ignore
+        DISTRIBUTION_SCHEMA_VERSION,
+        OS_GIT_HOT_TARGET_BYTES,
+        TieredFamilyUnavailable,
+        build_tiered_family,
+        check_tiered_git_surface,
+        load_tiered_manifests,
+        load_tiered_rows,
     )
     from provider_registry import (  # type: ignore
         connector_repos,
@@ -443,6 +471,9 @@ def _source_index_payload(owner_root: Path) -> dict[str, Any] | None:
     portable = _portable_bundle(owner_root)
     if portable is not None:
         return portable[0]
+    tiered = _tiered_bundle(owner_root)
+    if tiered is not None:
+        return tiered[0]
     return None
 
 
@@ -452,6 +483,137 @@ def portable_family_profile(
     owner_name: str,
     status: str,
 ) -> tuple[str, dict[str, Any]]:
+    manifest_path = owner_root / MANIFEST_RELATIVE_PATH
+    try:
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError):
+        raw_manifest = None
+    if (
+        isinstance(raw_manifest, dict)
+        and raw_manifest.get("schema_version") == DISTRIBUTION_SCHEMA_VERSION
+    ):
+        artifact_root_value = os.environ.get("KAG_ARTIFACT_ROOT")
+        artifact_root = (
+            Path(artifact_root_value).expanduser().resolve()
+            if artifact_root_value
+            else None
+        )
+        try:
+            distribution, corpus, _, _, _ = load_tiered_manifests(
+                owner_root,
+                artifact_root=artifact_root,
+            )
+        except (ValueError, FileNotFoundError, json.JSONDecodeError):
+            placement = raw_manifest.get("placement")
+            placement_state = (
+                placement.get("state")
+                if isinstance(placement, dict)
+                and placement.get("state") in {"shadow", "externalized"}
+                else "not-applicable"
+            )
+            return (
+                "v4-tiered-content-addressed",
+                {
+                    "manifest_ref": MANIFEST_RELATIVE_PATH.as_posix(),
+                    "content_digest": "",
+                    "digest_state": "not-applicable",
+                    "tracked_bytes": 0,
+                    "tracked_bytes_max": 0,
+                    "shards": 0,
+                    "budget_state": "not-applicable",
+                    "receipt_ref": "",
+                    "corpus_digest": "",
+                    "distribution_digest": "",
+                    "git_hot_bytes": 0,
+                    "corpus_total_bytes": 0,
+                    "artifact_cold_bytes": 0,
+                    "git_hot_objects": 0,
+                    "artifact_cold_objects": 0,
+                    "placement_state": placement_state,
+                    "hot_profile_ref": "kag/indexes/hot_profile.json",
+                    "artifact_locator_ref": "kag/indexes/artifact_locators.json",
+                    "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
+                    "aggregate_ceiling_receiptable_by_owner": False,
+                    "measurement_state": "not-applicable",
+                    "measurement_ref": "",
+                },
+            )
+        summary = distribution["summary"]
+        budgets = distribution["budgets"]
+        corpus_digest = corpus["corpus_identity"]["content_digest"]
+        distribution_digest = distribution["distribution_identity"][
+            "content_digest"
+        ]
+        git_hot_bytes = summary["git_hot_bytes"]
+        tracked_bytes_max = budgets["owner_git_hot_bytes_max"]
+        receipted = git_hot_bytes > tracked_bytes_max
+        self_manifest = (
+            owner_name == "aoa-kag"
+            and owner_root.resolve() == REPO_ROOT.resolve()
+        )
+        public_identity = "" if self_manifest else corpus_digest.removeprefix("sha256:")
+        measured_git_hot_bytes = 0 if self_manifest else git_hot_bytes
+        measured_corpus_total_bytes = (
+            0 if self_manifest else summary["corpus_total_bytes"]
+        )
+        measured_artifact_cold_bytes = (
+            0 if self_manifest else summary["artifact_cold_bytes"]
+        )
+        measured_git_hot_objects = (
+            0 if self_manifest else summary["git_hot_objects"]
+        )
+        measured_artifact_cold_objects = (
+            0 if self_manifest else summary["artifact_cold_objects"]
+        )
+        measured_shards = 0 if self_manifest else corpus["summary"]["objects"]
+        return (
+            "v4-tiered-content-addressed",
+            {
+                "manifest_ref": MANIFEST_RELATIVE_PATH.as_posix(),
+                "content_digest": public_identity,
+                "digest_state": "self-manifest" if self_manifest else "published",
+                "tracked_bytes": measured_git_hot_bytes,
+                "tracked_bytes_max": tracked_bytes_max,
+                "shards": measured_shards,
+                "budget_state": (
+                    "self-excluded"
+                    if self_manifest
+                    else ("receipted" if receipted else "passed")
+                ),
+                "receipt_ref": (
+                    (
+                        "kag/receipts/index_family_budget/"
+                        f"{public_identity}.json"
+                    )
+                    if receipted and not self_manifest
+                    else ""
+                ),
+                "corpus_digest": "" if self_manifest else corpus_digest,
+                "distribution_digest": (
+                    "" if self_manifest else distribution_digest
+                ),
+                "git_hot_bytes": measured_git_hot_bytes,
+                "corpus_total_bytes": measured_corpus_total_bytes,
+                "artifact_cold_bytes": measured_artifact_cold_bytes,
+                "git_hot_objects": measured_git_hot_objects,
+                "artifact_cold_objects": measured_artifact_cold_objects,
+                "placement_state": distribution["placement"]["state"],
+                "hot_profile_ref": "kag/indexes/hot_profile.json",
+                "artifact_locator_ref": "kag/indexes/artifact_locators.json",
+                "os_git_hot_target_bytes": budgets["os_git_hot_target_bytes"],
+                "aggregate_ceiling_receiptable_by_owner": budgets[
+                    "aggregate_ceiling_receiptable_by_owner"
+                ],
+                "measurement_state": (
+                    "self-excluded" if self_manifest else "measured"
+                ),
+                "measurement_ref": (
+                    "owner-family-release.json#/measurements"
+                    if self_manifest
+                    else ""
+                ),
+            },
+        )
     portable = _portable_bundle(owner_root)
     if portable is not None:
         manifest = portable[2]
@@ -476,13 +638,39 @@ def portable_family_profile(
                     if self_manifest
                     else "published"
                 ),
-                "tracked_bytes": tracked_bytes,
+                "tracked_bytes": 0 if self_manifest else tracked_bytes,
                 "tracked_bytes_max": tracked_bytes_max,
-                "shards": manifest["summary"]["shards"],
-                "budget_state": "receipted" if receipted else "passed",
+                "shards": 0 if self_manifest else manifest["summary"]["shards"],
+                "budget_state": (
+                    "self-excluded"
+                    if self_manifest
+                    else ("receipted" if receipted else "passed")
+                ),
                 "receipt_ref": (
                     receipt_path_for(manifest).as_posix()
                     if receipted and not self_manifest
+                    else ""
+                ),
+                "corpus_digest": "",
+                "distribution_digest": "",
+                "git_hot_bytes": 0 if self_manifest else tracked_bytes,
+                "corpus_total_bytes": 0 if self_manifest else tracked_bytes,
+                "artifact_cold_bytes": 0,
+                "git_hot_objects": (
+                    0 if self_manifest else manifest["summary"]["shards"]
+                ),
+                "artifact_cold_objects": 0,
+                "placement_state": "git-full",
+                "hot_profile_ref": "",
+                "artifact_locator_ref": "",
+                "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
+                "aggregate_ceiling_receiptable_by_owner": False,
+                "measurement_state": (
+                    "self-excluded" if self_manifest else "measured"
+                ),
+                "measurement_ref": (
+                    "owner-family-release.json#/measurements"
+                    if self_manifest
                     else ""
                 ),
             },
@@ -499,6 +687,20 @@ def portable_family_profile(
                 "shards": 0,
                 "budget_state": "not-applicable",
                 "receipt_ref": "",
+                "corpus_digest": "",
+                "distribution_digest": "",
+                "git_hot_bytes": 0,
+                "corpus_total_bytes": 0,
+                "artifact_cold_bytes": 0,
+                "git_hot_objects": 0,
+                "artifact_cold_objects": 0,
+                "placement_state": "not-applicable",
+                "hot_profile_ref": "",
+                "artifact_locator_ref": "",
+                "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
+                "aggregate_ceiling_receiptable_by_owner": False,
+                "measurement_state": "not-applicable",
+                "measurement_ref": "",
             },
         )
     return (
@@ -512,6 +714,20 @@ def portable_family_profile(
             "shards": 0,
             "budget_state": "not-applicable",
             "receipt_ref": "",
+            "corpus_digest": "",
+            "distribution_digest": "",
+            "git_hot_bytes": 0,
+            "corpus_total_bytes": 0,
+            "artifact_cold_bytes": 0,
+            "git_hot_objects": 0,
+            "artifact_cold_objects": 0,
+            "placement_state": "not-applicable",
+            "hot_profile_ref": "",
+            "artifact_locator_ref": "",
+            "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
+            "aggregate_ceiling_receiptable_by_owner": False,
+            "measurement_state": "not-applicable",
+            "measurement_ref": "",
         },
     )
 
@@ -523,7 +739,10 @@ def repository_index_family_refs(
     storage: str,
 ) -> dict[str, str]:
     present = set(relative_files)
-    if status == "passed" and storage == "v3-portable-shards":
+    if status == "passed" and storage in {
+        "v3-portable-shards",
+        "v4-tiered-content-addressed",
+    }:
         return dict(REPOSITORY_INDEX_FAMILY_REFS)
     return {
         index_kind: path
@@ -532,25 +751,71 @@ def repository_index_family_refs(
     }
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=None)
 def _portable_bundle_from_disk(
     owner_root: Path,
-) -> PortableBundle | None:
+) -> tuple[
+    dict[str, Any],
+    dict[str, dict[str, Any]],
+    dict[str, Any],
+] | None:
     manifest = owner_root / MANIFEST_RELATIVE_PATH
     if not manifest.is_file():
         return None
     try:
-        return load_portable_family(owner_root)
+        artifact_root_value = os.environ.get("KAG_ARTIFACT_ROOT")
+        return load_portable_family(
+            owner_root,
+            artifact_root=(
+                Path(artifact_root_value).expanduser().resolve()
+                if artifact_root_value
+                else None
+            ),
+        )
     except (ValueError, FileNotFoundError, json.JSONDecodeError):
         return None
 
 
-def _portable_bundle(owner_root: Path) -> PortableBundle | None:
+def _portable_bundle(
+    owner_root: Path,
+) -> tuple[
+    dict[str, Any],
+    dict[str, dict[str, Any]],
+    dict[str, Any],
+] | None:
     transient = _TRANSIENT_PORTABLE_BUNDLE
     resolved_root = owner_root.resolve()
     if transient is not None and transient[0] == resolved_root:
         return transient[1]
     return _portable_bundle_from_disk(resolved_root)
+
+
+# Keep the public cache-invalidation hook used by owner preparation and the
+# tiered coverage tests while retaining the transient same-run override above.
+_portable_bundle.cache_clear = _portable_bundle_from_disk.cache_clear  # type: ignore[attr-defined]
+
+
+def _portable_bundle_family_content_digest(
+    portable_bundle: PortableBundle,
+) -> str | None:
+    """Return the compatibility family digest for either manifest era."""
+
+    manifest = portable_bundle[2]
+    if manifest.get("schema_version") == DISTRIBUTION_SCHEMA_VERSION:
+        distribution_identity = manifest.get("distribution_identity")
+        digest = (
+            distribution_identity.get("corpus_digest")
+            if isinstance(distribution_identity, dict)
+            else None
+        )
+        return digest.removeprefix("sha256:") if isinstance(digest, str) else None
+    family_identity = manifest.get("family_identity")
+    digest = (
+        family_identity.get("content_digest")
+        if isinstance(family_identity, dict)
+        else None
+    )
+    return digest if isinstance(digest, str) else None
 
 
 @contextmanager
@@ -569,6 +834,99 @@ def _transient_portable_bundle(
         yield
     finally:
         _TRANSIENT_PORTABLE_BUNDLE = None
+
+
+@lru_cache(maxsize=None)
+def _externalized_tiered_bundle(
+    owner_root: Path,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+] | None:
+    if os.environ.get("KAG_ARTIFACT_ROOT"):
+        return None
+    manifest_path = owner_root / MANIFEST_RELATIVE_PATH
+    try:
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        placement = raw_manifest.get("placement")
+        if (
+            raw_manifest.get("schema_version") != DISTRIBUTION_SCHEMA_VERSION
+            or not isinstance(placement, dict)
+            or placement.get("state") != "externalized"
+        ):
+            return None
+    except (
+        FileNotFoundError,
+        IsADirectoryError,
+        TypeError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ):
+        return None
+    return _tiered_bundle(owner_root)
+
+
+@lru_cache(maxsize=None)
+def _tiered_bundle(
+    owner_root: Path,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+] | None:
+    """Load a v4 family for coverage from shadow Git or local CAS."""
+    manifest_path = owner_root / MANIFEST_RELATIVE_PATH
+    try:
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        placement = raw_manifest.get("placement")
+        if (
+            raw_manifest.get("schema_version") != DISTRIBUTION_SCHEMA_VERSION
+            or not isinstance(placement, dict)
+        ):
+            return None
+        artifact_root_value = os.environ.get("KAG_ARTIFACT_ROOT")
+        artifact_root = (
+            Path(artifact_root_value).expanduser().resolve()
+            if artifact_root_value
+            else None
+        )
+        distribution, corpus, hot_profile, locators, _ = load_tiered_manifests(
+            owner_root,
+            artifact_root=artifact_root,
+        )
+        externalized = placement.get("state") == "externalized"
+        rows, delivery = load_tiered_rows(
+            owner_root,
+            artifact_root=artifact_root,
+            allow_shadow_git=not externalized,
+            allow_hot_only=externalized,
+        )
+        expected_state = (
+            "hot_only"
+            if externalized and distribution["summary"]["artifact_cold_objects"]
+            else "complete"
+        )
+        if delivery.get("state") != expected_state:
+            return None
+        source_index = reconstruct_source_index(corpus, rows)
+        return source_index, distribution, corpus, hot_profile, locators
+    except (
+        FileNotFoundError,
+        IsADirectoryError,
+        KeyError,
+        TypeError,
+        ValueError,
+        TieredFamilyUnavailable,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ):
+        return None
+
 
 
 def repository_event_history_ref(owner_root: Path) -> str | None:
@@ -637,19 +995,75 @@ def repository_index_family_matches_owner(
     if portable is not None:
         actual = portable[1]
     else:
-        actual = {}
-        for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
-            path = owner_root / "kag" / "indexes" / filename
+        tiered = _tiered_bundle(owner_root)
+        if tiered is not None:
+            _, distribution, corpus, hot_profile, locators = tiered
             try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (
-                FileNotFoundError,
-                json.JSONDecodeError,
-                UnicodeDecodeError,
-                IsADirectoryError,
+                provenance_base_ref = effective_history_ref(owner_root)
+                if provenance_base_ref is not None:
+                    previous_manifest = tiered_previous_portable_manifest(
+                        owner_root,
+                        base_ref=provenance_base_ref,
+                        corpus_manifest=corpus,
+                        fallback=None,
+                    )
+                    expected_manifest, expected_shards = (
+                        build_portable_family(
+                            source_index,
+                            expected,
+                            previous_manifest=previous_manifest,
+                        )
+                    )
+                    expected_tiered = build_tiered_family(
+                        expected_manifest,
+                        expected_shards,
+                        hot_kinds=hot_profile["selection"][
+                            "include_record_kinds"
+                        ],
+                        max_pack_bytes=distribution["transport"][
+                            "max_pack_bytes"
+                        ],
+                        shadow_mode=(
+                            distribution.get("placement", {}).get("state")
+                            != "externalized"
+                        ),
+                        mirrors=locators["locators"],
+                        migration=tiered_migration_provenance(
+                            owner_root,
+                            expected_manifest,
+                            base_ref=provenance_base_ref,
+                            fallback_corpus=corpus,
+                        ),
+                    )
+            except (KeyError, TypeError, ValueError):
+                return False
+            if (
+                provenance_base_ref is not None
+                and not check_tiered_git_surface(
+                    owner_root,
+                    expected_tiered,
+                    externalized=(
+                        distribution.get("placement", {}).get("state")
+                        == "externalized"
+                    ),
+                )
             ):
                 return False
-            actual[index_kind] = payload
+            actual = expected
+        else:
+            actual = {}
+            for index_kind, filename in REPOSITORY_INDEX_FILENAMES.items():
+                path = owner_root / "kag" / "indexes" / filename
+                try:
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                except (
+                    FileNotFoundError,
+                    json.JSONDecodeError,
+                    UnicodeDecodeError,
+                    IsADirectoryError,
+                ):
+                    return False
+                actual[index_kind] = payload
     for index_kind in REPOSITORY_INDEX_FILENAMES:
         if actual[index_kind] != expected[index_kind]:
             return False
@@ -959,6 +1373,32 @@ def index_status(
                 relative_files,
             )
         return "migration-needed", relative_files
+    tiered = _tiered_bundle(owner_root)
+    if tiered is not None:
+        payload = tiered[0]
+        if (
+            payload.get("schema_version") == INDEX_SCHEMA_VERSION
+            and source_index_schema_matches(
+                payload,
+                label=f"{owner_name} coverage source index",
+            )
+            and source_index_matches_owner(
+                owner_root,
+                payload,
+                source_snapshot=source_snapshot,
+            )
+        ):
+            return (
+                "passed"
+                if repository_index_family_matches_owner(
+                    owner_root,
+                    payload,
+                    source_snapshot=source_snapshot,
+                )
+                else "migration-needed",
+                relative_files,
+            )
+        return "migration-needed", relative_files
     source_index = indexes / "source_surface_index.json"
     if source_index.is_file():
         try:
@@ -1075,21 +1515,103 @@ def _assemble_coverage(
     owners: Sequence[dict[str, Any]],
 ) -> dict[str, Any]:
     summary = {status: sum(1 for owner in owners if owner["index_status"] == status) for status in OWNER_STATUS}
+    if not any(
+        isinstance(owner.get("portable_family"), dict)
+        and "measurement_state" in owner["portable_family"]
+        for owner in owners
+    ):
+        portable_owners = [
+            owner
+            for owner in owners
+            if owner["family_storage"] == "v3-portable-shards"
+        ]
+        portable_tracked_bytes = sum(
+            owner["portable_family"]["tracked_bytes"]
+            for owner in portable_owners
+        )
+        aggregate_budget_state = (
+            "exceeded"
+            if portable_tracked_bytes > OS_AGGREGATE_TRACKED_BYTES_MAX
+            else (
+                "passed"
+                if len(portable_owners) == len(owners)
+                else "partial"
+            )
+        )
+        return {
+            "schema_version": "aoa-repo-local-kag-coverage-v1",
+            "source_contract": "schemas/repo-local-kag-index.schema.json",
+            "root": os_root.as_posix(),
+            "coverage_summary": {
+                "owner_count": len(owners),
+                "passed": summary["passed"],
+                "migration_needed": summary["migration-needed"],
+                "missing": summary["missing"],
+                "owner_specific": summary["owner-specific"],
+                "portable_v3": len(portable_owners),
+                "portable_tracked_bytes": portable_tracked_bytes,
+                "os_aggregate_tracked_bytes_max": OS_AGGREGATE_TRACKED_BYTES_MAX,
+                "aggregate_budget_state": aggregate_budget_state,
+            },
+            "owners": owners,
+        }
     portable_owners = [
         owner
         for owner in owners
         if owner["family_storage"] == "v3-portable-shards"
     ]
+    tiered_owners = [
+        owner
+        for owner in owners
+        if owner["family_storage"] == "v4-tiered-content-addressed"
+    ]
+    family_owners = [*portable_owners, *tiered_owners]
+    measured_family_owners = [
+        owner
+        for owner in family_owners
+        if owner["portable_family"]["measurement_state"] == "measured"
+    ]
+    self_excluded_owners = [
+        owner
+        for owner in family_owners
+        if owner["portable_family"]["measurement_state"] == "self-excluded"
+    ]
     portable_tracked_bytes = sum(
         owner["portable_family"]["tracked_bytes"]
         for owner in portable_owners
+        if owner["portable_family"]["measurement_state"] == "measured"
+    )
+    git_hot_bytes = sum(
+        owner["portable_family"]["git_hot_bytes"]
+        for owner in measured_family_owners
+    )
+    corpus_total_bytes = sum(
+        owner["portable_family"]["corpus_total_bytes"]
+        for owner in measured_family_owners
+    )
+    artifact_cold_bytes = sum(
+        owner["portable_family"]["artifact_cold_bytes"]
+        for owner in measured_family_owners
+        if owner["family_storage"] == "v4-tiered-content-addressed"
     )
     aggregate_budget_state = (
         "exceeded"
-        if portable_tracked_bytes > OS_AGGREGATE_TRACKED_BYTES_MAX
+        if git_hot_bytes > OS_AGGREGATE_TRACKED_BYTES_MAX
         else (
             "passed"
-            if len(portable_owners) == len(owners)
+            if len(measured_family_owners) == len(owners)
+            else "partial"
+        )
+    )
+    target_budget_state = (
+        "exceeded"
+        if git_hot_bytes > OS_GIT_HOT_TARGET_BYTES
+        else (
+            "passed"
+            if (
+                len(tiered_owners) == len(owners)
+                and len(measured_family_owners) == len(owners)
+            )
             else "partial"
         )
     )
@@ -1103,10 +1625,18 @@ def _assemble_coverage(
             "migration_needed": summary["migration-needed"],
             "missing": summary["missing"],
             "owner_specific": summary["owner-specific"],
+            "measured_owner_count": len(measured_family_owners),
+            "self_excluded_owner_count": len(self_excluded_owners),
             "portable_v3": len(portable_owners),
+            "tiered_v4": len(tiered_owners),
             "portable_tracked_bytes": portable_tracked_bytes,
+            "git_hot_bytes": git_hot_bytes,
+            "corpus_total_bytes": corpus_total_bytes,
+            "artifact_cold_bytes": artifact_cold_bytes,
             "os_aggregate_tracked_bytes_max": OS_AGGREGATE_TRACKED_BYTES_MAX,
+            "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
             "aggregate_budget_state": aggregate_budget_state,
+            "target_budget_state": target_budget_state,
         },
         "owners": owners,
     }
@@ -1326,8 +1856,48 @@ def _portable_manifest_identity(owner: str, owner_root: Path) -> dict[str, str]:
         raise RuntimeError(
             f"coverage packet portable family manifest owner mismatch for {owner}"
         )
-    family_identity = payload.get("family_identity")
-    compatibility = payload.get("compatibility")
+    if payload.get("schema_version") == DISTRIBUTION_SCHEMA_VERSION:
+        corpus_manifest_path = owner_root / "kag" / "indexes" / "corpus.manifest.json"
+        try:
+            corpus_payload = json.loads(
+                corpus_manifest_path.read_text(encoding="utf-8")
+            )
+        except (
+            FileNotFoundError,
+            IsADirectoryError,
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+        ) as exc:
+            raise RuntimeError(
+                f"coverage packet cannot read the v4 corpus manifest for {owner}"
+            ) from exc
+        corpus_repo_identity = (
+            corpus_payload.get("repo")
+            if isinstance(corpus_payload, dict)
+            else None
+        )
+        if (
+            not isinstance(corpus_repo_identity, dict)
+            or corpus_repo_identity.get("name") != owner
+        ):
+            raise RuntimeError(
+                f"coverage packet portable corpus manifest owner mismatch for {owner}"
+            )
+        family_identity = (
+            corpus_payload.get("corpus_identity")
+            if isinstance(corpus_payload, dict)
+            else None
+        )
+        compatibility = (
+            corpus_payload.get("compatibility")
+            if isinstance(corpus_payload, dict)
+            else None
+        )
+        family_digest_prefix = "sha256:"
+    else:
+        family_identity = payload.get("family_identity")
+        compatibility = payload.get("compatibility")
+        family_digest_prefix = ""
     files = compatibility.get("files") if isinstance(compatibility, dict) else None
     if not isinstance(family_identity, dict) or not isinstance(files, list):
         raise RuntimeError(
@@ -1343,7 +1913,9 @@ def _portable_manifest_identity(owner: str, owner_root: Path) -> dict[str, str]:
     )
     values = {
         "manifest_digest": _file_digest(manifest_path),
-        "family_content_digest": str(family_identity.get("content_digest", "")),
+        "family_content_digest": str(
+            family_identity.get("content_digest", "")
+        ).removeprefix(family_digest_prefix),
         "source_snapshot": str(family_identity.get("source_snapshot", "")),
         "event_content_digest": (
             str(event_entry.get("content_digest", ""))
@@ -1781,13 +2353,7 @@ def prebuild_provider_coverage_owner(
         raise RuntimeError(
             f"provider coverage prebuild received duplicate owner: {owner}"
         )
-    manifest = portable_bundle[2]
-    family_identity = manifest.get("family_identity")
-    family_digest = (
-        family_identity.get("content_digest")
-        if isinstance(family_identity, dict)
-        else None
-    )
+    family_digest = _portable_bundle_family_content_digest(portable_bundle)
     snapshot = next(
         (
             item
