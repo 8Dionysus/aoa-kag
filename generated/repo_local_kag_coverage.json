@@ -5,13 +5,13 @@
     "corpus_total_bytes": 260088612,
     "git_hot_bytes": 260088612,
     "measured_owner_count": 20,
-    "migration_needed": 20,
+    "migration_needed": 0,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
     "os_git_hot_target_bytes": 234881024,
     "owner_count": 21,
     "owner_specific": 0,
-    "passed": 1,
+    "passed": 21,
     "portable_tracked_bytes": 260088612,
     "portable_v3": 20,
     "self_excluded_owner_count": 1,
@@ -96,7 +96,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/8Dionysus/kag",
       "owner_type": "workspace",
       "portable_family": {
@@ -124,7 +124,15 @@
         "tracked_bytes_max": 5242880
       },
       "repo": "8Dionysus",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/8Dionysus"
     },
     {
@@ -227,7 +235,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/Agents-of-Abyss/kag",
       "owner_type": "center",
       "portable_family": {
@@ -255,7 +263,15 @@
         "tracked_bytes_max": 25165824
       },
       "repo": "Agents-of-Abyss",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/Agents-of-Abyss"
     },
     {
@@ -362,7 +378,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/Tree-of-Sophia/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -390,7 +406,15 @@
         "tracked_bytes_max": 11534336
       },
       "repo": "Tree-of-Sophia",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/Tree-of-Sophia"
     },
     {
@@ -490,7 +514,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-agents/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -518,7 +542,15 @@
         "tracked_bytes_max": 16777216
       },
       "repo": "aoa-agents",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-agents"
     },
     {
@@ -622,7 +654,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-evals/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -650,7 +682,15 @@
         "tracked_bytes_max": 26214400
       },
       "repo": "aoa-evals",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-evals"
     },
     {
@@ -896,7 +936,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-memo/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -924,7 +964,15 @@
         "tracked_bytes_max": 18874368
       },
       "repo": "aoa-memo",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-memo"
     },
     {
@@ -1023,7 +1071,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-playbooks/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -1051,7 +1099,15 @@
         "tracked_bytes_max": 10485760
       },
       "repo": "aoa-playbooks",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-playbooks"
     },
     {
@@ -1155,7 +1211,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-sdk/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -1183,7 +1239,15 @@
         "tracked_bytes_max": 15728640
       },
       "repo": "aoa-sdk",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-sdk"
     },
     {
@@ -1278,7 +1342,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-skills/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -1306,7 +1370,15 @@
         "tracked_bytes_max": 9437184
       },
       "repo": "aoa-skills",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-skills"
     },
     {
@@ -1404,7 +1476,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-stats/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -1432,7 +1504,15 @@
         "tracked_bytes_max": 9437184
       },
       "repo": "aoa-stats",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-stats"
     },
     {
@@ -1536,7 +1616,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/aoa-techniques/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -1564,7 +1644,15 @@
         "tracked_bytes_max": 36700160
       },
       "repo": "aoa-techniques",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/aoa-techniques"
     },
     {
@@ -1674,7 +1762,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/home/dionysus/src/abyss-stack/kag",
       "owner_type": "runtime_source",
       "portable_family": {
@@ -1702,7 +1790,15 @@
         "tracked_bytes_max": 24117248
       },
       "repo": "abyss-stack",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/home/dionysus/src/abyss-stack"
     },
     {
@@ -1797,7 +1893,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/abyss-machine/kag",
       "owner_type": "runtime_source",
       "portable_family": {
@@ -1825,7 +1921,15 @@
         "tracked_bytes_max": 27262976
       },
       "repo": "abyss-machine",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/abyss-machine"
     },
     {
@@ -1903,7 +2007,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/session_memory_source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/bundles/aoa-session-memory/kag",
       "owner_type": "bundle_provider",
       "portable_family": {
@@ -1931,7 +2035,15 @@
         "tracked_bytes_max": 13631488
       },
       "repo": "aoa-session-memory",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/bundles/aoa-session-memory"
     },
     {
@@ -2015,7 +2127,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-4pda-connector/kag",
       "owner_type": "connector",
       "portable_family": {
@@ -2043,7 +2155,15 @@
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-4pda-connector",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/connectors/aoa-4pda-connector"
     },
     {
@@ -2123,7 +2243,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-course-connector/kag",
       "owner_type": "connector",
       "portable_family": {
@@ -2151,7 +2271,15 @@
         "tracked_bytes_max": 6291456
       },
       "repo": "aoa-course-connector",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/connectors/aoa-course-connector"
     },
     {
@@ -2229,7 +2357,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-discord-connector/kag",
       "owner_type": "connector",
       "portable_family": {
@@ -2257,7 +2385,15 @@
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-discord-connector",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/connectors/aoa-discord-connector"
     },
     {
@@ -2335,7 +2471,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector/kag",
       "owner_type": "connector",
       "portable_family": {
@@ -2363,7 +2499,15 @@
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-stackoverflow-connector",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector"
     },
     {
@@ -2441,7 +2585,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-telegram-connector/kag",
       "owner_type": "connector",
       "portable_family": {
@@ -2469,7 +2613,15 @@
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-telegram-connector",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/connectors/aoa-telegram-connector"
     },
     {
@@ -2548,7 +2700,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/source_inventory.json"
       ],
-      "index_status": "migration-needed",
+      "index_status": "passed",
       "kag_home": "/srv/AbyssOS/connectors/aoa-xda-connector/kag",
       "owner_type": "connector",
       "portable_family": {
@@ -2576,7 +2728,15 @@
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-xda-connector",
-      "repository_index_family": {},
+      "repository_index_family": {
+        "anchor": "kag/indexes/repo_anchor_index.json",
+        "artifact": "kag/indexes/repo_artifact_index.json",
+        "assertion": "kag/indexes/repo_assertion_index.json",
+        "entity": "kag/indexes/repo_entity_index.json",
+        "event": "kag/indexes/repo_event_index.json",
+        "relation": "kag/indexes/repo_relation_index.json",
+        "source": "kag/indexes/source_surface_index.json"
+      },
       "root": "/srv/AbyssOS/connectors/aoa-xda-connector"
     }
   ],
