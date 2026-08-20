@@ -143,6 +143,10 @@ def write_fixture(root: Path) -> None:
 
 
 def write_capability_graph_fixture(root: Path) -> None:
+    (root / "kag" / "manifest.json").write_text(
+        json.dumps({"repo": "demo"}),
+        encoding="utf-8",
+    )
     family_path = root / "capabilities" / "families" / "session-memory.yaml"
     family_path.parent.mkdir(parents=True)
     family_path.write_text(
@@ -291,6 +295,15 @@ def write_capability_graph_fixture(root: Path) -> None:
             ensure_ascii=False,
             sort_keys=True,
         ),
+        encoding="utf-8",
+    )
+    (root / "generated" / "capability_graph.md").write_text(
+        "# Capability graph\n",
+        encoding="utf-8",
+    )
+    (root / "skills" / "demo" / "references").mkdir(parents=True)
+    (root / "skills" / "demo" / "references" / "capability-router.md").write_text(
+        "# Capability router\n",
         encoding="utf-8",
     )
 
@@ -971,7 +984,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             record["identity"]["path"]: record for record in source["records"]
         }
         graph_record = records_by_path["generated/capability_graph.json"]
-        self.assertEqual("generated_readmodel", graph_record["surface_state"])
+        self.assertEqual("generated_projection", graph_record["surface_state"])
         self.assertEqual(
             [
                 {
@@ -984,7 +997,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             graph_record["provenance"]["source_refs"],
         )
         self.assertEqual(
-            "scripts/build_capability_projection.py",
+            "aoa-skills:scripts/build_capability_home_projection.py",
             graph_record["provenance"]["generated_by"],
         )
         self.assertEqual(
@@ -1167,7 +1180,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             )
 
         self.assertEqual(current_source, incremental_source)
-        self.assertEqual(1, build_record_spy.call_count)
+        self.assertEqual(3, build_record_spy.call_count)
         self.assertEqual(full_family, incremental_family)
         self.assertEqual(1, extract_spy.call_count)
 

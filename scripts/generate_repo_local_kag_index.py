@@ -990,31 +990,6 @@ def capability_graph_payload(content: bytes) -> dict[str, Any] | None:
     return payload
 
 
-def capability_graph_source_paths(
-    content: bytes,
-    tracked_paths: set[Path],
-) -> tuple[Path, ...]:
-    payload = capability_graph_payload(content)
-    source = payload.get("source") if payload is not None else None
-    family_files = source.get("family_files") if isinstance(source, dict) else None
-    resolved: list[Path] = []
-    for index, item in enumerate(
-        family_files if isinstance(family_files, list) else []
-    ):
-        if not isinstance(item, dict):
-            continue
-        try:
-            path = manifest_relative_path(
-                item.get("path"),
-                field=f"capability graph source.family_files[{index}].path",
-            )
-        except ValueError:
-            continue
-        if path in tracked_paths and path not in resolved:
-            resolved.append(path)
-    return tuple(resolved)
-
-
 def manifest_relative_path(value: Any, *, field: str) -> Path:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ValueError(f"{field} must be a non-empty POSIX relative path")
@@ -2260,6 +2235,7 @@ def build_record(
             source_builders,
             content,
             repo_root=repo_root,
+            capability_projection=capability_projection is not None,
         )
     )
     observed_by = index_generator_route(repo)
@@ -2548,7 +2524,10 @@ def build_index(
                 # cannot preserve older authored-source provenance.
                 and rel not in skill_projections
                 and rel not in capability_projections
-                and source_record_projection_current(previous)
+                and source_record_projection_current(
+                    previous,
+                    capability_projection=bool(capability_projections),
+                )
                 and str(previous["identity"].get("git_blob_id") or "")
                 == tracked_entries[rel]["blob_id"]
                 and str(previous["identity"].get("lineage_path") or "")
