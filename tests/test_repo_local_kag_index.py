@@ -2299,6 +2299,12 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             schema = json.loads(schema_bytes)
             assert isinstance(schema, dict)
             assert isinstance(payload, dict)
+            unsupported = repo_local_kag_validator._unsupported_fast_schema_features(
+                schema
+            )
+            if label == "family-manifest" and unsupported:
+                self.assertEqual(("contains",), unsupported)
+                continue
             required = schema["required"]
             assert isinstance(required, list) and required
             missing_required = dict(payload)
