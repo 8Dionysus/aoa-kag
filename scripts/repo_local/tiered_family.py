@@ -489,8 +489,17 @@ def validate_hot_profile(profile: Mapping[str, Any]) -> None:
     if identity.get("content_digest") != _identity_digest(profile, "profile_identity"):
         raise TieredFamilyError("hot profile digest does not match")
     kinds = selection.get("include_record_kinds")
-    if not isinstance(kinds, list) or "source" not in kinds:
-        raise TieredFamilyError("hot profile must include source")
+    if (
+        not isinstance(kinds, list)
+        or not kinds
+        or any(not isinstance(kind, str) for kind in kinds)
+        or len(set(kinds)) != len(kinds)
+        or not set(kinds).issubset(DEFAULT_HOT_KINDS)
+        or "source" not in kinds
+    ):
+        raise TieredFamilyError(
+            "hot profile must use the unique source/source_chunk allowlist"
+        )
     if selection.get("runtime_frequency_inputs") != "forbidden":
         raise TieredFamilyError("runtime frequency cannot select committed hot shards")
 
@@ -542,7 +551,11 @@ def validate_locator_manifest(manifest: Mapping[str, Any]) -> None:
     _repo_name(manifest)
     identity = manifest.get("locator_identity")
     locators = manifest.get("locators")
-    if not isinstance(identity, Mapping) or not isinstance(locators, list):
+    if (
+        not isinstance(identity, Mapping)
+        or not isinstance(locators, list)
+        or not locators
+    ):
         raise TieredFamilyError("locator manifest needs identity and locators")
     if identity.get("content_digest") != _identity_digest(
         manifest, "locator_identity"
@@ -1567,6 +1580,15 @@ def _write_if_changed(path: Path, content: bytes) -> None:
         path.write_bytes(content)
 
 
+def _write_release_if_unchanged(path: Path, content: bytes) -> None:
+    """Keep one release coordinate immutable within a distribution path."""
+    if path.is_file() and path.read_bytes() != content:
+        raise TieredFamilyError(
+            f"owner release collision at shared artifact path: {path}"
+        )
+    _write_if_changed(path, content)
+
+
 def write_tiered_git_surface(
     repo_root: Path,
     build: TieredFamilyBuild,
@@ -1705,7 +1727,10 @@ def write_tiered_artifact(
     _write_if_changed(release_root / HOT_PROFILE_RELATIVE_PATH.name, render_manifest(build.hot_profile))
     _write_if_changed(release_root / LOCATOR_MANIFEST_RELATIVE_PATH.name, render_manifest(build.locator_manifest))
     _write_if_changed(release_root / PACK_INDEX_ARTIFACT_PATH, render_manifest(build.pack_index))
-    _write_if_changed(release_root / OWNER_RELEASE_ARTIFACT_PATH, render_manifest(build.owner_release))
+    _write_release_if_unchanged(
+        release_root / OWNER_RELEASE_ARTIFACT_PATH,
+        render_manifest(build.owner_release),
+    )
     return {
         "objects_added": added_objects,
         "objects_reused": reused_objects,
@@ -2208,6 +2233,19 @@ def import_portable_bundle(
     for field, expected in expected_bundle_links.items():
         if bundle_identity.get(field) != expected:
             raise TieredFamilyError(f"portable bundle {field} does not match")
+    summary = bundle.get("summary")
+    expected_summary = {
+        "objects": len(corpus["objects"]),
+        "packs": len(pack_index["packs"]),
+        "bytes": sum(int(item["bytes"]) for item in corpus["objects"]),
+    }
+    if not isinstance(summary, Mapping) or any(
+        summary.get(field) != expected
+        for field, expected in expected_summary.items()
+    ):
+        raise TieredFamilyError(
+            "portable bundle summary does not match linked manifests"
+        )
     pack_bytes: dict[str, bytes] = {}
     for descriptor in pack_index["packs"]:
         key = Path(descriptor["object_key"])
@@ -2231,14 +2269,18 @@ def import_portable_bundle(
             _write_if_changed(destination, content)
             added += 1
     release_root = target / _release_relative_root(distribution)
-    for relative in (
-        PACK_INDEX_ARTIFACT_PATH,
-        OWNER_RELEASE_ARTIFACT_PATH,
-    ):
-        _write_if_changed(
-            release_root / relative,
-            (source / relative).read_bytes(),
-        )
+    release_payloads = {
+        PACK_INDEX_ARTIFACT_PATH: (source / PACK_INDEX_ARTIFACT_PATH).read_bytes(),
+        OWNER_RELEASE_ARTIFACT_PATH: (
+            source / OWNER_RELEASE_ARTIFACT_PATH
+        ).read_bytes(),
+    }
+    for relative, content in release_payloads.items():
+        target_path = release_root / relative
+        if relative == OWNER_RELEASE_ARTIFACT_PATH:
+            _write_release_if_unchanged(target_path, content)
+        else:
+            _write_if_changed(target_path, content)
     for relative in (
         CORPUS_MANIFEST_RELATIVE_PATH.name,
         MANIFEST_RELATIVE_PATH.name,

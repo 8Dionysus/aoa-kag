@@ -172,8 +172,35 @@ def _object_path(artifact_root: Path, digest: str) -> Path:
     return artifact_root.resolve() / "objects" / "sha256" / value[:2] / value
 
 
+def _portable_relative_path(value: str, label: str) -> Path:
+    path = Path(value)
+    if (
+        not value
+        or "\\" in value
+        or path.is_absolute()
+        or value in {".", ".."}
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
+        raise TieredRolloutError(f"{label} must be a safe relative path")
+    return path
+
+
+def _portable_path_component(value: str, label: str) -> str:
+    if (
+        not value
+        or "\\" in value
+        or "/" in value
+        or Path(value).is_absolute()
+        or value in {".", ".."}
+    ):
+        raise TieredRolloutError(f"{label} must be a portable path component")
+    return value
+
+
 def _shard_path(kind: str, hash_range: str) -> Path:
-    return Path("kag/indexes/shards") / kind / f"{hash_range}.jsonl"
+    safe_kind = _portable_path_component(kind, "tiered shard kind")
+    safe_range = _portable_path_component(hash_range, "tiered shard range")
+    return Path("kag/indexes/shards") / safe_kind / f"{safe_range}.jsonl"
 
 
 def _load_v3_build(root: Path, *, shadow_mode: bool) -> TieredFamilyBuild:
@@ -193,9 +220,19 @@ def _load_v3_build(root: Path, *, shadow_mode: bool) -> TieredFamilyBuild:
             raise TieredRolloutError(
                 "portable v3 family contains a malformed shard descriptor"
             )
-        relative = Path(str(descriptor["path"]))
+        relative = _portable_relative_path(
+            str(descriptor["path"]),
+            "portable v3 shard path",
+        )
+        resolved = (root / relative).resolve()
         try:
-            shards[relative] = (root / relative).read_bytes()
+            resolved.relative_to(root.resolve())
+        except ValueError as exc:
+            raise TieredRolloutError(
+                f"portable v3 shard escapes owner root: {relative}"
+            ) from exc
+        try:
+            shards[relative] = resolved.read_bytes()
         except FileNotFoundError as exc:
             raise TieredRolloutError(
                 f"portable v3 shard is missing: {relative}"
@@ -220,6 +257,10 @@ def _load_v4_build(
     ) = load_tiered_manifests(root, artifact_root=artifact_root)
     if pack_index is None:
         raise TieredRolloutError("tiered owner needs a pack index")
+    # A v4 source is already an externalized claim. Validate every referenced
+    # CAS object, pack, and release binding before this rollout can stage or
+    # publish anything from it.
+    validate_tiered_artifact_release(root, artifact_root)
     release_root = _release_root(artifact_root, distribution)
     release = read_json(
         release_root / OWNER_RELEASE_ARTIFACT_PATH,
@@ -691,20 +732,14 @@ def _public_control_surface_safe(root: Path) -> bool:
         "sk-",
         "session transcript",
     )
-    for relative in (
-        CORPUS_MANIFEST_RELATIVE_PATH,
-        MANIFEST_RELATIVE_PATH,
-        HOT_PROFILE_RELATIVE_PATH,
-        LOCATOR_MANIFEST_RELATIVE_PATH,
-        OWNER_RELEASE_ARTIFACT_PATH,
-        BUNDLE_MANIFEST_PATH,
-    ):
-        path = root / relative
-        if not path.is_file():
-            continue
-        text = path.read_text(encoding="utf-8")
-        if any(marker in text for marker in forbidden):
-            return False
+    try:
+        paths = sorted(path for path in root.rglob("*") if path.is_file())
+        for path in paths:
+            content = path.read_bytes()
+            if any(marker.encode("utf-8") in content for marker in forbidden):
+                return False
+    except OSError:
+        return False
     return True
 
 
@@ -856,6 +891,10 @@ def prove_owner_release(
         shadow_mode=shadow_mode,
         source_commit=source_commit,
     )
+    if not _public_control_surface_safe(exported):
+        raise TieredRolloutError(
+            f"public control-surface scan failed for {owner}"
+        )
     trust_result = trust.admit(
         artifact_class="kag_owner_family_release",
         manifest_name="kag_owner_family_release.bundle.json",
@@ -868,10 +907,6 @@ def prove_owner_release(
         producer=f"{owner}-kag-builder",
         lifecycle_state=lifecycle_state,
     )
-    if not _public_control_surface_safe(exported):
-        raise TieredRolloutError(
-            f"public control-surface scan failed for {owner}"
-        )
     release_digest = signed_release["release_identity"]["content_digest"]
     evidence = {
         "owner": owner,

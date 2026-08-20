@@ -24,8 +24,10 @@ try:
         build_rollout_evidence,
         build_signed_composition,
         prove_owner_release,
+        read_json,
         write_json,
     )
+    from scripts.repo_local.tiered_family import CORPUS_MANIFEST_RELATIVE_PATH
 except ImportError:  # pragma: no cover - direct script execution
     from provider_registry import (  # type: ignore
         configured_provider_roots,
@@ -39,8 +41,10 @@ except ImportError:  # pragma: no cover - direct script execution
         build_rollout_evidence,
         build_signed_composition,
         prove_owner_release,
+        read_json,
         write_json,
     )
+    from repo_local.tiered_family import CORPUS_MANIFEST_RELATIVE_PATH  # type: ignore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -83,6 +87,61 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="defaults to OUTPUT_ROOT/rollout-evidence.json",
     )
     return parser.parse_args(argv)
+
+
+def referenced_artifact_unique_bytes(
+    *,
+    output_root: Path,
+    artifact_root: Path,
+    owners: Sequence[dict[str, object]],
+) -> int:
+    """Measure only CAS objects referenced by the owners in this rollout."""
+    referenced: set[str] = set()
+    for evidence in owners:
+        owner = evidence.get("owner")
+        if not isinstance(owner, str) or not owner:
+            raise TieredRolloutError("rollout evidence owner is invalid")
+        corpus = read_json(
+            output_root
+            / "owners"
+            / owner
+            / "family-export"
+            / CORPUS_MANIFEST_RELATIVE_PATH,
+            f"{owner} rollout corpus",
+        )
+        objects = corpus.get("objects")
+        if not isinstance(objects, list):
+            raise TieredRolloutError(
+                f"{owner} rollout corpus has no object list"
+            )
+        for descriptor in objects:
+            if not isinstance(descriptor, dict):
+                raise TieredRolloutError(
+                    f"{owner} rollout corpus has a malformed object"
+                )
+            digest = descriptor.get("content_digest")
+            if not isinstance(digest, str):
+                raise TieredRolloutError(
+                    f"{owner} rollout corpus object has no digest"
+                )
+            value = digest.removeprefix("sha256:")
+            if len(value) != 64 or any(
+                character not in "0123456789abcdef" for character in value
+            ):
+                raise TieredRolloutError(
+                    f"{owner} rollout corpus object digest is invalid"
+                )
+            referenced.add(value)
+    total = 0
+    for digest in referenced:
+        path = artifact_root / "objects" / "sha256" / digest[:2] / digest
+        try:
+            total += path.stat().st_size
+        except FileNotFoundError as exc:
+            raise TieredRolloutError(
+                f"rollout-referenced CAS object is missing: {digest}"
+            ) from exc
+    return total
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -196,12 +255,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             owners=owner_evidence,
             composition=composition,
             composition_proof=composition_proof,
-            artifact_unique_bytes=sum(
-                path.stat().st_size
-                for path in (artifact_root / "objects" / "sha256").glob(
-                    "*/*"
-                )
-                if path.is_file()
+            artifact_unique_bytes=referenced_artifact_unique_bytes(
+                output_root=output_root,
+                artifact_root=artifact_root,
+                owners=owner_evidence,
             ),
         )
         destination = (
