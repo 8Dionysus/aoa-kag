@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass, replace
@@ -729,14 +730,18 @@ def _public_control_surface_safe(root: Path) -> bool:
         "/home/",
         "/srv/",
         "BEGIN PRIVATE KEY",
-        "sk-",
         "session transcript",
+    )
+    api_key_pattern = re.compile(
+        rb"(?<![A-Za-z0-9])sk-(?:proj-)?[A-Za-z0-9_-]{20,}"
     )
     try:
         paths = sorted(path for path in root.rglob("*") if path.is_file())
         for path in paths:
             content = path.read_bytes()
             if any(marker.encode("utf-8") in content for marker in forbidden):
+                return False
+            if api_key_pattern.search(content):
                 return False
     except OSError:
         return False
@@ -1186,6 +1191,40 @@ def build_rollout_evidence(
         )
     if composition is None:
         blocking.append("signed_os_composition_missing")
+    for owner in owners:
+        owner_name = str(owner.get("owner") or "unknown")
+        trust = owner.get("trust")
+        if not isinstance(trust, Mapping):
+            blocking.append(f"owner_trust_missing:{owner_name}")
+        else:
+            if trust.get("trust_gate_verdict") != "allow":
+                blocking.append(f"owner_trust_denied:{owner_name}")
+            failed_trust_fields = sorted(
+                str(field)
+                for field, value in trust.items()
+                if str(field).endswith("_ok") and value is False
+            )
+            if failed_trust_fields:
+                blocking.append(
+                    f"owner_trust_failed:{owner_name}:"
+                    + ",".join(failed_trust_fields)
+                )
+        checks = owner.get("checks")
+        if isinstance(checks, Mapping):
+            failed_checks = sorted(
+                str(field)
+                for field, value in checks.items()
+                if value is False
+                or (
+                    isinstance(value, str)
+                    and value in {"failed", "blocked"}
+                )
+            )
+            if failed_checks:
+                blocking.append(
+                    f"owner_checks_failed:{owner_name}:"
+                    + ",".join(failed_checks)
+                )
     if git_hot_bytes > 234_881_024:
         blocking.append(
             f"git_hot_target_exceeded:{git_hot_bytes}>234881024"
