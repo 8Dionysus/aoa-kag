@@ -51,7 +51,6 @@ AOA_AGENTS_ROOT = repo_root_from_env("AOA_AGENTS_ROOT", REPO_ROOT.parent / "aoa-
 AGENTS_OF_ABYSS_ROOT = repo_root_from_env(
     "AGENTS_OF_ABYSS_ROOT", REPO_ROOT.parent / "Agents-of-Abyss"
 )
-AOA_ROUTING_ROOT = repo_root_from_env("AOA_ROUTING_ROOT", REPO_ROOT.parent / "aoa-routing")
 AOA_SDK_ROOT = repo_root_from_env("AOA_SDK_ROOT", REPO_ROOT.parent / "aoa-sdk")
 AOA_SKILLS_ROOT = repo_root_from_env("AOA_SKILLS_ROOT", REPO_ROOT.parent / "aoa-skills")
 TREE_OF_SOPHIA_ROOT = repo_root_from_env(

@@ -55,6 +55,33 @@
           ]
         },
         {
+          "path": "tests/test_impact_routing.py",
+          "family": "release/ci-impact",
+          "protects": "Fail-closed changed-path classification, always-required local proof, typed required-summary states, Git rename handling, and PR #174 regression cases.",
+          "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_impact_routing.py",
+          "failure_route": "Route through impact rules, classifier logic, required-summary semantics, workflow topology, or the classifier corpus.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "source/route-contract",
+            "topology/inventory"
+          ]
+        },
+        {
+          "path": "tests/test_ci_preflight_dag.py",
+          "family": "release/ci-dag",
+          "protects": "Bounded checkout/sentinel overlap, peer-only cancellation, and fail-closed outer-DAG scheduling without proof substitution.",
+          "owner_surface": "docs/validation/CI_EVIDENCE_DAG.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_ci_preflight_dag.py",
+          "failure_route": "Route through the CI preflight DAG scheduler, preparation sentinel, or bounded provider checkout command.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
+          ]
+        },
+        {
           "path": "tests/test_downstream_feed_contracts.py",
           "family": "generated/read-model",
           "protects": "Downstream feed contracts, generated KAG outputs, and federation consumer expectations.",
@@ -65,6 +92,61 @@
           "coverage_kinds": [
             "generated/parity",
             "sibling/live-dependency"
+          ]
+        },
+        {
+          "path": "tests/test_kag_mcp_source_identity.py",
+          "family": "kag/source-identity",
+          "protects": "Clean committed KAG source binding, canonical source-index identity, bounded freshness, private content-addressed outputs, stack overlay shape, and no-proof/no-acceptance stop-lines.",
+          "owner_surface": "scripts/issue_kag_mcp_source_identity.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_source_identity.py",
+          "failure_route": "Route through the KAG MCP source-identity schema, canonical source-index identity, issuer, or owner-boundary decision.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_kag_mcp_owner_review.py",
+          "family": "kag/owner-result-review",
+          "protects": "Source-pinned stack signer trust, private receipt/result attestation and binding, output-path isolation, KAG capability grounding, source-index freshness, content addressing, and no-acceptance stop-lines.",
+          "owner_surface": "scripts/review_kag_mcp_result.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_owner_review.py",
+          "failure_route": "Route through the KAG MCP capability schema, owner reviewer, SDK review contract, or stack capture contract.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "sibling/live-dependency",
+            "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_kag_mcp_owner_review_projection.py",
+          "family": "kag/owner-review-projection",
+          "protects": "Exact live owner-review and capture continuity, grounded-canary and freshness overlay projection, expiry, and no-proof/no-acceptance stop-lines.",
+          "owner_surface": "scripts/project_kag_mcp_owner_review.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_owner_review_projection.py",
+          "failure_route": "Route through the KAG owner-review projector, SDK review contract, or stack evidence-overlay contract.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "sibling/live-dependency",
+            "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_kag_mcp_owner_acceptance.py",
+          "family": "kag/owner-acceptance",
+          "protects": "Exact source, runtime, consumer, canary, owner-review, proof-packet, and content-addressed central-proof binding; expiry; private outputs; and no-admission/no-rollback stop-lines.",
+          "owner_surface": "scripts/accept_kag_mcp_owner_contour.py",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_kag_mcp_owner_acceptance.py",
+          "failure_route": "Route through the KAG owner-acceptance schema, issuer, owner-boundary decision, stack observation, or aoa-evals proof contract.",
+          "coverage_kinds": [
+            "source/route-contract",
+            "sibling/live-dependency",
+            "release/artifact-trust"
           ]
         },
         {
@@ -133,10 +215,10 @@
             "release/artifact-trust"
           ]
         },
-    {
-      "path": "tests/test_repo_validation_workflow.py",
+        {
+          "path": "tests/test_repo_validation_workflow.py",
       "family": "release/ci-lane",
-      "protects": "GitHub repo validation workflow dependency pins and generated drift posture.",
+      "protects": "GitHub repo validation always-required local proof, fail-closed conditional full audit, stable required summary, dependency pins, and generated drift posture.",
           "owner_surface": ".github/workflows/repo-validation.yml",
           "runtime_cost": "fast",
           "focused_target": "tests/test_repo_validation_workflow.py",
@@ -177,7 +259,7 @@
     {
       "path": "tests/test_repo_local_kag_index.py",
       "family": "kag/source-surface-index",
-      "protects": "Repo-local KAG index contract, generator coverage, canonical skill source versus declared v1 projection or v2 OS user exposure, document headings, mechanics, commands, schemas, portable-family storage coordinates, and OS-wide aggregate budget status.",
+          "protects": "Repo-local KAG index contract, exact staged and symlink source snapshots, batch Git object reads, fail-closed malformed or missing Git state, owner telemetry, generator coverage, canonical skill source versus declared v1 projection or v2 OS user exposure, capability-family source versus declared graph and routing projections, document headings, mechanics, commands, schemas, portable-family storage coordinates, and OS-wide aggregate budget status.",
       "owner_surface": "schemas/repo-local-kag-coverage.schema.json",
       "runtime_cost": "fast",
       "focused_target": "tests/test_repo_local_kag_index.py",
@@ -275,6 +357,19 @@
           ]
         },
         {
+          "path": "tests/test_source_fast_handoff.py",
+          "family": "release/ci-lane",
+          "protects": "Exact same-run source-fast receipt identity, donor pins, owner-family binding, strict receipt shape, CI continuation, and fail-closed full-release fallback.",
+          "owner_surface": "config/validation_lanes.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_source_fast_handoff.py",
+          "failure_route": "Route through the source-fast handoff contract, CI continuation entrypoint, workflow transfer, or full release fallback.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "topology/inventory"
+          ]
+        },
+        {
           "path": "tests/test_tos_tiny_entry_hop_compat.py",
           "family": "generated/read-model",
           "protects": "Tree of Sophia tiny-entry compatibility in KAG generated surfaces.",
@@ -327,7 +422,7 @@
         {
           "path": "tests/test_validate_kag.py",
           "family": "generated/read-model",
-          "protects": "Repo-wide validate_kag behavior for generated/read-model validation and repo-wide example contracts; mechanics-focused assertions live in part tests.",
+          "protects": "Scoped local, OS-wide, and full-compatible validate_kag behavior for generated/read-model validation and repo-wide example contracts; mechanics-focused assertions live in part tests.",
           "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
           "runtime_cost": "medium",
           "focused_target": "tests/test_validate_kag.py",
@@ -340,7 +435,7 @@
         {
           "path": "tests/test_validator_module_topology.py",
           "family": "validation/validator-topology",
-          "protects": "Validator owner modules, validate_kag adapter thinness, validator inventory sync, and source/projection split.",
+          "protects": "Validator owner modules, validate_kag adapter thinness and scoped lane entrypoints, validator inventory sync, and source/projection split.",
           "owner_surface": "docs/validation/validator_inventory.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validator_module_topology.py",
@@ -364,7 +459,7 @@
         {
           "path": "tests/test_validation_command_authority.py",
           "family": "validation/command-authority",
-          "protects": "Lane manifest authority, loader behavior, CI gate routing, workflow entrypoints, and release command storage.",
+          "protects": "Lane manifest authority, explicit local versus OS-wide validator placement, loader behavior, CI gate routing, workflow entrypoints, and release command storage.",
           "owner_surface": "config/validation_lanes.json",
           "runtime_cost": "fast",
           "focused_target": "tests/test_validation_command_authority.py",
@@ -372,6 +467,45 @@
           "coverage_kinds": [
             "topology/inventory",
             "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_prepare_landing.py",
+          "family": "release/ci-lane",
+          "protects": "Isolated KAG SCC preparation, ordered staging, bounded convergence, final-digest budget receipt handling, caller-index preservation, and concurrent-candidate fail-closed behavior.",
+          "owner_surface": "docs/RELEASING.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_prepare_landing.py",
+          "failure_route": "Route through the prepare-landing entrypoint, D-0034 SCC order, provider identity checks, or release preparation documentation.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
+          ]
+        },
+        {
+          "path": "tests/test_prepare_owner_landing.py",
+          "family": "release/ci-lane",
+          "protects": "Owner-neutral isolated repo-local KAG preparation, exact history and budget boundaries, generated-output scope, and caller-index preservation.",
+          "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_prepare_owner_landing.py",
+          "failure_route": "Route through the owner preparation entrypoint, common owner-family gate, or generated-output authority.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
+          ]
+        },
+        {
+          "path": "tests/test_repo_local_kag_gate.py",
+          "family": "release/ci-lane",
+          "protects": "Fail-fast incremental drift routing, complete canonical owner-family proof fan-out, stable candidate identity, and bounded scheduler receipts for reusable KAG consumers.",
+          "owner_surface": "docs/validation/COMMAND_AUTHORITY.md",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_repo_local_kag_gate.py",
+          "failure_route": "Route through the common repo-local KAG action, owner-family gate, or exact history and budget boundaries.",
+          "coverage_kinds": [
+            "release/artifact-trust",
+            "generated/parity"
           ]
         },
         {

@@ -1,0 +1,38 @@
+{
+  "schema_version": "eval_need_v1",
+  "name": "aoa-kag-fresh-owner-evidence-boundary",
+  "proof_question": "Does an exact refreshed aoa-kag MCP read preserve owner-grounded evidence while refusing to imply durable memory, owner acceptance, admission, cross-organ benefit, effect authority, or rollback?",
+  "origin_need": "The refreshed owner-scoped KAG projection now has exact storage identities, passing retrieval evaluation, a fresh signed canary, exact owner review, and bounded central packet review. The resulting cross-organ handoff needs a durable eval request that preserves every stronger authority boundary.",
+  "summary": "Routes fresh KAG owner evidence and its memo candidate into aoa-evals without treating MCP reachability, candidate creation, or central source-contract support as acceptance or admission.",
+  "object_under_evaluation": "fresh aoa-kag owner evidence boundary across KAG, memo, eval, and acceptance stages",
+  "category": "boundary",
+  "claim_type": "bounded",
+  "baseline_mode": "previous-version",
+  "report_format": "summary-with-breakdown",
+  "verdict_shape": "categorical",
+  "authoring_route": "candidate_evidence_packet",
+  "expected_use_when": [
+    "a fresh owner-grounded KAG read is handed to memo and eval contours",
+    "an agent must distinguish evidence, candidate memory, central proof, and owner acceptance"
+  ],
+  "blind_spot_notes": [
+    "does not prove durable memo landing or memory benefit",
+    "does not authorize registry admission, effects, or rollback",
+    "does not make MCP or the SDK the semantic owner of KAG, memo, or eval artifacts"
+  ],
+  "related_eval_refs": [
+    "aoa-organ-access-admission-integrity"
+  ],
+  "candidate_evidence_refs": [
+    "repo:aoa-evals/memo/candidates/20260731T012401Z.b6f51f4d.an-exact-fresh-owner-grounded-aoa-kag-mcp-read-a.candidate.json",
+    "repo:aoa-evals/memo/exports/20260731T012447Z.an-exact-fresh-owner-grounded-aoa-kag-mcp-read-a.aoa-memo-intake.json",
+    "receipt:aoa-kag-owner-review:sha256:7de0bd5757db14d4dc8d75993b72cb18cabd75bbcabccfbbef176b0d1b53de93",
+    "receipt:aoa-evals-central-review:sha256:0385610cd3fbde1a4a1a8493f80d65bd53f1474d2021d7cc4e4bfd7c206b490e"
+  ],
+  "source_refs": [
+    "docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md",
+    "docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md"
+  ],
+  "technique_dependencies": [],
+  "skill_dependencies": []
+}

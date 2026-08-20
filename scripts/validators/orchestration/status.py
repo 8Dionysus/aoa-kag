@@ -108,6 +108,10 @@ TAIL_STATUS_LINES = (
     "[ok] validated tiny consumer bundle example",
 )
 
+OS_WIDE_STATUS_LINE = (
+    "[ok] validated OS-wide provider homes and coverage parity"
+)
+
 
 def print_success_status() -> None:
     for line in STATUS_LINES:
@@ -116,3 +120,7 @@ def print_success_status() -> None:
         print("[ok] validated optional aoa-memo source-owned export readiness")
     for line in TAIL_STATUS_LINES:
         print(line)
+
+
+def print_os_wide_success_status() -> None:
+    print(OS_WIDE_STATUS_LINE)

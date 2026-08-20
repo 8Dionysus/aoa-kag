@@ -42,4 +42,5 @@ truth, runtime deployment, or owner acceptance.
 
 Start with `PARTS.md`. Use `parts/release-lane/` for release command posture.
 Keep command storage in `config/validation_lanes.json` and public entrypoints
-under `scripts/`.
+under `scripts/`. The CI-only continuation remains subordinate to the public
+full release entrypoint and its exact same-run receipt fallback contract.

@@ -27,6 +27,11 @@ readability. A v2 OS user exposure keeps the owner source canonical and uses a
 profile selection outside the repository instead of creating a same-name
 repository copy.
 
+Capability graphs, graph summaries, and routing cards declared by an owner
+capability-home manifest remain derived wherever packaging places them. Their
+provenance and owner return lead to the tracked capability-family contracts;
+their directory or proximity to `SKILL.md` does not grant source authority.
+
 ## Provenance rule
 
 Every meaningful KAG surface should preserve enough provenance to answer:

@@ -114,6 +114,28 @@ EXPECTED_TOS_ZARATHUSTRA_ROUTE_PACK_CONTRACT = {
     "consumer_projection": "deferred",
 }
 
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_EXAMPLE_NODE_IDS = {
+    "tos.source.thus-spoke-zarathustra.prologue",
+    "tos.concept.becoming",
+    "tos.principle.thus-spoke-zarathustra.prologue.wisdom-can-overfill",
+    "tos.lineage.thus-spoke-zarathustra.prologue.becoming-to-overcoming",
+    "tos.event.thus-spoke-zarathustra.prologue.departure-from-origin",
+    "tos.event.thus-spoke-zarathustra.prologue.receive-overflow-from-sun",
+    "tos.state.thus-spoke-zarathustra.prologue.overfull-wisdom",
+    "tos.support.thus-spoke-zarathustra.prologue.zarathustra",
+    "tos.analogy.thus-spoke-zarathustra.prologue.bee-honey-analogy",
+    "tos.synthesis.thus-spoke-zarathustra.prologue.departure-from-reflective-origin",
+}
+
+EXPECTED_TOS_ZARATHUSTRA_ROUTE_EXAMPLE_EDGE_IDS = {
+    "m001",
+    "m038",
+    "m039",
+    "m041",
+    "m108",
+    "m112",
+}
+
 EXPECTED_TOS_ZARATHUSTRA_ROUTE_RETRIEVAL_PACK_INPUTS = {
     (
         "tos_zarathustra_route_pack",

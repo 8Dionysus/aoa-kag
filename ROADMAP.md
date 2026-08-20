@@ -114,7 +114,8 @@ Goals:
 
 Goals:
 - connect `aoa-kag` cleanly to `aoa-techniques`, `aoa-skills`, `aoa-evals`, `aoa-memo`, `aoa-playbooks`, and `Tree-of-Sophia`
-- preserve clear boundaries relative to `aoa-routing`
+- preserve clear boundaries relative to the `aoa-sdk` routing control plane and
+  its stable `aoa-routing` compatibility namespace
 - keep source-of-truth discipline explicit as the KAG layer grows
 - make room for source-owned federation exports and bounded derived spine pilots before any full cross-repo export claim
 - keep the current ToS tiny-entry donor narrow while downstream routing handoff and source-owned export growth remain explicitly bounded

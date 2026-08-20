@@ -47,7 +47,10 @@ class ProviderRegistryTests(unittest.TestCase):
         self.assertEqual(len(repos), len(set(repos)))
         self.assertEqual({entry["repo"] for entry in entries}, set(repos))
         self.assertIn("aoa-kag", repos)
+        self.assertNotIn("aoa-routing", repos)
         self.assertNotIn("aoa-kag", provider_ci_envs())
+        self.assertNotIn("AOA_ROUTING_ROOT", provider_ci_envs().values())
+        self.assertNotIn("aoa-routing", provider_dependency_pins())
         self.assertIn("aoa-session-memory", provider_dependency_pins())
 
     def test_provider_checkout_envs_follow_registry_checkout_paths(self) -> None:
@@ -94,18 +97,18 @@ class ProviderRegistryTests(unittest.TestCase):
             session_memory["checkout_ssh_key_secret"],
         )
 
-    def test_runtime_source_repositories_are_pinned_providers(self) -> None:
+    def test_runtime_source_repositories_keep_explicit_physical_roots(self) -> None:
         entries = {entry["repo"]: entry for entry in provider_entries()}
 
         expected = {
-            "abyss-stack": ("ABYSS_STACK_ROOT", ".deps/abyss-stack"),
-            "abyss-machine": ("ABYSS_MACHINE_REPO_ROOT", ".deps/abyss-machine"),
+            "abyss-stack": ("runtime_source", "ABYSS_STACK_ROOT", ".deps/abyss-stack"),
+            "abyss-machine": ("direct", "ABYSS_MACHINE_REPO_ROOT", ".deps/abyss-machine"),
         }
-        for repo, (env_name, checkout_path) in expected.items():
+        for repo, (root_kind, env_name, checkout_path) in expected.items():
             with self.subTest(repo=repo):
                 entry = entries[repo]
                 self.assertEqual("runtime_source", entry["owner_type"])
-                self.assertEqual("runtime_source", entry["root_kind"])
+                self.assertEqual(root_kind, entry["root_kind"])
                 self.assertEqual("pinned", entry["checkout_mode"])
                 self.assertEqual(env_name, entry["env"])
                 self.assertEqual(checkout_path, entry["checkout_path"])

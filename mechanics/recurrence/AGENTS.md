@@ -20,7 +20,7 @@ changed.
 ## Boundaries
 
 - KAG regrounding is a derived return route, not recurrence law.
-- `aoa-routing` owns live route behavior.
+- The `aoa-sdk` routing control plane owns live route behavior.
 - `aoa-memo` owns memory truth.
 - `aoa-evals` owns proof.
 - Source repositories own source meaning.

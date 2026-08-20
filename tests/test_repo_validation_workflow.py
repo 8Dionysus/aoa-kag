@@ -1,104 +1,216 @@
 from __future__ import annotations
 
 from pathlib import Path
-import subprocess
-import textwrap
+import re
 import unittest
 
-from scripts.provider_registry import provider_dependency_pins
+from scripts.provider_registry import provider_dependency_pins, provider_entries
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "repo-validation.yml"
+COMPATIBILITY_WORKFLOW_PATH = (
+    REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml"
+)
 RELEASE_CHECK_PATH = REPO_ROOT / "scripts" / "release_check.py"
+CI_PREFLIGHT_DAG_PATH = REPO_ROOT / "scripts" / "ci_preflight_dag.py"
 
 
 class RepoValidationWorkflowTests(unittest.TestCase):
-    def test_owner_fast_gate_controls_full_fanout(self) -> None:
+    def test_concurrency_cancels_only_superseded_runs_of_the_same_pr(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        workflow_header = workflow_text.split("jobs:\n", 1)[0]
 
-        self.assertIn("owner_fast:", workflow_text)
-        self.assertIn("id: kag", workflow_text)
-        self.assertIn("validation-lane: ${{ steps.kag.outputs.validation-lane }}", workflow_text)
-        self.assertIn("incremental_federation:", workflow_text)
-        self.assertIn("name: Incremental Federation Gate", workflow_text)
-        self.assertIn("python scripts/ci_gate.py --mode incremental-federation", workflow_text)
-        self.assertIn("needs.owner_fast.outputs.validation-lane == 'incremental-federation'", workflow_text)
-        self.assertIn("needs.owner_fast.outputs.validation-lane == 'full-24-owner-audit'", workflow_text)
-        self.assertIn("github.event_name != 'pull_request'", workflow_text)
-        self.assertIn('cron: "31 7 * * 1"', workflow_text)
+        self.assertIn("concurrency:\n", workflow_header)
+        self.assertNotIn("github.workflow", workflow_header)
+        self.assertIn("aoa-kag-repo-validation-pr-{0}", workflow_header)
+        self.assertIn("github.event_name == 'pull_request'", workflow_header)
+        self.assertIn("github.run_attempt == '1'", workflow_header)
+        self.assertIn("github.event.pull_request.number", workflow_header)
+        self.assertIn(
+            "aoa-kag-repo-validation-{0}-{1}-attempt-{2}",
+            workflow_header,
+        )
+        self.assertIn("github.run_id, github.run_attempt", workflow_header)
+        self.assertIn(
+            "cancel-in-progress: true",
+            workflow_header,
+        )
 
-    def test_generated_drift_gate_uses_lane_authority_for_untracked_files(self) -> None:
+        compatibility_text = COMPATIBILITY_WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("github.event.pull_request.number", compatibility_text)
+
+    def test_source_fast_and_owner_family_are_always_in_the_required_local_job(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
-        ci_gate_text = (REPO_ROOT / "scripts" / "ci_gate.py").read_text(
-            encoding="utf-8"
-        )
+        source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
+            "  release_audit:\n",
+            1,
+        )[0]
 
-        self.assertIn("python scripts/release_check.py", workflow_text)
-        self.assertIn(
-            "validation_lanes.GENERATED_DRIFT_STATUS_COMMAND",
-            ci_gate_text,
+        self.assertIn("name: Source Fast and Owner Family", source_fast)
+        self.assertIn("python scripts/impact_routing.py classify", source_fast)
+        self.assertIn("uses: ./.github/actions/repo-local-kag-index", source_fast)
+        self.assertIn("python scripts/ci_gate.py --mode source-fast", source_fast)
+        self.assertLess(
+            source_fast.index("uses: ./.github/actions/repo-local-kag-index"),
+            source_fast.index("python scripts/ci_gate.py --mode source-fast"),
         )
-        self.assertIn(
-            "validation_lanes.GENERATED_UNTRACKED_PATHS_COMMAND",
-            ci_gate_text,
-        )
-        self.assertNotIn("Check generated outputs are committed", workflow_text)
-        self.assertNotIn("git diff --exit-code -- generated", workflow_text)
+        self.assertNotIn("owner_fast:", workflow_text)
 
-    def test_required_summary_preserves_branch_protection_context(self) -> None:
+    def test_local_job_checks_out_only_the_eight_source_fast_dependencies(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
+            "  release_audit:\n",
+            1,
+        )[0]
 
-        self.assertIn("required_summary:", workflow_text)
-        self.assertIn("name: Repo Validation", workflow_text)
-        self.assertIn("OWNER_FAST_RESULT: ${{ needs.owner_fast.result }}", workflow_text)
-        self.assertIn(
-            "INCREMENTAL_FEDERATION_RESULT: ${{ needs.incremental_federation.result }}",
-            workflow_text,
+        dependency_paths = set(
+            re.findall(r"          path: (\.deps/[^\n]+)", source_fast)
         )
-        self.assertIn(
-            "RELEASE_AUDIT_RESULT: ${{ needs.release_audit.result }}",
-            workflow_text,
+        self.assertEqual(
+            {
+                ".deps/Tree-of-Sophia",
+                ".deps/aoa-agents",
+                ".deps/aoa-evals",
+                ".deps/aoa-memo",
+                ".deps/aoa-playbooks",
+                ".deps/aoa-sdk",
+                ".deps/aoa-stats",
+                ".deps/aoa-techniques",
+            },
+            dependency_paths,
         )
-        self.assertIn(
-            'if [ "$OWNER_FAST_RESULT" != "success" ]',
-            workflow_text,
-        )
-        self.assertIn(
-            '[ "$VALIDATION_LANE" = "full-24-owner-audit" ]',
-            workflow_text,
-        )
-        self.assertIn(
-            '[ "$VALIDATION_LANE" = "incremental-federation" ]',
-            workflow_text,
-        )
-        self.assertIn(
-            '[ "$INCREMENTAL_FEDERATION_RESULT" != "success" ]',
-            workflow_text,
-        )
-        self.assertIn(
-            'if [ "$RELEASE_AUDIT_RESULT" != "success" ]',
-            workflow_text,
-        )
+        self.assertNotIn("AOA_SESSION_MEMORY_ROOT", source_fast)
 
-    def test_required_summary_shell_is_syntactically_valid(self) -> None:
+        dependency_checkout_blocks = [
+            block
+            for block in source_fast.split("      - name: ")[1:]
+            if "          path: .deps/" in block
+        ]
+        self.assertEqual(8, len(dependency_checkout_blocks))
+        self.assertTrue(
+            all(
+                "          fetch-depth: 1" in block
+                for block in dependency_checkout_blocks
+            )
+        )
+        self.assertEqual(8, source_fast.count("          fetch-depth: 1"))
+        self.assertEqual(1, source_fast.count("          fetch-depth: 0"))
+        compatibility_text = COMPATIBILITY_WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("fetch-depth: 1", compatibility_text)
+
+    def test_full_audit_is_additive_and_fail_closed(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        release_audit = workflow_text.split("  release_audit:\n", 1)[1].split(
+            "  required_summary:\n",
+            1,
+        )[0]
+
+        self.assertIn("name: Full OS-wide Release Audit", release_audit)
+        self.assertIn("needs: source_fast", release_audit)
+        self.assertIn("!cancelled()", release_audit)
+        self.assertNotIn("always()", release_audit)
+        self.assertIn("needs.source_fast.result == 'success'", release_audit)
+        self.assertIn(
+            "needs.source_fast.outputs.full-audit-required == 'true'",
+            release_audit,
+        )
+        self.assertIn("python scripts/ci_release_check.py", release_audit)
+        self.assertIn(
+            "AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}",
+            release_audit,
+        )
+        self.assertIn("fetch-depth: 0", release_audit)
+        self.assertNotIn("fetch-depth: 1", release_audit)
+        self.assertNotIn("filter:", release_audit)
+
+    def test_full_audit_uses_bounded_manifest_owned_public_checkout(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        preflight_text = CI_PREFLIGHT_DAG_PATH.read_text(encoding="utf-8")
+        release_audit = workflow_text.split("  release_audit:\n", 1)[1].split(
+            "  required_summary:\n",
+            1,
+        )[0]
+
+        self.assertIn('AOA_KAG_CHECKOUT_WORKERS: "3"', release_audit)
+        self.assertIn(
+            "AOA_KAG_PROVIDER_AUDIT_WORKERS: ${{ inputs.provider_audit_workers || '3' }}",
+            release_audit,
+        )
+        workflow_header = workflow_text.split("jobs:\n", 1)[0]
+        self.assertIn("provider_audit_workers:", workflow_header)
+        self.assertIn("Bounded OS-wide provider process workers", workflow_header)
+        provider_input = workflow_header.split("      provider_audit_workers:\n", 1)[1]
+        self.assertIn('        default: "3"', provider_input)
+        self.assertIn("inputs.preflight_mode || 'candidate'", release_audit)
+        history_ref_expression = (
+            "inputs.history_ref || github.event.pull_request.base.sha || "
+            "github.event.before || github.sha"
+        )
+        self.assertEqual(4, workflow_text.count(history_ref_expression))
+        source_fast = workflow_text.split("  source_fast:\n", 1)[1].split(
+            "  release_audit:\n",
+            1,
+        )[0]
+        self.assertIn(
+            "history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}",
+            source_fast,
+        )
+        self.assertIn(
+            "event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}",
+            source_fast,
+        )
+        self.assertNotIn(
+            "history-ref: ${{ github.event.pull_request.base.sha || github.sha }}",
+            source_fast,
+        )
+        self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
+        self.assertIn('--mode "$AOA_KAG_PREFLIGHT_MODE"', release_audit)
+        self.assertIn('--jobs "$AOA_KAG_CHECKOUT_WORKERS"', release_audit)
+        self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_text)
+        self.assertIn('"--exclude-secret-checkouts"', preflight_text)
+        self.assertEqual(1, release_audit.count("          path: .deps/"))
+        self.assertIn("repository: 8Dionysus/aoa-session-memory", release_audit)
+        self.assertIn("ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}", release_audit)
+        self.assertIn("persist-credentials: false", release_audit)
+
+        public_entries = [
+            entry
+            for entry in provider_entries()
+            if entry.get("checkout_mode") == "pinned"
+            and not entry.get("checkout_ssh_key_secret")
+        ]
+        for entry in public_entries:
+            with self.subTest(repo=entry["repo"]):
+                self.assertNotIn(
+                    f"repository: {entry['github_repository']}",
+                    release_audit,
+                )
+
+    def test_required_summary_preserves_context_and_typed_skip_status(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         summary = workflow_text.split("  required_summary:\n", 1)[1]
-        run_block = summary.split("        run: |\n", 1)[1]
-        script_lines = []
-        for line in run_block.splitlines():
-            if line and not line.startswith("          "):
-                break
-            script_lines.append(line[10:] if line else "")
-        result = subprocess.run(
-            ("bash", "-n"),
-            input=textwrap.dedent("\n".join(script_lines)) + "\n",
-            capture_output=True,
-            text=True,
-            check=False,
-        )
 
-        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("name: Repo Validation", summary)
+        self.assertIn("if: ${{ !cancelled() }}", summary)
+        self.assertNotIn("if: always()", summary)
+        self.assertIn("SOURCE_FAST_RESULT: ${{ needs.source_fast.result }}", summary)
+        self.assertIn(
+            "FULL_AUDIT_RESULT: ${{ needs.release_audit.result }}",
+            summary,
+        )
+        self.assertIn("python scripts/impact_routing.py summarize", summary)
+        self.assertIn("--full-audit-required", summary)
+        self.assertIn("--github-step-summary", summary)
+
+    def test_generated_drift_gate_checks_untracked_files(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "git status --porcelain --untracked-files=all -- generated",
+            workflow_text,
+        )
+        self.assertNotIn("git diff --exit-code -- generated", workflow_text)
 
     def test_release_check_validates_committed_outputs_before_regeneration(self) -> None:
         release_check_text = RELEASE_CHECK_PATH.read_text(encoding="utf-8")
@@ -106,7 +218,10 @@ class RepoValidationWorkflowTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)", release_check_text)
+        self.assertIn(
+            "validation_lanes.command_sequence_for_lane(lane_id)",
+            release_check_text,
+        )
         self.assertIn('"generated_check"', manifest_text)
         self.assertLess(
             manifest_text.index('"scripts/validate_kag.py"'),
@@ -122,12 +237,18 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         self.assertIn('"--check"', manifest_text)
         self.assertIn('"scripts/validate_decision_records.py"', manifest_text)
 
-    def test_repo_validation_uses_current_dependency_pins(self) -> None:
+    def test_workflows_route_current_dependency_pins_through_owned_surfaces(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        preflight_text = CI_PREFLIGHT_DAG_PATH.read_text(encoding="utf-8")
 
         for repo, pin in provider_dependency_pins().items():
             with self.subTest(repo=repo):
-                self.assertIn(pin, workflow_text)
+                entry = next(entry for entry in provider_entries() if entry["repo"] == repo)
+                if entry.get("checkout_ssh_key_secret"):
+                    self.assertIn(pin, workflow_text)
+                else:
+                    self.assertIn("python scripts/ci_preflight_dag.py", workflow_text)
+                    self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_text)
 
 
 if __name__ == "__main__":

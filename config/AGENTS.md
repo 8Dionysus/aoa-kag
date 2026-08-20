@@ -11,6 +11,9 @@ Keep config explicit, provenance-aware, and reviewable. Avoid private corpora, h
 When config changes generated projections, rebuild and inspect provenance, source refs, quarantine posture, and maturity governance.
 
 Full validation command sequences live in `config/validation_lanes.json`.
+The same manifest owns fail-closed impact rules. `source-fast` and the self
+owner-family proof remain always required; new or uncertain surfaces default
+to the full audit instead of widening the owner-local allowlist implicitly.
 Verify with the generated lane, then the source-fast lane:
 
 ```bash

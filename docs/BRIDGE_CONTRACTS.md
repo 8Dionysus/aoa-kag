@@ -14,7 +14,9 @@ The current explicit bridge home is split like this:
 - this document is the primary coordination note for the first bridge source ref
 - `mechanics/boundary-bridge/parts/tos-retrieval-axis/schemas/bridge-retrieval-surface.schema.json` and `mechanics/boundary-bridge/parts/tos-retrieval-axis/examples/tos_retrieval_axis_surface.example.json` define the KAG-side retrieval contract
 - `aoa-memo/mechanics/consumer-handoff/docs/KAG_TOS_BRIDGE_CONTRACT.md` defines the memo-side writeback and export companion contract
-- `aoa-routing/docs/FEDERATION_ENTRY_ABI.md` defines the orientation-only entry companion and does not become bridge authority
+- `aoa-sdk/mechanics/boundary-bridge/parts/consumed-surface-posture-gate/docs/routing-consumer-contract.md`
+  defines the current routing consumer boundary and does not become bridge
+  authority
 
 ## Core rule
 

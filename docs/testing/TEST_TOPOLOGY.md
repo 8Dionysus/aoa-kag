@@ -44,7 +44,13 @@ Each inventory file entry names one or more `coverage_kinds`.
 | `docs/root-surface` | Root/docs routing, roadmap parity, and public KAG posture. | `README.md`, `ROADMAP.md`, `docs/`. |
 | `decision-lane` | Decision record metadata and generated lookup indexes. | `docs/decisions/`. |
 | `generated/read-model` | Generated KAG read models and downstream feed contracts. | repo-wide and part-local manifests/generated companions, builders, and `scripts/validate_kag.py`. |
+| `kag/owner-source-snapshot` | Exact staged-file and symlink bytes, batch object loading, immutable owner-scan reuse, telemetry, and fail-closed malformed or missing Git state. | `scripts/generate_repo_local_kag_index.py`, `scripts/generate_repo_local_kag_coverage.py`, and `scripts/coverage_run.py`. |
+| `kag/source-identity` | Clean committed source binding, canonical source-index identity, private evidence outputs, and no-proof/no-acceptance stop-lines. | `scripts/issue_kag_mcp_source_identity.py`. |
+| `kag/owner-result-review` | Source-pinned stack signer trust, receipt/result attestation, exact capture binding, output-path isolation, KAG schema grounding, source-index freshness, and authority stop-lines. | `scripts/review_kag_mcp_result.py`. |
+| `kag/owner-review-projection` | Exact live review/capture continuity, grounded-canary and freshness overlay shape, expiry, and proof/acceptance stop-lines. | `scripts/project_kag_mcp_owner_review.py`. |
+| `kag/owner-acceptance` | Exact source, runtime, consumer, canary, review, packet, and central-proof binding; expiry; private output; and admission/rollback stop-lines. | `scripts/accept_kag_mcp_owner_contour.py`. |
 | `kag/source-home-preflight` | Local `/kag` source-home manifest, protocol topology, reserved surface map, source/projection provenance, and source-home evidence map. | `kag/`. |
+| `release/ci-impact` | Fail-closed impact classification, always-required local proof, and typed required-summary states. | `config/validation_lanes.json`, `scripts/impact_routing.py`, and `.github/workflows/repo-validation.yml`. |
 | `release/ci-lane` | CI lane composition, release stabilization, and workflow posture. | `config/validation_lanes.json`, `.github/workflows/*`, `scripts/release_check.py`. |
 | `mechanics/root-topology` | Mechanics package map, KAG-only ownership shape, and part-directory readiness. | `mechanics/`. |
 | `test-topology/authority` | Test inventory, home classification, and runner coverage. | `docs/testing/*` and `scripts/run_tests.py`. |

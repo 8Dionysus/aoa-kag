@@ -12,8 +12,11 @@ import os
 import re
 import subprocess
 import sys
+import time
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
 try:
@@ -171,6 +174,17 @@ HOME_SKILL_PROJECTION_BUILDER_ROUTE = (
 HOME_SKILL_PROJECTION_VALIDATOR_ROUTE = (
     "aoa-skills:scripts/validate_home_skill_port.py"
 )
+CAPABILITY_HOME_PORT_MANIFEST = Path("capabilities/port.manifest.json")
+CAPABILITY_HOME_PORT_SCHEMA_VERSION = "aoa_capability_home_port_v1"
+CAPABILITY_PROJECTION_FIELDS = (
+    "graph_json",
+    "graph_markdown",
+    "router_markdown",
+)
+CAPABILITY_PROJECTION_VALIDATOR_ROUTE = (
+    "aoa-skills:scripts/validate_capability_home_port.py"
+)
+CAPABILITY_ID_RE = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
 BASELINE_TOOLS = (
     "git",
@@ -310,11 +324,21 @@ def git_file_paths(repo_root: Path) -> list[Path]:
     return sorted(git_file_modes(repo_root))
 
 
-def manifest_repo_name(repo_root: Path) -> str:
-    manifest_path = repo_root / "kag" / "manifest.json"
+def manifest_repo_name(
+    repo_root: Path,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> str:
     try:
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
+        if source_snapshot is not None:
+            manifest_rel = Path("kag/manifest.json")
+            if manifest_rel not in source_snapshot.contents:
+                return ""
+            raw = source_snapshot.read_bytes(manifest_rel).decode("utf-8")
+        else:
+            raw = (repo_root / "kag" / "manifest.json").read_text(encoding="utf-8")
+        payload = json.loads(raw)
+    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError, SourceSnapshotError):
         return ""
     if not isinstance(payload, dict):
         return ""
@@ -324,8 +348,12 @@ def manifest_repo_name(repo_root: Path) -> str:
     return ""
 
 
-def repo_name(repo_root: Path) -> str:
-    manifest_name = manifest_repo_name(repo_root)
+def repo_name(
+    repo_root: Path,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> str:
+    manifest_name = manifest_repo_name(repo_root, source_snapshot=source_snapshot)
     if manifest_name:
         return manifest_name
     try:
@@ -335,12 +363,17 @@ def repo_name(repo_root: Path) -> str:
         return repo_root.name
 
 
-def effective_history_ref(repo_root: Path, history_ref: str | None = None) -> str | None:
+def effective_history_ref(
+    repo_root: Path,
+    history_ref: str | None = None,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> str | None:
     if history_ref:
         return history_ref
     env_ref = os.environ.get(HISTORY_REF_ENV, "").strip()
     env_repo = os.environ.get(HISTORY_REPO_ENV, "").strip()
-    if env_ref and env_repo == repo_name(repo_root):
+    if env_ref and env_repo == repo_name(repo_root, source_snapshot=source_snapshot):
         return env_ref
     return local_default_history_ref(repo_root)
 
@@ -350,12 +383,13 @@ def effective_event_history_ref(
     event_history_ref: str | None = None,
     *,
     fallback: str | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> str | None:
     if event_history_ref:
         return event_history_ref
     env_ref = os.environ.get(EVENT_HISTORY_REF_ENV, "").strip()
     env_repo = os.environ.get(HISTORY_REPO_ENV, "").strip()
-    if env_ref and env_repo == repo_name(repo_root):
+    if env_ref and env_repo == repo_name(repo_root, source_snapshot=source_snapshot):
         return env_ref
     return fallback
 
@@ -542,6 +576,300 @@ def is_portable_family_control_path(path: Path) -> bool:
     )
 
 
+class SourceSnapshotError(RuntimeError):
+    """The owner source epoch could not be captured exactly."""
+
+
+@dataclass
+class SourceReadMetrics:
+    read_requests: int = 0
+    cache_hits: int = 0
+    family_validation_cache_hits: int = 0
+    family_validation_cache_misses: int = 0
+
+
+@dataclass(frozen=True)
+class OwnerSourceSnapshot:
+    """One immutable Git-index or filesystem source epoch for an owner scan."""
+
+    repo_root: Path
+    source_ref: str
+    entries: Mapping[Path, Mapping[str, str]]
+    contents: Mapping[Path, bytes]
+    git_invocation_count: int
+    capture_duration_ms: int
+    unique_object_count: int
+    bytes_read: int
+    metrics: SourceReadMetrics
+
+    @classmethod
+    def capture(cls, repo_root: Path) -> "OwnerSourceSnapshot":
+        resolved_root = repo_root.resolve()
+        started = time.perf_counter()
+        git_invocations = 0
+        try:
+            git_invocations += 1
+            top = subprocess.run(
+                ("git", "rev-parse", "--show-toplevel"),
+                cwd=resolved_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+        except FileNotFoundError as exc:
+            if (resolved_root / ".git").exists():
+                raise SourceSnapshotError(
+                    f"Git is unavailable for owner source at {resolved_root}"
+                ) from exc
+            return cls._capture_filesystem(
+                resolved_root,
+                started=started,
+                git_invocation_count=git_invocations,
+            )
+        except subprocess.CalledProcessError as exc:
+            if (resolved_root / ".git").exists():
+                raise SourceSnapshotError(
+                    f"cannot inspect Git owner source at {resolved_root}"
+                ) from exc
+            return cls._capture_filesystem(
+                resolved_root,
+                started=started,
+                git_invocation_count=git_invocations,
+            )
+
+        if Path(top).resolve() != resolved_root:
+            raise SourceSnapshotError(
+                f"owner source root must be the Git top level: {resolved_root}"
+            )
+        git_invocations += 1
+        try:
+            raw_entries = subprocess.run(
+                ("git", "ls-files", "-s", "-z", "--cached"),
+                cwd=resolved_root,
+                check=True,
+                capture_output=True,
+            ).stdout
+        except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+            raise SourceSnapshotError(
+                f"cannot enumerate Git index source at {resolved_root}"
+            ) from exc
+
+        parsed_entries: dict[Path, dict[str, str]] = {}
+        for item in raw_entries.split(b"\0"):
+            if not item:
+                continue
+            metadata, separator, path_bytes = item.partition(b"\t")
+            fields = metadata.split(b" ")
+            if not separator or len(fields) != 3:
+                raise SourceSnapshotError(
+                    f"malformed Git index entry in {resolved_root}"
+                )
+            try:
+                mode, object_id, stage = (field.decode("ascii") for field in fields)
+                path = Path(path_bytes.decode("utf-8"))
+            except UnicodeDecodeError as exc:
+                raise SourceSnapshotError(
+                    f"non-UTF-8 Git index entry in {resolved_root}"
+                ) from exc
+            if not re.fullmatch(r"[0-7]{6}", mode):
+                raise SourceSnapshotError(f"invalid Git index mode for {path}: {mode}")
+            if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", object_id):
+                raise SourceSnapshotError(f"invalid Git object id for {path}")
+            if stage != "0":
+                raise SourceSnapshotError(
+                    f"unmerged Git index entry is not a stable source epoch: {path}"
+                )
+            if path.is_absolute() or ".." in path.parts or path.as_posix() == ".":
+                raise SourceSnapshotError(f"unsafe Git index path: {path}")
+            if is_source_path(path):
+                parsed_entries[path] = {"mode": mode, "blob_id": object_id}
+
+        blob_ids = sorted(
+            {
+                entry["blob_id"]
+                for path, entry in parsed_entries.items()
+                if entry["mode"] != "160000"
+                and not is_portable_family_control_path(path)
+            }
+        )
+        objects: dict[str, bytes] = {}
+        if blob_ids:
+            git_invocations += 1
+            try:
+                batch = subprocess.run(
+                    ("git", "cat-file", "--batch"),
+                    cwd=resolved_root,
+                    check=True,
+                    input=("\n".join(blob_ids) + "\n").encode("ascii"),
+                    capture_output=True,
+                ).stdout
+            except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+                raise SourceSnapshotError(
+                    f"cannot batch-read Git index objects at {resolved_root}"
+                ) from exc
+            cursor = 0
+            for requested_id in blob_ids:
+                line_end = batch.find(b"\n", cursor)
+                if line_end < 0:
+                    raise SourceSnapshotError(
+                        f"truncated Git object header for {requested_id}"
+                    )
+                try:
+                    header = batch[cursor:line_end].decode("ascii").split()
+                except UnicodeDecodeError as exc:
+                    raise SourceSnapshotError(
+                        f"non-ASCII Git object header for {requested_id}"
+                    ) from exc
+                if len(header) != 3 or header[0] != requested_id or header[1] != "blob":
+                    raise SourceSnapshotError(
+                        f"missing or malformed Git blob {requested_id}"
+                    )
+                try:
+                    size = int(header[2])
+                except ValueError as exc:
+                    raise SourceSnapshotError(
+                        f"invalid Git blob size for {requested_id}"
+                    ) from exc
+                content_start = line_end + 1
+                content_end = content_start + size
+                if content_end >= len(batch) or batch[content_end : content_end + 1] != b"\n":
+                    raise SourceSnapshotError(
+                        f"truncated Git blob content for {requested_id}"
+                    )
+                objects[requested_id] = batch[content_start:content_end]
+                cursor = content_end + 1
+            if cursor != len(batch):
+                raise SourceSnapshotError("unexpected trailing Git batch output")
+
+        path_contents: dict[Path, bytes] = {}
+        for path, entry in sorted(parsed_entries.items()):
+            if is_portable_family_control_path(path):
+                continue
+            if entry["mode"] == "160000":
+                git_invocations += 1
+                try:
+                    content = subprocess.run(
+                        ("git", "show", f":{path.as_posix()}"),
+                        cwd=resolved_root,
+                        check=True,
+                        capture_output=True,
+                    ).stdout
+                except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+                    raise SourceSnapshotError(
+                        f"cannot read Gitlink source entry {path}"
+                    ) from exc
+            else:
+                content = objects[entry["blob_id"]]
+            path_contents[path] = content
+
+        frozen_entries = MappingProxyType(
+            {
+                path: MappingProxyType(dict(entry))
+                for path, entry in sorted(parsed_entries.items())
+            }
+        )
+        return cls(
+            repo_root=resolved_root,
+            source_ref=GIT_INDEX_SOURCE_REF,
+            entries=frozen_entries,
+            contents=MappingProxyType(path_contents),
+            git_invocation_count=git_invocations,
+            capture_duration_ms=max(0, round((time.perf_counter() - started) * 1000)),
+            unique_object_count=len(blob_ids) + sum(
+                entry["mode"] == "160000"
+                and not is_portable_family_control_path(path)
+                for path, entry in parsed_entries.items()
+            ),
+            bytes_read=(
+                sum(len(content) for content in objects.values())
+                + sum(
+                    len(path_contents[path])
+                    for path, entry in parsed_entries.items()
+                    if entry["mode"] == "160000" and path in path_contents
+                )
+            ),
+            metrics=SourceReadMetrics(),
+        )
+
+    @classmethod
+    def _capture_filesystem(
+        cls,
+        repo_root: Path,
+        *,
+        started: float,
+        git_invocation_count: int,
+    ) -> "OwnerSourceSnapshot":
+        entries: dict[Path, Mapping[str, str]] = {}
+        contents: dict[Path, bytes] = {}
+        for path in repo_root.rglob("*"):
+            if not path.is_file() and not path.is_symlink():
+                continue
+            relative = path.relative_to(repo_root)
+            if not is_source_path(relative):
+                continue
+            content = (
+                path.readlink().as_posix().encode("utf-8")
+                if path.is_symlink()
+                else path.read_bytes()
+            )
+            contents[relative] = content
+            entries[relative] = MappingProxyType(
+                {
+                    "mode": "120000" if path.is_symlink() else "100644",
+                    "blob_id": sha256_bytes(content),
+                }
+            )
+        source_contents = {
+            path: content
+            for path, content in contents.items()
+            if not is_portable_family_control_path(path)
+        }
+        return cls(
+            repo_root=repo_root,
+            source_ref=FILESYSTEM_SOURCE_REF,
+            entries=MappingProxyType(dict(sorted(entries.items()))),
+            contents=MappingProxyType(dict(sorted(source_contents.items()))),
+            git_invocation_count=git_invocation_count,
+            capture_duration_ms=max(0, round((time.perf_counter() - started) * 1000)),
+            unique_object_count=len(
+                {entries[path]["blob_id"] for path in source_contents}
+            ),
+            bytes_read=sum(len(content) for content in source_contents.values()),
+            metrics=SourceReadMetrics(),
+        )
+
+    def read_bytes(self, rel: Path) -> bytes:
+        self.metrics.read_requests += 1
+        try:
+            content = self.contents[rel]
+        except KeyError as exc:
+            raise SourceSnapshotError(
+                f"source path is outside the captured owner epoch: {rel}"
+            ) from exc
+        self.metrics.cache_hits += 1
+        return content
+
+    def telemetry(self) -> dict[str, int | str]:
+        return {
+            "backend": self.source_ref,
+            "tracked_file_count": len(self.entries),
+            "files_read_count": len(self.contents),
+            "unique_object_count": self.unique_object_count,
+            "bytes_read": self.bytes_read,
+            "git_invocation_count": self.git_invocation_count,
+            "capture_duration_ms": self.capture_duration_ms,
+            "read_request_count": self.metrics.read_requests,
+            "cache_hit_count": self.metrics.cache_hits,
+            "cache_miss_count": self.unique_object_count,
+            "family_validation_cache_hit_count": (
+                self.metrics.family_validation_cache_hits
+            ),
+            "family_validation_cache_miss_count": (
+                self.metrics.family_validation_cache_misses
+            ),
+        }
+
+
 def git_file_entries(repo_root: Path) -> dict[Path, dict[str, str]]:
     try:
         raw = subprocess.run(
@@ -589,7 +917,17 @@ def git_file_modes(repo_root: Path) -> dict[Path, str]:
     return {path: entry["mode"] for path, entry in git_file_entries(repo_root).items()}
 
 
-def source_bytes(repo_root: Path, rel: Path, path: Path) -> bytes:
+def source_bytes(
+    repo_root: Path,
+    rel: Path,
+    path: Path,
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> bytes:
+    if source_snapshot is not None:
+        if source_snapshot.repo_root != repo_root.resolve():
+            raise SourceSnapshotError("source snapshot belongs to a different owner root")
+        return source_snapshot.read_bytes(rel)
     try:
         return subprocess.run(
             ("git", "show", f":{rel.as_posix()}"),
@@ -597,7 +935,20 @@ def source_bytes(repo_root: Path, rel: Path, path: Path) -> bytes:
             check=True,
             capture_output=True,
         ).stdout
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        try:
+            subprocess.run(
+                ("git", "rev-parse", "--show-toplevel"),
+                cwd=repo_root,
+                check=True,
+                capture_output=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+        else:
+            raise SourceSnapshotError(
+                f"cannot read tracked Git source entry {rel}"
+            ) from exc
         if path.is_symlink():
             return path.readlink().as_posix().encode("utf-8")
         return path.read_bytes()
@@ -628,9 +979,159 @@ def manifest_relative_path(value: Any, *, field: str) -> Path:
     return candidate
 
 
+def capability_family_node_ids(content: bytes) -> set[str]:
+    """Read declared node IDs from a capability-family YAML contract."""
+
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("capability family contract must be UTF-8") from exc
+
+    try:
+        import yaml
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "PyYAML is required to validate capability family contracts"
+        ) from exc
+
+    try:
+        payload = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ValueError("capability family contract must be valid YAML") from exc
+    if not isinstance(payload, dict):
+        return set()
+    nodes = payload.get("nodes")
+    if not isinstance(nodes, list):
+        return set()
+    node_ids: set[str] = set()
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        node_id = node.get("id")
+        if isinstance(node_id, str) and CAPABILITY_ID_RE.fullmatch(node_id):
+            node_ids.add(node_id)
+    return node_ids
+
+
+def capability_projection_sources(
+    repo_root: Path,
+    repo: str,
+    tracked_entries: Mapping[Path, Mapping[str, str]],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> dict[Path, dict[str, Any]]:
+    """Resolve every declared capability read model to authored family sources."""
+
+    if CAPABILITY_HOME_PORT_MANIFEST not in tracked_entries:
+        return {}
+    payload = json_object(
+        source_bytes(
+            repo_root,
+            CAPABILITY_HOME_PORT_MANIFEST,
+            repo_root / CAPABILITY_HOME_PORT_MANIFEST,
+            source_snapshot=source_snapshot,
+        )
+    )
+    if payload is None:
+        raise ValueError(f"{CAPABILITY_HOME_PORT_MANIFEST} must be a JSON object")
+    if payload.get("schema_version") != CAPABILITY_HOME_PORT_SCHEMA_VERSION:
+        return {}
+    if payload.get("owner_repo") != repo:
+        raise ValueError(
+            f"{CAPABILITY_HOME_PORT_MANIFEST} owner_repo must match repository {repo!r}"
+        )
+
+    source = payload.get("source")
+    if not isinstance(source, dict):
+        raise ValueError(
+            f"{CAPABILITY_HOME_PORT_MANIFEST} must declare source"
+        )
+    family_root = manifest_relative_path(
+        source.get("family_root"),
+        field="capability home source.family_root",
+    )
+    family_paths = tuple(
+        sorted(
+            path
+            for path in tracked_entries
+            if family_root in path.parents and path.suffix in {".yaml", ".yml"}
+        )
+    )
+    if not family_paths:
+        raise ValueError(
+            "capability home source.family_root has no tracked family contracts: "
+            f"{family_root.as_posix()}"
+        )
+    root_id = source.get("root_id")
+    if not isinstance(root_id, str) or not CAPABILITY_ID_RE.fullmatch(root_id):
+        raise ValueError("capability home source.root_id must be a capability id")
+    root_family_paths = tuple(
+        path
+        for path in family_paths
+        if root_id
+        in capability_family_node_ids(
+            source_bytes(
+                repo_root,
+                path,
+                repo_root / path,
+                source_snapshot=source_snapshot,
+            )
+        )
+    )
+    if len(root_family_paths) != 1:
+        raise ValueError(
+            "capability home source.root_id must resolve to exactly one tracked "
+            f"family contract: {root_id!r} matched {len(root_family_paths)}"
+        )
+    root_family_path = root_family_paths[0]
+    ordered_family_paths = (
+        root_family_path,
+        *(path for path in family_paths if path != root_family_path),
+    )
+
+    projection = payload.get("projection")
+    if not isinstance(projection, dict) or projection.get("authority") is not False:
+        raise ValueError(
+            f"{CAPABILITY_HOME_PORT_MANIFEST} must declare a non-authoritative projection"
+        )
+    builder = projection.get("generated_by")
+    if not isinstance(builder, str) or not builder.strip():
+        raise ValueError(
+            "capability home projection.generated_by must be a non-empty route"
+        )
+
+    resolved: dict[Path, dict[str, Any]] = {}
+    for field in CAPABILITY_PROJECTION_FIELDS:
+        projection_path = manifest_relative_path(
+            projection.get(field),
+            field=f"capability home projection.{field}",
+        )
+        if projection_path not in tracked_entries:
+            raise ValueError(
+                f"declared capability projection is not tracked: {projection_path.as_posix()}"
+            )
+        if projection_path in resolved:
+            raise ValueError(
+                f"capability projection paths must be distinct: {projection_path.as_posix()}"
+            )
+        if projection_path == CAPABILITY_HOME_PORT_MANIFEST or projection_path in family_paths:
+            raise ValueError(
+                "capability projection must not alias an authored capability source: "
+                f"{projection_path.as_posix()}"
+            )
+        resolved[projection_path] = {
+            "sources": ordered_family_paths,
+            "manifest": CAPABILITY_HOME_PORT_MANIFEST,
+            "builder": builder.strip(),
+        }
+    return resolved
+
+
 def home_skill_projection_sources(
     repo_root: Path,
-    tracked_entries: dict[Path, dict[str, str]],
+    tracked_entries: Mapping[Path, Mapping[str, str]],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[Path, dict[str, Path]]:
     """Validate owner skill exposure and resolve v1 copies to owner sources."""
 
@@ -641,6 +1142,7 @@ def home_skill_projection_sources(
             repo_root,
             HOME_SKILL_PORT_MANIFEST,
             repo_root / HOME_SKILL_PORT_MANIFEST,
+            source_snapshot=source_snapshot,
         )
     )
     if payload is None:
@@ -1271,6 +1773,8 @@ def part_local_generated_by_for(rel: Path, tracked_paths: set[Path]) -> str:
 def source_builder_contents(
     repo_root: Path,
     tracked_paths: set[Path],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> tuple[tuple[Path, bytes], ...]:
     builders: list[tuple[Path, bytes]] = []
     for candidate in sorted(tracked_paths):
@@ -1280,7 +1784,17 @@ def source_builder_contents(
             and candidate.suffix == ".py"
             and candidate.name.startswith(BUILDER_PREFIXES)
         ):
-            builders.append((candidate, source_bytes(repo_root, candidate, repo_root / candidate)))
+            builders.append(
+                (
+                    candidate,
+                    source_bytes(
+                        repo_root,
+                        candidate,
+                        repo_root / candidate,
+                        source_snapshot=source_snapshot,
+                    ),
+                )
+            )
     return tuple(builders)
 
 
@@ -1562,9 +2076,16 @@ def build_record(
     git_blob_id: str,
     git_mode: str = "",
     skill_projection: dict[str, Path] | None = None,
+    capability_projection: dict[str, Any] | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, Any]:
     rel_path = rel.as_posix()
-    content = source_bytes(repo_root, rel, path)
+    content = source_bytes(
+        repo_root,
+        rel,
+        path,
+        source_snapshot=source_snapshot,
+    )
     digest = sha256_bytes(content)
     stable_identity = artifact_identity(
         repo,
@@ -1583,43 +2104,82 @@ def build_record(
         kind,
         repo=repo,
         declared_generated=declared_generated,
-        generated_projection=skill_projection is not None,
+        generated_projection=(
+            skill_projection is not None or capability_projection is not None
+        ),
     )
     headings = heading_refs(content, rel_path) if doc_role != "none" else []
     line_refs = [f"{rel_path}:1"] if content else []
-    source_rel = skill_projection["source"] if skill_projection else rel
-    authority = "authored_source" if skill_projection else source_authority(state)
-    provenance_source_ref = {
-        "repo": repo,
-        "path": source_rel.as_posix(),
-        "role": "primary",
-        "authority": authority,
-    }
+    if skill_projection:
+        source_rel = skill_projection["source"]
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_rel.as_posix(),
+                "role": "primary",
+                "authority": "authored_source",
+            }
+        ]
+    elif capability_projection:
+        capability_sources = capability_projection["sources"]
+        source_rel = capability_sources[0]
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_path.as_posix(),
+                "role": "primary" if index == 0 else "supporting",
+                "authority": "authored_source",
+            }
+            for index, source_path in enumerate(capability_sources)
+        ]
+    else:
+        source_rel = rel
+        provenance_source_refs = [
+            {
+                "repo": repo,
+                "path": source_rel.as_posix(),
+                "role": "primary",
+                "authority": source_authority(state),
+            }
+        ]
+    projection_manifest = (
+        skill_projection["manifest"]
+        if skill_projection
+        else capability_projection["manifest"]
+        if capability_projection
+        else None
+    )
     provenance_materials = (
         [
             {
                 "repo": repo,
-                "path": skill_projection["manifest"].as_posix(),
+                "path": projection_manifest.as_posix(),
                 "role": "material",
                 "authority": "authored_source",
             }
         ]
-        if skill_projection
+        if projection_manifest
         else []
     )
-    generated_by = generated_by_for(
-        rel,
-        state,
-        tracked_paths,
-        source_builders,
-        content,
-        repo_root=repo_root,
+    generated_by = (
+        capability_projection["builder"]
+        if capability_projection
+        else generated_by_for(
+            rel,
+            state,
+            tracked_paths,
+            source_builders,
+            content,
+            repo_root=repo_root,
+        )
     )
     observed_by = index_generator_route(repo)
     validated_by = kag_validator_route(repo_root, repo, tracked_paths)
     provenance_validators = [validated_by]
     if skill_projection:
         provenance_validators.append(HOME_SKILL_PROJECTION_VALIDATOR_ROUTE)
+    if capability_projection:
+        provenance_validators.append(CAPABILITY_PROJECTION_VALIDATOR_ROUTE)
     mime = mime_for(path, content, git_mode=git_mode)
     required_tools = []
     if rel.suffix == ".py":
@@ -1671,7 +2231,7 @@ def build_record(
             "observed_by": observed_by,
             "generated_by": generated_by,
             "validated_by": provenance_validators,
-            "source_refs": [provenance_source_ref],
+            "source_refs": provenance_source_refs,
             "materials": provenance_materials,
         },
         "toolchain": {
@@ -1698,7 +2258,11 @@ def build_record(
         "owner_return_route": {
             "repo": repo,
             "surface": source_rel.as_posix(),
-            "route_kind": route_kind_for(kind, doc_role, command),
+            "route_kind": (
+                "source_owner"
+                if capability_projection
+                else route_kind_for(kind, doc_role, command)
+            ),
         },
         "validator_route": {
             "repo": "aoa-kag" if validated_by.startswith("aoa-kag:") else repo,
@@ -1755,8 +2319,13 @@ def classification_summary(records: Sequence[dict[str, Any]]) -> dict[str, dict[
 
 
 def payload_digest(payload: dict[str, Any]) -> str:
-    copy_payload = copy.deepcopy(payload)
-    copy_payload["index_identity"]["content_digest"] = ZERO_DIGEST
+    copy_payload = {
+        **payload,
+        "index_identity": {
+            **payload["index_identity"],
+            "content_digest": ZERO_DIGEST,
+        },
+    }
     encoded = json.dumps(copy_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
 
@@ -1768,11 +2337,19 @@ def build_index(
     excluded_outputs: Sequence[Path] = (),
     previous_index: dict[str, Any] | None = None,
     history_ref: str | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, Any]:
     repo_root = repo_root.resolve()
-    history_ref = effective_history_ref(repo_root, history_ref)
-    name = repo_name(repo_root)
-    snapshot_ref = source_snapshot_ref(repo_root)
+    source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(repo_root)
+    if source_snapshot.repo_root != repo_root:
+        raise SourceSnapshotError("source snapshot belongs to a different owner root")
+    name = repo_name(repo_root, source_snapshot=source_snapshot)
+    history_ref = effective_history_ref(
+        repo_root,
+        history_ref,
+        source_snapshot=source_snapshot,
+    )
+    snapshot_ref = source_snapshot.source_ref
     excluded_paths = {CANONICAL_SELF_INDEX, *CANONICAL_REPOSITORY_INDEX_PATHS}
     selected_outputs = (*excluded_outputs, *((output,) if output is not None else ()))
     for selected_output in selected_outputs:
@@ -1786,9 +2363,19 @@ def build_index(
         except ValueError:
             if not selected_output.is_absolute():
                 excluded_paths.add(selected_output)
-    tracked_entries = git_file_entries(repo_root)
+    tracked_entries = source_snapshot.entries
     tracked_paths = set(tracked_entries)
-    skill_projections = home_skill_projection_sources(repo_root, tracked_entries)
+    skill_projections = home_skill_projection_sources(
+        repo_root,
+        tracked_entries,
+        source_snapshot=source_snapshot,
+    )
+    capability_projections = capability_projection_sources(
+        repo_root,
+        name,
+        tracked_entries,
+        source_snapshot=source_snapshot,
+    )
     indexed_paths = {
         path
         for path in tracked_paths - excluded_paths
@@ -1799,7 +2386,11 @@ def build_index(
         tracked_paths,
         history_ref=history_ref,
     )
-    source_builders = source_builder_contents(repo_root, tracked_paths)
+    source_builders = source_builder_contents(
+        repo_root,
+        tracked_paths,
+        source_snapshot=source_snapshot,
+    )
     previous_records = {
         Path(str(record["identity"]["path"])): record
         for record in (previous_index or {}).get("records", [])
@@ -1813,6 +2404,7 @@ def build_index(
             for path in indexed_paths
             if path == Path("kag/manifest.json")
             or path == HOME_SKILL_PORT_MANIFEST
+            or path == CAPABILITY_HOME_PORT_MANIFEST
             or path in REPO_LOCAL_GENERATOR_HELPER_PATHS
             or path.name.startswith(("build_", "generate_"))
             or "builders" in path.parts
@@ -1836,6 +2428,7 @@ def build_index(
                 # small declared projection set so an incremental migration
                 # cannot preserve older authored-source provenance.
                 and rel not in skill_projections
+                and rel not in capability_projections
                 and str(previous["identity"].get("git_blob_id") or "")
                 == tracked_entries[rel]["blob_id"]
                 and str(previous["identity"].get("lineage_path") or "")
@@ -1856,6 +2449,8 @@ def build_index(
                     git_blob_id=tracked_entries[rel]["blob_id"],
                     git_mode=tracked_entries[rel]["mode"],
                     skill_projection=skill_projections.get(rel),
+                    capability_projection=capability_projections.get(rel),
+                    source_snapshot=source_snapshot,
                 )
             )
     records.sort(key=lambda record: record["identity"]["path"])
@@ -1916,6 +2511,7 @@ def build_index_incremental(
     output: Path | None = None,
     excluded_outputs: Sequence[Path] = (),
     history_ref: str | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, Any]:
     return build_index(
         repo_root,
@@ -1923,6 +2519,7 @@ def build_index_incremental(
         excluded_outputs=excluded_outputs,
         previous_index=previous_index,
         history_ref=history_ref,
+        source_snapshot=source_snapshot,
     )
 
 
@@ -2305,19 +2902,34 @@ def build_repository_indexes(
     previous_family: dict[str, dict[str, Any]] | None = None,
     history_ref: str | None = None,
     event_history_ref: str | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, dict[str, Any]]:
     if repo_root is not None:
         resolved_root = repo_root.resolve()
-        history_ref = effective_history_ref(resolved_root, history_ref)
+        source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(resolved_root)
+        if source_snapshot.repo_root != resolved_root:
+            raise SourceSnapshotError("source snapshot belongs to a different owner root")
+        history_ref = effective_history_ref(
+            resolved_root,
+            history_ref,
+            source_snapshot=source_snapshot,
+        )
         event_history_ref = effective_event_history_ref(
             resolved_root,
             event_history_ref,
             fallback=history_ref,
+            source_snapshot=source_snapshot,
         )
     effective_event_ref = (
         event_history_ref if event_history_ref is not None else history_ref
     )
-    records = [copy.deepcopy(record) for record in source_index["records"] if isinstance(record, dict)]
+    records: list[dict[str, Any]] = []
+    for record in source_index["records"]:
+        if not isinstance(record, dict):
+            continue
+        mutable_record = dict(record)
+        mutable_record["refs"] = dict(record["refs"])
+        records.append(mutable_record)
     repo = str(source_index["repo"]["name"])
     reusable_structure = previous_structure_refs(source_index, previous_family)
     for record in records:
@@ -2331,7 +2943,12 @@ def build_repository_indexes(
         content = b""
         if repo_root is not None:
             resolved_root = repo_root.resolve()
-            content = source_bytes(resolved_root, rel, resolved_root / rel)
+            content = source_bytes(
+                resolved_root,
+                rel,
+                resolved_root / rel,
+                source_snapshot=source_snapshot,
+            )
         structure = extract_structure(
             repo=repo,
             source_id=source_id,
@@ -2424,6 +3041,7 @@ def build_repository_indexes_incremental(
     repo_root: Path | None = None,
     history_ref: str | None = None,
     event_history_ref: str | None = None,
+    source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, dict[str, Any]]:
     return build_repository_indexes(
         source_index,
@@ -2432,6 +3050,7 @@ def build_repository_indexes_incremental(
         previous_family=previous_family,
         history_ref=history_ref,
         event_history_ref=event_history_ref,
+        source_snapshot=source_snapshot,
     )
 
 
@@ -2635,11 +3254,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     repo_root = Path(args.repo_root).resolve()
     output = Path(args.output)
     output_path = repo_root / output
-    history_ref = effective_history_ref(repo_root, args.history_ref)
+    source_snapshot = OwnerSourceSnapshot.capture(repo_root)
+    history_ref = effective_history_ref(
+        repo_root,
+        args.history_ref,
+        source_snapshot=source_snapshot,
+    )
     event_history_ref = effective_event_history_ref(
         repo_root,
         args.event_history_ref,
         fallback=history_ref,
+        source_snapshot=source_snapshot,
     )
     family_paths = repository_index_output_paths(output_path)
     previous_index: dict[str, Any] | None = None
@@ -2755,6 +3380,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
         previous_index=previous_index,
         history_ref=history_ref,
+        source_snapshot=source_snapshot,
     )
     if args.index_family or args.portable_family or args.tiered_family:
         try:
@@ -2768,6 +3394,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             previous_family=previous_family,
             history_ref=history_ref,
             event_history_ref=event_history_ref,
+            source_snapshot=source_snapshot,
         )
     else:
         family = {}

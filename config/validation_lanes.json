@@ -4,7 +4,10 @@
   "command_authority": "config/validation_lanes.json",
   "notes": [
     "This manifest is the canonical storage surface for active validation lane command sequences.",
-    "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences."
+    "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences.",
+    "The source-fast lane always runs validate_kag local scope; generated and compatibility lanes add one explicit OS-wide provider-home and coverage scope inside the same run-scoped packet epoch.",
+    "Impact routing never replaces source-fast or the self owner-family check; it only decides whether an additional full OS-wide release audit is required.",
+    "The CI release continuation may omit only a source-fast proof accepted through the exact same-run handoff contract; any absent, malformed, stale, mismatched, or ambiguous receipt falls back to the full release sequence."
   ],
   "lanes": {
     "source_fast": {
@@ -12,8 +15,9 @@
       "posture": "blocking",
       "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
       "command_sequence": "source_fast",
-      "purpose": "Growth-safe read-only integrity gate for route cards, mechanics skeleton, decision records, semantic AGENTS docs, unit tests, and committed KAG surfaces.",
+      "purpose": "Growth-safe read-only local integrity gate for route cards, mechanics skeleton, decision records, semantic AGENTS docs, unit tests, and committed KAG surfaces.",
       "does_not_own": [
+        "OS-wide provider-home and coverage audit",
         "generated-output mutation",
         "release stabilization",
         "future runtime graph/vector/index state"
@@ -25,22 +29,10 @@
       "owner_surface": "docs/validation/VALIDATOR_TOPOLOGY.md",
       "command_sequence": "generated_check",
       "drift_paths": "generated",
-      "purpose": "Generated/read-model parity for KAG outputs derived from manifests and source-owned exports.",
+      "purpose": "Generated/read-model parity plus one explicit blocking OS-wide provider-home and coverage audit for KAG outputs derived from manifests and source-owned exports.",
       "does_not_own": [
         "source repository authored meaning",
         "runtime graph/vector/index state"
-      ]
-    },
-    "incremental_federation": {
-      "label": "incremental-federation",
-      "posture": "blocking",
-      "owner_surface": ".github/workflows/repo-validation.yml",
-      "command_sequence": "incremental_federation",
-      "purpose": "Validate release/distribution-manifest-only composition replacement, affected cross-owner relations, retrieval projections, and tiered delivery without scanning all 24 owner source trees.",
-      "does_not_own": [
-        "full owner membership changes",
-        "shared schema or canonicalization changes",
-        "24-owner release audit"
       ]
     },
     "release": {
@@ -53,6 +45,19 @@
       "does_not_own": [
         "ordinary docs status",
         "GitHub dependency canary scheduling"
+      ]
+    },
+    "release_continuation": {
+      "label": "release-continuation",
+      "posture": "blocking",
+      "owner_surface": "docs/RELEASING.md",
+      "command_sequence": "release_continuation",
+      "entrypoint": "scripts/ci_release_check.py",
+      "purpose": "CI-only release continuation after exact same-run source-fast and owner-family receipt acceptance.",
+      "does_not_own": [
+        "standalone release validation",
+        "cross-run proof reuse",
+        "source repository authored meaning"
       ]
     },
     "compatibility_canary": {
@@ -96,12 +101,168 @@
   "drift_paths": {
     "generated": [
       "generated",
-      "kag/indexes/artifact_locators.json",
-      "kag/indexes/corpus.manifest.json",
-      "kag/indexes/hot_profile.json",
       "kag/indexes/index_family.manifest.json",
-      "kag/receipts/index_family_budget",
       "kag/indexes/shards"
+    ]
+  },
+  "source_fast_handoff": {
+    "schema_version": "aoa_kag_source_fast_handoff_v1",
+    "producer_job": "source_fast",
+    "consumer_job": "release_audit",
+    "invalid_receipt_posture": "fallback-full-release",
+    "donors": [
+      "Tree-of-Sophia",
+      "aoa-memo",
+      "aoa-playbooks",
+      "aoa-evals",
+      "aoa-agents",
+      "aoa-techniques",
+      "aoa-sdk",
+      "aoa-stats"
+    ]
+  },
+  "impact_routing": {
+    "schema_version": 1,
+    "default_route": "full-audit",
+    "default_reason": "unknown-path",
+    "always_required_proofs": [
+      "source-fast",
+      "owner-family"
+    ],
+    "full_audit_rules": [
+      {
+        "id": "artifact-or-pack-blob",
+        "reason": "artifact, pack, archive, or opaque blob changed",
+        "suffixes": [
+          ".bin",
+          ".blob",
+          ".pack",
+          ".pack.json",
+          ".pack.jsonl",
+          ".pack.zst",
+          ".gz",
+          ".tar",
+          ".tar.gz",
+          ".tgz",
+          ".xz",
+          ".zip",
+          ".zst"
+        ]
+      },
+      {
+        "id": "provider-membership-or-federation-input",
+        "reason": "provider membership, registry, readiness, or federation input changed",
+        "prefixes": [
+          "manifests/",
+          "generated/",
+          "kag/edges/",
+          "kag/nodes/",
+          "kag/projections/"
+        ],
+        "exact_paths": [
+          "kag/indexes/provider_readiness_index.json"
+        ]
+      },
+      {
+        "id": "shared-schema-or-abi",
+        "reason": "shared schema, KAG ABI, compatibility contract, or canonical model changed",
+        "prefixes": [
+          "schemas/"
+        ],
+        "exact_paths": [
+          "AGENTS.md",
+          "CHARTER.md",
+          "DESIGN.AGENTS.md",
+          "DESIGN.md",
+          "README.md",
+          "SECURITY.md",
+          "docs/BOUNDARIES.md",
+          "docs/CONSUMER_GUIDE.md",
+          "docs/KAG_MODEL.md",
+          "docs/RELEASING.md",
+          "docs/SOURCE_POLICY.md",
+          "kag/LOCAL_SUBTREE_PROTOCOL.md",
+          "kag/README.md"
+        ]
+      },
+      {
+        "id": "builder-loader-validator-or-release-topology",
+        "reason": "builder, loader, validator, test, release, or CI topology changed",
+        "prefixes": [
+          ".github/",
+          "config/",
+          "docs/decisions/",
+          "docs/testing/",
+          "docs/validation/",
+          "scripts/",
+          "tests/"
+        ]
+      },
+      {
+        "id": "trust-receipt-or-budget",
+        "reason": "artifact trust, receipt, budget, or release artifact changed",
+        "prefixes": [
+          "dist/",
+          "docs/artifact-bundles/",
+          "kag/receipts/",
+          "mechanics/audit/",
+          "mechanics/release-support/"
+        ]
+      },
+      {
+        "id": "federation-or-projection-mechanic",
+        "reason": "federation, projection, or cross-owner bridge mechanic changed",
+        "prefixes": [
+          "mechanics/boundary-bridge/"
+        ]
+      },
+      {
+        "id": "nested-derived-or-trust-surface",
+        "reason": "nested schema, manifest, generated, projection, receipt, artifact, or pack surface changed",
+        "segments": [
+          "artifacts",
+          "generated",
+          "manifests",
+          "packs",
+          "policies",
+          "projections",
+          "receipts",
+          "schemas"
+        ]
+      }
+    ],
+    "owner_local_rules": [
+      {
+        "id": "owner-authored-surface",
+        "reason": "owner-authored documentation, mechanic, quest, skill, eval, or stats surface changed",
+        "prefixes": [
+          ".agents/",
+          "docs/",
+          "evals/",
+          "mechanics/",
+          "quests/",
+          "skills/",
+          "stats/"
+        ],
+        "exact_paths": [
+          "CHANGELOG.md",
+          "CODE_OF_CONDUCT.md",
+          "CONTRIBUTING.md",
+          "LICENSE",
+          "QUESTBOOK.md",
+          "ROADMAP.md"
+        ]
+      },
+      {
+        "id": "owner-portable-family-output",
+        "reason": "self owner portable-family manifest or shard output changed",
+        "prefixes": [
+          "kag/indexes/shards/"
+        ],
+        "exact_paths": [
+          "kag/indexes/index_family.manifest.json"
+        ]
+      }
     ]
   },
   "command_sequences": {
@@ -137,7 +298,9 @@
       ],
       [
         "python",
-        "scripts/validate_kag.py"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
       ],
       [
         "python",
@@ -147,7 +310,15 @@
     "generated_check": [
       [
         "python",
-        "scripts/validate_kag.py"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
+      ],
+      [
+        "python",
+        "scripts/validate_kag.py",
+        "--scope",
+        "os-wide"
       ],
       [
         "python",
@@ -159,9 +330,12 @@
       ],
       [
         "python",
-        "scripts/build_repo_local_kag_release.py",
+        "scripts/generate_repo_local_kag_index.py",
         "--repo-root",
-        "."
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json",
+        "--portable-family"
       ],
       [
         "python",
@@ -173,9 +347,12 @@
       ],
       [
         "python",
-        "scripts/build_repo_local_kag_release.py",
+        "scripts/generate_repo_local_kag_index.py",
         "--repo-root",
-        "."
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json",
+        "--portable-family"
       ],
       [
         "python",
@@ -184,26 +361,24 @@
       ],
       [
         "python",
-        "scripts/build_repo_local_kag_release.py",
+        "scripts/generate_repo_local_kag_index.py",
         "--repo-root",
         ".",
+        "--output",
+        "kag/indexes/source_surface_index.json",
+        "--portable-family",
         "--check"
       ],
       [
         "python",
         "scripts/generate_kag.py",
         "--check"
-      ]
-    ],
-    "incremental_federation": [
+      ],
       [
         "python",
-        "-m",
-        "unittest",
-        "tests.test_repo_local_kag_tiered_governance",
-        "tests.test_repo_local_kag_federation",
-        "tests.test_repo_local_kag_projections",
-        "tests.test_repo_local_kag_tiered_distribution"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
       ]
     ],
     "release_check": [
@@ -213,6 +388,18 @@
         "--mode",
         "source-fast"
       ],
+      [
+        "python",
+        "scripts/ci_gate.py",
+        "--mode",
+        "generated"
+      ],
+      [
+        "python",
+        "scripts/validate_abyss_machine_kag_registry_bundle.py"
+      ]
+    ],
+    "release_continuation": [
       [
         "python",
         "scripts/ci_gate.py",
@@ -235,7 +422,15 @@
       ],
       [
         "python",
-        "scripts/validate_kag.py"
+        "scripts/validate_kag.py",
+        "--scope",
+        "local"
+      ],
+      [
+        "python",
+        "scripts/validate_kag.py",
+        "--scope",
+        "os-wide"
       ],
       [
         "python",
@@ -247,9 +442,12 @@
       ],
       [
         "python",
-        "scripts/build_repo_local_kag_release.py",
+        "scripts/generate_repo_local_kag_index.py",
         "--repo-root",
-        "."
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json",
+        "--portable-family"
       ],
       [
         "python",
@@ -261,9 +459,12 @@
       ],
       [
         "python",
-        "scripts/build_repo_local_kag_release.py",
+        "scripts/generate_repo_local_kag_index.py",
         "--repo-root",
-        "."
+        ".",
+        "--output",
+        "kag/indexes/source_surface_index.json",
+        "--portable-family"
       ],
       [
         "python",
@@ -272,9 +473,12 @@
       ],
       [
         "python",
-        "scripts/build_repo_local_kag_release.py",
+        "scripts/generate_repo_local_kag_index.py",
         "--repo-root",
         ".",
+        "--output",
+        "kag/indexes/source_surface_index.json",
+        "--portable-family",
         "--check"
       ],
       [
@@ -288,11 +492,7 @@
         "--exit-code",
         "--",
         "generated",
-        "kag/indexes/artifact_locators.json",
-        "kag/indexes/corpus.manifest.json",
-        "kag/indexes/hot_profile.json",
         "kag/indexes/index_family.manifest.json",
-        "kag/receipts/index_family_budget",
         "kag/indexes/shards"
       ]
     ]

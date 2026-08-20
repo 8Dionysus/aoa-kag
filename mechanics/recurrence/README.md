@@ -19,9 +19,9 @@ posture, and source-first return contracts for KAG consumers.
 
 ### Stronger owner split
 
-`Agents-of-Abyss` owns recurrence law. `aoa-routing` owns dispatch behavior.
-`aoa-memo` owns memory continuity. `aoa-evals` owns proof. Source repositories
-own authored meaning and owner-local readiness.
+`Agents-of-Abyss` owns recurrence law. The `aoa-sdk` routing control plane owns
+dispatch behavior. `aoa-memo` owns memory continuity. `aoa-evals` owns proof.
+Source repositories own authored meaning and owner-local readiness.
 
 ### Inputs
 

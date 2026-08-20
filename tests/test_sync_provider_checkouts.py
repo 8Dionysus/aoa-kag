@@ -34,7 +34,11 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
                     )
 
         self.assertEqual(7, result)
-        sync.assert_called_once_with(check=False)
+        sync.assert_called_once_with(
+            check=False,
+            jobs=1,
+            exclude_secret_checkouts=False,
+        )
         run.assert_called_once()
         command = run.call_args.args[0]
         self.assertEqual(sync_provider_checkouts.sys.executable, command[0])
@@ -85,7 +89,11 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
                 result = sync_provider_checkouts.main(["--check"])
 
         self.assertEqual(0, result)
-        sync.assert_called_once_with(check=True)
+        sync.assert_called_once_with(
+            check=True,
+            jobs=1,
+            exclude_secret_checkouts=False,
+        )
 
     def test_main_print_env_exports_checked_provider_environment(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -118,8 +126,15 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
 
-            def fake_sync_or_check(*, check: bool) -> list[Path]:
+            def fake_sync_or_check(
+                *,
+                check: bool,
+                jobs: int,
+                exclude_secret_checkouts: bool,
+            ) -> list[Path]:
                 self.assertTrue(check)
+                self.assertEqual(1, jobs)
+                self.assertFalse(exclude_secret_checkouts)
                 print(
                     "[provider-checkout] aoa-demo .deps/aoa-demo abc123",
                     file=sync_provider_checkouts.sys.stderr,
@@ -186,6 +201,107 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
             stderr.getvalue(),
         )
 
+    def test_parallel_sync_is_bounded_and_preserves_registry_order(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            entries = [
+                {
+                    "repo": f"aoa-demo-{index}",
+                    "checkout_path": f".deps/aoa-demo-{index}",
+                    "pinned_ref": f"pin-{index}",
+                }
+                for index in range(4)
+            ]
+            targets = {
+                entry["repo"]: repo_root / str(entry["checkout_path"])
+                for entry in entries
+            }
+            for target in targets.values():
+                target.mkdir(parents=True)
+
+            with patch.object(
+                sync_provider_checkouts,
+                "pinned_provider_entries",
+                return_value=entries,
+            ):
+                with patch.object(
+                    sync_provider_checkouts,
+                    "sync_checkout",
+                    side_effect=lambda entry, *, repo_root: targets[str(entry["repo"])],
+                ) as sync:
+                    paths = sync_provider_checkouts.sync_or_check(
+                        check=False,
+                        jobs=3,
+                        repo_root=repo_root,
+                    )
+
+        self.assertEqual([targets[str(entry["repo"])] for entry in entries], paths)
+        self.assertEqual(4, sync.call_count)
+
+    def test_parallel_sync_excludes_secret_owned_checkouts(self) -> None:
+        entries = [
+            {
+                "repo": "aoa-public",
+                "checkout_path": ".deps/aoa-public",
+                "pinned_ref": "public-pin",
+            },
+            {
+                "repo": "aoa-private",
+                "checkout_path": ".deps/aoa-private",
+                "pinned_ref": "private-pin",
+                "checkout_ssh_key_secret": "PRIVATE_DEPLOY_KEY",
+            },
+        ]
+
+        with patch.object(
+            sync_provider_checkouts,
+            "pinned_provider_entries",
+            return_value=entries,
+        ):
+            selected = sync_provider_checkouts.selected_pinned_provider_entries(
+                exclude_secret_checkouts=True
+            )
+
+        self.assertEqual(["aoa-public"], [entry["repo"] for entry in selected])
+
+    def test_parallel_sync_propagates_checkout_failure(self) -> None:
+        entries = [
+            {"repo": "aoa-good", "checkout_path": ".deps/aoa-good", "pinned_ref": "a"},
+            {"repo": "aoa-bad", "checkout_path": ".deps/aoa-bad", "pinned_ref": "b"},
+        ]
+
+        def fail_one(entry: dict[str, object], *, repo_root: Path) -> Path:
+            if entry["repo"] == "aoa-bad":
+                raise RuntimeError("checkout failed")
+            return repo_root / str(entry["checkout_path"])
+
+        with patch.object(
+            sync_provider_checkouts,
+            "pinned_provider_entries",
+            return_value=entries,
+        ):
+            with patch.object(
+                sync_provider_checkouts,
+                "sync_checkout",
+                side_effect=fail_one,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "checkout failed"):
+                    sync_provider_checkouts.sync_or_check(
+                        check=False,
+                        jobs=2,
+                        repo_root=Path("/tmp/provider-checkout-test"),
+                    )
+
+    def test_main_rejects_worker_counts_outside_bounded_range(self) -> None:
+        for jobs in (0, sync_provider_checkouts.MAX_CHECKOUT_JOBS + 1):
+            with self.subTest(jobs=jobs):
+                stderr = io.StringIO()
+                with redirect_stderr(stderr):
+                    result = sync_provider_checkouts.main(["--jobs", str(jobs)])
+
+                self.assertEqual(1, result)
+                self.assertIn("jobs must be between 1 and 3", stderr.getvalue())
+
     def test_sync_checkout_removes_ignored_provider_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / ".deps" / "aoa-demo"
@@ -199,8 +315,13 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
 
             with patch.object(sync_provider_checkouts, "checkout_path", return_value=target):
                 with patch.object(sync_provider_checkouts, "is_shallow_checkout", return_value=False):
-                    with patch.object(sync_provider_checkouts, "run") as run:
-                        sync_provider_checkouts.sync_checkout(entry, repo_root=Path(temp_dir))
+                    with patch.object(
+                        sync_provider_checkouts,
+                        "current_head",
+                        return_value="abc123",
+                    ):
+                        with patch.object(sync_provider_checkouts, "run") as run:
+                            sync_provider_checkouts.sync_checkout(entry, repo_root=Path(temp_dir))
 
             self.assertIn(call(("git", "clean", "-ffdx"), cwd=target), run.call_args_list)
             self.assertLess(
@@ -243,14 +364,48 @@ class SyncProviderCheckoutsTests(unittest.TestCase):
             }
 
             with patch.object(sync_provider_checkouts, "checkout_path", return_value=target):
-                with patch.object(sync_provider_checkouts, "is_shallow_checkout", return_value=True):
-                    with patch.object(sync_provider_checkouts, "run") as run:
-                        sync_provider_checkouts.sync_checkout(entry, repo_root=Path(temp_dir))
+                with patch.object(
+                    sync_provider_checkouts,
+                    "is_shallow_checkout",
+                    side_effect=[True, False],
+                ):
+                    with patch.object(
+                        sync_provider_checkouts,
+                        "current_head",
+                        return_value="abc123",
+                    ):
+                        with patch.object(sync_provider_checkouts, "run") as run:
+                            sync_provider_checkouts.sync_checkout(entry, repo_root=Path(temp_dir))
 
         self.assertIn(
             call(("git", "fetch", "--no-tags", "--prune", "--unshallow", "origin"), cwd=target),
             run.call_args_list,
         )
+
+    def test_sync_checkout_rejects_observed_head_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / ".deps" / "aoa-demo"
+            (target / ".git").mkdir(parents=True)
+            entry = {
+                "repo": "aoa-demo",
+                "github_repository": "8Dionysus/aoa-demo",
+                "checkout_path": ".deps/aoa-demo",
+                "pinned_ref": "abc123",
+            }
+
+            with patch.object(sync_provider_checkouts, "checkout_path", return_value=target):
+                with patch.object(sync_provider_checkouts, "is_shallow_checkout", return_value=False):
+                    with patch.object(
+                        sync_provider_checkouts,
+                        "current_head",
+                        return_value="wrong-head",
+                    ):
+                        with patch.object(sync_provider_checkouts, "run"):
+                            with self.assertRaisesRegex(RuntimeError, "observed wrong-head"):
+                                sync_provider_checkouts.sync_checkout(
+                                    entry,
+                                    repo_root=Path(temp_dir),
+                                )
 
     def test_check_checkout_rejects_shallow_provider_history(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -19,7 +19,8 @@ as derived guide-to-source surfaces instead of owner state.
 
 `aoa-playbooks` owns scenario choreography. `aoa-evals` owns artifact verdicts
 and proof. `aoa-memo` owns checkpoint-to-memory contracts and durable memory.
-`aoa-routing` owns live re-entry. Runtime owners own execution state.
+The `aoa-sdk` routing control plane owns live re-entry. Runtime owners own
+execution state.
 
 ### Inputs
 

@@ -3,7 +3,7 @@ identity:
   name: aoa-kag
   owner_repo: aoa-kag
   owner_path: skills/aoa-kag
-  version: 0.2.0
+  version: 0.2.4
   lifecycle: admitted
 purpose: >-
   Retrieve and compose owner-qualified AoA knowledge through the read-only
@@ -187,7 +187,7 @@ relations:
     - canonical source owner
     - aoa-evals for proof meaning
     - aoa-memo for memory meaning
-    - aoa-routing for dispatch meaning
+    - aoa-sdk routing control plane for dispatch meaning
     - abyss-stack for runtime meaning
   conflicts_with:
     - treating KAG as source, proof, memory, routing, or runtime authority

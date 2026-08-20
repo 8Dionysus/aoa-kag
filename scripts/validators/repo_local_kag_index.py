@@ -1,11 +1,32 @@
 from __future__ import annotations
 
 import copy
+import importlib.metadata
 import os
 import sys
+from functools import lru_cache
+from typing import Any
 
 from .common import *
 from .schema_surfaces import validate_top_level_schema
+
+try:
+    import jsonschema_rs
+except ImportError:  # Optional accelerator; the Python validator remains the fallback.
+    jsonschema_rs = None  # type: ignore[assignment]
+
+try:
+    from scripts.coverage_run import (
+        current_coverage_run,
+        record_validation_event,
+        validation_timing,
+    )
+except ImportError:  # pragma: no cover - direct script import fallback
+    from coverage_run import (  # type: ignore
+        current_coverage_run,
+        record_validation_event,
+        validation_timing,
+    )
 
 try:
     from scripts.generate_repo_local_kag_coverage import build_provider_coverage
@@ -40,10 +61,11 @@ REPOSITORY_INDEX_FAMILY_REFS = {
 }
 DOMAIN_INDEX_CATALOG_REF = "kag/indexes/domain_index_catalog.json"
 OS_GIT_HOT_TARGET_BYTES = 234_881_024
-OS_AGGREGATE_TRACKED_BYTES_MAX = 335_544_320
 
 
 def _empty_family_coordinates() -> dict[str, object]:
+    """Return the v2/non-portable compatibility coordinate shape."""
+
     return {
         "manifest_ref": "",
         "content_digest": "",
@@ -53,21 +75,123 @@ def _empty_family_coordinates() -> dict[str, object]:
         "shards": 0,
         "budget_state": "not-applicable",
         "receipt_ref": "",
-        "corpus_digest": "",
-        "distribution_digest": "",
-        "git_hot_bytes": 0,
-        "corpus_total_bytes": 0,
-        "artifact_cold_bytes": 0,
-        "git_hot_objects": 0,
-        "artifact_cold_objects": 0,
-        "placement_state": "not-applicable",
-        "hot_profile_ref": "",
-        "artifact_locator_ref": "",
-        "os_git_hot_target_bytes": OS_GIT_HOT_TARGET_BYTES,
-        "aggregate_ceiling_receiptable_by_owner": False,
-        "measurement_state": "not-applicable",
-        "measurement_ref": "",
     }
+
+
+_RUN_VALIDATED_PORTABLE_FAMILIES: set[tuple[str, str, str]] = set()
+FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
+FORCE_PYTHON_SCHEMA_VALIDATION_ENV = "AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION"
+ADMITTED_JSONSCHEMA_RS_VERSION = "0.49.2"
+_FAST_SCHEMA_SHADOWED_IDENTITIES: set[tuple[str, bytes]] = set()
+_FAST_SCHEMA_KEYWORDS = frozenset(
+    {
+        "$defs",
+        "$id",
+        "$ref",
+        "$schema",
+        "additionalProperties",
+        "allOf",
+        "const",
+        "enum",
+        "if",
+        "items",
+        "maxItems",
+        "maximum",
+        "minItems",
+        "minLength",
+        "minProperties",
+        "minimum",
+        "not",
+        "oneOf",
+        "pattern",
+        "properties",
+        "required",
+        "then",
+        "title",
+        "type",
+        "uniqueItems",
+    }
+)
+_FAST_SCHEMA_MAP_KEYWORDS = frozenset({"$defs", "properties"})
+_FAST_SCHEMA_SINGLE_KEYWORDS = frozenset(
+    {"additionalProperties", "if", "items", "not", "then"}
+)
+_FAST_SCHEMA_LIST_KEYWORDS = frozenset({"allOf", "oneOf"})
+
+
+class _FastSchemaNotAdmitted(ValueError):
+    pass
+
+
+@lru_cache(maxsize=4)
+def _distribution_version(distribution: str) -> str:
+    try:
+        return importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return "unavailable"
+
+
+def _unsupported_fast_schema_features(schema: object) -> tuple[str, ...]:
+    unsupported: set[str] = set()
+
+    def visit(node: object) -> None:
+        if isinstance(node, bool):
+            return
+        if not isinstance(node, dict):
+            unsupported.add("non-schema-node")
+            return
+        unsupported.update(str(key) for key in node if key not in _FAST_SCHEMA_KEYWORDS)
+        reference = node.get("$ref")
+        if isinstance(reference, str) and not reference.startswith("#/"):
+            unsupported.add("non-local-$ref")
+        for keyword in _FAST_SCHEMA_MAP_KEYWORDS:
+            children = node.get(keyword)
+            if isinstance(children, dict):
+                for child in children.values():
+                    visit(child)
+        for keyword in _FAST_SCHEMA_SINGLE_KEYWORDS:
+            if keyword in node:
+                visit(node[keyword])
+        for keyword in _FAST_SCHEMA_LIST_KEYWORDS:
+            children = node.get(keyword)
+            if isinstance(children, list):
+                for child in children:
+                    visit(child)
+
+    visit(schema)
+    return tuple(sorted(unsupported))
+
+
+def _portable_family_validation_identity(
+    repo_root: Path,
+    manifest: object,
+) -> tuple[str, str, str] | None:
+    run = current_coverage_run()
+    if run is None or not isinstance(manifest, dict):
+        return None
+    family_identity = manifest.get("family_identity")
+    family_digest = (
+        family_identity.get("content_digest")
+        if isinstance(family_identity, dict)
+        else None
+    )
+    if not isinstance(family_digest, str) or not family_digest:
+        return None
+    return run.run_scope_id, repo_root.resolve().as_posix(), family_digest
+
+
+def record_run_validated_portable_family(repo_root: Path, manifest: object) -> None:
+    identity = _portable_family_validation_identity(repo_root, manifest)
+    if identity is not None:
+        _RUN_VALIDATED_PORTABLE_FAMILIES.add(identity)
+
+
+def portable_family_validated_in_current_run(
+    repo_root: Path,
+    manifest: object,
+) -> bool:
+    identity = _portable_family_validation_identity(repo_root, manifest)
+    return identity is not None and identity in _RUN_VALIDATED_PORTABLE_FAMILIES
 
 
 def _repo_local_index_phase(label: str, *, progress: bool) -> None:
@@ -121,12 +245,211 @@ def _payload_value_summary(value: object) -> str:
     return rendered if len(rendered) <= 240 else f"{rendered[:237]}..."
 
 
-def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
-    schema = read_json(schema_path)
+def _build_repo_local_schema_validator(
+    schema_bytes: bytes,
+) -> Draft202012Validator:
+    schema = json.loads(schema_bytes.decode("utf-8"))
     if not isinstance(schema, dict):
-        fail(f"{label} schema must be a JSON object")
+        raise ValueError("schema must be a JSON object")
     Draft202012Validator.check_schema(schema)
-    errors = sorted(Draft202012Validator(schema).iter_errors(payload), key=lambda error: list(error.path))
+    return Draft202012Validator(schema)
+
+
+@lru_cache(maxsize=16)
+def _cached_repo_local_schema_validator(
+    schema_bytes: bytes,
+) -> Draft202012Validator:
+    return _build_repo_local_schema_validator(schema_bytes)
+
+
+def _repo_local_schema_validator(
+    schema_path: Path,
+    *,
+    label: str,
+) -> Draft202012Validator:
+    try:
+        schema_bytes = schema_path.read_bytes()
+    except OSError as exc:
+        fail(f"{label} schema is unavailable: {schema_path}")
+        raise AssertionError("unreachable") from exc
+    try:
+        if os.environ.get(FORCE_COLD_SCHEMA_COMPILATION_ENV) == "1":
+            return _build_repo_local_schema_validator(schema_bytes)
+        return _cached_repo_local_schema_validator(schema_bytes)
+    except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as exc:
+        fail(f"{label} schema must be a valid JSON object: {schema_path}")
+        raise AssertionError("unreachable") from exc
+
+
+def _build_fast_repo_local_schema_validator(schema_bytes: bytes) -> object:
+    if jsonschema_rs is None:
+        raise RuntimeError("jsonschema-rs is unavailable")
+    schema = json.loads(schema_bytes.decode("utf-8"))
+    if not isinstance(schema, dict):
+        raise ValueError("schema must be a JSON object")
+    unsupported = _unsupported_fast_schema_features(schema)
+    if unsupported:
+        raise _FastSchemaNotAdmitted(",".join(unsupported))
+    return jsonschema_rs.Draft202012Validator(
+        schema,
+        validate_formats=False,
+    )
+
+
+@lru_cache(maxsize=16)
+def _cached_fast_repo_local_schema_validator(schema_bytes: bytes) -> object:
+    return _build_fast_repo_local_schema_validator(schema_bytes)
+
+
+def _record_schema_validation_engine_event(
+    event: str,
+    *,
+    schema_path: Path,
+    engine: str,
+    reason: str | None = None,
+) -> None:
+    distribution = "jsonschema-rs" if engine == "jsonschema-rs" else "jsonschema"
+    payload: dict[str, object] = {
+        "event": event,
+        "component_type": "schema-validation-engine",
+        "component_id": schema_path.name,
+        "engine": engine,
+        "engine_version": _distribution_version(distribution),
+        "accelerator_version": _distribution_version("jsonschema-rs"),
+    }
+    if reason is not None:
+        payload["reason"] = reason
+    record_validation_event(payload)
+
+
+def _fast_repo_local_schema_validator(
+    schema_path: Path,
+    *,
+    schema_bytes: bytes,
+) -> object | None:
+    if os.environ.get(FORCE_PYTHON_SCHEMA_VALIDATION_ENV) == "1":
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason="forced-python",
+        )
+        return None
+    if jsonschema_rs is None:
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason="accelerator-unavailable",
+        )
+        return None
+    accelerator_version = _distribution_version("jsonschema-rs")
+    if accelerator_version != ADMITTED_JSONSCHEMA_RS_VERSION:
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason="accelerator-version-not-admitted",
+        )
+        return None
+    try:
+        if os.environ.get(FORCE_COLD_SCHEMA_COMPILATION_ENV) == "1":
+            return _build_fast_repo_local_schema_validator(schema_bytes)
+        return _cached_fast_repo_local_schema_validator(schema_bytes)
+    except _FastSchemaNotAdmitted as exc:
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason=f"schema-vocabulary-not-admitted:{exc}",
+        )
+        return None
+    except Exception:  # Optional acceleration failure always returns to Python.
+        _record_schema_validation_engine_event(
+            "schema-validation-python-fallback",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason="accelerator-compile-error",
+        )
+        return None
+
+
+def _python_schema_errors(
+    validator: Draft202012Validator,
+    payload: object,
+) -> list[Any]:
+    return sorted(
+        validator.iter_errors(payload),
+        key=lambda error: list(error.path),
+    )
+
+
+def repo_local_kag_validate_payload(payload: object, *, schema_path: Path, label: str) -> None:
+    validator = _repo_local_schema_validator(schema_path, label=label)
+    try:
+        schema_bytes = schema_path.read_bytes()
+    except OSError:
+        schema_bytes = b""
+    fast_validator = _fast_repo_local_schema_validator(
+        schema_path,
+        schema_bytes=schema_bytes,
+    )
+    fast_rejected = False
+    errors: list[Any] | None = None
+    if fast_validator is not None:
+        try:
+            fast_valid = bool(fast_validator.is_valid(payload))  # type: ignore[attr-defined]
+        except Exception:  # The optional accelerator may never suppress the Python path.
+            _record_schema_validation_engine_event(
+                "schema-validation-python-fallback",
+                schema_path=schema_path,
+                engine="python-jsonschema",
+                reason="accelerator-runtime-error",
+            )
+        else:
+            if fast_valid:
+                shadow_identity = (ADMITTED_JSONSCHEMA_RS_VERSION, schema_bytes)
+                if shadow_identity not in _FAST_SCHEMA_SHADOWED_IDENTITIES:
+                    shadow_errors = _python_schema_errors(validator, payload)
+                    if shadow_errors:
+                        _record_schema_validation_engine_event(
+                            "schema-validation-engine-disagreement",
+                            schema_path=schema_path,
+                            engine="python-jsonschema",
+                            reason="accelerator-false-positive",
+                        )
+                        errors = shadow_errors
+                    else:
+                        _FAST_SCHEMA_SHADOWED_IDENTITIES.add(shadow_identity)
+                        _record_schema_validation_engine_event(
+                            "schema-validation-fast-shadow-confirmed",
+                            schema_path=schema_path,
+                            engine="jsonschema-rs",
+                        )
+                        return
+                else:
+                    _record_schema_validation_engine_event(
+                        "schema-validation-fast-accept",
+                        schema_path=schema_path,
+                        engine="jsonschema-rs",
+                    )
+                    return
+            else:
+                fast_rejected = True
+                _record_schema_validation_engine_event(
+                    "schema-validation-fast-reject",
+                    schema_path=schema_path,
+                    engine="jsonschema-rs",
+                )
+    if errors is None:
+        errors = _python_schema_errors(validator, payload)
+    if fast_rejected and not errors:
+        _record_schema_validation_engine_event(
+            "schema-validation-engine-disagreement",
+            schema_path=schema_path,
+            engine="python-jsonschema",
+            reason="accelerator-false-negative",
+        )
     if errors:
         first = errors[0]
         path = format_schema_path(first.path)
@@ -140,7 +463,7 @@ def repo_local_kag_index_digest_without_self(payload: dict[str, object]) -> str:
     except ImportError:  # pragma: no cover
         from generate_repo_local_kag_index import payload_digest  # type: ignore
 
-    return payload_digest(copy.deepcopy(payload))
+    return payload_digest(payload)
 
 
 def validate_repo_local_kag_index_schema_surface() -> None:
@@ -153,26 +476,6 @@ def validate_repo_local_kag_index_schema_surface() -> None:
         REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
         "repo-local KAG portable family manifest",
     )
-    for path, label in (
-        (REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH, "repo-local KAG corpus manifest"),
-        (REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH, "repo-local KAG distribution manifest"),
-        (REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH, "repo-local KAG hot profile"),
-        (KAG_ARTIFACT_LOCATOR_SCHEMA_PATH, "KAG artifact locator"),
-        (KAG_PACK_SCHEMA_PATH, "KAG transport pack"),
-        (KAG_PACK_INDEX_SCHEMA_PATH, "KAG pack index"),
-        (KAG_OWNER_FAMILY_RELEASE_SCHEMA_PATH, "KAG owner-family release"),
-        (KAG_OS_COMPOSITION_SCHEMA_PATH, "KAG OS composition"),
-        (KAG_OWNER_CHANGE_RECEIPT_SCHEMA_PATH, "KAG owner change receipt"),
-        (KAG_RECEIPT_GOVERNANCE_SCHEMA_PATH, "KAG receipt governance"),
-        (KAG_RECEIPT_GOVERNANCE_REPORT_SCHEMA_PATH, "KAG receipt governance report"),
-        (KAG_TIERED_METRICS_SCHEMA_PATH, "KAG tiered metrics"),
-        (
-            KAG_TIERED_ROLLOUT_EVIDENCE_SCHEMA_PATH,
-            "KAG tiered rollout evidence",
-        ),
-        (KAG_PORTABLE_FAMILY_BUNDLE_SCHEMA_PATH, "KAG portable family bundle"),
-    ):
-        validate_top_level_schema(path, label)
     validate_top_level_schema(REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH, "repo-local KAG query result")
     validate_top_level_schema(KAG_MCP_CAPABILITIES_SCHEMA_PATH, "KAG MCP capabilities")
     validate_top_level_schema(KAG_MCP_RESULT_SCHEMA_PATH, "KAG MCP result")
@@ -391,7 +694,7 @@ def validate_repo_local_kag_repository_index_against_source(
     return payload
 
 
-def validate_repo_local_kag_repository_index_family(
+def _validate_repo_local_kag_repository_index_family_impl(
     family: object,
     *,
     source_payload: object,
@@ -581,23 +884,45 @@ def validate_repo_local_kag_repository_index_family(
     return validated
 
 
-def load_repo_local_kag_repository_index_family(
+def validate_repo_local_kag_repository_index_family(
+    family: object,
+    *,
+    source_payload: object,
+    label: str,
+) -> dict[str, dict[str, object]]:
+    with validation_timing(
+        component_type="portable-family-semantic-validation",
+        component_id=label,
+    ):
+        return _validate_repo_local_kag_repository_index_family_impl(
+            family,
+            source_payload=source_payload,
+            label=label,
+        )
+
+
+def load_repo_local_kag_repository_index_family_with_manifest(
     repo_root: Path,
     *,
     source_index: Path = Path("kag/indexes/source_surface_index.json"),
     label: str | None = None,
     artifact_root: Path | None = None,
     allow_shadow_git: bool = True,
-) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
+) -> tuple[
+    dict[str, object],
+    dict[str, dict[str, object]],
+    dict[str, object] | None,
+]:
     source_path = source_index if source_index.is_absolute() else repo_root / source_index
     portable_manifest_path = source_path.parent / "index_family.manifest.json"
+    portable_manifest: object | None = None
     if not source_path.is_file() and portable_manifest_path.is_file():
         try:
             from scripts.repo_local.portable_family import load_portable_family
         except ImportError:  # pragma: no cover - direct script import fallback
             from repo_local.portable_family import load_portable_family  # type: ignore
         try:
-            source_payload, family, _ = load_portable_family(
+            source_payload, family, portable_manifest = load_portable_family(
                 repo_root,
                 manifest_path=portable_manifest_path.relative_to(repo_root),
                 artifact_root=artifact_root,
@@ -618,6 +943,32 @@ def load_repo_local_kag_repository_index_family(
     )
     if not isinstance(source_payload, dict):
         fail(f"{label or repo_root.name} source index must be an object")
+    if portable_manifest is not None:
+        record_run_validated_portable_family(repo_root, portable_manifest)
+    return (
+        source_payload,
+        validated,
+        portable_manifest if isinstance(portable_manifest, dict) else None,
+    )
+
+
+def load_repo_local_kag_repository_index_family(
+    repo_root: Path,
+    *,
+    source_index: Path = Path("kag/indexes/source_surface_index.json"),
+    label: str | None = None,
+    artifact_root: Path | None = None,
+    allow_shadow_git: bool = True,
+) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
+    source_payload, validated, _portable_manifest = (
+        load_repo_local_kag_repository_index_family_with_manifest(
+            repo_root,
+            source_index=source_index,
+            label=label,
+            artifact_root=artifact_root,
+            allow_shadow_git=allow_shadow_git,
+        )
+    )
     return source_payload, validated
 
 
@@ -959,15 +1310,10 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
             )
             content_digest = portable_family.get("content_digest")
             digest_state = portable_family.get("digest_state")
-            measurement_state = portable_family.get("measurement_state")
-            measurement_ref = portable_family.get("measurement_ref")
             self_manifest = (
                 repo == "aoa-kag"
                 and digest_state == "self-manifest"
                 and content_digest == ""
-                and measurement_state == "self-excluded"
-                and measurement_ref
-                == "owner-family-release.json#/measurements"
             )
             expected_receipt = (
                 "kag/receipts/index_family_budget/"
@@ -982,66 +1328,38 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
                     and (
                         not content_digest
                         or digest_state != "published"
-                        or measurement_state != "measured"
-                        or measurement_ref != ""
                     )
                 )
+                or tracked_bytes <= 0
+                or portable_family.get("shards", 0) <= 0
                 or tracked_bytes_max <= 0
-            )
-            if self_manifest:
-                budget_invalid = (
-                    tracked_bytes != 0
-                    or portable_family.get("shards") != 0
-                    or portable_family.get("budget_state") != "self-excluded"
-                    or portable_family.get("receipt_ref") != ""
-                )
-            else:
-                budget_invalid = (
-                    tracked_bytes <= 0
-                    or portable_family.get("shards", 0) <= 0
-                    or (
-                        tracked_bytes <= tracked_bytes_max
-                        and (
-                            portable_family.get("budget_state") != "passed"
-                            or portable_family.get("receipt_ref") != ""
-                        )
+                or (
+                    tracked_bytes <= tracked_bytes_max
+                    and (
+                        portable_family.get("budget_state") != "passed"
+                        or portable_family.get("receipt_ref") != ""
                     )
-                    or (
-                        tracked_bytes > tracked_bytes_max
-                        and (
-                            portable_family.get("budget_state") != "receipted"
-                            or portable_family.get("receipt_ref")
+                )
+                or (
+                    tracked_bytes > tracked_bytes_max
+                    and (
+                        portable_family.get("budget_state") != "receipted"
+                        or (
+                            self_manifest
+                            and portable_family.get("receipt_ref") != ""
+                        )
+                        or (
+                            not self_manifest
+                            and portable_family.get("receipt_ref")
                             != expected_receipt
                         )
                     )
                 )
-            if coordinates_invalid or budget_invalid:
+            )
+            if coordinates_invalid:
                 fail(
                     f"{label} owner {repo} portable family coordinates are invalid"
                 )
-            if portable_family.get("corpus_digest") != "" or portable_family.get(
-                "distribution_digest"
-            ) != "":
-                fail(f"{label} owner {repo} v3 family cannot claim split identities")
-            physical_invalid = (
-                portable_family.get("git_hot_bytes") != tracked_bytes
-                or portable_family.get("corpus_total_bytes") != tracked_bytes
-                or portable_family.get("artifact_cold_bytes") != 0
-                or portable_family.get("git_hot_objects")
-                != portable_family.get("shards")
-                or portable_family.get("artifact_cold_objects") != 0
-                or portable_family.get("placement_state") != "git-full"
-                or portable_family.get("hot_profile_ref") != ""
-                or portable_family.get("artifact_locator_ref") != ""
-                or portable_family.get("os_git_hot_target_bytes")
-                != OS_GIT_HOT_TARGET_BYTES
-                or portable_family.get(
-                    "aggregate_ceiling_receiptable_by_owner"
-                )
-                is not False
-            )
-            if physical_invalid:
-                fail(f"{label} owner {repo} v3 physical measurements are invalid")
         elif family_storage == "v4-tiered-content-addressed":
             tracked_bytes = portable_family.get("tracked_bytes", 0)
             tracked_bytes_max = portable_family.get("tracked_bytes_max", -1)
@@ -1191,6 +1509,25 @@ def validate_repo_local_kag_coverage_payload(payload: object, *, label: str) -> 
     summary = payload.get("coverage_summary")
     if not isinstance(summary, dict):
         fail(f"{label} coverage_summary must be an object")
+    if "tiered_v4" not in summary:
+        portable_owners = [
+            owner
+            for owner in owners
+            if isinstance(owner, dict)
+            and owner.get("family_storage") == "v3-portable-shards"
+        ]
+        portable_bytes = sum(
+            int(owner["portable_family"]["tracked_bytes"])
+            for owner in portable_owners
+        )
+        if (
+            summary.get("portable_v3") != len(portable_owners)
+            or len(portable_owners) != len(owners)
+            or summary.get("portable_tracked_bytes") != portable_bytes
+            or summary.get("aggregate_budget_state") != "passed"
+        ):
+            fail(f"{label} portable aggregate budget summary is invalid")
+        return payload
     portable_owners = [
         owner
         for owner in owners
@@ -1297,12 +1634,30 @@ def validate_repo_local_kag_index_contract_with_progress() -> None:
     validate_repo_local_kag_index_contract(progress=True)
 
 
-def validate_repo_local_kag_index_contract(*, progress: bool = False) -> None:
+def validate_repo_local_kag_local_contract_with_progress() -> None:
+    validate_repo_local_kag_local_contract(progress=True)
+
+
+def validate_repo_local_kag_os_wide_contract_with_progress() -> None:
+    validate_repo_local_kag_os_wide_contract(progress=True)
+
+
+def validate_repo_local_kag_local_contract(*, progress: bool = False) -> None:
     _repo_local_index_phase("schema-surfaces", progress=progress)
     validate_repo_local_kag_index_schema_surface()
     _repo_local_index_phase("example", progress=progress)
     validate_repo_local_kag_index_example()
     _repo_local_index_phase("generated-index", progress=progress)
     validate_repo_local_kag_index_generated_payload(progress=progress)
+
+
+def validate_repo_local_kag_os_wide_contract(*, progress: bool = False) -> None:
     _repo_local_index_phase("generated-coverage", progress=progress)
     validate_repo_local_kag_coverage_generated_payload(progress=progress)
+
+
+def validate_repo_local_kag_index_contract(*, progress: bool = False) -> None:
+    """Compatibility entrypoint for the complete local plus OS-wide contract."""
+
+    validate_repo_local_kag_local_contract(progress=progress)
+    validate_repo_local_kag_os_wide_contract(progress=progress)

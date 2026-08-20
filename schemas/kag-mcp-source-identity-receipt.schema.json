@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-of-abyss.dev/schemas/aoa-kag/kag-mcp-source-identity-receipt.schema.json",
+  "title": "AoA KAG MCP source identity receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "owner",
+    "revision",
+    "tree_digest",
+    "expected_sync_tree_digest",
+    "canonical_source_ref",
+    "issued_at",
+    "expires_at",
+    "source_ref",
+    "contains_secrets",
+    "claim_limits",
+    "receipt_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa_kag_mcp_source_identity_receipt_v1"},
+    "owner": {"const": "aoa-kag"},
+    "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "tree_digest": {"$ref": "#/$defs/digest"},
+    "expected_sync_tree_digest": {"$ref": "#/$defs/digest"},
+    "canonical_source_ref": {"type": "string", "minLength": 3},
+    "issued_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "source_ref": {
+      "type": "string",
+      "pattern": "^owner-source://aoa-kag/[0-9a-f]{40}/[0-9a-f]{64}$"
+    },
+    "contains_secrets": {"const": false},
+    "claim_limits": {
+      "type": "array",
+      "minItems": 3,
+      "items": {"type": "string", "minLength": 3}
+    },
+    "receipt_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

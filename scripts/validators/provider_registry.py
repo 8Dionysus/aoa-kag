@@ -24,6 +24,16 @@ except ImportError:  # pragma: no cover - direct script execution
 
 
 PIN_RE = re.compile(r"^[a-f0-9]{40}$")
+BOUNDED_PUBLIC_CHECKOUT = (
+    "python scripts/sync_provider_checkouts.py\n"
+    "          --jobs \"$AOA_KAG_CHECKOUT_WORKERS\"\n"
+    "          --exclude-secret-checkouts"
+)
+PREFLIGHT_DAG_COMMAND = "python scripts/ci_preflight_dag.py"
+PREFLIGHT_DAG_CHECKOUT_MARKERS = (
+    '"scripts/sync_provider_checkouts.py"',
+    '"--exclude-secret-checkouts"',
+)
 
 
 def _validate_provider_registry_schema() -> None:
@@ -71,12 +81,18 @@ def _validate_provider_rows() -> None:
         root = roots[repo]
         if entry["checkout_mode"] == "self" and repo != KAG_REPO:
             fail("provider registry self checkout mode is reserved for aoa-kag")
-        if (entry["owner_type"] == "runtime_source") != (
-            entry["root_kind"] == "runtime_source"
-        ):
+        if entry["root_kind"] == "runtime_source" and entry["owner_type"] != "runtime_source":
             fail(
                 f"provider registry runtime source {repo} must pair "
                 "owner_type and root_kind"
+            )
+        if entry["owner_type"] == "runtime_source" and entry["root_kind"] not in {
+            "direct",
+            "runtime_source",
+        }:
+            fail(
+                f"provider registry runtime source {repo} must use a direct "
+                "or runtime_source root"
             )
         if entry["checkout_mode"] == "pinned":
             pin = str(entry.get("pinned_ref", ""))
@@ -102,9 +118,21 @@ def _validate_workflow_provider_routes() -> None:
     canary = (REPO_ROOT / ".github" / "workflows" / "compatibility-canary.yml").read_text(
         encoding="utf-8"
     )
+    preflight_dag = (REPO_ROOT / "scripts" / "ci_preflight_dag.py").read_text(
+        encoding="utf-8"
+    )
     entries = provider_entries()
     envs = provider_ci_envs()
     pins = provider_dependency_pins()
+    direct_checkout = BOUNDED_PUBLIC_CHECKOUT in repo_validation
+    scheduled_checkout = (
+        PREFLIGHT_DAG_COMMAND in repo_validation
+        and all(marker in preflight_dag for marker in PREFLIGHT_DAG_CHECKOUT_MARKERS)
+    )
+    if not direct_checkout and not scheduled_checkout:
+        fail("repo validation workflow must use the bounded public provider checkout")
+    if 'AOA_KAG_CHECKOUT_WORKERS: "3"' not in repo_validation:
+        fail("repo validation workflow must cap the public provider checkout at three workers")
     for repo, env_name in envs.items():
         checkout_path = next(
             str(entry["checkout_path"])
@@ -117,8 +145,9 @@ def _validate_workflow_provider_routes() -> None:
         if expected_env not in canary:
             fail(f"compatibility canary workflow must route {repo} through {env_name}")
     for repo, pin in pins.items():
-        if pin not in repo_validation:
-            fail(f"repo validation workflow must pin {repo} at registry ref")
+        entry = next(entry for entry in entries if entry["repo"] == repo)
+        if entry.get("checkout_ssh_key_secret") and pin not in repo_validation:
+            fail(f"repo validation workflow must pin secret-owned {repo} at registry ref")
     for entry in entries:
         secret = str(entry.get("checkout_ssh_key_secret") or "")
         if not secret:

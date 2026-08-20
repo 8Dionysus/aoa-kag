@@ -46,7 +46,8 @@ Do not treat this repository as the source of truth for:
 
 - authored technique, skill, or eval meaning
 - explicit memory-object meaning in `aoa-memo`
-- routing and dispatch logic in `aoa-routing`
+- routing and dispatch control-plane logic in `aoa-sdk`; the predecessor
+  `aoa-routing` repository is a historical reference, not the current owner
 - role contracts, progression policy, or self-agent checkpoint doctrine in `aoa-agents`
 - scenario composition in `aoa-playbooks`
 - source-authored Tree of Sophia meaning

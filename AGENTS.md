@@ -59,8 +59,8 @@ Do not treat generated outputs, compact packs, exported capsules, runtime
 receipts, graph-ready wording, retrieval-ready wording, or future local `/kag`
 pressure as source truth.
 
-Keep proof doctrine in `aoa-evals`, memory truth in `aoa-memo`, routing in
-`aoa-routing`, role meaning in `aoa-agents`, scenario composition in
+Keep proof doctrine in `aoa-evals`, memory truth in `aoa-memo`, the routing
+control plane in `aoa-sdk`, role meaning in `aoa-agents`, scenario composition in
 `aoa-playbooks`, shared portable skill procedures and home-port grammar in
 `aoa-skills`, admitted repository-local skill procedures in their owner
 repositories, reusable practice in `aoa-techniques`, and authored
@@ -232,8 +232,13 @@ route:
 2. Commit the intended change with a message that names the changed surface.
 3. Push the branch and open a pull request that states changed surfaces,
    validation run, skipped checks, and remaining risk.
-4. Wait for GitHub `Repo Validation` and any required GitHub checks. If a check
-   fails, fix the branch and wait for the new result.
+4. Wait for GitHub `Repo Validation` and any required GitHub checks.
+   `Repo Validation` always requires source-fast and self owner-family proof;
+   its fail-closed impact route additionally requires the full OS-wide audit
+   for high-impact, mixed, unknown, or unprovable changes. A summary may report
+   that the additional audit was correctly not required, but must never report
+   a skipped required proof as success. If a check fails, fix the branch and
+   wait for the new result.
 5. Merge through GitHub after green validation. Use squash unless repository
    settings report a different required method; report the method that landed.
 6. Return to `main`, fast-forward from `origin/main`, and confirm the worktree

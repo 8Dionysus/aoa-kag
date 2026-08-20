@@ -330,13 +330,13 @@
       "forbidden_inference": "Do not infer skill invocation posture as KAG ownership of execution workflows."
     },
     {
-      "owner_repo": "aoa-routing",
-      "current_kag_posture": "Routing may consume bounded KAG outputs, but routing truth stays outside the substrate.",
+      "owner_repo": "aoa-sdk",
+      "current_kag_posture": "The SDK routing control plane may consume bounded KAG outputs while preserving the stable aoa-routing compatibility namespace.",
       "waits_for": [
-        "routing-owned entry ABI growth that explicitly names a new KAG consumer contract",
-        "owner-declared downstream route packs that cannot reuse the current spine or adjuncts"
+        "SDK-owned routing entry ABI growth that explicitly names a new KAG consumer contract",
+        "SDK owner-declared downstream route packs that cannot reuse the current spine or adjuncts"
       ],
-      "forbidden_inference": "Do not infer routability from registry visibility alone."
+      "forbidden_inference": "Do not infer routability from registry visibility or restore the predecessor repository as routing owner."
     },
     {
       "owner_repo": "aoa-stats",

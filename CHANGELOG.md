@@ -9,6 +9,19 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Added
 
+- Add an AbyssOS-wide owner-family gate that fails fast on incremental drift,
+  then runs the unchanged full parity, family contract, and compatibility
+  commands through a two-worker bounded DAG; add isolated owner-neutral
+  pre-landing preparation while preserving sequential rollback, exact history
+  and budget boundaries, every blocking proof, and the caller Git index.
+- Add isolated fixed-point landing preparation and a fail-closed CI preflight
+  scheduler that detects self-SCC drift beside the bounded provider checkout
+  wave while retaining the unchanged full owner and release proofs; exact-head
+  hosted comparisons admit it for failure latency, not as a green-path proof
+  shortcut.
+- Add an exact same-run source-fast handoff receipt and CI-only release
+  continuation with strict SHA/tree/authority/input/donor/family/workflow
+  binding and complete-release fallback.
 - Add the five-operation KAG MCP contract, nine qualified resource shapes,
   capability and result schemas, provenance-rich examples, bounded pagination,
   and explicit canonical degradation fields.
@@ -19,6 +32,26 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Changed
 
+- Accept deployment-bound `abyss_stack_mcp_canary_receipt_v3` captures in the
+  KAG owner review path and validate the exact deployment service, source,
+  manifest, package, tree, and deployed-at bindings before grounding.
+- Review and accept a deployed KAG source revision when it is a committed
+  ancestor of the reviewer checkout, while keeping the source identity,
+  pinned SDK schema, runtime observation, proof packet, and final acceptance
+  bound to that exact deployed revision.
+- Align all eight source-fast dependency checkouts with provider-registry pins
+  and avoid repeating source-fast inside a high-impact full-audit job only
+  after exact receipt acceptance; standalone release validation remains full.
+- Cancel superseded runs only within one pull request while keeping main,
+  manual, stale re-run, other pull-request, and compatibility workflows
+  independent; use a stable file-owned group prefix and make the full audit and
+  required summary cancellation-responsive without changing their fail-closed
+  result contract for current heads.
+- Compact the owner skill's global description while retaining unknown-owner,
+  full-capability-contract and live-binding checks, supplied-source navigation,
+  same-owner or cross-repository relationship and compatibility traversal,
+  bounded multi-owner investigation or comparison, cross-repository impact,
+  canonical-return, and nearest-route boundaries.
 - Replace provisional per-provider MCP hints with one generated executable
   handoff for `discover`, `search`, `read`, `traverse`, and `explain`.
 - Rebuild manifest-declared owner skill projections during incremental indexing

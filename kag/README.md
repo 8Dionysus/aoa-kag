@@ -88,7 +88,7 @@ surfaces that matter for indexing and MCP access:
 
 | Layer | Surfaces |
 | --- | --- |
-| runtime source | `/home/dionysus/src/abyss-stack`, `/home/dionysus/src/abyss-machine` |
+| runtime source | `/home/dionysus/src/abyss-stack`, `/srv/AbyssOS/abyss-machine` |
 | runtime mirror | `/srv/AbyssOS/abyss-stack` |
 | organs | `/srv/AbyssOS/.aoa`, `/srv/AbyssOS/.agents` |
 | bundles | `/srv/AbyssOS/bundles`, `bundles/aoa-session-memory` |
@@ -109,12 +109,9 @@ The provider-ready homes are:
 | `aoa-playbooks` | `kag/` | `playbooks/source_home.manifest.json` |
 | `aoa-memo` | `kag/` | `generated/memory/memo_registry.min.json` |
 | `aoa-evals` | `kag/` | `generated/eval_report_index.min.json` |
-| `aoa-routing` | `kag/` | `routing/source_home.manifest.json` |
 | `aoa-sdk` | `kag/` | `sdk/source_home.manifest.json` |
 | `aoa-session-memory` | `kag/` | `schemas/session.manifest.schema.json` |
 | `8Dionysus` | `kag/` | `generated/workspace_memory_map.min.json` |
-| `Dionysus` | `kag/` | `generated/seed_route_map.min.json` |
-| `ATM10-Agent` | `kag/` | `src/kag/baseline.py` |
 | `aoa-stats` | `kag/` | `generated/agon_kag_stats_observability_registry.min.json` |
 | `abyss-stack` | `kag/` | `mcp/README.md` |
 | `abyss-machine` | `kag/` | `manifests/repo_scaffold.manifest.json` |
@@ -128,6 +125,21 @@ The provider-ready homes are:
 All homes expose the same record classes while returning to their own source
 owners.
 
+`ATM10-Agent` is intentionally `source_preparation`: its accepted standalone
+autonomy boundary removed the former top-level provider packet. KAG may retain
+explicit source-return candidates, but it must not require a sibling checkout
+or advertise an owner provider until ATM10 explicitly publishes a new optional
+handoff.
+
+`Dionysus` is a `retired_reference`: the former seed-garden provider packet was
+removed when that repository was isolated from active OS surfaces. Historical
+source returns remain explicit, but it is not a provider checkout.
+
+The predecessor `aoa-routing` repository is tracked separately as a
+`retired_reference`: its source paths remain historical return handles, but it
+is not a provider checkout. Current routing control-plane refs return to
+`aoa-sdk`.
+
 ## Consumer Route
 
 `aoa-kag` composes provider packets into a verified federation bundle.
@@ -140,3 +152,11 @@ for the five tools, nine `aoa-kag://` resource shapes, owner boundaries, and
 runtime owner. The result and capability envelopes live in
 `schemas/kag-mcp-result.schema.json` and
 `schemas/kag-mcp-capabilities.schema.json`.
+
+After `abyss-stack` captures one authenticated `kag_discover` result as a
+private, content-addressed artifact, `scripts/review_kag_mcp_result.py`
+validates the exact artifact against the capability schema and current
+owner-source digest relationship. It emits the shared
+`aoa_organ_owner_result_review_v1` receipt only within the capture expiry.
+That receipt can evidence KAG grounding and freshness; it cannot assert KAG
+acceptance, central proof, admission, cross-organ benefit, or rollback.

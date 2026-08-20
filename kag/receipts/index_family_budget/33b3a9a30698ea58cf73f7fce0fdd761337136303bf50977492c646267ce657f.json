@@ -1,0 +1,17 @@
+{
+  "allowed_bytes": 9129878,
+  "allowed_tracked_bytes": 11478067,
+  "approved_by": "repository-owner",
+  "base_ref": "62888d68c95082a0d37491c53e00cb070f54ae97",
+  "changed_generated_bytes": 9129878,
+  "changed_generated_files": 279,
+  "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md",
+  "default_limit_bytes": 1048576,
+  "head_family_digest": "33b3a9a30698ea58cf73f7fce0fdd761337136303bf50977492c646267ce657f",
+  "reason": "Provider-membership correction removes ATM10-Agent and retired Dionysus from the active federation and CI checkouts; combined decision, coverage, and provider-map changes require a deterministic portable self-index rebuild while remaining below the standing tracked-size ceiling.",
+  "repo": "aoa-kag",
+  "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
+  "scope": "generated_delta",
+  "tracked_bytes": 11478067,
+  "tracked_bytes_max": 12582912
+}

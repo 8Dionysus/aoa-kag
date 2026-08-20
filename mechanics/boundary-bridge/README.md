@@ -21,8 +21,8 @@ boundaries, generated projection contracts, and consumer return routes.
 ### Stronger owner split
 
 Source repositories own authored meaning. `Tree-of-Sophia` owns canon.
-`aoa-memo` owns memory objects. `aoa-evals` owns proof. `aoa-routing` owns live
-dispatch. Runtime owners own runtime state.
+`aoa-memo` owns memory objects. `aoa-evals` owns proof. The `aoa-sdk` routing
+control plane owns live dispatch. Runtime owners own runtime state.
 
 ### Inputs
 

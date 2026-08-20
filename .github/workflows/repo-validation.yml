@@ -5,77 +5,182 @@ on:
     branches:
       - main
   pull_request:
-  schedule:
-    - cron: "31 7 * * 1"
   workflow_dispatch:
+    inputs:
+      preflight_mode:
+        description: Exact-head checkout preflight experiment mode
+        required: true
+        default: candidate
+        type: choice
+        options:
+          - candidate
+          - direct-control
+      history_ref:
+        description: Exact commit used as the manual comparison history boundary
+        required: false
+        type: string
+      owner_family_workers:
+        description: Bounded owner-family gate workers; use 1 as the exact sequential control
+        required: true
+        default: "2"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+      provider_audit_workers:
+        description: Bounded OS-wide provider process workers; use 1 as the exact rollback
+        required: true
+        default: "3"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && github.run_attempt == '1' && format('aoa-kag-repo-validation-pr-{0}', github.event.pull_request.number) || format('aoa-kag-repo-validation-{0}-{1}-attempt-{2}', github.event_name, github.run_id, github.run_attempt) }}
+  cancel-in-progress: true
+
 jobs:
-  owner_fast:
-    name: Owner Fast Gate
+  source_fast:
+    name: Source Fast and Owner Family
     runs-on: ubuntu-latest
     outputs:
-      impact-class: ${{ steps.kag.outputs.impact-class }}
-      validation-lane: ${{ steps.kag.outputs.validation-lane }}
-      full-fanout-reason: ${{ steps.kag.outputs.full-fanout-reason }}
+      impact-route: ${{ steps.impact.outputs.route }}
+      impact-reason-ids: ${{ steps.impact.outputs.reason-ids }}
+      full-audit-required: ${{ steps.impact.outputs.full-audit-required }}
+      source_fast_handoff: ${{ steps.source_fast_handoff.outputs.receipt }}
+    env:
+      OS_ABYSS_ROOT: /srv/AbyssOS
+      AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
+      AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
+      AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
+      TREE_OF_SOPHIA_ROOT: ${{ github.workspace }}/.deps/Tree-of-Sophia
+      AOA_MEMO_ROOT: ${{ github.workspace }}/.deps/aoa-memo
+      AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
+      AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
+      AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.event.before || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.event.before || github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
 
+      - name: Checkout Tree-of-Sophia
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/Tree-of-Sophia
+          ref: 77f0cef4dfc64183ab6bdc76121c5242ca1472f0
+          path: .deps/Tree-of-Sophia
+          fetch-depth: 1
+
+      - name: Checkout aoa-memo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-memo
+          ref: 41fd7a647982d907464179e8d20a12d6398bfb4c
+          path: .deps/aoa-memo
+          fetch-depth: 1
+
+      - name: Checkout aoa-playbooks
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-playbooks
+          ref: 41f10f29b61d9f697d3e2537e3dd89b0e2d19f4d
+          path: .deps/aoa-playbooks
+          fetch-depth: 1
+
+      - name: Checkout aoa-evals
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-evals
+          ref: 1b531f51691fd0d655e50850a4ee1dca42f9aff5
+          path: .deps/aoa-evals
+          fetch-depth: 1
+
+      - name: Checkout aoa-agents
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-agents
+          ref: 4b4dcbf22c166e18db6e3e2eb05c2eb4661941b0
+          path: .deps/aoa-agents
+          fetch-depth: 1
+
+      - name: Checkout aoa-techniques
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-techniques
+          ref: 9a5222cc6a6b1fdc52b4df906f49dadfd0383c71
+          path: .deps/aoa-techniques
+          fetch-depth: 1
+
+      - name: Checkout aoa-sdk
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-sdk
+          ref: 459231bc69f39ca0e16e30849bc8e5237068e950
+          path: .deps/aoa-sdk
+          fetch-depth: 1
+
+      - name: Checkout aoa-stats
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: 8Dionysus/aoa-stats
+          ref: 326d56e9108b51728ce334da2ed49d53252bd81d
+          path: .deps/aoa-stats
+          fetch-depth: 1
+
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.12"
 
-      - name: Install owner-gate dependencies
-        run: python -m pip install PyYAML jsonschema
+      - name: Install validation dependencies
+        run: python -m pip install PyYAML jsonschema jsonschema-rs==0.49.2
 
-      - name: Check affected owner KAG family
-        id: kag
+      - name: Classify KAG validation impact
+        id: impact
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: >-
+          python scripts/impact_routing.py classify
+          --event-name "$EVENT_NAME"
+          --base-ref "$BASE_SHA"
+          --head-ref "$HEAD_SHA"
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Check repo-local KAG index family
         uses: ./.github/actions/repo-local-kag-index
-
-  incremental_federation:
-    name: Incremental Federation Gate
-    needs: owner_fast
-    if: >-
-      always() &&
-      github.event_name == 'pull_request' &&
-      needs.owner_fast.result == 'success' &&
-      needs.owner_fast.outputs.validation-lane == 'incremental-federation'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          fetch-depth: 0
+          history-ref: ${{ env.AOA_KAG_EXPECTED_HISTORY_REF }}
+          event-history-ref: ${{ env.AOA_KAG_EXPECTED_EVENT_HISTORY_REF }}
+          jobs: ${{ inputs.owner_family_workers || '2' }}
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
+      - name: Run source-fast validation
+        run: python scripts/ci_gate.py --mode source-fast
 
-      - name: Install federation-gate dependencies
-        run: python -m pip install PyYAML jsonschema
-
-      - name: Check incremental federation semantics
-        run: python scripts/ci_gate.py --mode incremental-federation
+      - name: Issue exact source-fast handoff
+        id: source_fast_handoff
+        run: python scripts/source_fast_handoff.py issue --github-output "$GITHUB_OUTPUT"
 
   release_audit:
-    name: Full 24-owner Release Audit
-    needs: owner_fast
+    name: Full OS-wide Release Audit
+    needs: source_fast
     if: >-
-      always() &&
-      needs.owner_fast.result == 'success' &&
-      (
-        github.event_name != 'pull_request' ||
-        needs.owner_fast.outputs.validation-lane == 'full-24-owner-audit'
-      )
+      !cancelled() &&
+      needs.source_fast.result == 'success' &&
+      needs.source_fast.outputs.full-audit-required == 'true'
     runs-on: ubuntu-latest
     env:
+      AOA_KAG_PROVIDER_AUDIT_WORKERS: ${{ inputs.provider_audit_workers || '3' }}
       AOA_TECHNIQUES_ROOT: ${{ github.workspace }}/.deps/aoa-techniques
       AOA_PLAYBOOKS_ROOT: ${{ github.workspace }}/.deps/aoa-playbooks
       AOA_EVALS_ROOT: ${{ github.workspace }}/.deps/aoa-evals
@@ -84,9 +189,6 @@ jobs:
       AOA_AGENTS_ROOT: ${{ github.workspace }}/.deps/aoa-agents
       AGENTS_OF_ABYSS_ROOT: ${{ github.workspace }}/.deps/Agents-of-Abyss
       EIGHT_DIONYSUS_ROOT: ${{ github.workspace }}/.deps/8Dionysus
-      DIONYSUS_ROOT: ${{ github.workspace }}/.deps/Dionysus
-      ATM10_AGENT_ROOT: ${{ github.workspace }}/.deps/ATM10-Agent
-      AOA_ROUTING_ROOT: ${{ github.workspace }}/.deps/aoa-routing
       AOA_SDK_ROOT: ${{ github.workspace }}/.deps/aoa-sdk
       AOA_SKILLS_ROOT: ${{ github.workspace }}/.deps/aoa-skills
       AOA_STATS_ROOT: ${{ github.workspace }}/.deps/aoa-stats
@@ -99,90 +201,13 @@ jobs:
       AOA_STACKOVERFLOW_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-stackoverflow-connector
       AOA_TELEGRAM_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-telegram-connector
       AOA_XDA_CONNECTOR_ROOT: ${{ github.workspace }}/.deps/aoa-xda-connector
+      AOA_KAG_EXPECTED_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.event.before || github.sha }}
+      AOA_KAG_EXPECTED_EVENT_HISTORY_REF: ${{ inputs.history_ref || github.event.pull_request.base.sha || github.event.before || github.sha }}
+      AOA_KAG_SOURCE_FAST_HANDOFF: ${{ needs.source_fast.outputs.source_fast_handoff }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          fetch-depth: 0
-
-      - name: Checkout Tree-of-Sophia
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/Tree-of-Sophia
-          ref: 8126cc379a759990358728bbcedadbd3b24a7b6d
-          path: .deps/Tree-of-Sophia
-          fetch-depth: 0
-
-      - name: Checkout Agents-of-Abyss
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/Agents-of-Abyss
-          ref: bfeb4bfb447b437f1360b814bbf4f1def5e62859
-          path: .deps/Agents-of-Abyss
-          fetch-depth: 0
-
-      - name: Checkout 8Dionysus
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/8Dionysus
-          ref: 8c547f73e55d62b5eaac0ee116cd4dbadff03fc7
-          path: .deps/8Dionysus
-          fetch-depth: 0
-
-      - name: Checkout Dionysus
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/Dionysus
-          ref: 8529c00c731ce560c0d8d2719fabbaf9dcbe222e
-          path: .deps/Dionysus
-          fetch-depth: 0
-
-      - name: Checkout ATM10-Agent
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/ATM10-Agent
-          ref: 482a8fc7cb23e33742f7440168c231779d74c5c3
-          path: .deps/ATM10-Agent
-          fetch-depth: 0
-
-      - name: Checkout aoa-memo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-memo
-          ref: d5f813c5eea2f430f59c0aad291315ca6c66b0f0
-          path: .deps/aoa-memo
-          fetch-depth: 0
-
-      - name: Checkout aoa-playbooks
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-playbooks
-          ref: a15866ec867209288533850cc34939ad81829947
-          path: .deps/aoa-playbooks
-          fetch-depth: 0
-
-      - name: Checkout aoa-evals
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-evals
-          ref: 347cf5b6c9b149f17371346e721bb047e15cb482
-          path: .deps/aoa-evals
-          fetch-depth: 0
-
-      - name: Checkout aoa-agents
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-agents
-          ref: ab5229bcb08f3ea0253ec6bb3aa7e8a854028f93
-          path: .deps/aoa-agents
-          fetch-depth: 0
-
-      - name: Checkout aoa-techniques
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-techniques
-          ref: e842c0d0156c58cfb9020b636e81134e96fc8cfb
-          path: .deps/aoa-techniques
           fetch-depth: 0
 
       - name: Checkout aoa-session-memory
@@ -195,165 +220,55 @@ jobs:
           ssh-key: ${{ secrets.AOA_SESSION_MEMORY_DEPLOY_KEY }}
           persist-credentials: false
 
-      - name: Checkout aoa-routing
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-routing
-          ref: cde31e568e49c5a50afbd89071cf72abd9733d99
-          path: .deps/aoa-routing
-          fetch-depth: 0
-
-      - name: Checkout aoa-sdk
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-sdk
-          ref: 6364ecddf8238b20b90eed08045f89a0288f8b1b
-          path: .deps/aoa-sdk
-          fetch-depth: 0
-
-      - name: Checkout aoa-skills
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-skills
-          ref: cc8e7a23cd9dd34d93af1e81d7f6fc7d061d53ad
-          path: .deps/aoa-skills
-          fetch-depth: 0
-
-      - name: Checkout aoa-stats
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-stats
-          ref: 24c3ae6e2844c2d24e0b15e5ce5b08c6999fd455
-          path: .deps/aoa-stats
-          fetch-depth: 0
-
-      - name: Checkout abyss-stack
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/abyss-stack
-          ref: 44ebcc90ef17a76887645251fc9bc082eccb8aa4
-          path: .deps/abyss-stack
-          fetch-depth: 0
-
-      - name: Checkout abyss-machine
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/abyss-machine
-          ref: 227b88157890d37663f75548485fedd08bd0abae
-          path: .deps/abyss-machine
-          fetch-depth: 0
-
-      - name: Checkout aoa-4pda-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-4pda-connector
-          ref: a273f71c6fcc30c34759b2ef1e2f08cd8fc6baa3
-          path: .deps/aoa-4pda-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-course-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-course-connector
-          ref: 346254a134f6f7dd14c6edc0a519a2681d8813a9
-          path: .deps/aoa-course-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-discord-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-discord-connector
-          ref: 2652b1d657cbe5a7888ac979cc07a8f9ec792887
-          path: .deps/aoa-discord-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-stackoverflow-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-stackoverflow-connector
-          ref: a239551bd629f59d32b59649eb308245be99c903
-          path: .deps/aoa-stackoverflow-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-telegram-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-telegram-connector
-          ref: 1d7e4157446839dc03f3ec80b687fdbb12dd8a22
-          path: .deps/aoa-telegram-connector
-          fetch-depth: 0
-
-      - name: Checkout aoa-xda-connector
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          repository: 8Dionysus/aoa-xda-connector
-          ref: 45dc97667c104f17b71fcd13978de5172e5c4c8d
-          path: .deps/aoa-xda-connector
-          fetch-depth: 0
-
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.12"
 
       - name: Install validation dependencies
-        run: python -m pip install PyYAML jsonschema
+        run: python -m pip install PyYAML jsonschema jsonschema-rs==0.49.2
+
+      - name: Checkout providers with early SCC preflight DAG
+        env:
+          AOA_KAG_CHECKOUT_WORKERS: "3"
+          AOA_KAG_PREFLIGHT_MODE: ${{ inputs.preflight_mode || 'candidate' }}
+        run: >-
+          python scripts/ci_preflight_dag.py
+          --base-ref "$AOA_KAG_EXPECTED_HISTORY_REF"
+          --jobs "$AOA_KAG_CHECKOUT_WORKERS"
+          --mode "$AOA_KAG_PREFLIGHT_MODE"
 
       - name: Run release audit
-        run: python scripts/release_check.py
+        run: python scripts/ci_release_check.py
+
+      - name: Check generated outputs are committed
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=all -- generated)" ]; then
+            git status --porcelain --untracked-files=all -- generated
+            exit 1
+          fi
 
   required_summary:
     name: Repo Validation
     needs:
-      - owner_fast
-      - incremental_federation
+      - source_fast
       - release_audit
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
       - name: Enforce required landing result
         env:
           EVENT_NAME: ${{ github.event_name }}
-          OWNER_FAST_RESULT: ${{ needs.owner_fast.result }}
-          INCREMENTAL_FEDERATION_RESULT: ${{ needs.incremental_federation.result }}
-          RELEASE_AUDIT_RESULT: ${{ needs.release_audit.result }}
-          VALIDATION_LANE: ${{ needs.owner_fast.outputs.validation-lane }}
+          SOURCE_FAST_RESULT: ${{ needs.source_fast.result }}
+          FULL_AUDIT_RESULT: ${{ needs.release_audit.result }}
+          FULL_AUDIT_REQUIRED: ${{ needs.source_fast.outputs.full-audit-required }}
         run: |
-          if [ "$OWNER_FAST_RESULT" != "success" ]; then
-            echo "owner-fast gate did not succeed: $OWNER_FAST_RESULT"
-            exit 1
-          fi
-          if [ "$EVENT_NAME" != "pull_request" ]; then
-            if [ "$RELEASE_AUDIT_RESULT" != "success" ]; then
-              echo "required full audit did not succeed: $RELEASE_AUDIT_RESULT"
-              exit 1
-            fi
-            if [ "$INCREMENTAL_FEDERATION_RESULT" != "skipped" ]; then
-              echo "non-PR run produced unexpected incremental result: $INCREMENTAL_FEDERATION_RESULT"
-              exit 1
-            fi
-          elif [ "$VALIDATION_LANE" = "full-24-owner-audit" ]; then
-            if [ "$RELEASE_AUDIT_RESULT" != "success" ]; then
-              echo "required full audit did not succeed: $RELEASE_AUDIT_RESULT"
-              exit 1
-            fi
-            if [ "$INCREMENTAL_FEDERATION_RESULT" != "skipped" ]; then
-              echo "full-audit PR produced unexpected incremental result: $INCREMENTAL_FEDERATION_RESULT"
-              exit 1
-            fi
-          elif [ "$VALIDATION_LANE" = "incremental-federation" ]; then
-            if [ "$INCREMENTAL_FEDERATION_RESULT" != "success" ]; then
-              echo "required incremental federation gate did not succeed: $INCREMENTAL_FEDERATION_RESULT"
-              exit 1
-            fi
-            if [ "$RELEASE_AUDIT_RESULT" != "skipped" ]; then
-              echo "incremental federation PR produced unexpected full-audit result: $RELEASE_AUDIT_RESULT"
-              exit 1
-            fi
-          else
-            if [ "$INCREMENTAL_FEDERATION_RESULT" != "skipped" ] ||
-               [ "$RELEASE_AUDIT_RESULT" != "skipped" ]; then
-              echo "owner-fast PR produced unexpected fanout results: incremental=$INCREMENTAL_FEDERATION_RESULT full=$RELEASE_AUDIT_RESULT"
-              exit 1
-            fi
-          fi
+          python scripts/impact_routing.py summarize \
+            --event-name "$EVENT_NAME" \
+            --source-fast-result "$SOURCE_FAST_RESULT" \
+            --full-audit-result "$FULL_AUDIT_RESULT" \
+            --full-audit-required "$FULL_AUDIT_REQUIRED" \
+            --github-step-summary "$GITHUB_STEP_SUMMARY"

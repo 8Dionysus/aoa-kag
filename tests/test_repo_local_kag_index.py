@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import io
 import json
 import os
@@ -8,10 +9,12 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from jsonschema import Draft202012Validator
 
+from scripts import coverage_run
 from scripts import generate_repo_local_kag_coverage as coverage_generation
 from scripts.generate_repo_local_kag_coverage import build_coverage, canonical_owner_root
 from scripts.generate_repo_local_kag_index import (
@@ -19,14 +22,18 @@ from scripts.generate_repo_local_kag_index import (
     ASSET_SUFFIXES,
     DATA_TABLE_SUFFIXES,
     HTML_SUFFIXES,
+    OwnerSourceSnapshot,
     PORTABLE_MIME_BY_SUFFIX,
     PORTABLE_TEXT_BASENAMES,
     RECORD_LOG_SUFFIXES,
     SERVICE_UNIT_SUFFIXES,
+    SourceReadMetrics,
     SOURCE_CODE_SUFFIXES,
     SPREADSHEET_SUFFIXES,
+    SourceSnapshotError,
     TEXT_ARTIFACT_SUFFIXES,
     TEXT_WRAPPER_SUFFIXES,
+    capability_family_node_ids,
     build_index,
     build_repository_indexes,
     mime_for,
@@ -35,23 +42,72 @@ from scripts.generate_repo_local_kag_index import (
     payload_digest,
     REPOSITORY_INDEX_FILENAMES,
 )
-from scripts.repo_local.portable_family import build_portable_family
-from scripts.repo_local.tiered_family import (
-    build_tiered_family,
-    write_tiered_git_surface,
-)
+from scripts.repo_local.portable_family import load_portable_family
+from scripts.validators import repo_local_kag_index as repo_local_kag_validator
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 COVERAGE_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-coverage.schema.json"
-COVERAGE_PACKET_SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-coverage-build-packet.schema.json"
 LOCAL_PROVIDER_MAP_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-provider-map.schema.json"
 EXAMPLE_PATH = REPO_ROOT / "examples" / "repo_local_kag_index.example.json"
 
 
 def load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def coverage_identity_for_payload(
+    payload: dict[str, object],
+    *,
+    epoch: str = "stable",
+) -> dict[str, object]:
+    owners = payload["owners"]
+    assert isinstance(owners, list)
+
+    def digest(label: str) -> str:
+        return coverage_generation._sha256_digest(label.encode("utf-8"))
+
+    snapshots: list[dict[str, str]] = []
+    for position, owner_payload in enumerate(owners):
+        assert isinstance(owner_payload, dict)
+        owner = owner_payload["repo"]
+        root = owner_payload["root"]
+        assert isinstance(owner, str)
+        assert isinstance(root, str)
+        head_commit = f"{position + 1:040x}"
+        snapshots.append(
+            {
+                "owner": owner,
+                "root": root,
+                "expected_ref": head_commit,
+                "head_commit": head_commit,
+                "index_tree": f"{position + 101:040x}",
+                "worktree_digest": digest(f"{epoch}:{owner}:worktree"),
+                "manifest_digest": digest(f"{epoch}:{owner}:manifest"),
+                "family_content_digest": digest(
+                    f"{epoch}:{owner}:family"
+                ).removeprefix("sha256:"),
+                "source_snapshot": digest(f"{epoch}:{owner}:source"),
+                "event_content_digest": digest(
+                    f"{epoch}:{owner}:event"
+                ).removeprefix("sha256:"),
+            }
+        )
+    return {
+        "schema_version": coverage_generation.COVERAGE_IDENTITY_SCHEMA_VERSION,
+        "run_scope_id": "0" * 32,
+        "lane": "test",
+        "display_os_root": payload["root"],
+        "canonicalization_epoch": epoch,
+        "index_schema_epoch": coverage_generation.INDEX_SCHEMA_VERSION,
+        "provider_registry_digest": digest(f"{epoch}:registry"),
+        "coverage_schema_digest": digest(f"{epoch}:coverage-schema"),
+        "family_manifest_schema_digest": digest(f"{epoch}:family-schema"),
+        "repository_index_schema_digest": digest(f"{epoch}:repository-schema"),
+        "runtime_inputs_digest": digest(f"{epoch}:runtime"),
+        "owner_snapshots": snapshots,
+    }
 
 
 def write_repository_index_family(
@@ -234,6 +290,84 @@ def write_owner_specific_provider_records(
 
 
 class RepoLocalKagIndexTests(unittest.TestCase):
+    def test_owner_source_snapshot_batches_staged_files_and_preserves_symlink_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            (root / "one.txt").write_text("staged\n", encoding="utf-8")
+            (root / "two.txt").write_text("staged\n", encoding="utf-8")
+            (root / "link.txt").symlink_to("one.txt")
+            subprocess.run(
+                ("git", "add", "one.txt", "two.txt", "link.txt"),
+                cwd=root,
+                check=True,
+            )
+            (root / "one.txt").write_text("worktree-only\n", encoding="utf-8")
+            (root / "link.txt").unlink()
+            (root / "link.txt").symlink_to("two.txt")
+
+            snapshot = OwnerSourceSnapshot.capture(root)
+
+        self.assertEqual(b"staged\n", snapshot.read_bytes(Path("one.txt")))
+        self.assertEqual(b"staged\n", snapshot.read_bytes(Path("two.txt")))
+        self.assertEqual(b"one.txt", snapshot.read_bytes(Path("link.txt")))
+        self.assertEqual(3, snapshot.git_invocation_count)
+        self.assertEqual(2, snapshot.unique_object_count)
+        self.assertEqual(3, snapshot.telemetry()["cache_hit_count"])
+
+    def test_owner_source_snapshot_fails_closed_for_missing_git_object(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            missing = "1" * 40
+            subprocess.run(
+                (
+                    "git",
+                    "update-index",
+                    "--add",
+                    "--info-only",
+                    "--cacheinfo",
+                    f"100644,{missing},missing.txt",
+                ),
+                cwd=root,
+                check=True,
+            )
+
+            with self.assertRaisesRegex(
+                SourceSnapshotError,
+                "missing or malformed Git blob",
+            ):
+                OwnerSourceSnapshot.capture(root)
+
+    def test_owner_source_snapshot_fails_closed_for_malformed_batch_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / ".git").mkdir()
+            object_id = "2" * 40
+            results = (
+                subprocess.CompletedProcess(
+                    args=("git", "rev-parse"),
+                    returncode=0,
+                    stdout=root.as_posix() + "\n",
+                ),
+                subprocess.CompletedProcess(
+                    args=("git", "ls-files"),
+                    returncode=0,
+                    stdout=f"100644 {object_id} 0\tREADME.md\0".encode("ascii"),
+                ),
+                subprocess.CompletedProcess(
+                    args=("git", "cat-file"),
+                    returncode=0,
+                    stdout=f"{object_id} blob invalid\n".encode("ascii"),
+                ),
+            )
+            with patch(
+                "scripts.generate_repo_local_kag_index.subprocess.run",
+                side_effect=results,
+            ):
+                with self.assertRaisesRegex(SourceSnapshotError, "invalid Git blob size"):
+                    OwnerSourceSnapshot.capture(root)
+
     def test_self_coverage_root_is_checkout_path_independent(self) -> None:
         self.assertEqual(
             Path("/workspace/os/aoa-kag"),
@@ -246,7 +380,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             canonical_owner_root(Path("/workspace/os"), "abyss-stack"),
         )
         self.assertEqual(
-            Path("/home/dionysus/src/abyss-machine"),
+            Path("/workspace/os/abyss-machine"),
             canonical_owner_root(Path("/workspace/os"), "abyss-machine"),
         )
 
@@ -836,6 +970,241 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             )
         )
 
+    def test_generator_returns_all_capability_projections_to_owner_contracts(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "aoa-owner"
+            family = root / "capabilities" / "families" / "central-proof.yaml"
+            graph_json = root / "read-models" / "capability_graph.json"
+            graph_markdown = root / "read-models" / "capability_graph.md"
+            router = root / "skills" / "aoa-owner" / "references" / "capability-router.md"
+            family.parent.mkdir(parents=True)
+            graph_json.parent.mkdir(parents=True)
+            router.parent.mkdir(parents=True)
+            kag_manifest = root / "kag" / "manifest.json"
+            kag_manifest.parent.mkdir(parents=True)
+            kag_manifest.write_text(
+                json.dumps({"repo": "aoa-owner"}) + "\n",
+                encoding="utf-8",
+            )
+            family.write_text(
+                "schema_version: aoa-capability-family-v1\n"
+                "family_id: central-proof\n"
+                "nodes: [{title: Central proof, id: central-proof}]\n"
+                "relations: []\n",
+                encoding="utf-8",
+            )
+            graph_json.write_text(
+                '{"schema_version":"aoa-capability-graph-v1","authority":false}\n',
+                encoding="utf-8",
+            )
+            graph_markdown.write_text("# Capability graph\n", encoding="utf-8")
+            router.write_text("# Capability router\n", encoding="utf-8")
+            (root / "capabilities" / "port.manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa_capability_home_port_v1",
+                        "owner_repo": "aoa-owner",
+                        "source": {
+                            "family_root": "capabilities/families",
+                            "root_id": "central-proof",
+                        },
+                        "projection": {
+                            "authority": False,
+                            "graph_json": "read-models/capability_graph.json",
+                            "graph_markdown": "read-models/capability_graph.md",
+                            "router_markdown": "skills/aoa-owner/references/capability-router.md",
+                            "generated_by": "aoa-skills:scripts/build_capability_home_projection.py",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+
+            payload = build_index(root)
+            self.assertEqual(0, payload["coverage_summary"]["generated_count"])
+            self.assertTrue(
+                coverage_generation.common_surface_profile(
+                    root,
+                    index_status="missing",
+                )["quality"]["has_generated_readmodels"]
+            )
+            family.write_text(
+                "schema_version: aoa-capability-family-v1\n"
+                "family_id: central-proof\n"
+                "nodes: [\n"
+                "  {title: Central proof, id: central-proof}\n"
+                "]\n"
+                "relations: []\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", family), cwd=root, check=True)
+            payload = build_index(root)
+            kag_manifest.write_text(
+                json.dumps({"repo": "unstaged-wrong-owner"}) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(payload, build_index(root))
+            staged_snapshot = OwnerSourceSnapshot.capture(root)
+            with patch.dict(
+                os.environ,
+                {
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REPO": "aoa-owner",
+                    "AOA_REPO_LOCAL_KAG_HISTORY_REF": "staged-history-ref",
+                },
+                clear=False,
+            ), patch(
+                "scripts.generate_repo_local_kag_index.git_lineage_paths",
+                side_effect=lambda _root, paths, *, history_ref: {
+                    path: path for path in paths
+                },
+            ) as lineage_paths:
+                build_index(root, source_snapshot=staged_snapshot)
+            self.assertEqual(
+                "staged-history-ref",
+                lineage_paths.call_args.kwargs["history_ref"],
+            )
+            kag_manifest.write_text(
+                json.dumps({"repo": "aoa-owner"}) + "\n",
+                encoding="utf-8",
+            )
+            previous_payload = json.loads(json.dumps(payload))
+            projection_paths = {
+                "read-models/capability_graph.json",
+                "read-models/capability_graph.md",
+                "skills/aoa-owner/references/capability-router.md",
+            }
+            for record in previous_payload["records"]:
+                if record["identity"]["path"] not in projection_paths:
+                    continue
+                record["surface_state"] = "authored_source"
+                record["provenance"]["source_refs"] = [
+                    {
+                        "repo": "aoa-owner",
+                        "path": record["identity"]["path"],
+                        "role": "primary",
+                        "authority": "authored_source",
+                    }
+                ]
+                record["provenance"]["materials"] = []
+                record["provenance"]["generated_by"] = ""
+                record["owner_return_route"]["surface"] = record["identity"]["path"]
+            incremental_payload = build_index(root, previous_index=previous_payload)
+            repository_family = build_repository_indexes(payload, repo_root=root)
+
+            manifest_path = root / "capabilities" / "port.manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["owner_repo"] = "wrong-owner"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            with self.assertRaisesRegex(ValueError, "owner_repo must match"):
+                build_index(root)
+
+            manifest["owner_repo"] = "aoa-owner"
+            manifest["source"]["root_id"] = "missing-root"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            with self.assertRaisesRegex(ValueError, "must resolve to exactly one"):
+                build_index(root)
+
+            manifest["source"]["root_id"] = "central-proof"
+            for authored_path in (
+                "capabilities/port.manifest.json",
+                "capabilities/families/central-proof.yaml",
+            ):
+                manifest["projection"]["graph_json"] = authored_path
+                manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                subprocess.run(("git", "add", "."), cwd=root, check=True)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "must not alias an authored capability source",
+                ):
+                    build_index(root)
+
+        self.validate_with_schema(payload, INDEX_SCHEMA_PATH)
+        records_by_path = {
+            record["identity"]["path"]: record for record in payload["records"]
+        }
+        expected_source_refs = [
+            {
+                "repo": "aoa-owner",
+                "path": "capabilities/families/central-proof.yaml",
+                "role": "primary",
+                "authority": "authored_source",
+            }
+        ]
+        expected_materials = [
+            {
+                "repo": "aoa-owner",
+                "path": "capabilities/port.manifest.json",
+                "role": "material",
+                "authority": "authored_source",
+            }
+        ]
+        for path in projection_paths:
+            record = records_by_path[path]
+            self.assertEqual("generated_projection", record["surface_state"])
+            self.assertEqual("generated_output", record["observed_form"])
+            self.assertEqual("generated", record["abi"]["compatibility"])
+            self.assertEqual(expected_source_refs, record["provenance"]["source_refs"])
+            self.assertEqual(expected_materials, record["provenance"]["materials"])
+            self.assertEqual(
+                "aoa-skills:scripts/build_capability_home_projection.py",
+                record["provenance"]["generated_by"],
+            )
+            self.assertIn(
+                "aoa-skills:scripts/validate_capability_home_port.py",
+                record["provenance"]["validated_by"],
+            )
+            self.assertEqual(
+                {
+                    "repo": "aoa-owner",
+                    "surface": "capabilities/families/central-proof.yaml",
+                    "route_kind": "source_owner",
+                },
+                record["owner_return_route"],
+            )
+        self.assertEqual(payload, incremental_payload)
+
+        artifact_by_path = {
+            artifact["path"]: artifact
+            for artifact in repository_family["artifact"]["entries"]
+        }
+        source_artifact = artifact_by_path["capabilities/families/central-proof.yaml"]
+        derived_pairs = {
+            (relation["from_id"], relation["to_id"])
+            for relation in repository_family["relation"]["entries"]
+            if relation["relation_kind"] == "derives_from"
+        }
+        for path in projection_paths:
+            self.assertIn(
+                (artifact_by_path[path]["id"], source_artifact["id"]),
+                derived_pairs,
+            )
+
+    def test_capability_parser_fails_closed_without_pyyaml(self) -> None:
+        real_import = __import__
+
+        def import_without_yaml(name: str, *args: object, **kwargs: object) -> object:
+            if name == "yaml":
+                raise ModuleNotFoundError("No module named 'yaml'")
+            return real_import(name, *args, **kwargs)
+
+        contract = (
+            b"schema_version: aoa-capability-family-v1\n"
+            b"nodes:\n"
+            b"  - id: root\n"
+            b"relations: []\n"
+        )
+        with patch("builtins.__import__", side_effect=import_without_yaml):
+            with self.assertRaisesRegex(RuntimeError, "PyYAML is required"):
+                capability_family_node_ids(contract)
+
     def test_generator_rejects_divergent_owner_skill_projection(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir) / "aoa-owner"
@@ -1337,6 +1706,20 @@ class RepoLocalKagIndexTests(unittest.TestCase):
 
             payload = build_index(root, output=Path("kag/indexes/source_surface_index.json"))
             self.assertTrue(coverage_generation.source_index_matches_owner(root, payload))
+            (root / "kag" / "manifest.json").write_text(
+                json.dumps({"repo": "unstaged-wrong-owner"}),
+                encoding="utf-8",
+            )
+            staged_snapshot = OwnerSourceSnapshot.capture(root)
+            self.assertTrue(
+                coverage_generation.source_index_matches_owner(
+                    root,
+                    payload,
+                    source_snapshot=staged_snapshot,
+                )
+            )
+            self.assertEqual("unstaged-wrong-owner", coverage_generation.repo_name(root))
+            self.assertTrue(coverage_generation.source_index_matches_owner(root, payload))
 
         self.assertEqual("aoa-kag", payload["repo"]["name"])
         records_by_path = {
@@ -1520,6 +1903,534 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                     )
                 )
 
+    def test_coverage_reuses_exact_family_validation_from_same_run(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        source_index: dict[str, object] = {}
+        family = {index_kind: {} for index_kind in REPOSITORY_INDEX_FILENAMES}
+        manifest = {
+            "family_identity": {
+                "content_digest": "a" * 64,
+            }
+        }
+        metrics = SourceReadMetrics()
+        snapshot = SimpleNamespace(metrics=metrics)
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True):
+            repo_local_kag_validator.record_run_validated_portable_family(
+                root,
+                manifest,
+            )
+            with patch.object(
+                coverage_generation,
+                "build_repository_indexes",
+                return_value=family,
+            ), patch.object(
+                coverage_generation,
+                "repository_event_history_ref",
+                return_value=None,
+            ), patch.object(
+                coverage_generation,
+                "_portable_bundle",
+                return_value=(source_index, family, manifest),
+            ), patch.object(
+                repo_local_kag_validator,
+                "validate_repo_local_kag_repository_index_family",
+            ) as validate:
+                matches = coverage_generation.repository_index_family_matches_owner(
+                    root,
+                    source_index,
+                    source_snapshot=snapshot,
+                )
+
+        self.assertTrue(matches)
+        validate.assert_not_called()
+        self.assertEqual(1, metrics.family_validation_cache_hits)
+        self.assertEqual(0, metrics.family_validation_cache_misses)
+
+    def test_repo_local_schema_compilation_reuses_only_exact_schema_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            repo_local_kag_validator._cached_repo_local_schema_validator.cache_clear()
+            with patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_COLD_SCHEMA_COMPILATION_ENV: "0"},
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(1, cache_info.misses)
+            self.assertEqual(1, cache_info.hits)
+
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            with patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_COLD_SCHEMA_COMPILATION_ENV: "0"},
+            ):
+                with self.assertRaisesRegex(
+                    repo_local_kag_validator.ValidationError,
+                    "does not match schema",
+                ):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+            changed_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(2, changed_info.misses)
+
+    def test_force_cold_schema_compilation_bypasses_same_process_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            repo_local_kag_validator._cached_repo_local_schema_validator.cache_clear()
+            with patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_COLD_SCHEMA_COMPILATION_ENV: "1"},
+            ):
+                for _ in range(2):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+
+            cache_info = repo_local_kag_validator._cached_repo_local_schema_validator.cache_info()
+            self.assertEqual(0, cache_info.misses)
+            self.assertEqual(0, cache_info.hits)
+
+    def test_fast_schema_accept_uses_one_python_shadow_per_exact_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            python_validator = Mock()
+            python_validator.iter_errors.return_value = []
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = True
+            repo_local_kag_validator._FAST_SCHEMA_SHADOWED_IDENTITIES.clear()
+            with patch.object(
+                repo_local_kag_validator,
+                "_repo_local_schema_validator",
+                return_value=python_validator,
+            ), patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                for _ in range(2):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+
+        self.assertEqual(1, python_validator.iter_errors.call_count)
+        self.assertEqual(2, fast_validator.is_valid.call_count)
+
+    def test_fast_schema_reject_preserves_python_verdict_and_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = False
+            with patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                with self.assertRaisesRegex(
+                    repo_local_kag_validator.ValidationError,
+                    "does not match schema",
+                ):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+
+        fast_validator.is_valid.assert_called_once_with({})
+
+    def test_fast_schema_false_negative_defers_to_python_acceptance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = False
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["disagreement_count"],
+        )
+        self.assertIn(
+            "accelerator-false-negative",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_fast_schema_false_positive_preserves_python_rejection(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"string"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.return_value = True
+            repo_local_kag_validator._FAST_SCHEMA_SHADOWED_IDENTITIES.clear()
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                with self.assertRaisesRegex(
+                    repo_local_kag_validator.ValidationError,
+                    "does not match schema",
+                ):
+                    repo_local_kag_validator.repo_local_kag_validate_payload(
+                        {},
+                        schema_path=schema_path,
+                        label="demo",
+                    )
+                summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["disagreement_count"],
+        )
+        self.assertIn(
+            "accelerator-false-positive",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_fast_schema_runtime_error_falls_back_to_python(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            fast_validator = Mock()
+            fast_validator.is_valid.side_effect = RuntimeError("probe failure")
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+                repo_local_kag_validator,
+                "_fast_repo_local_schema_validator",
+                return_value=fast_validator,
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["python_fallback_count"],
+        )
+        self.assertIn(
+            "accelerator-runtime-error",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_fast_schema_unadmitted_version_falls_back_to_python(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            accelerator = SimpleNamespace(Draft202012Validator=Mock())
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "0"},
+            ), patch.object(
+                repo_local_kag_validator,
+                "jsonschema_rs",
+                accelerator,
+            ), patch.object(
+                repo_local_kag_validator,
+                "_distribution_version",
+                side_effect=lambda distribution: (
+                    "0.49.1" if distribution == "jsonschema-rs" else "test"
+                ),
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        accelerator.Draft202012Validator.assert_not_called()
+        self.assertIn(
+            "accelerator-version-not-admitted",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_fast_schema_unknown_vocabulary_falls_back_to_python(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text(
+                '{"anyOf":[{"type":"object"}]}\n',
+                encoding="utf-8",
+            )
+            accelerator = SimpleNamespace(Draft202012Validator=Mock())
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "0"},
+            ), patch.object(
+                repo_local_kag_validator,
+                "jsonschema_rs",
+                accelerator,
+            ), patch.object(
+                repo_local_kag_validator,
+                "_distribution_version",
+                side_effect=lambda distribution: (
+                    repo_local_kag_validator.ADMITTED_JSONSCHEMA_RS_VERSION
+                    if distribution == "jsonschema-rs"
+                    else "test"
+                ),
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        accelerator.Draft202012Validator.assert_not_called()
+        self.assertIn(
+            "schema-vocabulary-not-admitted:anyOf",
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_current_repo_local_schema_vocabulary_is_fast_engine_admitted(self) -> None:
+        schema_paths = (
+            repo_local_kag_validator.REPO_LOCAL_KAG_INDEX_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH,
+            repo_local_kag_validator.REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH,
+        )
+        for schema_path in schema_paths:
+            with self.subTest(schema=schema_path.name):
+                self.assertEqual(
+                    (),
+                    repo_local_kag_validator._unsupported_fast_schema_features(
+                        load_json(schema_path)
+                    ),
+                )
+
+    @unittest.skipIf(
+        repo_local_kag_validator.jsonschema_rs is None,
+        "jsonschema-rs is not installed",
+    )
+    def test_admitted_fast_schema_engine_matches_python_on_current_corpus(self) -> None:
+        if (
+            repo_local_kag_validator._distribution_version("jsonschema-rs")
+            != repo_local_kag_validator.ADMITTED_JSONSCHEMA_RS_VERSION
+        ):
+            self.skipTest("installed jsonschema-rs version is not admitted")
+        source_payload, family, manifest = load_portable_family(REPO_ROOT)
+        cases = [
+            (
+                "source",
+                repo_local_kag_validator.REPO_LOCAL_KAG_INDEX_SCHEMA_PATH,
+                source_payload,
+            ),
+            *(
+                (
+                    f"repository-{index_kind}",
+                    repo_local_kag_validator.REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
+                    payload,
+                )
+                for index_kind, payload in sorted(family.items())
+            ),
+            (
+                "family-manifest",
+                repo_local_kag_validator.REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+                manifest,
+            ),
+            (
+                "query-result",
+                repo_local_kag_validator.REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_QUERY_RESULT_EXAMPLE_PATH),
+            ),
+            (
+                "federation",
+                repo_local_kag_validator.REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_FEDERATION_EXAMPLE_PATH),
+            ),
+            (
+                "retrieval-plan",
+                repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_PLAN_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_PLAN_EXAMPLE_PATH),
+            ),
+            (
+                "retrieval-bundle",
+                repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_RETRIEVAL_BUNDLE_EXAMPLE_PATH),
+            ),
+            (
+                "coverage",
+                repo_local_kag_validator.REPO_LOCAL_KAG_COVERAGE_SCHEMA_PATH,
+                load_json(repo_local_kag_validator.REPO_LOCAL_KAG_COVERAGE_PATH),
+            ),
+        ]
+        for label, schema_path, payload in cases:
+            schema_bytes = schema_path.read_bytes()
+            schema = json.loads(schema_bytes)
+            assert isinstance(schema, dict)
+            assert isinstance(payload, dict)
+            required = schema["required"]
+            assert isinstance(required, list) and required
+            missing_required = dict(payload)
+            missing_required.pop(required[0], None)
+            unexpected_property = {**payload, "__schema_engine_parity_probe__": True}
+            probes = (
+                ("valid", payload, True),
+                ("null-root", None, False),
+                ("empty-root", {}, False),
+                ("missing-required", missing_required, False),
+                ("unexpected-property", unexpected_property, False),
+            )
+            python_validator = Draft202012Validator(schema)
+            fast_validator = repo_local_kag_validator._build_fast_repo_local_schema_validator(
+                schema_bytes
+            )
+            for probe, candidate, expected in probes:
+                with self.subTest(case=label, probe=probe):
+                    python_valid = python_validator.is_valid(candidate)
+                    fast_valid = bool(fast_validator.is_valid(candidate))
+                    self.assertEqual(expected, python_valid)
+                    self.assertEqual(python_valid, fast_valid)
+
+    def test_force_python_schema_validation_is_exact_rollback(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "schema.json"
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            accelerator = SimpleNamespace(Draft202012Validator=Mock())
+            with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.dict(
+                os.environ,
+                {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "1"},
+            ), patch.object(
+                repo_local_kag_validator,
+                "jsonschema_rs",
+                accelerator,
+            ):
+                repo_local_kag_validator.repo_local_kag_validate_payload(
+                    {},
+                    schema_path=schema_path,
+                    label="demo",
+                )
+                summary = coverage_run.coverage_run_summary(run)
+
+        accelerator.Draft202012Validator.assert_not_called()
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["python_fallback_count"],
+        )
+        self.assertEqual(
+            ["forced-python"],
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_coverage_source_schema_preserves_forced_python_rollback(self) -> None:
+        payload = load_json(EXAMPLE_PATH)
+        with coverage_run.coverage_run_scope(
+            lane="test",
+            force_new=True,
+        ) as run, patch.dict(
+            os.environ,
+            {repo_local_kag_validator.FORCE_PYTHON_SCHEMA_VALIDATION_ENV: "1"},
+        ):
+            self.assertTrue(
+                coverage_generation.source_index_schema_matches(
+                    payload,
+                    label="coverage source index",
+                )
+            )
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(
+            1,
+            summary["schema_validation_engine"]["python_fallback_count"],
+        )
+        self.assertEqual(
+            ["forced-python"],
+            summary["schema_validation_engine"]["reasons"],
+        )
+
+    def test_coverage_source_schema_converts_validation_failure_to_status(self) -> None:
+        with patch.object(
+            repo_local_kag_validator,
+            "repo_local_kag_validate_payload",
+            side_effect=repo_local_kag_validator.ValidationError("invalid source index"),
+        ) as validate:
+            self.assertFalse(
+                coverage_generation.source_index_schema_matches(
+                    {},
+                    label="coverage source index",
+                )
+            )
+
+        validate.assert_called_once_with(
+            {},
+            schema_path=coverage_generation.INDEX_SCHEMA_PATH,
+            label="coverage source index",
+        )
+
+    def test_coverage_validates_family_without_same_run_identity(self) -> None:
+        root = Path("/srv/AbyssOS/aoa-demo")
+        source_index: dict[str, object] = {}
+        family = {index_kind: {} for index_kind in REPOSITORY_INDEX_FILENAMES}
+        manifest = {
+            "family_identity": {
+                "content_digest": "b" * 64,
+            }
+        }
+        metrics = SourceReadMetrics()
+        snapshot = SimpleNamespace(metrics=metrics)
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True), patch.object(
+            coverage_generation,
+            "build_repository_indexes",
+            return_value=family,
+        ), patch.object(
+            coverage_generation,
+            "repository_event_history_ref",
+            return_value=None,
+        ), patch.object(
+            coverage_generation,
+            "_portable_bundle",
+            return_value=(source_index, family, manifest),
+        ), patch.object(
+            repo_local_kag_validator,
+            "validate_repo_local_kag_repository_index_family",
+        ) as validate:
+            matches = coverage_generation.repository_index_family_matches_owner(
+                root,
+                source_index,
+                source_snapshot=snapshot,
+            )
+
+        self.assertTrue(matches)
+        validate.assert_called_once()
+        self.assertEqual(0, metrics.family_validation_cache_hits)
+        self.assertEqual(1, metrics.family_validation_cache_misses)
+
     def test_coverage_recovers_landed_snapshot_history_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir) / "aoa-demo"
@@ -1563,75 +2474,6 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             status, _ = coverage_generation.index_status(root)
 
         self.assertEqual("passed", status)
-
-    def test_coverage_accepts_externalized_hot_source_without_cas(
-        self,
-    ) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir) / "aoa-demo"
-            root.mkdir()
-            subprocess.run(
-                ["git", "init", "-b", "main"],
-                cwd=root,
-                check=True,
-                capture_output=True,
-            )
-            subprocess.run(
-                ["git", "config", "user.name", "Test"],
-                cwd=root,
-                check=True,
-            )
-            subprocess.run(
-                ["git", "config", "user.email", "test@example.com"],
-                cwd=root,
-                check=True,
-            )
-            (root / "README.md").write_text(
-                "# Externalized owner\n",
-                encoding="utf-8",
-            )
-            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
-            source = build_index(
-                root,
-                output=Path("kag/indexes/source_surface_index.json"),
-            )
-            family = build_repository_indexes(
-                source,
-                repo_root=root,
-            )
-            portable, shards = build_portable_family(source, family)
-            tiered = build_tiered_family(
-                portable,
-                shards,
-                shadow_mode=False,
-            )
-            write_tiered_git_surface(
-                root,
-                tiered,
-                externalize=True,
-            )
-            subprocess.run(["git", "add", "kag"], cwd=root, check=True)
-
-            with patch.dict(os.environ, {}, clear=False):
-                os.environ.pop("KAG_ARTIFACT_ROOT", None)
-                status, _ = coverage_generation.index_status(root)
-                storage, profile = (
-                    coverage_generation.portable_family_profile(
-                        root,
-                        owner_name="aoa-demo",
-                        status=status,
-                    )
-                )
-
-        self.assertEqual("passed", status)
-        self.assertEqual("v4-tiered-content-addressed", storage)
-        self.assertEqual("externalized", profile["placement_state"])
-        self.assertEqual(
-            tiered.distribution_manifest["distribution_identity"][
-                "content_digest"
-            ],
-            profile["distribution_digest"],
-        )
 
     def test_coverage_recovers_history_boundary_from_second_merge_parent(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1776,6 +2618,34 @@ class RepoLocalKagIndexTests(unittest.TestCase):
         owners = {owner["repo"]: owner for owner in payload["owners"]}
         self.assertEqual(1, owners["aoa-demo"]["coverage"]["documents"])
 
+    def test_coverage_owner_timing_reports_snapshot_cpu_rss_and_cache_metrics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            organ = root / "aoa-demo"
+            organ.mkdir()
+            subprocess.run(("git", "init", "-q"), cwd=organ, check=True)
+            (organ / "README.md").write_text("# Owner\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=organ, check=True)
+            owner_timings: list[dict[str, object]] = []
+
+            build_coverage(root, owner_timings=owner_timings)
+
+        self.assertEqual(1, len(owner_timings))
+        timing = owner_timings[0]
+        self.assertEqual("aoa-demo", timing["owner"])
+        self.assertGreaterEqual(timing["cpu_user_ms"], 0)
+        self.assertGreaterEqual(timing["cpu_system_ms"], 0)
+        self.assertGreater(timing["process_peak_rss_kib"], 0)
+        snapshot = timing["source_snapshot"]
+        assert isinstance(snapshot, dict)
+        self.assertEqual("git-index-source-tree", snapshot["backend"])
+        self.assertEqual(1, snapshot["tracked_file_count"])
+        self.assertEqual(1, snapshot["files_read_count"])
+        self.assertEqual(1, snapshot["unique_object_count"])
+        self.assertEqual(3, snapshot["git_invocation_count"])
+        self.assertGreaterEqual(snapshot["read_request_count"], 1)
+        self.assertEqual(snapshot["read_request_count"], snapshot["cache_hit_count"])
+
     def test_coverage_progress_reports_owner_scan_to_stderr(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1796,81 +2666,853 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             stderr.getvalue(),
         )
 
-    def test_provider_coverage_packet_reuses_one_verified_scan(self) -> None:
-        payload = {"schema_version": "coverage-test", "owners": []}
-        packet_key = {
-            "builder_digest": f"sha256:{'1' * 64}",
-            "canonicalization_epoch": "canonical-v1",
-            "schema_epoch": "schema-v1",
-            "distribution_epoch": "distribution-v1",
-            "owner_snapshots": [
-                {"owner": "aoa-demo", "source_snapshot": f"git-tree:{'2' * 40}"}
-            ],
+    def test_provider_home_fusion_builds_exact_payload_without_cold_reload(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        owners = payload["owners"]
+        assert isinstance(owners, list)
+        owner_payloads = {
+            owner["repo"]: owner
+            for owner in owners
+            if isinstance(owner, dict) and isinstance(owner.get("repo"), str)
         }
-        with tempfile.TemporaryDirectory() as tmpdir:
-            packet = Path(tmpdir) / "coverage.packet.json"
-            with patch.dict(
-                os.environ,
-                {coverage_generation.COVERAGE_PACKET_ENV: packet.as_posix()},
-            ), patch.object(
+        roots = [
+            (snapshot["owner"], Path(snapshot["root"]))
+            for snapshot in identity["owner_snapshots"]
+        ]
+
+        def build_owner(
+            owner: str,
+            _owner_root: Path,
+            *,
+            display_root: Path,
+            portable_bundle: object,
+        ) -> tuple[dict[str, object], dict[str, object]]:
+            self.assertIsNotNone(portable_bundle)
+            self.assertEqual(owner_payloads[owner]["root"], display_root.as_posix())
+            return copy.deepcopy(owner_payloads[owner]), {
+                "owner": owner,
+                "duration_ms": 1,
+                "cpu_user_ms": 1,
+                "cpu_system_ms": 0,
+                "process_peak_rss_kib": 1024,
+                "source_snapshot": {},
+            }
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
                 coverage_generation,
-                "coverage_packet_key",
-                return_value=packet_key,
+                "coverage_packet_identity",
+                side_effect=(identity, identity),
             ), patch.object(
                 coverage_generation,
                 "configured_owner_roots",
-                return_value=[],
+                return_value=roots,
+            ), patch.object(
+                coverage_generation,
+                "_build_owner_coverage",
+                side_effect=build_owner,
+            ) as owner_build, patch.object(
+                coverage_generation,
+                "build_coverage",
+            ) as cold_build:
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    for snapshot, (owner, owner_root) in reversed(
+                        list(zip(identity["owner_snapshots"], roots))
+                    ):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            owner,
+                            owner_root,
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": snapshot[
+                                            "family_content_digest"
+                                        ]
+                                    }
+                                },
+                            ),
+                        )
+                    actual = coverage_generation.build_provider_coverage()
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(payload, actual)
+        self.assertEqual(len(roots), owner_build.call_count)
+        cold_build.assert_not_called()
+        self.assertEqual(["provider-home-fused"], summary["build_strategies"])
+        self.assertEqual(len(roots), summary["prebuilt_owner_count"])
+        self.assertEqual(len(roots), summary["owner_scan_count"])
+
+    def test_provider_process_results_keep_exact_canonical_fan_in(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        owners = payload["owners"]
+        assert isinstance(snapshots, list)
+        assert isinstance(owners, list)
+        for snapshot, owner_payload in zip(snapshots, owners):
+            content_digest = owner_payload["portable_family"]["content_digest"]
+            if content_digest:
+                snapshot["family_content_digest"] = content_digest
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                side_effect=(identity, identity),
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
             ), patch.object(
                 coverage_generation,
                 "build_coverage",
-                return_value=payload,
-            ) as build:
-                first = coverage_generation.build_provider_coverage()
-                second = coverage_generation.build_provider_coverage()
+            ) as cold_build:
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    for snapshot, (owner, owner_root), owner_payload in zip(
+                        snapshots,
+                        roots,
+                        owners,
+                    ):
+                        coverage_generation.prebuild_provider_coverage_owner_result(
+                            owner,
+                            owner_root,
+                            family_content_digest=snapshot["family_content_digest"],
+                            owner_payload=copy.deepcopy(owner_payload),
+                            owner_timing={
+                                "owner": owner,
+                                "duration_ms": 1,
+                                "cpu_user_ms": 1,
+                                "cpu_system_ms": 0,
+                                "process_peak_rss_kib": 1024,
+                                "source_snapshot": {},
+                            },
+                        )
+                    actual = coverage_generation.build_provider_coverage()
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(payload, actual)
+        cold_build.assert_not_called()
+        self.assertEqual(
+            ["provider-home-fused-process"],
+            summary["build_strategies"],
+        )
+        self.assertEqual(len(roots), summary["prebuilt_owner_count"])
+
+    def test_provider_process_result_rejects_row_identity_mismatch(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        owners = payload["owners"]
+        assert isinstance(snapshots, list)
+        assert isinstance(owners, list)
+        for snapshot, owner_payload in zip(snapshots, owners):
+            content_digest = owner_payload["portable_family"]["content_digest"]
+            if content_digest:
+                snapshot["family_content_digest"] = content_digest
+        first = snapshots[0]
+        wrong_row = copy.deepcopy(owners[0])
+        wrong_row["repo"] = "wrong-owner"
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    with self.assertRaisesRegex(RuntimeError, "result identity"):
+                        coverage_generation.prebuild_provider_coverage_owner_result(
+                            first["owner"],
+                            Path(first["root"]),
+                            family_content_digest=first["family_content_digest"],
+                            owner_payload=wrong_row,
+                            owner_timing={"owner": first["owner"]},
+                        )
+
+    def test_provider_home_fusion_rejects_incomplete_owner_set_without_packet(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+        owner_payloads = {
+            owner["repo"]: owner
+            for owner in payload["owners"]
+            if isinstance(owner, dict) and isinstance(owner.get("repo"), str)
+        }
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ), patch.object(
+                coverage_generation,
+                "_build_owner_coverage",
+                side_effect=lambda owner, *_args, **_kwargs: (
+                    copy.deepcopy(owner_payloads[owner]),
+                    {
+                        "owner": owner,
+                        "duration_ms": 1,
+                        "source_snapshot": {},
+                    },
+                ),
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    first = snapshots[0]
+                    coverage_generation.prebuild_provider_coverage_owner(
+                        first["owner"],
+                        Path(first["root"]),
+                        (
+                            {},
+                            {},
+                            {
+                                "family_identity": {
+                                    "content_digest": first[
+                                        "family_content_digest"
+                                    ]
+                                }
+                            },
+                        ),
+                    )
+                    with self.assertRaisesRegex(RuntimeError, "owner membership"):
+                        coverage_generation.build_provider_coverage()
+                    self.assertFalse(run.packet_path.exists())
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(1, summary["build_failure_count"])
+        self.assertEqual(0, summary["coverage_build_count"])
+
+    def test_provider_home_fusion_rejects_identity_mutation(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        initial = coverage_identity_for_payload(payload, epoch="initial")
+        changed = coverage_identity_for_payload(payload, epoch="changed")
+        snapshots = initial["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+        owner_payloads = {
+            owner["repo"]: owner
+            for owner in payload["owners"]
+            if isinstance(owner, dict) and isinstance(owner.get("repo"), str)
+        }
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            initial["run_scope_id"] = run.run_scope_id
+            changed["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                side_effect=(initial, changed),
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ), patch.object(
+                coverage_generation,
+                "_build_owner_coverage",
+                side_effect=lambda owner, *_args, **_kwargs: (
+                    copy.deepcopy(owner_payloads[owner]),
+                    {
+                        "owner": owner,
+                        "duration_ms": 1,
+                        "source_snapshot": {},
+                    },
+                ),
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    for snapshot, (owner, owner_root) in zip(snapshots, roots):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            owner,
+                            owner_root,
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": snapshot[
+                                            "family_content_digest"
+                                        ]
+                                    }
+                                },
+                            ),
+                        )
+                    with self.assertRaisesRegex(RuntimeError, "inputs changed"):
+                        coverage_generation.build_provider_coverage()
+                    self.assertFalse(run.packet_path.exists())
+                    summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(1, summary["packet_reject_count"])
+        self.assertEqual(0, summary["coverage_build_count"])
+
+    def test_transient_portable_bundle_is_root_exact_and_released(self) -> None:
+        owner_root = Path("/srv/AbyssOS/aoa-demo")
+        other_root = Path("/srv/AbyssOS/aoa-other")
+        injected = ({"source": "injected"}, {}, {"manifest": "injected"})
+        disk = ({"source": "disk"}, {}, {"manifest": "disk"})
+
+        with patch.object(
+            coverage_generation,
+            "_portable_bundle_from_disk",
+            return_value=disk,
+        ) as load_disk:
+            with coverage_generation._transient_portable_bundle(
+                owner_root,
+                injected,
+            ):
+                self.assertIs(
+                    injected,
+                    coverage_generation._portable_bundle(owner_root),
+                )
+                self.assertIs(
+                    disk,
+                    coverage_generation._portable_bundle(other_root),
+                )
+            self.assertIs(
+                disk,
+                coverage_generation._portable_bundle(owner_root),
+            )
+
+        self.assertEqual(2, load_disk.call_count)
+
+    def test_provider_failure_scope_writes_no_coverage_packet(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "provider failed"):
+                    with coverage_generation.provider_coverage_prebuild_scope():
+                        raise RuntimeError("provider failed")
+            self.assertFalse(run.packet_path.exists())
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(0, summary["coverage_build_count"])
+        self.assertEqual(0, summary["packet_hit_count"])
+        self.assertEqual(0, summary["packet_miss_count"])
+
+    def test_provider_home_fusion_rejects_wrong_root_and_family_digest(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        snapshots = identity["owner_snapshots"]
+        assert isinstance(snapshots, list)
+        roots = [(item["owner"], Path(item["root"])) for item in snapshots]
+        first = snapshots[0]
+
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            identity["run_scope_id"] = run.run_scope_id
+            with patch.object(
+                coverage_generation,
+                "coverage_packet_identity",
+                return_value=identity,
+            ), patch.object(
+                coverage_generation,
+                "configured_owner_roots",
+                return_value=roots,
+            ):
+                with coverage_generation.provider_coverage_prebuild_scope():
+                    with self.assertRaisesRegex(RuntimeError, "unexpected owner root"):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            first["owner"],
+                            Path(first["root"]) / "wrong",
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": first[
+                                            "family_content_digest"
+                                        ]
+                                    }
+                                },
+                            ),
+                        )
+                    with self.assertRaisesRegex(RuntimeError, "identity mismatch"):
+                        coverage_generation.prebuild_provider_coverage_owner(
+                            first["owner"],
+                            Path(first["root"]),
+                            (
+                                {},
+                                {},
+                                {
+                                    "family_identity": {
+                                        "content_digest": "f" * 64,
+                                    }
+                                },
+                            ),
+                        )
+            self.assertFalse(run.packet_path.exists())
+
+    def test_provider_coverage_packet_reuses_one_verified_input_epoch(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            coverage_generation,
+            "coverage_packet_identity",
+            return_value=identity,
+        ), patch.object(
+            coverage_generation,
+            "configured_owner_roots",
+            return_value=[],
+        ), patch.object(
+            coverage_generation,
+            "build_coverage",
+            return_value=payload,
+        ) as build:
+            first = coverage_generation.build_provider_coverage()
+            second = coverage_generation.build_provider_coverage()
+            summary = coverage_run.coverage_run_summary(run)
 
         self.assertEqual(payload, first)
         self.assertEqual(payload, second)
         self.assertEqual(1, build.call_count)
+        self.assertEqual(1, summary["coverage_build_count"])
+        self.assertEqual(1, summary["packet_hit_count"])
+        self.assertEqual(1, summary["packet_miss_count"])
+        self.assertEqual(
+            [coverage_generation._json_digest(payload)],
+            summary["payload_digests"],
+        )
 
-    def test_provider_coverage_packet_rejects_tamper_and_snapshot_change(self) -> None:
-        payload = {"schema_version": "coverage-test", "owners": []}
-        packet_key = {
-            "builder_digest": f"sha256:{'1' * 64}",
-            "canonicalization_epoch": "canonical-v1",
-            "schema_epoch": "schema-v1",
-            "distribution_epoch": "distribution-v1",
-            "owner_snapshots": [
-                {"owner": "aoa-demo", "source_snapshot": f"git-tree:{'2' * 40}"}
+    def test_coverage_run_summary_aggregates_owner_resource_and_snapshot_metrics(self) -> None:
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            coverage_run.record_coverage_event(
+                {
+                    "event": "build",
+                    "duration_ms": 29,
+                    "owner_timings": [
+                        {
+                            "owner": "aoa-demo",
+                            "duration_ms": 23,
+                            "cpu_user_ms": 17,
+                            "cpu_system_ms": 3,
+                            "process_peak_rss_kib": 4096,
+                            "source_snapshot": {
+                                "git_invocation_count": 3,
+                                "files_read_count": 11,
+                                "unique_object_count": 9,
+                                "bytes_read": 2048,
+                                "family_validation_cache_hit_count": 1,
+                                "family_validation_cache_miss_count": 0,
+                            },
+                        }
+                    ],
+                }
+            )
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(17, summary["owner_cpu_user_ms"])
+        self.assertEqual(3, summary["owner_cpu_system_ms"])
+        self.assertEqual(4096, summary["process_peak_rss_kib"])
+        self.assertEqual(3, summary["source_snapshot_git_invocation_count"])
+        self.assertEqual(11, summary["source_snapshot_files_read_count"])
+        self.assertEqual(9, summary["source_snapshot_unique_object_count"])
+        self.assertEqual(2048, summary["source_snapshot_bytes_read"])
+        self.assertEqual(1, summary["family_validation_cache_hit_count"])
+        self.assertEqual(0, summary["family_validation_cache_miss_count"])
+
+    def test_validation_timing_is_typed_and_additive_to_coverage_receipt(self) -> None:
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with coverage_run.validation_timing(
+                component_type="provider-home",
+                component_id="aoa-demo",
+                details={"repo_root": "/tmp/aoa-demo"},
+            ):
+                pass
+            summary = coverage_run.coverage_run_summary(run)
+
+        telemetry = summary["validation_telemetry"]
+        self.assertEqual(
+            coverage_run.VALIDATION_TIMING_SCHEMA_VERSION,
+            telemetry["schema_version"],
+        )
+        self.assertEqual(1, telemetry["timing_count"])
+        self.assertEqual(0, telemetry["failed_timing_count"])
+        self.assertEqual(
+            telemetry["timings"][0]["duration_ms"],
+            telemetry["wall_ms_by_component_type"]["provider-home"],
+        )
+        self.assertEqual("aoa-demo", telemetry["timings"][0]["component_id"])
+        self.assertEqual(
+            {"repo_root": "/tmp/aoa-demo"},
+            telemetry["timings"][0]["details"],
+        )
+        self.assertEqual(
+            [
+                {
+                    "component_id": "aoa-demo",
+                    "duration_ms": telemetry["timings"][0]["duration_ms"],
+                    "status": "passed",
+                }
             ],
-        }
-        changed_key = json.loads(json.dumps(packet_key))
-        changed_key["owner_snapshots"][0]["source_snapshot"] = f"git-tree:{'3' * 40}"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            packet = Path(tmpdir) / "coverage.packet.json"
+            telemetry["top_slowest_by_component_type"]["provider-home"],
+        )
+
+    def test_validation_timing_sink_defers_child_publication(self) -> None:
+        captured: list[dict[str, object]] = []
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with coverage_run.validation_timing_sink(captured.append):
+                with coverage_run.validation_timing(
+                    component_type="provider-home",
+                    component_id="aoa-demo",
+                ):
+                    pass
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(1, len(captured))
+        self.assertEqual("validation-timing", captured[0]["event"])
+        self.assertEqual(0, summary["validation_telemetry"]["timing_count"])
+
+    def test_failed_validation_timing_preserves_failure_and_records_status(self) -> None:
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
+            with self.assertRaisesRegex(RuntimeError, "proof failed"):
+                with coverage_run.validation_timing(
+                    component_type="repo-local-index-phase",
+                    component_id="semantic-validation",
+                ):
+                    raise RuntimeError("proof failed")
+            summary = coverage_run.coverage_run_summary(run)
+
+        telemetry = summary["validation_telemetry"]
+        self.assertEqual(1, telemetry["failed_timing_count"])
+        self.assertEqual("failed", telemetry["timings"][0]["status"])
+
+    def test_validation_telemetry_publication_failure_is_degraded(self) -> None:
+        stderr = io.StringIO()
+        with patch.object(
+            coverage_run,
+            "record_coverage_event",
+            side_effect=OSError("receipt unavailable"),
+        ), redirect_stderr(stderr):
+            coverage_run.record_validation_timing(
+                component_type="provider-home",
+                component_id="aoa-demo",
+                duration_ms=1,
+                cpu_user_ms=1,
+                cpu_system_ms=0,
+                process_peak_rss_kib=1024,
+                status="passed",
+            )
+
+        self.assertIn("[aoa-kag-validation-telemetry-degraded]", stderr.getvalue())
+        self.assertIn("receipt unavailable", stderr.getvalue())
+
+    def test_coverage_run_receipt_appends_bounded_github_step_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            step_summary = Path(temp_dir) / "step-summary.md"
+            with patch.dict(
+                os.environ,
+                {coverage_run.GITHUB_STEP_SUMMARY_ENV: step_summary.as_posix()},
+            ):
+                with coverage_run.coverage_run_scope(lane="test", force_new=True):
+                    pass
+
+            rendered = step_summary.read_text(encoding="utf-8")
+
+        self.assertIn("### KAG coverage run receipt: `test`", rendered)
+        encoded = rendered.split("```json\n", 1)[1].split("\n```", 1)[0]
+        receipt = json.loads(encoded)
+        self.assertEqual(
+            coverage_run.COVERAGE_RECEIPT_SCHEMA_VERSION,
+            receipt["schema_version"],
+        )
+        self.assertEqual("test", receipt["lane"])
+        self.assertEqual(0, receipt["coverage_build_count"])
+
+    def test_coverage_run_receipt_reports_step_summary_failure_as_degraded(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            unavailable = Path(temp_dir) / "missing" / "step-summary.md"
+            stderr = io.StringIO()
+            with patch.dict(
+                os.environ,
+                {coverage_run.GITHUB_STEP_SUMMARY_ENV: unavailable.as_posix()},
+            ), redirect_stderr(stderr):
+                with coverage_run.coverage_run_scope(lane="test", force_new=True):
+                    pass
+
+        output = stderr.getvalue()
+        self.assertIn("[aoa-kag-coverage-run-receipt]", output)
+        self.assertIn(
+            "[aoa-kag-coverage-run-receipt-summary-degraded]",
+            output,
+        )
+
+    def test_coverage_run_receipt_refuses_oversized_step_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            step_summary = Path(temp_dir) / "step-summary.md"
+            stderr = io.StringIO()
+            with patch.dict(
+                os.environ,
+                {coverage_run.GITHUB_STEP_SUMMARY_ENV: step_summary.as_posix()},
+            ), patch.object(
+                coverage_run,
+                "GITHUB_STEP_SUMMARY_RECEIPT_MAX_BYTES",
+                1,
+            ), redirect_stderr(stderr):
+                with coverage_run.coverage_run_scope(lane="test", force_new=True):
+                    pass
+
+        self.assertFalse(step_summary.exists())
+        self.assertIn("bounded maximum is 1", stderr.getvalue())
+
+    def test_provider_coverage_packet_rebuilds_only_for_a_new_input_epoch(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        first_identity = coverage_identity_for_payload(payload, epoch="first")
+        second_identity = coverage_identity_for_payload(payload, epoch="second")
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run, patch.object(
+            coverage_generation,
+            "coverage_packet_identity",
+            side_effect=(
+                first_identity,
+                first_identity,
+                second_identity,
+                second_identity,
+            ),
+        ), patch.object(
+            coverage_generation,
+            "configured_owner_roots",
+            return_value=[],
+        ), patch.object(
+            coverage_generation,
+            "build_coverage",
+            return_value=payload,
+        ) as build:
+            coverage_generation.build_provider_coverage()
+            coverage_generation.build_provider_coverage()
+            summary = coverage_run.coverage_run_summary(run)
+
+        self.assertEqual(2, build.call_count)
+        self.assertEqual(2, summary["coverage_build_count"])
+        self.assertEqual(2, summary["packet_miss_count"])
+        self.assertEqual(0, summary["packet_hit_count"])
+        self.assertEqual(0, summary["packet_reject_count"])
+
+    def test_coverage_packet_rejects_tamper_and_incompatible_schema(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        with coverage_run.coverage_run_scope(lane="test", force_new=True) as run:
             coverage_generation.write_coverage_packet(
-                packet,
-                key=packet_key,
+                run.packet_path,
+                identity=identity,
                 payload=payload,
             )
-            raw = load_json(packet)
-            assert isinstance(raw, dict)
-            raw["coverage"] = {"schema_version": "tampered", "owners": []}
-            packet.write_text(json.dumps(raw), encoding="utf-8")
+            packet = load_json(run.packet_path)
+            assert isinstance(packet, dict)
+            packet["coverage"]["owners"][0]["coverage"]["documents"] += 1
+            run.packet_path.write_text(json.dumps(packet), encoding="utf-8")
             with self.assertRaisesRegex(RuntimeError, "payload digest mismatch"):
-                coverage_generation.load_coverage_packet(packet, expected_key=packet_key)
+                coverage_generation.load_coverage_packet(run.packet_path)
 
             coverage_generation.write_coverage_packet(
-                packet,
-                key=packet_key,
+                run.packet_path,
+                identity=identity,
                 payload=payload,
             )
-            with self.assertRaisesRegex(RuntimeError, "snapshot changed"):
-                coverage_generation.load_coverage_packet(packet, expected_key=changed_key)
+            packet = load_json(run.packet_path)
+            assert isinstance(packet, dict)
+            packet["schema_version"] = "unsupported-packet"
+            run.packet_path.write_text(json.dumps(packet), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "schema is incompatible"):
+                coverage_generation.load_coverage_packet(run.packet_path)
 
-    def test_coverage_packet_schema_is_valid(self) -> None:
-        schema = load_json(COVERAGE_PACKET_SCHEMA_PATH)
-        assert isinstance(schema, dict)
-        Draft202012Validator.check_schema(schema)
+            coverage_generation.write_coverage_packet(
+                run.packet_path,
+                identity=identity,
+                payload=payload,
+            )
+            packet = load_json(run.packet_path)
+            assert isinstance(packet, dict)
+            packet["identity"]["schema_version"] = "unsupported-identity"
+            run.packet_path.write_text(json.dumps(packet), encoding="utf-8")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "identity schema is incompatible",
+            ):
+                coverage_generation.load_coverage_packet(run.packet_path)
+
+    def test_coverage_packet_rejects_incomplete_owner_payload(self) -> None:
+        payload = load_json(REPO_ROOT / "generated" / "repo_local_kag_coverage.json")
+        assert isinstance(payload, dict)
+        identity = coverage_identity_for_payload(payload)
+        incomplete_payload = json.loads(json.dumps(payload))
+        incomplete_payload["owners"].pop()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "owner membership or order",
+            ):
+                coverage_generation.write_coverage_packet(
+                    Path(tmpdir) / "coverage.packet.json",
+                    identity=identity,
+                    payload=incomplete_payload,
+                )
+
+    def test_coverage_packet_provider_snapshot_rejects_stale_pin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init"), cwd=root, check=True, capture_output=True)
+            subprocess.run(
+                ("git", "config", "user.email", "test@example.com"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.name", "Test"),
+                cwd=root,
+                check=True,
+            )
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-m", "Base"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+            with self.assertRaisesRegex(RuntimeError, "provider pin mismatch"):
+                coverage_generation._provider_snapshot(
+                    "aoa-demo",
+                    root,
+                    expected_ref="f" * 40,
+                )
+
+    def test_coverage_packet_provider_snapshot_rejects_missing_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            missing_root = Path(tmpdir) / "missing-owner"
+            with self.assertRaisesRegex(RuntimeError, "provider root is unavailable"):
+                coverage_generation._provider_snapshot(
+                    "aoa-demo",
+                    missing_root,
+                    expected_ref="f" * 40,
+                )
+
+    def test_coverage_runtime_identity_tracks_schema_and_config_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            config_path = root / "config" / "validation.json"
+            schema_path = root / "schemas" / "coverage.schema.json"
+            config_path.parent.mkdir(parents=True)
+            schema_path.parent.mkdir(parents=True)
+            config_path.write_text('{"lane":"full"}\n', encoding="utf-8")
+            schema_path.write_text('{"type":"object"}\n', encoding="utf-8")
+            with patch.object(
+                coverage_generation,
+                "REPO_ROOT",
+                root,
+            ), patch.object(
+                coverage_generation,
+                "COVERAGE_RUNTIME_INPUT_PATHS",
+                (
+                    Path("config/validation.json"),
+                    Path("schemas/coverage.schema.json"),
+                ),
+            ):
+                baseline = coverage_generation._coverage_runtime_inputs_digest()
+                config_path.write_text('{"lane":"local"}\n', encoding="utf-8")
+                config_changed = (
+                    coverage_generation._coverage_runtime_inputs_digest()
+                )
+                config_path.write_text('{"lane":"full"}\n', encoding="utf-8")
+                schema_path.write_text(
+                    '{"type":"object","additionalProperties":false}\n',
+                    encoding="utf-8",
+                )
+                schema_changed = (
+                    coverage_generation._coverage_runtime_inputs_digest()
+                )
+
+        self.assertNotEqual(baseline, config_changed)
+        self.assertNotEqual(baseline, schema_changed)
+
+    def test_coverage_packet_identity_tracks_head_index_and_dirty_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init"), cwd=root, check=True, capture_output=True)
+            subprocess.run(
+                ("git", "config", "user.email", "test@example.com"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.name", "Test"),
+                cwd=root,
+                check=True,
+            )
+            (root / "README.md").write_text("# Owner\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-m", "Base"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+
+            clean_head = coverage_generation._git_head("demo", root)
+            clean_tree = coverage_generation._git_index_tree("demo", root)
+            clean_worktree = coverage_generation._git_worktree_digest("demo", root)
+            subprocess.run(
+                ("git", "commit", "--allow-empty", "-m", "History"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+            history_head = coverage_generation._git_head("demo", root)
+            history_tree = coverage_generation._git_index_tree("demo", root)
+            history_worktree = coverage_generation._git_worktree_digest("demo", root)
+            (root / "README.md").write_text("# Dirty owner\n", encoding="utf-8")
+            dirty_worktree = coverage_generation._git_worktree_digest("demo", root)
+            (root / "UNTRACKED.md").write_text("# Untracked\n", encoding="utf-8")
+            untracked_worktree = coverage_generation._git_worktree_digest("demo", root)
+
+        self.assertNotEqual(clean_head, history_head)
+        self.assertEqual(clean_tree, history_tree)
+        self.assertEqual(clean_worktree, history_worktree)
+        self.assertNotEqual(history_worktree, dirty_worktree)
+        self.assertNotEqual(dirty_worktree, untracked_worktree)
+
+    def test_coverage_packet_identity_requires_each_owner_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            with self.assertRaisesRegex(RuntimeError, "portable family manifest"):
+                coverage_generation._portable_manifest_identity("aoa-demo", root)
 
     def test_provider_coverage_keeps_invalid_common_index_visible(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -14,6 +14,11 @@ Do not update expected generated projections without checking manifests, source 
 
 Keep fixtures public-safe. No private corpora, hidden embeddings, secrets, or unreduced source dumps.
 
+Impact-routing fixtures must include both owner-local positive cases and
+fail-closed negative cases. Preserve explicit regressions for unknown paths,
+unverified pack/blob additions, trusted import code, and any workflow shape
+that lets an owner-family check replace source-fast.
+
 Full validation command sequences live in `config/validation_lanes.json`.
 Use the test runner or lane entrypoint:
 

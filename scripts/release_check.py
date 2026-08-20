@@ -8,8 +8,10 @@ from pathlib import Path
 
 try:  # Supports both ``python scripts/release_check.py`` and package-style imports.
     from scripts import validation_lanes
+    from scripts.coverage_run import coverage_run_scope
 except ImportError:  # pragma: no cover - exercised by direct script execution
     import validation_lanes  # type: ignore
+    from coverage_run import coverage_run_scope  # type: ignore
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_LANE_ID = "release"
@@ -56,8 +58,10 @@ def capture_repo_state(repo_root: Path) -> RepoStateSnapshot:
     )
 
 
-def release_lane_commands() -> tuple[validation_lanes.Command, ...]:
-    return validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)
+def release_lane_commands(
+    lane_id: str = RELEASE_LANE_ID,
+) -> tuple[validation_lanes.Command, ...]:
+    return validation_lanes.command_sequence_for_lane(lane_id)
 
 
 def normalized_worktree_status(snapshot: RepoStateSnapshot) -> str:
@@ -87,9 +91,8 @@ def run_release_lane(commands: tuple[validation_lanes.Command, ...], repo_root: 
         run_command(command, repo_root)
 
 
-def main() -> int:
-    repo_root = Path(__file__).resolve().parents[1]
-    release_commands = release_lane_commands()
+def run_release_check(repo_root: Path, *, lane_id: str = RELEASE_LANE_ID) -> int:
+    release_commands = release_lane_commands(lane_id)
     before_state = capture_repo_state(repo_root)
 
     run_release_lane(release_commands, repo_root)
@@ -128,6 +131,12 @@ def main() -> int:
 
     print("[ok] release check completed")
     return 0
+
+
+def main() -> int:
+    repo_root = Path(__file__).resolve().parents[1]
+    with coverage_run_scope(lane=RELEASE_LANE_ID):
+        return run_release_check(repo_root)
 
 
 if __name__ == "__main__":

@@ -57,6 +57,11 @@
       "items": {"type": "string", "pattern": "^aoa-kag://"}
     },
     "projection": {"$ref": "#/$defs/projection"},
+    "distribution": {"$ref": "#/$defs/distribution"},
+    "degradation": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/degradation"}
+    },
     "kinds": {
       "type": "object",
       "propertyNames": {"$ref": "#/$defs/recordClass"},
@@ -166,6 +171,47 @@
             "graph": {"$ref": "#/$defs/target"},
             "retrieval_eval": {"$ref": "#/$defs/target"}
           }
+        },
+        "distribution": {"$ref": "#/$defs/distribution"}
+      }
+    },
+    "degradation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "state", "fallback"],
+      "properties": {
+        "target": {"$ref": "#/$defs/nonEmptyString"},
+        "state": {"$ref": "#/$defs/nonEmptyString"},
+        "fallback": {"$ref": "#/$defs/nonEmptyString"},
+        "reason": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "composition_identity",
+        "owners",
+        "summary",
+        "degradation"
+      ],
+      "properties": {
+        "state": {"$ref": "#/$defs/nonEmptyString"},
+        "updated_at": {"type": ["string", "null"]},
+        "composition_identity": {"type": ["object", "null"]},
+        "owners": {
+          "type": "array",
+          "items": {"type": "object"}
+        },
+        "candidates": {
+          "type": "array",
+          "items": {"type": "object"}
+        },
+        "summary": {"type": "object"},
+        "degradation": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/degradation"}
         }
       }
     }

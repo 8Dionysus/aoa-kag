@@ -26,10 +26,10 @@ def repo_root_from_env(env_name: str, default: Path) -> Path:
         return default
     return Path(override).expanduser().resolve()
 
-OS_ABYSS_ROOT = repo_root_from_env("OS_ABYSS_ROOT", REPO_ROOT.parent)
+OS_ABYSS_ROOT = repo_root_from_env("OS_ABYSS_ROOT", Path("/srv/AbyssOS"))
 
 TREE_OF_SOPHIA_ROOT = repo_root_from_env(
-    "TREE_OF_SOPHIA_ROOT", REPO_ROOT.parent / "Tree-of-Sophia"
+    "TREE_OF_SOPHIA_ROOT", OS_ABYSS_ROOT / "Tree-of-Sophia"
 )
 
 SCHEMA_PATH = REPO_ROOT / "schemas" / "kag-registry.schema.json"

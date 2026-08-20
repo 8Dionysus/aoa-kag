@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+import hashlib
 import json
 import subprocess
 import sys
@@ -279,6 +281,34 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     manifest=raised_manifest,
                 )
 
+    def test_portable_family_budget_admission_can_only_be_deferred_explicitly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            manifest, shards = build_portable_family(
+                source_index,
+                family,
+                previous_manifest={"budgets": {"tracked_bytes_max": 1}},
+            )
+            write_portable_output(root, manifest, shards)
+
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "without a matching digest-bound receipt",
+            ):
+                load_portable_family(root)
+
+            loaded_source, loaded_family, loaded_manifest = load_portable_family(
+                root,
+                require_budget_receipt=False,
+            )
+
+        self.assertEqual(source_index, loaded_source)
+        self.assertEqual(family, loaded_family)
+        self.assertEqual(manifest, loaded_manifest)
+
     def test_portable_family_paths_do_not_amplify_repository_event_delta(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -517,6 +547,29 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     source_index["index_identity"]["content_digest"],
                     payload["source_index"]["content_digest"],
                 )
+
+    def test_payload_digest_matches_deepcopy_reference_without_mutating_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            payload = build_index(root)
+
+        original = copy.deepcopy(payload)
+        digest_material = copy.deepcopy(payload)
+        digest_material["index_identity"]["content_digest"] = "0" * 64
+        expected = hashlib.sha256(
+            json.dumps(
+                digest_material,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+
+        self.assertEqual(expected, payload_digest(payload))
+        self.assertEqual(original, payload)
+        self.assertEqual(expected, repo_local_kag_index_digest_without_self(payload))
+        self.assertEqual(original, payload)
 
     def test_entity_and_artifact_indexes_cover_unknown_surfaces(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

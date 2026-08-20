@@ -31,6 +31,16 @@ never sufficient evidence by itself; the owner manifest establishes the
 exposure mode, and deterministic parity is additionally required for a v1
 copy.
 
+## Rule 2b: a capability read model is not capability truth
+
+When an owner capability-home manifest declares generated graph and routing
+surfaces, KAG must classify every declared projection from that manifest,
+preserve its builder and validator provenance, and return to the tracked
+capability-family contracts. The manifest owner must match the indexed
+repository and its root capability must resolve to exactly one family contract.
+A routing card's placement inside a portable skill package does not make the
+generated card authored procedure.
+
 ## Rule 3: KAG is not proof
 
 A graph-ready or retrieval-ready surface may support reasoning.
@@ -43,7 +53,9 @@ Proof still belongs to `aoa-evals`.
 A derived knowledge surface may support navigation.
 That does not make the KAG layer the owner of dispatch.
 
-Navigation still belongs to `aoa-routing`.
+Navigation and dispatch control-plane behavior belong to `aoa-sdk`. The stable
+`aoa-routing` name may remain a compatibility namespace, but the predecessor
+repository is not the live owner.
 
 ## Rule 5: KAG is not memory truth
 

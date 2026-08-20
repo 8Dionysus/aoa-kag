@@ -1,0 +1,68 @@
+{
+  "schema_version": "aoa_kag_mcp_owner_acceptance_receipt_v1",
+  "organ_id": "aoa-kag",
+  "capability_id": "knowledge-retrieval",
+  "policy_family": "read",
+  "decision": "accepted",
+  "owners": {
+    "source": "aoa-kag",
+    "access": "aoa-kag",
+    "control": "aoa-sdk",
+    "runtime": "abyss-stack",
+    "proof": "aoa-evals",
+    "acceptance": "aoa-kag"
+  },
+  "accepted_at": "2026-08-01T04:00:02Z",
+  "expires_at": "2026-08-01T04:05:02Z",
+  "source": {
+    "revision": "1111111111111111111111111111111111111111",
+    "tree_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "source_ref": "owner-source://aoa-kag/1111111111111111111111111111111111111111/3333333333333333333333333333333333333333333333333333333333333333",
+    "source_receipt_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+  },
+  "package": {
+    "name": "aoa-kag-mcp",
+    "version": "0.1.0",
+    "artifact_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "deploy_revision": "example-stack-revision",
+    "deploy_tree_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "deploy_manifest_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "runtime_target": {
+    "process_identity": "systemd-user:aoa-kag:pid:1234:start:5678",
+    "server_schema_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "consumer_registration_ref": "consumer-registration://8Dionysus/codex/aoa_kag/8888888888888888888888888888888888888888888888888888888888888888",
+    "canary_route": "runbook://mcp-canary/aoa-kag/read",
+    "canary_ref": "/private/canaries/records/aoa-kag/example.json"
+  },
+  "central_proof": {
+    "proof_ref": "/private/proof-observations/records/aoa-kag/example.json",
+    "proof_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "evaluated_at": "2026-08-01T04:00:01Z",
+    "eval_name": "aoa-organ-access-admission-integrity",
+    "packet_ref": "/private/central-proof/candidates/aoa-kag.read.packet.json",
+    "packet_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "packet_id": "example.aoa-kag.read.consumer-bound",
+    "eval_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "manifest_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "packet_schema_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "owner_result_review": {
+    "review_ref": "/private/owner-reviews/aoa-kag/example.json",
+    "review_id": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "result_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "provider_watermark": "aoa-kag-source-index:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "admission_authorized": false,
+  "higher_effect_authorized": false,
+  "cross_organ_benefit_asserted": false,
+  "rollback_proven": false,
+  "contains_secrets": false,
+  "claim_limits": [
+    "This fictional receipt illustrates owner acceptance of one exact KAG read contour.",
+    "It does not authorize registry admission, runtime mutation, or higher effects.",
+    "It does not prove rollback, cross-organ benefit, protocol migration, or consumer-zero.",
+    "All identities and private-looking paths in this public example are illustrative only."
+  ],
+  "receipt_digest": "sha256:5c28dcf5359d453c77ac963c589b5e14d0afe5374bc2e86b20b402e24523fafe"
+}

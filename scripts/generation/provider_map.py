@@ -4,6 +4,15 @@ from collections import Counter
 
 from .common import *
 
+try:
+    from scripts.repo_local.portable_family import (
+        effective_index_surface_record,
+    )
+except ImportError:  # pragma: no cover - direct script execution
+    from repo_local.portable_family import (  # type: ignore
+        effective_index_surface_record,
+    )
+
 
 RECORD_CLASS_DIRECTORIES = {
     "node": "nodes",
@@ -66,8 +75,6 @@ REPOSITORY_META_INDEX_SCHEMA_VERSIONS = {
     "aoa-repo-local-kag-hot-profile-v1",
     "aoa-kag-artifact-locator-v1",
 }
-
-
 def _is_repo_local_meta_index_payload(payload: object) -> bool:
     return (
         isinstance(payload, dict)
@@ -77,6 +84,15 @@ def _is_repo_local_meta_index_payload(payload: object) -> bool:
 
 def _is_repo_local_source_index_path(group: str, path: Path) -> bool:
     return group == "indexes" and path.name == "source_surface_index.json"
+
+
+def _is_portable_family_manifest(group: str, path: Path, payload: object) -> bool:
+    return (
+        group == "indexes"
+        and path.name == "index_family.manifest.json"
+        and isinstance(payload, dict)
+        and payload.get("schema_version") == "aoa-repo-local-kag-family-manifest-v3"
+    )
 
 
 def _provider_record_payloads(
@@ -92,6 +108,8 @@ def _provider_record_payloads(
         directory = root / group
         if not directory.is_dir():
             fail(f"{repo} local KAG provider is missing kag/{group}/")
+        group_record_start = len(records)
+        portable_effective_index: dict[str, object] | None = None
         for path in sorted(directory.glob("*.json")):
             if _is_repo_local_source_index_path(group, path):
                 continue
@@ -101,9 +119,21 @@ def _provider_record_payloads(
                     f"{repo} local KAG provider record must be a JSON object: "
                     f"{path.as_posix()}"
                 )
+            if _is_portable_family_manifest(group, path, payload):
+                portable_effective_index = effective_index_surface_record(
+                    payload,
+                    repo=repo,
+                )
+                continue
             if _is_repo_local_meta_index_payload(payload):
                 continue
             records.append(payload)
+        if (
+            group == "indexes"
+            and len(records) == group_record_start
+            and portable_effective_index is not None
+        ):
+            records.append(portable_effective_index)
     if not records:
         fail(f"{repo} local KAG provider must contain records")
     return records
@@ -286,13 +316,22 @@ def _provider_record_counts(
         if not directory.is_dir():
             fail(f"{repo} local KAG provider is missing kag/{group}/")
         result[group] = 0
+        has_portable_family_manifest = False
         for path in sorted(directory.glob("*.json")):
             if _is_repo_local_source_index_path(group, path):
                 continue
             payload = read_json(path)
+            has_portable_family_manifest = (
+                has_portable_family_manifest
+                or _is_portable_family_manifest(group, path, payload)
+            )
             if _is_repo_local_meta_index_payload(payload):
                 continue
             result[group] += 1
+        if result[group] < 1 and has_portable_family_manifest:
+            # A v3 portable family manifest is the complete live index surface
+            # when compatibility monoliths are assembled only on demand.
+            result[group] = 1
         if result[group] < 1:
             fail(f"{repo} local KAG provider kag/{group}/ must contain JSON records")
     return result
@@ -573,7 +612,7 @@ def build_local_kag_provider_map_payload() -> dict[str, object]:
         {
             "surface_id": surface["surface_id"],
             "surface_class": surface["surface_class"],
-            "root": f"aoa-surface:{surface['surface_id']}",
+            "root": surface["root"],
             "provider_status": surface["provider_status"],
             "owner_return_route": surface["owner_return_route"],
             "candidate_source_surfaces": surface["candidate_source_surfaces"],

@@ -19,7 +19,8 @@
       "const": "schemas/repo-local-kag-index.schema.json"
     },
     "root": {
-      "const": "aoa-os:canonical-providers"
+      "type": "string",
+      "minLength": 1
     },
     "coverage_summary": {
       "type": "object",
@@ -29,9 +30,7 @@
         "passed",
         "migration_needed",
         "missing",
-        "owner_specific",
-        "measured_owner_count",
-        "self_excluded_owner_count"
+        "owner_specific"
       ],
       "properties": {
         "owner_count": {
@@ -164,11 +163,10 @@
         },
         "root": {
           "type": "string",
-          "pattern": "^aoa-owner:[A-Za-z0-9_.-]+$"
+          "minLength": 1
         },
         "kag_home": {
-          "type": "string",
-          "pattern": "^(|aoa-owner:[A-Za-z0-9_.-]+:kag)$"
+          "type": "string"
         },
         "index_status": {
           "type": "string",
@@ -269,21 +267,7 @@
         "tracked_bytes_max",
         "shards",
         "budget_state",
-        "receipt_ref",
-        "corpus_digest",
-        "distribution_digest",
-        "git_hot_bytes",
-        "corpus_total_bytes",
-        "artifact_cold_bytes",
-        "git_hot_objects",
-        "artifact_cold_objects",
-        "placement_state",
-        "hot_profile_ref",
-        "artifact_locator_ref",
-        "os_git_hot_target_bytes",
-        "aggregate_ceiling_receiptable_by_owner",
-        "measurement_state",
-        "measurement_ref"
+        "receipt_ref"
       ],
       "properties": {
         "manifest_ref": {

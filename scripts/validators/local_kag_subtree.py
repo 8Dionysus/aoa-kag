@@ -1,20 +1,50 @@
 from __future__ import annotations
 
+import multiprocessing
+import resource
 import sys
+import time
+from concurrent.futures import ProcessPoolExecutor
+from functools import lru_cache
 
 from .common import *
 from .schema_surfaces import validate_top_level_schema
 
 try:
-    from scripts.provider_registry import configured_provider_roots
+    from scripts.provider_registry import configured_provider_roots, provider_roots
 except ImportError:  # pragma: no cover - direct script execution
-    from provider_registry import configured_provider_roots  # type: ignore
+    from provider_registry import configured_provider_roots, provider_roots  # type: ignore
+
+try:
+    from scripts.coverage_run import (
+        VALIDATION_TIMING_SCHEMA_VERSION,
+        record_validation_event,
+        validation_timing,
+        validation_timing_sink,
+    )
+except ImportError:  # pragma: no cover - direct script execution
+    from coverage_run import (  # type: ignore
+        VALIDATION_TIMING_SCHEMA_VERSION,
+        record_validation_event,
+        validation_timing,
+        validation_timing_sink,
+    )
 
 OS_ABYSS_ROOT = Path(os.environ.get("OS_ABYSS_ROOT", "/srv/AbyssOS"))
 HOME_SRC_ROOT = Path(os.environ.get("AOA_HOME_SRC_ROOT", "/home/dionysus/src"))
 STRICT_OS_SURFACE_ROOTS = os.environ.get("CI") != "true"
+FORCE_COLD_SCHEMA_COMPILATION_ENV = "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION"
+PROVIDER_AUDIT_WORKERS_ENV = "AOA_KAG_PROVIDER_AUDIT_WORKERS"
+PROVIDER_AUDIT_WORKER_CHOICES = {1, 2, 3}
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
-EXPECTED_DIRECT_REPOS = set(PROVIDER_REPO_ROOTS)
+CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
+RETIRED_REFERENCE_REPOS = {"Dionysus", "aoa-routing"}
+SOURCE_PREPARATION_REPOS = {"ATM10-Agent", "aoa-models"}
+EXPECTED_DIRECT_REPOS = (
+    set(PROVIDER_REPO_ROOTS)
+    | RETIRED_REFERENCE_REPOS
+    | SOURCE_PREPARATION_REPOS
+)
 
 EXPECTED_CONNECTOR_SURFACE_ROOTS = {
     "connectors/aoa-4pda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-4pda-connector",
@@ -42,8 +72,12 @@ EXPECTED_OS_SURFACE_ROOTS = {
     "bundles/aoa-session-memory": OS_ABYSS_ROOT / "bundles" / "aoa-session-memory",
     "connectors": OS_ABYSS_ROOT / "connectors",
     **EXPECTED_CONNECTOR_SURFACE_ROOTS,
-    "src/abyss-machine": HOME_SRC_ROOT / "abyss-machine",
-    "src/abyss-stack": HOME_SRC_ROOT / "abyss-stack",
+    "src/abyss-machine": CANONICAL_PROVIDER_REPO_ROOTS["abyss-machine"],
+    "src/abyss-stack": CANONICAL_PROVIDER_REPO_ROOTS["abyss-stack"],
+}
+RUNTIME_SOURCE_SURFACE_REPOS = {
+    "src/abyss-machine": "abyss-machine",
+    "src/abyss-stack": "abyss-stack",
 }
 
 EXPECTED_OS_SURFACE_CLASSES = {
@@ -75,7 +109,7 @@ OS_SURFACE_PATH_LIST_KEYS = (
 )
 
 REQUIRED_RECORD_CLASSES = {"node", "edge", "index", "projection", "receipt"}
-EXPECTED_PROVIDER_READY_REPOS = set(EXPECTED_DIRECT_REPOS)
+EXPECTED_PROVIDER_READY_REPOS = set(PROVIDER_REPO_ROOTS)
 REPO_LOCAL_SOURCE_INDEX_NAME = "source_surface_index.json"
 REPO_LOCAL_FAMILY_MANIFEST_NAME = "index_family.manifest.json"
 REPO_LOCAL_TIERED_CONTROL_SCHEMAS = {
@@ -137,8 +171,11 @@ def _validate_payload_against_local_kag_schema(payload: object, *, label: str) -
         fail(f"{label} does not match local KAG subtree schema{suffix}: {first.message}")
 
 
-def _validate_payload_against_schema_def(payload: object, *, def_name: str, label: str) -> None:
-    schema = read_json(LOCAL_KAG_SUBTREE_SCHEMA_PATH)
+def _build_local_kag_schema_def_validator(
+    schema_bytes: bytes,
+    def_name: str,
+) -> Draft202012Validator:
+    schema = json.loads(schema_bytes.decode("utf-8"))
     if not isinstance(schema, dict):
         fail("local KAG subtree schema must be a JSON object")
     wrapper = {
@@ -148,7 +185,31 @@ def _validate_payload_against_schema_def(payload: object, *, def_name: str, labe
         "$ref": f"#/$defs/{def_name}",
     }
     Draft202012Validator.check_schema(wrapper)
-    errors = sorted(Draft202012Validator(wrapper).iter_errors(payload), key=lambda error: list(error.path))
+    return Draft202012Validator(wrapper)
+
+
+@lru_cache(maxsize=16)
+def _cached_local_kag_schema_def_validator(
+    schema_bytes: bytes,
+    def_name: str,
+) -> Draft202012Validator:
+    return _build_local_kag_schema_def_validator(schema_bytes, def_name)
+
+
+def _validate_payload_against_schema_def(payload: object, *, def_name: str, label: str) -> None:
+    try:
+        schema_bytes = LOCAL_KAG_SUBTREE_SCHEMA_PATH.read_bytes()
+    except FileNotFoundError:
+        fail(f"missing required file: {display_path(LOCAL_KAG_SUBTREE_SCHEMA_PATH)}")
+    try:
+        validator = (
+            _build_local_kag_schema_def_validator(schema_bytes, def_name)
+            if os.environ.get(FORCE_COLD_SCHEMA_COMPILATION_ENV) == "1"
+            else _cached_local_kag_schema_def_validator(schema_bytes, def_name)
+        )
+    except json.JSONDecodeError as exc:
+        fail(f"invalid JSON in {display_path(LOCAL_KAG_SUBTREE_SCHEMA_PATH)}: {exc}")
+    errors = sorted(validator.iter_errors(payload), key=lambda error: list(error.path))
     if errors:
         first = errors[0]
         path = format_schema_path(first.path)
@@ -212,6 +273,21 @@ def _validate_record_links(packet: dict[str, object]) -> None:
 
     for group_name in ("indexes", "projections"):
         for record in groups[group_name]:
+            if (
+                group_name == "indexes"
+                and record.get("effective_index_surface")
+                == "portable_family_manifest"
+            ):
+                if (
+                    record.get("schema_version")
+                    != "aoa-repo-local-kag-family-manifest-v3"
+                    or not record.get("portable_family_content_digest")
+                ):
+                    fail(
+                        "local KAG portable family effective index surface "
+                        "must keep its schema and content digest"
+                    )
+                continue
             source_ids = record.get("source_record_ids")
             if not isinstance(source_ids, list) or not source_ids:
                 fail(f"local KAG {group_name} record {record.get('local_id')} must keep source_record_ids")
@@ -256,6 +332,15 @@ def _validate_readiness_matrix(payload: dict[str, object]) -> None:
         if not isinstance(entry, dict):
             fail("local KAG readiness matrix repo entries must be objects")
         repo = entry["repo"]
+        if (
+            str(repo) in SOURCE_PREPARATION_REPOS
+            and entry["provider_status"] != "source_preparation"
+        ):
+            fail(
+                "unadmitted direct owner repos must remain source_preparation until "
+                "their committed provider homes enter the provider registry: "
+                + str(repo)
+            )
         if entry["provider_status"] == "provider_ready":
             ready_repos.add(str(repo))
             if set(entry.get("first_record_classes", [])) != REQUIRED_RECORD_CLASSES:
@@ -439,9 +524,14 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             fail(f"OS surface {surface_id} must keep surface_class {expected_class}")
         if entry.get("root") != expected_root.as_posix():
             fail(f"OS surface {surface_id} must keep root {expected_root.as_posix()}")
-        root_available = expected_root.is_dir()
+        validation_root = (
+            PROVIDER_REPO_ROOTS[RUNTIME_SOURCE_SURFACE_REPOS[surface_id]]
+            if surface_id in RUNTIME_SOURCE_SURFACE_REPOS
+            else expected_root
+        )
+        root_available = validation_root.is_dir()
         if STRICT_OS_SURFACE_ROOTS and not root_available:
-            fail(f"OS surface {surface_id} root must exist: {expected_root.as_posix()}")
+            fail(f"OS surface {surface_id} root must exist: {validation_root.as_posix()}")
 
         if expected_class == "connector_repo":
             connector_rows += 1
@@ -458,7 +548,7 @@ def _validate_os_surfaces(payload: dict[str, object]) -> None:
             if not isinstance(values, list):
                 fail(f"OS surface {surface_id} {key} must be a list")
             for relative_path in values:
-                _validate_surface_path(expected_root, relative_path, label=f"OS surface {surface_id} {key}")
+                _validate_surface_path(validation_root, relative_path, label=f"OS surface {surface_id} {key}")
 
     if connector_rows != EXPECTED_CONNECTOR_SURFACE_COUNT:
         fail("local KAG readiness matrix must cover every connector repo")
@@ -526,7 +616,16 @@ def _source_refs_in(payload: object):
             yield from _source_refs_in(item)
 
 
-def _validate_provider_home(repo: str, repo_root: Path) -> None:
+def _validate_provider_home(
+    repo: str,
+    repo_root: Path,
+    *,
+    prebuild: bool = True,
+) -> tuple[
+    dict[str, object],
+    dict[str, dict[str, object]],
+    dict[str, object],
+] | None:
     kag_root = repo_root / "kag"
     label = f"{repo} local KAG provider"
     for filename in ("AGENTS.md", "README.md", "manifest.json"):
@@ -545,6 +644,11 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
 
     groups: dict[str, list[dict[str, object]]] = {}
     source_index_cache: dict[Path, dict[str, object]] = {}
+    validated_portable_bundle: tuple[
+        dict[str, object],
+        dict[str, dict[str, object]],
+        dict[str, object],
+    ] | None = None
     for group_name, def_name in PROVIDER_RECORD_DIRS.items():
         directory = kag_root / group_name
         if not directory.is_dir():
@@ -553,6 +657,7 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
         if not files:
             fail(f"{label} kag/{group_name}/ must contain JSON records")
         records: list[dict[str, object]] = []
+        portable_effective_index: dict[str, object] | None = None
         for path in files:
             if group_name == "indexes" and path.name == REPO_LOCAL_SOURCE_INDEX_NAME:
                 continue
@@ -562,9 +667,17 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
             ):
                 payload = read_json(path)
                 from .repo_local_kag_index import (
-                    load_repo_local_kag_repository_index_family,
+                    load_repo_local_kag_repository_index_family_with_manifest,
                     repo_local_kag_validate_payload,
                 )
+                try:
+                    from scripts.repo_local.portable_family import (
+                        effective_index_surface_record,
+                    )
+                except ImportError:  # pragma: no cover - direct script execution
+                    from repo_local.portable_family import (  # type: ignore
+                        effective_index_surface_record,
+                    )
 
                 manifest_schema_path = (
                     REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH
@@ -578,12 +691,35 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                     schema_path=manifest_schema_path,
                     label=f"{label} {path.relative_to(repo_root).as_posix()}",
                 )
-                load_repo_local_kag_repository_index_family(
-                    repo_root=repo_root,
-                    source_index=Path(
-                        "kag/indexes/source_surface_index.json"
-                    ),
-                    label=f"{label} portable repository family",
+                source_payload, validated_family, portable_manifest = (
+                    load_repo_local_kag_repository_index_family_with_manifest(
+                        repo_root=repo_root,
+                        source_index=Path(
+                            "kag/indexes/source_surface_index.json"
+                        ),
+                        label=f"{label} portable repository family",
+                    )
+                )
+                if portable_manifest is None:
+                    fail(f"{label} portable repository family must keep its manifest")
+                validated_portable_bundle = (
+                    source_payload,
+                    validated_family,
+                    portable_manifest,
+                )
+                if not isinstance(payload, dict):
+                    fail(
+                        f"{label} {path.relative_to(repo_root).as_posix()} "
+                        "must be an object"
+                    )
+                portable_effective_index = (
+                    source_payload
+                    if payload.get("schema_version")
+                    == "aoa-repo-local-kag-distribution-manifest-v1"
+                    else effective_index_surface_record(
+                        payload,
+                        repo=repo,
+                    )
                 )
                 continue
             if (
@@ -670,9 +806,146 @@ def _validate_provider_home(repo: str, repo_root: Path) -> None:
                 label=f"{label} {path.relative_to(repo_root).as_posix()}",
             )
             records.append(record)
+        if (
+            group_name == "indexes"
+            and not records
+            and portable_effective_index is not None
+        ):
+            records.append(portable_effective_index)
         groups[group_name] = records
 
     _validate_record_links({"records": groups})
+    if validated_portable_bundle is not None and prebuild:
+        try:
+            from scripts.generate_repo_local_kag_coverage import (
+                prebuild_provider_coverage_owner,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from generate_repo_local_kag_coverage import (  # type: ignore
+                prebuild_provider_coverage_owner,
+            )
+        try:
+            prebuild_provider_coverage_owner(
+                repo,
+                repo_root,
+                validated_portable_bundle,
+            )
+        except RuntimeError as exc:
+            fail(str(exc))
+    return validated_portable_bundle
+
+
+def _provider_audit_workers() -> int:
+    configured = os.environ.get(PROVIDER_AUDIT_WORKERS_ENV)
+    if configured is None:
+        return 3 if "fork" in multiprocessing.get_all_start_methods() else 1
+    raw = configured.strip()
+    try:
+        workers = int(raw)
+    except ValueError:
+        fail(f"{PROVIDER_AUDIT_WORKERS_ENV} must be 1, 2, or 3")
+    if workers not in PROVIDER_AUDIT_WORKER_CHOICES:
+        fail(f"{PROVIDER_AUDIT_WORKERS_ENV} must be 1, 2, or 3")
+    return workers
+
+
+def _validate_provider_home_process_task(
+    task: tuple[str, str, str],
+) -> dict[str, object]:
+    repo, repo_root_text, os_root_text = task
+    repo_root = Path(repo_root_text)
+    os_root = Path(os_root_text)
+    started = time.perf_counter()
+    usage_before = resource.getrusage(resource.RUSAGE_SELF)
+    nested_timings: list[dict[str, object]] = []
+
+    try:
+        try:
+            from scripts.generate_repo_local_kag_coverage import (
+                _build_owner_coverage,
+                canonical_owner_root,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from generate_repo_local_kag_coverage import (  # type: ignore
+                _build_owner_coverage,
+                canonical_owner_root,
+            )
+
+        with validation_timing_sink(nested_timings.append):
+            portable_bundle = _validate_provider_home(
+                repo,
+                repo_root,
+                prebuild=False,
+            )
+            if portable_bundle is None:
+                raise RuntimeError(
+                    f"{repo} local KAG provider did not yield a portable family"
+                )
+            manifest = portable_bundle[2]
+            family_identity = manifest.get("family_identity")
+            family_content_digest = (
+                family_identity.get("content_digest")
+                if isinstance(family_identity, dict)
+                else None
+            )
+            if not isinstance(family_content_digest, str):
+                raise RuntimeError(
+                    f"{repo} local KAG provider family identity is unavailable"
+                )
+            owner_payload, owner_timing = _build_owner_coverage(
+                repo,
+                repo_root,
+                display_root=canonical_owner_root(os_root, repo),
+                portable_bundle=portable_bundle,
+            )
+        ok = True
+        error = ""
+    except Exception as exc:
+        ok = False
+        error = f"{type(exc).__name__}: {exc}"
+        family_content_digest = ""
+        owner_payload = {}
+        owner_timing = {}
+
+    usage_after = resource.getrusage(resource.RUSAGE_SELF)
+    provider_timing = {
+        "event": "validation-timing",
+        "timing_schema_version": VALIDATION_TIMING_SCHEMA_VERSION,
+        "component_type": "provider-home",
+        "component_id": repo,
+        "duration_ms": max(0, round((time.perf_counter() - started) * 1000)),
+        "cpu_user_ms": max(
+            0,
+            round((usage_after.ru_utime - usage_before.ru_utime) * 1000),
+        ),
+        "cpu_system_ms": max(
+            0,
+            round((usage_after.ru_stime - usage_before.ru_stime) * 1000),
+        ),
+        "process_peak_rss_kib": max(0, int(usage_after.ru_maxrss)),
+        "status": "passed" if ok else "failed",
+        "details": {
+            "repo_root": repo_root.as_posix(),
+            "execution_model": "process",
+        },
+    }
+    return {
+        "ok": ok,
+        "owner": repo,
+        "owner_root": repo_root.resolve().as_posix(),
+        "family_content_digest": family_content_digest,
+        "owner_payload": owner_payload,
+        "owner_timing": owner_timing,
+        "nested_timings": nested_timings,
+        "provider_timing": provider_timing,
+        "error": error,
+    }
+
+
+def _publish_process_validation_timing(event: object) -> None:
+    if not isinstance(event, dict):
+        fail("provider process returned malformed validation timing")
+    record_validation_event(event)
 
 
 def _validate_provider_ready_surfaces(
@@ -683,21 +956,120 @@ def _validate_provider_ready_surfaces(
     repos = readiness.get("repos")
     if not isinstance(repos, list):
         fail("local KAG readiness matrix repos must be a list")
+    surfaces: list[tuple[str, Path]] = []
     for entry in repos:
         if not isinstance(entry, dict) or entry.get("provider_status") != "provider_ready":
             continue
         repo = str(entry.get("repo"))
         repo_root = PROVIDER_REPO_ROOTS.get(repo, REPO_ROOT.parent / repo)
         if repo == KAG_REPO or repo_root.exists():
+            surfaces.append((repo, repo_root.resolve()))
+
+    if not surfaces:
+        return
+    workers = _provider_audit_workers()
+    if workers == 1:
+        for repo, repo_root in surfaces:
             _local_kag_phase(f"provider-home {repo}", progress=progress)
-            _validate_provider_home(repo, repo_root)
+            with validation_timing(
+                component_type="provider-home",
+                component_id=repo,
+                details={"repo_root": repo_root.as_posix()},
+            ):
+                _validate_provider_home(repo, repo_root)
+        return
+
+    if "fork" not in multiprocessing.get_all_start_methods():
+        fail("parallel provider audit requires the supported fork start method")
+    tasks = [
+        (repo, repo_root.as_posix(), OS_ABYSS_ROOT.resolve().as_posix())
+        for repo, repo_root in surfaces
+    ]
+    for repo, _repo_root in surfaces:
+        _local_kag_phase(f"provider-home {repo}", progress=progress)
+    try:
+        context = multiprocessing.get_context("fork")
+        with ProcessPoolExecutor(
+            max_workers=min(workers, len(tasks)),
+            mp_context=context,
+        ) as executor:
+            results = list(
+                executor.map(
+                    _validate_provider_home_process_task,
+                    tasks,
+                    chunksize=1,
+                )
+            )
+    except Exception as exc:
+        fail(f"parallel provider audit failed closed: {exc}")
+
+    if len(results) != len(surfaces):
+        fail("parallel provider audit returned an incomplete owner set")
+    for (expected_owner, expected_root), result in zip(surfaces, results):
+        if (
+            not isinstance(result, dict)
+            or result.get("owner") != expected_owner
+            or result.get("owner_root") != expected_root.as_posix()
+        ):
+            fail("parallel provider audit result identity mismatch")
+        nested_timings = result.get("nested_timings")
+        if not isinstance(nested_timings, list):
+            fail("parallel provider audit returned malformed nested timings")
+        for event in nested_timings:
+            _publish_process_validation_timing(event)
+        _publish_process_validation_timing(result.get("provider_timing"))
+        if result.get("ok") is not True:
+            fail(
+                f"parallel provider audit failed for {expected_owner}: "
+                f"{result.get('error', 'unknown child failure')}"
+            )
+
+    try:
+        from scripts.generate_repo_local_kag_coverage import (
+            prebuild_provider_coverage_owner_result,
+        )
+    except ImportError:  # pragma: no cover - direct script execution
+        from generate_repo_local_kag_coverage import (  # type: ignore
+            prebuild_provider_coverage_owner_result,
+        )
+    for (owner, owner_root), result in zip(surfaces, results):
+        family_content_digest = result.get("family_content_digest")
+        owner_payload = result.get("owner_payload")
+        owner_timing = result.get("owner_timing")
+        if (
+            not isinstance(family_content_digest, str)
+            or not isinstance(owner_payload, dict)
+            or not isinstance(owner_timing, dict)
+        ):
+            fail(f"parallel provider audit returned malformed proof data for {owner}")
+        try:
+            prebuild_provider_coverage_owner_result(
+                owner,
+                owner_root,
+                family_content_digest=family_content_digest,
+                owner_payload=owner_payload,
+                owner_timing=owner_timing,
+            )
+        except RuntimeError as exc:
+            fail(str(exc))
 
 
 def validate_local_kag_subtree_contract_with_progress() -> None:
     validate_local_kag_subtree_contract(progress=True)
 
 
-def validate_local_kag_subtree_contract(*, progress: bool = False) -> None:
+def validate_local_kag_subtree_local_contract_with_progress() -> None:
+    validate_local_kag_subtree_local_contract(progress=True)
+
+
+def validate_local_kag_provider_homes_contract_with_progress() -> None:
+    validate_local_kag_provider_homes_contract(progress=True)
+
+
+def _validate_local_kag_subtree_local_contract(
+    *,
+    progress: bool,
+) -> dict[str, object]:
     _local_kag_phase("schema", progress=progress)
     validate_top_level_schema(LOCAL_KAG_SUBTREE_SCHEMA_PATH, "local KAG subtree")
 
@@ -723,5 +1095,35 @@ def validate_local_kag_subtree_contract(*, progress: bool = False) -> None:
     _validate_registry_entries(example)
     _local_kag_phase("readiness-matrix", progress=progress)
     _validate_readiness_matrix(readiness)
+    return readiness
+
+
+def validate_local_kag_subtree_local_contract(*, progress: bool = False) -> None:
+    _validate_local_kag_subtree_local_contract(progress=progress)
+
+
+def validate_local_kag_provider_homes_contract(*, progress: bool = False) -> None:
+    _local_kag_phase("provider-home-readiness", progress=progress)
+    readiness = read_json(LOCAL_KAG_READINESS_MANIFEST_PATH)
+    if not isinstance(readiness, dict):
+        fail("local KAG readiness matrix must be a JSON object")
+    _validate_payload_against_local_kag_schema(
+        readiness,
+        label="local KAG readiness matrix",
+    )
+    _validate_language_posture(readiness, label="local KAG readiness matrix")
+    _validate_checked_ref_is_source_linked(
+        readiness,
+        label="local KAG readiness matrix",
+    )
+    _validate_readiness_matrix(readiness)
+    _local_kag_phase("provider-homes", progress=progress)
+    _validate_provider_ready_surfaces(readiness, progress=progress)
+
+
+def validate_local_kag_subtree_contract(*, progress: bool = False) -> None:
+    """Compatibility entrypoint for local plus OS-wide provider-home checks."""
+
+    readiness = _validate_local_kag_subtree_local_contract(progress=progress)
     _local_kag_phase("provider-homes", progress=progress)
     _validate_provider_ready_surfaces(readiness, progress=progress)

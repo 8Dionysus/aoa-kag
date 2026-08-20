@@ -25,6 +25,10 @@ class ReleaseLaneTests(unittest.TestCase):
             validation_lanes.command_sequence_for_lane("release"),
             release_check.release_lane_commands(),
         )
+        self.assertEqual(
+            validation_lanes.command_sequence_for_lane("release_continuation"),
+            release_check.release_lane_commands("release_continuation"),
+        )
         self.assertEqual("scripts/release_check.py", release_lane["entrypoint"])
 
     def test_release_entrypoint_does_not_duplicate_command_sequence(self) -> None:
@@ -32,7 +36,7 @@ class ReleaseLaneTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("validation_lanes.command_sequence_for_lane(RELEASE_LANE_ID)", release_check_text)
+        self.assertIn("validation_lanes.command_sequence_for_lane(lane_id)", release_check_text)
         self.assertNotIn("COMMANDS =", release_check_text)
         self.assertNotIn('"validate committed KAG surfaces"', release_check_text)
         self.assertNotIn('"generate KAG outputs"', release_check_text)

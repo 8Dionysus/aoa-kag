@@ -68,7 +68,7 @@ owner that can answer it.
 | Is this a source-home or future local `/kag` protocol question? | [kag](kag/README.md) and [LOCAL_SUBTREE_PROTOCOL](kag/LOCAL_SUBTREE_PROTOCOL.md) |
 | Is this a repeatable operation around lift, projection, bridge, handoff, maturity, quarantine, or regrounding? | [mechanics](mechanics/README.md), then the owning package |
 | Is this generated or compact? | source surface -> manifest or builder -> generated output -> validator |
-| Is this proof, memory, routing, role, playbook, skill, technique, runtime, stats, or authored ToS truth? | route to `aoa-evals`, `aoa-memo`, `aoa-routing`, `aoa-agents`, `aoa-playbooks`, `aoa-skills`, `aoa-techniques`, `abyss-stack`, `aoa-stats`, or `Tree-of-Sophia` |
+| Is this proof, memory, routing, role, playbook, skill, technique, runtime, stats, or authored ToS truth? | route to `aoa-evals`, `aoa-memo`, the `aoa-sdk` routing control plane, `aoa-agents`, `aoa-playbooks`, `aoa-skills`, `aoa-techniques`, `abyss-stack`, `aoa-stats`, or `Tree-of-Sophia` |
 | Has provenance, non-identity, or owner return weakened? | [BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs](docs/README.md), and the owning mechanic package |
 
 ## Current Contour

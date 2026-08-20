@@ -6,7 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import nullcontext, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -28,6 +28,176 @@ def load_json(path: Path) -> object:
 
 
 class ValidateKagTestCase(unittest.TestCase):
+    def test_provider_audit_workers_default_to_three_on_fork_hosts(self) -> None:
+        with patch.dict(local_kag_subtree.os.environ, {}, clear=True), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_all_start_methods",
+            return_value=["fork", "spawn"],
+        ):
+            self.assertEqual(3, local_kag_subtree._provider_audit_workers())
+
+    def test_provider_audit_workers_default_to_serial_without_fork(self) -> None:
+        with patch.dict(local_kag_subtree.os.environ, {}, clear=True), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_all_start_methods",
+            return_value=["spawn"],
+        ):
+            self.assertEqual(1, local_kag_subtree._provider_audit_workers())
+
+    def test_provider_audit_workers_fail_closed_outside_bounded_choices(self) -> None:
+        for value in ("", "0", "4", "many"):
+            with self.subTest(value=value), patch.dict(
+                local_kag_subtree.os.environ,
+                {local_kag_subtree.PROVIDER_AUDIT_WORKERS_ENV: value},
+            ):
+                with self.assertRaisesRegex(
+                    local_kag_subtree.ValidationError,
+                    "must be 1, 2, or 3",
+                ):
+                    local_kag_subtree._provider_audit_workers()
+
+    def test_parallel_provider_audit_keeps_canonical_parent_fan_in(self) -> None:
+        owner_root = REPO_ROOT.resolve()
+        result = {
+            "ok": True,
+            "owner": "aoa-kag",
+            "owner_root": owner_root.as_posix(),
+            "family_content_digest": "a" * 64,
+            "owner_payload": {"repo": "aoa-kag"},
+            "owner_timing": {"owner": "aoa-kag"},
+            "nested_timings": [],
+            "provider_timing": {
+                "event": "validation-timing",
+                "timing_schema_version": "aoa-kag-validation-timing-v1",
+                "component_type": "provider-home",
+                "component_id": "aoa-kag",
+                "duration_ms": 1,
+                "cpu_user_ms": 1,
+                "cpu_system_ms": 0,
+                "process_peak_rss_kib": 1,
+                "status": "passed",
+            },
+            "error": "",
+        }
+
+        class FakeExecutor:
+            def __init__(self, *, max_workers: int, mp_context: object) -> None:
+                self.max_workers = max_workers
+                self.mp_context = mp_context
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def map(self, _function, tasks, *, chunksize: int):
+                self.assert_equal(chunksize, 1)
+                self.assert_equal(list(tasks)[0][0], "aoa-kag")
+                return [copy.deepcopy(result)]
+
+            @staticmethod
+            def assert_equal(left: object, right: object) -> None:
+                if left != right:
+                    raise AssertionError(f"{left!r} != {right!r}")
+
+        readiness = {
+            "repos": [{"repo": "aoa-kag", "provider_status": "provider_ready"}]
+        }
+        with patch.dict(
+            local_kag_subtree.os.environ,
+            {local_kag_subtree.PROVIDER_AUDIT_WORKERS_ENV: "2"},
+        ), patch.object(
+            local_kag_subtree,
+            "PROVIDER_REPO_ROOTS",
+            {"aoa-kag": owner_root},
+        ), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_all_start_methods",
+            return_value=["fork"],
+        ), patch.object(
+            local_kag_subtree.multiprocessing,
+            "get_context",
+            return_value=object(),
+        ), patch.object(
+            local_kag_subtree,
+            "ProcessPoolExecutor",
+            FakeExecutor,
+        ), patch.object(
+            local_kag_subtree,
+            "_publish_process_validation_timing",
+        ) as publish, patch(
+            "scripts.generate_repo_local_kag_coverage.prebuild_provider_coverage_owner_result"
+        ) as prebuild:
+            local_kag_subtree._validate_provider_ready_surfaces(readiness)
+
+        publish.assert_called_once_with(result["provider_timing"])
+        prebuild.assert_called_once_with(
+            "aoa-kag",
+            owner_root,
+            family_content_digest="a" * 64,
+            owner_payload={"repo": "aoa-kag"},
+            owner_timing={"owner": "aoa-kag"},
+        )
+
+    def test_local_kag_schema_def_validator_is_reused_by_schema_identity(self) -> None:
+        payload = load_json(REPO_ROOT / "kag" / "manifest.json")
+        local_kag_subtree._cached_local_kag_schema_def_validator.cache_clear()
+        with patch.dict(
+            local_kag_subtree.os.environ,
+            {local_kag_subtree.FORCE_COLD_SCHEMA_COMPILATION_ENV: "0"},
+        ), patch.object(
+            local_kag_subtree,
+            "_build_local_kag_schema_def_validator",
+            wraps=local_kag_subtree._build_local_kag_schema_def_validator,
+        ) as build_validator:
+            for _ in range(2):
+                local_kag_subtree._validate_payload_against_schema_def(
+                    payload,
+                    def_name="localManifest",
+                    label="local manifest",
+                )
+
+        build_validator.assert_called_once()
+
+    def test_local_kag_schema_def_validator_has_forced_cold_path(self) -> None:
+        payload = load_json(REPO_ROOT / "kag" / "manifest.json")
+        with patch.dict(
+            local_kag_subtree.os.environ,
+            {local_kag_subtree.FORCE_COLD_SCHEMA_COMPILATION_ENV: "1"},
+        ), patch.object(
+            local_kag_subtree,
+            "_build_local_kag_schema_def_validator",
+            wraps=local_kag_subtree._build_local_kag_schema_def_validator,
+        ) as build_validator:
+            for _ in range(2):
+                local_kag_subtree._validate_payload_against_schema_def(
+                    payload,
+                    def_name="localManifest",
+                    label="local manifest",
+                )
+
+        self.assertEqual(2, build_validator.call_count)
+
+    def test_local_kag_schema_def_validator_preserves_non_object_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            schema_path = Path(temp_dir) / "local-kag-subtree.schema.json"
+            schema_path.write_text("[]\n", encoding="utf-8")
+            with patch.object(
+                local_kag_subtree,
+                "LOCAL_KAG_SUBTREE_SCHEMA_PATH",
+                schema_path,
+            ):
+                with self.assertRaisesRegex(
+                    local_kag_subtree.ValidationError,
+                    "local KAG subtree schema must be a JSON object",
+                ):
+                    local_kag_subtree._validate_payload_against_schema_def(
+                        {},
+                        def_name="localManifest",
+                        label="local manifest",
+                    )
+
     def test_local_kag_schemas_share_runtime_source_vocabulary(self) -> None:
         subtree_schema = load_json(validate_kag.LOCAL_KAG_SUBTREE_SCHEMA_PATH)
         provider_map_schema = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH)
@@ -432,6 +602,33 @@ class ValidateKagTestCase(unittest.TestCase):
 
         self.assertIn("source-ready provider repo", str(context.exception))
 
+    def test_local_kag_readiness_keeps_unadmitted_owners_in_source_preparation(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        for repo in ("ATM10-Agent", "aoa-models"):
+            with self.subTest(repo=repo):
+                row = next(entry for entry in payload["repos"] if entry["repo"] == repo)
+                self.assertEqual("source_preparation", row["provider_status"])
+                self.assertEqual([], row["source_owned_exports"])
+                self.assertEqual([], row["first_record_classes"])
+
+    def test_local_kag_readiness_rejects_unadmitted_owner_promotion(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        broken_payload = copy.deepcopy(payload)
+        for repo in ("ATM10-Agent", "aoa-models"):
+            candidate = copy.deepcopy(broken_payload)
+            next(entry for entry in candidate["repos"] if entry["repo"] == repo)[
+                "provider_status"
+            ] = "provider_ready"
+            with self.subTest(repo=repo), self.patched_read_json(
+                local_kag_subtree,
+                {validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH: candidate},
+            ):
+                with self.assertRaises(validate_kag.ValidationError) as context:
+                    local_kag_subtree.validate_local_kag_subtree_local_contract()
+                self.assertIn("must remain source_preparation", str(context.exception))
+
     def test_local_kag_provider_map_schema_rejects_invalid_repo_index_status(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_PROVIDER_MAP_OUTPUT_PATH)
         assert isinstance(payload, dict)
@@ -662,6 +859,143 @@ class ValidateKagTestCase(unittest.TestCase):
         self.assertEqual(0, source_reads)
         self.assertEqual(1, manifest_reads)
 
+    def test_provider_home_keeps_portable_only_family_as_effective_index(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir) / "portable-provider"
+            kag_root = repo_root / "kag"
+            kag_root.mkdir(parents=True)
+            for filename in ("AGENTS.md", "README.md"):
+                (kag_root / filename).write_text("# fixture\n", encoding="utf-8")
+            (kag_root / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "repo": "portable-provider",
+                        "record_classes": sorted(
+                            local_kag_subtree.REQUIRED_RECORD_CLASSES
+                        ),
+                    }
+                ),
+                encoding="utf-8",
+            )
+            for group_name in local_kag_subtree.PROVIDER_RECORD_DIRS:
+                directory = kag_root / group_name
+                directory.mkdir()
+                if group_name == "indexes":
+                    (directory / "index_family.manifest.json").write_text(
+                        json.dumps(
+                            {
+                                "schema_version": (
+                                    "aoa-repo-local-kag-family-manifest-v3"
+                                ),
+                                "family_identity": {
+                                    "content_digest": "0" * 64,
+                                },
+                                "source_index_header": {
+                                    "index_identity": {
+                                        "local_id": (
+                                            "index:repo-local:source-surfaces"
+                                        ),
+                                    },
+                                },
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                else:
+                    (directory / "fixture.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+
+            with patch.object(
+                local_kag_subtree,
+                "_validate_payload_against_schema_def",
+            ), patch.object(
+                local_kag_subtree,
+                "_validate_source_refs_exist",
+            ), patch.object(
+                local_kag_subtree,
+                "_validate_checked_ref_is_source_linked",
+            ), patch.object(
+                repo_local_kag_index,
+                "repo_local_kag_validate_payload",
+            ), patch.object(
+                repo_local_kag_index,
+                "load_repo_local_kag_repository_index_family_with_manifest",
+                return_value=(
+                    {},
+                    {},
+                    {"family_identity": {"content_digest": "0" * 64}},
+                ),
+            ), patch.object(
+                local_kag_subtree,
+                "_validate_record_links",
+            ) as validate_links:
+                local_kag_subtree._validate_provider_home(
+                    "portable-provider",
+                    repo_root,
+                )
+
+        packet = validate_links.call_args.args[0]
+        indexes = packet["records"]["indexes"]
+        self.assertEqual(1, len(indexes))
+        self.assertEqual(
+            "portable_family_manifest",
+            indexes[0]["effective_index_surface"],
+        )
+
+    def test_record_links_accept_portable_family_effective_index(self) -> None:
+        local_kag_subtree._validate_record_links(
+            {
+                "records": {
+                    "nodes": [
+                        {
+                            "local_id": "node:fixture",
+                            "record_class": "node",
+                        }
+                    ],
+                    "edges": [
+                        {
+                            "local_id": "edge:fixture",
+                            "record_class": "edge",
+                            "from_id": "node:fixture",
+                            "to_id": "node:fixture",
+                            "edge_trace": ["fixture"],
+                        }
+                    ],
+                    "indexes": [
+                        {
+                            "schema_version": (
+                                "aoa-repo-local-kag-family-manifest-v3"
+                            ),
+                            "local_id": "index:repo-local:source-surfaces",
+                            "record_class": "index",
+                            "effective_index_surface": (
+                                "portable_family_manifest"
+                            ),
+                            "portable_family_content_digest": "0" * 64,
+                        }
+                    ],
+                    "projections": [
+                        {
+                            "local_id": "projection:fixture",
+                            "record_class": "projection",
+                            "source_record_ids": ["node:fixture"],
+                        }
+                    ],
+                    "receipts": [
+                        {
+                            "local_id": "receipt:fixture",
+                            "record_class": "receipt",
+                            "fallback_route": "owner-review",
+                        }
+                    ],
+                }
+            }
+        )
+
     def test_local_kag_readiness_keeps_contract_when_host_roots_are_unavailable(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)
@@ -685,6 +1019,14 @@ class ValidateKagTestCase(unittest.TestCase):
             runner,
             "validate_static_surfaces",
             side_effect=mark("static-surfaces"),
+        ), patch.object(
+            runner,
+            "validate_local_kag_provider_homes_contract_with_progress",
+            side_effect=mark("os-wide-provider-homes"),
+        ), patch.object(
+            runner,
+            "validate_repo_local_kag_os_wide_contract_with_progress",
+            side_effect=mark("os-wide-provider-coverage"),
         ), patch.object(
             runner,
             "load_registry_context",
@@ -713,12 +1055,22 @@ class ValidateKagTestCase(unittest.TestCase):
             runner,
             "print_success_status",
             side_effect=mark("success-status"),
-        ):
+        ), patch.object(
+            runner,
+            "print_os_wide_success_status",
+            side_effect=mark("os-wide-success-status"),
+        ), patch.object(
+            runner,
+            "provider_coverage_prebuild_scope",
+            return_value=nullcontext(),
+        ) as coverage_prebuild_scope:
             with redirect_stderr(stderr):
-                self.assertEqual(0, runner.main())
+                self.assertEqual(0, runner.main(["--scope", "full"]))
 
         expected = [
             "static-surfaces",
+            "os-wide-provider-homes",
+            "os-wide-provider-coverage",
             "registry-context",
             "manifest-contracts",
             "expected-payloads",
@@ -726,12 +1078,82 @@ class ValidateKagTestCase(unittest.TestCase):
             "generated-structures",
             "examples",
             "success-status",
+            "os-wide-success-status",
         ]
         self.assertEqual(expected, calls)
+        coverage_prebuild_scope.assert_called_once_with()
         self.assertEqual(
-            "".join(f"[validate-kag] {phase}\n" for phase in expected),
+            "".join(
+                f"[validate-kag] {phase}\n"
+                for phase in (
+                    "static-surfaces",
+                    "os-wide-provider-homes",
+                    "os-wide-provider-coverage",
+                    "registry-context",
+                    "manifest-contracts",
+                    "expected-payloads",
+                    "generated-text",
+                    "generated-structures",
+                    "examples",
+                    "success-status",
+                )
+            ),
             stderr.getvalue(),
         )
+
+    def test_validate_kag_scopes_keep_local_and_os_wide_execution_explicit(self) -> None:
+        self.assertEqual("full", runner.parse_args([]).scope)
+
+        with patch.object(runner, "validate_static_surfaces") as local_validate, patch.object(
+            runner,
+            "validate_local_kag_provider_homes_contract_with_progress",
+        ) as provider_homes_validate, patch.object(
+            runner,
+            "validate_repo_local_kag_os_wide_contract_with_progress",
+        ) as os_wide_validate, patch.object(
+            runner,
+            "load_registry_context",
+            return_value=({}, {}, ["missing-provider-root"]),
+        ), patch.object(
+            runner,
+            "print_success_status",
+        ), patch.object(
+            runner,
+            "provider_coverage_prebuild_scope",
+            return_value=nullcontext(),
+        ) as coverage_prebuild_scope, redirect_stderr(io.StringIO()):
+            self.assertEqual(0, runner.main(["--scope", "local"]))
+
+        local_validate.assert_called_once_with()
+        provider_homes_validate.assert_not_called()
+        os_wide_validate.assert_not_called()
+        coverage_prebuild_scope.assert_not_called()
+
+        with patch.object(runner, "validate_static_surfaces") as local_validate, patch.object(
+            runner,
+            "validate_local_kag_provider_homes_contract_with_progress",
+        ) as provider_homes_validate, patch.object(
+            runner,
+            "validate_repo_local_kag_os_wide_contract_with_progress",
+        ) as os_wide_validate, patch.object(
+            runner,
+            "load_registry_context",
+        ) as load_registry, patch.object(
+            runner,
+            "print_os_wide_success_status",
+        ) as print_os_wide_status, patch.object(
+            runner,
+            "provider_coverage_prebuild_scope",
+            return_value=nullcontext(),
+        ) as coverage_prebuild_scope, redirect_stderr(io.StringIO()):
+            self.assertEqual(0, runner.main(["--scope", "os-wide"]))
+
+        local_validate.assert_not_called()
+        load_registry.assert_not_called()
+        provider_homes_validate.assert_called_once_with()
+        os_wide_validate.assert_called_once_with()
+        print_os_wide_status.assert_called_once_with()
+        coverage_prebuild_scope.assert_called_once_with()
 
     def test_static_surfaces_reports_subphase_progress_to_stderr(self) -> None:
         calls: list[str] = []
@@ -763,17 +1185,93 @@ class ValidateKagTestCase(unittest.TestCase):
             stderr.getvalue(),
         )
 
+    def test_static_surfaces_keep_provider_homes_out_of_local_scope(self) -> None:
+        checks = dict(static_surface_runner.STATIC_SURFACE_PHASES)[
+            "core-local-kag-subtree"
+        ]
+
+        self.assertIn(
+            local_kag_subtree.validate_local_kag_subtree_local_contract_with_progress,
+            checks,
+        )
+        self.assertNotIn(
+            local_kag_subtree.validate_local_kag_subtree_contract_with_progress,
+            checks,
+        )
+        self.assertNotIn(
+            local_kag_subtree.validate_local_kag_provider_homes_contract_with_progress,
+            checks,
+        )
+
     def test_local_kag_progress_wrapper_enables_progress_mode(self) -> None:
         with patch.object(local_kag_subtree, "validate_local_kag_subtree_contract") as validate:
             local_kag_subtree.validate_local_kag_subtree_contract_with_progress()
 
         validate.assert_called_once_with(progress=True)
 
+    def test_local_kag_scope_wrappers_enable_progress_mode(self) -> None:
+        with patch.object(
+            local_kag_subtree,
+            "validate_local_kag_subtree_local_contract",
+        ) as validate_local:
+            local_kag_subtree.validate_local_kag_subtree_local_contract_with_progress()
+        validate_local.assert_called_once_with(progress=True)
+
+        with patch.object(
+            local_kag_subtree,
+            "validate_local_kag_provider_homes_contract",
+        ) as validate_provider_homes:
+            local_kag_subtree.validate_local_kag_provider_homes_contract_with_progress()
+        validate_provider_homes.assert_called_once_with(progress=True)
+
+    def test_local_kag_compatibility_contract_keeps_both_scopes(self) -> None:
+        readiness = {"repos": []}
+        with patch.object(
+            local_kag_subtree,
+            "_validate_local_kag_subtree_local_contract",
+            return_value=readiness,
+        ) as validate_local, patch.object(
+            local_kag_subtree,
+            "_validate_provider_ready_surfaces",
+        ) as validate_provider_homes:
+            local_kag_subtree.validate_local_kag_subtree_contract(progress=True)
+
+        validate_local.assert_called_once_with(progress=True)
+        validate_provider_homes.assert_called_once_with(readiness, progress=True)
+
     def test_repo_local_index_progress_wrapper_enables_progress_mode(self) -> None:
         with patch.object(repo_local_kag_index, "validate_repo_local_kag_index_contract") as validate:
             repo_local_kag_index.validate_repo_local_kag_index_contract_with_progress()
 
         validate.assert_called_once_with(progress=True)
+
+    def test_repo_local_index_scope_wrappers_enable_progress_mode(self) -> None:
+        with patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_local_contract",
+        ) as validate_local:
+            repo_local_kag_index.validate_repo_local_kag_local_contract_with_progress()
+        validate_local.assert_called_once_with(progress=True)
+
+        with patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_os_wide_contract",
+        ) as validate_os_wide:
+            repo_local_kag_index.validate_repo_local_kag_os_wide_contract_with_progress()
+        validate_os_wide.assert_called_once_with(progress=True)
+
+    def test_repo_local_index_compatibility_contract_keeps_both_scopes(self) -> None:
+        with patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_local_contract",
+        ) as validate_local, patch.object(
+            repo_local_kag_index,
+            "validate_repo_local_kag_os_wide_contract",
+        ) as validate_os_wide:
+            repo_local_kag_index.validate_repo_local_kag_index_contract(progress=True)
+
+        validate_local.assert_called_once_with(progress=True)
+        validate_os_wide.assert_called_once_with(progress=True)
 
 
 if __name__ == "__main__":

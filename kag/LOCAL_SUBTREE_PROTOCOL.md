@@ -176,6 +176,18 @@ The generated handoff gives `aoa-kag-mcp` one compact agent protocol:
 the runtime adapter. MCP Roots remain a client capability rather than a
 repo-provider declaration.
 
+One successful MCP call is runtime evidence only. For the bounded
+`kag_discover` canary, the runtime owner preserves the exact untrusted result
+and `aoa-kag` separately checks its schema, the requested owner row, and
+runtime-to-canonical source-index freshness. The resulting owner review binds
+the exact capture and expires with it. It does not accept or admit the organ.
+
+The owner review resolves the canonical source-index identity from
+`source_surface_index.json` or the portable family manifest's source snapshot.
+The portable family digest is a different identity and must not be compared
+with a runtime `source_index_digest`. Self-reported digest equality in an MCP
+payload cannot override the owner source identity.
+
 ## Current Providers
 
 | Repository | Home | First source route |
@@ -189,12 +201,9 @@ repo-provider declaration.
 | `aoa-playbooks` | `kag/` | playbook source-home manifest and scenario registry |
 | `aoa-memo` | `kag/` | memory registry and reviewed memory corpus route |
 | `aoa-evals` | `kag/` | eval report index and proof bundle route |
-| `aoa-routing` | `kag/` | routing source-home manifest and cross-repo registry |
 | `aoa-sdk` | `kag/` | SDK source-home manifest and typed KAG helper route |
 | `aoa-session-memory` | `kag/` | session-memory kernel, route atlas, and manifest schema |
 | `8Dionysus` | `kag/` | public ecosystem profile and workspace memory map |
-| `Dionysus` | `kag/` | seed garden route map and registry |
-| `ATM10-Agent` | `kag/` | project-local KAG runtime and operator runbook route |
 | `aoa-stats` | `kag/` | derived KAG stats observability registry |
 | `aoa-4pda-connector` | `kag/` | 4PDA connector source policy and storage boundary |
 | `aoa-course-connector` | `kag/` | course connector boundaries and source/storage policies |
@@ -204,3 +213,16 @@ repo-provider declaration.
 | `aoa-xda-connector` | `kag/` | XDA connector source policy and storage boundary |
 | `abyss-stack` | `kag/` | runtime source topology and MCP access planes |
 | `abyss-machine` | `kag/` | host source contracts and validation lanes |
+
+The readiness matrix keeps `aoa-routing` as a `retired_reference` so historical
+source returns remain explicit. Provider validation and CI must not resolve or
+checkout that predecessor repository; current routing ownership returns to
+`aoa-sdk`.
+
+`Dionysus` is also a `retired_reference`: its former seed provider survives as
+bounded historical provenance, not as an active checkout or MCP provider.
+
+`ATM10-Agent` remains a direct owner row in `source_preparation`, not a provider
+checkout. Its standalone autonomy contract is stronger than the former shared
+provider-home assumption; any future KAG handoff must be optional and
+owner-published.

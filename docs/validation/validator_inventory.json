@@ -15,8 +15,9 @@
     {
       "path": "scripts/validate_kag.py",
       "module_type": "adapter",
-      "function": "CLI entrypoint for repo-wide KAG validation.",
+      "function": "CLI entrypoint for explicit local, OS-wide, or full-compatible KAG validation.",
       "inputs": [
+        "validation scope",
         "scripts/validators package"
       ],
       "outputs": [
@@ -300,21 +301,21 @@
     {
       "path": "scripts/validators/local_kag_subtree.py",
       "module_type": "local_kag_subtree_contract",
-      "function": "Validate repo-local KAG subtree schema, example packet, readiness matrix, record links, registry coverage, and MCP access shape.",
+      "function": "Expose separate repo-local KAG subtree, example, readiness, record-link, registry, and MCP access validation and OS-wide provider-home family completeness, plus a full compatibility composition.",
       "inputs": [
         "schemas/local-kag-subtree.schema.json",
         "examples/local_kag_subtree.example.json",
         "manifests/local_kag_readiness.json"
       ],
       "outputs": [
-        "local KAG subtree contract verdicts"
+        "separate local KAG subtree and OS-wide provider-home contract verdicts"
       ],
       "covered_by": "tests/test_validate_kag.py"
     },
     {
       "path": "scripts/validators/repo_local_kag_index.py",
       "module_type": "repo_local_kag_index_contract",
-      "function": "Validate portable family manifests, shards, budgets, exact v2 compatibility, repo-local source and repository index schemas, query and retrieval projection contracts, complete family integrity, examples, generated parity, and OS-wide coverage parity.",
+      "function": "Expose separate repo-local portable-family, retrieval, example, and generated-parity validation and OS-wide coverage parity, plus a full compatibility composition.",
       "inputs": [
         "schemas/repo-local-kag-family-manifest.schema.json",
         "schemas/repo-local-kag-index.schema.json",
@@ -334,7 +335,7 @@
         "generated/repo_local_kag_coverage.json"
       ],
       "outputs": [
-        "repo-local index and coverage contract verdicts"
+        "separate repo-local and OS-wide coverage contract verdicts"
       ],
       "covered_by": "tests/test_repo_local_kag_index.py"
     },
@@ -956,7 +957,7 @@
     {
       "path": "scripts/validators/orchestration/static_surfaces.py",
       "module_type": "orchestration_static_surfaces",
-      "function": "Run local, schema, route, and stress surface checks.",
+      "function": "Run local, schema, route, repo-local family, and stress surface checks without OS-wide provider families.",
       "inputs": [
         "local validators",
         "schema validators"
@@ -1034,7 +1035,7 @@
     {
       "path": "scripts/validators/orchestration/status.py",
       "module_type": "orchestration_status",
-      "function": "Print validate_kag success status output.",
+      "function": "Print scope-accurate local and OS-wide validate_kag success status output.",
       "inputs": [
         "validation phase completion"
       ],
@@ -1046,8 +1047,9 @@
     {
       "path": "scripts/validators/orchestration/runner.py",
       "module_type": "orchestration_runner",
-      "function": "Run top-level validate_kag flow.",
+      "function": "Select and run explicit local, OS-wide, or full-compatible validate_kag flow.",
       "inputs": [
+        "validation scope",
         "orchestration phases"
       ],
       "outputs": [

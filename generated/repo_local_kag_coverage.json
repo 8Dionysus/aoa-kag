@@ -1,22 +1,14 @@
 {
   "coverage_summary": {
-    "aggregate_budget_state": "partial",
-    "artifact_cold_bytes": 0,
-    "corpus_total_bytes": 272425808,
-    "git_hot_bytes": 272425808,
-    "measured_owner_count": 23,
+    "aggregate_budget_state": "passed",
     "migration_needed": 0,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
-    "os_git_hot_target_bytes": 234881024,
-    "owner_count": 24,
+    "owner_count": 21,
     "owner_specific": 0,
-    "passed": 24,
-    "portable_tracked_bytes": 272425808,
-    "portable_v3": 23,
-    "self_excluded_owner_count": 1,
-    "target_budget_state": "exceeded",
-    "tiered_v4": 1
+    "passed": 21,
+    "portable_tracked_bytes": 273259157,
+    "portable_v3": 21
   },
   "owners": [
     {
@@ -24,48 +16,49 @@
         "counts": {
           "artifact_kind": {
             "asset": 6,
-            "config": 39,
-            "document": 116,
-            "generated_readmodel": 15,
+            "config": 41,
+            "document": 124,
+            "generated_readmodel": 17,
             "index": 1,
             "manifest": 1,
             "owner_metadata": 3,
             "projection": 1,
             "receipt": 1,
             "record_log": 1,
-            "schema": 11,
-            "script": 41,
+            "schema": 15,
+            "script": 47,
             "source_code": 11,
-            "test": 25,
-            "validator": 10
+            "test": 27,
+            "validator": 11
           },
           "command_role": {
             "builder": 3,
-            "none": 206,
-            "script": 38,
-            "test": 25,
-            "validator": 10
+            "none": 222,
+            "script": 44,
+            "test": 27,
+            "validator": 11
           },
           "document_role": {
-            "agents": 20,
-            "decision": 28,
-            "none": 159,
+            "agents": 21,
+            "decision": 34,
+            "none": 176,
             "readme": 13,
+            "skill": 1,
             "unknown_document": 62
           },
           "mechanics_role": {
-            "none": 282
+            "none": 307
           },
           "primary_kind": {
-            "artifact": 21,
-            "command": 76,
-            "document": 123,
-            "surface": 62
+            "artifact": 23,
+            "command": 85,
+            "document": 131,
+            "surface": 68
           },
           "surface_state": {
-            "authored_source": 259,
+            "authored_source": 282,
             "generated_projection": 1,
-            "generated_readmodel": 22
+            "generated_readmodel": 24
           }
         },
         "quality": {
@@ -80,14 +73,14 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 56,
-        "documents": 123,
-        "generated": 10,
+        "commands": 61,
+        "documents": 131,
+        "generated": 12,
         "mechanics": 0,
-        "schemas": 12,
-        "scripts": 31,
-        "tests": 25,
-        "validators": 10
+        "schemas": 16,
+        "scripts": 34,
+        "tests": 27,
+        "validators": 11
       },
       "domain_index_catalog_ref": "",
       "family_storage": "v3-portable-shards",
@@ -96,30 +89,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:8Dionysus:kag",
+      "kag_home": "/srv/AbyssOS/8Dionysus/kag",
       "owner_type": "workspace",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "5c0267bfa2ea2364567a0719392bc3608fc839c320c3f2097d17d088c69c43bd",
-        "corpus_digest": "",
-        "corpus_total_bytes": 3897324,
+        "content_digest": "9360f4f8342f69d43d4c7001c70da1f42b0dd115122983e9fbe6246e6708aa7a",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 3897324,
-        "git_hot_objects": 288,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 288,
-        "tracked_bytes": 3897324,
+        "tracked_bytes": 4381831,
         "tracked_bytes_max": 5242880
       },
       "repo": "8Dionysus",
@@ -132,127 +111,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:8Dionysus"
-    },
-    {
-      "common_surface_profile": {
-        "counts": {
-          "artifact_kind": {
-            "asset": 54,
-            "config": 75,
-            "dependency_manifest": 9,
-            "document": 161,
-            "generated_readmodel": 8,
-            "index": 1,
-            "license": 1,
-            "owner_metadata": 3,
-            "projection": 1,
-            "receipt": 1,
-            "record_log": 7,
-            "schema": 10,
-            "script": 15,
-            "security": 1,
-            "source_code": 98,
-            "test": 104,
-            "validator": 3
-          },
-          "command_role": {
-            "builder": 2,
-            "none": 430,
-            "script": 13,
-            "test": 104,
-            "validator": 3
-          },
-          "document_role": {
-            "agents": 17,
-            "audit": 3,
-            "changelog": 1,
-            "decision": 8,
-            "none": 383,
-            "readme": 9,
-            "release_notes": 1,
-            "roadmap": 1,
-            "unknown_document": 129
-          },
-          "mechanics_role": {
-            "none": 552
-          },
-          "primary_kind": {
-            "artifact": 77,
-            "command": 122,
-            "document": 169,
-            "surface": 184
-          },
-          "surface_state": {
-            "authored_source": 540,
-            "generated_readmodel": 12
-          }
-        },
-        "quality": {
-          "has_generated_readmodels": true,
-          "has_kag_home": true,
-          "has_owner_commands": true,
-          "has_record_classes": true,
-          "has_source_index": true,
-          "has_validation_route": true,
-          "unknown_count": 0
-        },
-        "source": "source_surface_index"
-      },
-      "coverage": {
-        "commands": 189,
-        "documents": 169,
-        "generated": 0,
-        "mechanics": 0,
-        "schemas": 11,
-        "scripts": 85,
-        "tests": 104,
-        "validators": 3
-      },
-      "domain_index_catalog_ref": "",
-      "family_storage": "v3-portable-shards",
-      "index_files": [
-        "kag/indexes/index_family.manifest.json",
-        "kag/indexes/provider_readiness_index.json"
-      ],
-      "index_status": "passed",
-      "kag_home": "aoa-owner:ATM10-Agent:kag",
-      "owner_type": "workspace",
-      "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "630ac15884c953446e7ab2832222142514d34f501504cdde6a4ccf60e5e5d56a",
-        "corpus_digest": "",
-        "corpus_total_bytes": 9012924,
-        "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 9012924,
-        "git_hot_objects": 288,
-        "hot_profile_ref": "",
-        "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 288,
-        "tracked_bytes": 9012924,
-        "tracked_bytes_max": 10485760
-      },
-      "repo": "ATM10-Agent",
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
-      "root": "aoa-owner:ATM10-Agent"
+      "root": "/srv/AbyssOS/8Dionysus"
     },
     {
       "common_surface_profile": {
@@ -262,7 +121,7 @@
             "config": 273,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 1151,
+            "document": 1156,
             "generated_readmodel": 38,
             "index": 1,
             "license": 1,
@@ -281,7 +140,7 @@
           "command_role": {
             "builder": 27,
             "lane_entrypoint": 1,
-            "none": 1741,
+            "none": 1746,
             "script": 5,
             "test": 92,
             "validator": 90
@@ -290,11 +149,11 @@
             "agents": 65,
             "audit": 6,
             "changelog": 1,
-            "decision": 38,
+            "decision": 42,
             "design": 1,
             "design_agents": 1,
             "handoff": 12,
-            "mechanics_doc": 577,
+            "mechanics_doc": 578,
             "none": 797,
             "parts": 13,
             "provenance": 13,
@@ -307,9 +166,9 @@
             "legacy": 314,
             "mechanic_package": 215,
             "mechanic_part": 282,
-            "none": 486,
+            "none": 490,
             "part_contract": 100,
-            "part_doc": 250,
+            "part_doc": 251,
             "part_schema": 216,
             "part_script": 55,
             "part_test": 38
@@ -317,11 +176,11 @@
           "primary_kind": {
             "artifact": 43,
             "command": 215,
-            "document": 1159,
+            "document": 1164,
             "surface": 539
           },
           "surface_state": {
-            "authored_source": 1598,
+            "authored_source": 1603,
             "generated_readmodel": 43,
             "legacy": 314,
             "receipt": 1
@@ -340,9 +199,9 @@
       },
       "coverage": {
         "commands": 229,
-        "documents": 1159,
+        "documents": 1164,
         "generated": 32,
-        "mechanics": 1470,
+        "mechanics": 1471,
         "schemas": 226,
         "scripts": 137,
         "tests": 92,
@@ -355,30 +214,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:Agents-of-Abyss:kag",
+      "kag_home": "/srv/AbyssOS/Agents-of-Abyss/kag",
       "owner_type": "center",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "4ff1a4094c5b1b7e4da1649faeff0fd2bc096355e1e009222a3c8b404d2af10c",
-        "corpus_digest": "",
-        "corpus_total_bytes": 21935013,
+        "content_digest": "62dbc5eb9223139f8d3d79a4a8ae450160001a73636a159d17f39e4f1b52bb09",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 21935013,
-        "git_hot_objects": 652,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 652,
-        "tracked_bytes": 21935013,
+        "tracked_bytes": 22166122,
         "tracked_bytes_max": 25165824
       },
       "repo": "Agents-of-Abyss",
@@ -391,143 +236,18 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:Agents-of-Abyss"
-    },
-    {
-      "common_surface_profile": {
-        "counts": {
-          "artifact_kind": {
-            "archive": 102,
-            "asset": 50,
-            "config": 217,
-            "dependency_manifest": 2,
-            "directory_marker": 4,
-            "document": 634,
-            "generated_readmodel": 13,
-            "index": 1,
-            "license": 1,
-            "manifest": 1,
-            "owner_metadata": 2,
-            "projection": 1,
-            "receipt": 1,
-            "schema": 10,
-            "script": 12,
-            "security": 1,
-            "source_code": 5,
-            "test": 15,
-            "text_artifact": 3,
-            "validator": 15
-          },
-          "command_role": {
-            "builder": 3,
-            "lane_entrypoint": 1,
-            "none": 1048,
-            "script": 8,
-            "test": 15,
-            "validator": 15
-          },
-          "document_role": {
-            "agents": 21,
-            "audit": 9,
-            "changelog": 1,
-            "decision": 8,
-            "none": 448,
-            "readme": 33,
-            "report": 275,
-            "roadmap": 1,
-            "unknown_document": 294
-          },
-          "mechanics_role": {
-            "none": 1090
-          },
-          "primary_kind": {
-            "artifact": 172,
-            "command": 42,
-            "document": 642,
-            "surface": 234
-          },
-          "surface_state": {
-            "authored_source": 906,
-            "generated_readmodel": 18,
-            "legacy": 166
-          }
-        },
-        "quality": {
-          "has_generated_readmodels": true,
-          "has_kag_home": true,
-          "has_owner_commands": true,
-          "has_record_classes": true,
-          "has_source_index": true,
-          "has_validation_route": true,
-          "unknown_count": 0
-        },
-        "source": "source_surface_index"
-      },
-      "coverage": {
-        "commands": 43,
-        "documents": 642,
-        "generated": 6,
-        "mechanics": 0,
-        "schemas": 11,
-        "scripts": 28,
-        "tests": 15,
-        "validators": 15
-      },
-      "domain_index_catalog_ref": "",
-      "family_storage": "v3-portable-shards",
-      "index_files": [
-        "kag/indexes/index_family.manifest.json",
-        "kag/indexes/provider_readiness_index.json"
-      ],
-      "index_status": "passed",
-      "kag_home": "aoa-owner:Dionysus:kag",
-      "owner_type": "workspace",
-      "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "d49b36f6c9a673100fbe04c3648db1ca103d2397e0729207ef6f2f5a14607563",
-        "corpus_digest": "",
-        "corpus_total_bytes": 21290750,
-        "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 21290750,
-        "git_hot_objects": 526,
-        "hot_profile_ref": "",
-        "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 526,
-        "tracked_bytes": 21290750,
-        "tracked_bytes_max": 24117248
-      },
-      "repo": "Dionysus",
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
-      "root": "aoa-owner:Dionysus"
+      "root": "/srv/AbyssOS/Agents-of-Abyss"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 412,
+            "config": 454,
             "data_table": 12,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 456,
+            "document": 504,
             "generated_readmodel": 9,
             "index": 1,
             "license": 1,
@@ -535,59 +255,61 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "record_log": 40,
-            "schema": 28,
-            "script": 29,
+            "record_log": 62,
+            "schema": 53,
+            "script": 30,
             "security": 1,
             "source_code": 2,
             "spreadsheet": 1,
-            "test": 30,
-            "validator": 23
+            "test": 31,
+            "unknown": 4,
+            "validator": 24
           },
           "command_role": {
-            "builder": 9,
+            "builder": 10,
             "lane_entrypoint": 1,
-            "none": 1025,
+            "none": 1166,
             "script": 19,
-            "test": 30,
-            "validator": 23
+            "test": 31,
+            "validator": 24
           },
           "document_role": {
             "agents": 54,
             "audit": 5,
             "boundary": 1,
             "changelog": 1,
-            "decision": 25,
+            "decision": 28,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 36,
-            "none": 643,
+            "none": 739,
             "parts": 16,
             "provenance": 16,
-            "readme": 118,
+            "readme": 130,
             "roadmap": 17,
             "testing_doc": 1,
-            "unknown_document": 171,
+            "unknown_document": 204,
             "validation_doc": 1
           },
           "mechanics_role": {
             "legacy": 16,
             "mechanic_package": 88,
             "mechanic_part": 17,
-            "none": 905,
+            "none": 1049,
             "part_doc": 56,
             "part_schema": 15,
             "part_script": 9,
             "part_test": 1
           },
           "primary_kind": {
-            "artifact": 115,
-            "command": 82,
-            "document": 464,
-            "surface": 446
+            "artifact": 137,
+            "command": 85,
+            "document": 512,
+            "surface": 513,
+            "unknown": 4
           },
           "surface_state": {
-            "authored_source": 1077,
+            "authored_source": 1221,
             "generated_readmodel": 13,
             "legacy": 16,
             "receipt": 1
@@ -600,19 +322,19 @@
           "has_record_classes": true,
           "has_source_index": true,
           "has_validation_route": true,
-          "unknown_count": 0
+          "unknown_count": 4
         },
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 84,
-        "documents": 464,
+        "commands": 87,
+        "documents": 512,
         "generated": 1,
         "mechanics": 202,
-        "schemas": 28,
-        "scripts": 52,
-        "tests": 32,
-        "validators": 23
+        "schemas": 53,
+        "scripts": 54,
+        "tests": 33,
+        "validators": 24
       },
       "domain_index_catalog_ref": "",
       "family_storage": "v3-portable-shards",
@@ -621,30 +343,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:Tree-of-Sophia:kag",
+      "kag_home": "/srv/AbyssOS/Tree-of-Sophia/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "0308578bcf72413acb8dab3eec5e5d8d01cb0f9993613b63921627ebf0e719f7",
-        "corpus_digest": "",
-        "corpus_total_bytes": 10329132,
+        "budget_state": "receipted",
+        "content_digest": "8c79a2a6f792c7fe993f434d9908b37e0c5134d11a50564ba77d5a0ceec90db5",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 10329132,
-        "git_hot_objects": 543,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 543,
-        "tracked_bytes": 10329132,
+        "receipt_ref": "kag/receipts/index_family_budget/8c79a2a6f792c7fe993f434d9908b37e0c5134d11a50564ba77d5a0ceec90db5.json",
+        "shards": 549,
+        "tracked_bytes": 12246993,
         "tracked_bytes_max": 11534336
       },
       "repo": "Tree-of-Sophia",
@@ -657,18 +365,17 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:Tree-of-Sophia"
+      "root": "/srv/AbyssOS/Tree-of-Sophia"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "asset": 50,
-            "config": 339,
+            "config": 302,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 644,
-            "generated_readmodel": 46,
+            "document": 560,
+            "generated_readmodel": 47,
             "index": 1,
             "license": 1,
             "manifest": 12,
@@ -676,56 +383,56 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 128,
-            "script": 24,
+            "schema": 125,
+            "script": 18,
             "security": 1,
             "source_code": 9,
-            "test": 43,
+            "test": 44,
             "validator": 34
           },
           "command_role": {
             "builder": 15,
             "lane_entrypoint": 1,
-            "none": 1241,
-            "script": 8,
-            "test": 43,
+            "none": 1068,
+            "script": 2,
+            "test": 44,
             "validator": 34
           },
           "document_role": {
-            "agents": 64,
-            "audit": 3,
+            "agents": 65,
             "boundary": 1,
             "changelog": 1,
-            "decision": 65,
+            "decision": 68,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 155,
-            "none": 690,
+            "none": 596,
             "parts": 12,
             "provenance": 12,
-            "readme": 206,
+            "readme": 208,
             "roadmap": 1,
-            "unknown_document": 130
+            "skill": 3,
+            "unknown_document": 40
           },
           "mechanics_role": {
             "legacy": 60,
             "mechanic_package": 82,
             "mechanic_part": 158,
-            "none": 601,
+            "none": 423,
             "part_doc": 287,
             "part_schema": 111,
             "part_script": 27,
             "part_test": 16
           },
           "primary_kind": {
-            "artifact": 99,
-            "command": 101,
-            "document": 652,
-            "surface": 490
+            "artifact": 50,
+            "command": 96,
+            "document": 568,
+            "surface": 450
           },
           "surface_state": {
-            "authored_source": 1231,
-            "generated_readmodel": 50,
+            "authored_source": 1051,
+            "generated_readmodel": 52,
             "legacy": 60,
             "receipt": 1
           }
@@ -742,13 +449,13 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 111,
-        "documents": 652,
-        "generated": 41,
+        "commands": 106,
+        "documents": 568,
+        "generated": 43,
         "mechanics": 741,
-        "schemas": 159,
-        "scripts": 68,
-        "tests": 43,
+        "schemas": 156,
+        "scripts": 62,
+        "tests": 44,
         "validators": 34
       },
       "domain_index_catalog_ref": "",
@@ -758,30 +465,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-agents:kag",
+      "kag_home": "/srv/AbyssOS/aoa-agents/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "43fb735342f751c7e163fd317db6168c18d50e292ffa40f4df84e93419cb48ca",
-        "corpus_digest": "",
-        "corpus_total_bytes": 14996893,
+        "content_digest": "4ecd1729b25e4115311d179594488322c26f4c91fb3b0704224daac1ef2654f8",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 14996893,
-        "git_hot_objects": 601,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
-        "shards": 601,
-        "tracked_bytes": 14996893,
+        "shards": 599,
+        "tracked_bytes": 14254819,
         "tracked_bytes_max": 16777216
       },
       "repo": "aoa-agents",
@@ -794,16 +487,16 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-agents"
+      "root": "/srv/AbyssOS/aoa-agents"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 325,
+            "config": 389,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 1071,
+            "document": 1096,
             "generated_readmodel": 32,
             "index": 1,
             "license": 1,
@@ -811,62 +504,63 @@
             "mechanics_surface": 3,
             "owner_metadata": 2,
             "projection": 1,
-            "receipt": 1,
+            "receipt": 5,
             "record_log": 1,
-            "schema": 120,
-            "script": 33,
+            "schema": 148,
+            "script": 55,
             "security": 1,
             "source_code": 227,
-            "test": 87,
-            "validator": 18
+            "test": 107,
+            "validator": 19
           },
           "command_role": {
             "builder": 17,
             "lane_entrypoint": 2,
-            "none": 1813,
-            "script": 14,
-            "test": 87,
-            "validator": 18
+            "none": 1934,
+            "script": 36,
+            "test": 107,
+            "validator": 19
           },
           "document_role": {
             "agents": 89,
             "changelog": 1,
-            "decision": 254,
+            "decision": 258,
             "design": 1,
             "design_agents": 1,
-            "mechanics_doc": 229,
-            "none": 873,
+            "handoff": 4,
+            "mechanics_doc": 230,
+            "none": 1012,
             "parts": 19,
             "provenance": 19,
-            "readme": 189,
+            "readme": 190,
             "report": 2,
             "roadmap": 1,
+            "skill": 1,
             "testing_doc": 1,
-            "unknown_document": 269,
+            "unknown_document": 283,
             "validation_doc": 3
           },
           "mechanics_role": {
             "legacy": 118,
             "mechanic_package": 101,
-            "mechanic_part": 184,
-            "none": 1123,
-            "part_doc": 279,
-            "part_schema": 86,
-            "part_script": 28,
-            "part_test": 32
+            "mechanic_part": 192,
+            "none": 1273,
+            "part_doc": 280,
+            "part_schema": 89,
+            "part_script": 29,
+            "part_test": 33
           },
           "primary_kind": {
-            "artifact": 37,
-            "command": 138,
-            "document": 1078,
-            "surface": 698
+            "artifact": 41,
+            "command": 181,
+            "document": 1103,
+            "surface": 790
           },
           "surface_state": {
-            "authored_source": 1793,
-            "generated_projection": 1,
+            "authored_source": 1954,
             "generated_readmodel": 38,
             "legacy": 118,
-            "receipt": 1
+            "receipt": 5
           }
         },
         "quality": {
@@ -881,14 +575,14 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 365,
-        "documents": 1078,
+        "commands": 387,
+        "documents": 1103,
         "generated": 28,
-        "mechanics": 828,
-        "schemas": 122,
-        "scripts": 277,
-        "tests": 88,
-        "validators": 239
+        "mechanics": 842,
+        "schemas": 150,
+        "scripts": 279,
+        "tests": 108,
+        "validators": 240
       },
       "domain_index_catalog_ref": "",
       "family_storage": "v3-portable-shards",
@@ -897,30 +591,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-evals:kag",
+      "kag_home": "/srv/AbyssOS/aoa-evals/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "68876bcaab7ea7fb97d5166efb94caba07c99d946e8711f38d406b77d93543cd",
-        "corpus_digest": "",
-        "corpus_total_bytes": 23577276,
+        "budget_state": "receipted",
+        "content_digest": "fec76380729a6ac6669de975a129fff68d1e94837d341b4b526005be44d5e21d",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 23577276,
-        "git_hot_objects": 659,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 659,
-        "tracked_bytes": 23577276,
+        "receipt_ref": "kag/receipts/index_family_budget/fec76380729a6ac6669de975a129fff68d1e94837d341b4b526005be44d5e21d.json",
+        "shards": 661,
+        "tracked_bytes": 26441553,
         "tracked_bytes_max": 26214400
       },
       "repo": "aoa-evals",
@@ -933,14 +613,14 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-evals"
+      "root": "/srv/AbyssOS/aoa-evals"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 84,
-            "document": 320,
+            "config": 91,
+            "document": 336,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -948,30 +628,30 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 94,
-            "script": 22,
+            "schema": 79,
+            "script": 27,
             "security": 1,
-            "source_code": 111,
-            "test": 55,
-            "validator": 16
+            "source_code": 108,
+            "test": 61,
+            "validator": 15
           },
           "command_role": {
-            "builder": 9,
+            "builder": 8,
             "lane_entrypoint": 3,
-            "none": 679,
-            "script": 10,
-            "test": 55,
-            "validator": 16
+            "none": 684,
+            "script": 16,
+            "test": 61,
+            "validator": 15
           },
           "document_role": {
             "agents": 58,
             "boundary": 1,
             "changelog": 1,
-            "decision": 26,
+            "decision": 45,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
-            "none": 444,
+            "none": 443,
             "parts": 13,
             "provenance": 13,
             "readme": 72,
@@ -979,14 +659,14 @@
             "skill": 1,
             "source_policy": 1,
             "testing_doc": 1,
-            "unknown_document": 21,
+            "unknown_document": 18,
             "validation_doc": 4
           },
           "mechanics_role": {
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 351,
+            "none": 366,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -995,12 +675,12 @@
           },
           "primary_kind": {
             "artifact": 40,
-            "command": 93,
-            "document": 328,
-            "surface": 311
+            "command": 103,
+            "document": 344,
+            "surface": 300
           },
           "surface_state": {
-            "authored_source": 711,
+            "authored_source": 726,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -1017,50 +697,33 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 204,
-        "documents": 328,
+        "commands": 211,
+        "documents": 344,
         "generated": 35,
         "mechanics": 421,
-        "schemas": 95,
-        "scripts": 147,
-        "tests": 57,
-        "validators": 100
+        "schemas": 80,
+        "scripts": 148,
+        "tests": 63,
+        "validators": 99
       },
       "domain_index_catalog_ref": "",
-      "family_storage": "v4-tiered-content-addressed",
+      "family_storage": "v3-portable-shards",
       "index_files": [
-        "kag/indexes/artifact_locators.json",
-        "kag/indexes/corpus.manifest.json",
-        "kag/indexes/hot_profile.json",
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-kag:kag",
+      "kag_home": "/srv/AbyssOS/aoa-kag/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "kag/indexes/artifact_locators.json",
-        "budget_state": "self-excluded",
+        "budget_state": "receipted",
         "content_digest": "",
-        "corpus_digest": "",
-        "corpus_total_bytes": 0,
         "digest_state": "self-manifest",
-        "distribution_digest": "",
-        "git_hot_bytes": 0,
-        "git_hot_objects": 0,
-        "hot_profile_ref": "kag/indexes/hot_profile.json",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "owner-family-release.json#/measurements",
-        "measurement_state": "self-excluded",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "shadow",
         "receipt_ref": "",
-        "shards": 0,
-        "tracked_bytes": 0,
-        "tracked_bytes_max": 4194304
+        "shards": 486,
+        "tracked_bytes": 13170545,
+        "tracked_bytes_max": 12582912
       },
       "repo": "aoa-kag",
       "repository_index_family": {
@@ -1072,83 +735,83 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-kag"
+      "root": "/srv/AbyssOS/aoa-kag"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 216,
+            "config": 245,
             "dependency_manifest": 1,
             "directory_marker": 12,
-            "document": 929,
+            "document": 953,
             "generated_readmodel": 47,
             "index": 1,
             "license": 1,
             "manifest": 16,
-            "mechanics_surface": 21,
+            "mechanics_surface": 25,
             "owner_metadata": 2,
             "projection": 1,
-            "receipt": 5,
+            "receipt": 11,
             "record_log": 1,
-            "schema": 105,
-            "script": 34,
+            "schema": 128,
+            "script": 41,
             "security": 1,
             "source_code": 67,
-            "test": 86,
+            "test": 100,
             "validator": 35
           },
           "command_role": {
             "builder": 29,
             "lane_entrypoint": 3,
-            "none": 1426,
-            "script": 2,
-            "test": 86,
+            "none": 1512,
+            "script": 9,
+            "test": 100,
             "validator": 35
           },
           "document_role": {
             "agents": 118,
-            "audit": 5,
+            "audit": 6,
             "boundary": 1,
             "changelog": 1,
-            "decision": 91,
+            "decision": 100,
             "design": 1,
             "design_agents": 1,
             "handoff": 7,
-            "mechanics_doc": 432,
-            "none": 644,
+            "mechanics_doc": 436,
+            "none": 727,
             "parts": 15,
             "provenance": 15,
-            "readme": 162,
+            "readme": 164,
             "release_notes": 4,
             "roadmap": 16,
+            "skill": 1,
             "testing_doc": 1,
-            "unknown_document": 65,
+            "unknown_document": 72,
             "validation_doc": 2
           },
           "mechanics_role": {
             "legacy": 243,
             "mechanic_package": 300,
-            "mechanic_part": 125,
-            "none": 568,
-            "part_contract": 54,
-            "part_doc": 138,
-            "part_schema": 71,
-            "part_script": 28,
-            "part_test": 54
+            "mechanic_part": 139,
+            "none": 611,
+            "part_contract": 56,
+            "part_doc": 142,
+            "part_schema": 93,
+            "part_script": 37,
+            "part_test": 67
           },
           "primary_kind": {
-            "artifact": 63,
-            "command": 155,
-            "document": 937,
-            "surface": 426
+            "artifact": 69,
+            "command": 176,
+            "document": 961,
+            "surface": 482
           },
           "surface_state": {
-            "authored_source": 1281,
-            "generated_projection": 1,
+            "authored_source": 1383,
             "generated_readmodel": 51,
             "legacy": 243,
-            "receipt": 5
+            "receipt": 11
           }
         },
         "quality": {
@@ -1163,13 +826,13 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 241,
-        "documents": 937,
+        "commands": 266,
+        "documents": 961,
         "generated": 46,
-        "mechanics": 1013,
-        "schemas": 111,
-        "scripts": 149,
-        "tests": 92,
+        "mechanics": 1077,
+        "schemas": 134,
+        "scripts": 159,
+        "tests": 107,
         "validators": 79
       },
       "domain_index_catalog_ref": "",
@@ -1179,30 +842,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-memo:kag",
+      "kag_home": "/srv/AbyssOS/aoa-memo/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "ef8a12bd0894a45b955f9e0c30fa9be04a0e752e69231c58bc526268b6a9f032",
-        "corpus_digest": "",
-        "corpus_total_bytes": 16545073,
+        "content_digest": "c7f56dceeb90fc20ea6b8c423890d8fa610e07395d9f9d5cbb5ca204906f498d",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 16545073,
-        "git_hot_objects": 646,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
-        "shards": 646,
-        "tracked_bytes": 16545073,
+        "shards": 649,
+        "tracked_bytes": 18180999,
         "tracked_bytes_max": 18874368
       },
       "repo": "aoa-memo",
@@ -1215,36 +864,36 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-memo"
+      "root": "/srv/AbyssOS/aoa-memo"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 97,
+            "config": 98,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 388,
-            "generated_readmodel": 30,
+            "document": 390,
+            "generated_readmodel": 31,
             "index": 1,
             "license": 1,
             "manifest": 8,
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 50,
-            "script": 27,
+            "schema": 51,
+            "script": 28,
             "security": 1,
             "source_code": 2,
-            "test": 38,
+            "test": 39,
             "validator": 28
           },
           "command_role": {
-            "builder": 23,
+            "builder": 24,
             "lane_entrypoint": 1,
-            "none": 587,
+            "none": 592,
             "script": 3,
-            "test": 38,
+            "test": 39,
             "validator": 28
           },
           "document_role": {
@@ -1252,36 +901,36 @@
             "audit": 1,
             "boundary": 1,
             "changelog": 1,
-            "decision": 22,
+            "decision": 24,
             "design": 1,
             "design_agents": 1,
-            "mechanics_doc": 172,
-            "none": 284,
-            "parts": 16,
-            "provenance": 16,
-            "readme": 66,
+            "mechanics_doc": 173,
+            "none": 289,
+            "parts": 15,
+            "provenance": 15,
+            "readme": 67,
             "release_notes": 3,
             "roadmap": 1,
             "unknown_document": 57
           },
           "mechanics_role": {
             "legacy": 21,
-            "mechanic_package": 82,
-            "mechanic_part": 74,
-            "none": 247,
-            "part_doc": 193,
-            "part_schema": 49,
-            "part_script": 14
+            "mechanic_package": 80,
+            "mechanic_part": 75,
+            "none": 251,
+            "part_doc": 195,
+            "part_schema": 50,
+            "part_script": 15
           },
           "primary_kind": {
-            "artifact": 33,
-            "command": 93,
-            "document": 396,
-            "surface": 158
+            "artifact": 34,
+            "command": 95,
+            "document": 398,
+            "surface": 160
           },
           "surface_state": {
-            "authored_source": 625,
-            "generated_readmodel": 33,
+            "authored_source": 631,
+            "generated_readmodel": 34,
             "legacy": 21,
             "receipt": 1
           }
@@ -1298,13 +947,13 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 95,
-        "documents": 396,
-        "generated": 23,
-        "mechanics": 433,
-        "schemas": 51,
-        "scripts": 57,
-        "tests": 38,
+        "commands": 97,
+        "documents": 398,
+        "generated": 24,
+        "mechanics": 436,
+        "schemas": 52,
+        "scripts": 58,
+        "tests": 39,
         "validators": 28
       },
       "domain_index_catalog_ref": "",
@@ -1314,30 +963,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-playbooks:kag",
+      "kag_home": "/srv/AbyssOS/aoa-playbooks/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "52b75ff3b4b0dc65eaac5fa3ccaf6ebf35023d626b21c4bec57eca6b989369bd",
-        "corpus_digest": "",
-        "corpus_total_bytes": 8603664,
+        "content_digest": "48e0da50950b3ba00ab5d55b4c7889b24f8c4304abce9226db6285891355a1e1",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 8603664,
-        "git_hot_objects": 366,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 366,
-        "tracked_bytes": 8603664,
+        "tracked_bytes": 8907025,
         "tracked_bytes_max": 10485760
       },
       "repo": "aoa-playbooks",
@@ -1350,208 +985,77 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-playbooks"
+      "root": "/srv/AbyssOS/aoa-playbooks"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "asset": 50,
-            "config": 164,
-            "dependency_manifest": 1,
-            "document": 412,
-            "generated_readmodel": 71,
-            "index": 1,
-            "license": 1,
-            "manifest": 2,
-            "owner_metadata": 2,
-            "projection": 1,
-            "receipt": 1,
-            "record_log": 1,
-            "schema": 69,
-            "script": 12,
-            "security": 1,
-            "source_code": 2,
-            "test": 25,
-            "validator": 11
-          },
-          "command_role": {
-            "builder": 4,
-            "lane_entrypoint": 1,
-            "none": 779,
-            "script": 7,
-            "test": 25,
-            "validator": 11
-          },
-          "document_role": {
-            "agents": 51,
-            "audit": 3,
-            "boundary": 1,
-            "changelog": 1,
-            "decision": 10,
-            "mechanics_doc": 81,
-            "none": 407,
-            "parts": 11,
-            "provenance": 12,
-            "readme": 105,
-            "report": 1,
-            "roadmap": 12,
-            "unknown_document": 132
-          },
-          "mechanics_role": {
-            "legacy": 60,
-            "mechanic_package": 58,
-            "mechanic_part": 55,
-            "none": 457,
-            "part_doc": 128,
-            "part_schema": 56,
-            "part_script": 2,
-            "part_test": 11
-          },
-          "primary_kind": {
-            "artifact": 121,
-            "command": 48,
-            "document": 420,
-            "surface": 238
-          },
-          "surface_state": {
-            "authored_source": 685,
-            "generated_readmodel": 74,
-            "legacy": 67,
-            "receipt": 1
-          }
-        },
-        "quality": {
-          "has_generated_readmodels": true,
-          "has_kag_home": true,
-          "has_owner_commands": true,
-          "has_record_classes": true,
-          "has_source_index": true,
-          "has_validation_route": true,
-          "unknown_count": 0
-        },
-        "source": "source_surface_index"
-      },
-      "coverage": {
-        "commands": 49,
-        "documents": 420,
-        "generated": 65,
-        "mechanics": 370,
-        "schemas": 70,
-        "scripts": 23,
-        "tests": 26,
-        "validators": 11
-      },
-      "domain_index_catalog_ref": "",
-      "family_storage": "v3-portable-shards",
-      "index_files": [
-        "kag/indexes/index_family.manifest.json",
-        "kag/indexes/provider_readiness_index.json"
-      ],
-      "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-routing:kag",
-      "owner_type": "organ",
-      "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "ffa30bf9ceaa58627679a9b0541f8b25cd2abeacd5bde060c152492937fa4043",
-        "corpus_digest": "",
-        "corpus_total_bytes": 7964006,
-        "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 7964006,
-        "git_hot_objects": 394,
-        "hot_profile_ref": "",
-        "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 394,
-        "tracked_bytes": 7964006,
-        "tracked_bytes_max": 9437184
-      },
-      "repo": "aoa-routing",
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
-      "root": "aoa-owner:aoa-routing"
-    },
-    {
-      "common_surface_profile": {
-        "counts": {
-          "artifact_kind": {
+            "archive": 3,
             "asset": 2,
-            "config": 142,
+            "config": 188,
             "directory_marker": 1,
-            "document": 549,
+            "document": 645,
             "generated_readmodel": 84,
             "index": 1,
             "license": 1,
-            "manifest": 23,
-            "mechanics_surface": 4,
+            "manifest": 25,
+            "mechanics_surface": 6,
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
             "record_log": 2,
-            "schema": 123,
-            "script": 40,
-            "source_code": 193,
-            "test": 94,
-            "validator": 20
+            "schema": 193,
+            "script": 67,
+            "source_code": 239,
+            "test": 120,
+            "validator": 21
           },
           "command_role": {
-            "builder": 17,
+            "builder": 26,
             "lane_entrypoint": 1,
-            "none": 1129,
-            "script": 22,
-            "test": 94,
-            "validator": 20
+            "none": 1394,
+            "script": 40,
+            "test": 120,
+            "validator": 21
           },
           "document_role": {
-            "agents": 49,
+            "agents": 50,
             "changelog": 1,
-            "decision": 76,
+            "decision": 102,
             "design": 1,
             "design_agents": 1,
-            "mechanics_doc": 246,
-            "none": 727,
+            "handoff": 1,
+            "mechanics_doc": 284,
+            "none": 950,
             "parts": 12,
             "provenance": 12,
-            "readme": 121,
+            "readme": 135,
             "release_notes": 1,
+            "report": 1,
             "roadmap": 14,
-            "unknown_document": 22
+            "skill": 3,
+            "unknown_document": 34
           },
           "mechanics_role": {
             "legacy": 24,
             "mechanic_package": 65,
-            "mechanic_part": 162,
-            "none": 459,
-            "part_contract": 54,
-            "part_doc": 264,
-            "part_schema": 122,
-            "part_script": 41,
-            "part_test": 92
+            "mechanic_part": 196,
+            "none": 612,
+            "part_contract": 63,
+            "part_doc": 305,
+            "part_schema": 150,
+            "part_script": 68,
+            "part_test": 119
           },
           "primary_kind": {
-            "artifact": 87,
-            "command": 154,
-            "document": 556,
-            "surface": 486
+            "artifact": 90,
+            "command": 208,
+            "document": 652,
+            "surface": 652
           },
           "surface_state": {
-            "authored_source": 1171,
+            "authored_source": 1490,
             "generated_readmodel": 87,
             "legacy": 24,
             "receipt": 1
@@ -1569,14 +1073,14 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 149,
-        "documents": 556,
+        "commands": 203,
+        "documents": 652,
         "generated": 77,
-        "mechanics": 824,
-        "schemas": 124,
-        "scripts": 53,
-        "tests": 96,
-        "validators": 20
+        "mechanics": 990,
+        "schemas": 194,
+        "scripts": 80,
+        "tests": 123,
+        "validators": 21
       },
       "domain_index_catalog_ref": "",
       "family_storage": "v3-portable-shards",
@@ -1585,30 +1089,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-sdk:kag",
+      "kag_home": "/srv/AbyssOS/aoa-sdk/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "9ae369913caaae1726fd174846781c0e4434a36814b82279493c66c00ae06149",
-        "corpus_digest": "",
-        "corpus_total_bytes": 13812671,
+        "budget_state": "receipted",
+        "content_digest": "4d3337f67e2ef716e6127623fca3ba22eaba93d8790c4c23b7ec42159b3d8761",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 13812671,
-        "git_hot_objects": 558,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 558,
-        "tracked_bytes": 13812671,
+        "receipt_ref": "kag/receipts/index_family_budget/4d3337f67e2ef716e6127623fca3ba22eaba93d8790c4c23b7ec42159b3d8761.json",
+        "shards": 562,
+        "tracked_bytes": 20216013,
         "tracked_bytes_max": 15728640
       },
       "repo": "aoa-sdk",
@@ -1621,16 +1111,15 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-sdk"
+      "root": "/srv/AbyssOS/aoa-sdk"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "asset": 14,
-            "config": 49,
+            "config": 55,
             "dependency_manifest": 1,
-            "document": 138,
+            "document": 159,
             "generated_readmodel": 21,
             "index": 1,
             "license": 1,
@@ -1638,54 +1127,55 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 12,
-            "script": 26,
+            "schema": 14,
+            "script": 30,
             "security": 1,
-            "source_code": 24,
-            "test": 8,
-            "validator": 9
+            "source_code": 25,
+            "test": 10,
+            "validator": 11
           },
           "command_role": {
             "builder": 8,
             "lane_entrypoint": 4,
-            "none": 267,
-            "script": 14,
-            "test": 8,
-            "validator": 9
+            "none": 283,
+            "script": 18,
+            "test": 10,
+            "validator": 11
           },
           "document_role": {
             "agents": 25,
+            "audit": 1,
             "changelog": 1,
-            "decision": 48,
+            "decision": 50,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 5,
-            "none": 164,
+            "none": 167,
             "readme": 27,
             "roadmap": 1,
+            "skill": 9,
             "testing_doc": 1,
-            "unknown_document": 33,
+            "unknown_document": 42,
             "validation_doc": 3
           },
           "mechanics_role": {
             "mechanic_package": 18,
             "mechanic_part": 4,
-            "none": 275,
+            "none": 299,
             "part_doc": 4,
             "part_schema": 3,
             "part_script": 4,
             "part_test": 2
           },
           "primary_kind": {
-            "artifact": 34,
-            "command": 43,
-            "document": 146,
-            "surface": 87
+            "artifact": 20,
+            "command": 51,
+            "document": 167,
+            "surface": 96
           },
           "surface_state": {
-            "authored_source": 282,
-            "generated_readmodel": 27,
-            "receipt": 1
+            "authored_source": 305,
+            "generated_readmodel": 29
           }
         },
         "quality": {
@@ -1700,14 +1190,14 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 67,
-        "documents": 146,
+        "commands": 76,
+        "documents": 167,
         "generated": 16,
         "mechanics": 35,
-        "schemas": 14,
-        "scripts": 59,
-        "tests": 8,
-        "validators": 14
+        "schemas": 16,
+        "scripts": 66,
+        "tests": 10,
+        "validators": 16
       },
       "domain_index_catalog_ref": "",
       "family_storage": "v3-portable-shards",
@@ -1716,30 +1206,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-skills:kag",
+      "kag_home": "/srv/AbyssOS/aoa-skills/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "4f92131ade8ea77a186663daeb6b13cdaa0f927eb66ed7ce32b46f8f9505a53e",
-        "corpus_digest": "",
-        "corpus_total_bytes": 8477033,
+        "budget_state": "receipted",
+        "content_digest": "4d44c7f81da2e3fa8df7c1bdad7f593f57aabdcfca711f5fed18e24cef6838fe",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 8477033,
-        "git_hot_objects": 357,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 357,
-        "tracked_bytes": 8477033,
+        "receipt_ref": "kag/receipts/index_family_budget/4d44c7f81da2e3fa8df7c1bdad7f593f57aabdcfca711f5fed18e24cef6838fe.json",
+        "shards": 358,
+        "tracked_bytes": 10092517,
         "tracked_bytes_max": 9437184
       },
       "repo": "aoa-skills",
@@ -1752,15 +1228,15 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-skills"
+      "root": "/srv/AbyssOS/aoa-skills"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 129,
+            "config": 133,
             "dependency_manifest": 1,
-            "document": 361,
+            "document": 367,
             "generated_readmodel": 39,
             "index": 1,
             "license": 1,
@@ -1768,41 +1244,42 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 93,
-            "script": 18,
+            "schema": 94,
+            "script": 21,
             "security": 1,
             "service_unit": 2,
             "source_code": 31,
-            "test": 54,
+            "test": 57,
             "validator": 19
           },
           "command_role": {
             "builder": 10,
             "lane_entrypoint": 1,
-            "none": 680,
-            "script": 7,
-            "test": 54,
+            "none": 691,
+            "script": 10,
+            "test": 57,
             "validator": 19
           },
           "document_role": {
             "agents": 45,
             "boundary": 1,
             "changelog": 1,
-            "decision": 20,
+            "decision": 23,
             "design": 1,
             "mechanics_doc": 180,
-            "none": 402,
+            "none": 413,
             "parts": 11,
             "provenance": 11,
             "readme": 85,
             "roadmap": 1,
-            "unknown_document": 13
+            "skill": 1,
+            "unknown_document": 15
           },
           "mechanics_role": {
             "legacy": 23,
             "mechanic_package": 51,
             "mechanic_part": 92,
-            "none": 259,
+            "none": 276,
             "part_contract": 42,
             "part_doc": 183,
             "part_schema": 58,
@@ -1811,13 +1288,12 @@
           },
           "primary_kind": {
             "artifact": 40,
-            "command": 91,
-            "document": 369,
-            "surface": 271
+            "command": 97,
+            "document": 375,
+            "surface": 276
           },
           "surface_state": {
-            "authored_source": 703,
-            "generated_projection": 1,
+            "authored_source": 721,
             "generated_readmodel": 44,
             "legacy": 23
           }
@@ -1834,13 +1310,13 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 91,
-        "documents": 369,
+        "commands": 97,
+        "documents": 375,
         "generated": 32,
         "mechanics": 512,
-        "schemas": 94,
-        "scripts": 37,
-        "tests": 54,
+        "schemas": 95,
+        "scripts": 40,
+        "tests": 57,
         "validators": 19
       },
       "domain_index_catalog_ref": "",
@@ -1850,30 +1326,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-stats:kag",
+      "kag_home": "/srv/AbyssOS/aoa-stats/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "f16e3f0af19c38047c7988ebf9fb0ee6706e47315e1683725cfc8020408321e6",
-        "corpus_digest": "",
-        "corpus_total_bytes": 8072226,
+        "content_digest": "15882ea67c810d73a93bf02e107009544ee48b721053ec9d90904aed1903fcbe",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 8072226,
-        "git_hot_objects": 395,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 395,
-        "tracked_bytes": 8072226,
+        "tracked_bytes": 8441345,
         "tracked_bytes_max": 9437184
       },
       "repo": "aoa-stats",
@@ -1886,7 +1348,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-stats"
+      "root": "/srv/AbyssOS/aoa-stats"
     },
     {
       "common_surface_profile": {
@@ -1990,30 +1452,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-techniques:kag",
+      "kag_home": "/srv/AbyssOS/aoa-techniques/kag",
       "owner_type": "organ",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "23f28c077642d7b3b710d74265a7354af0e374a0260132b85330745ae3b6edd0",
-        "corpus_digest": "",
-        "corpus_total_bytes": 33249508,
+        "content_digest": "c203eb881fd212e749562fa41d6fe592a66f2e0c00ce2d2431c01f2433cfedba",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 33249508,
-        "git_hot_objects": 743,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 743,
-        "tracked_bytes": 33249508,
+        "tracked_bytes": 33264020,
         "tracked_bytes_max": 36700160
       },
       "repo": "aoa-techniques",
@@ -2026,81 +1474,86 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-techniques"
+      "root": "/srv/AbyssOS/aoa-techniques"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 185,
+            "config": 237,
             "dependency_manifest": 11,
             "directory_marker": 4,
-            "document": 528,
-            "generated_readmodel": 16,
+            "document": 599,
+            "generated_readmodel": 17,
             "index": 1,
             "license": 1,
-            "manifest": 12,
-            "mechanics_surface": 16,
+            "manifest": 16,
+            "mechanics_surface": 21,
             "owner_metadata": 3,
             "package_manifest": 1,
             "projection": 1,
-            "receipt": 6,
-            "schema": 71,
-            "script": 143,
+            "receipt": 8,
+            "schema": 140,
+            "script": 207,
             "security": 2,
-            "service_unit": 47,
-            "source_code": 122,
+            "service_unit": 68,
+            "source_code": 195,
             "symlink": 30,
-            "test": 94,
+            "test": 128,
             "text_artifact": 25,
-            "validator": 20
+            "unknown": 2,
+            "validator": 25
           },
           "command_role": {
-            "builder": 7,
+            "builder": 10,
             "lane_entrypoint": 7,
-            "none": 1082,
-            "script": 129,
-            "test": 94,
-            "validator": 20
+            "none": 1382,
+            "script": 190,
+            "test": 128,
+            "validator": 25
           },
           "document_role": {
-            "agents": 50,
-            "boundary": 12,
+            "agents": 57,
+            "boundary": 16,
             "changelog": 1,
-            "decision": 86,
-            "design": 12,
+            "decision": 116,
+            "design": 16,
             "design_agents": 1,
-            "mechanics_doc": 138,
-            "none": 802,
+            "handoff": 1,
+            "mechanics_doc": 146,
+            "none": 1134,
             "parts": 10,
             "provenance": 10,
-            "readme": 157,
+            "readme": 165,
             "roadmap": 11,
+            "skill": 1,
             "testing_doc": 1,
-            "unknown_document": 45,
+            "unknown_document": 53,
             "validation_doc": 3
           },
           "mechanics_role": {
             "legacy": 136,
             "mechanic_package": 83,
-            "mechanic_part": 133,
-            "none": 786,
-            "part_doc": 126,
-            "part_schema": 38,
-            "part_script": 1,
-            "part_test": 36
+            "mechanic_part": 185,
+            "none": 1086,
+            "part_contract": 2,
+            "part_doc": 136,
+            "part_schema": 63,
+            "part_script": 3,
+            "part_test": 48
           },
           "primary_kind": {
-            "artifact": 137,
-            "command": 257,
-            "document": 537,
-            "surface": 408
+            "artifact": 161,
+            "command": 360,
+            "document": 608,
+            "surface": 611,
+            "unknown": 2
           },
           "surface_state": {
-            "authored_source": 1172,
-            "generated_readmodel": 22,
+            "authored_source": 1572,
+            "generated_readmodel": 23,
             "legacy": 139,
-            "receipt": 6
+            "receipt": 8
           }
         },
         "quality": {
@@ -2110,19 +1563,19 @@
           "has_record_classes": true,
           "has_source_index": true,
           "has_validation_route": true,
-          "unknown_count": 0
+          "unknown_count": 2
         },
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 174,
-        "documents": 537,
-        "generated": 11,
-        "mechanics": 553,
-        "schemas": 71,
-        "scripts": 66,
-        "tests": 108,
-        "validators": 42
+        "commands": 240,
+        "documents": 608,
+        "generated": 12,
+        "mechanics": 656,
+        "schemas": 140,
+        "scripts": 94,
+        "tests": 146,
+        "validators": 48
       },
       "domain_index_catalog_ref": "",
       "family_storage": "v3-portable-shards",
@@ -2131,30 +1584,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:abyss-stack:kag",
+      "kag_home": "/home/dionysus/src/abyss-stack/kag",
       "owner_type": "runtime_source",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
-        "budget_state": "passed",
-        "content_digest": "4ffb2d1168d791e23ebc6a62ca5f1a91f54475a5f3c6b1e949249e09cae1624a",
-        "corpus_digest": "",
-        "corpus_total_bytes": 21724495,
+        "budget_state": "receipted",
+        "content_digest": "edeceefc73924505925afaca8d5bb149d5cd23750444f75f6f331cfdede6466c",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 21724495,
-        "git_hot_objects": 715,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
-        "receipt_ref": "",
-        "shards": 715,
-        "tracked_bytes": 21724495,
+        "receipt_ref": "kag/receipts/index_family_budget/edeceefc73924505925afaca8d5bb149d5cd23750444f75f6f331cfdede6466c.json",
+        "shards": 839,
+        "tracked_bytes": 31572431,
         "tracked_bytes_max": 24117248
       },
       "repo": "abyss-stack",
@@ -2167,18 +1606,18 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:abyss-stack"
+      "root": "/home/dionysus/src/abyss-stack"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 32,
-            "document": 192,
+            "config": 35,
+            "document": 198,
             "generated_readmodel": 2,
             "index": 1,
             "license": 1,
-            "manifest": 13,
+            "manifest": 16,
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
@@ -2186,49 +1625,50 @@
             "script": 38,
             "security": 1,
             "service_unit": 60,
-            "source_code": 117,
-            "test": 142,
+            "source_code": 121,
+            "test": 146,
             "validator": 1
           },
           "command_role": {
             "builder": 2,
             "lane_entrypoint": 2,
-            "none": 431,
+            "none": 447,
             "script": 34,
-            "test": 142,
+            "test": 146,
             "validator": 1
           },
           "document_role": {
-            "agents": 58,
+            "agents": 59,
             "boundary": 1,
             "changelog": 2,
-            "decision": 22,
+            "decision": 24,
             "design": 2,
             "design_agents": 2,
             "mechanics_doc": 16,
-            "none": 419,
+            "none": 433,
             "parts": 8,
             "provenance": 8,
-            "readme": 49,
+            "readme": 50,
             "release_notes": 1,
             "roadmap": 10,
+            "skill": 1,
             "testing_doc": 1,
-            "unknown_document": 12,
+            "unknown_document": 13,
             "validation_doc": 1
           },
           "mechanics_role": {
             "mechanic_package": 66,
-            "none": 538,
+            "none": 558,
             "part_doc": 8
           },
           "primary_kind": {
             "artifact": 67,
-            "command": 181,
-            "document": 193,
-            "surface": 171
+            "command": 185,
+            "document": 199,
+            "surface": 181
           },
           "surface_state": {
-            "authored_source": 605,
+            "authored_source": 625,
             "generated_readmodel": 6,
             "receipt": 1
           }
@@ -2245,13 +1685,13 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 164,
-        "documents": 193,
+        "commands": 168,
+        "documents": 199,
         "generated": 4,
         "mechanics": 74,
         "schemas": 10,
         "scripts": 21,
-        "tests": 143,
+        "tests": 147,
         "validators": 18
       },
       "domain_index_catalog_ref": "",
@@ -2261,30 +1701,16 @@
         "kag/indexes/provider_readiness_index.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:abyss-machine:kag",
+      "kag_home": "/srv/AbyssOS/abyss-machine/kag",
       "owner_type": "runtime_source",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "4aff3a5f0f9c60dbb84e1782f56b48cbb60d100d3937e5958712fec87bf2ffcc",
-        "corpus_digest": "",
-        "corpus_total_bytes": 24675273,
+        "content_digest": "c7338a379eae0e11414df38552b80297f947024e026b7daf667bd037bcdfda4a",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 24675273,
-        "git_hot_objects": 520,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
-        "shards": 520,
-        "tracked_bytes": 24675273,
+        "shards": 522,
+        "tracked_bytes": 25591341,
         "tracked_bytes_max": 27262976
       },
       "repo": "abyss-machine",
@@ -2297,7 +1723,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:abyss-machine"
+      "root": "/srv/AbyssOS/abyss-machine"
     },
     {
       "common_surface_profile": {
@@ -2375,27 +1801,13 @@
         "kag/indexes/session_memory_source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-session-memory:kag",
+      "kag_home": "/srv/AbyssOS/bundles/aoa-session-memory/kag",
       "owner_type": "bundle_provider",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
         "content_digest": "c6a8cd608690e08ca87ab429f2184508eb46a6d5e4b1dd1caa8d0994689a6985",
-        "corpus_digest": "",
-        "corpus_total_bytes": 11921424,
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 11921424,
-        "git_hot_objects": 314,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 314,
         "tracked_bytes": 11921424,
@@ -2411,7 +1823,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-session-memory"
+      "root": "/srv/AbyssOS/bundles/aoa-session-memory"
     },
     {
       "common_surface_profile": {
@@ -2495,30 +1907,16 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-4pda-connector:kag",
+      "kag_home": "/srv/AbyssOS/connectors/aoa-4pda-connector/kag",
       "owner_type": "connector",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "ad0a1168114a971b7149556e807170524eacd5db80588aba8f5253999e540023",
-        "corpus_digest": "",
-        "corpus_total_bytes": 3198708,
+        "content_digest": "c990504997be236d4b3640560088f45d4f5f67db391f0df2440fe31c93809a49",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 3198708,
-        "git_hot_objects": 213,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 213,
-        "tracked_bytes": 3198708,
+        "tracked_bytes": 3199649,
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-4pda-connector",
@@ -2531,13 +1929,13 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-4pda-connector"
+      "root": "/srv/AbyssOS/connectors/aoa-4pda-connector"
     },
     {
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 38,
+            "config": 39,
             "directory_marker": 4,
             "document": 54,
             "index": 1,
@@ -2546,15 +1944,15 @@
             "projection": 1,
             "receipt": 1,
             "schema": 27,
-            "script": 1,
-            "source_code": 53,
-            "test": 24,
+            "script": 2,
+            "source_code": 54,
+            "test": 26,
             "validator": 2
           },
           "command_role": {
-            "none": 184,
-            "script": 1,
-            "test": 24,
+            "none": 186,
+            "script": 2,
+            "test": 26,
             "validator": 2
           },
           "document_role": {
@@ -2562,23 +1960,23 @@
             "boundary": 1,
             "changelog": 1,
             "decision": 1,
-            "none": 157,
+            "none": 162,
             "readme": 10,
             "roadmap": 1,
             "source_policy": 1,
             "unknown_document": 34
           },
           "mechanics_role": {
-            "none": 211
+            "none": 216
           },
           "primary_kind": {
             "artifact": 8,
-            "command": 27,
+            "command": 30,
             "document": 54,
-            "surface": 122
+            "surface": 124
           },
           "surface_state": {
-            "authored_source": 207,
+            "authored_source": 212,
             "generated_readmodel": 3,
             "receipt": 1
           }
@@ -2595,13 +1993,13 @@
         "source": "source_surface_index"
       },
       "coverage": {
-        "commands": 27,
+        "commands": 30,
         "documents": 54,
         "generated": 0,
         "mechanics": 0,
         "schemas": 27,
-        "scripts": 3,
-        "tests": 24,
+        "scripts": 4,
+        "tests": 26,
         "validators": 2
       },
       "domain_index_catalog_ref": "",
@@ -2611,30 +2009,16 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-course-connector:kag",
+      "kag_home": "/srv/AbyssOS/connectors/aoa-course-connector/kag",
       "owner_type": "connector",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "06d32aaee149182b1aeee0f7cc64297c387ecdcd9d23f389117d2152e977ca25",
-        "corpus_digest": "",
-        "corpus_total_bytes": 5057329,
+        "content_digest": "2035c5d1c4d725ae3993a79c8673bfec18221cbc057960d1a1384ace6dc63e36",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 5057329,
-        "git_hot_objects": 288,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 288,
-        "tracked_bytes": 5057329,
+        "tracked_bytes": 5120884,
         "tracked_bytes_max": 6291456
       },
       "repo": "aoa-course-connector",
@@ -2647,7 +2031,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-course-connector"
+      "root": "/srv/AbyssOS/connectors/aoa-course-connector"
     },
     {
       "common_surface_profile": {
@@ -2725,30 +2109,16 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-discord-connector:kag",
+      "kag_home": "/srv/AbyssOS/connectors/aoa-discord-connector/kag",
       "owner_type": "connector",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "484b8204bef41546fa3f644322af445e8869b106b60103cd44c52a9ed81eb9d2",
-        "corpus_digest": "",
-        "corpus_total_bytes": 933765,
+        "content_digest": "1a4da7751f945c36554f5f25d43179097029527d1c168f94a8d04d5f3b90e95f",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 933765,
-        "git_hot_objects": 44,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
-        "shards": 44,
-        "tracked_bytes": 933765,
+        "shards": 45,
+        "tracked_bytes": 934959,
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-discord-connector",
@@ -2761,7 +2131,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-discord-connector"
+      "root": "/srv/AbyssOS/connectors/aoa-discord-connector"
     },
     {
       "common_surface_profile": {
@@ -2839,30 +2209,16 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-stackoverflow-connector:kag",
+      "kag_home": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector/kag",
       "owner_type": "connector",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "588c5f8970d6d4ed9ecb498017ffa46500d4247af04d27ff9cf6a9e9f0ef26b2",
-        "corpus_digest": "",
-        "corpus_total_bytes": 1103445,
+        "content_digest": "981c7314c890f045b2aa677ff83ded21a6dbefe744b291dfe02f74f6103e4d96",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 1103445,
-        "git_hot_objects": 43,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
-        "shards": 43,
-        "tracked_bytes": 1103445,
+        "shards": 44,
+        "tracked_bytes": 1104675,
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-stackoverflow-connector",
@@ -2875,7 +2231,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-stackoverflow-connector"
+      "root": "/srv/AbyssOS/connectors/aoa-stackoverflow-connector"
     },
     {
       "common_surface_profile": {
@@ -2953,30 +2309,16 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-telegram-connector:kag",
+      "kag_home": "/srv/AbyssOS/connectors/aoa-telegram-connector/kag",
       "owner_type": "connector",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "0aecf1d7172450f4dba13730bf59b3e69426c5b727c973a9530e18bfb84fed78",
-        "corpus_digest": "",
-        "corpus_total_bytes": 1058389,
+        "content_digest": "b11703855d9d6bc76b38fa4ae5effd99442b3ca486521128c3a83757bfae3d42",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 1058389,
-        "git_hot_objects": 43,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 43,
-        "tracked_bytes": 1058389,
+        "tracked_bytes": 1059355,
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-telegram-connector",
@@ -2989,7 +2331,7 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-telegram-connector"
+      "root": "/srv/AbyssOS/connectors/aoa-telegram-connector"
     },
     {
       "common_surface_profile": {
@@ -3068,30 +2410,16 @@
         "kag/indexes/source_inventory.json"
       ],
       "index_status": "passed",
-      "kag_home": "aoa-owner:aoa-xda-connector:kag",
+      "kag_home": "/srv/AbyssOS/connectors/aoa-xda-connector/kag",
       "owner_type": "connector",
       "portable_family": {
-        "aggregate_ceiling_receiptable_by_owner": false,
-        "artifact_cold_bytes": 0,
-        "artifact_cold_objects": 0,
-        "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "52593169e259b2f695542a6b9edc9a44d2001e125b776dbf7c4270392b82c7f2",
-        "corpus_digest": "",
-        "corpus_total_bytes": 989487,
+        "content_digest": "76780c03c5d0abae1685fa3a9ebd44914a70f4158d10a86f06377f1e3825dd2b",
         "digest_state": "published",
-        "distribution_digest": "",
-        "git_hot_bytes": 989487,
-        "git_hot_objects": 44,
-        "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
-        "measurement_ref": "",
-        "measurement_state": "measured",
-        "os_git_hot_target_bytes": 234881024,
-        "placement_state": "git-full",
         "receipt_ref": "",
-        "shards": 44,
-        "tracked_bytes": 989487,
+        "shards": 45,
+        "tracked_bytes": 990657,
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-xda-connector",
@@ -3104,10 +2432,10 @@
         "relation": "kag/indexes/repo_relation_index.json",
         "source": "kag/indexes/source_surface_index.json"
       },
-      "root": "aoa-owner:aoa-xda-connector"
+      "root": "/srv/AbyssOS/connectors/aoa-xda-connector"
     }
   ],
-  "root": "aoa-os:canonical-providers",
+  "root": "/srv/AbyssOS",
   "schema_version": "aoa-repo-local-kag-coverage-v1",
   "source_contract": "schemas/repo-local-kag-index.schema.json"
 }

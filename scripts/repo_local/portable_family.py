@@ -86,6 +86,55 @@ class PortableFamilyError(ValueError):
     pass
 
 
+def effective_index_surface_record(
+    manifest: Mapping[str, Any],
+    *,
+    repo: str,
+) -> dict[str, object]:
+    """Project a portable-only family manifest as one effective index surface."""
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "effective index surface requires a v3 portable family manifest"
+        )
+    family_identity = manifest.get("family_identity")
+    source_index_header = manifest.get("source_index_header")
+    if not isinstance(family_identity, Mapping) or not isinstance(
+        source_index_header,
+        Mapping,
+    ):
+        raise PortableFamilyError(
+            "portable family manifest needs family and source index identity"
+        )
+    index_identity = source_index_header.get("index_identity")
+    if not isinstance(index_identity, Mapping):
+        raise PortableFamilyError(
+            "portable family manifest needs source_index_header.index_identity"
+        )
+    local_id = index_identity.get("local_id")
+    content_digest = family_identity.get("content_digest")
+    if not isinstance(local_id, str) or not local_id:
+        raise PortableFamilyError(
+            "portable family source index identity needs local_id"
+        )
+    if not isinstance(content_digest, str) or not content_digest:
+        raise PortableFamilyError(
+            "portable family identity needs content_digest"
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "repo": repo,
+        "local_id": local_id,
+        "record_class": "index",
+        "generated_or_authored": "generated_from_source",
+        "builder": {
+            "route": "repo-local KAG portable family",
+            "surface": MANIFEST_RELATIVE_PATH.as_posix(),
+        },
+        "effective_index_surface": "portable_family_manifest",
+        "portable_family_content_digest": content_digest,
+    }
+
+
 def canonical_json_bytes(payload: object) -> bytes:
     return json.dumps(
         payload,
@@ -643,6 +692,8 @@ def _validate_manifest_shape(manifest: object) -> dict[str, Any]:
 def _load_rows(
     repo_root: Path,
     manifest: Mapping[str, Any],
+    *,
+    require_budget_receipt: bool,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     shards = manifest.get("shards")
@@ -711,7 +762,10 @@ def _load_rows(
         raise PortableFamilyError("portable family needs budgets")
     if budgets.get("global_tracked_bytes_max") != GLOBAL_TRACKED_BYTES_MAX:
         raise PortableFamilyError("portable global tracked byte budget drifted")
-    if summary["tracked_bytes"] > budgets.get("tracked_bytes_max", -1):
+    if (
+        require_budget_receipt
+        and summary["tracked_bytes"] > budgets.get("tracked_bytes_max", -1)
+    ):
         _validate_tracked_size_receipt(repo_root, manifest)
     return rows
 
@@ -723,7 +777,7 @@ def _expanded_parents(
 ) -> list[dict[str, Any]]:
     chunk_kind = f"{parent_kind}_chunk"
     parents = {
-        _row_key(row): copy.deepcopy(row)
+        _row_key(row): dict(row)
         for row in rows
         if _row_kind(row) == parent_kind
     }
@@ -778,7 +832,7 @@ def _expanded_parents(
 
 
 def _strip_portable_fields(row: Mapping[str, Any]) -> dict[str, Any]:
-    payload = copy.deepcopy(dict(row))
+    payload = dict(row)
     payload.pop("_kind", None)
     payload.pop("_key", None)
     payload.pop("_chunked", None)
@@ -805,7 +859,7 @@ def reconstruct_source_index(
     source_header = manifest.get("source_index_header")
     if not isinstance(source_header, dict):
         raise PortableFamilyError("portable family needs source_index_header")
-    source_index = copy.deepcopy(source_header)
+    source_index = dict(source_header)
     source_index["records"] = source_rows
 
     compatibility = manifest.get("compatibility")
@@ -848,7 +902,22 @@ def reconstruct_compatibility_family(
     rows: Sequence[dict[str, Any]],
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     source_index = reconstruct_source_index(manifest, rows)
-    structure_records = copy.deepcopy(source_index["records"])
+    source_rows = source_index["records"]
+    if not isinstance(source_rows, list):
+        raise PortableFamilyError("portable source records must be a list")
+    structure_records: list[dict[str, Any]] = []
+    for source_record in source_rows:
+        structure_record = dict(source_record)
+        source_refs = source_record.get("refs")
+        if not isinstance(source_refs, dict):
+            raise PortableFamilyError("portable source refs must be an object")
+        structure_refs = dict(source_refs)
+        for field in ("anchor_refs", "outbound_refs"):
+            value = source_refs.get(field)
+            if isinstance(value, list):
+                structure_refs[field] = list(value)
+        structure_record["refs"] = structure_refs
+        structure_records.append(structure_record)
     anchor_rows = _expanded_parents(rows, parent_kind="anchor")
     anchors: list[dict[str, Any]] = []
     records_by_id = {
@@ -1007,6 +1076,7 @@ def load_portable_family_with_state(
     manifest_path: Path = MANIFEST_RELATIVE_PATH,
     artifact_root: Path | None = None,
     allow_shadow_git: bool = True,
+    require_budget_receipt: bool = True,
 ) -> tuple[
     dict[str, Any],
     dict[str, dict[str, Any]],
@@ -1049,7 +1119,11 @@ def load_portable_family_with_state(
         )
         return source, family, distribution, state
     validated = _validate_manifest_shape(manifest)
-    rows = _load_rows(root, validated)
+    rows = _load_rows(
+        root,
+        validated,
+        require_budget_receipt=require_budget_receipt,
+    )
     source, family = reconstruct_compatibility_family(validated, rows)
     state = {
         "state": "git_hot_complete",
@@ -1074,12 +1148,14 @@ def load_portable_family(
     manifest_path: Path = MANIFEST_RELATIVE_PATH,
     artifact_root: Path | None = None,
     allow_shadow_git: bool = True,
+    require_budget_receipt: bool = True,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
     source, family, manifest, _ = load_portable_family_with_state(
         repo_root,
         manifest_path=manifest_path,
         artifact_root=artifact_root,
         allow_shadow_git=allow_shadow_git,
+        require_budget_receipt=require_budget_receipt,
     )
     return source, family, manifest
 

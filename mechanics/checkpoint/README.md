@@ -20,8 +20,8 @@ contracts, and return routes to owner repositories.
 ### Stronger owner split
 
 `Agents-of-Abyss` owns common checkpoint law. `aoa-memo` owns memory writeback.
-`aoa-evals` owns proof. `aoa-routing` owns live re-entry. Source owners own
-state meaning.
+`aoa-evals` owns proof. The `aoa-sdk` routing control plane owns live re-entry.
+Source owners own state meaning.
 
 ### Inputs
 

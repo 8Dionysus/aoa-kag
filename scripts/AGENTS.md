@@ -24,5 +24,21 @@ Use lane entrypoints instead of copying release sequences:
 ```bash
 python scripts/ci_gate.py --mode source-fast
 python scripts/ci_gate.py --mode generated
+python scripts/ci_release_check.py
 python scripts/validate_abyss_machine_kag_registry_bundle.py
 ```
+
+`ci_release_check.py` is CI-only: it accepts the source-fast omission only
+through an exact same-run receipt and otherwise falls back to the complete
+`release_check.py` sequence. Do not use it to weaken standalone release
+validation or to authorize cross-run reuse.
+
+`scripts/validate_kag.py` exposes `local`, `os-wide`, and full-compatible
+scopes. Local phases must not acquire the OS-wide provider sweep implicitly;
+the lane manifest owns placement of that blocking audit.
+
+`scripts/impact_routing.py` may only add the full OS-wide audit to the
+always-required source-fast and self owner-family proofs. Keep its owner-local
+surface an explicit allowlist; invalid, empty, unavailable, or unknown paths
+must route to full audit. Its required-summary mode must distinguish a verified
+audit from one that was correctly not required.

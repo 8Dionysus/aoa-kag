@@ -8,9 +8,10 @@ route cards, and mechanics surfaces.
 
 | Lane | Function |
 | --- | --- |
-| `source-fast` | read-only source and topology integrity |
-| `generated` | generated/read-model parity |
+| `source-fast` | read-only repository-local source and topology integrity |
+| `generated` | generated/read-model parity plus explicit OS-wide provider-home and coverage validation |
 | `release` | release-prep validation |
+| `release-continuation` | CI-only generated and artifact continuation after exact same-run source-fast receipt acceptance; invalid receipts fall back to `release` |
 | `compatibility-canary` | floating sibling compatibility check |
 | `advisory` | route inventory for later KAG pressure |
 
@@ -21,6 +22,27 @@ entries are listed in `docs/validation/COMMAND_AUTHORITY.md`.
 
 `scripts/validate_kag.py` is the repo-wide validation entrypoint. Validator
 implementation lives in `scripts/validators/`.
+
+The entrypoint exposes explicit `local`, `os-wide`, and `full` scopes. `local`
+runs the repository-owned validator topology without loading every provider
+family. `os-wide` validates provider-home completeness and committed coverage
+against the complete current provider build; coverage consumers use the
+verified packet when a lane run scope is active. `full` composes both and
+remains the no-argument compatibility behavior. Command authority, not an
+implicit validator side effect, decides where the blocking OS-wide proof runs.
+
+## Impact Route Boundary
+
+Impact routing is not a weaker validator scope. Every pull request still runs
+the complete `source-fast` lane and the self owner-family full/incremental
+parity action. The fail-closed classifier may only require or correctly omit
+the additional `os-wide` release audit. Source-fast receives its seven pinned
+source donors, including `aoa-sdk` for the source-pinned owner-review schema,
+plus pinned `aoa-stats`, while the other provider homes remain exclusive to
+the OS-wide lane. Unknown paths, classifier uncertainty, and
+changes to schemas, builders, validators, federation, trust, receipts, budgets,
+compatibility, generated coverage, or release topology require that audit. The
+required summary rejects a skipped required proof.
 
 | Module | Function |
 | --- | --- |
@@ -40,10 +62,10 @@ implementation lives in `scripts/validators/`.
 | `scripts/validators/expected/docs_contracts.py` | markdown/date/root/snippet expectations |
 | `scripts/validators/common.py` | shared validator errors, file readers, markdown helpers, schema helpers |
 | `scripts/validators/source_refs.py` | source reference resolution |
-| `scripts/validators/schema_surfaces.py` | JSON schema checks, including registry, provider map, v3/v4 corpus/distribution, release, composition, locator, pack, hot-profile, receipt, metrics, query, retrieval, and coverage schemas |
+| `scripts/validators/schema_surfaces.py` | JSON schema checks, including registry, provider map, repo-local index, retrieval bundle, and coverage schemas |
 | `scripts/validators/local_contracts.py` | local route, mechanics skeleton, questbook, antifragility, and ToS tiny-entry checks |
-| `scripts/validators/local_kag_subtree.py` | repo-local KAG subtree schema, example, readiness, and record-link checks |
-| `scripts/validators/repo_local_kag_index.py` | v3/v4 repo-local family, CAS-backed generated parity, retrieval/degradation contracts, self-excluding coverage, budgets, and OS-wide coverage checks |
+| `scripts/validators/local_kag_subtree.py` | separately callable repo-local KAG subtree/schema/readiness checks and OS-wide provider-home family completeness, plus their full compatibility composition |
+| `scripts/validators/repo_local_kag_index.py` | separately callable repo-local index-family/retrieval/generated parity and OS-wide coverage contracts, plus their full compatibility composition |
 | `scripts/validators/manifest_contracts.py` | manifest contract facade |
 | `scripts/validators/manifests/technique_lift.py` | technique-lift manifest checks |
 | `scripts/validators/manifests/tos_text_chunk_map.py` | ToS text chunk map manifest checks |
@@ -87,14 +109,14 @@ implementation lives in `scripts/validators/`.
 | `scripts/validators/examples/reasoning_handoff_examples.py` | reasoning-handoff example checks |
 | `scripts/validators/sibling_readiness.py` | optional source-owned export readiness checks |
 | `scripts/validators/orchestrator.py` | validate_kag orchestration facade |
-| `scripts/validators/orchestration/static_surfaces.py` | local, schema, route, and stress surface checks |
+| `scripts/validators/orchestration/static_surfaces.py` | local, schema, route, repo-local family, and stress surface checks; never the OS-wide provider sweep |
 | `scripts/validators/orchestration/manifests.py` | registry context and manifest contract checks |
 | `scripts/validators/orchestration/expected_payloads.py` | expected generated payload construction |
 | `scripts/validators/orchestration/generated_text.py` | generated text parity checks |
 | `scripts/validators/orchestration/generated_structures.py` | generated structure checks |
 | `scripts/validators/orchestration/examples.py` | public example checks |
 | `scripts/validators/orchestration/status.py` | success status output |
-| `scripts/validators/orchestration/runner.py` | top-level validation flow |
+| `scripts/validators/orchestration/runner.py` | scoped local, OS-wide, and full top-level validation flow |
 
 The machine-readable module map is
 `docs/validation/validator_inventory.json`.
