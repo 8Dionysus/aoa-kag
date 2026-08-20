@@ -3748,6 +3748,25 @@ class PrepareLandingTests(unittest.TestCase):
             )
         )
         owners = seed["owners"]
+        # The committed coverage report may be a partial v4 migration read model.
+        # These tests exercise the legacy external-seed contract, so make that
+        # fixture explicitly all-owner-green and v3 without changing the source
+        # report used by the generated/release lanes.
+        legacy_family = {
+            "source": "kag/indexes/source_surface_index.json",
+            "entity": "kag/indexes/repo_entity_index.json",
+            "artifact": "kag/indexes/repo_artifact_index.json",
+            "anchor": "kag/indexes/repo_anchor_index.json",
+            "event": "kag/indexes/repo_event_index.json",
+            "assertion": "kag/indexes/repo_assertion_index.json",
+            "relation": "kag/indexes/repo_relation_index.json",
+        }
+        for owner in owners:
+            if owner["repo"] == "aoa-kag":
+                continue
+            owner["index_status"] = "passed"
+            owner["family_storage"] = "v3-portable-shards"
+            owner["repository_index_family"] = copy.deepcopy(legacy_family)
         order = tuple(row["repo"] for row in owners)
         roots = {owner: Path("/providers") / owner for owner in order}
         entries = {
