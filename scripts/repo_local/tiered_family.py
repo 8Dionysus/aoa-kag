@@ -2294,9 +2294,9 @@ def import_portable_bundle(
             LOCATOR_MANIFEST_RELATIVE_PATH.name: source / LOCATOR_MANIFEST_RELATIVE_PATH,
         }[relative]
         _write_if_changed(release_root / relative, source_path.read_bytes())
-    for source_path in (source / "packs").glob("sha256/*/*.pack"):
-        relative = source_path.relative_to(source)
-        _write_if_changed(target / relative, source_path.read_bytes())
+    for descriptor in pack_index["packs"]:
+        relative = Path(descriptor["object_key"])
+        _write_if_changed(target / relative, pack_bytes[descriptor["pack_digest"]])
     return {"objects_added": added, "objects_reused": reused}
 
 
