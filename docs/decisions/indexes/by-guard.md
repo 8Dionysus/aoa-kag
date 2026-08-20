@@ -19,6 +19,10 @@
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 
+## artifact admission
+
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
+
 ## atomic SCC
 
 - [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
@@ -34,6 +38,10 @@
 ## bounded context
 
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
+
+## bounded hydration
+
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
 ## bounded process workers
 
@@ -80,6 +88,7 @@
 ## compatibility parity
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
 ## complete history
 
@@ -287,9 +296,17 @@
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
 
+## Git-hot ceiling
+
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
+
 ## historical provenance
 
 - [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
+
+## identity separation
+
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
 ## incremental parity
 
@@ -382,6 +399,7 @@
 ## offline portability
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
 ## owner autonomy
 
@@ -463,6 +481,10 @@
 - [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
 - [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
 
+## public safety
+
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
+
 ## Python shadow
 
 - [AOA-KAG-D-0032 - Fail-Closed Accelerated Schema Validation](../AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md) (`docs/decisions/AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md`)
@@ -488,6 +510,10 @@
 ## retirement
 
 - [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
+
+## rollback
+
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
 ## run-scoped observability
 
@@ -535,6 +561,7 @@
 ## source ownership
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+- [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
 ## source return
 

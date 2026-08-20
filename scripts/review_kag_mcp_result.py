@@ -568,6 +568,67 @@ def _canonical_source_index_identity(
     source_revision: str | None = None,
 ) -> tuple[str, str]:
     revision = source_revision or _git_revision(REPO_ROOT)
+    corpus_ref = "kag/indexes/corpus.manifest.json"
+    if _committed_path_exists(revision, corpus_ref):
+        corpus, _ = _read_committed_public_json(
+            revision,
+            corpus_ref,
+            "canonical KAG corpus manifest",
+        )
+        if corpus.get("schema_version") == "aoa-repo-local-kag-corpus-manifest-v1":
+            source_header = corpus.get("source_index_header")
+            source_identity = (
+                source_header.get("index_identity")
+                if isinstance(source_header, dict)
+                else None
+            )
+            repo = source_header.get("repo") if isinstance(source_header, dict) else None
+            if not isinstance(repo, dict) or repo.get("name") != "aoa-kag":
+                raise KagOwnerReviewError(
+                    "canonical KAG corpus owner does not match"
+                )
+            corpus_identity = corpus.get("corpus_identity")
+            source_snapshot = (
+                corpus_identity.get("source_snapshot")
+                if isinstance(corpus_identity, dict)
+                else None
+            )
+            header_digest = (
+                source_identity.get("content_digest")
+                if isinstance(source_identity, dict)
+                else None
+            )
+            compatibility = corpus.get("compatibility")
+            files = (
+                compatibility.get("files")
+                if isinstance(compatibility, dict)
+                else None
+            )
+            source_file_digests = (
+                {
+                    str(item.get("content_digest"))
+                    for item in files
+                    if isinstance(item, dict)
+                    and item.get("kind") == "source"
+                    and _valid_digest(item.get("content_digest"))
+                }
+                if isinstance(files, list)
+                else set()
+            )
+            digests = {
+                str(source_snapshot).removeprefix("sha256:")
+                if source_snapshot
+                else "",
+                str(header_digest or ""),
+                *source_file_digests,
+            }
+            digests.discard("")
+            if len(digests) != 1 or not _valid_digest(next(iter(digests), None)):
+                raise KagOwnerReviewError(
+                    "canonical KAG portable source-index identities do not agree"
+                )
+            return next(iter(digests)), corpus_ref
+
     manifest_ref = "kag/indexes/index_family.manifest.json"
     if _committed_path_exists(revision, manifest_ref):
         manifest, _ = _read_committed_public_json(

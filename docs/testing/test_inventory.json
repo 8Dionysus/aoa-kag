@@ -288,7 +288,7 @@
       "path": "tests/test_repo_local_kag_tiered_distribution.py",
       "family": "kag/tiered-family-distribution",
       "protects": "Corpus/distribution identity separation, transport-independent packs and locators, explicit hot-only degradation, offline CAS reuse, artifact release contents, and selective CI impact classification.",
-      "owner_surface": "docs/decisions/AOA-KAG-D-0019-tiered-content-addressed-kag-distribution.md",
+      "owner_surface": "docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
       "runtime_cost": "fast",
       "focused_target": "tests/test_repo_local_kag_tiered_distribution.py",
       "failure_route": "Route through D-0019, tiered schemas, tiered_family.py, kag_impact.py, or artifact release tooling.",

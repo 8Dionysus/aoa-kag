@@ -2260,7 +2260,12 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             ),
             (
                 "family-manifest",
-                repo_local_kag_validator.REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH,
+                (
+                    repo_local_kag_validator.REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH
+                    if manifest.get("schema_version")
+                    == "aoa-repo-local-kag-distribution-manifest-v1"
+                    else repo_local_kag_validator.REPO_LOCAL_KAG_FAMILY_MANIFEST_SCHEMA_PATH
+                ),
                 manifest,
             ),
             (

@@ -2,7 +2,7 @@
 
 ## Index Metadata
 
-- Decision ID: AOA-KAG-D-0019
+- Decision ID: AOA-KAG-D-0039
 - Original date: 2026-07-18
 - Surface classes: kag/source-home, schema contract, artifact distribution, runtime materialization, federation input, validation guard
 - KAG surfaces: corpus identity, distribution identity, Git-hot bootstrap, content-addressed cold shards, owner-family release, OS composition, transport packs, offline recovery
