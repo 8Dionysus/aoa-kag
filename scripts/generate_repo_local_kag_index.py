@@ -3101,12 +3101,7 @@ def build_repository_indexes(
                 source_snapshot=source_snapshot,
             )
             graph_payload = capability_graph_payload(graph_content)
-            if (
-                graph_payload is not None
-                and isinstance(graph_payload.get("source"), Mapping)
-                and isinstance(graph_payload.get("nodes"), list)
-                and isinstance(graph_payload.get("relations"), list)
-            ):
+            if graph_payload is not None:
                 validate_capability_graph_against_sources(
                     graph_payload,
                     capability_graph_sources,

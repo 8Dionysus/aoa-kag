@@ -1340,6 +1340,27 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "digest mismatch"):
                 build_repository_indexes(source, repo_root=root)
 
+    def test_capability_graph_rejects_malformed_projection_shape(self) -> None:
+        malformed_fields = ("source", "nodes", "relations")
+        for field in malformed_fields:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                write_fixture(root)
+                write_capability_graph_fixture(root)
+                graph_path = root / "generated" / "capability_graph.json"
+                graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+                if field == "source":
+                    del graph_payload[field]
+                else:
+                    graph_payload[field] = {}
+                graph_path.write_text(
+                    json.dumps(graph_payload, sort_keys=True),
+                    encoding="utf-8",
+                )
+                source = build_index(root)
+                with self.assertRaisesRegex(ValueError, rf"{field} must be"):
+                    build_repository_indexes(source, repo_root=root)
+
     def test_capability_graph_rejects_phantom_nodes_and_relations(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

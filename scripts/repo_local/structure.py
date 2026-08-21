@@ -552,15 +552,7 @@ def _capability_graph_structure(
         or payload.get("authority") is not False
     ):
         return [], []
-    if not authored_sources:
-        return [], []
-    if not (
-        isinstance(payload.get("source"), Mapping)
-        and isinstance(payload.get("nodes"), list)
-        and isinstance(payload.get("relations"), list)
-    ):
-        return [], []
-    validate_capability_graph_against_sources(payload, authored_sources)
+    validate_capability_graph_against_sources(payload, authored_sources or {})
 
     anchors: list[dict[str, Any]] = []
     outbound: list[dict[str, Any]] = []

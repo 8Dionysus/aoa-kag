@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import io
 import json
 import os
@@ -1043,7 +1044,44 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 "relations: []\n",
                 encoding="utf-8",
             )
+            graph_json.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-capability-graph-v1",
+                        "authority": False,
+                        "source": {
+                            "root": "capabilities/families",
+                            "family_files": [
+                                {
+                                    "path": "capabilities/families/central-proof.yaml",
+                                    "sha256": hashlib.sha256(
+                                        family.read_bytes()
+                                    ).hexdigest(),
+                                }
+                            ],
+                            "referenced_files": [],
+                            "content_hash": "b" * 64,
+                        },
+                        "nodes": [
+                            {
+                                "id": "central-proof",
+                                "kind": "capability",
+                                "title": "Central proof",
+                                "source_family": "central-proof",
+                                "source_path": (
+                                    "capabilities/families/central-proof.yaml"
+                                ),
+                            }
+                        ],
+                        "relations": [],
+                    },
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
             subprocess.run(("git", "add", family), cwd=root, check=True)
+            subprocess.run(("git", "add", graph_json), cwd=root, check=True)
             payload = build_index(root)
             kag_manifest.write_text(
                 json.dumps({"repo": "unstaged-wrong-owner"}) + "\n",
