@@ -2960,6 +2960,12 @@ def previous_structure_refs(
     for anchor in previous_family["anchor"].get("entries", []):
         if isinstance(anchor, dict):
             anchors_by_source.setdefault(str(anchor["source_record_id"]), []).append(anchor)
+    previous_capability_graph_source_ids = {
+        str(anchor["source_record_id"])
+        for anchor in previous_family["anchor"].get("entries", [])
+        if isinstance(anchor, dict)
+        and anchor.get("parser_ref") == "aoa-capability-graph@1"
+    }
 
     reusable: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for record in source_index["records"]:
@@ -2971,17 +2977,20 @@ def previous_structure_refs(
             or not previous_anchors
         ):
             continue
-        if (
-            Path(str(identity["path"])) == capability_graph_path
+        current_path = Path(str(identity["path"]))
+        current_is_capability_graph = (
+            current_path == capability_graph_path
             and record.get("abi", {}).get("schema_version")
             == CAPABILITY_GRAPH_SCHEMA_VERSION
-            and not any(
-                anchor.get("parser_ref") == "aoa-capability-graph@1"
-                and str(anchor.get("symbol_kind") or "").startswith(
-                    "capability_graph_node:"
-                )
-                for anchor in previous_anchors
+        )
+        if source_id in previous_capability_graph_source_ids and not current_is_capability_graph:
+            continue
+        if current_is_capability_graph and not any(
+            anchor.get("parser_ref") == "aoa-capability-graph@1"
+            and str(anchor.get("symbol_kind") or "").startswith(
+                "capability_graph_node:"
             )
+            for anchor in previous_anchors
         ):
             continue
         raw_anchors: list[dict[str, Any]] = []

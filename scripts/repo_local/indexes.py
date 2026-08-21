@@ -50,14 +50,16 @@ def anchor_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
             if not isinstance(reference, dict):
                 continue
             source_anchor_id = str(reference.get("source_anchor_id") or "")
-            outbound_by_anchor.setdefault(source_anchor_id, []).append(
-                {
-                    "relation_kind": str(reference.get("relation_kind") or "references"),
-                    "source_context": str(reference.get("source_context") or "$artifact"),
-                    "target_ref": str(reference.get("target_ref") or ""),
-                    "evidence_class": str(reference.get("evidence_class") or "deterministic"),
-                }
-            )
+            outbound_entry = {
+                "relation_kind": str(reference.get("relation_kind") or "references"),
+                "source_context": str(reference.get("source_context") or "$artifact"),
+                "target_ref": str(reference.get("target_ref") or ""),
+                "evidence_class": str(reference.get("evidence_class") or "deterministic"),
+            }
+            source_path = reference.get("source_path")
+            if isinstance(source_path, str) and source_path:
+                outbound_entry["source_path"] = source_path
+            outbound_by_anchor.setdefault(source_anchor_id, []).append(outbound_entry)
         for anchor in anchors if isinstance(anchors, list) else []:
             if not isinstance(anchor, dict):
                 continue
@@ -409,6 +411,7 @@ def _relation(
     to_id: str,
     evidence_anchor_ids: Iterable[str],
     evidence_class: str = "deterministic",
+    source_path: str | None = None,
 ) -> dict[str, Any]:
     evidence = sorted(set(evidence_anchor_ids))
     relation_id = qualified_id(
@@ -416,7 +419,7 @@ def _relation(
         "relation",
         f"{from_id}:{relation_kind}:{to_id}:{'|'.join(evidence)}",
     )
-    return {
+    relation = {
         "id": relation_id,
         "relation_kind": relation_kind,
         "from_id": from_id,
@@ -428,6 +431,9 @@ def _relation(
         "provenance_ref": evidence_class,
         "trust_ref": evidence_class,
     }
+    if source_path:
+        relation["source_path"] = source_path
+    return relation
 
 
 def relation_entries(
@@ -642,6 +648,12 @@ def relation_entries(
                 to_id=target_id,
                 evidence_anchor_ids=[evidence_anchor_id],
                 evidence_class=str(reference.get("evidence_class") or "deterministic"),
+                source_path=(
+                    str(reference["source_path"])
+                    if isinstance(reference.get("source_path"), str)
+                    and reference["source_path"]
+                    else None
+                ),
             )
             relations[relation["id"]] = relation
     return sorted(relations.values(), key=lambda item: (item["relation_kind"], item["from_id"], item["to_id"]))

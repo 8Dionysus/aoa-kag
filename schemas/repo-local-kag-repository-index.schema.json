@@ -317,7 +317,8 @@
         "source_digest": {"$ref": "#/$defs/digest"},
         "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
-        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "source_path": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "artifactEntry": {
@@ -580,7 +581,8 @@
         "evidence_class": {
           "type": "string",
           "enum": ["deterministic", "declared", "inferred"]
-        }
+        },
+        "source_path": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "actor": {

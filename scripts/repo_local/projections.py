@@ -296,6 +296,16 @@ def _retrieval_document(
     provenance_ref = str(node["provenance_ref"])
     temporal_ref = str(node["temporal_ref"])
     trust_ref = str(node["trust_ref"])
+    provenance = copy.deepcopy(record["provenance"])
+    relation_source_paths = {
+        str(reference["source_path"])
+        for reference in node.get("outbound_refs", [])
+        if isinstance(reference, dict)
+        and isinstance(reference.get("source_path"), str)
+        and reference["source_path"]
+    }
+    if len(relation_source_paths) == 1:
+        provenance["source_path"] = next(iter(relation_source_paths))
     return {
         "id": document_id,
         "version_id": version_id,
@@ -317,7 +327,7 @@ def _retrieval_document(
         "surface_state": str(record["surface_state"]),
         "abi": copy.deepcopy(record["abi"]),
         "signs": copy.deepcopy(record["signs"]),
-        "provenance": copy.deepcopy(record["provenance"]),
+        "provenance": provenance,
         "freshness": copy.deepcopy(record["freshness"]),
         "access": copy.deepcopy(record["access"]),
         "owner_return_route": copy.deepcopy(record["owner_return_route"]),

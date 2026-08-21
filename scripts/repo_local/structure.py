@@ -341,15 +341,17 @@ def _capability_graph_structure(
             parser="aoa-capability-graph",
         )
         anchors.append(relation_anchor)
-        outbound.append(
-            {
-                "relation_kind": relation_kind,
-                "source_anchor_id": relation_anchor["id"],
-                "source_context": f"capability:{source}",
-                "target_ref": f"capability:{target}",
-                "evidence_class": "declared",
-            }
-        )
+        reference = {
+            "relation_kind": relation_kind,
+            "source_anchor_id": relation_anchor["id"],
+            "source_context": f"capability:{source}",
+            "target_ref": f"capability:{target}",
+            "evidence_class": "declared",
+        }
+        source_path = relation.get("source_path")
+        if isinstance(source_path, str) and source_path:
+            reference["source_path"] = source_path
+        outbound.append(reference)
     return anchors, outbound
 
 

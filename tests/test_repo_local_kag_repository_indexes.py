@@ -1115,6 +1115,90 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "capabilities/families/session-memory.yaml",
             relation_document["provenance"]["source_refs"][0]["path"],
         )
+        self.assertEqual(
+            "capabilities/families/session-memory.yaml",
+            relation_document["provenance"]["source_path"],
+        )
+
+    def test_capability_graph_preserves_relation_source_path_for_multi_family_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            supporting_path = root / "capabilities" / "families" / "supporting.yaml"
+            supporting_path.write_text(
+                "schema_version: aoa-capability-family-v1\n"
+                "family: supporting\n"
+                "nodes:\n"
+                "  - id: adapter.audit\n",
+                encoding="utf-8",
+            )
+            graph_path = root / "generated" / "capability_graph.json"
+            graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+            graph_payload["source"]["family_files"].append(
+                {
+                    "path": "capabilities/families/supporting.yaml",
+                    "sha256": "c" * 64,
+                }
+            )
+            graph_payload["relations"][1]["source_path"] = (
+                "capabilities/families/supporting.yaml"
+            )
+            graph_path.write_text(
+                json.dumps(graph_payload, sort_keys=True),
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+            documents = build_repo_retrieval_documents(root, source, family)
+
+        graph_record = next(
+            record
+            for record in source["records"]
+            if record["identity"]["path"] == "generated/capability_graph.json"
+        )
+        self.assertEqual(
+            [
+                "capabilities/families/session-memory.yaml",
+                "capabilities/families/supporting.yaml",
+            ],
+            [
+                source_ref["path"]
+                for source_ref in graph_record["provenance"]["source_refs"]
+            ],
+        )
+        graph_anchor = next(
+            anchor
+            for anchor in family["anchor"]["entries"]
+            if anchor["source_record_id"] == graph_record["identity"]["id"]
+            and anchor["locator"]["pointer"] == "/relations/1"
+        )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            graph_anchor["outbound_refs"][0]["source_path"],
+        )
+        handoff = next(
+            relation
+            for relation in family["relation"]["entries"]
+            if relation["relation_kind"] == "hands-off-to"
+        )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            handoff["source_path"],
+        )
+        relation_document = next(
+            document
+            for document in documents
+            if document["node_id"] == graph_anchor["id"]
+        )
+        self.assertEqual(
+            "capabilities/families/session-memory.yaml",
+            relation_document["provenance"]["source_refs"][0]["path"],
+        )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            relation_document["provenance"]["source_path"],
+        )
 
     def test_capability_projection_upgrade_invalidates_legacy_incremental_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1183,6 +1267,67 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(3, build_record_spy.call_count)
         self.assertEqual(full_family, incremental_family)
         self.assertEqual(1, extract_spy.call_count)
+
+    def test_incremental_capability_graph_reselect_invalidates_previous_graph_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            previous_source = build_index(root)
+            previous_family = build_repository_indexes(
+                previous_source,
+                repo_root=root,
+            )
+
+            old_graph_path = root / "generated" / "capability_graph.json"
+            new_graph_path = root / "generated" / "capability_graph-v2.json"
+            new_graph_path.write_text(
+                old_graph_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            manifest_path = root / "capabilities" / "port.manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["projection"]["graph_json"] = "generated/capability_graph-v2.json"
+            manifest_path.write_text(
+                json.dumps(manifest, sort_keys=True),
+                encoding="utf-8",
+            )
+            current_source = build_index(root)
+            incremental_family = build_repository_indexes_incremental(
+                current_source,
+                previous_family,
+                repo_root=root,
+            )
+            full_family = build_repository_indexes(
+                current_source,
+                repo_root=root,
+            )
+
+        self.assertEqual(full_family, incremental_family)
+        old_graph_id = next(
+            record["identity"]["id"]
+            for record in current_source["records"]
+            if record["identity"]["path"] == "generated/capability_graph.json"
+        )
+        new_graph_id = next(
+            record["identity"]["id"]
+            for record in current_source["records"]
+            if record["identity"]["path"] == "generated/capability_graph-v2.json"
+        )
+        self.assertFalse(
+            any(
+                anchor["source_record_id"] == old_graph_id
+                and anchor["parser_ref"] == "aoa-capability-graph@1"
+                for anchor in incremental_family["anchor"]["entries"]
+            )
+        )
+        self.assertTrue(
+            any(
+                anchor["source_record_id"] == new_graph_id
+                and anchor["parser_ref"] == "aoa-capability-graph@1"
+                for anchor in incremental_family["anchor"]["entries"]
+            )
+        )
 
     def test_structural_indexes_cover_anchors_entities_and_relations(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
