@@ -54,6 +54,10 @@ class RepoKagQuery:
             str(record["identity"]["id"]): record
             for record in source_index["records"]
         }
+        self._source_records_by_path = {
+            str(record["identity"]["path"]): record
+            for record in source_index["records"]
+        }
         self._nodes = self._build_nodes()
         self._tokens = {node_id: tokenize(node.text) for node_id, node in self._nodes.items()}
         self._relations = {
@@ -78,6 +82,17 @@ class RepoKagQuery:
 
     def source_access(self, source_ids: Sequence[str]) -> str:
         return self._source_access(source_ids)
+
+    def _authored_source_ids(
+        self,
+        source_path: Any,
+        fallback: Sequence[str],
+    ) -> tuple[str, ...]:
+        if isinstance(source_path, str) and source_path:
+            record = self._source_records_by_path.get(source_path)
+            if record is not None:
+                return (str(record["identity"]["id"]),)
+        return tuple(str(item) for item in fallback)
 
     def _source_dimension(
         self,
@@ -168,7 +183,11 @@ class RepoKagQuery:
             )
         for anchor in self.family["anchor"]["entries"]:
             source_id = str(anchor["source_record_id"])
-            path = str(self._source_records[source_id]["identity"]["path"])
+            source_ids = self._authored_source_ids(
+                anchor.get("source_path"),
+                (source_id,),
+            )
+            path = str(self._source_records[source_ids[0]]["identity"]["path"])
             anchor_id = str(anchor["id"])
             nodes[anchor_id] = _Node(
                 id=anchor_id,
@@ -180,16 +199,19 @@ class RepoKagQuery:
                     f"{anchor['qualified_name']} {path} {anchor['anchor_kind']}"
                 ),
                 path=path,
-                source_record_ids=(source_id,),
+                source_record_ids=source_ids,
                 anchor_ids=(anchor_id,),
-                access_scope=self._source_access((source_id,)),
+                access_scope=self._source_access(source_ids),
                 provenance_ref=str(anchor["provenance_ref"]),
                 temporal_ref=str(anchor["temporal_ref"]),
                 trust_ref=str(anchor["trust_ref"]),
                 record=copy.deepcopy(anchor),
             )
         for entity in self.family["entity"]["entries"]:
-            source_ids = tuple(str(item) for item in entity["source_record_ids"])
+            source_ids = self._authored_source_ids(
+                entity.get("source_path"),
+                entity["source_record_ids"],
+            )
             entity_id = str(entity["id"])
             path = ""
             if source_ids and source_ids[0] in self._source_records:
@@ -264,7 +286,7 @@ class RepoKagQuery:
         for relation in self.family["relation"]["entries"]:
             relation_id = str(relation["id"])
             anchor_ids = tuple(str(item) for item in relation["evidence_anchor_ids"])
-            source_ids = tuple(
+            evidence_source_ids = tuple(
                 sorted(
                     {
                         anchor_sources[anchor_id]
@@ -272,6 +294,10 @@ class RepoKagQuery:
                         if anchor_id in anchor_sources
                     }
                 )
+            )
+            source_ids = self._authored_source_ids(
+                relation.get("source_path"),
+                evidence_source_ids,
             )
             path = ""
             if source_ids:

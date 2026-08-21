@@ -1154,6 +1154,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             source = build_index(root)
             family = build_repository_indexes(source, repo_root=root)
             documents = build_repo_retrieval_documents(root, source, family)
+            query = RepoKagQuery(source, family)
 
         graph_record = next(
             record
@@ -1240,6 +1241,33 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(
             supporting_record["owner_return_route"],
             relation_document["owner_return_route"],
+        )
+        supporting_source_id = supporting_record["identity"]["id"]
+        supporting_entity_handle = query.projection_handle(
+            capability_entities["capability:adapter.audit"]["id"]
+        )
+        self.assertIsNotNone(supporting_entity_handle)
+        self.assertEqual(
+            [supporting_source_id],
+            supporting_entity_handle["source_record_ids"],
+        )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            supporting_entity_handle["path"],
+        )
+        self.assertEqual(
+            supporting_record["owner_return_route"],
+            supporting_entity_handle["owner_return_route"],
+        )
+        relation_handle = query.projection_handle(handoff["id"])
+        self.assertIsNotNone(relation_handle)
+        self.assertEqual(
+            [supporting_source_id],
+            relation_handle["source_record_ids"],
+        )
+        self.assertEqual(
+            supporting_record["owner_return_route"],
+            relation_handle["owner_return_route"],
         )
         node_document = next(
             document
