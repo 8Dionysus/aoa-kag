@@ -1091,6 +1091,20 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         )
         self.assertFalse(
             any(
+                entry["source_record_id"] == graph_source_id
+                and entry["locator"]["pointer"] == "/retrieval_documents"
+                for entry in family["anchor"]["entries"]
+            )
+        )
+        self.assertFalse(
+            any(
+                document["path"] == "generated/capability_graph.json"
+                and "Retrieve session evidence." in document["text"]
+                for document in documents
+            )
+        )
+        self.assertFalse(
+            any(
                 entry["source_record_id"] == fixture_source_id
                 and entry["parser_ref"] == "aoa-capability-graph@1"
                 for entry in family["anchor"]["entries"]
@@ -1552,9 +1566,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
             graph_payload["nodes"][1].update(
                 {
-                    "owner_contract": {"authority": "owner"},
-                    "owner_contract_ref": {"path": "skills/demo/references/contract.yaml"},
-                    "package": "demo",
+                    "owner_contract": {
+                        "authority": "forged-owner",
+                        "marker": "owner-metadata-must-not-be-retrieved",
+                    },
+                    "owner_contract_ref": {
+                        "path": "skills/demo/references/nonexistent.yaml",
+                        "sha256": "0" * 64,
+                    },
+                    "package": "forged-package-metadata",
                 }
             )
             graph_payload["nodes"][1]["kind"] = "skill"
@@ -1564,11 +1584,75 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             )
             source = build_index(root)
             family = build_repository_indexes(source, repo_root=root)
+            documents = build_repo_retrieval_documents(root, source, family)
 
+        graph_anchor = next(
+            entry
+            for entry in family["anchor"]["entries"]
+            if entry["parser_ref"] == "aoa-capability-graph@1"
+            and entry["locator"]["pointer"] == "/nodes/1"
+        )
+        graph_document = next(
+            document for document in documents if document["node_id"] == graph_anchor["id"]
+        )
         self.assertTrue(
             any(
                 entry["semantic_key"] == "capability:skill.query"
                 for entry in family["entity"]["entries"]
+            )
+        )
+        self.assertNotIn("owner-metadata-must-not-be-retrieved", graph_document["text"])
+        self.assertNotIn("nonexistent.yaml", graph_document["text"])
+
+    def test_capability_source_path_override_requires_graph_anchor_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+            graph_record = next(
+                record
+                for record in source["records"]
+                if record["identity"]["path"] == "generated/capability_graph.json"
+            )
+            graph_source_id = graph_record["identity"]["id"]
+            graph_anchor = next(
+                entry
+                for entry in family["anchor"]["entries"]
+                if entry["parser_ref"] == "aoa-capability-graph@1"
+                and entry["locator"]["pointer"] == "/nodes/1"
+            )
+            capability_entity = next(
+                entry
+                for entry in family["entity"]["entries"]
+                if entry["semantic_key"] == "capability:skill.query"
+            )
+            handoff = next(
+                entry
+                for entry in family["relation"]["entries"]
+                if entry["relation_kind"] == "hands-off-to"
+            )
+            graph_anchor["source_path"] = "README.md"
+            capability_entity["source_path"] = "README.md"
+            handoff["source_path"] = "README.md"
+
+            query = RepoKagQuery(source, family)
+            entity_handle = query.projection_handle(capability_entity["id"])
+            relation_handle = query.projection_handle(handoff["id"])
+            documents = build_repo_retrieval_documents(root, source, family)
+            graph_document = next(
+                document for document in documents if document["node_id"] == graph_anchor["id"]
+            )
+
+        self.assertEqual([graph_source_id], entity_handle["source_record_ids"])
+        self.assertEqual([graph_source_id], relation_handle["source_record_ids"])
+        self.assertNotIn("README.md", graph_document["provenance"].get("source_path", ""))
+        self.assertTrue(
+            all(
+                source_ref["path"] != "README.md"
+                for source_ref in graph_document["provenance"]["source_refs"]
             )
         )
 

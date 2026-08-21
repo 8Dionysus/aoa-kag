@@ -718,6 +718,11 @@ def _json_structure(
         return [], []
     anchors: list[dict[str, Any]] = []
     for key in payload:
+        if enable_capability_graph and key == "retrieval_documents":
+            # The shared capability-home projector owns these derived search
+            # documents.  They have no authored family source and must not
+            # become source-backed KAG anchors or retrieval text.
+            continue
         pointer = f"/{_json_pointer_token(str(key))}"
         anchors.append(
             _anchor(

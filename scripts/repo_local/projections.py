@@ -12,7 +12,11 @@ from typing import Any, Mapping, Protocol, Sequence
 
 from .federation import RepoKagFederation, github_ref_names_by_repo
 from .identity import qualified_id
-from .query import retrieval_document_role
+from .query import (
+    _validated_capability_source_record,
+    retrieval_document_role,
+)
+from .structure import CAPABILITY_GRAPH_DERIVED_FIELDS_BY_KIND
 
 
 ZERO_DIGEST = "0" * 64
@@ -156,6 +160,18 @@ def _semantic_segment(
         pointer = str(locator.get("pointer") or "")
         try:
             value = _json_pointer_value(text, pointer)
+            symbol_kind = str(anchor.get("symbol_kind") or "")
+            if symbol_kind.startswith("capability_graph_node:") and isinstance(value, dict):
+                node_kind = symbol_kind.removeprefix("capability_graph_node:")
+                derived_fields = CAPABILITY_GRAPH_DERIVED_FIELDS_BY_KIND.get(
+                    node_kind,
+                    frozenset(),
+                )
+                value = {
+                    key: item
+                    for key, item in value.items()
+                    if key not in derived_fields
+                }
             rendered = json.dumps(
                 {str(anchor["label"]): value},
                 ensure_ascii=False,
@@ -310,9 +326,22 @@ def _retrieval_document(
         authored_source_path = node_source_path
     elif len(relation_source_paths) == 1:
         authored_source_path = next(iter(relation_source_paths))
-    authored_record = source_records_by_path.get(authored_source_path, record)
+    source_records_by_id = {
+        str(item["identity"]["id"]): item
+        for item in source_index["records"]
+    }
+    authored_record = _validated_capability_source_record(
+        family=family,
+        source_records_by_path=source_records_by_path,
+        source_records_by_id=source_records_by_id,
+        source_path=authored_source_path,
+        fallback_source_ids=[source_id],
+        evidence_anchor_ids=anchor_ids,
+    )
+    if authored_record is None:
+        authored_record = record
     provenance = copy.deepcopy(authored_record["provenance"])
-    if authored_source_path:
+    if authored_record is not record and authored_source_path:
         provenance["source_path"] = authored_source_path
     return {
         "id": document_id,
