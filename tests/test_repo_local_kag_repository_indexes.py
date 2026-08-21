@@ -1302,6 +1302,10 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "capabilities/families/supporting.yaml",
             graph_anchor["outbound_refs"][0]["source_path"],
         )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            graph_anchor["source_path"],
+        )
         handoff = next(
             relation
             for relation in family["relation"]["entries"]

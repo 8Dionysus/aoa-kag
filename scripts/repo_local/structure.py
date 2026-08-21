@@ -674,6 +674,7 @@ def _capability_graph_structure(
                 f"capability graph relations[{index}] lacks kind/source/target"
             )
         pointer = f"/relations/{index}"
+        source_path = relation.get("source_path")
         relation_anchor = _anchor(
             repo=repo,
             source_id=source_id,
@@ -684,6 +685,7 @@ def _capability_graph_structure(
             pointer=pointer,
             symbol_kind="capability_graph_relation",
             qualified_name=f"{source} -> {target}",
+            source_path=(source_path if isinstance(source_path, str) else ""),
             parser="aoa-capability-graph",
         )
         anchors.append(relation_anchor)
@@ -694,7 +696,6 @@ def _capability_graph_structure(
             "target_ref": f"capability:{target}",
             "evidence_class": "declared",
         }
-        source_path = relation.get("source_path")
         if isinstance(source_path, str) and source_path:
             reference["source_path"] = source_path
         outbound.append(reference)
