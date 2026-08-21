@@ -179,7 +179,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         )
         return 2
-    query = RepoKagQuery(source_index, family)
+    query = RepoKagQuery(source_index, family, repo_root=repo_root)
     payload = query.query(
         args.query,
         mode=args.mode,

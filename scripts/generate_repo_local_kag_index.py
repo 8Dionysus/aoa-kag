@@ -35,7 +35,12 @@ try:
         entity_entries as project_entity_entries,
         relation_entries as project_relation_entries,
     )
-    from scripts.repo_local.structure import extract_structure, markdown_headings
+    from scripts.repo_local.structure import (
+        CAPABILITY_GRAPH_SCHEMA_VERSION,
+        extract_structure,
+        markdown_headings,
+        validate_capability_graph_against_sources,
+    )
 except ImportError:  # pragma: no cover - direct script execution
     from repo_local.identity import (  # type: ignore
         artifact_identity,
@@ -51,7 +56,12 @@ except ImportError:  # pragma: no cover - direct script execution
         entity_entries as project_entity_entries,
         relation_entries as project_relation_entries,
     )
-    from repo_local.structure import extract_structure, markdown_headings  # type: ignore
+    from repo_local.structure import (  # type: ignore
+        CAPABILITY_GRAPH_SCHEMA_VERSION,
+        extract_structure,
+        markdown_headings,
+        validate_capability_graph_against_sources,
+    )
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -971,6 +981,43 @@ def json_object(content: bytes) -> dict[str, Any] | None:
     return None
 
 
+def capability_graph_payload(content: bytes) -> dict[str, Any] | None:
+    payload = json_object(content)
+    if (
+        payload is None
+        or payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
+        or payload.get("authority") is not False
+    ):
+        return None
+    return payload
+
+
+def selected_capability_graph_payload(
+    content: bytes,
+    *,
+    path: Path,
+) -> dict[str, Any]:
+    """Require the manifest-selected graph to satisfy its graph contract."""
+
+    payload = json_object(content)
+    if payload is None:
+        raise ValueError(
+            "manifest-selected capability graph must be a JSON object: "
+            f"{path.as_posix()}"
+        )
+    if payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION:
+        raise ValueError(
+            "manifest-selected capability graph has an invalid schema_version: "
+            f"{path.as_posix()}"
+        )
+    if payload.get("authority") is not False:
+        raise ValueError(
+            "manifest-selected capability graph must declare authority=false: "
+            f"{path.as_posix()}"
+        )
+    return payload
+
+
 def manifest_relative_path(value: Any, *, field: str) -> Path:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ValueError(f"{field} must be a non-empty POSIX relative path")
@@ -1126,6 +1173,45 @@ def capability_projection_sources(
             "builder": builder.strip(),
         }
     return resolved
+
+
+def capability_graph_projection_path(
+    repo_root: Path,
+    tracked_paths: set[Path],
+    *,
+    source_snapshot: OwnerSourceSnapshot | None = None,
+) -> Path | None:
+    """Return the exact opted-in graph path used by structural extraction."""
+
+    if CAPABILITY_HOME_PORT_MANIFEST not in tracked_paths:
+        return None
+    payload = json_object(
+        source_bytes(
+            repo_root,
+            CAPABILITY_HOME_PORT_MANIFEST,
+            repo_root / CAPABILITY_HOME_PORT_MANIFEST,
+            source_snapshot=source_snapshot,
+        )
+    )
+    if (
+        payload is None
+        or payload.get("schema_version") != CAPABILITY_HOME_PORT_SCHEMA_VERSION
+    ):
+        return None
+    projection = payload.get("projection")
+    if (
+        not isinstance(projection, dict)
+        or projection.get("authority") is not False
+    ):
+        return None
+    try:
+        graph_path = manifest_relative_path(
+            projection.get("graph_json"),
+            field="capability home projection.graph_json",
+        )
+    except ValueError:
+        return None
+    return graph_path if graph_path in tracked_paths else None
 
 
 def home_skill_projection_sources(
@@ -1991,6 +2077,7 @@ def generated_by_for(
     content: bytes,
     *,
     repo_root: Path,
+    capability_projection: bool,
 ) -> str:
     if state == "generated_projection":
         return HOME_SKILL_PROJECTION_BUILDER_ROUTE
@@ -2001,6 +2088,10 @@ def generated_by_for(
     if builder_surface:
         return builder_surface
     payload = json_object(content)
+    if capability_projection and capability_graph_payload(content) is not None:
+        capability_builder = Path("scripts/build_capability_projection.py")
+        if capability_builder in tracked_paths:
+            return capability_builder.as_posix()
     if (
         isinstance(payload, dict)
         and payload.get("generated_or_authored") == "generated_from_source"
@@ -2172,6 +2263,7 @@ def build_record(
             source_builders,
             content,
             repo_root=repo_root,
+            capability_projection=capability_projection is not None,
         )
     )
     observed_by = index_generator_route(repo)
@@ -2319,6 +2411,36 @@ def classification_summary(records: Sequence[dict[str, Any]]) -> dict[str, dict[
     }
 
 
+def source_record_projection_current(
+    record: dict[str, Any],
+    *,
+    capability_projection: bool,
+) -> bool:
+    if not capability_projection:
+        return True
+    abi = record.get("abi")
+    if (
+        not isinstance(abi, dict)
+        or abi.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
+    ):
+        return True
+    provenance = record.get("provenance")
+    source_refs = (
+        provenance.get("source_refs")
+        if isinstance(provenance, dict)
+        else None
+    )
+    return bool(
+        isinstance(source_refs, list)
+        and source_refs
+        and all(
+            isinstance(source_ref, dict)
+            and source_ref.get("authority") == "authored_source"
+            for source_ref in source_refs
+        )
+    )
+
+
 def payload_digest(payload: dict[str, Any]) -> str:
     copy_payload = {
         **payload,
@@ -2430,6 +2552,10 @@ def build_index(
                 # cannot preserve older authored-source provenance.
                 and rel not in skill_projections
                 and rel not in capability_projections
+                and source_record_projection_current(
+                    previous,
+                    capability_projection=bool(capability_projections),
+                )
                 and str(previous["identity"].get("git_blob_id") or "")
                 == tracked_entries[rel]["blob_id"]
                 and str(previous["identity"].get("lineage_path") or "")
@@ -2841,6 +2967,8 @@ def repository_index_payload(
 def previous_structure_refs(
     source_index: dict[str, Any],
     previous_family: dict[str, dict[str, Any]] | None,
+    *,
+    capability_graph_path: Path | None,
 ) -> dict[str, dict[str, list[dict[str, Any]]]]:
     if not previous_family or set(previous_family) != set(REPOSITORY_INDEX_FILENAMES):
         return {}
@@ -2860,6 +2988,12 @@ def previous_structure_refs(
     for anchor in previous_family["anchor"].get("entries", []):
         if isinstance(anchor, dict):
             anchors_by_source.setdefault(str(anchor["source_record_id"]), []).append(anchor)
+    previous_capability_graph_source_ids = {
+        str(anchor["source_record_id"])
+        for anchor in previous_family["anchor"].get("entries", [])
+        if isinstance(anchor, dict)
+        and anchor.get("parser_ref") == "aoa-capability-graph@1"
+    }
 
     reusable: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for record in source_index["records"]:
@@ -2869,6 +3003,22 @@ def previous_structure_refs(
         if (
             previous_hashes.get(source_id) != str(identity["content_hash"])
             or not previous_anchors
+        ):
+            continue
+        current_path = Path(str(identity["path"]))
+        current_is_capability_graph = (
+            current_path == capability_graph_path
+            and record.get("abi", {}).get("schema_version")
+            == CAPABILITY_GRAPH_SCHEMA_VERSION
+        )
+        if source_id in previous_capability_graph_source_ids and not current_is_capability_graph:
+            continue
+        if current_is_capability_graph and not any(
+            anchor.get("parser_ref") == "aoa-capability-graph@1"
+            and str(anchor.get("symbol_kind") or "").startswith(
+                "capability_graph_node:"
+            )
+            for anchor in previous_anchors
         ):
             continue
         raw_anchors: list[dict[str, Any]] = []
@@ -2905,6 +3055,7 @@ def build_repository_indexes(
     event_history_ref: str | None = None,
     source_snapshot: OwnerSourceSnapshot | None = None,
 ) -> dict[str, dict[str, Any]]:
+    resolved_root: Path | None = None
     if repo_root is not None:
         resolved_root = repo_root.resolve()
         source_snapshot = source_snapshot or OwnerSourceSnapshot.capture(resolved_root)
@@ -2932,7 +3083,62 @@ def build_repository_indexes(
         mutable_record["refs"] = dict(record["refs"])
         records.append(mutable_record)
     repo = str(source_index["repo"]["name"])
-    reusable_structure = previous_structure_refs(source_index, previous_family)
+    tracked_paths = {
+        Path(str(record["identity"]["path"]))
+        for record in records
+    }
+    capability_graph_path = (
+        capability_graph_projection_path(
+            resolved_root,
+            tracked_paths,
+            source_snapshot=source_snapshot,
+        )
+        if resolved_root is not None
+        else None
+    )
+    capability_graph_sources: dict[str, bytes] = {}
+    if (
+        resolved_root is not None
+        and capability_graph_path is not None
+        and CAPABILITY_HOME_PORT_MANIFEST in tracked_paths
+    ):
+        tracked_entries_for_projection = {path: {} for path in tracked_paths}
+        capability_projection_map = capability_projection_sources(
+            resolved_root,
+            repo,
+            tracked_entries_for_projection,
+            source_snapshot=source_snapshot,
+        )
+        graph_projection = capability_projection_map.get(capability_graph_path)
+        if graph_projection is not None:
+            capability_graph_sources = {
+                family_path.as_posix(): source_bytes(
+                    resolved_root,
+                    family_path,
+                    resolved_root / family_path,
+                    source_snapshot=source_snapshot,
+                )
+                for family_path in graph_projection["sources"]
+            }
+            graph_content = source_bytes(
+                resolved_root,
+                capability_graph_path,
+                resolved_root / capability_graph_path,
+                source_snapshot=source_snapshot,
+            )
+            graph_payload = selected_capability_graph_payload(
+                graph_content,
+                path=capability_graph_path,
+            )
+            validate_capability_graph_against_sources(
+                graph_payload,
+                capability_graph_sources,
+            )
+    reusable_structure = previous_structure_refs(
+        source_index,
+        previous_family,
+        capability_graph_path=capability_graph_path,
+    )
     for record in records:
         identity = record["identity"]
         source_id = str(identity["id"])
@@ -2943,7 +3149,6 @@ def build_repository_indexes(
         rel = Path(str(identity["path"]))
         content = b""
         if repo_root is not None:
-            resolved_root = repo_root.resolve()
             content = source_bytes(
                 resolved_root,
                 rel,
@@ -2956,6 +3161,10 @@ def build_repository_indexes(
             path=rel.as_posix(),
             mime=str(identity["mime"]),
             content=content,
+            enable_capability_graph=rel == capability_graph_path,
+            capability_graph_sources=(
+                capability_graph_sources if rel == capability_graph_path else None
+            ),
         )
         refs = record["refs"]
         refs["anchor_refs"] = structure["anchor_refs"]

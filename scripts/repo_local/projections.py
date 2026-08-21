@@ -12,7 +12,11 @@ from typing import Any, Mapping, Protocol, Sequence
 
 from .federation import RepoKagFederation, github_ref_names_by_repo
 from .identity import qualified_id
-from .query import retrieval_document_role
+from .query import (
+    _validated_capability_source_record,
+    retrieval_document_role,
+)
+from .structure import CAPABILITY_GRAPH_DERIVED_FIELDS_BY_KIND
 
 
 ZERO_DIGEST = "0" * 64
@@ -156,6 +160,18 @@ def _semantic_segment(
         pointer = str(locator.get("pointer") or "")
         try:
             value = _json_pointer_value(text, pointer)
+            symbol_kind = str(anchor.get("symbol_kind") or "")
+            if symbol_kind.startswith("capability_graph_node:") and isinstance(value, dict):
+                node_kind = symbol_kind.removeprefix("capability_graph_node:")
+                derived_fields = CAPABILITY_GRAPH_DERIVED_FIELDS_BY_KIND.get(
+                    node_kind,
+                    frozenset(),
+                )
+                value = {
+                    key: item
+                    for key, item in value.items()
+                    if key not in derived_fields
+                }
             rendered = json.dumps(
                 {str(anchor["label"]): value},
                 ensure_ascii=False,
@@ -264,10 +280,141 @@ def _asset_metadata_text(
     )
 
 
+def _authored_capability_anchor(
+    *,
+    repo_root: Path,
+    family: Mapping[str, dict[str, Any]],
+    graph_anchor: Mapping[str, Any],
+    graph_record: Mapping[str, Any],
+    authored_record: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Resolve a graph anchor to the YAML anchor that authored its evidence.
+
+    Capability graph anchors are derived JSON coordinates.  Once a projection
+    is rebound to its authored family record, retaining that coordinate would
+    make the returned path and locator disagree.  Resolve the graph identity
+    against the authored YAML payload and return the corresponding indexed
+    anchor, failing closed if the binding cannot be proven.
+    """
+
+    try:
+        import yaml
+
+        payload = yaml.safe_load(
+            _verified_source_bytes(repo_root, dict(authored_record)).decode("utf-8")
+        )
+    except (UnicodeDecodeError, yaml.YAMLError) as exc:
+        raise ValueError("authored capability family is not valid YAML") from exc
+    if not isinstance(payload, Mapping):
+        raise ValueError("authored capability family must be a mapping")
+
+    authored_source_id = str(authored_record["identity"]["id"])
+    authored_anchors = [
+        anchor
+        for anchor in family["anchor"]["entries"]
+        if str(anchor.get("source_record_id")) == authored_source_id
+        and str(anchor.get("parser_ref")) == "aoa-yaml-path@1"
+    ]
+
+    def anchor_for(pointer: str) -> dict[str, Any]:
+        matches = [
+            anchor
+            for anchor in authored_anchors
+            if str(anchor.get("locator", {}).get("pointer")) == pointer
+        ]
+        if len(matches) != 1:
+            raise ValueError(
+                "authored capability locator is not uniquely indexed: "
+                f"{authored_record['identity']['path']}:{pointer}"
+            )
+        return copy.deepcopy(matches[0])
+
+    symbol_kind = str(graph_anchor.get("symbol_kind") or "")
+    if symbol_kind.startswith("capability_graph_node:"):
+        node_id = str(graph_anchor.get("qualified_name") or "")
+        nodes = payload.get("nodes")
+        if not node_id or not isinstance(nodes, list):
+            raise ValueError("capability graph node lacks authored YAML identity")
+        for index, node in enumerate(nodes):
+            if isinstance(node, Mapping) and node.get("id") == node_id:
+                return anchor_for(f"/nodes/{index}/id")
+        raise ValueError(
+            "authored capability node is missing: "
+            f"{authored_record['identity']['path']}:{node_id}"
+        )
+
+    if symbol_kind == "capability_graph_relation":
+        qualified_name = str(graph_anchor.get("qualified_name") or "")
+        if " -> " not in qualified_name:
+            raise ValueError("capability graph relation lacks authored endpoints")
+        source, target = qualified_name.split(" -> ", 1)
+        label = str(graph_anchor.get("label") or "")
+        relation_kind = label.split(":", 1)[0].strip()
+        if not relation_kind:
+            raise ValueError("capability graph relation lacks its relation kind")
+
+        if relation_kind == "primary-parent":
+            nodes = payload.get("nodes")
+            if not isinstance(nodes, list):
+                raise ValueError("authored capability family lacks nodes")
+            for index, node in enumerate(nodes):
+                if (
+                    isinstance(node, Mapping)
+                    and node.get("id") == source
+                    and node.get("primary_parent") == target
+                ):
+                    return anchor_for(f"/nodes/{index}/primary_parent")
+        else:
+            relations = payload.get("relations")
+            if not isinstance(relations, list):
+                raise ValueError("authored capability family lacks relations")
+            try:
+                graph_payload = json.loads(
+                    _verified_source_bytes(repo_root, dict(graph_record)).decode("utf-8")
+                )
+                graph_relation = _json_pointer_value(
+                    json.dumps(graph_payload),
+                    str(graph_anchor.get("locator", {}).get("pointer") or ""),
+                )
+            except (
+                UnicodeDecodeError,
+                json.JSONDecodeError,
+                IndexError,
+                KeyError,
+                TypeError,
+                ValueError,
+            ) as exc:
+                raise ValueError(
+                    "capability graph relation cannot be resolved from its source"
+                ) from exc
+            if not isinstance(graph_relation, Mapping):
+                raise ValueError("capability graph relation source is not an object")
+            normalized_graph_relation = dict(graph_relation)
+            normalized_graph_relation.pop("source_path", None)
+            if graph_relation.get("source_path") != authored_record["identity"]["path"]:
+                raise ValueError(
+                    "capability graph relation source_path does not match its authored record"
+                )
+            for index, relation in enumerate(relations):
+                if isinstance(relation, Mapping) and dict(relation) == normalized_graph_relation:
+                    return anchor_for(f"/relations/{index}/kind")
+        raise ValueError(
+            "authored capability relation is missing: "
+            f"{authored_record['identity']['path']}:{qualified_name}"
+        )
+
+    raise ValueError(
+        "cannot translate non-capability graph anchor to authored YAML: "
+        f"{graph_anchor.get('id')}"
+    )
+
+
 def _retrieval_document(
     *,
+    repo_root: Path,
     source_index: dict[str, Any],
     family: Mapping[str, dict[str, Any]],
+    source_records_by_path: Mapping[str, dict[str, Any]],
     record: dict[str, Any],
     node: dict[str, Any],
     node_class: str,
@@ -296,6 +443,49 @@ def _retrieval_document(
     provenance_ref = str(node["provenance_ref"])
     temporal_ref = str(node["temporal_ref"])
     trust_ref = str(node["trust_ref"])
+    node_source_path = node.get("source_path")
+    relation_source_paths = {
+        str(reference["source_path"])
+        for reference in node.get("outbound_refs", [])
+        if isinstance(reference, dict)
+        and isinstance(reference.get("source_path"), str)
+        and reference["source_path"]
+    }
+    authored_source_path = ""
+    if isinstance(node_source_path, str) and node_source_path:
+        authored_source_path = node_source_path
+    elif len(relation_source_paths) == 1:
+        authored_source_path = next(iter(relation_source_paths))
+    source_records_by_id = {
+        str(item["identity"]["id"]): item
+        for item in source_index["records"]
+    }
+    authored_record = _validated_capability_source_record(
+        family=family,
+        source_records_by_path=source_records_by_path,
+        source_records_by_id=source_records_by_id,
+        source_path=authored_source_path,
+        fallback_source_ids=[source_id],
+        evidence_anchor_ids=anchor_ids,
+    )
+    if authored_record is None:
+        authored_record = record
+    selected_identity = authored_record["identity"]
+    selected_locator = copy.deepcopy(locator)
+    selected_anchor_ids = [str(item) for item in anchor_ids]
+    if authored_record is not record:
+        authored_anchor = _authored_capability_anchor(
+            repo_root=repo_root,
+            family=family,
+            graph_anchor=node,
+            graph_record=record,
+            authored_record=authored_record,
+        )
+        selected_locator = copy.deepcopy(authored_anchor["locator"])
+        selected_anchor_ids = [str(authored_anchor["id"])]
+    provenance = copy.deepcopy(authored_record["provenance"])
+    if authored_record is not record and authored_source_path:
+        provenance["source_path"] = authored_source_path
     return {
         "id": document_id,
         "version_id": version_id,
@@ -305,22 +495,22 @@ def _retrieval_document(
         "node_class": node_class,
         "kind": kind,
         "label": label,
-        "path": str(identity["path"]),
-        "locator": copy.deepcopy(locator),
+        "path": str(selected_identity["path"]),
+        "locator": selected_locator,
         "chunk_index": chunk_index,
         "text": text,
         "text_digest": text_digest,
-        "source_record_ids": [source_id],
-        "source_version_ids": [str(identity["version_id"])],
-        "anchor_ids": sorted(set(str(item) for item in anchor_ids)),
-        "document_role": retrieval_document_role(record),
-        "surface_state": str(record["surface_state"]),
-        "abi": copy.deepcopy(record["abi"]),
-        "signs": copy.deepcopy(record["signs"]),
-        "provenance": copy.deepcopy(record["provenance"]),
-        "freshness": copy.deepcopy(record["freshness"]),
-        "access": copy.deepcopy(record["access"]),
-        "owner_return_route": copy.deepcopy(record["owner_return_route"]),
+        "source_record_ids": [str(selected_identity["id"])],
+        "source_version_ids": [str(selected_identity["version_id"])],
+        "anchor_ids": sorted(set(selected_anchor_ids)),
+        "document_role": retrieval_document_role(authored_record),
+        "surface_state": str(authored_record["surface_state"]),
+        "abi": copy.deepcopy(authored_record["abi"]),
+        "signs": copy.deepcopy(authored_record["signs"]),
+        "provenance": provenance,
+        "freshness": copy.deepcopy(authored_record["freshness"]),
+        "access": copy.deepcopy(authored_record["access"]),
+        "owner_return_route": copy.deepcopy(authored_record["owner_return_route"]),
         "provenance_ref": provenance_ref,
         "temporal_ref": temporal_ref,
         "trust_ref": trust_ref,
@@ -350,6 +540,10 @@ def build_repo_retrieval_documents(
         str(entry["id"]): entry
         for entry in family["artifact"]["entries"]
     }
+    source_records_by_path = {
+        str(item["identity"]["path"]): item
+        for item in source_index["records"]
+    }
     documents: list[dict[str, Any]] = []
     for record in source_index["records"]:
         identity = record["identity"]
@@ -371,8 +565,10 @@ def build_repo_retrieval_documents(
         if str(artifact["artifact_kind"]) == "asset":
             documents.append(
                 _retrieval_document(
+                    repo_root=repo_root,
                     source_index=source_index,
                     family=family,
+                    source_records_by_path=source_records_by_path,
                     record=record,
                     node=artifact,
                     node_class="artifact",
@@ -418,8 +614,10 @@ def build_repo_retrieval_documents(
                 locator["end_line"] = chunk_end
                 documents.append(
                     _retrieval_document(
+                        repo_root=repo_root,
                         source_index=source_index,
                         family=family,
+                        source_records_by_path=source_records_by_path,
                         record=record,
                         node=anchor,
                         node_class="anchor",
@@ -449,8 +647,10 @@ def build_repo_retrieval_documents(
                 locator["end_line"] = chunk_end
                 documents.append(
                     _retrieval_document(
+                        repo_root=repo_root,
                         source_index=source_index,
                         family=family,
+                        source_records_by_path=source_records_by_path,
                         record=record,
                         node=artifact,
                         node_class="artifact",
@@ -599,6 +799,7 @@ def build_federated_retrieval_plan(
     federation = RepoKagFederation(
         bundles,
         github_refs_by_repo=github_ref_names_by_repo(owner_roots),
+        repo_roots=owner_roots,
     ).projection()
     documents: list[dict[str, Any]] = []
     canonical_inputs: list[dict[str, Any]] = []

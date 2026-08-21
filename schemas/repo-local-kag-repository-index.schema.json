@@ -317,7 +317,8 @@
         "source_digest": {"$ref": "#/$defs/digest"},
         "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
-        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "source_path": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "artifactEntry": {
@@ -381,6 +382,7 @@
         "qualified_name": {"type": "string"},
         "parser_ref": {"$ref": "#/$defs/nonEmptyString"},
         "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_path": {"$ref": "#/$defs/nonEmptyString"},
         "outbound_refs": {
           "type": "array",
           "items": {"$ref": "#/$defs/outboundRef"}
@@ -552,7 +554,8 @@
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
         "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
-        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "source_path": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "changeRecord": {
@@ -580,7 +583,8 @@
         "evidence_class": {
           "type": "string",
           "enum": ["deterministic", "declared", "inferred"]
-        }
+        },
+        "source_path": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "actor": {

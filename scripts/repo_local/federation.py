@@ -85,6 +85,7 @@ class RepoKagFederation:
         bundles: Mapping[str, tuple[dict[str, Any], dict[str, dict[str, Any]]]],
         *,
         github_refs_by_repo: Mapping[str, Sequence[str]] | None = None,
+        repo_roots: Mapping[str, Path] | None = None,
     ) -> None:
         if not bundles:
             raise ValueError("federation requires at least one owner bundle")
@@ -95,6 +96,16 @@ class RepoKagFederation:
         self._artifacts_by_repo_path: dict[tuple[str, str], dict[str, Any]] = {}
         self._directories_by_repo_path: dict[tuple[str, str], dict[str, Any]] = {}
         self._headings_by_repo_path_fragment: dict[tuple[str, str, str], dict[str, Any]] = {}
+        self._repo_roots = {
+            str(owner): Path(root).resolve()
+            for owner, root in (repo_roots or {}).items()
+        }
+        unknown_roots = set(self._repo_roots) - set(bundles)
+        if unknown_roots:
+            raise ValueError(
+                "repo roots declare unknown federation owners: "
+                + ", ".join(sorted(unknown_roots))
+            )
         self._root_entities: dict[str, dict[str, Any]] = {}
         self._file_entities: dict[tuple[str, str], dict[str, Any]] = {}
         self._entity_by_anchor: dict[str, dict[str, Any]] = {}
@@ -124,7 +135,11 @@ class RepoKagFederation:
                 label=f"{owner} federation family",
             )
             self._bundles[owner] = (source, family)
-            self._queries[owner] = RepoKagQuery(source, family)
+            self._queries[owner] = RepoKagQuery(
+                source,
+                family,
+                repo_root=self._repo_roots.get(owner),
+            )
             self._register_owner(owner, source, family)
 
         self._local_relations = self._collect_local_relations()
