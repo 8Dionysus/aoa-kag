@@ -441,10 +441,26 @@ def validate_capability_graph_against_sources(
                 f"graph node {node_id!r} source_family {graph_node.get('source_family')!r} "
                 f"does not match authored family_id {family_id!r}"
             )
+        authored_keys = set(authored_node)
+        graph_keys = set(graph_node)
+        extra_keys = sorted(
+            graph_keys - authored_keys - {"source_family", "source_path"}
+        )
+        if extra_keys:
+            issues.append(
+                f"graph node {node_id!r} contains unauthored fields: {extra_keys}"
+            )
+        missing_keys = sorted(
+            authored_keys - graph_keys - {"source_family", "source_path"}
+        )
+        if missing_keys:
+            issues.append(
+                f"graph node {node_id!r} omits authored fields: {missing_keys}"
+            )
         for key, value in authored_node.items():
             if key in {"source_family", "source_path"}:
                 continue
-            if graph_node.get(key) != value:
+            if key not in graph_node or graph_node[key] != value:
                 issues.append(
                     f"graph node {node_id!r} field {key!r} does not match authored source"
                 )
@@ -486,6 +502,29 @@ def validate_capability_graph_against_sources(
                 )
             graph_primary_parent.add(relation_key)
 
+        graph_keys = set(raw_relation)
+        authored_candidates = [
+            authored_relation
+            for authored_path, authored_relation in authored_relations
+            if authored_path == source_path
+        ]
+        authored_keys_for_path: set[str] = set()
+        for authored_relation in authored_candidates:
+            authored_keys_for_path.update(authored_relation)
+        allowed_keys = authored_keys_for_path or {
+            "kind",
+            "source",
+            "target",
+            "source_path",
+        }
+        extra_keys = sorted(graph_keys - allowed_keys - {"source_path"})
+        if extra_keys:
+            issues.append(
+                "graph relation "
+                f"{kind!r} {source_id!r}->{target_id!r} contains "
+                f"unauthored fields: {extra_keys}"
+            )
+
         matched = False
         for relation_index, (authored_path, authored_relation) in enumerate(
             authored_relations
@@ -493,7 +532,7 @@ def validate_capability_graph_against_sources(
             if relation_index in matched_relations or authored_path != source_path:
                 continue
             if all(
-                raw_relation.get(key) == value
+                key in raw_relation and raw_relation[key] == value
                 for key, value in authored_relation.items()
             ):
                 matched_relations.add(relation_index)
@@ -506,6 +545,7 @@ def validate_capability_graph_against_sources(
             if (
                 graph_nodes[source_id].get("primary_parent") == target_id
                 and graph_nodes[source_id].get("source_path") == source_path
+                and graph_keys == {"kind", "source", "target", "source_path"}
             ):
                 continue
         issues.append(

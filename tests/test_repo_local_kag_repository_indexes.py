@@ -154,11 +154,38 @@ def write_capability_graph_fixture(root: Path) -> None:
         "family: session-memory\n"
         "nodes:\n"
         "  - id: memory\n"
+        "    kind: capability\n"
+        "    title: Session memory\n"
+        "    contract_level: navigation\n"
         "    primary_parent: null\n"
+        "    owner:\n"
+        "      authority: authored\n"
+        "      repo: demo\n"
+        "      surface: capabilities/families/session-memory.yaml\n"
+        "    lifecycle:\n"
+        "      state: active\n"
         "  - id: skill.query\n"
+        "    kind: skill\n"
+        "    title: Query memory\n"
+        "    contract_level: executable\n"
         "    primary_parent: memory\n"
+        "    owner:\n"
+        "      authority: authored\n"
+        "      repo: demo\n"
+        "      surface: capabilities/families/session-memory.yaml\n"
+        "    lifecycle:\n"
+        "      state: active\n"
         "  - id: adapter.audit\n"
+        "    kind: adapter\n"
+        "    title: Audit adapter\n"
+        "    contract_level: executable\n"
         "    primary_parent: memory\n"
+        "    owner:\n"
+        "      authority: authored\n"
+        "      repo: demo\n"
+        "      surface: capabilities/families/session-memory.yaml\n"
+        "    lifecycle:\n"
+        "      state: active\n"
         "relations:\n"
         "  - kind: hands-off-to\n"
         "    source: skill.query\n"
@@ -1152,7 +1179,16 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "family: supporting\n"
                 "nodes:\n"
                 "  - id: adapter.audit\n"
+                "    kind: adapter\n"
+                "    title: Audit adapter\n"
+                "    contract_level: executable\n"
                 "    primary_parent: memory\n"
+                "    owner:\n"
+                "      authority: authored\n"
+                "      repo: demo\n"
+                "      surface: capabilities/families/supporting.yaml\n"
+                "    lifecycle:\n"
+                "      state: active\n"
                 "relations:\n"
                 "  - kind: hands-off-to\n"
                 "    source: skill.query\n"
@@ -1165,9 +1201,27 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "family: session-memory\n"
                 "nodes:\n"
                 "  - id: memory\n"
+                "    kind: capability\n"
+                "    title: Session memory\n"
+                "    contract_level: navigation\n"
                 "    primary_parent: null\n"
+                "    owner:\n"
+                "      authority: authored\n"
+                "      repo: demo\n"
+                "      surface: capabilities/families/session-memory.yaml\n"
+                "    lifecycle:\n"
+                "      state: active\n"
                 "  - id: skill.query\n"
+                "    kind: skill\n"
+                "    title: Query memory\n"
+                "    contract_level: executable\n"
                 "    primary_parent: memory\n"
+                "    owner:\n"
+                "      authority: authored\n"
+                "      repo: demo\n"
+                "      surface: capabilities/families/session-memory.yaml\n"
+                "    lifecycle:\n"
+                "      state: active\n"
                 "relations: []\n",
                 encoding="utf-8",
             )
@@ -1186,6 +1240,9 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "capabilities/families/supporting.yaml"
             )
             graph_payload["nodes"][2]["source_family"] = "supporting"
+            graph_payload["nodes"][2]["owner"]["surface"] = (
+                "capabilities/families/supporting.yaml"
+            )
             graph_payload["relations"][1]["source_path"] = (
                 "capabilities/families/supporting.yaml"
             )
@@ -1424,6 +1481,27 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "duplicate primary-parent relation",
             ):
                 build_repository_indexes(source, repo_root=root)
+
+    def test_capability_graph_rejects_unauthored_semantic_fields(self) -> None:
+        variants = ("node", "relation")
+        for variant in variants:
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                write_fixture(root)
+                write_capability_graph_fixture(root)
+                graph_path = root / "generated" / "capability_graph.json"
+                graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+                if variant == "node":
+                    graph_payload["nodes"][0]["derived_label"] = "forged"
+                else:
+                    graph_payload["relations"][0]["derived_condition"] = "forged"
+                graph_path.write_text(
+                    json.dumps(graph_payload, sort_keys=True),
+                    encoding="utf-8",
+                )
+                source = build_index(root)
+                with self.assertRaisesRegex(ValueError, "unauthored fields"):
+                    build_repository_indexes(source, repo_root=root)
 
     def test_capability_graph_rejects_phantom_nodes_and_relations(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -992,7 +992,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
             family.write_text(
                 "schema_version: aoa-capability-family-v1\n"
                 "family_id: central-proof\n"
-                "nodes: [{title: Central proof, id: central-proof}]\n"
+                "nodes: [{title: Central proof, id: central-proof, kind: capability}]\n"
                 "relations: []\n",
                 encoding="utf-8",
             )
@@ -1039,7 +1039,7 @@ class RepoLocalKagIndexTests(unittest.TestCase):
                 "schema_version: aoa-capability-family-v1\n"
                 "family_id: central-proof\n"
                 "nodes: [\n"
-                "  {title: Central proof, id: central-proof}\n"
+                "  {title: Central proof, id: central-proof, kind: capability}\n"
                 "]\n"
                 "relations: []\n",
                 encoding="utf-8",
