@@ -992,6 +992,32 @@ def capability_graph_payload(content: bytes) -> dict[str, Any] | None:
     return payload
 
 
+def selected_capability_graph_payload(
+    content: bytes,
+    *,
+    path: Path,
+) -> dict[str, Any]:
+    """Require the manifest-selected graph to satisfy its graph contract."""
+
+    payload = json_object(content)
+    if payload is None:
+        raise ValueError(
+            "manifest-selected capability graph must be a JSON object: "
+            f"{path.as_posix()}"
+        )
+    if payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION:
+        raise ValueError(
+            "manifest-selected capability graph has an invalid schema_version: "
+            f"{path.as_posix()}"
+        )
+    if payload.get("authority") is not False:
+        raise ValueError(
+            "manifest-selected capability graph must declare authority=false: "
+            f"{path.as_posix()}"
+        )
+    return payload
+
+
 def manifest_relative_path(value: Any, *, field: str) -> Path:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ValueError(f"{field} must be a non-empty POSIX relative path")
@@ -3100,12 +3126,14 @@ def build_repository_indexes(
                 resolved_root / capability_graph_path,
                 source_snapshot=source_snapshot,
             )
-            graph_payload = capability_graph_payload(graph_content)
-            if graph_payload is not None:
-                validate_capability_graph_against_sources(
-                    graph_payload,
-                    capability_graph_sources,
-                )
+            graph_payload = selected_capability_graph_payload(
+                graph_content,
+                path=capability_graph_path,
+            )
+            validate_capability_graph_against_sources(
+                graph_payload,
+                capability_graph_sources,
+            )
     reusable_structure = previous_structure_refs(
         source_index,
         previous_family,

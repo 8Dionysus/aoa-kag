@@ -407,6 +407,9 @@ def validate_capability_graph_against_sources(
         if not isinstance(raw_node, Mapping):
             issues.append(f"graph nodes[{index}] must be an object")
             continue
+        node_kind = raw_node.get("kind")
+        if not isinstance(node_kind, str) or not node_kind:
+            issues.append(f"graph nodes[{index}].kind is required")
         node_id = raw_node.get("id")
         if not isinstance(node_id, str) or not CAPABILITY_ID_RE.fullmatch(node_id):
             issues.append(f"graph nodes[{index}].id is invalid")
@@ -475,7 +478,13 @@ def validate_capability_graph_against_sources(
                 f"has an unauthored source_path {source_path!r}"
             )
         if kind == "primary-parent":
-            graph_primary_parent.add((source_id, target_id, source_path))
+            relation_key = (source_id, target_id, source_path)
+            if relation_key in graph_primary_parent:
+                issues.append(
+                    "graph contains duplicate primary-parent relation "
+                    f"{source_id!r}->{target_id!r} ({source_path})"
+                )
+            graph_primary_parent.add(relation_key)
 
         matched = False
         for relation_index, (authored_path, authored_relation) in enumerate(
@@ -547,11 +556,10 @@ def _capability_graph_structure(
     *,
     authored_sources: Mapping[str, bytes] | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    if (
-        payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
-        or payload.get("authority") is not False
-    ):
-        return [], []
+    if payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION:
+        raise ValueError("selected capability graph has an invalid schema_version")
+    if payload.get("authority") is not False:
+        raise ValueError("selected capability graph must declare authority=false")
     validate_capability_graph_against_sources(payload, authored_sources or {})
 
     anchors: list[dict[str, Any]] = []

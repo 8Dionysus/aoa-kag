@@ -1361,6 +1361,70 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, rf"{field} must be"):
                     build_repository_indexes(source, repo_root=root)
 
+    def test_capability_graph_rejects_unrecognized_selected_graph(self) -> None:
+        variants = ("invalid-json", "schema-version", "authority")
+        for variant in variants:
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                write_fixture(root)
+                write_capability_graph_fixture(root)
+                graph_path = root / "generated" / "capability_graph.json"
+                if variant == "invalid-json":
+                    graph_path.write_text("{", encoding="utf-8")
+                else:
+                    graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+                    if variant == "schema-version":
+                        graph_payload["schema_version"] = "aoa-capability-graph-v2"
+                    else:
+                        graph_payload["authority"] = True
+                    graph_path.write_text(
+                        json.dumps(graph_payload, sort_keys=True),
+                        encoding="utf-8",
+                    )
+                source = build_index(root)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "manifest-selected capability graph",
+                ):
+                    build_repository_indexes(source, repo_root=root)
+
+    def test_capability_graph_rejects_missing_projection_kind(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            graph_path = root / "generated" / "capability_graph.json"
+            graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+            del graph_payload["nodes"][0]["kind"]
+            graph_path.write_text(
+                json.dumps(graph_payload, sort_keys=True),
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            with self.assertRaisesRegex(ValueError, r"nodes\[0\]\.kind is required"):
+                build_repository_indexes(source, repo_root=root)
+
+    def test_capability_graph_rejects_duplicate_primary_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            graph_path = root / "generated" / "capability_graph.json"
+            graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+            graph_payload["relations"].append(
+                copy.deepcopy(graph_payload["relations"][0])
+            )
+            graph_path.write_text(
+                json.dumps(graph_payload, sort_keys=True),
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            with self.assertRaisesRegex(
+                ValueError,
+                "duplicate primary-parent relation",
+            ):
+                build_repository_indexes(source, repo_root=root)
+
     def test_capability_graph_rejects_phantom_nodes_and_relations(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
