@@ -1467,6 +1467,82 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             node_document["anchor_ids"],
         )
 
+    def test_capability_graph_rebinds_repeated_relation_to_matching_authored_locator(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            family_path = root / "capabilities" / "families" / "session-memory.yaml"
+            family_path.write_text(
+                family_path.read_text(encoding="utf-8")
+                + "  - kind: hands-off-to\n"
+                + "    source: skill.query\n"
+                + "    target: adapter.audit\n"
+                + "    condition: Second evidence handoff.\n",
+                encoding="utf-8",
+            )
+            graph_path = root / "generated" / "capability_graph.json"
+            graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+            graph_payload["source"]["family_files"][0]["sha256"] = hashlib.sha256(
+                family_path.read_bytes()
+            ).hexdigest()
+            graph_payload["relations"].append(
+                {
+                    "kind": "hands-off-to",
+                    "source": "skill.query",
+                    "target": "adapter.audit",
+                    "condition": "Second evidence handoff.",
+                    "source_path": "capabilities/families/session-memory.yaml",
+                }
+            )
+            graph_path.write_text(
+                json.dumps(graph_payload, sort_keys=True),
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+            documents = build_repo_retrieval_documents(root, source, family)
+
+        graph_anchors = {
+            entry["locator"]["pointer"]: entry
+            for entry in family["anchor"]["entries"]
+            if entry["parser_ref"] == "aoa-capability-graph@1"
+            and entry["locator"]["pointer"].startswith("/relations/")
+        }
+        authored_anchors = {
+            entry["locator"]["pointer"]: entry
+            for entry in family["anchor"]["entries"]
+            if entry["parser_ref"] == "aoa-yaml-path@1"
+            and entry["source_record_id"]
+            == next(
+                record["identity"]["id"]
+                for record in source["records"]
+                if record["identity"]["path"]
+                == "capabilities/families/session-memory.yaml"
+            )
+        }
+        second_document = next(
+            document
+            for document in documents
+            if document["node_id"] == graph_anchors["/relations/3"]["id"]
+        )
+        self.assertEqual(
+            authored_anchors["/relations/0/kind"]["locator"],
+            next(
+                document
+                for document in documents
+                if document["node_id"] == graph_anchors["/relations/1"]["id"]
+            )["locator"],
+        )
+        self.assertEqual(
+            authored_anchors["/relations/1/kind"]["locator"],
+            second_document["locator"],
+        )
+        self.assertEqual(
+            [authored_anchors["/relations/1/kind"]["id"]],
+            second_document["anchor_ids"],
+        )
+
     def test_capability_graph_rejects_stale_authored_family_digest(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

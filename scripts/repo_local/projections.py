@@ -285,6 +285,7 @@ def _authored_capability_anchor(
     repo_root: Path,
     family: Mapping[str, dict[str, Any]],
     graph_anchor: Mapping[str, Any],
+    graph_record: Mapping[str, Any],
     authored_record: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Resolve a graph anchor to the YAML anchor that authored its evidence.
@@ -367,13 +368,35 @@ def _authored_capability_anchor(
             relations = payload.get("relations")
             if not isinstance(relations, list):
                 raise ValueError("authored capability family lacks relations")
+            try:
+                graph_payload = json.loads(
+                    _verified_source_bytes(repo_root, dict(graph_record)).decode("utf-8")
+                )
+                graph_relation = _json_pointer_value(
+                    json.dumps(graph_payload),
+                    str(graph_anchor.get("locator", {}).get("pointer") or ""),
+                )
+            except (
+                UnicodeDecodeError,
+                json.JSONDecodeError,
+                IndexError,
+                KeyError,
+                TypeError,
+                ValueError,
+            ) as exc:
+                raise ValueError(
+                    "capability graph relation cannot be resolved from its source"
+                ) from exc
+            if not isinstance(graph_relation, Mapping):
+                raise ValueError("capability graph relation source is not an object")
+            normalized_graph_relation = dict(graph_relation)
+            normalized_graph_relation.pop("source_path", None)
+            if graph_relation.get("source_path") != authored_record["identity"]["path"]:
+                raise ValueError(
+                    "capability graph relation source_path does not match its authored record"
+                )
             for index, relation in enumerate(relations):
-                if (
-                    isinstance(relation, Mapping)
-                    and relation.get("kind") == relation_kind
-                    and relation.get("source") == source
-                    and relation.get("target") == target
-                ):
+                if isinstance(relation, Mapping) and dict(relation) == normalized_graph_relation:
                     return anchor_for(f"/relations/{index}/kind")
         raise ValueError(
             "authored capability relation is missing: "
@@ -455,6 +478,7 @@ def _retrieval_document(
             repo_root=repo_root,
             family=family,
             graph_anchor=node,
+            graph_record=record,
             authored_record=authored_record,
         )
         selected_locator = copy.deepcopy(authored_anchor["locator"])
