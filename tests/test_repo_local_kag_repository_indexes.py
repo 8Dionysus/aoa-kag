@@ -1181,6 +1181,36 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "capabilities/families/session-memory.yaml",
             relation_document["provenance"]["source_path"],
         )
+        session_memory_source_id = records_by_path[
+            "capabilities/families/session-memory.yaml"
+        ]["identity"]["id"]
+        authored_anchors = {
+            entry["locator"]["pointer"]: entry
+            for entry in family["anchor"]["entries"]
+            if entry["source_record_id"] == session_memory_source_id
+            and entry["parser_ref"] == "aoa-yaml-path@1"
+        }
+        authored_handoff_anchor = authored_anchors["/relations/0/kind"]
+        self.assertEqual(
+            authored_handoff_anchor["locator"],
+            relation_document["locator"],
+        )
+        self.assertEqual(
+            [authored_handoff_anchor["id"]],
+            relation_document["anchor_ids"],
+        )
+        primary_parent_document = next(
+            document
+            for document in documents
+            if document["node_id"] == graph_anchors["/relations/0"]["id"]
+        )
+        authored_primary_parent_anchor = authored_anchors[
+            "/nodes/1/primary_parent"
+        ]
+        self.assertEqual(
+            authored_primary_parent_anchor["locator"],
+            primary_parent_document["locator"],
+        )
 
     def test_capability_graph_preserves_relation_source_path_for_multi_family_projection(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1375,6 +1405,23 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             [supporting_record["identity"]["version_id"]],
             relation_document["source_version_ids"],
         )
+        supporting_authored_anchors = {
+            entry["locator"]["pointer"]: entry
+            for entry in family["anchor"]["entries"]
+            if entry["source_record_id"] == supporting_source_id
+            and entry["parser_ref"] == "aoa-yaml-path@1"
+        }
+        supporting_handoff_anchor = supporting_authored_anchors[
+            "/relations/0/kind"
+        ]
+        self.assertEqual(
+            supporting_handoff_anchor["locator"],
+            relation_document["locator"],
+        )
+        self.assertEqual(
+            [supporting_handoff_anchor["id"]],
+            relation_document["anchor_ids"],
+        )
         supporting_entity_handle = query.projection_handle(
             capability_entities["capability:adapter.audit"]["id"]
         )
@@ -1409,6 +1456,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(
             "capabilities/families/supporting.yaml",
             node_document["provenance"]["source_path"],
+        )
+        supporting_node_anchor = supporting_authored_anchors["/nodes/0/id"]
+        self.assertEqual(
+            supporting_node_anchor["locator"],
+            node_document["locator"],
+        )
+        self.assertEqual(
+            [supporting_node_anchor["id"]],
+            node_document["anchor_ids"],
         )
 
     def test_capability_graph_rejects_stale_authored_family_digest(self) -> None:
