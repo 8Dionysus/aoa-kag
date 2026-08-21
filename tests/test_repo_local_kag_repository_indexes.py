@@ -1214,12 +1214,32 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             if document["node_id"] == graph_anchor["id"]
         )
         self.assertEqual(
-            "capabilities/families/session-memory.yaml",
+            "capabilities/families/supporting.yaml",
             relation_document["provenance"]["source_refs"][0]["path"],
         )
         self.assertEqual(
             "capabilities/families/supporting.yaml",
             relation_document["provenance"]["source_path"],
+        )
+        supporting_record = next(
+            record
+            for record in source["records"]
+            if record["identity"]["path"]
+            == "capabilities/families/supporting.yaml"
+        )
+        expected_supporting_provenance = copy.deepcopy(
+            supporting_record["provenance"]
+        )
+        expected_supporting_provenance["source_path"] = (
+            "capabilities/families/supporting.yaml"
+        )
+        self.assertEqual(
+            expected_supporting_provenance,
+            relation_document["provenance"],
+        )
+        self.assertEqual(
+            supporting_record["owner_return_route"],
+            relation_document["owner_return_route"],
         )
         node_document = next(
             document

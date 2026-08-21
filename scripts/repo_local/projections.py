@@ -268,6 +268,7 @@ def _retrieval_document(
     *,
     source_index: dict[str, Any],
     family: Mapping[str, dict[str, Any]],
+    source_records_by_path: Mapping[str, dict[str, Any]],
     record: dict[str, Any],
     node: dict[str, Any],
     node_class: str,
@@ -296,7 +297,6 @@ def _retrieval_document(
     provenance_ref = str(node["provenance_ref"])
     temporal_ref = str(node["temporal_ref"])
     trust_ref = str(node["trust_ref"])
-    provenance = copy.deepcopy(record["provenance"])
     node_source_path = node.get("source_path")
     relation_source_paths = {
         str(reference["source_path"])
@@ -305,10 +305,15 @@ def _retrieval_document(
         and isinstance(reference.get("source_path"), str)
         and reference["source_path"]
     }
+    authored_source_path = ""
     if isinstance(node_source_path, str) and node_source_path:
-        provenance["source_path"] = node_source_path
+        authored_source_path = node_source_path
     elif len(relation_source_paths) == 1:
-        provenance["source_path"] = next(iter(relation_source_paths))
+        authored_source_path = next(iter(relation_source_paths))
+    authored_record = source_records_by_path.get(authored_source_path, record)
+    provenance = copy.deepcopy(authored_record["provenance"])
+    if authored_source_path:
+        provenance["source_path"] = authored_source_path
     return {
         "id": document_id,
         "version_id": version_id,
@@ -333,7 +338,7 @@ def _retrieval_document(
         "provenance": provenance,
         "freshness": copy.deepcopy(record["freshness"]),
         "access": copy.deepcopy(record["access"]),
-        "owner_return_route": copy.deepcopy(record["owner_return_route"]),
+        "owner_return_route": copy.deepcopy(authored_record["owner_return_route"]),
         "provenance_ref": provenance_ref,
         "temporal_ref": temporal_ref,
         "trust_ref": trust_ref,
@@ -363,6 +368,10 @@ def build_repo_retrieval_documents(
         str(entry["id"]): entry
         for entry in family["artifact"]["entries"]
     }
+    source_records_by_path = {
+        str(item["identity"]["path"]): item
+        for item in source_index["records"]
+    }
     documents: list[dict[str, Any]] = []
     for record in source_index["records"]:
         identity = record["identity"]
@@ -386,6 +395,7 @@ def build_repo_retrieval_documents(
                 _retrieval_document(
                     source_index=source_index,
                     family=family,
+                    source_records_by_path=source_records_by_path,
                     record=record,
                     node=artifact,
                     node_class="artifact",
@@ -433,6 +443,7 @@ def build_repo_retrieval_documents(
                     _retrieval_document(
                         source_index=source_index,
                         family=family,
+                        source_records_by_path=source_records_by_path,
                         record=record,
                         node=anchor,
                         node_class="anchor",
@@ -464,6 +475,7 @@ def build_repo_retrieval_documents(
                     _retrieval_document(
                         source_index=source_index,
                         family=family,
+                        source_records_by_path=source_records_by_path,
                         record=record,
                         node=artifact,
                         node_class="artifact",
