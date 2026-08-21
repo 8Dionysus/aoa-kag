@@ -38,7 +38,7 @@
   },
   "distribution_identity": {
     "artifact_kind": "repo_local_kag_distribution",
-    "content_digest": "sha256:b044074312e5a079fe27ceaf215c9d557be26bf836dec8fe32526bb7da107191",
+    "content_digest": "sha256:56c431740404c9f1275e6e132898439580723ed4558808357448ae21c758838d",
     "corpus_digest": "sha256:b421f2fb751cc5cfd64a096e763683f1d24f9a45ae771e97ba72f145558ee291",
     "local_id": "family:repo-local:tiered-distribution",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-distribution-manifest.schema.json"
@@ -61,7 +61,7 @@
         "anchor",
         "event"
       ],
-      "shadow_git_copy": false
+      "shadow_git_copy": true
     },
     "git_hot": {
       "object_set_digest": "sha256:f44cd575b2ab96bf2197ec5cea5a1a3a1ebbf02da0cf0f98f5213761c037e2dc",
@@ -72,7 +72,7 @@
         "source_chunk"
       ]
     },
-    "state": "externalized"
+    "state": "shadow"
   },
   "provenance": {
     "authored_truth_owner": "aoa-kag",
@@ -94,7 +94,7 @@
     "git_hot_bytes": 2306435,
     "git_hot_objects": 203,
     "git_hot_shard_bytes": 2188024,
-    "shadow_git_bytes": 0
+    "shadow_git_bytes": 11891776
   },
   "transport": {
     "max_pack_bytes": 8388608,
