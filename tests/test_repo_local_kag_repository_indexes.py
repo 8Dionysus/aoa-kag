@@ -1498,6 +1498,41 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             node_document["anchor_ids"],
         )
 
+    def test_capability_query_keeps_graph_fallback_without_repo_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+            query = RepoKagQuery(source, family)
+
+        graph_record = next(
+            record
+            for record in source["records"]
+            if record["identity"]["path"] == "generated/capability_graph.json"
+        )
+        graph_anchor = next(
+            anchor
+            for anchor in family["anchor"]["entries"]
+            if anchor["source_record_id"] == graph_record["identity"]["id"]
+            and anchor["locator"]["pointer"] == "/nodes/2"
+        )
+        entity = next(
+            entry
+            for entry in family["entity"]["entries"]
+            if entry["semantic_key"] == "capability:adapter.audit"
+        )
+        handle = query.projection_handle(entity["id"])
+        self.assertIsNotNone(handle)
+        self.assertEqual([graph_record["identity"]["id"]], handle["source_record_ids"])
+        self.assertEqual([graph_anchor["id"]], handle["anchor_ids"])
+        hit = query.read(entity["id"], access_scopes={"public"})
+        self.assertIsNotNone(hit)
+        self.assertEqual([graph_record["identity"]["id"]], hit["source_record_ids"])
+        self.assertEqual([graph_anchor["id"]], hit["anchor_ids"])
+        self.assertEqual([graph_anchor["id"]], hit["evidence"]["anchor_ids"])
+
     def test_capability_graph_rebinds_repeated_relation_to_matching_authored_locator(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

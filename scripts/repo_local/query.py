@@ -171,7 +171,7 @@ class RepoKagQuery:
         *,
         evidence_anchor_ids: Sequence[str] = (),
     ) -> dict[str, Any] | None:
-        return _validated_capability_source_record(
+        record = _validated_capability_source_record(
             family=self.family,
             source_records_by_path=self._source_records_by_path,
             source_records_by_id=self._source_records,
@@ -179,6 +179,19 @@ class RepoKagQuery:
             fallback_source_ids=fallback,
             evidence_anchor_ids=evidence_anchor_ids,
         )
+        if record is None or self.repo_root is not None:
+            return record
+        # A portable family has the graph/source binding but not necessarily the
+        # authored YAML bytes needed to translate its JSON anchor. Preserve a
+        # self-consistent graph-source fallback until a local source root is
+        # supplied; do not claim an authored record with graph-only evidence.
+        if any(
+            str(self._anchors_by_id.get(str(anchor_id), {}).get("parser_ref") or "")
+            == "aoa-capability-graph@1"
+            for anchor_id in evidence_anchor_ids
+        ):
+            return None
+        return record
 
     def _rebound_anchor_ids(
         self,
@@ -207,10 +220,8 @@ class RepoKagQuery:
                 rebound.append(anchor_id)
                 continue
             if self.repo_root is None:
-                raise ValueError(
-                    "repo_root is required to rebind capability query evidence "
-                    "to authored anchors"
-                )
+                rebound.append(anchor_id)
+                continue
             graph_record = self._source_records.get(
                 str(graph_anchor.get("source_record_id") or "")
             )
