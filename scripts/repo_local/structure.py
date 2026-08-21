@@ -21,6 +21,14 @@ TOML_TABLE = re.compile(r"^[ \t]*\[\[?(?P<name>[^\]]+)\]\]?[ \t]*(?:#.*)?$")
 TOML_KEY = re.compile(r"^[ \t]*(?P<key>[A-Za-z0-9_.-]+)[ \t]*=")
 CAPABILITY_GRAPH_SCHEMA_VERSION = "aoa-capability-graph-v1"
 CAPABILITY_ID_RE = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
+# The shared capability-home projector enriches skill and mode nodes with
+# owner-layer bindings. These fields are source-linked projection metadata,
+# not KAG node semantics; KAG intentionally does not project or trust them as
+# replacements for authored family fields.
+CAPABILITY_GRAPH_DERIVED_FIELDS_BY_KIND = {
+    "skill": frozenset({"owner_contract", "owner_contract_ref", "package"}),
+    "mode": frozenset({"mode_contract", "owner_contract_ref"}),
+}
 
 
 def _anchor(
@@ -443,8 +451,15 @@ def validate_capability_graph_against_sources(
             )
         authored_keys = set(authored_node)
         graph_keys = set(graph_node)
+        derived_keys = CAPABILITY_GRAPH_DERIVED_FIELDS_BY_KIND.get(
+            str(graph_node.get("kind")),
+            frozenset(),
+        )
         extra_keys = sorted(
-            graph_keys - authored_keys - {"source_family", "source_path"}
+            graph_keys
+            - authored_keys
+            - {"source_family", "source_path"}
+            - derived_keys
         )
         if extra_keys:
             issues.append(

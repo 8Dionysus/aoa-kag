@@ -1539,6 +1539,35 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "does not match an authored relation"):
                 build_repository_indexes(source, repo_root=root)
 
+    def test_capability_graph_accepts_typed_owner_projection_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            graph_path = root / "generated" / "capability_graph.json"
+            graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+            graph_payload["nodes"][1].update(
+                {
+                    "owner_contract": {"authority": "owner"},
+                    "owner_contract_ref": {"path": "skills/demo/references/contract.yaml"},
+                    "package": "demo",
+                }
+            )
+            graph_payload["nodes"][1]["kind"] = "skill"
+            graph_path.write_text(
+                json.dumps(graph_payload, sort_keys=True),
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        self.assertTrue(
+            any(
+                entry["semantic_key"] == "capability:skill.query"
+                for entry in family["entity"]["entries"]
+            )
+        )
+
     def test_capability_graph_rejects_phantom_nodes_and_relations(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
