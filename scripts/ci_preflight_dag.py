@@ -184,6 +184,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         description="Overlap the preparation-only coverage sentinel with provider checkout."
     )
     parser.add_argument("--base-ref", required=True)
+    parser.add_argument(
+        "--coverage-seed-ref",
+        help=(
+            "Preparation-only external coverage seed ref. This is separate "
+            "from the historical base-ref and never changes downstream proof."
+        ),
+    )
     parser.add_argument("--jobs", type=int, default=3)
     parser.add_argument(
         "--mode",
@@ -201,6 +208,9 @@ def run_preflight(
     receipt_parent: Path,
 ) -> int:
     started = time.perf_counter()
+    coverage_seed_ref = str(
+        getattr(args, "coverage_seed_ref", None) or args.base_ref
+    )
     coverage_receipt = receipt_parent / "coverage-sentinel.json"
     generated_receipt = receipt_parent / "generated-sentinel.json"
     checkout_command = (
@@ -222,6 +232,7 @@ def run_preflight(
             "verdict": "passed" if completed.returncode == 0 else "failed",
             "partial_result_is_green": False,
             "base_ref": args.base_ref,
+            "coverage_seed_ref": coverage_seed_ref,
             "checkout": {
                 "command": list(checkout_command),
                 "return_code": completed.returncode,
@@ -252,7 +263,7 @@ def run_preflight(
         "--sentinel",
         "--coverage-only",
         "--external-seed-ref",
-        args.base_ref,
+        coverage_seed_ref,
         "--receipt-output",
         coverage_receipt.as_posix(),
     )
@@ -267,6 +278,7 @@ def run_preflight(
         "verdict": "failed",
         "partial_result_is_green": False,
         "base_ref": args.base_ref,
+        "coverage_seed_ref": coverage_seed_ref,
         "parallel": {
             "checkout": process_payload(checkout),
             "coverage_sentinel": process_payload(coverage),
@@ -319,7 +331,7 @@ def run_preflight(
         "--sentinel",
         "--generated-only",
         "--external-seed-ref",
-        args.base_ref,
+        coverage_seed_ref,
         "--receipt-output",
         generated_receipt.as_posix(),
     )

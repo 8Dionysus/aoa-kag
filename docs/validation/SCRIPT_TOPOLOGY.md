@@ -133,6 +133,11 @@ provider checkout wave, cancels only the peer processes it launched when one
 fails, and performs a generated sentinel after checkout fan-in. The canonical
 release continuation remains unchanged and blocking; neither sentinel output
 is admitted as owner proof or a landing verdict.
+Its `--base-ref` remains the historical proof boundary. An optional
+`--coverage-seed-ref` supplies only the exact candidate/default-head seed for
+the preparation sentinels; runtime compatibility and ancestry are still
+required, and the separate seed cannot alter provider checkout identity or the
+downstream release commands.
 Its manual-dispatch `direct-control` route is an exact-head measurement and
 rollback surface: it runs the same bounded checkout command without either
 sentinel and still fans into the identical canonical release continuation.

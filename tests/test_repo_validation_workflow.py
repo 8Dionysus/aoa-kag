@@ -166,6 +166,14 @@ class RepoValidationWorkflowTests(unittest.TestCase):
         )
         self.assertIn("python scripts/ci_preflight_dag.py", release_audit)
         self.assertIn('--mode "$AOA_KAG_PREFLIGHT_MODE"', release_audit)
+        self.assertIn(
+            'AOA_KAG_PREPARATION_SEED_REF: ${{ github.event.pull_request.head.sha || github.sha }}',
+            release_audit,
+        )
+        self.assertIn(
+            '--coverage-seed-ref "$AOA_KAG_PREPARATION_SEED_REF"',
+            release_audit,
+        )
         self.assertIn('--jobs "$AOA_KAG_CHECKOUT_WORKERS"', release_audit)
         self.assertIn('"scripts/sync_provider_checkouts.py"', preflight_text)
         self.assertIn('"--exclude-secret-checkouts"', preflight_text)
