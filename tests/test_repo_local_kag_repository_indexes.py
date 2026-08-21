@@ -1363,6 +1363,18 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             relation_document["owner_return_route"],
         )
         supporting_source_id = supporting_record["identity"]["id"]
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            relation_document["path"],
+        )
+        self.assertEqual(
+            [supporting_source_id],
+            relation_document["source_record_ids"],
+        )
+        self.assertEqual(
+            [supporting_record["identity"]["version_id"]],
+            relation_document["source_version_ids"],
+        )
         supporting_entity_handle = query.projection_handle(
             capability_entities["capability:adapter.audit"]["id"]
         )
@@ -1580,6 +1592,11 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             graph_payload["search_payload"] = {
                 "marker": "unvalidated-top-level-metadata-must-not-be-retrieved"
             }
+            graph_payload["$defs"] = {
+                "Injected": {
+                    "marker": "unvalidated-schema-definition-must-not-be-retrieved"
+                }
+            }
             graph_payload["nodes"][1]["kind"] = "skill"
             graph_path.write_text(
                 json.dumps(graph_payload, sort_keys=True),
@@ -1614,13 +1631,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertFalse(
             any(
                 entry["source_record_id"] == graph_source_id
-                and entry["locator"]["pointer"] in {"/nodes", "/search_payload"}
+                and entry["locator"]["pointer"]
+                in {"/nodes", "/search_payload", "/$defs/Injected"}
                 for entry in family["anchor"]["entries"]
             )
         )
         self.assertFalse(
             any(
                 "unvalidated-top-level-metadata-must-not-be-retrieved" in document["text"]
+                or "unvalidated-schema-definition-must-not-be-retrieved" in document["text"]
                 for document in documents
             )
         )

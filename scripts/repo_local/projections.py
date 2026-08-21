@@ -340,6 +340,7 @@ def _retrieval_document(
     )
     if authored_record is None:
         authored_record = record
+    selected_identity = authored_record["identity"]
     provenance = copy.deepcopy(authored_record["provenance"])
     if authored_record is not record and authored_source_path:
         provenance["source_path"] = authored_source_path
@@ -352,21 +353,21 @@ def _retrieval_document(
         "node_class": node_class,
         "kind": kind,
         "label": label,
-        "path": str(identity["path"]),
+        "path": str(selected_identity["path"]),
         "locator": copy.deepcopy(locator),
         "chunk_index": chunk_index,
         "text": text,
         "text_digest": text_digest,
-        "source_record_ids": [source_id],
-        "source_version_ids": [str(identity["version_id"])],
+        "source_record_ids": [str(selected_identity["id"])],
+        "source_version_ids": [str(selected_identity["version_id"])],
         "anchor_ids": sorted(set(str(item) for item in anchor_ids)),
-        "document_role": retrieval_document_role(record),
-        "surface_state": str(record["surface_state"]),
-        "abi": copy.deepcopy(record["abi"]),
-        "signs": copy.deepcopy(record["signs"]),
+        "document_role": retrieval_document_role(authored_record),
+        "surface_state": str(authored_record["surface_state"]),
+        "abi": copy.deepcopy(authored_record["abi"]),
+        "signs": copy.deepcopy(authored_record["signs"]),
         "provenance": provenance,
-        "freshness": copy.deepcopy(record["freshness"]),
-        "access": copy.deepcopy(record["access"]),
+        "freshness": copy.deepcopy(authored_record["freshness"]),
+        "access": copy.deepcopy(authored_record["access"]),
         "owner_return_route": copy.deepcopy(authored_record["owner_return_route"]),
         "provenance_ref": provenance_ref,
         "temporal_ref": temporal_ref,

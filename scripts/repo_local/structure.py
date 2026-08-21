@@ -738,26 +738,27 @@ def _json_structure(
                 parser="python-json",
             )
         )
-    for container_name in ("$defs", "definitions"):
-        definitions = payload.get(container_name)
-        if not isinstance(definitions, dict):
-            continue
-        for key in definitions:
-            pointer = f"/{_json_pointer_token(container_name)}/{_json_pointer_token(str(key))}"
-            anchors.append(
-                _anchor(
-                    repo=repo,
-                    source_id=source_id,
-                    kind="json_pointer",
-                    semantic_key=f"json:{pointer}",
-                    label=str(key),
-                    line=1,
-                    pointer=pointer,
-                    symbol_kind="schema_definition",
-                    qualified_name=str(key),
-                    parser="python-json",
+    if not enable_capability_graph:
+        for container_name in ("$defs", "definitions"):
+            definitions = payload.get(container_name)
+            if not isinstance(definitions, dict):
+                continue
+            for key in definitions:
+                pointer = f"/{_json_pointer_token(container_name)}/{_json_pointer_token(str(key))}"
+                anchors.append(
+                    _anchor(
+                        repo=repo,
+                        source_id=source_id,
+                        kind="json_pointer",
+                        semantic_key=f"json:{pointer}",
+                        label=str(key),
+                        line=1,
+                        pointer=pointer,
+                        symbol_kind="schema_definition",
+                        qualified_name=str(key),
+                        parser="python-json",
+                    )
                 )
-            )
     if enable_capability_graph:
         capability_anchors, capability_outbound = _capability_graph_structure(
             repo,
