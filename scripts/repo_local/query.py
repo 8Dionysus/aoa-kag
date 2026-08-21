@@ -53,8 +53,7 @@ def _validated_capability_source_record(
     if not candidate_id:
         return None
 
-    graph_anchor_paths: dict[str, str] = {}
-    graph_source_ids: set[str] = set()
+    graph_anchor_bindings: dict[str, tuple[str, str]] = {}
     anchors = family.get("anchor", {}).get("entries", [])
     if not isinstance(anchors, list):
         return None
@@ -67,21 +66,21 @@ def _validated_capability_source_record(
         anchor_id = str(anchor.get("id") or "")
         source_id = str(anchor.get("source_record_id") or "")
         if isinstance(anchor_path, str) and anchor_path and anchor_id and source_id:
-            graph_anchor_paths[anchor_id] = anchor_path
-            graph_source_ids.add(source_id)
+            graph_anchor_bindings[anchor_id] = (source_id, anchor_path)
 
     fallback_ids = {str(item) for item in fallback_source_ids}
-    if not graph_source_ids.intersection(fallback_ids):
-        return None
-    bound_paths = {
-        graph_anchor_paths[anchor_id]
-        for anchor_id in (str(item) for item in evidence_anchor_ids)
-        if anchor_id in graph_anchor_paths
-    }
-    if source_path not in bound_paths:
+    bound_graph_source_ids: set[str] = set()
+    for anchor_id in (str(item) for item in evidence_anchor_ids):
+        binding = graph_anchor_bindings.get(anchor_id)
+        if binding is None:
+            continue
+        source_id, anchor_path = binding
+        if source_id in fallback_ids and anchor_path == source_path:
+            bound_graph_source_ids.add(source_id)
+    if not bound_graph_source_ids:
         return None
 
-    for graph_source_id in sorted(graph_source_ids.intersection(fallback_ids)):
+    for graph_source_id in sorted(bound_graph_source_ids):
         graph_record = source_records_by_id.get(graph_source_id)
         provenance = graph_record.get("provenance") if graph_record else None
         source_refs = provenance.get("source_refs") if isinstance(provenance, Mapping) else None

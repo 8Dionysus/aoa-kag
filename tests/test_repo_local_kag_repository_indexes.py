@@ -1577,6 +1577,9 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     "package": "forged-package-metadata",
                 }
             )
+            graph_payload["search_payload"] = {
+                "marker": "unvalidated-top-level-metadata-must-not-be-retrieved"
+            }
             graph_payload["nodes"][1]["kind"] = "skill"
             graph_path.write_text(
                 json.dumps(graph_payload, sort_keys=True),
@@ -1595,6 +1598,11 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         graph_document = next(
             document for document in documents if document["node_id"] == graph_anchor["id"]
         )
+        graph_source_id = next(
+            record["identity"]["id"]
+            for record in source["records"]
+            if record["identity"]["path"] == "generated/capability_graph.json"
+        )
         self.assertTrue(
             any(
                 entry["semantic_key"] == "capability:skill.query"
@@ -1603,6 +1611,19 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         )
         self.assertNotIn("owner-metadata-must-not-be-retrieved", graph_document["text"])
         self.assertNotIn("nonexistent.yaml", graph_document["text"])
+        self.assertFalse(
+            any(
+                entry["source_record_id"] == graph_source_id
+                and entry["locator"]["pointer"] in {"/nodes", "/search_payload"}
+                for entry in family["anchor"]["entries"]
+            )
+        )
+        self.assertFalse(
+            any(
+                "unvalidated-top-level-metadata-must-not-be-retrieved" in document["text"]
+                for document in documents
+            )
+        )
 
     def test_capability_source_path_override_requires_graph_anchor_binding(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1624,6 +1645,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 if entry["parser_ref"] == "aoa-capability-graph@1"
                 and entry["locator"]["pointer"] == "/nodes/1"
             )
+            authored_path = graph_anchor["source_path"]
             capability_entity = next(
                 entry
                 for entry in family["entity"]["entries"]
@@ -1634,8 +1656,19 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 for entry in family["relation"]["entries"]
                 if entry["relation_kind"] == "hands-off-to"
             )
+            readme_source_id = next(
+                record["identity"]["id"]
+                for record in source["records"]
+                if record["identity"]["path"] == "README.md"
+            )
+            forged_anchor = copy.deepcopy(graph_anchor)
+            forged_anchor["id"] = f"{graph_anchor['id']}:forged-owner"
+            forged_anchor["source_record_id"] = readme_source_id
+            forged_anchor["source_path"] = authored_path
+            family["anchor"]["entries"].append(forged_anchor)
             graph_anchor["source_path"] = "README.md"
             capability_entity["source_path"] = "README.md"
+            capability_entity["anchor_ids"] = [forged_anchor["id"]]
             handoff["source_path"] = "README.md"
 
             query = RepoKagQuery(source, family)
