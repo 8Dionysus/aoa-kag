@@ -36,10 +36,11 @@ def _anchor(
     pointer: str = "",
     symbol_kind: str = "",
     qualified_name: str = "",
+    source_path: str = "",
     parser: str,
 ) -> dict[str, Any]:
     key = f"{source_id}:{kind}:{semantic_key}"
-    return {
+    anchor = {
         "id": qualified_id(repo, "anchor", key),
         "anchor_kind": kind,
         "semantic_key": semantic_key,
@@ -56,6 +57,9 @@ def _anchor(
         "qualified_name": qualified_name,
         "parser": {"name": parser, "version": "1"},
     }
+    if source_path:
+        anchor["source_path"] = source_path
+    return anchor
 
 
 def _artifact_anchor(repo: str, source_id: str) -> dict[str, Any]:
@@ -298,6 +302,7 @@ def _capability_graph_structure(
         if not isinstance(node_kind, str) or not node_kind:
             continue
         pointer = f"/nodes/{index}"
+        source_path = node.get("source_path")
         anchors.append(
             _anchor(
                 repo=repo,
@@ -309,6 +314,7 @@ def _capability_graph_structure(
                 pointer=pointer,
                 symbol_kind=f"capability_graph_node:{node_kind}",
                 qualified_name=node_id,
+                source_path=(source_path if isinstance(source_path, str) else ""),
                 parser="aoa-capability-graph",
             )
         )

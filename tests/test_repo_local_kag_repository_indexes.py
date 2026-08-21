@@ -1141,6 +1141,9 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     "sha256": "c" * 64,
                 }
             )
+            graph_payload["nodes"][2]["source_path"] = (
+                "capabilities/families/supporting.yaml"
+            )
             graph_payload["relations"][1]["source_path"] = (
                 "capabilities/families/supporting.yaml"
             )
@@ -1166,6 +1169,25 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 source_ref["path"]
                 for source_ref in graph_record["provenance"]["source_refs"]
             ],
+        )
+        capability_entities = {
+            entry["semantic_key"]: entry
+            for entry in family["entity"]["entries"]
+            if entry["semantic_key"].startswith("capability:")
+        }
+        graph_node = next(
+            anchor
+            for anchor in family["anchor"]["entries"]
+            if anchor["source_record_id"] == graph_record["identity"]["id"]
+            and anchor["locator"]["pointer"] == "/nodes/2"
+        )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            graph_node["source_path"],
+        )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            capability_entities["capability:adapter.audit"]["source_path"],
         )
         graph_anchor = next(
             anchor
@@ -1198,6 +1220,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(
             "capabilities/families/supporting.yaml",
             relation_document["provenance"]["source_path"],
+        )
+        node_document = next(
+            document
+            for document in documents
+            if document["node_id"] == graph_node["id"]
+        )
+        self.assertEqual(
+            "capabilities/families/supporting.yaml",
+            node_document["provenance"]["source_path"],
         )
 
     def test_capability_projection_upgrade_invalidates_legacy_incremental_records(self) -> None:

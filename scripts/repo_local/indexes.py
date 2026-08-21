@@ -127,10 +127,11 @@ def _entity(
     anchor_ids: Iterable[str],
     semantic_key: str,
     source_digest: str,
+    source_path: str | None = None,
 ) -> dict[str, Any]:
     sources = sorted(set(source_record_ids))
     anchors = sorted(set(anchor_ids))
-    return {
+    entity = {
         "id": entity_id,
         "entity_kind": entity_kind,
         "label": label,
@@ -142,6 +143,9 @@ def _entity(
         "temporal_ref": "current",
         "trust_ref": "deterministic",
     }
+    if source_path:
+        entity["source_path"] = source_path
+    return entity
 
 
 def _aggregate_source_digest(
@@ -251,6 +255,12 @@ def entity_entries(
                 anchor_ids=[str(anchor["id"])],
                 semantic_key=semantic_key,
                 source_digest=str(identity["content_hash"]),
+                source_path=(
+                    str(anchor["source_path"])
+                    if isinstance(anchor.get("source_path"), str)
+                    and anchor["source_path"]
+                    else None
+                ),
             )
 
         parts = path.parts
