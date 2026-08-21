@@ -5,6 +5,7 @@ import math
 import re
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
@@ -113,9 +114,16 @@ class _Node:
 
 
 class RepoKagQuery:
-    def __init__(self, source_index: dict[str, Any], family: dict[str, dict[str, Any]]) -> None:
+    def __init__(
+        self,
+        source_index: dict[str, Any],
+        family: dict[str, dict[str, Any]],
+        *,
+        repo_root: Path | None = None,
+    ) -> None:
         self.source_index = source_index
         self.family = family
+        self.repo_root = repo_root.resolve() if repo_root is not None else None
         self.repo = copy.deepcopy(source_index["repo"])
         self.freshness_digest = str(source_index["index_identity"]["content_digest"])
         self._source_records = {
@@ -126,6 +134,11 @@ class RepoKagQuery:
             str(record["identity"]["path"]): record
             for record in source_index["records"]
         }
+        self._anchors_by_id = {
+            str(anchor["id"]): anchor
+            for anchor in family["anchor"]["entries"]
+        }
+        self._anchor_id_rebindings: dict[str, str] = {}
         self._nodes = self._build_nodes()
         self._tokens = {node_id: tokenize(node.text) for node_id, node in self._nodes.items()}
         self._relations = {
@@ -151,14 +164,14 @@ class RepoKagQuery:
     def source_access(self, source_ids: Sequence[str]) -> str:
         return self._source_access(source_ids)
 
-    def _authored_source_ids(
+    def _authored_source_record(
         self,
         source_path: Any,
         fallback: Sequence[str],
         *,
         evidence_anchor_ids: Sequence[str] = (),
-    ) -> tuple[str, ...]:
-        record = _validated_capability_source_record(
+    ) -> dict[str, Any] | None:
+        return _validated_capability_source_record(
             family=self.family,
             source_records_by_path=self._source_records_by_path,
             source_records_by_id=self._source_records,
@@ -166,9 +179,68 @@ class RepoKagQuery:
             fallback_source_ids=fallback,
             evidence_anchor_ids=evidence_anchor_ids,
         )
-        if record is not None:
-            return (str(record["identity"]["id"]),)
-        return tuple(str(item) for item in fallback)
+
+    def _rebound_anchor_ids(
+        self,
+        anchor_ids: Sequence[str],
+        *,
+        authored_record: Mapping[str, Any] | None,
+    ) -> tuple[str, ...]:
+        if authored_record is None:
+            return tuple(str(item) for item in anchor_ids)
+        authored_source_id = str(authored_record["identity"]["id"])
+        rebound: list[str] = []
+        for raw_anchor_id in anchor_ids:
+            anchor_id = str(raw_anchor_id)
+            previous = self._anchor_id_rebindings.get(anchor_id)
+            if previous is not None:
+                rebound.append(previous)
+                continue
+            graph_anchor = self._anchors_by_id.get(anchor_id)
+            if (
+                graph_anchor is None
+                or str(graph_anchor.get("parser_ref") or "")
+                != "aoa-capability-graph@1"
+                or str(graph_anchor.get("source_record_id") or "")
+                == authored_source_id
+            ):
+                rebound.append(anchor_id)
+                continue
+            if self.repo_root is None:
+                raise ValueError(
+                    "repo_root is required to rebind capability query evidence "
+                    "to authored anchors"
+                )
+            graph_record = self._source_records.get(
+                str(graph_anchor.get("source_record_id") or "")
+            )
+            if graph_record is None:
+                raise ValueError(
+                    f"capability graph anchor source record is missing: {anchor_id}"
+                )
+            from .projections import _authored_capability_anchor
+
+            authored_anchor = _authored_capability_anchor(
+                repo_root=self.repo_root,
+                family=self.family,
+                graph_anchor=graph_anchor,
+                graph_record=graph_record,
+                authored_record=authored_record,
+            )
+            rebound_anchor_id = str(authored_anchor["id"])
+            self._anchor_id_rebindings[anchor_id] = rebound_anchor_id
+            rebound.append(rebound_anchor_id)
+        return tuple(sorted(set(rebound)))
+
+    def _rebound_evidence_anchor_ids(self, anchor_ids: Iterable[str]) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                {
+                    self._anchor_id_rebindings.get(str(item), str(item))
+                    for item in anchor_ids
+                }
+            )
+        )
 
     def _source_dimension(
         self,
@@ -260,10 +332,18 @@ class RepoKagQuery:
         for anchor in self.family["anchor"]["entries"]:
             source_id = str(anchor["source_record_id"])
             anchor_id = str(anchor["id"])
-            source_ids = self._authored_source_ids(
+            authored_record = self._authored_source_record(
                 anchor.get("source_path"),
                 (source_id,),
                 evidence_anchor_ids=(anchor_id,),
+            )
+            source_ids = (
+                (str(authored_record["identity"]["id"]),)
+                if authored_record is not None
+                else (source_id,)
+            )
+            anchor_ids = self._rebound_anchor_ids(
+                (anchor_id,), authored_record=authored_record
             )
             path = str(self._source_records[source_ids[0]]["identity"]["path"])
             nodes[anchor_id] = _Node(
@@ -277,7 +357,7 @@ class RepoKagQuery:
                 ),
                 path=path,
                 source_record_ids=source_ids,
-                anchor_ids=(anchor_id,),
+                anchor_ids=anchor_ids,
                 access_scope=self._source_access(source_ids),
                 provenance_ref=str(anchor["provenance_ref"]),
                 temporal_ref=str(anchor["temporal_ref"]),
@@ -285,12 +365,20 @@ class RepoKagQuery:
                 record=copy.deepcopy(anchor),
             )
         for entity in self.family["entity"]["entries"]:
-            source_ids = self._authored_source_ids(
+            authored_record = self._authored_source_record(
                 entity.get("source_path"),
                 entity["source_record_ids"],
                 evidence_anchor_ids=entity["anchor_ids"],
             )
+            source_ids = (
+                (str(authored_record["identity"]["id"]),)
+                if authored_record is not None
+                else tuple(str(item) for item in entity["source_record_ids"])
+            )
             entity_id = str(entity["id"])
+            anchor_ids = self._rebound_anchor_ids(
+                entity["anchor_ids"], authored_record=authored_record
+            )
             path = ""
             if source_ids and source_ids[0] in self._source_records:
                 path = str(self._source_records[source_ids[0]]["identity"]["path"])
@@ -302,7 +390,7 @@ class RepoKagQuery:
                 text=f"{entity['label']} {entity['semantic_key']} {entity['entity_kind']} {path}",
                 path=path,
                 source_record_ids=source_ids,
-                anchor_ids=tuple(str(item) for item in entity["anchor_ids"]),
+                anchor_ids=anchor_ids,
                 access_scope=self._source_access(source_ids),
                 provenance_ref=str(entity["provenance_ref"]),
                 temporal_ref=str(entity["temporal_ref"]),
@@ -373,10 +461,18 @@ class RepoKagQuery:
                     }
                 )
             )
-            source_ids = self._authored_source_ids(
+            authored_record = self._authored_source_record(
                 relation.get("source_path"),
                 evidence_source_ids,
                 evidence_anchor_ids=anchor_ids,
+            )
+            source_ids = (
+                (str(authored_record["identity"]["id"]),)
+                if authored_record is not None
+                else evidence_source_ids
+            )
+            anchor_ids = self._rebound_anchor_ids(
+                anchor_ids, authored_record=authored_record
             )
             path = ""
             if source_ids:
@@ -507,7 +603,10 @@ class RepoKagQuery:
             "record": copy.deepcopy(node.record),
             "evidence": {
                 "relation_ids": sorted(relation_evidence),
-                "anchor_ids": sorted(set(evidence_anchor_ids) | set(node.anchor_ids)),
+                "anchor_ids": sorted(
+                    set(self._rebound_evidence_anchor_ids(evidence_anchor_ids))
+                    | set(node.anchor_ids)
+                ),
             },
         }
 

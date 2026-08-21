@@ -219,6 +219,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     projection = RepoKagFederation(
         bundles,
         github_refs_by_repo=github_ref_names_by_repo(selected_roots),
+        repo_roots=selected_roots,
     ).projection()
     rendered = json.dumps(
         projection,

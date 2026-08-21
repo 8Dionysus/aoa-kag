@@ -1019,7 +1019,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             source = build_index(root)
             family = build_repository_indexes(source, repo_root=root)
             documents = build_repo_retrieval_documents(root, source, family)
-            query = RepoKagQuery(source, family)
+            query = RepoKagQuery(source, family, repo_root=root)
 
         records_by_path = {
             record["identity"]["path"]: record for record in source["records"]
@@ -1300,7 +1300,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             source = build_index(root)
             family = build_repository_indexes(source, repo_root=root)
             documents = build_repo_retrieval_documents(root, source, family)
-            query = RepoKagQuery(source, family)
+            query = RepoKagQuery(source, family, repo_root=root)
 
         graph_record = next(
             record
@@ -1445,6 +1445,20 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             relation_handle["source_record_ids"],
         )
         self.assertEqual(
+            [supporting_handoff_anchor["id"]],
+            relation_handle["anchor_ids"],
+        )
+        relation_hit = query.read(handoff["id"], access_scopes={"public"})
+        self.assertIsNotNone(relation_hit)
+        self.assertEqual(
+            [supporting_handoff_anchor["id"]],
+            relation_hit["anchor_ids"],
+        )
+        self.assertEqual(
+            [supporting_handoff_anchor["id"]],
+            relation_hit["evidence"]["anchor_ids"],
+        )
+        self.assertEqual(
             supporting_record["owner_return_route"],
             relation_handle["owner_return_route"],
         )
@@ -1458,6 +1472,23 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             node_document["provenance"]["source_path"],
         )
         supporting_node_anchor = supporting_authored_anchors["/nodes/0/id"]
+        self.assertEqual(
+            [supporting_node_anchor["id"]],
+            supporting_entity_handle["anchor_ids"],
+        )
+        entity_hit = query.read(
+            capability_entities["capability:adapter.audit"]["id"],
+            access_scopes={"public"},
+        )
+        self.assertIsNotNone(entity_hit)
+        self.assertEqual(
+            [supporting_node_anchor["id"]],
+            entity_hit["anchor_ids"],
+        )
+        self.assertEqual(
+            [supporting_node_anchor["id"]],
+            entity_hit["evidence"]["anchor_ids"],
+        )
         self.assertEqual(
             supporting_node_anchor["locator"],
             node_document["locator"],
@@ -1822,7 +1853,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             capability_entity["anchor_ids"] = [forged_anchor["id"]]
             handoff["source_path"] = "README.md"
 
-            query = RepoKagQuery(source, family)
+            query = RepoKagQuery(source, family, repo_root=root)
             entity_handle = query.projection_handle(capability_entity["id"])
             relation_handle = query.projection_handle(handoff["id"])
             documents = build_repo_retrieval_documents(root, source, family)

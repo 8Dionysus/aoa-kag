@@ -799,6 +799,7 @@ def build_federated_retrieval_plan(
     federation = RepoKagFederation(
         bundles,
         github_refs_by_repo=github_ref_names_by_repo(owner_roots),
+        repo_roots=owner_roots,
     ).projection()
     documents: list[dict[str, Any]] = []
     canonical_inputs: list[dict[str, Any]] = []
