@@ -1503,6 +1503,42 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unauthored fields"):
                     build_repository_indexes(source, repo_root=root)
 
+    def test_capability_graph_matches_exact_authored_relation_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            write_capability_graph_fixture(root)
+            family_path = root / "capabilities" / "families" / "session-memory.yaml"
+            family_path.write_text(
+                family_path.read_text(encoding="utf-8")
+                + "\n"
+                + "  - kind: references\n"
+                + "    source: memory\n"
+                + "    target: skill.query\n",
+                encoding="utf-8",
+            )
+            graph_path = root / "generated" / "capability_graph.json"
+            graph_payload = json.loads(graph_path.read_text(encoding="utf-8"))
+            graph_payload["source"]["family_files"][0]["sha256"] = hashlib.sha256(
+                family_path.read_bytes()
+            ).hexdigest()
+            graph_payload["relations"].append(
+                {
+                    "kind": "references",
+                    "source": "memory",
+                    "target": "skill.query",
+                    "condition": "forged",
+                    "source_path": "capabilities/families/session-memory.yaml",
+                }
+            )
+            graph_path.write_text(
+                json.dumps(graph_payload, sort_keys=True),
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            with self.assertRaisesRegex(ValueError, "does not match an authored relation"):
+                build_repository_indexes(source, repo_root=root)
+
     def test_capability_graph_rejects_phantom_nodes_and_relations(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

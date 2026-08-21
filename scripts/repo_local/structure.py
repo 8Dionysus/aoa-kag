@@ -493,8 +493,10 @@ def validate_capability_graph_against_sources(
                 f"graph relation {kind!r} {source_id!r}->{target_id!r} "
                 f"has an unauthored source_path {source_path!r}"
             )
+        duplicate_primary_parent = False
         if kind == "primary-parent":
             relation_key = (source_id, target_id, source_path)
+            duplicate_primary_parent = relation_key in graph_primary_parent
             if relation_key in graph_primary_parent:
                 issues.append(
                     "graph contains duplicate primary-parent relation "
@@ -504,20 +506,38 @@ def validate_capability_graph_against_sources(
 
         graph_keys = set(raw_relation)
         authored_candidates = [
-            authored_relation
-            for authored_path, authored_relation in authored_relations
+            (relation_index, authored_relation)
+            for relation_index, (authored_path, authored_relation) in enumerate(
+                authored_relations
+            )
             if authored_path == source_path
+            and all(
+                raw_relation.get(key) == authored_relation.get(key)
+                for key in ("kind", "source", "target")
+            )
         ]
-        authored_keys_for_path: set[str] = set()
-        for authored_relation in authored_candidates:
-            authored_keys_for_path.update(authored_relation)
-        allowed_keys = authored_keys_for_path or {
-            "kind",
-            "source",
-            "target",
-            "source_path",
-        }
-        extra_keys = sorted(graph_keys - allowed_keys - {"source_path"})
+        matched = False
+        for relation_index, authored_relation in authored_candidates:
+            if relation_index in matched_relations:
+                continue
+            expected_relation = dict(authored_relation)
+            expected_relation["source_path"] = source_path
+            if all(
+                raw_relation.get(key) == value
+                for key, value in expected_relation.items()
+            ) and set(raw_relation) == set(expected_relation):
+                matched_relations.add(relation_index)
+                matched = True
+                break
+        if matched:
+            continue
+
+        allowed_keys = (
+            set(authored_candidates[0][1]) | {"source_path"}
+            if authored_candidates
+            else {"kind", "source", "target", "source_path"}
+        )
+        extra_keys = sorted(graph_keys - allowed_keys)
         if extra_keys:
             issues.append(
                 "graph relation "
@@ -525,23 +545,11 @@ def validate_capability_graph_against_sources(
                 f"unauthored fields: {extra_keys}"
             )
 
-        matched = False
-        for relation_index, (authored_path, authored_relation) in enumerate(
-            authored_relations
+        if (
+            kind == "primary-parent"
+            and source_id in graph_nodes
+            and not duplicate_primary_parent
         ):
-            if relation_index in matched_relations or authored_path != source_path:
-                continue
-            if all(
-                key in raw_relation and raw_relation[key] == value
-                for key, value in authored_relation.items()
-            ):
-                matched_relations.add(relation_index)
-                matched = True
-                break
-        if matched:
-            continue
-
-        if kind == "primary-parent" and source_id in graph_nodes:
             if (
                 graph_nodes[source_id].get("primary_parent") == target_id
                 and graph_nodes[source_id].get("source_path") == source_path
@@ -605,15 +613,17 @@ def _capability_graph_structure(
     anchors: list[dict[str, Any]] = []
     outbound: list[dict[str, Any]] = []
     nodes = payload.get("nodes")
-    for index, node in enumerate(nodes if isinstance(nodes, list) else []):
+    if not isinstance(nodes, list):
+        raise ValueError("capability graph nodes must be an array")
+    for index, node in enumerate(nodes):
         if not isinstance(node, dict):
-            continue
+            raise ValueError(f"capability graph nodes[{index}] must be an object")
         node_id = node.get("id")
         node_kind = node.get("kind")
-        if not isinstance(node_id, str) or not node_id:
-            continue
+        if not isinstance(node_id, str) or not CAPABILITY_ID_RE.fullmatch(node_id):
+            raise ValueError(f"capability graph nodes[{index}].id is invalid")
         if not isinstance(node_kind, str) or not node_kind:
-            continue
+            raise ValueError(f"capability graph nodes[{index}].kind is required")
         pointer = f"/nodes/{index}"
         source_path = node.get("source_path")
         anchors.append(
@@ -633,11 +643,11 @@ def _capability_graph_structure(
         )
 
     relations = payload.get("relations")
-    for index, relation in enumerate(
-        relations if isinstance(relations, list) else []
-    ):
+    if not isinstance(relations, list):
+        raise ValueError("capability graph relations must be an array")
+    for index, relation in enumerate(relations):
         if not isinstance(relation, dict):
-            continue
+            raise ValueError(f"capability graph relations[{index}] must be an object")
         relation_kind = relation.get("kind")
         source = relation.get("source")
         target = relation.get("target")
@@ -645,7 +655,9 @@ def _capability_graph_structure(
             isinstance(value, str) and value
             for value in (relation_kind, source, target)
         ):
-            continue
+            raise ValueError(
+                f"capability graph relations[{index}] lacks kind/source/target"
+            )
         pointer = f"/relations/{index}"
         relation_anchor = _anchor(
             repo=repo,
