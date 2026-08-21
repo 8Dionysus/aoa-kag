@@ -39,6 +39,7 @@ try:
         CAPABILITY_GRAPH_SCHEMA_VERSION,
         extract_structure,
         markdown_headings,
+        validate_capability_graph_against_sources,
     )
 except ImportError:  # pragma: no cover - direct script execution
     from repo_local.identity import (  # type: ignore
@@ -59,6 +60,7 @@ except ImportError:  # pragma: no cover - direct script execution
         CAPABILITY_GRAPH_SCHEMA_VERSION,
         extract_structure,
         markdown_headings,
+        validate_capability_graph_against_sources,
     )
 
 
@@ -3068,6 +3070,47 @@ def build_repository_indexes(
         if resolved_root is not None
         else None
     )
+    capability_graph_sources: dict[str, bytes] = {}
+    if (
+        resolved_root is not None
+        and capability_graph_path is not None
+        and CAPABILITY_HOME_PORT_MANIFEST in tracked_paths
+    ):
+        tracked_entries_for_projection = {path: {} for path in tracked_paths}
+        capability_projection_map = capability_projection_sources(
+            resolved_root,
+            repo,
+            tracked_entries_for_projection,
+            source_snapshot=source_snapshot,
+        )
+        graph_projection = capability_projection_map.get(capability_graph_path)
+        if graph_projection is not None:
+            capability_graph_sources = {
+                family_path.as_posix(): source_bytes(
+                    resolved_root,
+                    family_path,
+                    resolved_root / family_path,
+                    source_snapshot=source_snapshot,
+                )
+                for family_path in graph_projection["sources"]
+            }
+            graph_content = source_bytes(
+                resolved_root,
+                capability_graph_path,
+                resolved_root / capability_graph_path,
+                source_snapshot=source_snapshot,
+            )
+            graph_payload = capability_graph_payload(graph_content)
+            if (
+                graph_payload is not None
+                and isinstance(graph_payload.get("source"), Mapping)
+                and isinstance(graph_payload.get("nodes"), list)
+                and isinstance(graph_payload.get("relations"), list)
+            ):
+                validate_capability_graph_against_sources(
+                    graph_payload,
+                    capability_graph_sources,
+                )
     reusable_structure = previous_structure_refs(
         source_index,
         previous_family,
@@ -3096,6 +3139,9 @@ def build_repository_indexes(
             mime=str(identity["mime"]),
             content=content,
             enable_capability_graph=rel == capability_graph_path,
+            capability_graph_sources=(
+                capability_graph_sources if rel == capability_graph_path else None
+            ),
         )
         refs = record["refs"]
         refs["anchor_refs"] = structure["anchor_refs"]

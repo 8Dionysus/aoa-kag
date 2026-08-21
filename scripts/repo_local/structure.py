@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import posixpath
 import re
 from pathlib import PurePosixPath
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import unquote, urlsplit
 
 from .identity import qualified_id
@@ -19,6 +20,7 @@ YAML_KEY = re.compile(
 TOML_TABLE = re.compile(r"^[ \t]*\[\[?(?P<name>[^\]]+)\]\]?[ \t]*(?:#.*)?$")
 TOML_KEY = re.compile(r"^[ \t]*(?P<key>[A-Za-z0-9_.-]+)[ \t]*=")
 CAPABILITY_GRAPH_SCHEMA_VERSION = "aoa-capability-graph-v1"
+CAPABILITY_ID_RE = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
 
 def _anchor(
@@ -278,16 +280,287 @@ def _json_pointer_token(value: str) -> str:
     return value.replace("~", "~0").replace("/", "~1")
 
 
+def validate_capability_graph_against_sources(
+    payload: Mapping[str, Any],
+    authored_sources: Mapping[str, bytes],
+) -> None:
+    """Fail closed unless a derived graph agrees with authored family files."""
+
+    if (
+        payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
+        or payload.get("authority") is not False
+    ):
+        return
+
+    issues: list[str] = []
+    source = payload.get("source")
+    nodes = payload.get("nodes")
+    relations = payload.get("relations")
+    if not authored_sources:
+        issues.append("authored family source snapshot is missing")
+    if not isinstance(source, Mapping):
+        issues.append("source must be an object")
+    if not isinstance(nodes, list):
+        issues.append("nodes must be an array")
+    if not isinstance(relations, list):
+        issues.append("relations must be an array")
+    if issues:
+        raise ValueError("capability graph validation failed: " + "; ".join(issues))
+
+    declared_family_files = source.get("family_files")
+    declared_by_path: dict[str, str] = {}
+    if not isinstance(declared_family_files, list) or not declared_family_files:
+        issues.append("source.family_files must be a non-empty array")
+    else:
+        for index, raw_file in enumerate(declared_family_files):
+            if not isinstance(raw_file, Mapping):
+                issues.append(f"source.family_files[{index}] must be an object")
+                continue
+            path = raw_file.get("path")
+            digest = raw_file.get("sha256")
+            if not isinstance(path, str) or not path:
+                issues.append(f"source.family_files[{index}].path is invalid")
+                continue
+            if path in declared_by_path:
+                issues.append(f"source.family_files contains duplicate path {path!r}")
+                continue
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                issues.append(f"source.family_files[{index}].sha256 is invalid")
+                continue
+            declared_by_path[path] = digest
+
+    expected_paths = set(authored_sources)
+    if set(declared_by_path) != expected_paths:
+        issues.append(
+            "source.family_files paths do not match the resolved authored sources: "
+            f"declared={sorted(declared_by_path)}, expected={sorted(expected_paths)}"
+        )
+    for path, content in authored_sources.items():
+        actual_digest = hashlib.sha256(content).hexdigest()
+        if declared_by_path.get(path) != actual_digest:
+            issues.append(
+                f"source.family_files digest mismatch for {path}: "
+                f"declared={declared_by_path.get(path)!r}, actual={actual_digest!r}"
+            )
+
+    try:
+        import yaml
+    except ModuleNotFoundError as exc:  # pragma: no cover - repository dependency
+        raise RuntimeError(
+            "PyYAML is required to validate capability graph sources"
+        ) from exc
+
+    authored_nodes: dict[str, tuple[str, Mapping[str, Any], str | None]] = {}
+    authored_relations: list[tuple[str, Mapping[str, Any]]] = []
+    for path, content in authored_sources.items():
+        try:
+            family = yaml.safe_load(content.decode("utf-8"))
+        except (UnicodeDecodeError, yaml.YAMLError) as exc:
+            issues.append(f"authored family {path} is not valid UTF-8 YAML: {exc}")
+            continue
+        if not isinstance(family, Mapping):
+            issues.append(f"authored family {path} must be an object")
+            continue
+        family_id = family.get("family_id", family.get("family"))
+        family_id_value = family_id if isinstance(family_id, str) else None
+        family_nodes = family.get("nodes")
+        if not isinstance(family_nodes, list):
+            issues.append(f"authored family {path}.nodes must be an array")
+        else:
+            for index, raw_node in enumerate(family_nodes):
+                if not isinstance(raw_node, Mapping):
+                    issues.append(f"authored family {path}.nodes[{index}] must be an object")
+                    continue
+                node_id = raw_node.get("id")
+                if not isinstance(node_id, str) or not CAPABILITY_ID_RE.fullmatch(node_id):
+                    issues.append(f"authored family {path}.nodes[{index}].id is invalid")
+                    continue
+                if node_id in authored_nodes:
+                    issues.append(
+                        f"authored capability node {node_id!r} appears in both "
+                        f"{authored_nodes[node_id][0]} and {path}"
+                    )
+                    continue
+                authored_nodes[node_id] = (path, raw_node, family_id_value)
+        family_relations = family.get("relations", [])
+        if not isinstance(family_relations, list):
+            issues.append(f"authored family {path}.relations must be an array")
+            continue
+        for index, raw_relation in enumerate(family_relations):
+            if not isinstance(raw_relation, Mapping):
+                issues.append(
+                    f"authored family {path}.relations[{index}] must be an object"
+                )
+                continue
+            if not all(
+                isinstance(raw_relation.get(key), str) and raw_relation.get(key)
+                for key in ("kind", "source", "target")
+            ):
+                issues.append(
+                    f"authored family {path}.relations[{index}] lacks kind/source/target"
+                )
+                continue
+            authored_relations.append((path, raw_relation))
+
+    graph_nodes: dict[str, Mapping[str, Any]] = {}
+    for index, raw_node in enumerate(nodes):
+        if not isinstance(raw_node, Mapping):
+            issues.append(f"graph nodes[{index}] must be an object")
+            continue
+        node_id = raw_node.get("id")
+        if not isinstance(node_id, str) or not CAPABILITY_ID_RE.fullmatch(node_id):
+            issues.append(f"graph nodes[{index}].id is invalid")
+            continue
+        if node_id in graph_nodes:
+            issues.append(f"graph contains duplicate node {node_id!r}")
+            continue
+        graph_nodes[node_id] = raw_node
+
+    if set(graph_nodes) != set(authored_nodes):
+        issues.append(
+            "graph node IDs do not match authored family nodes: "
+            f"graph_only={sorted(set(graph_nodes) - set(authored_nodes))}, "
+            f"authored_only={sorted(set(authored_nodes) - set(graph_nodes))}"
+        )
+
+    for node_id, (authored_path, authored_node, family_id) in authored_nodes.items():
+        graph_node = graph_nodes.get(node_id)
+        if graph_node is None:
+            continue
+        graph_path = graph_node.get("source_path")
+        if graph_path != authored_path:
+            issues.append(
+                f"graph node {node_id!r} source_path {graph_path!r} does not match "
+                f"authored family {authored_path!r}"
+            )
+        if family_id is not None and graph_node.get("source_family") != family_id:
+            issues.append(
+                f"graph node {node_id!r} source_family {graph_node.get('source_family')!r} "
+                f"does not match authored family_id {family_id!r}"
+            )
+        for key, value in authored_node.items():
+            if key in {"source_family", "source_path"}:
+                continue
+            if graph_node.get(key) != value:
+                issues.append(
+                    f"graph node {node_id!r} field {key!r} does not match authored source"
+                )
+
+    matched_relations: set[int] = set()
+    graph_primary_parent: set[tuple[str, str, str]] = set()
+    for index, raw_relation in enumerate(relations):
+        if not isinstance(raw_relation, Mapping):
+            issues.append(f"graph relations[{index}] must be an object")
+            continue
+        kind = raw_relation.get("kind")
+        source_id = raw_relation.get("source")
+        target_id = raw_relation.get("target")
+        source_path = raw_relation.get("source_path")
+        if not all(
+            isinstance(value, str) and value
+            for value in (kind, source_id, target_id, source_path)
+        ):
+            issues.append(
+                f"graph relations[{index}] lacks kind/source/target/source_path"
+            )
+            continue
+        if source_id not in authored_nodes or target_id not in authored_nodes:
+            issues.append(
+                f"graph relation {kind!r} {source_id!r}->{target_id!r} "
+                "references an unauthored node"
+            )
+        if source_path not in expected_paths:
+            issues.append(
+                f"graph relation {kind!r} {source_id!r}->{target_id!r} "
+                f"has an unauthored source_path {source_path!r}"
+            )
+        if kind == "primary-parent":
+            graph_primary_parent.add((source_id, target_id, source_path))
+
+        matched = False
+        for relation_index, (authored_path, authored_relation) in enumerate(
+            authored_relations
+        ):
+            if relation_index in matched_relations or authored_path != source_path:
+                continue
+            if all(
+                raw_relation.get(key) == value
+                for key, value in authored_relation.items()
+            ):
+                matched_relations.add(relation_index)
+                matched = True
+                break
+        if matched:
+            continue
+
+        if kind == "primary-parent" and source_id in graph_nodes:
+            if (
+                graph_nodes[source_id].get("primary_parent") == target_id
+                and graph_nodes[source_id].get("source_path") == source_path
+            ):
+                continue
+        issues.append(
+            f"graph relation {kind!r} {source_id!r}->{target_id!r} "
+            "does not match an authored relation"
+        )
+
+    for relation_index, (authored_path, authored_relation) in enumerate(authored_relations):
+        if relation_index not in matched_relations:
+            issues.append(
+                "authored relation is absent from graph: "
+                f"{authored_relation.get('kind')!r} "
+                f"{authored_relation.get('source')!r}->{authored_relation.get('target')!r} "
+                f"({authored_path})"
+            )
+
+    for node_id, (authored_path, authored_node, _) in authored_nodes.items():
+        parent = authored_node.get("primary_parent")
+        if isinstance(parent, str) and (node_id, parent, authored_path) not in graph_primary_parent:
+            issues.append(
+                f"authored primary_parent for {node_id!r} is absent from graph"
+            )
+
+    if all(
+        isinstance(authored_node, Mapping) and "primary_parent" in authored_node
+        for _, authored_node, _ in authored_nodes.values()
+    ):
+        expected_roots = sorted(
+            node_id
+            for node_id, (_, authored_node, _) in authored_nodes.items()
+            if authored_node.get("primary_parent") is None
+        )
+        actual_roots = payload.get("roots")
+        actual_roots_sorted = sorted(actual_roots) if isinstance(actual_roots, list) else None
+        if actual_roots_sorted != expected_roots:
+            issues.append(
+                f"graph roots {actual_roots!r} do not match authored roots {expected_roots!r}"
+            )
+
+    if issues:
+        raise ValueError("capability graph validation failed: " + "; ".join(issues))
+
+
 def _capability_graph_structure(
     repo: str,
     source_id: str,
     payload: dict[str, Any],
+    *,
+    authored_sources: Mapping[str, bytes] | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     if (
         payload.get("schema_version") != CAPABILITY_GRAPH_SCHEMA_VERSION
         or payload.get("authority") is not False
     ):
         return [], []
+    if not authored_sources:
+        return [], []
+    if not (
+        isinstance(payload.get("source"), Mapping)
+        and isinstance(payload.get("nodes"), list)
+        and isinstance(payload.get("relations"), list)
+    ):
+        return [], []
+    validate_capability_graph_against_sources(payload, authored_sources)
 
     anchors: list[dict[str, Any]] = []
     outbound: list[dict[str, Any]] = []
@@ -367,6 +640,7 @@ def _json_structure(
     text: str,
     *,
     enable_capability_graph: bool,
+    capability_graph_sources: Mapping[str, bytes] | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     try:
         payload = json.loads(text)
@@ -415,6 +689,7 @@ def _json_structure(
             repo,
             source_id,
             payload,
+            authored_sources=capability_graph_sources,
         )
         anchors.extend(capability_anchors)
         return anchors, capability_outbound
@@ -536,6 +811,7 @@ def extract_structure(
     mime: str,
     content: bytes,
     enable_capability_graph: bool = False,
+    capability_graph_sources: Mapping[str, bytes] | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     anchors = [_artifact_anchor(repo, source_id)]
     outbound: list[dict[str, Any]] = []
@@ -558,6 +834,7 @@ def extract_structure(
             source_id,
             text,
             enable_capability_graph=enable_capability_graph,
+            capability_graph_sources=capability_graph_sources,
         )
         anchors.extend(extracted)
         outbound.extend(references)
