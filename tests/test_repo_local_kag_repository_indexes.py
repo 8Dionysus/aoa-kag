@@ -14,6 +14,7 @@ from unittest import mock
 from jsonschema import Draft202012Validator
 
 from scripts.generate_repo_local_kag_index import (
+    REPO_LOCAL_GENERATOR_HELPER_PATHS,
     REPOSITORY_INDEX_FILENAMES,
     build_index,
     build_index_incremental,
@@ -929,6 +930,11 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 base_manifest=base_manifest,
             )
         self.assertEqual(producer, recovered)
+
+    def test_budget_procedure_identity_covers_generator_helpers(self) -> None:
+        self.assertTrue(
+            REPO_LOCAL_GENERATOR_HELPER_PATHS <= set(BUDGET_PROCEDURE_PATHS)
+        )
 
     def test_partitioning_transition_precedes_hot_profile_churn(self) -> None:
         identity = {

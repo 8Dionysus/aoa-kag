@@ -76,8 +76,8 @@
         "base_ref": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
         "files": {
           "type": "array",
-          "minItems": 6,
-          "maxItems": 6,
+          "minItems": 10,
+          "maxItems": 10,
           "uniqueItems": true,
           "items": {
             "type": "object",
@@ -98,6 +98,10 @@
             {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/portable_family.py"}}}},
             {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/tiered_family.py"}}}},
             {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/generate_repo_local_kag_index.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/history.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/identity.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/indexes.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/structure.py"}}}},
             {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/prepare_landing.py"}}}},
             {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "schemas/repo-local-kag-budget-evidence.schema.json"}}}},
             {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "schemas/repo-local-kag-budget-receipt.schema.json"}}}}
