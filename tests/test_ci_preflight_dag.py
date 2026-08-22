@@ -98,6 +98,97 @@ class CiPreflightDagTests(unittest.TestCase):
         self.assertEqual(1, code)
         generated.assert_not_called()
 
+    def test_candidate_uses_separate_coverage_seed_without_changing_base(self) -> None:
+        args = argparse.Namespace(
+            base_ref="history",
+            coverage_seed_ref="candidate",
+            jobs=3,
+            mode="candidate",
+            receipt_output=None,
+        )
+        success = ci_preflight_dag.ProcessResult(("command",), 0, 1, False)
+
+        def parallel(_checkout, sentinel, *, repo_root):
+            del repo_root
+            seed_index = sentinel.index("--external-seed-ref")
+            self.assertEqual("candidate", sentinel[seed_index + 1])
+            Path(sentinel[-1]).write_text(
+                json.dumps(self.sentinel_receipt()),
+                encoding="utf-8",
+            )
+            return success, success
+
+        def generated(command, *, cwd, check):
+            del cwd, check
+            seed_index = command.index("--external-seed-ref")
+            self.assertEqual("candidate", command[seed_index + 1])
+            Path(command[-1]).write_text(
+                json.dumps(self.sentinel_receipt()),
+                encoding="utf-8",
+            )
+            return unittest.mock.Mock(returncode=0)
+
+        with tempfile.TemporaryDirectory() as tmpdir, patch.object(
+            ci_preflight_dag,
+            "run_parallel_preflight",
+            side_effect=parallel,
+        ), patch.object(
+            ci_preflight_dag.subprocess,
+            "run",
+            side_effect=generated,
+        ):
+            code = ci_preflight_dag.run_preflight(
+                args,
+                receipt_parent=Path(tmpdir),
+            )
+
+        self.assertEqual(0, code)
+
+    def test_candidate_defaults_coverage_seed_to_current_head(self) -> None:
+        args = argparse.Namespace(
+            base_ref="history",
+            jobs=3,
+            mode="candidate",
+            receipt_output=None,
+        )
+        success = ci_preflight_dag.ProcessResult(("command",), 0, 1, False)
+
+        def parallel(_checkout, sentinel, *, repo_root):
+            del repo_root
+            seed_index = sentinel.index("--external-seed-ref")
+            self.assertEqual("HEAD", sentinel[seed_index + 1])
+            Path(sentinel[-1]).write_text(
+                json.dumps(self.sentinel_receipt()),
+                encoding="utf-8",
+            )
+            return success, success
+
+        def generated(command, *, cwd, check):
+            del cwd, check
+            seed_index = command.index("--external-seed-ref")
+            self.assertEqual("HEAD", command[seed_index + 1])
+            Path(command[-1]).write_text(
+                json.dumps(self.sentinel_receipt()),
+                encoding="utf-8",
+            )
+            return unittest.mock.Mock(returncode=0)
+
+        with tempfile.TemporaryDirectory() as tmpdir, patch.object(
+            ci_preflight_dag,
+            "run_parallel_preflight",
+            side_effect=parallel,
+        ), patch.object(
+            ci_preflight_dag.subprocess,
+            "run",
+            side_effect=generated,
+        ):
+            code = ci_preflight_dag.run_preflight(
+                args,
+                receipt_parent=Path(tmpdir),
+            )
+
+        self.assertEqual(0, code)
+
     def test_direct_control_runs_only_the_same_bounded_checkout(self) -> None:
         args = argparse.Namespace(
             base_ref="base",

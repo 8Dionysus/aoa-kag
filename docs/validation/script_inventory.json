@@ -844,7 +844,7 @@
       "organ_lane": "release/ci-lane",
       "owner_surface": "docs/RELEASING.md",
       "source_truth": ["docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md", "manifests/provider_registry.json", "config/validation_lanes.json"],
-      "reads": ["caller HEAD, Git index and worktree candidate, exact provider pins, KAG generated and portable-family inputs"],
+      "reads": ["caller HEAD, Git index and worktree candidate, exact provider pins, preparation-only coverage seed, KAG generated and portable-family inputs"],
       "writes": ["isolated temporary Git worktree and optional unstaged generated patch in the caller worktree"],
       "side_effects": "converges the atomic KAG SCC through isolated ordered staging; --check never changes the caller and --apply preserves its Git index",
       "validation_lane": "release",

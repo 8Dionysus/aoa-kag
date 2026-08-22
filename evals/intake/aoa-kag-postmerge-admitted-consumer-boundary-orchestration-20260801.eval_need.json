@@ -1,0 +1,39 @@
+{
+  "schema_version": "eval_need_v1",
+  "name": "aoa-kag-postmerge-admitted-consumer-boundary-orchestration-20260801",
+  "proof_question": "Does the post-merge KAG to memo handoff preserve owner-qualified evidence and the bounded Codex consumer while refusing to transfer semantic, proof, acceptance, or effect authority?",
+  "origin_need": "A merged aoa-kag owner review, admitted read contour, bounded Codex registration, host receipts, and a schema-valid memo candidate now form an explicit owner-visible handoff that requires central boundary review.",
+  "summary": "Routes the admitted KAG evidence and memo candidate into aoa-evals without treating MCP reachability, admission, candidate creation, SDK validation, or stack persistence as a semantic proof verdict.",
+  "object_under_evaluation": "post-merge admitted KAG evidence to memo candidate boundary",
+  "category": "boundary",
+  "claim_type": "bounded",
+  "baseline_mode": "previous-version",
+  "report_format": "summary-with-breakdown",
+  "verdict_shape": "categorical",
+  "authoring_route": "candidate_evidence_packet",
+  "expected_use_when": [
+    "an admitted owner-grounded KAG read is handed to memo and eval contours",
+    "an agent must distinguish consumer registration, candidate memory, central proof, and memo-owner acceptance"
+  ],
+  "blind_spot_notes": [
+    "does not prove durable memory benefit beyond the reviewed bounded evidence",
+    "does not authorize external effects or hidden server chaining",
+    "does not make MCP, aoa-sdk, or abyss-stack the semantic owner"
+  ],
+  "related_eval_refs": [
+    "aoa-organ-access-admission-integrity"
+  ],
+  "candidate_evidence_refs": [
+    "repo:aoa-evals/memo/candidates/20260801T120622Z.00a930e9.a-post-merge-owner-grounded-aoa-kag-mcp-result-b.candidate.json",
+    "receipt:abyss-stack-cross-organ-host:sha256:6bd828176bdb2480967a78b373fed376adb6d5094c7842805c687d437dd8bdf4",
+    "receipt:aoa-kag-owner-review:sha256:01e15dd251de5706ac49a010db0f50ff097445de3ebb52e0ebaeeb75ace56d05",
+    "receipt:codex-consumer-apply:sha256:b1d244f529e1c7ce772335cc58e3a91bc2bf5ef671728013764f6c5587ca821f"
+  ],
+  "source_refs": [
+    "repo:aoa-kag/docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md",
+    "repo:aoa-sdk/docs/decisions/AOA-SDK-D-0080-host-visible-cross-organ-orchestration.md",
+    "repo:aoa-evals/evals/boundary/aoa-organ-access-admission-integrity/EVAL.md"
+  ],
+  "technique_dependencies": [],
+  "skill_dependencies": []
+}

@@ -4126,6 +4126,10 @@ class PrepareLandingTests(unittest.TestCase):
             prepare_landing,
             "build_preparation_coverage",
             return_value={},
+        ), patch.object(
+            prepare_landing,
+            "build_self_coverage_check_payload",
+            return_value={},
         ), patch.object(prepare_landing, "run_command") as run_command:
             code, receipt = prepare_landing.landing_sentinel(
                 Path("/candidate"),
@@ -4176,6 +4180,10 @@ class PrepareLandingTests(unittest.TestCase):
             return_value={},
         ), patch.object(
             prepare_landing,
+            "build_self_coverage_check_payload",
+            return_value={},
+        ), patch.object(
+            prepare_landing,
             "run_command",
             return_value=generated,
         ):
@@ -4214,6 +4222,10 @@ class PrepareLandingTests(unittest.TestCase):
         ), patch.object(
             prepare_landing,
             "build_preparation_coverage",
+            return_value={},
+        ), patch.object(
+            prepare_landing,
+            "build_self_coverage_check_payload",
             return_value={},
         ), patch.object(
             prepare_landing,

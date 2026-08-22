@@ -72,6 +72,9 @@ PORTABLE_FAMILY_SHARD_ROOT = Path("kag/indexes/shards")
 PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT = Path(
     "kag/receipts/index_family_budget"
 )
+PREPARATION_COVERAGE_SEED = Path(
+    "generated/repo_local_kag_preparation_seed.json"
+)
 REPOSITORY_INDEX_FILENAMES = {
     "entity": "repo_entity_index.json",
     "artifact": "repo_artifact_index.json",
@@ -581,6 +584,7 @@ def is_portable_family_control_path(path: Path) -> bool:
             Path("kag/indexes/corpus.manifest.json"),
             Path("kag/indexes/hot_profile.json"),
             Path("kag/indexes/artifact_locators.json"),
+            PREPARATION_COVERAGE_SEED,
         }
         or PORTABLE_FAMILY_SHARD_ROOT in (path, *path.parents)
         or PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT in (path, *path.parents)
