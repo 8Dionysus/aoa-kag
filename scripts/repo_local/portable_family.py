@@ -4,9 +4,16 @@ import copy
 import hashlib
 import json
 import math
+import os
+import stat
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
+
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
+from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 
 
 SCHEMA_VERSION = "aoa-repo-local-kag-family-manifest-v3"
@@ -21,7 +28,75 @@ TIERED_CONTROL_PATHS = {
     Path("kag/indexes/hot_profile.json"),
     Path("kag/indexes/artifact_locators.json"),
 }
-BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
+BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v2"
+LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
+BUDGET_EVIDENCE_SCHEMA_VERSION = "aoa-repo-local-kag-budget-evidence-v2"
+SEMANTIC_BUDGET_DECISION_REF = (
+    "aoa-kag:docs/decisions/"
+    "AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md"
+)
+BUDGET_CAUSE_CLASSES = frozenset(
+    {
+        "deliberate_source_migration",
+        "legitimate_bulk_authored_change",
+        "schema_builder_migration",
+        "accidental_generated_amplification",
+        "hot_set_pressure",
+        "shard_topology_pressure",
+        "artifact_delivery_migration",
+    }
+)
+BUDGET_SEMANTIC_STATES = frozenset(
+    {"supported", "unsupported", "unknown", "migration_required"}
+)
+BUDGET_PROCEDURE_VERSION = "aoa-kag:budget-semantic-admission-v3"
+BUDGET_PROCEDURE_PATHS = (
+    Path("scripts/repo_local/portable_family.py"),
+    Path("scripts/repo_local/tiered_family.py"),
+    Path("scripts/generate_repo_local_kag_index.py"),
+    Path("scripts/repo_local/history.py"),
+    Path("scripts/repo_local/identity.py"),
+    Path("scripts/repo_local/indexes.py"),
+    Path("scripts/repo_local/structure.py"),
+    Path("scripts/prepare_landing.py"),
+    Path("schemas/repo-local-kag-budget-evidence.schema.json"),
+    Path("schemas/repo-local-kag-budget-receipt.schema.json"),
+)
+BUDGET_EVIDENCE_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-budget-evidence.schema.json"
+)
+BUDGET_RECEIPT_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-budget-receipt.schema.json"
+)
+BUDGET_RECEIPT_FAILURE_MARKER = "budget_receipt_validation_failure"
+SOURCE_CAUSE_CLASSES = frozenset(
+    {
+        "deliberate_source_migration",
+        "legitimate_bulk_authored_change",
+    }
+)
+TOPOLOGY_CAUSE_CLASSES = frozenset(
+    {
+        "hot_set_pressure",
+        "shard_topology_pressure",
+        "artifact_delivery_migration",
+    }
+)
+# A causal receipt is deliberately conservative.  A one-byte edit is not a
+# source/procedure witness for a large generated delta; callers can remain in
+# the explicit unknown state until the owner procedure produces a real
+# transition or source change.
+MIN_CAUSAL_DELTA_BYTES = 16
+MAX_GENERATED_FILES_PER_CAUSAL_FILE = 128
+MAX_GENERATED_BYTES_PER_CAUSAL_BYTE = 4096
+MAX_UNRELATED_GENERATED_BYTES = 128 * 1024
+SEMANTIC_DERIVED_PATHS = {
+    Path("docs/validation/script_inventory.json"),
+    Path("docs/testing/test_inventory.json"),
+}
+SEMANTIC_DERIVED_ROOTS = {
+    Path("docs/decisions/indexes"),
+}
 DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0017-portable-content-addressed-repository-family.md"
@@ -84,6 +159,17 @@ CHUNKABLE_FIELDS = {
 
 class PortableFamilyError(ValueError):
     pass
+
+
+class BudgetReceiptValidationError(PortableFamilyError):
+    """A receipt/evidence failure that the preparation lane may regenerate."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(f"{BUDGET_RECEIPT_FAILURE_MARKER}: {message}")
+
+
+class BudgetPairPublicationError(PortableFamilyError):
+    """A paired receipt/evidence publication failed after semantic preflight."""
 
 
 def effective_index_surface_record(
@@ -431,6 +517,32 @@ def _compatibility_files(
     files: list[dict[str, Any]] = []
     for kind in COMPATIBILITY_ORDER:
         payload = source_index if kind == "source" else family[kind]
+        if kind != "source":
+            payload = copy.deepcopy(dict(payload))
+            source_reference = payload.get("source_index")
+            if not isinstance(source_reference, Mapping):
+                raise PortableFamilyError(
+                    f"{kind} compatibility view needs source_index"
+                )
+            payload["source_index"] = {
+                **dict(source_reference),
+                "path": (
+                    Path("kag/indexes")
+                    / LEGACY_INDEX_FILENAMES["source"]
+                ).as_posix(),
+            }
+            canonical_identity = payload.get("index_identity")
+            if not isinstance(canonical_identity, Mapping):
+                raise PortableFamilyError(
+                    f"{kind} compatibility view needs identity"
+                )
+            payload["index_identity"] = {
+                **dict(canonical_identity),
+                "content_digest": ZERO_DIGEST,
+            }
+            payload["index_identity"]["content_digest"] = sha256_bytes(
+                canonical_json_bytes(payload)
+            )
         identity = payload.get("index_identity")
         if not isinstance(identity, Mapping):
             raise PortableFamilyError(f"{kind} compatibility view needs identity")
@@ -554,6 +666,9 @@ def build_portable_family(
     manifest: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "repo": copy.deepcopy(dict(repo)),
+        "producer_identity": _budget_procedure_identity(
+            Path(__file__).resolve().parents[2]
+        ),
         "family_identity": {
             "local_id": "family:repo-local:portable-record-corpus",
             "artifact_kind": "repo_local_kag_portable_family",
@@ -1008,6 +1123,22 @@ def reconstruct_compatibility_family(
             relation_entries,
         )
 
+    compatibility = manifest.get("compatibility")
+    files = (
+        compatibility.get("files")
+        if isinstance(compatibility, Mapping)
+        else None
+    )
+    source_index_path = DEFAULT_OUTPUT
+    for item in files or []:
+        if (
+            isinstance(item, Mapping)
+            and item.get("kind") == "source"
+            and isinstance(item.get("path"), str)
+        ):
+            source_index_path = Path(str(item["path"]))
+            break
+
     repo = str(source_index["repo"]["name"])
     artifacts = artifact_entries(structure_records)
     entities = entity_entries(repo, structure_records)
@@ -1036,7 +1167,7 @@ def reconstruct_compatibility_family(
             source_index,
             index_kind=kind,
             entries=entries[kind],
-            source_index_path=DEFAULT_OUTPUT,
+            source_index_path=source_index_path,
         )
         for kind in (
             "entity",
@@ -1047,12 +1178,6 @@ def reconstruct_compatibility_family(
             "relation",
         )
     }
-    compatibility = manifest.get("compatibility")
-    files = (
-        compatibility.get("files")
-        if isinstance(compatibility, Mapping)
-        else None
-    )
     expected_digests = {
         item["kind"]: item["content_digest"]
         for item in files or []
@@ -1365,6 +1490,46 @@ def _base_manifest(
         raise PortableFamilyError(
             f"{base_ref} portable family manifest must be an object"
         )
+    if payload.get("schema_version") == TIERED_DISTRIBUTION_SCHEMA_VERSION:
+        corpus_content = _git_bytes(
+            repo_root,
+            base_ref,
+            Path("kag/indexes/corpus.manifest.json"),
+        )
+        if corpus_content is None:
+            raise PortableFamilyError(
+                f"{base_ref} tiered family corpus manifest is missing"
+            )
+        try:
+            corpus = json.loads(corpus_content)
+        except json.JSONDecodeError as exc:
+            raise PortableFamilyError(
+                f"{base_ref} tiered family corpus manifest is invalid"
+            ) from exc
+        if not isinstance(corpus, dict):
+            raise PortableFamilyError(
+                f"{base_ref} tiered family corpus manifest must be an object"
+            )
+        distribution_identity = payload.get("distribution_identity")
+        corpus_identity = corpus.get("corpus_identity")
+        if not isinstance(distribution_identity, Mapping) or not isinstance(
+            corpus_identity,
+            Mapping,
+        ):
+            raise PortableFamilyError(
+                f"{base_ref} tiered family identities are incomplete"
+            )
+        corpus_digest = distribution_identity.get("corpus_digest")
+        if isinstance(corpus_digest, str):
+            corpus_digest = corpus_digest.removeprefix("sha256:")
+        payload["family_identity"] = {
+            "content_digest": corpus_digest,
+            "source_snapshot": corpus_identity.get("source_snapshot"),
+            "distribution_digest": distribution_identity.get("content_digest"),
+        }
+        producer_identity = corpus.get("producer_identity")
+        if isinstance(producer_identity, Mapping):
+            payload["producer_identity"] = copy.deepcopy(dict(producer_identity))
     return payload
 
 
@@ -1421,12 +1586,1301 @@ def _validate_standing_budget(
 
 
 def _budget_decision_ref(manifest: Mapping[str, Any]) -> str:
-    return (
-        TIERED_DECISION_REF
-        if manifest.get("schema_version")
-        == TIERED_DISTRIBUTION_SCHEMA_VERSION
-        else DECISION_REF
+    del manifest
+    return SEMANTIC_BUDGET_DECISION_REF
+
+
+def _resolve_git_ref(repo_root: Path, ref: str) -> str:
+    return subprocess.run(
+        ("git", "rev-parse", ref),
+        cwd=repo_root.resolve(),
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _current_bytes(repo_root: Path, path: Path) -> bytes | None:
+    candidate = repo_root.resolve() / path
+    try:
+        if candidate.is_symlink():
+            return candidate.readlink().as_posix().encode("utf-8")
+        if candidate.is_file():
+            return candidate.read_bytes()
+    except OSError:
+        return None
+    return None
+
+
+def _content_delta_bytes(old: bytes | None, new: bytes | None) -> int:
+    """Measure the smallest contiguous content replacement for one path.
+
+    ``changed_bytes`` remains the conservative whole-file budget measure.  The
+    causal witness also needs a localized edit measure so that a one-byte edit
+    to a large builder file cannot masquerade as a large owner migration.
+    """
+    old_bytes = old or b""
+    new_bytes = new or b""
+    if old_bytes == new_bytes:
+        return 0
+    prefix = 0
+    common_prefix = min(len(old_bytes), len(new_bytes))
+    while prefix < common_prefix and old_bytes[prefix] == new_bytes[prefix]:
+        prefix += 1
+    old_end = len(old_bytes)
+    new_end = len(new_bytes)
+    suffix = 0
+    while (
+        suffix < old_end - prefix
+        and suffix < new_end - prefix
+        and old_bytes[old_end - suffix - 1] == new_bytes[new_end - suffix - 1]
+    ):
+        suffix += 1
+    return max(
+        old_end - prefix - suffix,
+        new_end - prefix - suffix,
     )
+
+
+def _path_change_records(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    paths: Iterable[Path],
+) -> list[dict[str, Any]]:
+    root = repo_root.resolve()
+    records: list[dict[str, Any]] = []
+    for path in sorted(set(paths)):
+        old = _git_bytes(root, base_ref, path)
+        new = _current_bytes(root, path)
+        if old == new:
+            continue
+        records.append(
+            {
+                "path": path.as_posix(),
+                "old_digest": sha256_bytes(old) if old is not None else None,
+                "new_digest": sha256_bytes(new) if new is not None else None,
+                "old_bytes": len(old) if old is not None else 0,
+                "new_bytes": len(new) if new is not None else 0,
+                "changed_bytes": max(
+                    len(old) if old is not None else 0,
+                    len(new) if new is not None else 0,
+                ),
+                "delta_bytes": _content_delta_bytes(old, new),
+            }
+        )
+    return records
+
+
+def _measurement_digest(records: Sequence[Mapping[str, Any]]) -> str:
+    return sha256_bytes(canonical_json_bytes(list(records)))
+
+
+def _changed_generated_records(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    return _path_change_records(
+        repo_root,
+        base_ref=base_ref,
+        paths=(
+            expected_portable_paths(manifest)
+            | _base_portable_paths(repo_root.resolve(), base_ref)
+        ),
+    )
+
+
+def _git_changed_paths(repo_root: Path, base_ref: str) -> set[Path]:
+    root = repo_root.resolve()
+    changed = subprocess.run(
+        ("git", "diff", "--name-only", "-z", base_ref, "--"),
+        cwd=root,
+        check=True,
+        capture_output=True,
+    ).stdout
+    untracked = subprocess.run(
+        ("git", "ls-files", "--others", "--exclude-standard", "-z"),
+        cwd=root,
+        check=True,
+        capture_output=True,
+    ).stdout
+    paths: set[Path] = set()
+    for encoded in (*changed.split(b"\0"), *untracked.split(b"\0")):
+        if not encoded:
+            continue
+        try:
+            path = Path(encoded.decode("utf-8"))
+        except UnicodeDecodeError as exc:
+            raise PortableFamilyError(
+                "Git changed path is not valid UTF-8"
+            ) from exc
+        if path.is_absolute() or ".." in path.parts:
+            raise PortableFamilyError(f"Git changed path is unsafe: {path}")
+        paths.add(path)
+    return paths
+
+
+def _is_semantic_derived_path(path: Path) -> bool:
+    return (
+        path in SEMANTIC_DERIVED_PATHS
+        or any(root in (path, *path.parents) for root in SEMANTIC_DERIVED_ROOTS)
+        or "generated" in path.parts
+    )
+
+
+def _changed_source_records(
+    repo_root: Path,
+    *,
+    base_ref: str,
+) -> list[dict[str, Any]]:
+    paths = {
+        path
+        for path in _git_changed_paths(repo_root, base_ref)
+        if not is_portable_control_path(path)
+        and path not in BUDGET_PROCEDURE_PATHS
+        and not _is_semantic_derived_path(path)
+    }
+    return _path_change_records(repo_root, base_ref=base_ref, paths=paths)
+
+
+def _measurement_payload(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    return {
+        "bytes": sum(int(record["changed_bytes"]) for record in records),
+        "delta_bytes": sum(int(record["delta_bytes"]) for record in records),
+        "files": len(records),
+        "paths_digest": _measurement_digest(records),
+    }
+
+
+def _family_json_rows(
+    content: bytes | None,
+    *,
+    path: Path,
+) -> list[dict[str, Any]]:
+    if content is None:
+        return []
+    if path.suffix != ".jsonl":
+        return []
+    rows: list[dict[str, Any]] = []
+    try:
+        for line in content.splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise PortableFamilyError(
+                    f"portable family row is not an object: {path}"
+                )
+            rows.append(row)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PortableFamilyError(
+            f"portable family row is malformed: {path}"
+        ) from exc
+    return rows
+
+
+def _row_dependency_paths(
+    row: Mapping[str, Any],
+    source_ids: Mapping[str, str],
+    *,
+    fallback_source_ids: Mapping[str, str] | None = None,
+    ambiguous_source_ids: set[str] | frozenset[str] = frozenset(),
+) -> set[str]:
+    """Collect declared source lineage without inventing path conventions.
+
+    The primary map belongs to the row's temporal version. A fallback map
+    covers rows whose source record exists only in the other version, while
+    current-version paths remain preferred when both versions know the ID.
+    IDs that resolve to multiple paths inside one version are intentionally
+    ignored so an ambiguous identity cannot authorize source-caused output.
+    """
+    paths: set[str] = set()
+    path_keys = {"path", "old_path", "source_path", "lineage_path"}
+    id_keys = {
+        "object_id",
+        "source_id",
+        "source_record_id",
+        "source_record_ids",
+        "object_ids",
+    }
+
+    def visit(value: Any, key: str | None = None) -> None:
+        if isinstance(value, Mapping):
+            for child_key, child_value in value.items():
+                visit(child_value, str(child_key))
+            return
+        if isinstance(value, Sequence) and not isinstance(
+            value,
+            (str, bytes, bytearray),
+        ):
+            for child in value:
+                visit(child, key)
+            return
+        if not isinstance(value, str):
+            return
+        if key in path_keys:
+            paths.add(value)
+        if key in id_keys:
+            if value in ambiguous_source_ids:
+                return
+            source_path = source_ids.get(value)
+            if source_path is not None:
+                paths.add(source_path)
+            elif fallback_source_ids is not None:
+                source_path = fallback_source_ids.get(value)
+                if source_path is not None:
+                    paths.add(source_path)
+
+    visit(row)
+    return paths
+
+
+def _family_row_key(row: Mapping[str, Any]) -> str:
+    for key in ("_key", "id"):
+        value = row.get(key)
+        if isinstance(value, str) and value:
+            return f"{key}:{value}"
+    return f"content:{sha256_bytes(canonical_json_bytes(row))}"
+
+
+def _source_dependency_measurement(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    source_records: Sequence[Mapping[str, Any]],
+    generated_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Bind source-caused admission to generated rows that name those inputs.
+
+    The scan is bounded by the existing owner-family read ceiling.  Control
+    manifests are excluded from the relation check; every changed shard must
+    either carry a changed source path directly or expose one through its
+    typed source-id/path lineage.  A small shard-sized tolerance covers
+    deterministic source-family movement without allowing a source edit to
+    self-authorize unrelated generated churn.
+    """
+    source_paths = sorted(
+        {
+            str(record.get("path"))
+            for record in source_records
+            if isinstance(record.get("path"), str)
+        }
+    )
+    empty_digest = sha256_bytes(canonical_json_bytes([]))
+    base_paths = _base_portable_paths(repo_root.resolve(), base_ref)
+    current_paths = expected_portable_paths(manifest)
+    shard_paths = {
+        path
+        for path in {*current_paths, *base_paths}
+        if SHARD_ROOT_RELATIVE_PATH in (path, *path.parents)
+    }
+    if not source_paths:
+        return {
+            "state": "not_applicable",
+            "changed_source_paths_digest": empty_digest,
+            "related_generated_paths_digest": empty_digest,
+            "unrelated_generated_paths_digest": empty_digest,
+            "related_generated_rows_digest": empty_digest,
+            "unrelated_generated_rows_digest": empty_digest,
+            "related_generated_files": 0,
+            "unrelated_generated_files": 0,
+            "related_generated_rows": 0,
+            "unrelated_generated_rows": 0,
+            "unrelated_generated_bytes": 0,
+        }
+    if not base_paths:
+        return {
+            "state": "unknown",
+            "changed_source_paths_digest": sha256_bytes(
+                canonical_json_bytes(source_paths)
+            ),
+            "related_generated_paths_digest": empty_digest,
+            "unrelated_generated_paths_digest": empty_digest,
+            "related_generated_rows_digest": empty_digest,
+            "unrelated_generated_rows_digest": empty_digest,
+            "related_generated_files": 0,
+            "unrelated_generated_files": 0,
+            "related_generated_rows": 0,
+            "unrelated_generated_rows": 0,
+            "unrelated_generated_bytes": 0,
+        }
+
+    rows_by_path: dict[tuple[str, Path], list[dict[str, Any]]] = {}
+    source_ids_by_ref: dict[str, dict[str, str]] = {
+        "current": {},
+        "base": {},
+    }
+    ambiguous_source_ids: set[str] = set()
+    for ref, paths in (("current", current_paths), ("base", base_paths)):
+        total_bytes = 0
+        for path in sorted(paths):
+            if SHARD_ROOT_RELATIVE_PATH not in (path, *path.parents):
+                continue
+            content = (
+                _current_bytes(repo_root, path)
+                if ref == "current"
+                else _git_bytes(repo_root, base_ref, path)
+            )
+            total_bytes += len(content or b"")
+            if total_bytes > GLOBAL_TRACKED_BYTES_MAX:
+                raise PortableFamilyError(
+                    "portable source dependency scan exceeds the bounded read ceiling"
+                )
+            rows = _family_json_rows(content, path=path)
+            rows_by_path[(ref, path)] = rows
+            for row in rows:
+                identity = row.get("identity")
+                if not isinstance(identity, Mapping):
+                    continue
+                source_id = identity.get("id")
+                source_path = identity.get("path")
+                if isinstance(source_id, str) and isinstance(source_path, str):
+                    source_ids = source_ids_by_ref[ref]
+                    previous_path = source_ids.get(source_id)
+                    if previous_path is None:
+                        source_ids[source_id] = source_path
+                    elif previous_path != source_path:
+                        ambiguous_source_ids.add(source_id)
+
+    changed_generated_paths = {
+        Path(str(record["path"]))
+        for record in generated_records
+        if record.get("old_digest") != record.get("new_digest")
+    }
+    related_paths: list[str] = []
+    unrelated_paths: list[str] = []
+    related_rows: list[str] = []
+    unrelated_rows: list[str] = []
+    unrelated_bytes = 0
+    changed_source_paths = set(source_paths)
+    for path in sorted(changed_generated_paths & shard_paths):
+        current_rows = rows_by_path.get(("current", path), [])
+        base_rows = rows_by_path.get(("base", path), [])
+        current_by_key = {_family_row_key(row): row for row in current_rows}
+        base_by_key = {_family_row_key(row): row for row in base_rows}
+        path_has_related = False
+        path_has_unrelated = False
+        changed_row_keys = sorted(set(current_by_key) | set(base_by_key))
+        changed_row_count = 0
+        for key in changed_row_keys:
+            current_row = current_by_key.get(key)
+            base_row = base_by_key.get(key)
+            if current_row == base_row:
+                continue
+            changed_row_count += 1
+            dependencies: set[str] = set()
+            if current_row is not None:
+                dependencies.update(
+                    _row_dependency_paths(
+                        current_row,
+                        source_ids_by_ref["current"],
+                        fallback_source_ids=source_ids_by_ref["base"],
+                        ambiguous_source_ids=ambiguous_source_ids,
+                    )
+                )
+            if base_row is not None:
+                dependencies.update(
+                    _row_dependency_paths(
+                        base_row,
+                        source_ids_by_ref["base"],
+                        fallback_source_ids=source_ids_by_ref["current"],
+                        ambiguous_source_ids=ambiguous_source_ids,
+                    )
+                )
+            if dependencies & changed_source_paths:
+                path_has_related = True
+                related_rows.append(f"{path.as_posix()}::{key}")
+            else:
+                path_has_unrelated = True
+                unrelated_rows.append(f"{path.as_posix()}::{key}")
+                current_size = len(render_row(current_row)) if current_row is not None else 0
+                base_size = len(render_row(base_row)) if base_row is not None else 0
+                unrelated_bytes += max(current_size, base_size)
+        if changed_row_count == 0:
+            path_has_unrelated = True
+            unrelated_rows.append(f"{path.as_posix()}::file-without-changed-row")
+            current = _current_bytes(repo_root, path)
+            previous = _git_bytes(repo_root, base_ref, path)
+            unrelated_bytes += max(len(current or b""), len(previous or b""))
+        if path_has_related:
+            related_paths.append(path.as_posix())
+        if path_has_unrelated:
+            unrelated_paths.append(path.as_posix())
+
+    relation_state = (
+        "matched"
+        if related_paths and unrelated_bytes <= MAX_UNRELATED_GENERATED_BYTES
+        else "unmatched"
+    )
+    return {
+        "state": relation_state,
+        "changed_source_paths_digest": sha256_bytes(
+            canonical_json_bytes(source_paths)
+        ),
+        "related_generated_paths_digest": sha256_bytes(
+            canonical_json_bytes(sorted(related_paths))
+        ),
+        "unrelated_generated_paths_digest": sha256_bytes(
+            canonical_json_bytes(sorted(unrelated_paths))
+        ),
+        "related_generated_rows_digest": sha256_bytes(
+            canonical_json_bytes(sorted(related_rows))
+        ),
+        "unrelated_generated_rows_digest": sha256_bytes(
+            canonical_json_bytes(sorted(unrelated_rows))
+        ),
+        "related_generated_files": len(related_paths),
+        "unrelated_generated_files": len(unrelated_paths),
+        "related_generated_rows": len(related_rows),
+        "unrelated_generated_rows": len(unrelated_rows),
+        "unrelated_generated_bytes": unrelated_bytes,
+    }
+
+
+def _budget_identity(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    identity = manifest.get("family_identity")
+    if not isinstance(identity, Mapping):
+        raise PortableFamilyError("portable budget family identity is missing")
+    digest = identity.get("content_digest")
+    source_snapshot = identity.get("source_snapshot")
+    distribution_digest = identity.get("distribution_digest")
+    if not isinstance(digest, str) or not digest:
+        raise PortableFamilyError("portable budget family digest is missing")
+    if not isinstance(source_snapshot, str) or not source_snapshot:
+        raise PortableFamilyError("portable budget source snapshot is missing")
+    if distribution_digest is not None and not isinstance(distribution_digest, str):
+        raise PortableFamilyError("portable budget distribution digest is malformed")
+    return {
+        "family_digest": digest,
+        "source_snapshot": source_snapshot,
+        "distribution_digest": distribution_digest,
+    }
+
+
+def _base_identity(
+    base_ref: str,
+    base_manifest: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    identity = (
+        _budget_identity(base_manifest)
+        if base_manifest is not None
+        and isinstance(base_manifest.get("family_identity"), Mapping)
+        else {
+            "family_digest": None,
+            "source_snapshot": None,
+            "distribution_digest": None,
+        }
+    )
+    return {"ref": base_ref, **identity}
+
+
+def _budget_base_supported(base_manifest: Mapping[str, Any] | None) -> bool:
+    return bool(
+        base_manifest is not None
+        and base_manifest.get("schema_version")
+        in {SCHEMA_VERSION, TIERED_DISTRIBUTION_SCHEMA_VERSION}
+        and isinstance(base_manifest.get("family_identity"), Mapping)
+    )
+
+
+def _git_json(
+    repo_root: Path,
+    ref: str,
+    path: Path,
+) -> dict[str, Any] | None:
+    content = _git_bytes(repo_root, ref, path)
+    if content is None:
+        return None
+    try:
+        payload = json.loads(content)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise PortableFamilyError(
+            f"{ref} JSON control surface is invalid: {path.as_posix()}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise PortableFamilyError(
+            f"{ref} JSON control surface must be an object: {path.as_posix()}"
+        )
+    return payload
+
+
+def _digest_value(value: object) -> str | None:
+    if value is None:
+        return None
+    return f"sha256:{sha256_bytes(canonical_json_bytes(value))}"
+
+
+def _placement_state(payload: Mapping[str, Any] | None) -> str | None:
+    placement = payload.get("placement") if isinstance(payload, Mapping) else None
+    state = placement.get("state") if isinstance(placement, Mapping) else None
+    return state if isinstance(state, str) else None
+
+
+def _hot_profile_digest(payload: Mapping[str, Any] | None) -> str | None:
+    profile = payload.get("hot_profile") if isinstance(payload, Mapping) else None
+    digest = profile.get("content_digest") if isinstance(profile, Mapping) else None
+    return digest if isinstance(digest, str) else None
+
+
+def _partitioning_value(
+    repo_root: Path,
+    base_ref: str,
+    payload: Mapping[str, Any] | None,
+    *,
+    base: bool,
+) -> object:
+    if isinstance(payload, Mapping):
+        partitioning = payload.get("partitioning")
+        if partitioning is not None:
+            return partitioning
+    if not base:
+        return None
+    corpus = _git_json(
+        repo_root,
+        base_ref,
+        Path("kag/indexes/corpus.manifest.json"),
+    )
+    return corpus.get("partitioning") if isinstance(corpus, Mapping) else None
+
+
+def _budget_topology_context(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    procedure_base_ref: str,
+    manifest: Mapping[str, Any],
+    base_manifest: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    head_identity = _budget_identity(manifest)
+    base_identity = _base_identity(base_ref, base_manifest)
+    head_source = head_identity["source_snapshot"]
+    base_source = base_identity["source_snapshot"]
+    if isinstance(head_source, str) and isinstance(base_source, str):
+        source_snapshot_relation = (
+            "unchanged" if head_source == base_source else "changed"
+        )
+    else:
+        source_snapshot_relation = "unknown"
+
+    head_partitioning = _partitioning_value(
+        repo_root,
+        base_ref,
+        manifest,
+        base=False,
+    )
+    base_partitioning = _partitioning_value(
+        repo_root,
+        base_ref,
+        base_manifest,
+        base=True,
+    )
+    head_partitioning_digest = _digest_value(head_partitioning)
+    base_partitioning_digest = _digest_value(base_partitioning)
+    base_hot_profile_digest = _hot_profile_digest(base_manifest)
+    head_hot_profile_digest = _hot_profile_digest(manifest)
+    transition = "none"
+    base_legacy_paths = {
+        Path("kag/indexes") / filename
+        for filename in LEGACY_INDEX_FILENAMES.values()
+        if _git_bytes(
+            repo_root.resolve(),
+            base_ref,
+            Path("kag/indexes") / filename,
+        )
+        is not None
+    }
+    complete_legacy_family = base_legacy_paths == {
+        Path("kag/indexes") / filename
+        for filename in LEGACY_INDEX_FILENAMES.values()
+    }
+    first_family_migration = (
+        base_manifest is None
+        and manifest.get("schema_version")
+        in {SCHEMA_VERSION, TIERED_DISTRIBUTION_SCHEMA_VERSION}
+        and (not base_legacy_paths or complete_legacy_family)
+    )
+    if first_family_migration:
+        transition = "first_family_migration"
+    elif (
+        _placement_state(manifest) == "externalized"
+        and _placement_state(base_manifest) != "externalized"
+    ):
+        transition = "artifact_delivery_externalization"
+    elif (
+        head_partitioning_digest is not None
+        and base_partitioning_digest is not None
+        and head_partitioning_digest != base_partitioning_digest
+    ):
+        transition = "partitioning_change"
+    elif (
+        head_hot_profile_digest is not None
+        and base_hot_profile_digest is not None
+        and head_hot_profile_digest != base_hot_profile_digest
+    ):
+        transition = "hot_profile_change"
+
+    return {
+        "base_schema_version": (
+            base_manifest.get("schema_version")
+            if isinstance(base_manifest, Mapping)
+            else None
+        ),
+        "head_schema_version": manifest.get("schema_version"),
+        "base_placement_state": _placement_state(base_manifest),
+        "head_placement_state": _placement_state(manifest),
+        "base_hot_profile_digest": base_hot_profile_digest,
+        "head_hot_profile_digest": head_hot_profile_digest,
+        "base_partitioning_digest": base_partitioning_digest,
+        "head_partitioning_digest": head_partitioning_digest,
+        "procedure_base_ref": procedure_base_ref,
+        "source_snapshot_relation": source_snapshot_relation,
+        "transition": transition,
+    }
+
+
+def _record_delta_stats(records: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        "delta_bytes": sum(int(record["delta_bytes"]) for record in records),
+        "deleted_files": sum(
+            1 for record in records if int(record.get("new_bytes", 0)) == 0
+        ),
+        "added_or_modified_files": sum(
+            1 for record in records if int(record.get("new_bytes", 0)) > 0
+        ),
+    }
+
+
+def _procedure_root(repo_root: Path) -> Path:
+    del repo_root
+    root = Path(__file__).resolve().parents[2]
+    if not (root / BUDGET_PROCEDURE_PATHS[0]).is_file():
+        raise PortableFamilyError(
+            "executing aoa-kag procedure checkout is missing its owner module"
+        )
+    return root
+
+
+def _procedure_baseline_ref(owner_root: Path) -> str:
+    """Resolve an immutable baseline owned by the executing KAG checkout."""
+    for candidate in ("origin/HEAD", "origin/main", "main"):
+        try:
+            return _resolve_git_ref(owner_root, candidate)
+        except subprocess.CalledProcessError:
+            continue
+    raise PortableFamilyError(
+        "executing aoa-kag procedure checkout has no local immutable baseline"
+    )
+
+
+def _procedure_measurement_base_ref(
+    repo_root: Path,
+    target_base_ref: str,
+) -> str:
+    owner_root = _procedure_root(repo_root)
+    if owner_root == repo_root.resolve():
+        return _resolve_git_ref(owner_root, target_base_ref)
+    return _procedure_baseline_ref(owner_root)
+
+
+def _published_budget_schema_path(kind: str) -> Path:
+    if kind == "evidence":
+        relative = BUDGET_EVIDENCE_SCHEMA_PATH
+    elif kind == "receipt":
+        relative = BUDGET_RECEIPT_SCHEMA_PATH
+    else:  # pragma: no cover - private helper guard
+        raise PortableFamilyError(f"unknown published budget schema kind: {kind}")
+    return _procedure_root(Path(".")) / relative
+
+
+def _validate_published_budget_schema(
+    kind: str,
+    payload: Mapping[str, Any],
+) -> None:
+    path = _published_budget_schema_path(kind)
+    try:
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(dict(payload))
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise PortableFamilyError(
+            f"published budget {kind} schema cannot be loaded: {path}"
+        ) from exc
+    except SchemaError as exc:
+        raise PortableFamilyError(
+            f"published budget {kind} schema is invalid: {path}"
+        ) from exc
+    except JsonSchemaValidationError as exc:
+        location = ".".join(str(part) for part in exc.absolute_path)
+        suffix = f" at {location}" if location else ""
+        raise PortableFamilyError(
+            f"budget {kind} does not match its published schema{suffix}: "
+            f"{exc.message}"
+        ) from exc
+
+
+def _budget_procedure_identity(
+    repo_root: Path,
+    *,
+    procedure_base_ref: str | None = None,
+) -> dict[str, Any]:
+    root = _procedure_root(repo_root)
+    resolved_base_ref = (
+        _procedure_baseline_ref(root)
+        if procedure_base_ref is None
+        else _resolve_git_ref(root, procedure_base_ref)
+    )
+    files: list[dict[str, Any]] = []
+    for relative in BUDGET_PROCEDURE_PATHS:
+        path = root / relative
+        if not path.is_file():
+            files.append(
+                {"path": relative.as_posix(), "state": "missing"}
+            )
+            continue
+        files.append(
+            {
+                "path": relative.as_posix(),
+                "state": "present",
+                "digest": sha256_bytes(path.read_bytes()),
+                "bytes": path.stat().st_size,
+            }
+        )
+    return {
+        "contract_version": BUDGET_PROCEDURE_VERSION,
+        "owner": "aoa-kag",
+        "base_ref": resolved_base_ref,
+        "files": files,
+        "digest": sha256_bytes(canonical_json_bytes(files)),
+    }
+
+
+def _procedure_identity_files(
+    identity: Mapping[str, Any],
+    *,
+    require_sizes: bool,
+) -> dict[str, Mapping[str, Any]] | None:
+    files = identity.get("files")
+    if not isinstance(files, Sequence) or isinstance(
+        files,
+        (str, bytes, bytearray),
+    ):
+        return None
+    by_path: dict[str, Mapping[str, Any]] = {}
+    for entry in files:
+        if not isinstance(entry, Mapping):
+            return None
+        path = entry.get("path")
+        state = entry.get("state")
+        digest = entry.get("digest")
+        size = entry.get("bytes")
+        if (
+            not isinstance(path, str)
+            or not path
+            or path in by_path
+            or state != "present"
+            or not isinstance(digest, str)
+            or (
+                require_sizes
+                and (not isinstance(size, int) or size < 0)
+            )
+        ):
+            return None
+        by_path[path] = entry
+    expected_paths = {path.as_posix() for path in BUDGET_PROCEDURE_PATHS}
+    if set(by_path) != expected_paths:
+        return None
+    return by_path
+
+
+def _procedure_identity_change_records(
+    previous: Mapping[str, Any],
+    current: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Compare producer identities carried by two authenticated family heads."""
+    previous_files = _procedure_identity_files(previous, require_sizes=True)
+    current_files = _procedure_identity_files(current, require_sizes=True)
+    if previous_files is None or current_files is None:
+        return []
+    if (
+        previous.get("contract_version") != BUDGET_PROCEDURE_VERSION
+        or current.get("contract_version") != BUDGET_PROCEDURE_VERSION
+        or previous.get("owner") != "aoa-kag"
+        or current.get("owner") != "aoa-kag"
+        or previous.get("digest")
+        != sha256_bytes(canonical_json_bytes(list(previous.get("files", []))))
+        or current.get("digest")
+        != sha256_bytes(canonical_json_bytes(list(current.get("files", []))))
+    ):
+        return []
+
+    records: list[dict[str, Any]] = []
+    for path in sorted(previous_files):
+        old = previous_files[path]
+        new = current_files[path]
+        if old.get("digest") == new.get("digest") and old.get("bytes") == new.get(
+            "bytes"
+        ):
+            continue
+        old_bytes = int(old["bytes"])
+        new_bytes = int(new["bytes"])
+        records.append(
+            {
+                "path": path,
+                "old_digest": old["digest"],
+                "new_digest": new["digest"],
+                "old_bytes": old_bytes,
+                "new_bytes": new_bytes,
+                "changed_bytes": max(old_bytes, new_bytes),
+                "delta_bytes": max(
+                    abs(new_bytes - old_bytes),
+                    MIN_CAUSAL_DELTA_BYTES,
+                ),
+            }
+        )
+    return records
+
+
+def _valid_procedure_identity(
+    identity: Mapping[str, Any],
+) -> Mapping[str, Any] | None:
+    if (
+        identity.get("contract_version") != BUDGET_PROCEDURE_VERSION
+        or identity.get("owner") != "aoa-kag"
+    ):
+        return None
+    base_ref = identity.get("base_ref")
+    if (
+        not isinstance(base_ref, str)
+        or not 40 <= len(base_ref) <= 64
+        or any(character not in HEX_DIGITS for character in base_ref)
+    ):
+        return None
+    if _procedure_identity_files(identity, require_sizes=True) is None:
+        return None
+    if identity.get("digest") != sha256_bytes(
+        canonical_json_bytes(list(identity.get("files", [])))
+    ):
+        return None
+    return identity
+
+
+def _authenticated_base_procedure_identity(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    base_manifest: Mapping[str, Any] | None,
+) -> Mapping[str, Any] | None:
+    """Recover a producer identity only from the base head's paired proof."""
+    if not _budget_base_supported(base_manifest):
+        return None
+    assert base_manifest is not None
+    producer_identity = base_manifest.get("producer_identity")
+    if isinstance(producer_identity, Mapping):
+        valid_producer = _valid_procedure_identity(producer_identity)
+        if valid_producer is not None:
+            return valid_producer
+    receipt_path = receipt_path_for(base_manifest)
+    evidence_path = evidence_path_for(base_manifest)
+    receipt_bytes = _git_bytes(repo_root, base_ref, receipt_path)
+    evidence_bytes = _git_bytes(repo_root, base_ref, evidence_path)
+    if receipt_bytes is None or evidence_bytes is None:
+        return None
+    try:
+        receipt = json.loads(receipt_bytes)
+        evidence = json.loads(evidence_bytes)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if not isinstance(receipt, dict) or not isinstance(evidence, dict):
+        return None
+    try:
+        _validate_published_budget_schema("receipt", receipt)
+        _validate_published_budget_schema("evidence", evidence)
+    except PortableFamilyError:
+        return None
+    base_identity = _budget_identity(base_manifest)
+    base_repo = base_manifest.get("repo")
+    if not isinstance(base_repo, Mapping):
+        return None
+    if (
+        receipt.get("repo") != base_repo.get("name")
+        or receipt.get("head_family_digest") != base_identity["family_digest"]
+        or receipt.get("head_source_snapshot") != base_identity["source_snapshot"]
+        or receipt.get("head_distribution_digest")
+        != base_identity["distribution_digest"]
+        or receipt.get("semantic_admission") != "supported"
+        or receipt.get("semantic_evidence_ref") != evidence_path.as_posix()
+        or receipt.get("semantic_evidence_digest")
+        != sha256_bytes(render_manifest(evidence))
+        or evidence.get("state") != "supported"
+        or evidence.get("owner") != base_repo
+        or evidence.get("head_identity") != base_identity
+    ):
+        return None
+    procedure = evidence.get("procedure")
+    if not isinstance(procedure, Mapping):
+        return None
+    return _valid_procedure_identity(procedure)
+
+
+def _review_identity(repo_root: Path, review_ref: str) -> dict[str, str]:
+    if not isinstance(review_ref, str) or not review_ref.startswith("aoa-kag:"):
+        raise PortableFamilyError(
+            "budget semantic evidence review_ref must use the aoa-kag owner ref"
+        )
+    relative = Path(review_ref.removeprefix("aoa-kag:"))
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or not relative.as_posix().startswith("docs/decisions/")
+        or _is_semantic_derived_path(relative)
+    ):
+        raise PortableFamilyError(
+            "budget semantic evidence review_ref must name an authored decision"
+        )
+    owner_root = _procedure_root(repo_root)
+    path = owner_root / relative
+    if not path.is_file():
+        raise PortableFamilyError(
+            f"budget semantic evidence review ref is missing: {review_ref}"
+        )
+    return {
+        "ref": review_ref,
+        "digest": sha256_bytes(path.read_bytes()),
+    }
+
+
+def _duplicate_materialization(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    changed_paths: set[str] | None = None,
+) -> dict[str, Any]:
+    by_digest: dict[str, list[str]] = {}
+    for record in records:
+        digest = record.get("new_digest")
+        new_bytes = record.get("new_bytes")
+        if not isinstance(digest, str) or not isinstance(new_bytes, int):
+            continue
+        if new_bytes <= 0:
+            continue
+        by_digest.setdefault(digest, []).append(str(record["path"]))
+    groups = [
+        {"digest": digest, "paths": sorted(paths)}
+        for digest, paths in sorted(by_digest.items())
+        if len(paths) > 1
+        and (
+            changed_paths is None
+            or any(path in changed_paths for path in paths)
+        )
+    ]
+    return {
+        "state": "present" if groups else "absent",
+        "groups": groups,
+    }
+
+
+def _head_family_records(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Read the complete materialized head family once for duplicate admission."""
+    total_bytes = 0
+    records: list[dict[str, Any]] = []
+    for path in sorted(expected_portable_paths(manifest)):
+        content = _current_bytes(repo_root, path)
+        if content is None:
+            continue
+        total_bytes += len(content)
+        if total_bytes > GLOBAL_TRACKED_BYTES_MAX:
+            raise PortableFamilyError(
+                "portable family duplicate scan exceeds the global bounded read ceiling"
+            )
+        records.append(
+            {
+                "path": path.as_posix(),
+                "old_digest": None,
+                "new_digest": sha256_bytes(content),
+                "old_bytes": 0,
+                "new_bytes": len(content),
+                "changed_bytes": len(content),
+                "delta_bytes": len(content),
+            }
+        )
+    return records
+
+
+def _semantic_admission_state(
+    *,
+    base_supported: bool,
+    cause_class: str,
+    source_measurement: Mapping[str, Any],
+    duplicate_materialization: Mapping[str, Any],
+    causal_measurements: Mapping[str, Any] | None = None,
+) -> str:
+    if cause_class == "accidental_generated_amplification":
+        return "unsupported"
+    if duplicate_materialization.get("state") == "present":
+        return "unsupported"
+    if not base_supported and causal_measurements is None:
+        return "migration_required"
+    if causal_measurements is None:
+        return "unknown"
+    source_records = causal_measurements.get("source_records")
+    procedure_records = causal_measurements.get("procedure_records")
+    topology = causal_measurements.get("topology")
+    generated_delta = causal_measurements.get("generated_delta")
+    if not isinstance(source_records, Sequence) or isinstance(
+        source_records,
+        (str, bytes, bytearray),
+    ):
+        return "unknown"
+    if not isinstance(procedure_records, Sequence) or isinstance(
+        procedure_records,
+        (str, bytes, bytearray),
+    ):
+        return "unknown"
+    if not isinstance(topology, Mapping) or not isinstance(
+        generated_delta,
+        Mapping,
+    ):
+        return "unknown"
+
+    source_stats = _record_delta_stats(source_records)
+    procedure_stats = _record_delta_stats(procedure_records)
+    transition = topology.get("transition")
+    if not base_supported and transition != "first_family_migration":
+        return "migration_required"
+    try:
+        source_files = int(source_measurement.get("files", 0))
+        generated_bytes = int(generated_delta.get("bytes", -1))
+        generated_files = int(generated_delta.get("files", -1))
+    except (TypeError, ValueError):
+        return "unknown"
+
+    def generated_delta_is_bounded(
+        *,
+        causal_delta_bytes: int,
+        causal_files: int,
+    ) -> bool:
+        return (
+            causal_delta_bytes >= MIN_CAUSAL_DELTA_BYTES
+            and causal_files >= 1
+            and generated_files
+            <= causal_files * MAX_GENERATED_FILES_PER_CAUSAL_FILE
+            and generated_bytes
+            <= causal_delta_bytes * MAX_GENERATED_BYTES_PER_CAUSAL_BYTE
+        )
+
+    source_relation = topology.get("source_snapshot_relation")
+    source_dependency = causal_measurements.get("source_dependency")
+    if cause_class in SOURCE_CAUSE_CLASSES and (
+        not isinstance(source_dependency, Mapping)
+        or source_dependency.get("state") != "matched"
+    ):
+        return "unknown"
+    if (
+        source_stats["deleted_files"] > 0
+        or not generated_delta_is_bounded(
+            causal_delta_bytes=source_stats["delta_bytes"],
+            causal_files=source_files,
+        )
+        or procedure_stats["deleted_files"] > 0
+        or procedure_stats["added_or_modified_files"] > 0
+    ) and cause_class in SOURCE_CAUSE_CLASSES:
+        return "unknown"
+    if cause_class in SOURCE_CAUSE_CLASSES:
+        return (
+            "supported"
+            if source_relation == "changed"
+            else "unknown"
+        )
+
+    if cause_class == "schema_builder_migration":
+        if not base_supported and transition != "first_family_migration":
+            return "migration_required"
+        if (
+            not base_supported
+            and (
+                source_records
+                or source_stats["deleted_files"] > 0
+                or topology.get("source_snapshot_relation") != "unknown"
+            )
+        ):
+            return "unknown"
+        if base_supported and (
+            source_records
+            or topology.get("source_snapshot_relation") != "unchanged"
+        ):
+            return "unknown"
+        if (
+            procedure_stats["deleted_files"] > 0
+            or not generated_delta_is_bounded(
+                causal_delta_bytes=procedure_stats["delta_bytes"],
+                causal_files=procedure_stats["added_or_modified_files"],
+            )
+        ):
+            return "unknown"
+        return "supported"
+
+    if cause_class == "artifact_delivery_migration":
+        source_delta_is_bounded = (
+            source_stats["deleted_files"] == 0
+            and generated_delta_is_bounded(
+                causal_delta_bytes=source_stats["delta_bytes"],
+                causal_files=source_files,
+            )
+        )
+        return (
+            "supported"
+            if (
+                transition == "artifact_delivery_externalization"
+                and not procedure_records
+                and (
+                    (not source_records and source_relation == "unchanged")
+                    or (
+                        bool(source_records)
+                        and source_relation == "changed"
+                        and source_delta_is_bounded
+                    )
+                )
+            )
+            else "unknown"
+        )
+    if cause_class == "hot_set_pressure":
+        return (
+            "supported"
+            if (
+                transition == "hot_profile_change"
+                and not source_records
+                and not procedure_records
+                and source_relation == "unchanged"
+            )
+            else "unknown"
+        )
+    if cause_class == "shard_topology_pressure":
+        return (
+            "supported"
+            if (
+                transition == "partitioning_change"
+                and not source_records
+                and not procedure_records
+                and source_relation == "unchanged"
+            )
+            else "unknown"
+        )
+    return "unknown"
+
+
+def _cause_witness(
+    cause_class: str,
+    measurements: Mapping[str, Any],
+) -> dict[str, Any]:
+    source_measurement = measurements["authored_source_delta"]
+    procedure_measurement = measurements["procedure_delta"]
+    generated_measurement = measurements["generated_delta"]
+    source_stats = _record_delta_stats(measurements["source_records"])
+    procedure_stats = _record_delta_stats(measurements["procedure_records"])
+    topology = measurements["topology"]
+    if cause_class in SOURCE_CAUSE_CLASSES:
+        kind = "authored_source_delta"
+    elif cause_class == "schema_builder_migration":
+        kind = "procedure_delta"
+    elif cause_class in TOPOLOGY_CAUSE_CLASSES:
+        kind = "distribution_transition"
+    else:
+        kind = "generated_delta_amplification"
+    return {
+        "kind": kind,
+        "source_paths_digest": source_measurement["paths_digest"],
+        "procedure_paths_digest": procedure_measurement["paths_digest"],
+        "generated_paths_digest": generated_measurement["paths_digest"],
+        "source_delta_bytes": source_stats["delta_bytes"],
+        "procedure_delta_bytes": procedure_stats["delta_bytes"],
+        "source_deleted_files": source_stats["deleted_files"],
+        "source_dependency_state": measurements["source_dependency"]["state"],
+        "source_snapshot_relation": topology["source_snapshot_relation"],
+        "transition": topology["transition"],
+    }
+
+
+def _budget_measurements(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    base_manifest: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    generated_records = _changed_generated_records(
+        repo_root,
+        base_ref=base_ref,
+        manifest=manifest,
+    )
+    source_records = _changed_source_records(repo_root, base_ref=base_ref)
+    procedure_root = _procedure_root(repo_root)
+    procedure_base_ref = _procedure_measurement_base_ref(repo_root, base_ref)
+    current_procedure = _budget_procedure_identity(
+        repo_root,
+        procedure_base_ref=procedure_base_ref,
+    )
+    if procedure_root == repo_root.resolve():
+        procedure_records = _path_change_records(
+            procedure_root,
+            base_ref=procedure_base_ref,
+            paths=BUDGET_PROCEDURE_PATHS,
+        )
+    else:
+        previous_procedure = _authenticated_base_procedure_identity(
+            repo_root,
+            base_ref=base_ref,
+            base_manifest=base_manifest,
+        )
+        procedure_records = (
+            _procedure_identity_change_records(previous_procedure, current_procedure)
+            if previous_procedure is not None
+            else []
+        )
+    budgets = manifest["budgets"]
+    summary = manifest["summary"]
+    head_family_records = _head_family_records(repo_root, manifest)
+    changed_generated_paths = {
+        str(record["path"])
+        for record in generated_records
+        if record.get("new_bytes", 0) > 0
+    }
+    return {
+        "generated_delta": _measurement_payload(generated_records),
+        "tracked_size": {
+            "bytes": summary["tracked_bytes"],
+            "limit_bytes": budgets["tracked_bytes_max"],
+        },
+        "authored_source_delta": _measurement_payload(source_records),
+        "duplicate_materialization": _duplicate_materialization(
+            head_family_records,
+            changed_paths=changed_generated_paths,
+        ),
+        "procedure_delta": _measurement_payload(procedure_records),
+        "source_dependency": _source_dependency_measurement(
+            repo_root,
+            base_ref=base_ref,
+            manifest=manifest,
+            source_records=source_records,
+            generated_records=generated_records,
+        ),
+        "topology": _budget_topology_context(
+            repo_root,
+            base_ref=base_ref,
+            procedure_base_ref=procedure_base_ref,
+            manifest=manifest,
+            base_manifest=base_manifest,
+        ),
+        "generated_records": generated_records,
+        "source_records": source_records,
+        "procedure_records": procedure_records,
+        "procedure_base_ref": procedure_base_ref,
+        "base_supported": _budget_base_supported(base_manifest),
+    }
 
 
 def changed_generated_bytes(
@@ -1436,26 +2890,14 @@ def changed_generated_bytes(
     manifest: Mapping[str, Any],
 ) -> tuple[int, int, str]:
     root = repo_root.resolve()
-    resolved = subprocess.run(
-        ("git", "rev-parse", base_ref),
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    head_paths = expected_portable_paths(manifest)
-    base_paths = _base_portable_paths(root, resolved)
-    changed_bytes = 0
-    changed_files = 0
-    for path in sorted(head_paths | base_paths):
-        old = _git_bytes(root, resolved, path)
-        new_path = root / path
-        new = new_path.read_bytes() if new_path.is_file() else None
-        if old == new:
-            continue
-        changed_files += 1
-        changed_bytes += max(len(old or b""), len(new or b""))
-    return changed_bytes, changed_files, resolved
+    resolved = _resolve_git_ref(root, base_ref)
+    records = _changed_generated_records(
+        root,
+        base_ref=resolved,
+        manifest=manifest,
+    )
+    measurement = _measurement_payload(records)
+    return measurement["bytes"], measurement["files"], resolved
 
 
 def receipt_path_for(manifest: Mapping[str, Any]) -> Path:
@@ -1466,16 +2908,268 @@ def receipt_path_for(manifest: Mapping[str, Any]) -> Path:
     )
 
 
+def evidence_path_for(manifest: Mapping[str, Any]) -> Path:
+    digest = manifest["family_identity"]["content_digest"]
+    return (
+        BUDGET_RECEIPT_ROOT_RELATIVE_PATH
+        / f"{digest}.evidence.json"
+    )
+
+
+def build_budget_evidence(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    reason: str,
+    cause_class: str,
+    review_ref: str,
+) -> tuple[Path, dict[str, Any]]:
+    if not isinstance(reason, str) or not reason.strip():
+        raise PortableFamilyError("budget semantic evidence reason must not be empty")
+    if cause_class not in BUDGET_CAUSE_CLASSES:
+        raise PortableFamilyError(
+            "budget semantic evidence cause_class is not a supported typed cause"
+        )
+    root = repo_root.resolve()
+    resolved = _resolve_git_ref(root, base_ref)
+    base_manifest = _base_manifest(root, resolved)
+    _validate_standing_budget(manifest, base_manifest)
+    measurements = _budget_measurements(
+        root,
+        base_ref=resolved,
+        manifest=manifest,
+        base_manifest=base_manifest,
+    )
+    state = _semantic_admission_state(
+        base_supported=measurements["base_supported"],
+        cause_class=cause_class,
+        source_measurement=measurements["authored_source_delta"],
+        duplicate_materialization=measurements["duplicate_materialization"],
+        causal_measurements=measurements,
+    )
+    head_identity = _budget_identity(manifest)
+    source_bytes = int(measurements["authored_source_delta"]["bytes"])
+    generated_bytes = int(measurements["generated_delta"]["bytes"])
+    evidence = {
+        "schema_version": BUDGET_EVIDENCE_SCHEMA_VERSION,
+        "state": state,
+        "owner": copy.deepcopy(manifest["repo"]),
+        "scope": _budget_receipt_scope(
+            base_has_v3=measurements["base_supported"],
+            generated_delta_exceeded=generated_bytes
+            > manifest["budgets"]["changed_generated_bytes_max"],
+            tracked_size_exceeded=manifest["summary"]["tracked_bytes"]
+            > manifest["budgets"]["tracked_bytes_max"],
+        ),
+        "base_identity": _base_identity(resolved, base_manifest),
+        "head_identity": head_identity,
+        "procedure": _budget_procedure_identity(
+            root,
+            procedure_base_ref=measurements["procedure_base_ref"],
+        ),
+        "review": _review_identity(root, review_ref),
+        "cause": {
+            "class": cause_class,
+            "reason": reason.strip(),
+            "evidence": _cause_witness(cause_class, measurements),
+        },
+        "measurements": {
+            "generated_delta": measurements["generated_delta"],
+            "tracked_size": measurements["tracked_size"],
+            "authored_source_delta": measurements["authored_source_delta"],
+            "procedure_delta": measurements["procedure_delta"],
+            "source_dependency": measurements["source_dependency"],
+            "topology": measurements["topology"],
+            "amplification": {
+                "generated_bytes": generated_bytes,
+                "authored_source_bytes": source_bytes,
+                "ratio_numerator": generated_bytes,
+                "ratio_denominator": max(source_bytes, 1),
+            },
+            "duplicate_materialization": measurements[
+                "duplicate_materialization"
+            ],
+        },
+        "fixed_point": {
+            "state": "required_external_gate",
+            "family_digest": head_identity["family_digest"],
+        },
+    }
+    return evidence_path_for(manifest), evidence
+
+
+def _validate_budget_semantic_evidence(
+    repo_root: Path,
+    *,
+    manifest: Mapping[str, Any],
+    base_ref: str,
+    base_manifest: Mapping[str, Any] | None,
+    expected_scope: str,
+    receipt: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    recompute_measurements: bool = True,
+) -> None:
+    if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "budget semantic admission is migration_required for legacy evidence"
+        )
+    _validate_published_budget_schema("evidence", evidence)
+    _validate_published_budget_schema("receipt", receipt)
+    state = evidence.get("state")
+    if state not in BUDGET_SEMANTIC_STATES:
+        raise PortableFamilyError("budget semantic evidence state is invalid")
+    if state != "supported":
+        raise PortableFamilyError(
+            f"budget semantic admission state={state}; supported owner evidence is required"
+        )
+    if evidence.get("owner") != manifest.get("repo"):
+        raise PortableFamilyError("budget semantic evidence owner identity mismatches family")
+    if evidence.get("scope") != expected_scope:
+        raise PortableFamilyError("budget semantic evidence scope mismatches exceedance")
+    if recompute_measurements:
+        if evidence.get("base_identity") != _base_identity(base_ref, base_manifest):
+            raise PortableFamilyError(
+                "budget semantic evidence base identity mismatches current base"
+            )
+    else:
+        base_identity = evidence.get("base_identity")
+        if not isinstance(base_identity, Mapping) or base_identity.get("ref") != base_ref:
+            raise PortableFamilyError(
+                "budget semantic evidence base identity is not bound to the receipt"
+            )
+    head_identity = _budget_identity(manifest)
+    if evidence.get("head_identity") != head_identity:
+        raise PortableFamilyError("budget semantic evidence head identity mismatches family")
+    if evidence.get("fixed_point") != {
+        "state": "required_external_gate",
+        "family_digest": head_identity["family_digest"],
+    }:
+        raise PortableFamilyError("budget semantic evidence fixed-point binding mismatches family")
+    procedure_base_ref = _procedure_measurement_base_ref(repo_root, base_ref)
+    if evidence.get("procedure") != _budget_procedure_identity(
+        repo_root,
+        procedure_base_ref=procedure_base_ref,
+    ):
+        raise PortableFamilyError(
+            "budget semantic evidence procedure/environment identity is stale"
+        )
+    review = evidence.get("review")
+    if not isinstance(review, Mapping):
+        raise PortableFamilyError("budget semantic evidence review binding is missing")
+    expected_review = _review_identity(repo_root, str(review.get("ref", "")))
+    if dict(review) != expected_review:
+        raise PortableFamilyError("budget semantic evidence review binding is stale")
+    cause = evidence.get("cause")
+    if not isinstance(cause, Mapping) or cause.get("class") not in BUDGET_CAUSE_CLASSES:
+        raise PortableFamilyError("budget semantic evidence cause class is invalid")
+    if cause.get("reason") != receipt.get("reason"):
+        raise PortableFamilyError(
+            "budget semantic evidence reason is not bound to the receipt"
+        )
+    observed = evidence.get("measurements")
+    if not isinstance(observed, Mapping):
+        raise PortableFamilyError("budget semantic evidence measurements are missing")
+    if recompute_measurements:
+        measurements = _budget_measurements(
+            repo_root,
+            base_ref=base_ref,
+            manifest=manifest,
+            base_manifest=base_manifest,
+        )
+        expected_measurements = {
+            "generated_delta": measurements["generated_delta"],
+            "tracked_size": measurements["tracked_size"],
+            "authored_source_delta": measurements["authored_source_delta"],
+            "procedure_delta": measurements["procedure_delta"],
+            "source_dependency": measurements["source_dependency"],
+            "topology": measurements["topology"],
+            "amplification": {
+                "generated_bytes": measurements["generated_delta"]["bytes"],
+                "authored_source_bytes": measurements["authored_source_delta"]["bytes"],
+                "ratio_numerator": measurements["generated_delta"]["bytes"],
+                "ratio_denominator": max(
+                    measurements["authored_source_delta"]["bytes"],
+                    1,
+                ),
+            },
+            "duplicate_materialization": measurements[
+                "duplicate_materialization"
+            ],
+        }
+        if dict(observed) != expected_measurements:
+            raise PortableFamilyError(
+                "budget semantic evidence measurements do not match current source and family"
+            )
+        expected_cause_evidence = _cause_witness(
+            str(cause["class"]),
+            measurements,
+        )
+        if cause.get("evidence") != expected_cause_evidence:
+            raise PortableFamilyError(
+                "budget semantic evidence cause witness is stale or incomplete"
+            )
+        expected_state = _semantic_admission_state(
+            base_supported=measurements["base_supported"],
+            cause_class=str(cause["class"]),
+            source_measurement=measurements["authored_source_delta"],
+            duplicate_materialization=measurements["duplicate_materialization"],
+            causal_measurements=measurements,
+        )
+        if expected_state != state:
+            raise PortableFamilyError(
+                f"budget semantic evidence state={state} does not match measured state={expected_state}"
+            )
+    else:
+        generated = observed.get("generated_delta")
+        tracked = observed.get("tracked_size")
+        if not isinstance(generated, Mapping) or not isinstance(tracked, Mapping):
+            raise PortableFamilyError(
+                "shallow checkout evidence measurements are incomplete"
+            )
+        if (
+            generated.get("bytes") != receipt.get("changed_generated_bytes")
+            or generated.get("files") != receipt.get("changed_generated_files")
+            or tracked.get("bytes") != manifest["summary"]["tracked_bytes"]
+            or tracked.get("limit_bytes") != manifest["budgets"]["tracked_bytes_max"]
+        ):
+            raise PortableFamilyError(
+                "shallow checkout evidence measurements do not match current family"
+            )
+        if str(cause["class"]) in SOURCE_CAUSE_CLASSES:
+            source_dependency = observed.get("source_dependency")
+            if (
+                not isinstance(source_dependency, Mapping)
+                or source_dependency.get("state") != "matched"
+            ):
+                raise PortableFamilyError(
+                    "shallow checkout source-caused evidence lacks a matched "
+                    "generated dependency witness"
+                )
+        duplicate = observed.get("duplicate_materialization")
+        if not isinstance(duplicate, Mapping) or duplicate.get("state") != "absent":
+            raise PortableFamilyError(
+                "shallow checkout evidence does not prove duplicate-free admission"
+            )
+    if receipt.get("semantic_admission") != state:
+        raise PortableFamilyError("budget receipt semantic admission state is not supported")
+
+
 def build_budget_receipt(
     repo_root: Path,
     *,
     base_ref: str,
     manifest: Mapping[str, Any],
     reason: str,
+    semantic_evidence: Mapping[str, Any] | None = None,
     approved_by: str = "repository-owner",
 ) -> tuple[Path, dict[str, Any]]:
     if not reason.strip():
         raise PortableFamilyError("budget receipt reason must not be empty")
+    if semantic_evidence is None:
+        raise PortableFamilyError(
+            "budget receipt requires typed semantic owner evidence"
+        )
     changed_bytes, changed_files, resolved = changed_generated_bytes(
         repo_root,
         base_ref=base_ref,
@@ -1492,7 +3186,7 @@ def build_budget_receipt(
         summary["tracked_bytes"] > budgets["tracked_bytes_max"]
     )
     scope = _budget_receipt_scope(
-        base_has_v3=base_manifest is not None,
+        base_has_v3=_budget_base_supported(base_manifest),
         generated_delta_exceeded=delta_exceeded,
         tracked_size_exceeded=tracked_exceeded,
     )
@@ -1502,6 +3196,10 @@ def build_budget_receipt(
         "scope": scope,
         "base_ref": resolved,
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+        "head_distribution_digest": _budget_identity(manifest)[
+            "distribution_digest"
+        ],
         "changed_generated_bytes": changed_bytes,
         "changed_generated_files": changed_files,
         "default_limit_bytes": DEFAULT_DELTA_BYTES_MAX,
@@ -1512,8 +3210,220 @@ def build_budget_receipt(
         "reason": reason.strip(),
         "approved_by": approved_by,
         "decision_ref": _budget_decision_ref(manifest),
+        "semantic_admission": semantic_evidence.get("state"),
+        "semantic_evidence_ref": evidence_path_for(manifest).as_posix(),
+        "semantic_evidence_digest": sha256_bytes(
+            render_manifest(semantic_evidence)
+        ),
     }
+    _validate_budget_semantic_evidence(
+        repo_root,
+        manifest=manifest,
+        base_ref=resolved,
+        base_manifest=base_manifest,
+        expected_scope=scope,
+        receipt=receipt,
+        evidence=semantic_evidence,
+    )
     return receipt_path_for(manifest), receipt
+
+
+def build_budget_publication(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    reason: str,
+    cause_class: str,
+    review_ref: str,
+    approved_by: str = "repository-owner",
+) -> tuple[Path, dict[str, Any], Path, dict[str, Any]]:
+    """Build and semantically validate both members before any pair write."""
+    evidence_path, evidence = build_budget_evidence(
+        repo_root,
+        base_ref=base_ref,
+        manifest=manifest,
+        reason=reason,
+        cause_class=cause_class,
+        review_ref=review_ref,
+    )
+    receipt_path, receipt = build_budget_receipt(
+        repo_root,
+        base_ref=base_ref,
+        manifest=manifest,
+        reason=reason,
+        semantic_evidence=evidence,
+        approved_by=approved_by,
+    )
+    return evidence_path, evidence, receipt_path, receipt
+
+
+def _budget_destination(repo_root: Path, path: Path) -> Path:
+    if path.is_absolute() or ".." in path.parts:
+        raise BudgetPairPublicationError(
+            f"budget pair path must be repo-relative: {path}"
+        )
+    return repo_root.resolve() / path
+
+
+def _stage_budget_bytes(destination: Path, content: bytes) -> Path:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=destination.parent,
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        mode = (
+            stat.S_IMODE(destination.stat().st_mode)
+            if destination.is_file()
+            else 0o644
+        )
+        os.chmod(temporary, mode)
+    except BaseException:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        temporary.unlink(missing_ok=True)
+        raise
+    return temporary
+
+
+def _replace_budget_pair_member(source: Path, destination: Path) -> None:
+    os.replace(source, destination)
+
+
+def _restore_budget_pair_member(
+    destination: Path,
+    previous: Path | None,
+) -> None:
+    if previous is None:
+        destination.unlink(missing_ok=True)
+    else:
+        _replace_budget_pair_member(previous, destination)
+
+
+def publish_budget_pair(
+    repo_root: Path,
+    *,
+    evidence_path: Path,
+    evidence: Mapping[str, Any],
+    receipt_path: Path,
+    receipt: Mapping[str, Any],
+) -> None:
+    """Publish a validated pair with rollback around the two-file boundary.
+
+    Each member is staged and replaced atomically.  If either replacement (or
+    an in-process interruption) fails, the exact previous member bytes and
+    presence are restored.  POSIX still cannot make two independent renames
+    crash-atomic; a process death between the replacements remains an
+    explicit bounded window rather than an implicit success claim.
+    """
+    evidence_content = render_manifest(evidence)
+    receipt_content = render_manifest(receipt)
+    if evidence_path == receipt_path:
+        raise BudgetPairPublicationError(
+            "budget pair evidence and receipt paths must be distinct"
+        )
+    if receipt.get("semantic_evidence_ref") != evidence_path.as_posix():
+        raise BudgetPairPublicationError(
+            "budget pair receipt does not reference the staged evidence path"
+        )
+    if receipt.get("semantic_evidence_digest") != sha256_bytes(evidence_content):
+        raise BudgetPairPublicationError(
+            "budget pair receipt digest does not match staged evidence"
+        )
+    if receipt.get("semantic_admission") != evidence.get("state"):
+        raise BudgetPairPublicationError(
+            "budget pair semantic admission does not match evidence state"
+        )
+
+    root = repo_root.resolve()
+    evidence_destination = _budget_destination(root, evidence_path)
+    receipt_destination = _budget_destination(root, receipt_path)
+    if evidence_destination.parent != receipt_destination.parent:
+        raise BudgetPairPublicationError(
+            "budget pair members must share one publication directory"
+        )
+    destinations = (
+        (evidence_destination, evidence_content),
+        (receipt_destination, receipt_content),
+    )
+    staged_new: dict[Path, Path] = {}
+    staged_previous: dict[Path, Path | None] = {}
+    cleanup_staged = True
+    try:
+        for destination, content in destinations:
+            staged_new[destination] = _stage_budget_bytes(destination, content)
+        for destination, _ in destinations:
+            if destination.exists() and not destination.is_file():
+                raise BudgetPairPublicationError(
+                    f"budget pair destination is not a regular file: {destination}"
+                )
+            staged_previous[destination] = (
+                _stage_budget_bytes(destination, destination.read_bytes())
+                if destination.is_file()
+                else None
+            )
+        try:
+            for destination, _ in destinations:
+                _replace_budget_pair_member(staged_new[destination], destination)
+        except BaseException as exc:
+            try:
+                for destination, _ in reversed(destinations):
+                    _restore_budget_pair_member(
+                        destination,
+                        staged_previous[destination],
+                    )
+            except BaseException as rollback_exc:
+                cleanup_staged = False
+                raise BudgetPairPublicationError(
+                    "budget pair publication failed and rollback failed; "
+                    "accepted pair recovery artifacts were retained"
+                ) from rollback_exc
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            raise BudgetPairPublicationError(
+                "budget pair publication failed; accepted pair was restored"
+            ) from exc
+    finally:
+        if cleanup_staged:
+            for temporary in (*staged_new.values(), *staged_previous.values()):
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
+
+
+def _write_budget_file_atomically(
+    repo_root: Path,
+    path: Path,
+    content: bytes,
+) -> None:
+    destination = _budget_destination(repo_root, path)
+    temporary: Path | None = None
+    try:
+        temporary = _stage_budget_bytes(destination, content)
+        _replace_budget_pair_member(temporary, destination)
+    except (OSError, BudgetPairPublicationError) as exc:
+        raise BudgetPairPublicationError(
+            f"budget file publication failed for {path}"
+        ) from exc
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def write_budget_evidence(
+    repo_root: Path,
+    path: Path,
+    evidence: Mapping[str, Any],
+) -> None:
+    _write_budget_file_atomically(repo_root, path, render_manifest(evidence))
 
 
 def write_budget_receipt(
@@ -1521,11 +3431,84 @@ def write_budget_receipt(
     path: Path,
     receipt: Mapping[str, Any],
 ) -> None:
-    destination = repo_root.resolve() / path
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    content = render_manifest(receipt)
-    if not destination.is_file() or destination.read_bytes() != content:
-        destination.write_bytes(content)
+    _write_budget_file_atomically(repo_root, path, render_manifest(receipt))
+
+
+def _validate_budget_receipt_without_history(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+    *,
+    base_ref: str,
+    require_tracked: bool = False,
+) -> tuple[int, int, bool]:
+    """Validate a receipt when its immutable base object is outside a shallow clone.
+
+    A receipt/evidence packet cannot replace the missing causal base.  The
+    structural current-head checks remain useful for an under-budget family,
+    but any exceedance fails closed until immutable history is available.
+    """
+    try:
+        path = repo_root.resolve() / receipt_path_for(manifest)
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(receipt, dict):
+            raise PortableFamilyError("budget receipt must be an object")
+        if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+            raise PortableFamilyError(
+                "budget receipt semantic admission is migration_required; legacy v1 "
+                "receipt is structural-only"
+            )
+        _validate_published_budget_schema("receipt", receipt)
+        if receipt.get("base_ref") != base_ref:
+            raise PortableFamilyError(
+                "shallow checkout receipt base_ref does not match the requested ref"
+            )
+        budgets = manifest["budgets"]
+        summary = manifest["summary"]
+        expected = {
+            "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
+            "repo": manifest["repo"]["name"],
+            "head_family_digest": manifest["family_identity"]["content_digest"],
+            "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+            "head_distribution_digest": _budget_identity(manifest)[
+                "distribution_digest"
+            ],
+            "default_limit_bytes": DEFAULT_DELTA_BYTES_MAX,
+            "tracked_bytes": summary["tracked_bytes"],
+            "tracked_bytes_max": budgets["tracked_bytes_max"],
+            "decision_ref": _budget_decision_ref(manifest),
+        }
+        for field, value in expected.items():
+            if receipt.get(field) != value:
+                raise PortableFamilyError(
+                    f"shallow checkout receipt field {field} does not match family"
+                )
+        changed_bytes = receipt.get("changed_generated_bytes")
+        changed_files = receipt.get("changed_generated_files")
+        if not isinstance(changed_bytes, int) or not isinstance(changed_files, int):
+            raise PortableFamilyError(
+                "shallow checkout receipt generated-delta measurement is missing"
+            )
+        delta_exceeded = changed_bytes > budgets["changed_generated_bytes_max"]
+        tracked_exceeded = summary["tracked_bytes"] > budgets["tracked_bytes_max"]
+        if require_tracked and not tracked_exceeded:
+            raise PortableFamilyError(
+                "shallow checkout tracked-size receipt is not required by the current family"
+            )
+        if not delta_exceeded and not tracked_exceeded:
+            return changed_bytes, changed_files, False
+        raise PortableFamilyError(
+            "shallow checkout semantic admission requires immutable base history; "
+            "receipt/evidence cannot replace a causal base or an independently "
+            "authenticated full-history verdict"
+        )
+    except BudgetReceiptValidationError:
+        raise
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        raise BudgetReceiptValidationError(
+            "shallow checkout cannot validate a missing or malformed receipt"
+        ) from exc
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
 
 
 def validate_changed_generated_budget(
@@ -1534,11 +3517,18 @@ def validate_changed_generated_budget(
     base_ref: str,
     manifest: Mapping[str, Any],
 ) -> tuple[int, int, bool]:
-    changed_bytes, changed_files, resolved = changed_generated_bytes(
-        repo_root,
-        base_ref=base_ref,
-        manifest=manifest,
-    )
+    try:
+        changed_bytes, changed_files, resolved = changed_generated_bytes(
+            repo_root,
+            base_ref=base_ref,
+            manifest=manifest,
+        )
+    except subprocess.CalledProcessError:
+        return _validate_budget_receipt_without_history(
+            repo_root,
+            manifest,
+            base_ref=base_ref,
+        )
     base_manifest = _base_manifest(repo_root, resolved)
     _validate_standing_budget(manifest, base_manifest)
     budgets = manifest["budgets"]
@@ -1554,14 +3544,25 @@ def validate_changed_generated_budget(
     try:
         receipt = json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError) as exc:
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "portable family budget is exceeded and no matching receipt exists: "
             f"changed={changed_bytes}/{limit}, "
             f"tracked={summary['tracked_bytes']}/"
             f"{budgets['tracked_bytes_max']}"
         ) from exc
+    if not isinstance(receipt, dict):
+        raise BudgetReceiptValidationError("budget receipt must be an object")
+    if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+        raise BudgetReceiptValidationError(
+            "budget receipt semantic admission is migration_required; legacy v1 "
+            "receipt is structural-only"
+        )
+    try:
+        _validate_published_budget_schema("receipt", receipt)
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
     expected_scope = _budget_receipt_scope(
-        base_has_v3=base_manifest is not None,
+        base_has_v3=_budget_base_supported(base_manifest),
         generated_delta_exceeded=delta_exceeded,
         tracked_size_exceeded=tracked_exceeded,
     )
@@ -1570,20 +3571,24 @@ def validate_changed_generated_budget(
         "repo": manifest["repo"]["name"],
         "base_ref": resolved,
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+        "head_distribution_digest": _budget_identity(manifest)[
+            "distribution_digest"
+        ],
         "changed_generated_bytes": changed_bytes,
         "changed_generated_files": changed_files,
-        "default_limit_bytes": limit,
+        "default_limit_bytes": DEFAULT_DELTA_BYTES_MAX,
         "tracked_bytes": summary["tracked_bytes"],
         "tracked_bytes_max": budgets["tracked_bytes_max"],
         "decision_ref": _budget_decision_ref(manifest),
     }
     for field, value in expected.items():
         if receipt.get(field) != value:
-            raise PortableFamilyError(
+            raise BudgetReceiptValidationError(
                 f"budget receipt field {field} does not match current delta"
             )
     if receipt.get("scope") != expected_scope:
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "budget receipt scope does not match the current exceedance"
         )
     if (
@@ -1595,11 +3600,82 @@ def validate_changed_generated_budget(
         or receipt.get("allowed_tracked_bytes", -1)
         < summary["tracked_bytes"]
     ):
-        raise PortableFamilyError("budget receipt approval is incomplete")
+        raise BudgetReceiptValidationError("budget receipt approval is incomplete")
+    evidence_ref = receipt.get("semantic_evidence_ref")
+    evidence_path = evidence_path_for(manifest)
+    if evidence_ref != evidence_path.as_posix():
+        raise BudgetReceiptValidationError(
+            "budget receipt semantic evidence ref does not match current family"
+        )
+    evidence_digest = receipt.get("semantic_evidence_digest")
+    if not isinstance(evidence_digest, str):
+        raise BudgetReceiptValidationError("budget receipt semantic evidence digest is missing")
+    evidence_file = repo_root.resolve() / evidence_path
+    try:
+        evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        raise BudgetReceiptValidationError(
+            "budget receipt semantic admission is migration_required; typed evidence is missing"
+        ) from exc
+    if not isinstance(evidence, dict) or sha256_bytes(
+        render_manifest(evidence)
+    ) != evidence_digest:
+        raise BudgetReceiptValidationError("budget semantic evidence digest does not match receipt")
+    if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
+        raise BudgetReceiptValidationError(
+            "budget semantic admission is migration_required for legacy evidence"
+        )
+    try:
+        _validate_published_budget_schema("evidence", evidence)
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
+    try:
+        _validate_budget_semantic_evidence(
+            repo_root,
+            manifest=manifest,
+            base_ref=resolved,
+            base_manifest=base_manifest,
+            expected_scope=expected_scope,
+            receipt=receipt,
+            evidence=evidence,
+        )
+    except BudgetReceiptValidationError:
+        raise
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
     return changed_bytes, changed_files, True
 
 
 def _validate_tracked_size_receipt(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+) -> None:
+    try:
+        _validate_tracked_size_receipt_with_history(repo_root, manifest)
+    except subprocess.CalledProcessError:
+        try:
+            fallback_receipt = json.loads(
+                (
+                    repo_root.resolve() / receipt_path_for(manifest)
+                ).read_text(encoding="utf-8")
+            )
+        except (FileNotFoundError, json.JSONDecodeError) as exc:
+            raise BudgetReceiptValidationError(
+                "shallow checkout cannot validate a missing or malformed receipt"
+            ) from exc
+        _validate_budget_receipt_without_history(
+            repo_root,
+            manifest,
+            base_ref=str(fallback_receipt.get("base_ref", "")),
+            require_tracked=True,
+        )
+    except BudgetReceiptValidationError:
+        raise
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
+
+
+def _validate_tracked_size_receipt_with_history(
     repo_root: Path,
     manifest: Mapping[str, Any],
 ) -> None:
@@ -1611,12 +3687,24 @@ def _validate_tracked_size_receipt(
             "portable tracked byte budget is exceeded without a matching "
             "digest-bound receipt"
         ) from exc
+    if not isinstance(receipt, dict):
+        raise PortableFamilyError("tracked-size receipt must be an object")
+    if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "portable tracked byte budget is migration_required; legacy v1 receipt "
+            "is structural-only"
+        )
+    _validate_published_budget_schema("receipt", receipt)
     summary = manifest["summary"]
     budgets = manifest["budgets"]
     expected = {
         "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
         "repo": manifest["repo"]["name"],
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+        "head_distribution_digest": _budget_identity(manifest)[
+            "distribution_digest"
+        ],
         "tracked_bytes": summary["tracked_bytes"],
         "tracked_bytes_max": budgets["tracked_bytes_max"],
         "decision_ref": _budget_decision_ref(manifest),
@@ -1637,6 +3725,63 @@ def _validate_tracked_size_receipt(
         raise PortableFamilyError(
             "tracked-size receipt allowance is below the family size"
         )
+    base_ref = receipt.get("base_ref")
+    if not isinstance(base_ref, str) or not base_ref:
+        raise PortableFamilyError(
+            "tracked-size receipt semantic admission is missing base identity"
+        )
+    resolved = _resolve_git_ref(repo_root, base_ref)
+    if resolved != base_ref:
+        raise PortableFamilyError(
+            "tracked-size receipt base_ref must be the resolved full Git ref"
+        )
+    base_manifest = _base_manifest(repo_root, resolved)
+    changed_bytes, changed_files, _ = changed_generated_bytes(
+        repo_root,
+        base_ref=resolved,
+        manifest=manifest,
+    )
+    expected_scope = _budget_receipt_scope(
+        base_has_v3=_budget_base_supported(base_manifest),
+        generated_delta_exceeded=changed_bytes
+        > budgets.get("changed_generated_bytes_max", DEFAULT_DELTA_BYTES_MAX),
+        tracked_size_exceeded=True,
+    )
+    if receipt.get("scope") != expected_scope:
+        raise PortableFamilyError(
+            "tracked-size receipt scope does not match current generated delta"
+        )
+    evidence_path = evidence_path_for(manifest)
+    if receipt.get("semantic_evidence_ref") != evidence_path.as_posix():
+        raise PortableFamilyError(
+            "tracked-size receipt semantic evidence ref does not match family"
+        )
+    try:
+        evidence = json.loads(
+            (repo_root.resolve() / evidence_path).read_text(encoding="utf-8")
+        )
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        raise PortableFamilyError(
+            "portable tracked byte budget is migration_required; typed evidence is missing"
+        ) from exc
+    if not isinstance(evidence, dict) or sha256_bytes(
+        render_manifest(evidence)
+    ) != receipt.get("semantic_evidence_digest"):
+        raise PortableFamilyError("tracked-size semantic evidence digest does not match")
+    if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "budget semantic admission is migration_required for legacy evidence"
+        )
+    _validate_published_budget_schema("evidence", evidence)
+    _validate_budget_semantic_evidence(
+        repo_root,
+        manifest=manifest,
+        base_ref=resolved,
+        base_manifest=base_manifest,
+        expected_scope=expected_scope,
+        receipt=receipt,
+        evidence=evidence,
+    )
 
 
 def write_compatibility_view(

@@ -117,7 +117,7 @@ validation or landing authority.
 provider repository without treating that repository as the root KAG SCC. It
 copies the exact tracked, staged, unstaged, and untracked candidate into a
 detached temporary worktree, regenerates only its portable family and optional
-digest-bound budget receipt, then requires the common owner-family gate. Its
+typed semantic-evidence budget receipt, then requires the common owner-family gate. Its
 `--apply` route changes only allowed KAG worktree outputs and preserves the
 caller's Git index.
 

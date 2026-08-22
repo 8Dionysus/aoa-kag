@@ -1,0 +1,129 @@
+{
+  "base_identity": {
+    "distribution_digest": "sha256:c30e7771379c0b43fe459c13ce74fae7ffabe37e19823bdc29042b1adb28fca2",
+    "family_digest": "744675ad20ac1c780b5b29532676317a11abdcc69638b9b3c6079d2d988d3dab",
+    "ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "source_snapshot": "sha256:966789856f081cbf47616e488d8a9f8a1f118d6913f3628cd2ecf4c293e42b74"
+  },
+  "cause": {
+    "class": "schema_builder_migration",
+    "evidence": {
+      "generated_paths_digest": "664b1aab418ca970658d5a750eb543f3446e777724a32f889c5d9feaa104d109",
+      "kind": "procedure_delta",
+      "procedure_delta_bytes": 169880,
+      "procedure_paths_digest": "d1ffd3f7d0c3900ff36e20d6fe1e6054b6a25fccb3adae2994a4f7a713b99565",
+      "source_deleted_files": 0,
+      "source_delta_bytes": 269525,
+      "source_paths_digest": "f465490ec8b578fe0b42ccc6e512f8eb506f4058227315b94447e7564d135d21",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "reason": "Repair causal semantic admission for current-head owner procedure changes."
+  },
+  "fixed_point": {
+    "family_digest": "436292011959d714def96d16885bf5d77726283b30b16c0d12cb21384e1b9f4c",
+    "state": "required_external_gate"
+  },
+  "head_identity": {
+    "distribution_digest": "sha256:0939a403f7bfef46fa6c23a553f14446c9be0da3b11e1d275a6f2e1da05fd238",
+    "family_digest": "436292011959d714def96d16885bf5d77726283b30b16c0d12cb21384e1b9f4c",
+    "source_snapshot": "sha256:21097b59fd40e0a18022b93fd3325ddf4dc56582dd8e4fdcc6919dac93a3a6dc"
+  },
+  "measurements": {
+    "amplification": {
+      "authored_source_bytes": 1119835,
+      "generated_bytes": 12056571,
+      "ratio_denominator": 1119835,
+      "ratio_numerator": 12056571
+    },
+    "authored_source_delta": {
+      "bytes": 1119835,
+      "delta_bytes": 269525,
+      "files": 21,
+      "paths_digest": "f465490ec8b578fe0b42ccc6e512f8eb506f4058227315b94447e7564d135d21"
+    },
+    "duplicate_materialization": {
+      "groups": [],
+      "state": "absent"
+    },
+    "generated_delta": {
+      "bytes": 12056571,
+      "delta_bytes": 5600997,
+      "files": 288,
+      "paths_digest": "664b1aab418ca970658d5a750eb543f3446e777724a32f889c5d9feaa104d109"
+    },
+    "procedure_delta": {
+      "bytes": 584630,
+      "delta_bytes": 169880,
+      "files": 6,
+      "paths_digest": "d1ffd3f7d0c3900ff36e20d6fe1e6054b6a25fccb3adae2994a4f7a713b99565"
+    },
+    "topology": {
+      "base_hot_profile_digest": "sha256:1e8463aa5b61109efdb038d83330895cf38692f49669058ab396a56041deaabd",
+      "base_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "base_placement_state": "shadow",
+      "base_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "head_hot_profile_digest": "sha256:fd1a4fca2c6abba826bf26289065e43c5994ec7720c891d06f5769b0a550201a",
+      "head_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "head_placement_state": "shadow",
+      "head_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "tracked_size": {
+      "bytes": 2332930,
+      "limit_bytes": 4194304
+    }
+  },
+  "owner": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "procedure": {
+    "contract_version": "aoa-kag:budget-semantic-admission-v3",
+    "digest": "1caf142e421ece232ff3c120bfc535ff185e2a1dc54ca06b73ba1de62ee2e29c",
+    "files": [
+      {
+        "digest": "a7cb656c32ddad7b8511cb7d006aafb5672dc5fb51721abe8c8ae7b964dc9a9e",
+        "path": "scripts/repo_local/portable_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "05ff202e40d2e91ed1cb03d37c5967010c12737c74ac1efe8e02e12e0c0e03f2",
+        "path": "scripts/repo_local/tiered_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "677638901eb2d80ace39836a2ece7cb37d10e1ae2e6eb23a2f03590c5d2ffbe1",
+        "path": "scripts/generate_repo_local_kag_index.py",
+        "state": "present"
+      },
+      {
+        "digest": "b07f8d825ccf1ced1da459d5f71d77f61a6e868b9eb04a7f64007afbec0bd43b",
+        "path": "scripts/prepare_landing.py",
+        "state": "present"
+      },
+      {
+        "digest": "305e49aa5cb88330d22639a15ee63a0f7d41e8272a92cf9fef630265c5429772",
+        "path": "schemas/repo-local-kag-budget-evidence.schema.json",
+        "state": "present"
+      },
+      {
+        "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
+        "path": "schemas/repo-local-kag-budget-receipt.schema.json",
+        "state": "present"
+      }
+    ],
+    "owner": "aoa-kag"
+  },
+  "review": {
+    "digest": "6ba82c813e6fc96ded088be8c63907d2ca91b6dfc575beb7c5988499f6f79f55",
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md"
+  },
+  "schema_version": "aoa-repo-local-kag-budget-evidence-v2",
+  "scope": "generated_delta",
+  "state": "supported"
+}

@@ -108,6 +108,8 @@
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 - [AOA-KAG-D-0040 - AOA-KAG-D-0040 Routing Consumer Pin And Predecessor Archive Boundary](../AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md) (`docs/decisions/AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md`)
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## aoa-memo
 
@@ -198,6 +200,11 @@
 ## distillation
 
 - [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
+
+## downstream owner-family consumers
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## federation and MCP consumers
 

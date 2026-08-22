@@ -28,6 +28,11 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+try:
+    from scripts.repo_local.portable_family import BUDGET_RECEIPT_FAILURE_MARKER
+except ImportError:  # pragma: no cover - direct script execution
+    from repo_local.portable_family import BUDGET_RECEIPT_FAILURE_MARKER  # type: ignore
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "aoa-kag-prepare-landing-receipt-v1"
@@ -68,6 +73,16 @@ PORTABLE_LOCAL_CONFIG_KEYS = frozenset(
 PORTABLE_LOCAL_CONFIG_PREFIXES = ("branch.",)
 ISOLATION_LOCAL_CONFIG_KEYS = frozenset({"core.fsmonitor", "core.hookspath"})
 PORTABLE_REMOTE_CONFIG_SUFFIXES = (".url", ".fetch")
+
+
+def is_budget_receipt_failure_output(output: str) -> bool:
+    """Recognize only the portable-family validator's typed failure marker."""
+    marker = f"{BUDGET_RECEIPT_FAILURE_MARKER}:"
+    return any(
+        line.lstrip().startswith(marker)
+        or line.lstrip().startswith(f"[repo-local-kag-index] {marker}")
+        for line in output.splitlines()
+    )
 
 
 @dataclass(frozen=True)
@@ -5311,6 +5326,8 @@ def portable_family_command(
     enforce_budget: bool = False,
     write_budget_receipt: bool = False,
     budget_reason: str | None = None,
+    budget_cause_class: str | None = None,
+    budget_review_ref: str | None = None,
 ) -> tuple[str, ...]:
     command = [
         "python",
@@ -5329,7 +5346,16 @@ def portable_family_command(
         command.extend(("--budget-base-ref", refs.budget_base_ref))
     if write_budget_receipt:
         command.append("--write-budget-receipt")
-        command.extend(("--budget-reason", budget_reason or ""))
+        command.extend(
+            (
+                "--budget-reason",
+                budget_reason or "",
+                "--budget-cause-class",
+                budget_cause_class or "",
+                "--budget-review-ref",
+                budget_review_ref or "",
+            )
+        )
     if check:
         command.append("--check")
     return tuple(command)
@@ -5397,7 +5423,13 @@ def prune_obsolete_budget_receipts(
     repo_root: Path,
     refs: ResolvedRefs,
 ) -> None:
-    keep = _current_budget_receipt_path(repo_root)
+    keep_receipt = _current_budget_receipt_path(repo_root)
+    keep = {
+        keep_receipt,
+        keep_receipt.with_name(
+            f"{keep_receipt.stem}.evidence.json"
+        ),
+    }
     root = Path(BUDGET_RECEIPT_PATHS[0])
     base_rows = git_bytes(
         repo_root,
@@ -5419,7 +5451,7 @@ def prune_obsolete_budget_receipts(
         return
     for candidate in sorted(receipt_root.glob("*.json")):
         relative = candidate.relative_to(repo_root)
-        if relative == keep or relative in base_paths:
+        if relative in keep or relative in base_paths:
             continue
         candidate.unlink()
 
@@ -5429,6 +5461,8 @@ def ensure_budget_receipt(
     refs: ResolvedRefs,
     *,
     budget_reason: str | None,
+    budget_cause_class: str | None = None,
+    budget_review_ref: str | None = None,
 ) -> str:
     check = run_command(
         portable_family_command(refs, check=True, enforce_budget=True),
@@ -5439,12 +5473,7 @@ def ensure_budget_receipt(
         output = check.stdout + check.stderr
         return "accepted" if "receipt=accepted" in output else "not_required"
     output = check.stdout + check.stderr
-    receipt_failure = (
-        "no matching receipt exists" in output
-        or "receipt field" in output
-        or "receipt scope" in output
-        or "receipt approval" in output
-    )
+    receipt_failure = is_budget_receipt_failure_output(output)
     if not receipt_failure:
         raise PreparationFailure(
             "final portable-family budget check failed for a non-receipt reason",
@@ -5453,11 +5482,18 @@ def ensure_budget_receipt(
             command=check.command,
             details={"return_code": check.returncode, "duration_ms": check.duration_ms},
         )
-    if not budget_reason or not budget_reason.strip():
+    if (
+        not budget_reason
+        or not budget_reason.strip()
+        or not budget_cause_class
+        or not budget_cause_class.strip()
+        or not budget_review_ref
+        or not budget_review_ref.strip()
+    ):
         raise PreparationFailure(
-            "final family requires an owner-reasoned digest-bound budget receipt",
+            "final family requires typed semantic budget evidence",
             failure_type="budget_receipt_authority_required",
-            action_class="provide_budget_reason",
+            action_class="provide_budget_evidence",
             command=check.command,
             details={"budget_base_ref": refs.budget_base_ref},
         )
@@ -5467,6 +5503,8 @@ def ensure_budget_receipt(
             enforce_budget=True,
             write_budget_receipt=True,
             budget_reason=budget_reason,
+            budget_cause_class=budget_cause_class,
+            budget_review_ref=budget_review_ref,
         ),
         repo_root=repo_root,
         failure_type="budget_receipt_generation_failure",
@@ -5490,6 +5528,8 @@ def converge_budgeted_scc(
     max_iterations: int,
     budget_reason: str | None,
     full_coverage_cache: Path | None = None,
+    budget_cause_class: str | None = None,
+    budget_review_ref: str | None = None,
 ) -> tuple[int, str, str]:
     iterations, fixed_point_tree = converge_scc(
         repo_root,
@@ -5504,6 +5544,8 @@ def converge_budgeted_scc(
             repo_root,
             refs,
             budget_reason=budget_reason,
+            budget_cause_class=budget_cause_class,
+            budget_review_ref=budget_review_ref,
         )
         if observed == "created" or budget_receipt != "created":
             budget_receipt = observed
@@ -5704,6 +5746,8 @@ def prepare_landing(
     budget_base_ref: str | None,
     budget_reason: str | None,
     temp_root: Path | None,
+    budget_cause_class: str | None = None,
+    budget_review_ref: str | None = None,
 ) -> tuple[int, dict[str, object]]:
     started = time.perf_counter()
     snapshot: CandidateSnapshot | None = None
@@ -5755,6 +5799,8 @@ def prepare_landing(
             max_iterations=max_iterations,
             budget_reason=budget_reason,
             full_coverage_cache=full_coverage_cache,
+            budget_cause_class=budget_cause_class,
+            budget_review_ref=budget_review_ref,
         )
         final_confirmation(
             temporary_worktree,
@@ -6117,6 +6163,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Explicit repository-owner reason used only if the final digest exceeds its budget.",
     )
     parser.add_argument(
+        "--budget-cause-class",
+        help="Typed owner cause class used only if the final digest exceeds its budget.",
+    )
+    parser.add_argument(
+        "--budget-review-ref",
+        help="Authored aoa-kag decision ref used only if the final digest exceeds its budget.",
+    )
+    parser.add_argument(
         "--max-iterations",
         type=int,
         default=DEFAULT_MAX_ITERATIONS,
@@ -6209,6 +6263,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         budget_base_ref=args.budget_base_ref,
         budget_reason=args.budget_reason,
         temp_root=args.temp_root,
+        budget_cause_class=args.budget_cause_class,
+        budget_review_ref=args.budget_review_ref,
     )
     encoded_receipt = json.dumps(receipt, ensure_ascii=False, sort_keys=True)
     if args.receipt_output is not None:

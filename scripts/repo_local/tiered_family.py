@@ -354,6 +354,9 @@ def build_corpus_manifest(
     manifest: dict[str, Any] = {
         "schema_version": CORPUS_SCHEMA_VERSION,
         "repo": copy.deepcopy(portable_manifest["repo"]),
+        "producer_identity": copy.deepcopy(
+            portable_manifest.get("producer_identity")
+        ),
         "corpus_identity": {
             "local_id": "family:repo-local:logical-record-corpus",
             "artifact_kind": "repo_local_kag_corpus",
@@ -1681,7 +1684,16 @@ def tiered_budget_projection(
         "repo": copy.deepcopy(distribution["repo"]),
         "family_identity": {
             "content_digest": corpus_digest,
+            "source_snapshot": build.corpus_manifest["corpus_identity"][
+                "source_snapshot"
+            ],
+            "distribution_digest": distribution["distribution_identity"][
+                "content_digest"
+            ],
         },
+        "producer_identity": copy.deepcopy(
+            build.corpus_manifest.get("producer_identity")
+        ),
         "budgets": {
             "tracked_bytes_max": distribution["budgets"][
                 "owner_git_hot_bytes_max"
@@ -1693,6 +1705,15 @@ def tiered_budget_projection(
         "summary": {
             "tracked_bytes": distribution["summary"]["git_hot_bytes"],
         },
+        # Carry the owner-authored topology facts into the budget procedure's
+        # semantic projection.  They are not a second source of truth; they
+        # let the receipt validator prove typed source-free transitions such
+        # as shadow -> externalized without accepting arbitrary path lists.
+        "placement": {
+            "state": distribution["placement"]["state"],
+        },
+        "hot_profile": copy.deepcopy(distribution["hot_profile"]),
+        "partitioning": copy.deepcopy(build.corpus_manifest["partitioning"]),
         "shards": [
             {"path": path.as_posix()}
             for path in sorted({*control_paths, *expected_shards})

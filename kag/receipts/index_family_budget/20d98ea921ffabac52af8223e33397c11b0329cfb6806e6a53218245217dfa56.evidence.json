@@ -1,0 +1,151 @@
+{
+  "base_identity": {
+    "distribution_digest": "sha256:c30e7771379c0b43fe459c13ce74fae7ffabe37e19823bdc29042b1adb28fca2",
+    "family_digest": "744675ad20ac1c780b5b29532676317a11abdcc69638b9b3c6079d2d988d3dab",
+    "ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "source_snapshot": "sha256:966789856f081cbf47616e488d8a9f8a1f118d6913f3628cd2ecf4c293e42b74"
+  },
+  "cause": {
+    "class": "schema_builder_migration",
+    "evidence": {
+      "generated_paths_digest": "4673ec41991e92b2af0d1c79cfdc49cbb879fc9a37783aaa6ee8bd8903c2d578",
+      "kind": "procedure_delta",
+      "procedure_delta_bytes": 455713,
+      "procedure_paths_digest": "936a6bfe9309912799aedfa3e507cf93bc18fa87264672bf8e0c4925ad3cbdcc",
+      "source_deleted_files": 0,
+      "source_delta_bytes": 595158,
+      "source_dependency_state": "unmatched",
+      "source_paths_digest": "d71622cd6796f89e1a3c10917a058a0fa77aaea39afdecfffad2609165bad6fa",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "reason": "Preserve legacy structural compatibility while keeping typed producer migration fail-closed."
+  },
+  "fixed_point": {
+    "family_digest": "20d98ea921ffabac52af8223e33397c11b0329cfb6806e6a53218245217dfa56",
+    "state": "required_external_gate"
+  },
+  "head_identity": {
+    "distribution_digest": "sha256:56aba92a40deeeab7ec1d1a8da0ac1a3cc61643ab7e3f29ec906eb8b2d8061dc",
+    "family_digest": "20d98ea921ffabac52af8223e33397c11b0329cfb6806e6a53218245217dfa56",
+    "source_snapshot": "sha256:5958f67f20818906e36919cea33009e7ead9ad2c0f20d30a02e910415477f0d0"
+  },
+  "measurements": {
+    "amplification": {
+      "authored_source_bytes": 1221751,
+      "generated_bytes": 12275578,
+      "ratio_denominator": 1221751,
+      "ratio_numerator": 12275578
+    },
+    "authored_source_delta": {
+      "bytes": 1221751,
+      "delta_bytes": 595158,
+      "files": 25,
+      "paths_digest": "d71622cd6796f89e1a3c10917a058a0fa77aaea39afdecfffad2609165bad6fa"
+    },
+    "duplicate_materialization": {
+      "groups": [],
+      "state": "absent"
+    },
+    "generated_delta": {
+      "bytes": 12275578,
+      "delta_bytes": 6109890,
+      "files": 293,
+      "paths_digest": "4673ec41991e92b2af0d1c79cfdc49cbb879fc9a37783aaa6ee8bd8903c2d578"
+    },
+    "procedure_delta": {
+      "bytes": 616619,
+      "delta_bytes": 455713,
+      "files": 6,
+      "paths_digest": "936a6bfe9309912799aedfa3e507cf93bc18fa87264672bf8e0c4925ad3cbdcc"
+    },
+    "source_dependency": {
+      "changed_source_paths_digest": "c7b46c5a70c35dfea500b694778421c88ed7533b32f5b7f176ae7fafe1bd9c86",
+      "related_generated_files": 252,
+      "related_generated_paths_digest": "1b22a9a41f61c98115873d73a7a6937205070ff80843f1c076bd48ea75866242",
+      "related_generated_rows": 603,
+      "related_generated_rows_digest": "0aeecc9668d3d54c36163059bb4e3b9f59696a89227cd0207bb792c6fc0ed877",
+      "state": "unmatched",
+      "unrelated_generated_bytes": 1102299,
+      "unrelated_generated_files": 265,
+      "unrelated_generated_paths_digest": "92c6547396f2090f8e8f4363e5f76670c66b6b4020f501e106fd3e9ec8ff37bf",
+      "unrelated_generated_rows": 1401,
+      "unrelated_generated_rows_digest": "b1c8f3e9e85bef2fcd6790d59dd3babfcef5d5b837535deb84dfdec4e43c16c5"
+    },
+    "topology": {
+      "base_hot_profile_digest": "sha256:1e8463aa5b61109efdb038d83330895cf38692f49669058ab396a56041deaabd",
+      "base_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "base_placement_state": "shadow",
+      "base_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "head_hot_profile_digest": "sha256:b8301e0805e8b10ed70f8433c812ee6900d444475fcbbb76fc61d6659c5d27e6",
+      "head_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "head_placement_state": "shadow",
+      "head_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "procedure_base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "tracked_size": {
+      "bytes": 2338657,
+      "limit_bytes": 4194304
+    }
+  },
+  "owner": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "procedure": {
+    "base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "contract_version": "aoa-kag:budget-semantic-admission-v3",
+    "digest": "6f45e5ee11dd96c434568ccb419eda580a0486852c35f307841a33de5acf8a56",
+    "files": [
+      {
+        "bytes": 130978,
+        "digest": "8dc230a448e42fca2b4a05817c6a9e6235abea1da0112d8b7f4ee6dce70aa64a",
+        "path": "scripts/repo_local/portable_family.py",
+        "state": "present"
+      },
+      {
+        "bytes": 92445,
+        "digest": "791bffaeee8041de5e7c9bded7876c2f97f446c1b2e6b339c0357deadf06aa61",
+        "path": "scripts/repo_local/tiered_family.py",
+        "state": "present"
+      },
+      {
+        "bytes": 142630,
+        "digest": "677638901eb2d80ace39836a2ece7cb37d10e1ae2e6eb23a2f03590c5d2ffbe1",
+        "path": "scripts/generate_repo_local_kag_index.py",
+        "state": "present"
+      },
+      {
+        "bytes": 236821,
+        "digest": "12457effb91a6a72e35e75a2f99b0b41a58bd1de6746f579f8b26d3569fa93ca",
+        "path": "scripts/prepare_landing.py",
+        "state": "present"
+      },
+      {
+        "bytes": 11477,
+        "digest": "ceebf7bbe29f475c51f88ce233c2fb0072890d781663e1f85df365701fa16417",
+        "path": "schemas/repo-local-kag-budget-evidence.schema.json",
+        "state": "present"
+      },
+      {
+        "bytes": 2268,
+        "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
+        "path": "schemas/repo-local-kag-budget-receipt.schema.json",
+        "state": "present"
+      }
+    ],
+    "owner": "aoa-kag"
+  },
+  "review": {
+    "digest": "cdfa64334480db30333c1f223736cde383e242969aa2ff942b26a8a1abf13d70",
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md"
+  },
+  "schema_version": "aoa-repo-local-kag-budget-evidence-v2",
+  "scope": "generated_delta",
+  "state": "supported"
+}

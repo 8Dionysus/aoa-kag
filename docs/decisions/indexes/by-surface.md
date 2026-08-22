@@ -133,6 +133,11 @@
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
 - [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
 
+## generated-delta validator
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
+
 ## generated/maturity
 
 - [AOA-KAG-D-0001 - KAG Maturity Hardening](../AOA-KAG-D-0001-kag-maturity-hardening.md) (`docs/decisions/AOA-KAG-D-0001-kag-maturity-hardening.md`)
@@ -216,6 +221,11 @@
 
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 - [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
+
+## owner procedure
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## owner return
 
@@ -303,10 +313,15 @@
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
 
 ## schema engine
 
 - [AOA-KAG-D-0032 - Fail-Closed Accelerated Schema Validation](../AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md) (`docs/decisions/AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md`)
+
+## schema evolution
+
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## schemas
 

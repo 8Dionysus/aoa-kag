@@ -421,6 +421,81 @@ class RepoLocalKagTieredFamilyTests(unittest.TestCase):
         self.assertEqual("complete", materialized_receipt["state"])
         self.assertEqual("unsigned-candidate", receipt["signature_state"])
 
+    def test_tiered_budget_path_delegates_to_shared_pair_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp, tempfile.TemporaryDirectory() as artifact_tmp:
+            root = Path(repo_tmp)
+            artifact_root = Path(artifact_tmp)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.name", "Tiered Family Test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.email", "tiered-family@example.invalid"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "fixture source"), cwd=root, check=True)
+            base_ref = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            evidence_path = Path("kag/receipts/index_family_budget/tiered.evidence.json")
+            receipt_path = Path("kag/receipts/index_family_budget/tiered.json")
+            evidence = {"state": "supported"}
+            receipt = {
+                "semantic_admission": "supported",
+                "semantic_evidence_ref": evidence_path.as_posix(),
+                "semantic_evidence_digest": "sha256:" + "0" * 64,
+            }
+            with patch(
+                "scripts.repo_local.portable_family.build_budget_publication",
+                return_value=(evidence_path, evidence, receipt_path, receipt),
+            ) as build_publication, patch(
+                "scripts.repo_local.portable_family.publish_budget_pair",
+            ) as publish_pair, patch(
+                "scripts.repo_local.portable_family.validate_changed_generated_budget",
+                return_value=(0, 0, True),
+            ):
+                result = generate_main(
+                    [
+                        "--repo-root",
+                        str(root),
+                        "--tiered-family",
+                        "--artifact-root",
+                        str(artifact_root),
+                        "--history-ref",
+                        base_ref,
+                        "--event-history-ref",
+                        base_ref,
+                        "--budget-base-ref",
+                        base_ref,
+                        "--write-budget-receipt",
+                        "--budget-reason",
+                        "bounded tiered publication test",
+                        "--budget-cause-class",
+                        "schema_builder_migration",
+                        "--budget-review-ref",
+                        "aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
+                    ]
+                )
+
+        self.assertEqual(0, result)
+        build_publication.assert_called_once()
+        publish_pair.assert_called_once_with(
+            root,
+            evidence_path=evidence_path,
+            evidence=evidence,
+            receipt_path=receipt_path,
+            receipt=receipt,
+        )
+
     def test_legacy_portable_invocation_routes_to_current_tiered_family(self) -> None:
         with (
             tempfile.TemporaryDirectory() as repo_tmp,

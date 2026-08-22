@@ -26,6 +26,7 @@ except ImportError:  # pragma: no cover - direct script execution
 from .portable_family import (
     MANIFEST_RELATIVE_PATH,
     SCHEMA_VERSION as PORTABLE_V3_SCHEMA_VERSION,
+    SEMANTIC_BUDGET_DECISION_REF,
     build_portable_family,
     render_manifest,
 )
@@ -1016,6 +1017,10 @@ def prepare_owner_externalization(
             "artifact delivery migration: tiered content-addressed "
             "KAG distribution"
         ),
+        "--budget-cause-class",
+        "artifact_delivery_migration",
+        "--budget-review-ref",
+        SEMANTIC_BUDGET_DECISION_REF,
     ]
     if generate_index_main(generator_args) != 0:
         raise TieredRolloutError(

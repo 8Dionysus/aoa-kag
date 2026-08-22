@@ -19,6 +19,11 @@
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 
+## budget receipt
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
+
 ## callable KAG procedure
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
@@ -302,6 +307,8 @@
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
 - [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 - [AOA-KAG-D-0035 - Bounded Owner-Family Component DAG](../AOA-KAG-D-0035-bounded-owner-family-component-dag.md) (`docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## portable record corpus
 
@@ -442,6 +449,11 @@
 ## script topology
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+
+## semantic admission evidence
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## skill projection provenance
 

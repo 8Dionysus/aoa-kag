@@ -1,0 +1,99 @@
+{
+  "schema_version": "aoa-repo-local-kag-budget-evidence-v2",
+  "state": "supported",
+  "owner": {
+    "name": "example-owner",
+    "namespace": "aoa:example-owner",
+    "owner_type": "organ",
+    "root": ".",
+    "git_ref": "git-index-source-tree"
+  },
+  "scope": "generated_delta",
+  "base_identity": {
+    "ref": "0123456789abcdef0123456789abcdef01234567",
+    "family_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "source_snapshot": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "distribution_digest": null
+  },
+  "head_identity": {
+    "family_digest": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    "source_snapshot": "sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    "distribution_digest": null
+  },
+  "procedure": {
+      "contract_version": "aoa-kag:budget-semantic-admission-v3",
+    "owner": "aoa-kag",
+    "base_ref": "0123456789abcdef0123456789abcdef01234567",
+    "files": [
+      {"path": "scripts/repo_local/portable_family.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "scripts/repo_local/tiered_family.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "scripts/generate_repo_local_kag_index.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "scripts/repo_local/history.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "scripts/repo_local/identity.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "scripts/repo_local/indexes.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "scripts/repo_local/structure.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "scripts/prepare_landing.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "schemas/repo-local-kag-budget-evidence.schema.json", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096},
+      {"path": "schemas/repo-local-kag-budget-receipt.schema.json", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "bytes": 4096}
+    ],
+    "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "review": {
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
+    "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "cause": {
+    "class": "legitimate_bulk_authored_change",
+    "reason": "The owner source change has been measured against the generated family.",
+    "evidence": {
+      "kind": "authored_source_delta",
+      "source_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "procedure_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "generated_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "source_delta_bytes": 1024,
+      "procedure_delta_bytes": 0,
+      "source_deleted_files": 0,
+      "source_dependency_state": "matched",
+      "source_snapshot_relation": "changed",
+      "transition": "none"
+    }
+  },
+  "measurements": {
+    "generated_delta": {"bytes": 2097152, "delta_bytes": 2097152, "files": 12, "paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+    "tracked_size": {"bytes": 4194304, "limit_bytes": 4194304},
+    "authored_source_delta": {"bytes": 1024, "delta_bytes": 1024, "files": 2, "paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+    "procedure_delta": {"bytes": 0, "delta_bytes": 0, "files": 0, "paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+    "source_dependency": {
+      "state": "matched",
+      "changed_source_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "related_generated_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "unrelated_generated_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "related_generated_rows_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "unrelated_generated_rows_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "related_generated_files": 12,
+      "unrelated_generated_files": 0,
+      "related_generated_rows": 12,
+      "unrelated_generated_rows": 0,
+      "unrelated_generated_bytes": 0
+    },
+    "topology": {
+      "base_schema_version": "aoa-repo-local-kag-family-manifest-v3",
+      "head_schema_version": "aoa-repo-local-kag-family-manifest-v3",
+      "base_placement_state": null,
+      "head_placement_state": null,
+      "base_hot_profile_digest": null,
+      "head_hot_profile_digest": null,
+      "base_partitioning_digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "head_partitioning_digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "procedure_base_ref": "0123456789abcdef0123456789abcdef01234567",
+      "source_snapshot_relation": "changed",
+      "transition": "none"
+    },
+    "amplification": {"generated_bytes": 2097152, "authored_source_bytes": 1024, "ratio_numerator": 2097152, "ratio_denominator": 1024},
+    "duplicate_materialization": {"state": "absent", "groups": []}
+  },
+  "fixed_point": {
+    "state": "required_external_gate",
+    "family_digest": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+  }
+}

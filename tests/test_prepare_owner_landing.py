@@ -38,10 +38,14 @@ class PrepareOwnerLandingTests(unittest.TestCase):
         output: str,
         refs: object,
         budget_reason: str | None,
+        budget_cause_class: str | None,
+        budget_review_ref: str | None,
     ) -> str:
         assert output == PREPARE.DEFAULT_OUTPUT
         assert refs is not None
         assert budget_reason is None
+        assert budget_cause_class is None
+        assert budget_review_ref is None
         shard_dir = repo_root / "kag" / "indexes" / "shards"
         shard_dir.mkdir(parents=True)
         (repo_root / "kag" / "indexes" / "index_family.manifest.json").write_text(
