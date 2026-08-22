@@ -482,8 +482,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             action.index("--sentinel-only"),
         )
         self.assertLess(
-            action.index("--sentinel-only"),
             action.index('python3 -c "import jsonschema"'),
+            action.index("--sentinel-only"),
         )
         self.assertLess(
             action.index('python3 -c "import jsonschema"'),

@@ -44,6 +44,7 @@
       "source_delta_bytes": 1024,
       "procedure_delta_bytes": 0,
       "source_deleted_files": 0,
+      "source_dependency_state": "matched",
       "source_snapshot_relation": "changed",
       "transition": "none"
     }
@@ -53,6 +54,15 @@
     "tracked_size": {"bytes": 4194304, "limit_bytes": 4194304},
     "authored_source_delta": {"bytes": 1024, "delta_bytes": 1024, "files": 2, "paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
     "procedure_delta": {"bytes": 0, "delta_bytes": 0, "files": 0, "paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+    "source_dependency": {
+      "state": "matched",
+      "changed_source_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "related_generated_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "unrelated_generated_paths_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "related_generated_files": 12,
+      "unrelated_generated_files": 0,
+      "unrelated_generated_bytes": 0
+    },
     "topology": {
       "base_schema_version": "aoa-repo-local-kag-family-manifest-v3",
       "head_schema_version": "aoa-repo-local-kag-family-manifest-v3",

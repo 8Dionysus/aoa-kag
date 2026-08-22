@@ -44,10 +44,12 @@ from scripts.repo_local.portable_family import (
     render_manifest,
     sha256_bytes,
     _budget_procedure_identity,
+    _budget_topology_context,
     _duplicate_materialization,
     _head_family_records,
     _review_identity,
     _semantic_admission_state,
+    _source_dependency_measurement,
     validate_changed_generated_budget,
     write_budget_evidence,
     write_budget_receipt,
@@ -819,6 +821,125 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     changed_paths={"kag/indexes/shards/source/a.jsonl"},
                 )["state"],
             )
+
+    def test_partitioning_transition_precedes_hot_profile_churn(self) -> None:
+        identity = {
+            "content_digest": "a" * 64,
+            "source_snapshot": "sha256:" + "b" * 64,
+            "distribution_digest": "sha256:" + "c" * 64,
+        }
+        manifest = {
+            "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+            "family_identity": identity,
+            "placement": {"state": "shadow"},
+        }
+        base_manifest = {
+            "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+            "family_identity": identity,
+            "placement": {"state": "shadow"},
+        }
+        with mock.patch.object(
+            portable_family_module,
+            "_git_bytes",
+            return_value=None,
+        ), mock.patch.object(
+            portable_family_module,
+            "_partitioning_value",
+            side_effect=lambda _root, _ref, _manifest, *, base: (
+                {"bucket": "base"} if base else {"bucket": "head"}
+            ),
+        ), mock.patch.object(
+            portable_family_module,
+            "_hot_profile_digest",
+            side_effect=["base-hot", "head-hot"],
+        ):
+            topology = _budget_topology_context(
+                Path("."),
+                base_ref="a" * 40,
+                procedure_base_ref="b" * 40,
+                manifest=manifest,
+                base_manifest=base_manifest,
+            )
+        self.assertEqual("partitioning_change", topology["transition"])
+
+    def test_source_cause_requires_a_matched_generated_dependency_witness(self) -> None:
+        source_record = {
+            "path": "src/input.py",
+            "old_bytes": 100,
+            "new_bytes": 132,
+            "delta_bytes": 32,
+        }
+        causal = {
+            "source_records": [source_record],
+            "procedure_records": [],
+            "generated_delta": {"bytes": 200, "files": 1},
+            "source_dependency": {
+                "state": "unmatched",
+            },
+            "topology": {
+                "source_snapshot_relation": "changed",
+                "transition": "none",
+            },
+        }
+        kwargs = {
+            "base_supported": True,
+            "cause_class": "legitimate_bulk_authored_change",
+            "source_measurement": {"bytes": 132, "files": 1},
+            "duplicate_materialization": {"state": "absent"},
+            "causal_measurements": causal,
+        }
+        self.assertEqual("unknown", _semantic_admission_state(**kwargs))
+        causal["source_dependency"]["state"] = "matched"
+        self.assertEqual("supported", _semantic_admission_state(**kwargs))
+
+    def test_source_dependency_scan_rejects_unrelated_generated_rows(self) -> None:
+        shard = Path("kag/indexes/shards/source/a.jsonl")
+        source_records = [{"path": "src/input.py"}]
+        generated_records = [{
+            "path": shard.as_posix(),
+            "old_digest": "a" * 64,
+            "new_digest": "b" * 64,
+        }]
+
+        def measure(row: dict[str, object]) -> dict[str, object]:
+            content = (json.dumps(row) + "\n").encode("utf-8")
+            with mock.patch.object(
+                portable_family_module,
+                "expected_portable_paths",
+                return_value={shard},
+            ), mock.patch.object(
+                portable_family_module,
+                "_base_portable_paths",
+                return_value={shard},
+            ), mock.patch.object(
+                portable_family_module,
+                "_current_bytes",
+                return_value=content,
+            ), mock.patch.object(
+                portable_family_module,
+                "_git_bytes",
+                return_value=content,
+            ):
+                return _source_dependency_measurement(
+                    Path("."),
+                    base_ref="a" * 40,
+                    manifest={},
+                    source_records=source_records,
+                    generated_records=generated_records,
+                )
+
+        self.assertEqual(
+            "unmatched",
+            measure({"identity": {"id": "other", "path": "src/other.py"}})[
+                "state"
+            ],
+        )
+        self.assertEqual(
+            "matched",
+            measure({"identity": {"id": "input", "path": "src/input.py"}})[
+                "state"
+            ],
+        )
 
     def test_first_family_migration_requires_typed_procedure_transition(self) -> None:
         causal = {

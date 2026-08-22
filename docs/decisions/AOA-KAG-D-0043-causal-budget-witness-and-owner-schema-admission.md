@@ -20,8 +20,9 @@ source bytes could stand in for causality, topology transitions had no typed
 witness, duplicate materialization could be hidden by an unchanged head
 shard, first-family migration was rejected before typed causal evidence was
 considered, procedure and review identities could resolve from a target
-checkout, published-schema failures were not a typed regeneration signal, and
-pruning could orphan the evidence paired with the current receipt.
+checkout, published-schema failures were not a typed regeneration signal,
+pruning could orphan the evidence paired with the current receipt, and a
+source edit could authorize unrelated generated churn.
 
 ## Decision
 
@@ -36,15 +37,20 @@ First-family creation uses the explicit `first_family_migration` transition and
 admits only a bounded, localized owner procedure witness; absent, partial, or
 ambiguous legacy evidence remains migration-required or unknown. Source and
 procedure witnesses use conservative localized-delta and generated
-amplification bounds; deletions, insufficient deltas, unrelated procedure
-changes, and ambiguous transitions remain `unknown`. Exact source-free delivery
-transitions are admitted only from the owner-authored topology projection. The
-executing `aoa-kag` module checkout owns procedure, review, and published-schema
-resolution; a supplied target repository cannot shadow those bindings. When a
-base object is unavailable in a shallow checkout, admission may use only a
-receipt/evidence packet bound to the current head and explicitly avoids
-inventing historical measurements. Current receipt and evidence files are one
-lifecycle pair during pruning.
+amplification bounds; source causes additionally require a bounded generated
+dependency scan whose typed source IDs or paths explain the changed family
+rows, with only a shard-sized unrelated-byte tolerance. Deletions,
+insufficient deltas, unrelated procedure changes, and ambiguous transitions
+remain unknown. Partitioning transitions take precedence over hot-profile
+churn when both identities move. Exact source-free delivery transitions are
+admitted only from the owner-authored topology projection. The executing
+`aoa-kag` module checkout owns procedure, review, and published-schema
+resolution; a supplied target repository cannot shadow those bindings. The
+repo-local action installs its schema dependencies before the drift sentinel
+imports the owner procedure. When a base object is unavailable in a shallow
+checkout, admission may use only a receipt/evidence packet bound to the
+current head and explicitly avoids inventing historical measurements. Current
+receipt and evidence files are one lifecycle pair during pruning.
 
 Older evidence remains `migration_required` before v2 schema validation. The
 receipt remains a separate digest-bound measurement envelope and both receipt

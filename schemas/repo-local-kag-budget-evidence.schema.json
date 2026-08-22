@@ -126,6 +126,7 @@
         "source_delta_bytes": {"type": "integer", "minimum": 0},
         "procedure_delta_bytes": {"type": "integer", "minimum": 0},
         "source_deleted_files": {"type": "integer", "minimum": 0},
+        "source_dependency_state": {"enum": ["matched", "unmatched", "not_applicable", "unknown"]},
         "source_snapshot_relation": {"enum": ["changed", "unchanged", "unknown"]},
         "transition": {"enum": ["none", "first_family_migration", "artifact_delivery_externalization", "hot_profile_change", "partitioning_change"]}
       }
@@ -208,9 +209,24 @@
         "tracked_size": {"$ref": "#/$defs/tracked"},
         "authored_source_delta": {"$ref": "#/$defs/measurement"},
         "procedure_delta": {"$ref": "#/$defs/measurement"},
+        "source_dependency": {"$ref": "#/$defs/sourceDependency"},
         "topology": {"$ref": "#/$defs/topology"},
         "amplification": {"$ref": "#/$defs/amplification"},
         "duplicate_materialization": {"$ref": "#/$defs/duplicates"}
+      }
+    },
+    "sourceDependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "changed_source_paths_digest", "related_generated_paths_digest", "unrelated_generated_paths_digest", "related_generated_files", "unrelated_generated_files", "unrelated_generated_bytes"],
+      "properties": {
+        "state": {"enum": ["matched", "unmatched", "not_applicable", "unknown"]},
+        "changed_source_paths_digest": {"$ref": "#/$defs/digest"},
+        "related_generated_paths_digest": {"$ref": "#/$defs/digest"},
+        "unrelated_generated_paths_digest": {"$ref": "#/$defs/digest"},
+        "related_generated_files": {"type": "integer", "minimum": 0},
+        "unrelated_generated_files": {"type": "integer", "minimum": 0},
+        "unrelated_generated_bytes": {"type": "integer", "minimum": 0}
       }
     },
     "fixedPoint": {

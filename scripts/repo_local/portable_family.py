@@ -82,6 +82,7 @@ TOPOLOGY_CAUSE_CLASSES = frozenset(
 MIN_CAUSAL_DELTA_BYTES = 16
 MAX_GENERATED_FILES_PER_CAUSAL_FILE = 128
 MAX_GENERATED_BYTES_PER_CAUSAL_BYTE = 4096
+MAX_UNRELATED_GENERATED_BYTES = 128 * 1024
 SEMANTIC_DERIVED_PATHS = {
     Path("docs/validation/script_inventory.json"),
     Path("docs/testing/test_inventory.json"),
@@ -1735,6 +1736,200 @@ def _measurement_payload(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]
     }
 
 
+def _family_json_rows(
+    content: bytes | None,
+    *,
+    path: Path,
+) -> list[dict[str, Any]]:
+    if content is None:
+        return []
+    if path.suffix != ".jsonl":
+        return []
+    rows: list[dict[str, Any]] = []
+    try:
+        for line in content.splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise PortableFamilyError(
+                    f"portable family row is not an object: {path}"
+                )
+            rows.append(row)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PortableFamilyError(
+            f"portable family row is malformed: {path}"
+        ) from exc
+    return rows
+
+
+def _row_dependency_paths(
+    row: Mapping[str, Any],
+    source_ids: Mapping[str, str],
+) -> set[str]:
+    """Collect declared source lineage without inventing path conventions."""
+    paths: set[str] = set()
+    path_keys = {"path", "old_path", "source_path", "lineage_path"}
+    id_keys = {
+        "object_id",
+        "source_id",
+        "source_record_id",
+        "source_record_ids",
+        "object_ids",
+    }
+
+    def visit(value: Any, key: str | None = None) -> None:
+        if isinstance(value, Mapping):
+            for child_key, child_value in value.items():
+                visit(child_value, str(child_key))
+            return
+        if isinstance(value, Sequence) and not isinstance(
+            value,
+            (str, bytes, bytearray),
+        ):
+            for child in value:
+                visit(child, key)
+            return
+        if not isinstance(value, str):
+            return
+        if key in path_keys:
+            paths.add(value)
+        if key in id_keys:
+            source_path = source_ids.get(value)
+            if source_path is not None:
+                paths.add(source_path)
+
+    visit(row)
+    return paths
+
+
+def _source_dependency_measurement(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    source_records: Sequence[Mapping[str, Any]],
+    generated_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Bind source-caused admission to generated rows that name those inputs.
+
+    The scan is bounded by the existing owner-family read ceiling.  Control
+    manifests are excluded from the relation check; every changed shard must
+    either carry a changed source path directly or expose one through its
+    typed source-id/path lineage.  A small shard-sized tolerance covers
+    deterministic source-family movement without allowing a source edit to
+    self-authorize unrelated generated churn.
+    """
+    source_paths = sorted(
+        {
+            str(record.get("path"))
+            for record in source_records
+            if isinstance(record.get("path"), str)
+        }
+    )
+    empty_digest = sha256_bytes(canonical_json_bytes([]))
+    base_paths = _base_portable_paths(repo_root.resolve(), base_ref)
+    current_paths = expected_portable_paths(manifest)
+    shard_paths = {
+        path
+        for path in {*current_paths, *base_paths}
+        if SHARD_ROOT_RELATIVE_PATH in (path, *path.parents)
+    }
+    if not source_paths:
+        return {
+            "state": "not_applicable",
+            "changed_source_paths_digest": empty_digest,
+            "related_generated_paths_digest": empty_digest,
+            "unrelated_generated_paths_digest": empty_digest,
+            "related_generated_files": 0,
+            "unrelated_generated_files": 0,
+            "unrelated_generated_bytes": 0,
+        }
+    if not base_paths:
+        return {
+            "state": "unknown",
+            "changed_source_paths_digest": sha256_bytes(
+                canonical_json_bytes(source_paths)
+            ),
+            "related_generated_paths_digest": empty_digest,
+            "unrelated_generated_paths_digest": empty_digest,
+            "related_generated_files": 0,
+            "unrelated_generated_files": 0,
+            "unrelated_generated_bytes": 0,
+        }
+
+    rows_by_path: dict[tuple[str, Path], list[dict[str, Any]]] = {}
+    source_ids: dict[str, str] = {}
+    for ref, paths in (("current", current_paths), ("base", base_paths)):
+        total_bytes = 0
+        for path in sorted(paths):
+            if SHARD_ROOT_RELATIVE_PATH not in (path, *path.parents):
+                continue
+            content = (
+                _current_bytes(repo_root, path)
+                if ref == "current"
+                else _git_bytes(repo_root, base_ref, path)
+            )
+            total_bytes += len(content or b"")
+            if total_bytes > GLOBAL_TRACKED_BYTES_MAX:
+                raise PortableFamilyError(
+                    "portable source dependency scan exceeds the bounded read ceiling"
+                )
+            rows = _family_json_rows(content, path=path)
+            rows_by_path[(ref, path)] = rows
+            for row in rows:
+                identity = row.get("identity")
+                if not isinstance(identity, Mapping):
+                    continue
+                source_id = identity.get("id")
+                source_path = identity.get("path")
+                if isinstance(source_id, str) and isinstance(source_path, str):
+                    source_ids[source_id] = source_path
+
+    changed_generated_paths = {
+        Path(str(record["path"]))
+        for record in generated_records
+        if record.get("old_digest") != record.get("new_digest")
+    }
+    related_paths: list[str] = []
+    unrelated_paths: list[str] = []
+    unrelated_bytes = 0
+    changed_source_paths = set(source_paths)
+    for path in sorted(changed_generated_paths & shard_paths):
+        dependencies: set[str] = set()
+        for ref in ("current", "base"):
+            for row in rows_by_path.get((ref, path), []):
+                dependencies.update(_row_dependency_paths(row, source_ids))
+        if dependencies & changed_source_paths:
+            related_paths.append(path.as_posix())
+        else:
+            unrelated_paths.append(path.as_posix())
+            current = _current_bytes(repo_root, path)
+            previous = _git_bytes(repo_root, base_ref, path)
+            unrelated_bytes += max(len(current or b""), len(previous or b""))
+
+    relation_state = (
+        "matched"
+        if related_paths and unrelated_bytes <= MAX_UNRELATED_GENERATED_BYTES
+        else "unmatched"
+    )
+    return {
+        "state": relation_state,
+        "changed_source_paths_digest": sha256_bytes(
+            canonical_json_bytes(source_paths)
+        ),
+        "related_generated_paths_digest": sha256_bytes(
+            canonical_json_bytes(sorted(related_paths))
+        ),
+        "unrelated_generated_paths_digest": sha256_bytes(
+            canonical_json_bytes(sorted(unrelated_paths))
+        ),
+        "related_generated_files": len(related_paths),
+        "unrelated_generated_files": len(unrelated_paths),
+        "unrelated_generated_bytes": unrelated_bytes,
+    }
+
+
 def _budget_identity(manifest: Mapping[str, Any]) -> dict[str, Any]:
     identity = manifest.get("family_identity")
     if not isinstance(identity, Mapping):
@@ -1905,17 +2100,17 @@ def _budget_topology_context(
     ):
         transition = "artifact_delivery_externalization"
     elif (
-        head_hot_profile_digest is not None
-        and base_hot_profile_digest is not None
-        and head_hot_profile_digest != base_hot_profile_digest
-    ):
-        transition = "hot_profile_change"
-    elif (
         head_partitioning_digest is not None
         and base_partitioning_digest is not None
         and head_partitioning_digest != base_partitioning_digest
     ):
         transition = "partitioning_change"
+    elif (
+        head_hot_profile_digest is not None
+        and base_hot_profile_digest is not None
+        and head_hot_profile_digest != base_hot_profile_digest
+    ):
+        transition = "hot_profile_change"
 
     return {
         "base_schema_version": (
@@ -2200,6 +2395,12 @@ def _semantic_admission_state(
         )
 
     source_relation = topology.get("source_snapshot_relation")
+    source_dependency = causal_measurements.get("source_dependency")
+    if cause_class in SOURCE_CAUSE_CLASSES and (
+        not isinstance(source_dependency, Mapping)
+        or source_dependency.get("state") != "matched"
+    ):
+        return "unknown"
     if (
         source_stats["deleted_files"] > 0
         or not generated_delta_is_bounded(
@@ -2314,6 +2515,7 @@ def _cause_witness(
         "source_delta_bytes": source_stats["delta_bytes"],
         "procedure_delta_bytes": procedure_stats["delta_bytes"],
         "source_deleted_files": source_stats["deleted_files"],
+        "source_dependency_state": measurements["source_dependency"]["state"],
         "source_snapshot_relation": topology["source_snapshot_relation"],
         "transition": topology["transition"],
     }
@@ -2359,6 +2561,13 @@ def _budget_measurements(
             changed_paths=changed_generated_paths,
         ),
         "procedure_delta": _measurement_payload(procedure_records),
+        "source_dependency": _source_dependency_measurement(
+            repo_root,
+            base_ref=base_ref,
+            manifest=manifest,
+            source_records=source_records,
+            generated_records=generated_records,
+        ),
         "topology": _budget_topology_context(
             repo_root,
             base_ref=base_ref,
@@ -2470,6 +2679,7 @@ def build_budget_evidence(
             "tracked_size": measurements["tracked_size"],
             "authored_source_delta": measurements["authored_source_delta"],
             "procedure_delta": measurements["procedure_delta"],
+            "source_dependency": measurements["source_dependency"],
             "topology": measurements["topology"],
             "amplification": {
                 "generated_bytes": generated_bytes,
@@ -2572,6 +2782,7 @@ def _validate_budget_semantic_evidence(
             "tracked_size": measurements["tracked_size"],
             "authored_source_delta": measurements["authored_source_delta"],
             "procedure_delta": measurements["procedure_delta"],
+            "source_dependency": measurements["source_dependency"],
             "topology": measurements["topology"],
             "amplification": {
                 "generated_bytes": measurements["generated_delta"]["bytes"],
@@ -2625,6 +2836,16 @@ def _validate_budget_semantic_evidence(
             raise PortableFamilyError(
                 "shallow checkout evidence measurements do not match current family"
             )
+        if str(cause["class"]) in SOURCE_CAUSE_CLASSES:
+            source_dependency = observed.get("source_dependency")
+            if (
+                not isinstance(source_dependency, Mapping)
+                or source_dependency.get("state") != "matched"
+            ):
+                raise PortableFamilyError(
+                    "shallow checkout source-caused evidence lacks a matched "
+                    "generated dependency witness"
+                )
         duplicate = observed.get("duplicate_materialization")
         if not isinstance(duplicate, Mapping) or duplicate.get("state") != "absent":
             raise PortableFamilyError(
