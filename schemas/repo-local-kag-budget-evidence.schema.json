@@ -69,10 +69,11 @@
     "procedure": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["contract_version", "owner", "files", "digest"],
+      "required": ["contract_version", "owner", "base_ref", "files", "digest"],
       "properties": {
         "contract_version": {"const": "aoa-kag:budget-semantic-admission-v3"},
         "owner": {"const": "aoa-kag"},
+        "base_ref": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
         "files": {
           "type": "array",
           "minItems": 1,
@@ -126,7 +127,7 @@
         "procedure_delta_bytes": {"type": "integer", "minimum": 0},
         "source_deleted_files": {"type": "integer", "minimum": 0},
         "source_snapshot_relation": {"enum": ["changed", "unchanged", "unknown"]},
-        "transition": {"enum": ["none", "artifact_delivery_externalization", "hot_profile_change", "partitioning_change"]}
+        "transition": {"enum": ["none", "first_family_migration", "artifact_delivery_externalization", "hot_profile_change", "partitioning_change"]}
       }
     },
     "measurement": {
@@ -163,7 +164,7 @@
     "topology": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["base_schema_version", "head_schema_version", "base_placement_state", "head_placement_state", "base_hot_profile_digest", "head_hot_profile_digest", "base_partitioning_digest", "head_partitioning_digest", "source_snapshot_relation", "transition"],
+      "required": ["base_schema_version", "head_schema_version", "base_placement_state", "head_placement_state", "base_hot_profile_digest", "head_hot_profile_digest", "base_partitioning_digest", "head_partitioning_digest", "procedure_base_ref", "source_snapshot_relation", "transition"],
       "properties": {
         "base_schema_version": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
         "head_schema_version": {"type": "string", "minLength": 1},
@@ -173,8 +174,9 @@
         "head_hot_profile_digest": {"anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]},
         "base_partitioning_digest": {"anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]},
         "head_partitioning_digest": {"anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]},
+        "procedure_base_ref": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
         "source_snapshot_relation": {"enum": ["changed", "unchanged", "unknown"]},
-        "transition": {"enum": ["none", "artifact_delivery_externalization", "hot_profile_change", "partitioning_change"]}
+        "transition": {"enum": ["none", "first_family_migration", "artifact_delivery_externalization", "hot_profile_change", "partitioning_change"]}
       }
     },
     "duplicates": {

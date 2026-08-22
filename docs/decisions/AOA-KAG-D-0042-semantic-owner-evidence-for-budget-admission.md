@@ -68,8 +68,10 @@ unsupported rather than being normalized into approval.
 
 ## Consequences
 
-- New exceedance receipts require a v2 receipt and a matching v1 evidence
-  packet produced by the owner procedure.
+- New exceedance receipts require a v2 receipt and the current typed evidence
+  packet produced by the owner procedure. The earlier v1-evidence wording in
+  this record is superseded by D-0043; this record's decision reference remains
+  the stable receipt ABI coordinate.
 - A missing, copied, stale, tampered, unsupported, unknown, or legacy packet
   blocks semantic admission and preserves the reason for the block.
 - Large legitimate source-owned changes can still be admitted when the typed

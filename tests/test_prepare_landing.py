@@ -4253,7 +4253,7 @@ class PrepareLandingTests(unittest.TestCase):
             ("family", "--check"),
             1,
             "",
-            "portable family budget is exceeded and no matching receipt exists",
+            "budget_receipt_validation_failure: portable family budget is exceeded and no matching receipt exists",
             10,
         )
         with patch.object(prepare_landing, "run_command", return_value=failure):
@@ -4272,7 +4272,7 @@ class PrepareLandingTests(unittest.TestCase):
             ("family", "--check"),
             1,
             "",
-            "portable family budget is exceeded and no matching receipt exists",
+            "budget_receipt_validation_failure: portable family budget is exceeded and no matching receipt exists",
             10,
         )
         success = prepare_landing.CommandResult(("family",), 0, "", "", 10)

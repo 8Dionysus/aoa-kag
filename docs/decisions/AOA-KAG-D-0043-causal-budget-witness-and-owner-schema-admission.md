@@ -15,11 +15,13 @@
 ## Context
 
 The D-0042 evidence packet bound a typed cause to a generated-family budget,
-but the current-head review exposed six generic admission gaps: aggregate
+but complete-family admission pressure exposed several generic gaps: aggregate
 source bytes could stand in for causality, topology transitions had no typed
-witness, procedure and review identities could resolve from a target checkout,
-published schemas were not enforced at admission, and pruning could orphan
-the evidence paired with the current receipt.
+witness, duplicate materialization could be hidden by an unchanged head
+shard, first-family migration was rejected before typed causal evidence was
+considered, procedure and review identities could resolve from a target
+checkout, published-schema failures were not a typed regeneration signal, and
+pruning could orphan the evidence paired with the current receipt.
 
 ## Decision
 
@@ -27,14 +29,22 @@ Evolve the evidence packet and procedure contract to v2/v3. A supported cause
 must carry a digest-bound witness containing the localized source and procedure
 delta measurements, generated-path identity, source snapshot relation, and an
 exact owner topology transition when the cause is delivery or distribution
-pressure. Source and procedure witnesses use conservative localized-delta and
-generated amplification bounds; deletions, insufficient deltas, unrelated
-procedure changes, and ambiguous transitions remain `unknown`. Exact
-source-free delivery transitions are admitted only from the owner-authored
-topology projection. The executing `aoa-kag` module checkout owns procedure,
-review, and published-schema resolution; a supplied target repository cannot
-shadow those bindings. Current receipt and evidence files are one lifecycle
-pair during pruning.
+pressure. Duplicate admission scans the complete materialized head family but
+only rejects groups containing a changed generated path, so pre-existing
+unchanged duplicates do not self-authorize or self-invalidate a candidate.
+First-family creation uses the explicit `first_family_migration` transition and
+admits only a bounded, localized owner procedure witness; absent, partial, or
+ambiguous legacy evidence remains migration-required or unknown. Source and
+procedure witnesses use conservative localized-delta and generated
+amplification bounds; deletions, insufficient deltas, unrelated procedure
+changes, and ambiguous transitions remain `unknown`. Exact source-free delivery
+transitions are admitted only from the owner-authored topology projection. The
+executing `aoa-kag` module checkout owns procedure, review, and published-schema
+resolution; a supplied target repository cannot shadow those bindings. When a
+base object is unavailable in a shallow checkout, admission may use only a
+receipt/evidence packet bound to the current head and explicitly avoids
+inventing historical measurements. Current receipt and evidence files are one
+lifecycle pair during pruning.
 
 Older evidence remains `migration_required` before v2 schema validation. The
 receipt remains a separate digest-bound measurement envelope and both receipt
@@ -57,7 +67,11 @@ additional properties.
 ## Consequences
 
 - New evidence is v2 and the owner procedure identity is v3; old evidence is
-  not semantic approval.
+  not semantic approval. Its topology witness includes the immutable procedure
+  baseline used for the delta.
+- Receipt or evidence validation failures carry one exact typed marker so the
+  preparation lanes regenerate only a known stale/missing pair; unrelated
+  validator failures remain code failures.
 - `supported` requires a recomputable witness, exact owner provenance, and
   schema-valid paired artifacts. Insufficient or mixed evidence stays
   `unknown` or `unsupported` according to the existing state contract.

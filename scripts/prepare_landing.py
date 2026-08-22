@@ -28,6 +28,11 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+try:
+    from scripts.repo_local.portable_family import BUDGET_RECEIPT_FAILURE_MARKER
+except ImportError:  # pragma: no cover - direct script execution
+    from repo_local.portable_family import BUDGET_RECEIPT_FAILURE_MARKER  # type: ignore
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "aoa-kag-prepare-landing-receipt-v1"
@@ -68,6 +73,16 @@ PORTABLE_LOCAL_CONFIG_KEYS = frozenset(
 PORTABLE_LOCAL_CONFIG_PREFIXES = ("branch.",)
 ISOLATION_LOCAL_CONFIG_KEYS = frozenset({"core.fsmonitor", "core.hookspath"})
 PORTABLE_REMOTE_CONFIG_SUFFIXES = (".url", ".fetch")
+
+
+def is_budget_receipt_failure_output(output: str) -> bool:
+    """Recognize only the portable-family validator's typed failure marker."""
+    marker = f"{BUDGET_RECEIPT_FAILURE_MARKER}:"
+    return any(
+        line.lstrip().startswith(marker)
+        or line.lstrip().startswith(f"[repo-local-kag-index] {marker}")
+        for line in output.splitlines()
+    )
 
 
 @dataclass(frozen=True)
@@ -5458,14 +5473,7 @@ def ensure_budget_receipt(
         output = check.stdout + check.stderr
         return "accepted" if "receipt=accepted" in output else "not_required"
     output = check.stdout + check.stderr
-    receipt_failure = (
-        "no matching receipt exists" in output
-        or "receipt field" in output
-        or "receipt scope" in output
-        or "receipt approval" in output
-        or "semantic admission" in output
-        or "semantic evidence" in output
-    )
+    receipt_failure = is_budget_receipt_failure_output(output)
     if not receipt_failure:
         raise PreparationFailure(
             "final portable-family budget check failed for a non-receipt reason",

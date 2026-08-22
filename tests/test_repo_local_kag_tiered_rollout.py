@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from jsonschema import Draft202012Validator
 
@@ -14,9 +15,11 @@ from scripts.generate_repo_local_kag_index import (
     build_repository_indexes,
 )
 from scripts.repo_local.portable_family import (
+    BUDGET_PROCEDURE_PATHS,
     build_portable_family,
     write_portable_output,
 )
+from scripts.repo_local import portable_family as portable_family_module
 from scripts.repo_local.tiered_rollout import (
     CANARY_OWNERS,
     MachineTrustAdapter,
@@ -118,6 +121,29 @@ def build_committed_v3_owner(root: Path, owner: str) -> None:
 
 
 class RepoLocalKagTieredRolloutTests(unittest.TestCase):
+    def _clean_procedure_delta_for_owner_fixture(self) -> mock._patch:
+        original_path_change_records = portable_family_module._path_change_records
+
+        def path_change_records_without_dirty_owner(
+            candidate_root: Path,
+            **kwargs: object,
+        ) -> list[dict[str, object]]:
+            if (
+                candidate_root.resolve() == REPO_ROOT.resolve()
+                and set(kwargs.get("paths", ())) == set(BUDGET_PROCEDURE_PATHS)
+            ):
+                return []
+            return original_path_change_records(  # type: ignore[arg-type]
+                candidate_root,
+                **kwargs,
+            )
+
+        return mock.patch.object(
+            portable_family_module,
+            "_path_change_records",
+            side_effect=path_change_records_without_dirty_owner,
+        )
+
     def test_machine_trust_adapter_isolates_provider_root_override(
         self,
     ) -> None:
@@ -193,10 +219,11 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
                 cwd=root,
                 check=True,
             )
-            receipt = prepare_owner_externalization(
-                OwnerSource(owner="owner-demo", root=root),
-                artifact_root=base / "cas",
-            )
+            with self._clean_procedure_delta_for_owner_fixture():
+                receipt = prepare_owner_externalization(
+                    OwnerSource(owner="owner-demo", root=root),
+                    artifact_root=base / "cas",
+                )
             distribution = read_json(
                 root / "kag/indexes/index_family.manifest.json",
                 "distribution",
@@ -234,10 +261,11 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
             base = Path(tmpdir)
             root = base / "owner"
             build_committed_v3_owner(root, "owner-demo")
-            receipt = prepare_owner_externalization(
-                OwnerSource(owner="owner-demo", root=root),
-                artifact_root=base / "cas",
-            )
+            with self._clean_procedure_delta_for_owner_fixture():
+                receipt = prepare_owner_externalization(
+                    OwnerSource(owner="owner-demo", root=root),
+                    artifact_root=base / "cas",
+                )
             evidence_path = root / receipt["budget_receipt"]
             evidence = read_json(
                 evidence_path.with_name(

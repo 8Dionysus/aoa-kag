@@ -23,6 +23,7 @@
   "procedure": {
       "contract_version": "aoa-kag:budget-semantic-admission-v3",
     "owner": "aoa-kag",
+    "base_ref": "0123456789abcdef0123456789abcdef01234567",
     "files": [
       {"path": "scripts/repo_local/portable_family.py", "state": "present", "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}
     ],
@@ -61,6 +62,7 @@
       "head_hot_profile_digest": null,
       "base_partitioning_digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       "head_partitioning_digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "procedure_base_ref": "0123456789abcdef0123456789abcdef01234567",
       "source_snapshot_relation": "changed",
       "transition": "none"
     },

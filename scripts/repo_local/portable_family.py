@@ -61,6 +61,7 @@ BUDGET_EVIDENCE_SCHEMA_PATH = Path(
 BUDGET_RECEIPT_SCHEMA_PATH = Path(
     "schemas/repo-local-kag-budget-receipt.schema.json"
 )
+BUDGET_RECEIPT_FAILURE_MARKER = "budget_receipt_validation_failure"
 SOURCE_CAUSE_CLASSES = frozenset(
     {
         "deliberate_source_migration",
@@ -150,6 +151,13 @@ CHUNKABLE_FIELDS = {
 
 class PortableFamilyError(ValueError):
     pass
+
+
+class BudgetReceiptValidationError(PortableFamilyError):
+    """A receipt/evidence failure that the preparation lane may regenerate."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(f"{BUDGET_RECEIPT_FAILURE_MARKER}: {message}")
 
 
 def effective_index_surface_record(
@@ -1837,6 +1845,7 @@ def _budget_topology_context(
     repo_root: Path,
     *,
     base_ref: str,
+    procedure_base_ref: str,
     manifest: Mapping[str, Any],
     base_manifest: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
@@ -1868,7 +1877,29 @@ def _budget_topology_context(
     base_hot_profile_digest = _hot_profile_digest(base_manifest)
     head_hot_profile_digest = _hot_profile_digest(manifest)
     transition = "none"
-    if (
+    base_legacy_paths = {
+        Path("kag/indexes") / filename
+        for filename in LEGACY_INDEX_FILENAMES.values()
+        if _git_bytes(
+            repo_root.resolve(),
+            base_ref,
+            Path("kag/indexes") / filename,
+        )
+        is not None
+    }
+    complete_legacy_family = base_legacy_paths == {
+        Path("kag/indexes") / filename
+        for filename in LEGACY_INDEX_FILENAMES.values()
+    }
+    first_family_migration = (
+        base_manifest is None
+        and manifest.get("schema_version")
+        in {SCHEMA_VERSION, TIERED_DISTRIBUTION_SCHEMA_VERSION}
+        and (not base_legacy_paths or complete_legacy_family)
+    )
+    if first_family_migration:
+        transition = "first_family_migration"
+    elif (
         _placement_state(manifest) == "externalized"
         and _placement_state(base_manifest) != "externalized"
     ):
@@ -1899,6 +1930,7 @@ def _budget_topology_context(
         "head_hot_profile_digest": head_hot_profile_digest,
         "base_partitioning_digest": base_partitioning_digest,
         "head_partitioning_digest": head_partitioning_digest,
+        "procedure_base_ref": procedure_base_ref,
         "source_snapshot_relation": source_snapshot_relation,
         "transition": transition,
     }
@@ -1924,6 +1956,28 @@ def _procedure_root(repo_root: Path) -> Path:
             "executing aoa-kag procedure checkout is missing its owner module"
         )
     return root
+
+
+def _procedure_baseline_ref(owner_root: Path) -> str:
+    """Resolve an immutable baseline owned by the executing KAG checkout."""
+    for candidate in ("origin/HEAD", "origin/main", "main"):
+        try:
+            return _resolve_git_ref(owner_root, candidate)
+        except subprocess.CalledProcessError:
+            continue
+    raise PortableFamilyError(
+        "executing aoa-kag procedure checkout has no local immutable baseline"
+    )
+
+
+def _procedure_measurement_base_ref(
+    repo_root: Path,
+    target_base_ref: str,
+) -> str:
+    owner_root = _procedure_root(repo_root)
+    if owner_root == repo_root.resolve():
+        return _resolve_git_ref(owner_root, target_base_ref)
+    return _procedure_baseline_ref(owner_root)
 
 
 def _published_budget_schema_path(kind: str) -> Path:
@@ -1962,8 +2016,17 @@ def _validate_published_budget_schema(
         ) from exc
 
 
-def _budget_procedure_identity(repo_root: Path) -> dict[str, Any]:
+def _budget_procedure_identity(
+    repo_root: Path,
+    *,
+    procedure_base_ref: str | None = None,
+) -> dict[str, Any]:
     root = _procedure_root(repo_root)
+    resolved_base_ref = (
+        _procedure_baseline_ref(root)
+        if procedure_base_ref is None
+        else _resolve_git_ref(root, procedure_base_ref)
+    )
     files: list[dict[str, Any]] = []
     for relative in BUDGET_PROCEDURE_PATHS:
         path = root / relative
@@ -1982,6 +2045,7 @@ def _budget_procedure_identity(repo_root: Path) -> dict[str, Any]:
     return {
         "contract_version": BUDGET_PROCEDURE_VERSION,
         "owner": "aoa-kag",
+        "base_ref": resolved_base_ref,
         "files": files,
         "digest": sha256_bytes(canonical_json_bytes(files)),
     }
@@ -2016,6 +2080,8 @@ def _review_identity(repo_root: Path, review_ref: str) -> dict[str, str]:
 
 def _duplicate_materialization(
     records: Sequence[Mapping[str, Any]],
+    *,
+    changed_paths: set[str] | None = None,
 ) -> dict[str, Any]:
     by_digest: dict[str, list[str]] = {}
     for record in records:
@@ -2030,11 +2096,45 @@ def _duplicate_materialization(
         {"digest": digest, "paths": sorted(paths)}
         for digest, paths in sorted(by_digest.items())
         if len(paths) > 1
+        and (
+            changed_paths is None
+            or any(path in changed_paths for path in paths)
+        )
     ]
     return {
         "state": "present" if groups else "absent",
         "groups": groups,
     }
+
+
+def _head_family_records(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Read the complete materialized head family once for duplicate admission."""
+    total_bytes = 0
+    records: list[dict[str, Any]] = []
+    for path in sorted(expected_portable_paths(manifest)):
+        content = _current_bytes(repo_root, path)
+        if content is None:
+            continue
+        total_bytes += len(content)
+        if total_bytes > GLOBAL_TRACKED_BYTES_MAX:
+            raise PortableFamilyError(
+                "portable family duplicate scan exceeds the global bounded read ceiling"
+            )
+        records.append(
+            {
+                "path": path.as_posix(),
+                "old_digest": None,
+                "new_digest": sha256_bytes(content),
+                "old_bytes": 0,
+                "new_bytes": len(content),
+                "changed_bytes": len(content),
+                "delta_bytes": len(content),
+            }
+        )
+    return records
 
 
 def _semantic_admission_state(
@@ -2045,12 +2145,12 @@ def _semantic_admission_state(
     duplicate_materialization: Mapping[str, Any],
     causal_measurements: Mapping[str, Any] | None = None,
 ) -> str:
-    if not base_supported:
-        return "migration_required"
     if cause_class == "accidental_generated_amplification":
         return "unsupported"
     if duplicate_materialization.get("state") == "present":
         return "unsupported"
+    if not base_supported and causal_measurements is None:
+        return "migration_required"
     if causal_measurements is None:
         return "unknown"
     source_records = causal_measurements.get("source_records")
@@ -2075,6 +2175,9 @@ def _semantic_admission_state(
 
     source_stats = _record_delta_stats(source_records)
     procedure_stats = _record_delta_stats(procedure_records)
+    transition = topology.get("transition")
+    if not base_supported and transition != "first_family_migration":
+        return "migration_required"
     try:
         source_files = int(source_measurement.get("files", 0))
         generated_bytes = int(generated_delta.get("bytes", -1))
@@ -2115,6 +2218,17 @@ def _semantic_admission_state(
         )
 
     if cause_class == "schema_builder_migration":
+        if not base_supported and transition != "first_family_migration":
+            return "migration_required"
+        if (
+            not base_supported
+            and (
+                source_records
+                or source_stats["deleted_files"] > 0
+                or topology.get("source_snapshot_relation") != "unknown"
+            )
+        ):
+            return "unknown"
         if (
             procedure_stats["deleted_files"] > 0
             or not generated_delta_is_bounded(
@@ -2125,7 +2239,6 @@ def _semantic_admission_state(
             return "unknown"
         return "supported"
 
-    transition = topology.get("transition")
     if cause_class == "artifact_delivery_migration":
         source_delta_is_bounded = (
             source_stats["deleted_files"] == 0
@@ -2219,13 +2332,21 @@ def _budget_measurements(
         manifest=manifest,
     )
     source_records = _changed_source_records(repo_root, base_ref=base_ref)
+    procedure_root = _procedure_root(repo_root)
+    procedure_base_ref = _procedure_measurement_base_ref(repo_root, base_ref)
     procedure_records = _path_change_records(
-        repo_root,
-        base_ref=base_ref,
+        procedure_root,
+        base_ref=procedure_base_ref,
         paths=BUDGET_PROCEDURE_PATHS,
     )
     budgets = manifest["budgets"]
     summary = manifest["summary"]
+    head_family_records = _head_family_records(repo_root, manifest)
+    changed_generated_paths = {
+        str(record["path"])
+        for record in generated_records
+        if record.get("new_bytes", 0) > 0
+    }
     return {
         "generated_delta": _measurement_payload(generated_records),
         "tracked_size": {
@@ -2234,18 +2355,21 @@ def _budget_measurements(
         },
         "authored_source_delta": _measurement_payload(source_records),
         "duplicate_materialization": _duplicate_materialization(
-            generated_records
+            head_family_records,
+            changed_paths=changed_generated_paths,
         ),
         "procedure_delta": _measurement_payload(procedure_records),
         "topology": _budget_topology_context(
             repo_root,
             base_ref=base_ref,
+            procedure_base_ref=procedure_base_ref,
             manifest=manifest,
             base_manifest=base_manifest,
         ),
         "generated_records": generated_records,
         "source_records": source_records,
         "procedure_records": procedure_records,
+        "procedure_base_ref": procedure_base_ref,
         "base_supported": _budget_base_supported(base_manifest),
     }
 
@@ -2331,7 +2455,10 @@ def build_budget_evidence(
         ),
         "base_identity": _base_identity(resolved, base_manifest),
         "head_identity": head_identity,
-        "procedure": _budget_procedure_identity(root),
+        "procedure": _budget_procedure_identity(
+            root,
+            procedure_base_ref=measurements["procedure_base_ref"],
+        ),
         "review": _review_identity(root, review_ref),
         "cause": {
             "class": cause_class,
@@ -2371,6 +2498,7 @@ def _validate_budget_semantic_evidence(
     expected_scope: str,
     receipt: Mapping[str, Any],
     evidence: Mapping[str, Any],
+    recompute_measurements: bool = True,
 ) -> None:
     if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
         raise PortableFamilyError(
@@ -2389,8 +2517,17 @@ def _validate_budget_semantic_evidence(
         raise PortableFamilyError("budget semantic evidence owner identity mismatches family")
     if evidence.get("scope") != expected_scope:
         raise PortableFamilyError("budget semantic evidence scope mismatches exceedance")
-    if evidence.get("base_identity") != _base_identity(base_ref, base_manifest):
-        raise PortableFamilyError("budget semantic evidence base identity mismatches current base")
+    if recompute_measurements:
+        if evidence.get("base_identity") != _base_identity(base_ref, base_manifest):
+            raise PortableFamilyError(
+                "budget semantic evidence base identity mismatches current base"
+            )
+    else:
+        base_identity = evidence.get("base_identity")
+        if not isinstance(base_identity, Mapping) or base_identity.get("ref") != base_ref:
+            raise PortableFamilyError(
+                "budget semantic evidence base identity is not bound to the receipt"
+            )
     head_identity = _budget_identity(manifest)
     if evidence.get("head_identity") != head_identity:
         raise PortableFamilyError("budget semantic evidence head identity mismatches family")
@@ -2399,7 +2536,11 @@ def _validate_budget_semantic_evidence(
         "family_digest": head_identity["family_digest"],
     }:
         raise PortableFamilyError("budget semantic evidence fixed-point binding mismatches family")
-    if evidence.get("procedure") != _budget_procedure_identity(repo_root):
+    procedure_base_ref = _procedure_measurement_base_ref(repo_root, base_ref)
+    if evidence.get("procedure") != _budget_procedure_identity(
+        repo_root,
+        procedure_base_ref=procedure_base_ref,
+    ):
         raise PortableFamilyError(
             "budget semantic evidence procedure/environment identity is stale"
         )
@@ -2416,57 +2557,79 @@ def _validate_budget_semantic_evidence(
         raise PortableFamilyError(
             "budget semantic evidence reason is not bound to the receipt"
         )
-    measurements = _budget_measurements(
-        repo_root,
-        base_ref=base_ref,
-        manifest=manifest,
-        base_manifest=base_manifest,
-    )
     observed = evidence.get("measurements")
     if not isinstance(observed, Mapping):
         raise PortableFamilyError("budget semantic evidence measurements are missing")
-    expected_measurements = {
-        "generated_delta": measurements["generated_delta"],
-        "tracked_size": measurements["tracked_size"],
-        "authored_source_delta": measurements["authored_source_delta"],
-        "procedure_delta": measurements["procedure_delta"],
-        "topology": measurements["topology"],
-        "amplification": {
-            "generated_bytes": measurements["generated_delta"]["bytes"],
-            "authored_source_bytes": measurements["authored_source_delta"]["bytes"],
-            "ratio_numerator": measurements["generated_delta"]["bytes"],
-            "ratio_denominator": max(
-                measurements["authored_source_delta"]["bytes"],
-                1,
-            ),
-        },
-        "duplicate_materialization": measurements[
-            "duplicate_materialization"
-        ],
-    }
-    if dict(observed) != expected_measurements:
-        raise PortableFamilyError(
-            "budget semantic evidence measurements do not match current source and family"
+    if recompute_measurements:
+        measurements = _budget_measurements(
+            repo_root,
+            base_ref=base_ref,
+            manifest=manifest,
+            base_manifest=base_manifest,
         )
-    expected_cause_evidence = _cause_witness(
-        str(cause["class"]),
-        measurements,
-    )
-    if cause.get("evidence") != expected_cause_evidence:
-        raise PortableFamilyError(
-            "budget semantic evidence cause witness is stale or incomplete"
+        expected_measurements = {
+            "generated_delta": measurements["generated_delta"],
+            "tracked_size": measurements["tracked_size"],
+            "authored_source_delta": measurements["authored_source_delta"],
+            "procedure_delta": measurements["procedure_delta"],
+            "topology": measurements["topology"],
+            "amplification": {
+                "generated_bytes": measurements["generated_delta"]["bytes"],
+                "authored_source_bytes": measurements["authored_source_delta"]["bytes"],
+                "ratio_numerator": measurements["generated_delta"]["bytes"],
+                "ratio_denominator": max(
+                    measurements["authored_source_delta"]["bytes"],
+                    1,
+                ),
+            },
+            "duplicate_materialization": measurements[
+                "duplicate_materialization"
+            ],
+        }
+        if dict(observed) != expected_measurements:
+            raise PortableFamilyError(
+                "budget semantic evidence measurements do not match current source and family"
+            )
+        expected_cause_evidence = _cause_witness(
+            str(cause["class"]),
+            measurements,
         )
-    expected_state = _semantic_admission_state(
-        base_supported=measurements["base_supported"],
-        cause_class=str(cause["class"]),
-        source_measurement=measurements["authored_source_delta"],
-        duplicate_materialization=measurements["duplicate_materialization"],
-        causal_measurements=measurements,
-    )
-    if expected_state != state:
-        raise PortableFamilyError(
-            f"budget semantic evidence state={state} does not match measured state={expected_state}"
+        if cause.get("evidence") != expected_cause_evidence:
+            raise PortableFamilyError(
+                "budget semantic evidence cause witness is stale or incomplete"
+            )
+        expected_state = _semantic_admission_state(
+            base_supported=measurements["base_supported"],
+            cause_class=str(cause["class"]),
+            source_measurement=measurements["authored_source_delta"],
+            duplicate_materialization=measurements["duplicate_materialization"],
+            causal_measurements=measurements,
         )
+        if expected_state != state:
+            raise PortableFamilyError(
+                f"budget semantic evidence state={state} does not match measured state={expected_state}"
+            )
+    else:
+        generated = observed.get("generated_delta")
+        tracked = observed.get("tracked_size")
+        if not isinstance(generated, Mapping) or not isinstance(tracked, Mapping):
+            raise PortableFamilyError(
+                "shallow checkout evidence measurements are incomplete"
+            )
+        if (
+            generated.get("bytes") != receipt.get("changed_generated_bytes")
+            or generated.get("files") != receipt.get("changed_generated_files")
+            or tracked.get("bytes") != manifest["summary"]["tracked_bytes"]
+            or tracked.get("limit_bytes") != manifest["budgets"]["tracked_bytes_max"]
+        ):
+            raise PortableFamilyError(
+                "shallow checkout evidence measurements do not match current family"
+            )
+        duplicate = observed.get("duplicate_materialization")
+        if not isinstance(duplicate, Mapping) or duplicate.get("state") != "absent":
+            raise PortableFamilyError(
+                "shallow checkout evidence does not prove duplicate-free admission"
+            )
     if receipt.get("semantic_admission") != state:
         raise PortableFamilyError("budget receipt semantic admission state is not supported")
 
@@ -2502,7 +2665,7 @@ def build_budget_receipt(
         summary["tracked_bytes"] > budgets["tracked_bytes_max"]
     )
     scope = _budget_receipt_scope(
-        base_has_v3=base_manifest is not None,
+        base_has_v3=_budget_base_supported(base_manifest),
         generated_delta_exceeded=delta_exceeded,
         tracked_size_exceeded=tracked_exceeded,
     )
@@ -2568,17 +2731,146 @@ def write_budget_receipt(
         destination.write_bytes(content)
 
 
+def _validate_budget_receipt_without_history(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+    *,
+    base_ref: str,
+    require_tracked: bool = False,
+) -> tuple[int, int, bool]:
+    """Validate a receipt when its immutable base object is outside a shallow clone.
+
+    The receipt and current head remain digest-bound, but no historical delta or
+    base family is guessed.  The caller gets a typed validation failure when the
+    packet cannot carry all of the missing historical evidence.
+    """
+    try:
+        path = repo_root.resolve() / receipt_path_for(manifest)
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(receipt, dict):
+            raise PortableFamilyError("budget receipt must be an object")
+        if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+            raise PortableFamilyError(
+                "budget receipt semantic admission is migration_required; legacy v1 "
+                "receipt is structural-only"
+            )
+        _validate_published_budget_schema("receipt", receipt)
+        if receipt.get("base_ref") != base_ref:
+            raise PortableFamilyError(
+                "shallow checkout receipt base_ref does not match the requested ref"
+            )
+        budgets = manifest["budgets"]
+        summary = manifest["summary"]
+        expected = {
+            "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
+            "repo": manifest["repo"]["name"],
+            "head_family_digest": manifest["family_identity"]["content_digest"],
+            "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+            "head_distribution_digest": _budget_identity(manifest)[
+                "distribution_digest"
+            ],
+            "default_limit_bytes": DEFAULT_DELTA_BYTES_MAX,
+            "tracked_bytes": summary["tracked_bytes"],
+            "tracked_bytes_max": budgets["tracked_bytes_max"],
+            "decision_ref": _budget_decision_ref(manifest),
+        }
+        for field, value in expected.items():
+            if receipt.get(field) != value:
+                raise PortableFamilyError(
+                    f"shallow checkout receipt field {field} does not match family"
+                )
+        changed_bytes = receipt.get("changed_generated_bytes")
+        changed_files = receipt.get("changed_generated_files")
+        if not isinstance(changed_bytes, int) or not isinstance(changed_files, int):
+            raise PortableFamilyError(
+                "shallow checkout receipt generated-delta measurement is missing"
+            )
+        delta_exceeded = changed_bytes > budgets["changed_generated_bytes_max"]
+        tracked_exceeded = summary["tracked_bytes"] > budgets["tracked_bytes_max"]
+        if require_tracked and not tracked_exceeded:
+            raise PortableFamilyError(
+                "shallow checkout tracked-size receipt is not required by the current family"
+            )
+        if not delta_exceeded and not tracked_exceeded:
+            return changed_bytes, changed_files, False
+        expected_scopes = (
+            {"generated_delta_and_tracked_size"}
+            if delta_exceeded and tracked_exceeded
+            else {"generated_delta", "v2_to_v3_migration"}
+            if delta_exceeded
+            else {"tracked_size"}
+        )
+        if receipt.get("scope") not in expected_scopes:
+            raise PortableFamilyError(
+                "shallow checkout receipt scope does not match current measurements"
+            )
+        if (
+            not isinstance(receipt.get("reason"), str)
+            or not receipt["reason"].strip()
+            or not isinstance(receipt.get("approved_by"), str)
+            or not receipt["approved_by"].strip()
+            or receipt.get("allowed_bytes", -1) < changed_bytes
+            or receipt.get("allowed_tracked_bytes", -1) < summary["tracked_bytes"]
+        ):
+            raise PortableFamilyError("shallow checkout receipt approval is incomplete")
+        evidence_path = evidence_path_for(manifest)
+        if receipt.get("semantic_evidence_ref") != evidence_path.as_posix():
+            raise PortableFamilyError(
+                "shallow checkout receipt semantic evidence ref does not match family"
+            )
+        evidence = json.loads(
+            (repo_root.resolve() / evidence_path).read_text(encoding="utf-8")
+        )
+        if not isinstance(evidence, dict) or sha256_bytes(
+            render_manifest(evidence)
+        ) != receipt.get("semantic_evidence_digest"):
+            raise PortableFamilyError(
+                "shallow checkout semantic evidence digest does not match receipt"
+            )
+        if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
+            raise PortableFamilyError(
+                "budget semantic admission is migration_required for legacy evidence"
+            )
+        _validate_published_budget_schema("evidence", evidence)
+        _validate_budget_semantic_evidence(
+            repo_root,
+            manifest=manifest,
+            base_ref=base_ref,
+            base_manifest=None,
+            expected_scope=str(receipt["scope"]),
+            receipt=receipt,
+            evidence=evidence,
+            recompute_measurements=False,
+        )
+        return changed_bytes, changed_files, True
+    except BudgetReceiptValidationError:
+        raise
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        raise BudgetReceiptValidationError(
+            "shallow checkout cannot validate a missing or malformed receipt"
+        ) from exc
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
+
+
 def validate_changed_generated_budget(
     repo_root: Path,
     *,
     base_ref: str,
     manifest: Mapping[str, Any],
 ) -> tuple[int, int, bool]:
-    changed_bytes, changed_files, resolved = changed_generated_bytes(
-        repo_root,
-        base_ref=base_ref,
-        manifest=manifest,
-    )
+    try:
+        changed_bytes, changed_files, resolved = changed_generated_bytes(
+            repo_root,
+            base_ref=base_ref,
+            manifest=manifest,
+        )
+    except subprocess.CalledProcessError:
+        return _validate_budget_receipt_without_history(
+            repo_root,
+            manifest,
+            base_ref=base_ref,
+        )
     base_manifest = _base_manifest(repo_root, resolved)
     _validate_standing_budget(manifest, base_manifest)
     budgets = manifest["budgets"]
@@ -2594,20 +2886,25 @@ def validate_changed_generated_budget(
     try:
         receipt = json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError) as exc:
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "portable family budget is exceeded and no matching receipt exists: "
             f"changed={changed_bytes}/{limit}, "
             f"tracked={summary['tracked_bytes']}/"
             f"{budgets['tracked_bytes_max']}"
         ) from exc
+    if not isinstance(receipt, dict):
+        raise BudgetReceiptValidationError("budget receipt must be an object")
     if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "budget receipt semantic admission is migration_required; legacy v1 "
             "receipt is structural-only"
         )
-    _validate_published_budget_schema("receipt", receipt)
+    try:
+        _validate_published_budget_schema("receipt", receipt)
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
     expected_scope = _budget_receipt_scope(
-        base_has_v3=base_manifest is not None,
+        base_has_v3=_budget_base_supported(base_manifest),
         generated_delta_exceeded=delta_exceeded,
         tracked_size_exceeded=tracked_exceeded,
     )
@@ -2629,11 +2926,11 @@ def validate_changed_generated_budget(
     }
     for field, value in expected.items():
         if receipt.get(field) != value:
-            raise PortableFamilyError(
+            raise BudgetReceiptValidationError(
                 f"budget receipt field {field} does not match current delta"
             )
     if receipt.get("scope") != expected_scope:
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "budget receipt scope does not match the current exceedance"
         )
     if (
@@ -2645,45 +2942,82 @@ def validate_changed_generated_budget(
         or receipt.get("allowed_tracked_bytes", -1)
         < summary["tracked_bytes"]
     ):
-        raise PortableFamilyError("budget receipt approval is incomplete")
+        raise BudgetReceiptValidationError("budget receipt approval is incomplete")
     evidence_ref = receipt.get("semantic_evidence_ref")
     evidence_path = evidence_path_for(manifest)
     if evidence_ref != evidence_path.as_posix():
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "budget receipt semantic evidence ref does not match current family"
         )
     evidence_digest = receipt.get("semantic_evidence_digest")
     if not isinstance(evidence_digest, str):
-        raise PortableFamilyError("budget receipt semantic evidence digest is missing")
+        raise BudgetReceiptValidationError("budget receipt semantic evidence digest is missing")
     evidence_file = repo_root.resolve() / evidence_path
     try:
         evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError) as exc:
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "budget receipt semantic admission is migration_required; typed evidence is missing"
         ) from exc
     if not isinstance(evidence, dict) or sha256_bytes(
         render_manifest(evidence)
     ) != evidence_digest:
-        raise PortableFamilyError("budget semantic evidence digest does not match receipt")
+        raise BudgetReceiptValidationError("budget semantic evidence digest does not match receipt")
     if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
-        raise PortableFamilyError(
+        raise BudgetReceiptValidationError(
             "budget semantic admission is migration_required for legacy evidence"
         )
-    _validate_published_budget_schema("evidence", evidence)
-    _validate_budget_semantic_evidence(
-        repo_root,
-        manifest=manifest,
-        base_ref=resolved,
-        base_manifest=base_manifest,
-        expected_scope=expected_scope,
-        receipt=receipt,
-        evidence=evidence,
-    )
+    try:
+        _validate_published_budget_schema("evidence", evidence)
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
+    try:
+        _validate_budget_semantic_evidence(
+            repo_root,
+            manifest=manifest,
+            base_ref=resolved,
+            base_manifest=base_manifest,
+            expected_scope=expected_scope,
+            receipt=receipt,
+            evidence=evidence,
+        )
+    except BudgetReceiptValidationError:
+        raise
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
     return changed_bytes, changed_files, True
 
 
 def _validate_tracked_size_receipt(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+) -> None:
+    try:
+        _validate_tracked_size_receipt_with_history(repo_root, manifest)
+    except subprocess.CalledProcessError:
+        try:
+            fallback_receipt = json.loads(
+                (
+                    repo_root.resolve() / receipt_path_for(manifest)
+                ).read_text(encoding="utf-8")
+            )
+        except (FileNotFoundError, json.JSONDecodeError) as exc:
+            raise BudgetReceiptValidationError(
+                "shallow checkout cannot validate a missing or malformed receipt"
+            ) from exc
+        _validate_budget_receipt_without_history(
+            repo_root,
+            manifest,
+            base_ref=str(fallback_receipt.get("base_ref", "")),
+            require_tracked=True,
+        )
+    except BudgetReceiptValidationError:
+        raise
+    except PortableFamilyError as exc:
+        raise BudgetReceiptValidationError(str(exc)) from exc
+
+
+def _validate_tracked_size_receipt_with_history(
     repo_root: Path,
     manifest: Mapping[str, Any],
 ) -> None:
@@ -2695,6 +3029,8 @@ def _validate_tracked_size_receipt(
             "portable tracked byte budget is exceeded without a matching "
             "digest-bound receipt"
         ) from exc
+    if not isinstance(receipt, dict):
+        raise PortableFamilyError("tracked-size receipt must be an object")
     if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
         raise PortableFamilyError(
             "portable tracked byte budget is migration_required; legacy v1 receipt "

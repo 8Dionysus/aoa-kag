@@ -117,14 +117,7 @@ def generate_owner_family(
         return "accepted" if "receipt=accepted" in combined else "not_required"
 
     combined = check.stdout + check.stderr
-    receipt_failure = (
-        "no matching receipt exists" in combined
-        or "receipt field" in combined
-        or "receipt scope" in combined
-        or "receipt approval" in combined
-        or "semantic admission" in combined
-        or "semantic evidence" in combined
-    )
+    receipt_failure = isolation.is_budget_receipt_failure_output(combined)
     if not receipt_failure:
         raise isolation.PreparationFailure(
             "owner-family parity or budget check failed for a non-receipt reason",

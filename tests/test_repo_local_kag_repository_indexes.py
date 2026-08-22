@@ -28,6 +28,7 @@ from scripts.generate_repo_local_kag_index import (
 from scripts.generate_repo_local_kag_coverage import source_index_matches_owner
 from scripts.generation.provider_map import _is_repo_local_meta_index_payload
 from scripts.repo_local.projections import build_repo_retrieval_documents
+from scripts.repo_local import portable_family as portable_family_module
 from scripts.repo_local.query import RepoKagQuery
 from scripts.repo_local.portable_family import (
     BUDGET_PROCEDURE_PATHS,
@@ -43,6 +44,8 @@ from scripts.repo_local.portable_family import (
     render_manifest,
     sha256_bytes,
     _budget_procedure_identity,
+    _duplicate_materialization,
+    _head_family_records,
     _review_identity,
     _semantic_admission_state,
     validate_changed_generated_budget,
@@ -606,29 +609,84 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             manifest["family_identity"]["content_digest"] = manifest_digest(manifest)
             write_portable_output(root, manifest, shards)
 
-            evidence_path, evidence = build_budget_evidence(
-                root,
-                base_ref=base_ref,
-                manifest=manifest,
-                reason="The owner source change is measured by the generic procedure.",
-                cause_class="legitimate_bulk_authored_change",
-                review_ref="aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
-            )
-            self.assertEqual("supported", evidence["state"])
-            write_budget_evidence(root, evidence_path, evidence)
-            receipt_path, receipt = build_budget_receipt(
-                root,
-                base_ref=base_ref,
-                manifest=manifest,
-                reason=evidence["cause"]["reason"],
-                semantic_evidence=evidence,
-            )
-            write_budget_receipt(root, receipt_path, receipt)
-            changed_bytes, changed_files, receipted = validate_changed_generated_budget(
-                root,
-                base_ref=base_ref,
-                manifest=manifest,
-            )
+            owner_head = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            original_path_change_records = portable_family_module._path_change_records
+
+            def path_change_records_without_dirty_owner(
+                candidate_root: Path,
+                **kwargs: object,
+            ) -> list[dict[str, Any]]:
+                if (
+                    candidate_root.resolve() == REPO_ROOT.resolve()
+                    and set(kwargs.get("paths", ())) == set(BUDGET_PROCEDURE_PATHS)
+                ):
+                    return []
+                return original_path_change_records(candidate_root, **kwargs)  # type: ignore[arg-type]
+
+            with mock.patch(
+                "scripts.repo_local.portable_family._procedure_baseline_ref",
+                return_value=owner_head,
+            ), mock.patch.object(
+                portable_family_module,
+                "_path_change_records",
+                side_effect=path_change_records_without_dirty_owner,
+            ):
+                evidence_path, evidence = build_budget_evidence(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                    reason="The owner source change is measured by the generic procedure.",
+                    cause_class="legitimate_bulk_authored_change",
+                    review_ref="aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
+                )
+                self.assertEqual("supported", evidence["state"])
+                write_budget_evidence(root, evidence_path, evidence)
+                receipt_path, receipt = build_budget_receipt(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                    reason=evidence["cause"]["reason"],
+                    semantic_evidence=evidence,
+                )
+                write_budget_receipt(root, receipt_path, receipt)
+                changed_bytes, changed_files, receipted = validate_changed_generated_budget(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                )
+                original_resolve_git_ref = portable_family_module._resolve_git_ref
+
+                def resolve_without_target_history(
+                    candidate_root: Path,
+                    ref: str,
+                ) -> str:
+                    if candidate_root.resolve() == root.resolve():
+                        raise subprocess.CalledProcessError(128, ("git", "rev-parse", ref))
+                    return original_resolve_git_ref(candidate_root, ref)
+
+                with mock.patch.object(
+                    portable_family_module,
+                    "_resolve_git_ref",
+                    side_effect=resolve_without_target_history,
+                ):
+                    shallow_bytes, shallow_files, shallow_receipted = (
+                        validate_changed_generated_budget(
+                            root,
+                            base_ref=base_ref,
+                            manifest=manifest,
+                        )
+                    )
+                self.assertEqual((changed_bytes, changed_files, True), (
+                    shallow_bytes,
+                    shallow_files,
+                    shallow_receipted,
+                ))
             self.assertGreater(changed_bytes, 0)
             self.assertGreater(changed_files, 0)
             self.assertTrue(receipted)
@@ -732,6 +790,79 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 cause_class="legitimate_bulk_authored_change",
                 source_measurement={"bytes": 1, "files": 1},
                 duplicate_materialization=no_duplicate,
+            ),
+        )
+
+    def test_duplicate_admission_scans_changed_paths_against_complete_head_family(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            manifest = {
+                "shards": [
+                    {"path": "kag/indexes/shards/source/a.jsonl"},
+                    {"path": "kag/indexes/shards/source/b.jsonl"},
+                ]
+            }
+            for path in ("a.jsonl", "b.jsonl"):
+                destination = root / "kag" / "indexes" / "shards" / "source" / path
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(b"same materialization\n" * 128)
+
+            records = _head_family_records(root, manifest)
+            self.assertEqual(
+                "absent",
+                _duplicate_materialization(records, changed_paths=set())["state"],
+            )
+            self.assertEqual(
+                "present",
+                _duplicate_materialization(
+                    records,
+                    changed_paths={"kag/indexes/shards/source/a.jsonl"},
+                )["state"],
+            )
+
+    def test_first_family_migration_requires_typed_procedure_transition(self) -> None:
+        causal = {
+            "source_records": [],
+            "procedure_records": [
+                {"old_bytes": 100, "new_bytes": 180, "delta_bytes": 80}
+            ],
+            "generated_delta": {"bytes": 1000, "files": 2},
+            "topology": {
+                "source_snapshot_relation": "unknown",
+                "transition": "first_family_migration",
+            },
+        }
+        self.assertEqual(
+            "supported",
+            _semantic_admission_state(
+                base_supported=False,
+                cause_class="schema_builder_migration",
+                source_measurement={"bytes": 0, "files": 0},
+                duplicate_materialization={"state": "absent"},
+                causal_measurements=causal,
+            ),
+        )
+        causal["topology"]["transition"] = "none"
+        self.assertEqual(
+            "migration_required",
+            _semantic_admission_state(
+                base_supported=False,
+                cause_class="schema_builder_migration",
+                source_measurement={"bytes": 0, "files": 0},
+                duplicate_materialization={"state": "absent"},
+                causal_measurements=causal,
+            ),
+        )
+        causal["topology"]["transition"] = "first_family_migration"
+        causal["procedure_records"][0]["delta_bytes"] = 1
+        self.assertEqual(
+            "unknown",
+            _semantic_admission_state(
+                base_supported=False,
+                cause_class="schema_builder_migration",
+                source_measurement={"bytes": 0, "files": 0},
+                duplicate_materialization={"state": "absent"},
+                causal_measurements=causal,
             ),
         )
 
