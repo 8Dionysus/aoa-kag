@@ -1,0 +1,141 @@
+{
+  "base_identity": {
+    "distribution_digest": "sha256:c30e7771379c0b43fe459c13ce74fae7ffabe37e19823bdc29042b1adb28fca2",
+    "family_digest": "744675ad20ac1c780b5b29532676317a11abdcc69638b9b3c6079d2d988d3dab",
+    "ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "source_snapshot": "sha256:966789856f081cbf47616e488d8a9f8a1f118d6913f3628cd2ecf4c293e42b74"
+  },
+  "cause": {
+    "class": "schema_builder_migration",
+    "evidence": {
+      "generated_paths_digest": "a590aee21a0adf635b406069124f20788015a9a7d3b1a5619c0775c88ade2557",
+      "kind": "procedure_delta",
+      "procedure_delta_bytes": 394633,
+      "procedure_paths_digest": "9dcc74921c62cbb4162450589a3d826ebdadcaf8684920f6e23bd4948a88cf39",
+      "source_deleted_files": 0,
+      "source_delta_bytes": 519249,
+      "source_dependency_state": "unmatched",
+      "source_paths_digest": "ac8dd408669b944a4699c93d550640df95696a1f438c0dcb4ac3bbb779bd3909",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "reason": "Repair complete-family duplicate admission, typed first-family migration, source dependency binding, and owner receipt validation."
+  },
+  "fixed_point": {
+    "family_digest": "ea8588c7fbffd3796a1b12b25f65ea967a31eb98c1748ee6345393a1cd854567",
+    "state": "required_external_gate"
+  },
+  "head_identity": {
+    "distribution_digest": "sha256:71b73a71776bf046e18250bd85e6009bd3d93a32f6b2475590a9fe18faef0a0f",
+    "family_digest": "ea8588c7fbffd3796a1b12b25f65ea967a31eb98c1748ee6345393a1cd854567",
+    "source_snapshot": "sha256:e42e8263189189f6fd21d6fb6c33bd46dc577228a71befc942bb4d56f1759ad1"
+  },
+  "measurements": {
+    "amplification": {
+      "authored_source_bytes": 1190748,
+      "generated_bytes": 12290931,
+      "ratio_denominator": 1190748,
+      "ratio_numerator": 12290931
+    },
+    "authored_source_delta": {
+      "bytes": 1190748,
+      "delta_bytes": 519249,
+      "files": 23,
+      "paths_digest": "ac8dd408669b944a4699c93d550640df95696a1f438c0dcb4ac3bbb779bd3909"
+    },
+    "duplicate_materialization": {
+      "groups": [],
+      "state": "absent"
+    },
+    "generated_delta": {
+      "bytes": 12290931,
+      "delta_bytes": 5957007,
+      "files": 292,
+      "paths_digest": "a590aee21a0adf635b406069124f20788015a9a7d3b1a5619c0775c88ade2557"
+    },
+    "procedure_delta": {
+      "bytes": 609230,
+      "delta_bytes": 394633,
+      "files": 6,
+      "paths_digest": "9dcc74921c62cbb4162450589a3d826ebdadcaf8684920f6e23bd4948a88cf39"
+    },
+    "source_dependency": {
+      "changed_source_paths_digest": "7e17dcd7d0beb467c7729afcd6c1f0be78e4aba468a15b1a26f09a378d7f8df1",
+      "related_generated_files": 246,
+      "related_generated_paths_digest": "963d373a2d570bbf2e8ad250cc52fa51945bf8dda70c5e8ad9d09e2312243a27",
+      "state": "unmatched",
+      "unrelated_generated_bytes": 1477676,
+      "unrelated_generated_files": 42,
+      "unrelated_generated_paths_digest": "8c5d7bc66e4b172c6ddf440c1ddd5612c8219d405826ac57daae21bb9009fd5c"
+    },
+    "topology": {
+      "base_hot_profile_digest": "sha256:1e8463aa5b61109efdb038d83330895cf38692f49669058ab396a56041deaabd",
+      "base_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "base_placement_state": "shadow",
+      "base_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "head_hot_profile_digest": "sha256:1938d0f961ab2eda2d7082b7208ffefa6cf6667ce90ae8a70887409b7f1bd677",
+      "head_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "head_placement_state": "shadow",
+      "head_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "procedure_base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "tracked_size": {
+      "bytes": 2337092,
+      "limit_bytes": 4194304
+    }
+  },
+  "owner": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "procedure": {
+    "base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "contract_version": "aoa-kag:budget-semantic-admission-v3",
+    "digest": "f14ba6d705e6d0826b62671ad1046861db51511f81becd486665effc9c93b280",
+    "files": [
+      {
+        "digest": "e8f10092e8735c55b7a0eedc74fab8e64ee898eb0d5d3662e1ed48323b5d1724",
+        "path": "scripts/repo_local/portable_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "05ff202e40d2e91ed1cb03d37c5967010c12737c74ac1efe8e02e12e0c0e03f2",
+        "path": "scripts/repo_local/tiered_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "677638901eb2d80ace39836a2ece7cb37d10e1ae2e6eb23a2f03590c5d2ffbe1",
+        "path": "scripts/generate_repo_local_kag_index.py",
+        "state": "present"
+      },
+      {
+        "digest": "12457effb91a6a72e35e75a2f99b0b41a58bd1de6746f579f8b26d3569fa93ca",
+        "path": "scripts/prepare_landing.py",
+        "state": "present"
+      },
+      {
+        "digest": "cc36acd3fef9eec6a7f6702d80b865b8f3353671d4eafb6966aed584077ab68d",
+        "path": "schemas/repo-local-kag-budget-evidence.schema.json",
+        "state": "present"
+      },
+      {
+        "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
+        "path": "schemas/repo-local-kag-budget-receipt.schema.json",
+        "state": "present"
+      }
+    ],
+    "owner": "aoa-kag"
+  },
+  "review": {
+    "digest": "3cd381929057896ff07868be3f144be2f3e0db4b73b9fc2019bd52830623871e",
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md"
+  },
+  "schema_version": "aoa-repo-local-kag-budget-evidence-v2",
+  "scope": "generated_delta",
+  "state": "supported"
+}
