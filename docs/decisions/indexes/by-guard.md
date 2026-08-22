@@ -165,6 +165,7 @@
 
 - [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## exact input epoch
 
@@ -207,6 +208,7 @@
 - [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
 - [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## fail-closed cold fallback
 
@@ -625,6 +627,7 @@
 - [AOA-KAG-D-0040 - AOA-KAG-D-0040 Routing Consumer Pin And Predecessor Archive Boundary](../AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md) (`docs/decisions/AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md`)
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## source-return route
 

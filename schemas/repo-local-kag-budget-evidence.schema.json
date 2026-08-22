@@ -18,7 +18,7 @@
     "fixed_point"
   ],
   "properties": {
-    "schema_version": {"const": "aoa-repo-local-kag-budget-evidence-v1"},
+    "schema_version": {"const": "aoa-repo-local-kag-budget-evidence-v2"},
     "state": {"enum": ["supported", "unsupported", "unknown", "migration_required"]},
     "owner": {"$ref": "#/$defs/repo"},
     "scope": {"enum": ["generated_delta", "tracked_size", "generated_delta_and_tracked_size", "v2_to_v3_migration"]},
@@ -33,18 +33,6 @@
   "$defs": {
     "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "sha256Digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
-    "repo": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "namespace", "owner_type", "root", "git_ref"],
-      "properties": {
-        "name": {"type": "string", "minLength": 1},
-        "namespace": {"type": "string", "pattern": "^aoa:[a-z0-9_.-]+$"},
-        "owner_type": {"type": "string", "minLength": 1},
-        "root": {"const": "."},
-        "git_ref": {"type": "string", "minLength": 1}
-      }
-    },
     "repo": {
       "type": "object",
       "additionalProperties": false,
@@ -83,7 +71,7 @@
       "additionalProperties": false,
       "required": ["contract_version", "owner", "files", "digest"],
       "properties": {
-        "contract_version": {"const": "aoa-kag:budget-semantic-admission-v2"},
+        "contract_version": {"const": "aoa-kag:budget-semantic-admission-v3"},
         "owner": {"const": "aoa-kag"},
         "files": {
           "type": "array",
@@ -118,18 +106,36 @@
     "cause": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["class", "reason"],
+      "required": ["class", "reason", "evidence"],
       "properties": {
         "class": {"enum": ["deliberate_source_migration", "legitimate_bulk_authored_change", "schema_builder_migration", "accidental_generated_amplification", "hot_set_pressure", "shard_topology_pressure", "artifact_delivery_migration"]},
-        "reason": {"type": "string", "minLength": 1}
+        "reason": {"type": "string", "minLength": 1},
+        "evidence": {"$ref": "#/$defs/causeEvidence"}
+      }
+    },
+    "causeEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source_paths_digest", "procedure_paths_digest", "generated_paths_digest", "source_delta_bytes", "procedure_delta_bytes", "source_deleted_files", "source_snapshot_relation", "transition"],
+      "properties": {
+        "kind": {"enum": ["authored_source_delta", "procedure_delta", "distribution_transition", "generated_delta_amplification"]},
+        "source_paths_digest": {"$ref": "#/$defs/digest"},
+        "procedure_paths_digest": {"$ref": "#/$defs/digest"},
+        "generated_paths_digest": {"$ref": "#/$defs/digest"},
+        "source_delta_bytes": {"type": "integer", "minimum": 0},
+        "procedure_delta_bytes": {"type": "integer", "minimum": 0},
+        "source_deleted_files": {"type": "integer", "minimum": 0},
+        "source_snapshot_relation": {"enum": ["changed", "unchanged", "unknown"]},
+        "transition": {"enum": ["none", "artifact_delivery_externalization", "hot_profile_change", "partitioning_change"]}
       }
     },
     "measurement": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["bytes", "files", "paths_digest"],
+      "required": ["bytes", "delta_bytes", "files", "paths_digest"],
       "properties": {
         "bytes": {"type": "integer", "minimum": 0},
+        "delta_bytes": {"type": "integer", "minimum": 0},
         "files": {"type": "integer", "minimum": 0},
         "paths_digest": {"$ref": "#/$defs/digest"}
       }
@@ -152,6 +158,23 @@
         "authored_source_bytes": {"type": "integer", "minimum": 0},
         "ratio_numerator": {"type": "integer", "minimum": 0},
         "ratio_denominator": {"type": "integer", "minimum": 1}
+      }
+    },
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_schema_version", "head_schema_version", "base_placement_state", "head_placement_state", "base_hot_profile_digest", "head_hot_profile_digest", "base_partitioning_digest", "head_partitioning_digest", "source_snapshot_relation", "transition"],
+      "properties": {
+        "base_schema_version": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "head_schema_version": {"type": "string", "minLength": 1},
+        "base_placement_state": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "head_placement_state": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "base_hot_profile_digest": {"anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]},
+        "head_hot_profile_digest": {"anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]},
+        "base_partitioning_digest": {"anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]},
+        "head_partitioning_digest": {"anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]},
+        "source_snapshot_relation": {"enum": ["changed", "unchanged", "unknown"]},
+        "transition": {"enum": ["none", "artifact_delivery_externalization", "hot_profile_change", "partitioning_change"]}
       }
     },
     "duplicates": {
@@ -177,11 +200,13 @@
     "measurements": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["generated_delta", "tracked_size", "authored_source_delta", "amplification", "duplicate_materialization"],
+      "required": ["generated_delta", "tracked_size", "authored_source_delta", "procedure_delta", "topology", "amplification", "duplicate_materialization"],
       "properties": {
         "generated_delta": {"$ref": "#/$defs/measurement"},
         "tracked_size": {"$ref": "#/$defs/tracked"},
         "authored_source_delta": {"$ref": "#/$defs/measurement"},
+        "procedure_delta": {"$ref": "#/$defs/measurement"},
+        "topology": {"$ref": "#/$defs/topology"},
         "amplification": {"$ref": "#/$defs/amplification"},
         "duplicate_materialization": {"$ref": "#/$defs/duplicates"}
       }

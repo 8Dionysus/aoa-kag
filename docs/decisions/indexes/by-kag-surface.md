@@ -22,6 +22,7 @@
 ## budget receipt
 
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## callable KAG procedure
 
@@ -307,6 +308,7 @@
 - [AOA-KAG-D-0034 - Bounded Repository Family Reconstruction](../AOA-KAG-D-0034-bounded-repository-family-reconstruction.md) (`docs/decisions/AOA-KAG-D-0034-bounded-repository-family-reconstruction.md`)
 - [AOA-KAG-D-0035 - Bounded Owner-Family Component DAG](../AOA-KAG-D-0035-bounded-owner-family-component-dag.md) (`docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## portable record corpus
 
@@ -451,6 +453,7 @@
 ## semantic admission evidence
 
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## skill projection provenance
 

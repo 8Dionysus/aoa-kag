@@ -227,6 +227,36 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
             receipt["head_commit_state"],
         )
 
+    def test_externalization_preparation_supports_source_free_budget_cause(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            root = base / "owner"
+            build_committed_v3_owner(root, "owner-demo")
+            receipt = prepare_owner_externalization(
+                OwnerSource(owner="owner-demo", root=root),
+                artifact_root=base / "cas",
+            )
+            evidence_path = root / receipt["budget_receipt"]
+            evidence = read_json(
+                evidence_path.with_name(
+                    f"{evidence_path.stem}.evidence.json"
+                ),
+                "budget evidence",
+            )
+
+        self.assertEqual("supported", evidence["state"])
+        self.assertEqual(
+            "artifact_delivery_migration",
+            evidence["cause"]["class"],
+        )
+        self.assertEqual(0, evidence["measurements"]["authored_source_delta"]["files"])
+        self.assertEqual(
+            "artifact_delivery_externalization",
+            evidence["measurements"]["topology"]["transition"],
+        )
+
     def test_externalization_preparation_rejects_unstaged_input(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir) / "owner"

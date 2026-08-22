@@ -4297,6 +4297,35 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertTrue(run_command.call_args_list[2].args[0].count("--check"))
         prune.assert_called_once_with(Path("/candidate"), refs)
 
+    def test_prune_preserves_the_current_receipt_and_evidence_pair(self) -> None:
+        with tempfile.TemporaryDirectory() as repo_tmp:
+            repo = self.make_repo(Path(repo_tmp))
+            digest = "a" * 64
+            manifest_path = repo / "kag" / "indexes" / "index_family.manifest.json"
+            manifest_path.parent.mkdir(parents=True)
+            manifest_path.write_text(
+                json.dumps({"family_identity": {"content_digest": digest}}),
+                encoding="utf-8",
+            )
+            receipt_root = repo / "kag" / "receipts" / "index_family_budget"
+            receipt_root.mkdir(parents=True)
+            current_receipt = receipt_root / f"{digest}.json"
+            current_evidence = receipt_root / f"{digest}.evidence.json"
+            stale_receipt = receipt_root / f"{'b' * 64}.json"
+            current_receipt.write_text("{}\n", encoding="utf-8")
+            current_evidence.write_text("{}\n", encoding="utf-8")
+            stale_receipt.write_text("{}\n", encoding="utf-8")
+            head = git(repo, "rev-parse", "HEAD").decode("ascii").strip()
+
+            prepare_landing.prune_obsolete_budget_receipts(
+                repo,
+                prepare_landing.ResolvedRefs(head, head, head),
+            )
+
+            self.assertTrue(current_receipt.is_file())
+            self.assertTrue(current_evidence.is_file())
+            self.assertFalse(stale_receipt.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

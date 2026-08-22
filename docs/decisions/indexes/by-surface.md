@@ -136,6 +136,7 @@
 ## generated-delta validator
 
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## generated/maturity
 
@@ -224,6 +225,7 @@
 ## owner procedure
 
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## owner return
 
@@ -316,6 +318,10 @@
 ## schema engine
 
 - [AOA-KAG-D-0032 - Fail-Closed Accelerated Schema Validation](../AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md) (`docs/decisions/AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md`)
+
+## schema evolution
+
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
 
 ## schemas
 

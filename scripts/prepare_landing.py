@@ -5408,7 +5408,13 @@ def prune_obsolete_budget_receipts(
     repo_root: Path,
     refs: ResolvedRefs,
 ) -> None:
-    keep = _current_budget_receipt_path(repo_root)
+    keep_receipt = _current_budget_receipt_path(repo_root)
+    keep = {
+        keep_receipt,
+        keep_receipt.with_name(
+            f"{keep_receipt.stem}.evidence.json"
+        ),
+    }
     root = Path(BUDGET_RECEIPT_PATHS[0])
     base_rows = git_bytes(
         repo_root,
@@ -5430,7 +5436,7 @@ def prune_obsolete_budget_receipts(
         return
     for candidate in sorted(receipt_root.glob("*.json")):
         relative = candidate.relative_to(repo_root)
-        if relative == keep or relative in base_paths:
+        if relative in keep or relative in base_paths:
             continue
         candidate.unlink()
 

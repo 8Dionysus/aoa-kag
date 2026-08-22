@@ -8,6 +8,10 @@ import subprocess
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
+from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
+
 
 SCHEMA_VERSION = "aoa-repo-local-kag-family-manifest-v3"
 SCHEMA_REF = "aoa-kag:schemas/repo-local-kag-family-manifest.schema.json"
@@ -23,7 +27,7 @@ TIERED_CONTROL_PATHS = {
 }
 BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v2"
 LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
-BUDGET_EVIDENCE_SCHEMA_VERSION = "aoa-repo-local-kag-budget-evidence-v1"
+BUDGET_EVIDENCE_SCHEMA_VERSION = "aoa-repo-local-kag-budget-evidence-v2"
 SEMANTIC_BUDGET_DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md"
@@ -42,14 +46,41 @@ BUDGET_CAUSE_CLASSES = frozenset(
 BUDGET_SEMANTIC_STATES = frozenset(
     {"supported", "unsupported", "unknown", "migration_required"}
 )
-BUDGET_PROCEDURE_VERSION = "aoa-kag:budget-semantic-admission-v2"
+BUDGET_PROCEDURE_VERSION = "aoa-kag:budget-semantic-admission-v3"
 BUDGET_PROCEDURE_PATHS = (
     Path("scripts/repo_local/portable_family.py"),
     Path("scripts/repo_local/tiered_family.py"),
     Path("scripts/generate_repo_local_kag_index.py"),
+    Path("scripts/prepare_landing.py"),
     Path("schemas/repo-local-kag-budget-evidence.schema.json"),
     Path("schemas/repo-local-kag-budget-receipt.schema.json"),
 )
+BUDGET_EVIDENCE_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-budget-evidence.schema.json"
+)
+BUDGET_RECEIPT_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-budget-receipt.schema.json"
+)
+SOURCE_CAUSE_CLASSES = frozenset(
+    {
+        "deliberate_source_migration",
+        "legitimate_bulk_authored_change",
+    }
+)
+TOPOLOGY_CAUSE_CLASSES = frozenset(
+    {
+        "hot_set_pressure",
+        "shard_topology_pressure",
+        "artifact_delivery_migration",
+    }
+)
+# A causal receipt is deliberately conservative.  A one-byte edit is not a
+# source/procedure witness for a large generated delta; callers can remain in
+# the explicit unknown state until the owner procedure produces a real
+# transition or source change.
+MIN_CAUSAL_DELTA_BYTES = 16
+MAX_GENERATED_FILES_PER_CAUSAL_FILE = 128
+MAX_GENERATED_BYTES_PER_CAUSAL_BYTE = 4096
 SEMANTIC_DERIVED_PATHS = {
     Path("docs/validation/script_inventory.json"),
     Path("docs/testing/test_inventory.json"),
@@ -466,6 +497,32 @@ def _compatibility_files(
     files: list[dict[str, Any]] = []
     for kind in COMPATIBILITY_ORDER:
         payload = source_index if kind == "source" else family[kind]
+        if kind != "source":
+            payload = copy.deepcopy(dict(payload))
+            source_reference = payload.get("source_index")
+            if not isinstance(source_reference, Mapping):
+                raise PortableFamilyError(
+                    f"{kind} compatibility view needs source_index"
+                )
+            payload["source_index"] = {
+                **dict(source_reference),
+                "path": (
+                    Path("kag/indexes")
+                    / LEGACY_INDEX_FILENAMES["source"]
+                ).as_posix(),
+            }
+            canonical_identity = payload.get("index_identity")
+            if not isinstance(canonical_identity, Mapping):
+                raise PortableFamilyError(
+                    f"{kind} compatibility view needs identity"
+                )
+            payload["index_identity"] = {
+                **dict(canonical_identity),
+                "content_digest": ZERO_DIGEST,
+            }
+            payload["index_identity"]["content_digest"] = sha256_bytes(
+                canonical_json_bytes(payload)
+            )
         identity = payload.get("index_identity")
         if not isinstance(identity, Mapping):
             raise PortableFamilyError(f"{kind} compatibility view needs identity")
@@ -1043,6 +1100,22 @@ def reconstruct_compatibility_family(
             relation_entries,
         )
 
+    compatibility = manifest.get("compatibility")
+    files = (
+        compatibility.get("files")
+        if isinstance(compatibility, Mapping)
+        else None
+    )
+    source_index_path = DEFAULT_OUTPUT
+    for item in files or []:
+        if (
+            isinstance(item, Mapping)
+            and item.get("kind") == "source"
+            and isinstance(item.get("path"), str)
+        ):
+            source_index_path = Path(str(item["path"]))
+            break
+
     repo = str(source_index["repo"]["name"])
     artifacts = artifact_entries(structure_records)
     entities = entity_entries(repo, structure_records)
@@ -1071,7 +1144,7 @@ def reconstruct_compatibility_family(
             source_index,
             index_kind=kind,
             entries=entries[kind],
-            source_index_path=DEFAULT_OUTPUT,
+            source_index_path=source_index_path,
         )
         for kind in (
             "entity",
@@ -1082,12 +1155,6 @@ def reconstruct_compatibility_family(
             "relation",
         )
     }
-    compatibility = manifest.get("compatibility")
-    files = (
-        compatibility.get("files")
-        if isinstance(compatibility, Mapping)
-        else None
-    )
     expected_digests = {
         item["kind"]: item["content_digest"]
         for item in files or []
@@ -1519,6 +1586,36 @@ def _current_bytes(repo_root: Path, path: Path) -> bytes | None:
     return None
 
 
+def _content_delta_bytes(old: bytes | None, new: bytes | None) -> int:
+    """Measure the smallest contiguous content replacement for one path.
+
+    ``changed_bytes`` remains the conservative whole-file budget measure.  The
+    causal witness also needs a localized edit measure so that a one-byte edit
+    to a large builder file cannot masquerade as a large owner migration.
+    """
+    old_bytes = old or b""
+    new_bytes = new or b""
+    if old_bytes == new_bytes:
+        return 0
+    prefix = 0
+    common_prefix = min(len(old_bytes), len(new_bytes))
+    while prefix < common_prefix and old_bytes[prefix] == new_bytes[prefix]:
+        prefix += 1
+    old_end = len(old_bytes)
+    new_end = len(new_bytes)
+    suffix = 0
+    while (
+        suffix < old_end - prefix
+        and suffix < new_end - prefix
+        and old_bytes[old_end - suffix - 1] == new_bytes[new_end - suffix - 1]
+    ):
+        suffix += 1
+    return max(
+        old_end - prefix - suffix,
+        new_end - prefix - suffix,
+    )
+
+
 def _path_change_records(
     repo_root: Path,
     *,
@@ -1543,6 +1640,7 @@ def _path_change_records(
                     len(old) if old is not None else 0,
                     len(new) if new is not None else 0,
                 ),
+                "delta_bytes": _content_delta_bytes(old, new),
             }
         )
     return records
@@ -1623,6 +1721,7 @@ def _changed_source_records(
 def _measurement_payload(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     return {
         "bytes": sum(int(record["changed_bytes"]) for record in records),
+        "delta_bytes": sum(int(record["delta_bytes"]) for record in records),
         "files": len(records),
         "paths_digest": _measurement_digest(records),
     }
@@ -1674,11 +1773,193 @@ def _budget_base_supported(base_manifest: Mapping[str, Any] | None) -> bool:
     )
 
 
+def _git_json(
+    repo_root: Path,
+    ref: str,
+    path: Path,
+) -> dict[str, Any] | None:
+    content = _git_bytes(repo_root, ref, path)
+    if content is None:
+        return None
+    try:
+        payload = json.loads(content)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise PortableFamilyError(
+            f"{ref} JSON control surface is invalid: {path.as_posix()}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise PortableFamilyError(
+            f"{ref} JSON control surface must be an object: {path.as_posix()}"
+        )
+    return payload
+
+
+def _digest_value(value: object) -> str | None:
+    if value is None:
+        return None
+    return f"sha256:{sha256_bytes(canonical_json_bytes(value))}"
+
+
+def _placement_state(payload: Mapping[str, Any] | None) -> str | None:
+    placement = payload.get("placement") if isinstance(payload, Mapping) else None
+    state = placement.get("state") if isinstance(placement, Mapping) else None
+    return state if isinstance(state, str) else None
+
+
+def _hot_profile_digest(payload: Mapping[str, Any] | None) -> str | None:
+    profile = payload.get("hot_profile") if isinstance(payload, Mapping) else None
+    digest = profile.get("content_digest") if isinstance(profile, Mapping) else None
+    return digest if isinstance(digest, str) else None
+
+
+def _partitioning_value(
+    repo_root: Path,
+    base_ref: str,
+    payload: Mapping[str, Any] | None,
+    *,
+    base: bool,
+) -> object:
+    if isinstance(payload, Mapping):
+        partitioning = payload.get("partitioning")
+        if partitioning is not None:
+            return partitioning
+    if not base:
+        return None
+    corpus = _git_json(
+        repo_root,
+        base_ref,
+        Path("kag/indexes/corpus.manifest.json"),
+    )
+    return corpus.get("partitioning") if isinstance(corpus, Mapping) else None
+
+
+def _budget_topology_context(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    base_manifest: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    head_identity = _budget_identity(manifest)
+    base_identity = _base_identity(base_ref, base_manifest)
+    head_source = head_identity["source_snapshot"]
+    base_source = base_identity["source_snapshot"]
+    if isinstance(head_source, str) and isinstance(base_source, str):
+        source_snapshot_relation = (
+            "unchanged" if head_source == base_source else "changed"
+        )
+    else:
+        source_snapshot_relation = "unknown"
+
+    head_partitioning = _partitioning_value(
+        repo_root,
+        base_ref,
+        manifest,
+        base=False,
+    )
+    base_partitioning = _partitioning_value(
+        repo_root,
+        base_ref,
+        base_manifest,
+        base=True,
+    )
+    head_partitioning_digest = _digest_value(head_partitioning)
+    base_partitioning_digest = _digest_value(base_partitioning)
+    base_hot_profile_digest = _hot_profile_digest(base_manifest)
+    head_hot_profile_digest = _hot_profile_digest(manifest)
+    transition = "none"
+    if (
+        _placement_state(manifest) == "externalized"
+        and _placement_state(base_manifest) != "externalized"
+    ):
+        transition = "artifact_delivery_externalization"
+    elif (
+        head_hot_profile_digest is not None
+        and base_hot_profile_digest is not None
+        and head_hot_profile_digest != base_hot_profile_digest
+    ):
+        transition = "hot_profile_change"
+    elif (
+        head_partitioning_digest is not None
+        and base_partitioning_digest is not None
+        and head_partitioning_digest != base_partitioning_digest
+    ):
+        transition = "partitioning_change"
+
+    return {
+        "base_schema_version": (
+            base_manifest.get("schema_version")
+            if isinstance(base_manifest, Mapping)
+            else None
+        ),
+        "head_schema_version": manifest.get("schema_version"),
+        "base_placement_state": _placement_state(base_manifest),
+        "head_placement_state": _placement_state(manifest),
+        "base_hot_profile_digest": base_hot_profile_digest,
+        "head_hot_profile_digest": head_hot_profile_digest,
+        "base_partitioning_digest": base_partitioning_digest,
+        "head_partitioning_digest": head_partitioning_digest,
+        "source_snapshot_relation": source_snapshot_relation,
+        "transition": transition,
+    }
+
+
+def _record_delta_stats(records: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        "delta_bytes": sum(int(record["delta_bytes"]) for record in records),
+        "deleted_files": sum(
+            1 for record in records if int(record.get("new_bytes", 0)) == 0
+        ),
+        "added_or_modified_files": sum(
+            1 for record in records if int(record.get("new_bytes", 0)) > 0
+        ),
+    }
+
+
 def _procedure_root(repo_root: Path) -> Path:
-    candidate = repo_root.resolve() / BUDGET_PROCEDURE_PATHS[0]
-    if candidate.is_file():
-        return repo_root.resolve()
-    return Path(__file__).resolve().parents[2]
+    del repo_root
+    root = Path(__file__).resolve().parents[2]
+    if not (root / BUDGET_PROCEDURE_PATHS[0]).is_file():
+        raise PortableFamilyError(
+            "executing aoa-kag procedure checkout is missing its owner module"
+        )
+    return root
+
+
+def _published_budget_schema_path(kind: str) -> Path:
+    if kind == "evidence":
+        relative = BUDGET_EVIDENCE_SCHEMA_PATH
+    elif kind == "receipt":
+        relative = BUDGET_RECEIPT_SCHEMA_PATH
+    else:  # pragma: no cover - private helper guard
+        raise PortableFamilyError(f"unknown published budget schema kind: {kind}")
+    return _procedure_root(Path(".")) / relative
+
+
+def _validate_published_budget_schema(
+    kind: str,
+    payload: Mapping[str, Any],
+) -> None:
+    path = _published_budget_schema_path(kind)
+    try:
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(dict(payload))
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise PortableFamilyError(
+            f"published budget {kind} schema cannot be loaded: {path}"
+        ) from exc
+    except SchemaError as exc:
+        raise PortableFamilyError(
+            f"published budget {kind} schema is invalid: {path}"
+        ) from exc
+    except JsonSchemaValidationError as exc:
+        location = ".".join(str(part) for part in exc.absolute_path)
+        suffix = f" at {location}" if location else ""
+        raise PortableFamilyError(
+            f"budget {kind} does not match its published schema{suffix}: "
+            f"{exc.message}"
+        ) from exc
 
 
 def _budget_procedure_identity(repo_root: Path) -> dict[str, Any]:
@@ -1721,12 +2002,8 @@ def _review_identity(repo_root: Path, review_ref: str) -> dict[str, str]:
         raise PortableFamilyError(
             "budget semantic evidence review_ref must name an authored decision"
         )
-    owner_root = repo_root.resolve()
+    owner_root = _procedure_root(repo_root)
     path = owner_root / relative
-    if not path.is_file():
-        procedure_root = _procedure_root(owner_root)
-        if procedure_root != owner_root:
-            path = procedure_root / relative
     if not path.is_file():
         raise PortableFamilyError(
             f"budget semantic evidence review ref is missing: {review_ref}"
@@ -1766,6 +2043,7 @@ def _semantic_admission_state(
     cause_class: str,
     source_measurement: Mapping[str, Any],
     duplicate_materialization: Mapping[str, Any],
+    causal_measurements: Mapping[str, Any] | None = None,
 ) -> str:
     if not base_supported:
         return "migration_required"
@@ -1773,9 +2051,159 @@ def _semantic_admission_state(
         return "unsupported"
     if duplicate_materialization.get("state") == "present":
         return "unsupported"
-    if int(source_measurement.get("bytes", 0)) <= 0:
+    if causal_measurements is None:
         return "unknown"
-    return "supported"
+    source_records = causal_measurements.get("source_records")
+    procedure_records = causal_measurements.get("procedure_records")
+    topology = causal_measurements.get("topology")
+    generated_delta = causal_measurements.get("generated_delta")
+    if not isinstance(source_records, Sequence) or isinstance(
+        source_records,
+        (str, bytes, bytearray),
+    ):
+        return "unknown"
+    if not isinstance(procedure_records, Sequence) or isinstance(
+        procedure_records,
+        (str, bytes, bytearray),
+    ):
+        return "unknown"
+    if not isinstance(topology, Mapping) or not isinstance(
+        generated_delta,
+        Mapping,
+    ):
+        return "unknown"
+
+    source_stats = _record_delta_stats(source_records)
+    procedure_stats = _record_delta_stats(procedure_records)
+    try:
+        source_files = int(source_measurement.get("files", 0))
+        generated_bytes = int(generated_delta.get("bytes", -1))
+        generated_files = int(generated_delta.get("files", -1))
+    except (TypeError, ValueError):
+        return "unknown"
+
+    def generated_delta_is_bounded(
+        *,
+        causal_delta_bytes: int,
+        causal_files: int,
+    ) -> bool:
+        return (
+            causal_delta_bytes >= MIN_CAUSAL_DELTA_BYTES
+            and causal_files >= 1
+            and generated_files
+            <= causal_files * MAX_GENERATED_FILES_PER_CAUSAL_FILE
+            and generated_bytes
+            <= causal_delta_bytes * MAX_GENERATED_BYTES_PER_CAUSAL_BYTE
+        )
+
+    source_relation = topology.get("source_snapshot_relation")
+    if (
+        source_stats["deleted_files"] > 0
+        or not generated_delta_is_bounded(
+            causal_delta_bytes=source_stats["delta_bytes"],
+            causal_files=source_files,
+        )
+        or procedure_stats["deleted_files"] > 0
+        or procedure_stats["added_or_modified_files"] > 0
+    ) and cause_class in SOURCE_CAUSE_CLASSES:
+        return "unknown"
+    if cause_class in SOURCE_CAUSE_CLASSES:
+        return (
+            "supported"
+            if source_relation == "changed"
+            else "unknown"
+        )
+
+    if cause_class == "schema_builder_migration":
+        if (
+            procedure_stats["deleted_files"] > 0
+            or not generated_delta_is_bounded(
+                causal_delta_bytes=procedure_stats["delta_bytes"],
+                causal_files=procedure_stats["added_or_modified_files"],
+            )
+        ):
+            return "unknown"
+        return "supported"
+
+    transition = topology.get("transition")
+    if cause_class == "artifact_delivery_migration":
+        source_delta_is_bounded = (
+            source_stats["deleted_files"] == 0
+            and generated_delta_is_bounded(
+                causal_delta_bytes=source_stats["delta_bytes"],
+                causal_files=source_files,
+            )
+        )
+        return (
+            "supported"
+            if (
+                transition == "artifact_delivery_externalization"
+                and not procedure_records
+                and (
+                    (not source_records and source_relation == "unchanged")
+                    or (
+                        bool(source_records)
+                        and source_relation == "changed"
+                        and source_delta_is_bounded
+                    )
+                )
+            )
+            else "unknown"
+        )
+    if cause_class == "hot_set_pressure":
+        return (
+            "supported"
+            if (
+                transition == "hot_profile_change"
+                and not source_records
+                and not procedure_records
+                and source_relation == "unchanged"
+            )
+            else "unknown"
+        )
+    if cause_class == "shard_topology_pressure":
+        return (
+            "supported"
+            if (
+                transition == "partitioning_change"
+                and not source_records
+                and not procedure_records
+                and source_relation == "unchanged"
+            )
+            else "unknown"
+        )
+    return "unknown"
+
+
+def _cause_witness(
+    cause_class: str,
+    measurements: Mapping[str, Any],
+) -> dict[str, Any]:
+    source_measurement = measurements["authored_source_delta"]
+    procedure_measurement = measurements["procedure_delta"]
+    generated_measurement = measurements["generated_delta"]
+    source_stats = _record_delta_stats(measurements["source_records"])
+    procedure_stats = _record_delta_stats(measurements["procedure_records"])
+    topology = measurements["topology"]
+    if cause_class in SOURCE_CAUSE_CLASSES:
+        kind = "authored_source_delta"
+    elif cause_class == "schema_builder_migration":
+        kind = "procedure_delta"
+    elif cause_class in TOPOLOGY_CAUSE_CLASSES:
+        kind = "distribution_transition"
+    else:
+        kind = "generated_delta_amplification"
+    return {
+        "kind": kind,
+        "source_paths_digest": source_measurement["paths_digest"],
+        "procedure_paths_digest": procedure_measurement["paths_digest"],
+        "generated_paths_digest": generated_measurement["paths_digest"],
+        "source_delta_bytes": source_stats["delta_bytes"],
+        "procedure_delta_bytes": procedure_stats["delta_bytes"],
+        "source_deleted_files": source_stats["deleted_files"],
+        "source_snapshot_relation": topology["source_snapshot_relation"],
+        "transition": topology["transition"],
+    }
 
 
 def _budget_measurements(
@@ -1791,6 +2219,11 @@ def _budget_measurements(
         manifest=manifest,
     )
     source_records = _changed_source_records(repo_root, base_ref=base_ref)
+    procedure_records = _path_change_records(
+        repo_root,
+        base_ref=base_ref,
+        paths=BUDGET_PROCEDURE_PATHS,
+    )
     budgets = manifest["budgets"]
     summary = manifest["summary"]
     return {
@@ -1803,8 +2236,16 @@ def _budget_measurements(
         "duplicate_materialization": _duplicate_materialization(
             generated_records
         ),
+        "procedure_delta": _measurement_payload(procedure_records),
+        "topology": _budget_topology_context(
+            repo_root,
+            base_ref=base_ref,
+            manifest=manifest,
+            base_manifest=base_manifest,
+        ),
         "generated_records": generated_records,
         "source_records": source_records,
+        "procedure_records": procedure_records,
         "base_supported": _budget_base_supported(base_manifest),
     }
 
@@ -1872,6 +2313,7 @@ def build_budget_evidence(
         cause_class=cause_class,
         source_measurement=measurements["authored_source_delta"],
         duplicate_materialization=measurements["duplicate_materialization"],
+        causal_measurements=measurements,
     )
     head_identity = _budget_identity(manifest)
     source_bytes = int(measurements["authored_source_delta"]["bytes"])
@@ -1894,11 +2336,14 @@ def build_budget_evidence(
         "cause": {
             "class": cause_class,
             "reason": reason.strip(),
+            "evidence": _cause_witness(cause_class, measurements),
         },
         "measurements": {
             "generated_delta": measurements["generated_delta"],
             "tracked_size": measurements["tracked_size"],
             "authored_source_delta": measurements["authored_source_delta"],
+            "procedure_delta": measurements["procedure_delta"],
+            "topology": measurements["topology"],
             "amplification": {
                 "generated_bytes": generated_bytes,
                 "authored_source_bytes": source_bytes,
@@ -1931,6 +2376,8 @@ def _validate_budget_semantic_evidence(
         raise PortableFamilyError(
             "budget semantic admission is migration_required for legacy evidence"
         )
+    _validate_published_budget_schema("evidence", evidence)
+    _validate_published_budget_schema("receipt", receipt)
     state = evidence.get("state")
     if state not in BUDGET_SEMANTIC_STATES:
         raise PortableFamilyError("budget semantic evidence state is invalid")
@@ -1982,6 +2429,8 @@ def _validate_budget_semantic_evidence(
         "generated_delta": measurements["generated_delta"],
         "tracked_size": measurements["tracked_size"],
         "authored_source_delta": measurements["authored_source_delta"],
+        "procedure_delta": measurements["procedure_delta"],
+        "topology": measurements["topology"],
         "amplification": {
             "generated_bytes": measurements["generated_delta"]["bytes"],
             "authored_source_bytes": measurements["authored_source_delta"]["bytes"],
@@ -1999,11 +2448,20 @@ def _validate_budget_semantic_evidence(
         raise PortableFamilyError(
             "budget semantic evidence measurements do not match current source and family"
         )
+    expected_cause_evidence = _cause_witness(
+        str(cause["class"]),
+        measurements,
+    )
+    if cause.get("evidence") != expected_cause_evidence:
+        raise PortableFamilyError(
+            "budget semantic evidence cause witness is stale or incomplete"
+        )
     expected_state = _semantic_admission_state(
         base_supported=measurements["base_supported"],
         cause_class=str(cause["class"]),
         source_measurement=measurements["authored_source_delta"],
         duplicate_materialization=measurements["duplicate_materialization"],
+        causal_measurements=measurements,
     )
     if expected_state != state:
         raise PortableFamilyError(
@@ -2147,6 +2605,7 @@ def validate_changed_generated_budget(
             "budget receipt semantic admission is migration_required; legacy v1 "
             "receipt is structural-only"
         )
+    _validate_published_budget_schema("receipt", receipt)
     expected_scope = _budget_receipt_scope(
         base_has_v3=base_manifest is not None,
         generated_delta_exceeded=delta_exceeded,
@@ -2207,6 +2666,11 @@ def validate_changed_generated_budget(
         render_manifest(evidence)
     ) != evidence_digest:
         raise PortableFamilyError("budget semantic evidence digest does not match receipt")
+    if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "budget semantic admission is migration_required for legacy evidence"
+        )
+    _validate_published_budget_schema("evidence", evidence)
     _validate_budget_semantic_evidence(
         repo_root,
         manifest=manifest,
@@ -2236,6 +2700,7 @@ def _validate_tracked_size_receipt(
             "portable tracked byte budget is migration_required; legacy v1 receipt "
             "is structural-only"
         )
+    _validate_published_budget_schema("receipt", receipt)
     summary = manifest["summary"]
     budgets = manifest["budgets"]
     expected = {
@@ -2309,6 +2774,11 @@ def _validate_tracked_size_receipt(
         render_manifest(evidence)
     ) != receipt.get("semantic_evidence_digest"):
         raise PortableFamilyError("tracked-size semantic evidence digest does not match")
+    if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "budget semantic admission is migration_required for legacy evidence"
+        )
+    _validate_published_budget_schema("evidence", evidence)
     _validate_budget_semantic_evidence(
         repo_root,
         manifest=manifest,

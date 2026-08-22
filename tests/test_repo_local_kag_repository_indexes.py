@@ -30,6 +30,7 @@ from scripts.generation.provider_map import _is_repo_local_meta_index_payload
 from scripts.repo_local.projections import build_repo_retrieval_documents
 from scripts.repo_local.query import RepoKagQuery
 from scripts.repo_local.portable_family import (
+    BUDGET_PROCEDURE_PATHS,
     HARD_MAX_SHARD_BYTES,
     MANIFEST_RELATIVE_PATH,
     PortableFamilyError,
@@ -41,6 +42,9 @@ from scripts.repo_local.portable_family import (
     manifest_digest,
     render_manifest,
     sha256_bytes,
+    _budget_procedure_identity,
+    _review_identity,
+    _semantic_admission_state,
     validate_changed_generated_budget,
     write_budget_evidence,
     write_budget_receipt,
@@ -386,6 +390,36 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "kag/indexes/index_family.manifest.json",
         )
 
+    def test_portable_family_canonicalizes_custom_source_index_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            custom_family = build_repository_indexes(
+                source_index,
+                source_index_path=Path("kag/indexes/index_family.manifest.json"),
+                repo_root=root,
+            )
+            canonical_family = build_repository_indexes(
+                source_index,
+                repo_root=root,
+            )
+            manifest, shards = build_portable_family(source_index, custom_family)
+            write_portable_output(root, manifest, shards)
+
+            rebuilt_source, rebuilt_family, _ = load_portable_family(root)
+
+        self.assertEqual(source_index, rebuilt_source)
+        self.assertEqual(canonical_family, rebuilt_family)
+        self.assertEqual(
+            "kag/indexes/source_surface_index.json",
+            next(
+                item["path"]
+                for item in manifest["compatibility"]["files"]
+                if item["kind"] == "source"
+            ),
+        )
+
     def test_portable_family_preserves_ranges_and_localizes_small_change(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -599,6 +633,56 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             self.assertGreater(changed_files, 0)
             self.assertTrue(receipted)
 
+            valid_evidence = json.loads(
+                (root / evidence_path).read_text(encoding="utf-8")
+            )
+            invalid_evidence = dict(valid_evidence)
+            invalid_evidence["unexpected"] = True
+            write_budget_evidence(root, evidence_path, invalid_evidence)
+            invalid_receipt = dict(receipt)
+            invalid_receipt["semantic_evidence_digest"] = sha256_bytes(
+                render_manifest(invalid_evidence)
+            )
+            write_budget_receipt(root, receipt_path, invalid_receipt)
+            with self.assertRaisesRegex(PortableFamilyError, "published schema"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                )
+
+            write_budget_evidence(root, evidence_path, valid_evidence)
+            write_budget_receipt(root, receipt_path, receipt)
+            invalid_receipt = dict(receipt)
+            invalid_receipt["unexpected"] = True
+            write_budget_receipt(root, receipt_path, invalid_receipt)
+            with self.assertRaisesRegex(PortableFamilyError, "published schema"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                )
+
+            legacy_evidence = dict(valid_evidence)
+            legacy_evidence["schema_version"] = (
+                "aoa-repo-local-kag-budget-evidence-v1"
+            )
+            write_budget_evidence(root, evidence_path, legacy_evidence)
+            legacy_evidence_receipt = dict(receipt)
+            legacy_evidence_receipt["semantic_evidence_digest"] = sha256_bytes(
+                render_manifest(legacy_evidence)
+            )
+            write_budget_receipt(root, receipt_path, legacy_evidence_receipt)
+            with self.assertRaisesRegex(PortableFamilyError, "migration_required"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                )
+
+            write_budget_evidence(root, evidence_path, valid_evidence)
+            write_budget_receipt(root, receipt_path, receipt)
+
             tampered = json.loads((root / evidence_path).read_text(encoding="utf-8"))
             tampered["head_identity"]["family_digest"] = "0" * 64
             (root / evidence_path).write_text(render_manifest(tampered).decode("utf-8"), encoding="utf-8")
@@ -612,8 +696,6 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 validate_changed_generated_budget(root, base_ref=base_ref, manifest=manifest)
 
     def test_budget_semantic_states_preserve_unknown_unsupported_and_migration(self) -> None:
-        from scripts.repo_local.portable_family import _semantic_admission_state
-
         no_source = {"bytes": 0, "files": 0}
         no_duplicate = {"state": "absent"}
         self.assertEqual(
@@ -652,6 +734,172 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 duplicate_materialization=no_duplicate,
             ),
         )
+
+    def test_budget_cause_requires_a_causal_witness_not_aggregate_delta(self) -> None:
+        def state(
+            *,
+            cause: str,
+            source_records: list[dict[str, object]],
+            procedure_records: list[dict[str, object]],
+            topology: dict[str, object],
+            generated_bytes: int = 200,
+            generated_files: int = 200,
+        ) -> str:
+            return _semantic_admission_state(
+                base_supported=True,
+                cause_class=cause,
+                source_measurement={
+                    "bytes": 100,
+                    "files": len(source_records),
+                },
+                duplicate_materialization={"state": "absent"},
+                causal_measurements={
+                    "source_records": source_records,
+                    "procedure_records": procedure_records,
+                    "generated_delta": {
+                        "bytes": generated_bytes,
+                        "files": generated_files,
+                    },
+                    "topology": topology,
+                },
+            )
+
+        changed_source = {
+            "old_bytes": 100,
+            "new_bytes": 100,
+            "delta_bytes": 1,
+        }
+        no_topology = {
+            "source_snapshot_relation": "changed",
+            "transition": "none",
+        }
+        self.assertEqual(
+            "unknown",
+            state(
+                cause="legitimate_bulk_authored_change",
+                source_records=[changed_source],
+                procedure_records=[],
+                topology=no_topology,
+            ),
+        )
+        self.assertEqual(
+            "unknown",
+            state(
+                cause="legitimate_bulk_authored_change",
+                source_records=[
+                    {
+                        "old_bytes": 100,
+                        "new_bytes": 132,
+                        "delta_bytes": 32,
+                    }
+                ],
+                procedure_records=[
+                    {
+                        "old_bytes": 100,
+                        "new_bytes": 0,
+                        "delta_bytes": 100,
+                    }
+                ],
+                topology=no_topology,
+                generated_bytes=100,
+                generated_files=1,
+            ),
+        )
+        self.assertEqual(
+            "unknown",
+            state(
+                cause="legitimate_bulk_authored_change",
+                source_records=[
+                    {
+                        "old_bytes": 100,
+                        "new_bytes": 132,
+                        "delta_bytes": 32,
+                    }
+                ],
+                procedure_records=[],
+                topology=no_topology,
+                generated_bytes=200_000,
+                generated_files=1,
+            ),
+        )
+        self.assertEqual(
+            "unknown",
+            state(
+                cause="legitimate_bulk_authored_change",
+                source_records=[
+                    {
+                        "old_bytes": 100,
+                        "new_bytes": 0,
+                        "delta_bytes": 100,
+                    }
+                ],
+                procedure_records=[],
+                topology=no_topology,
+            ),
+        )
+        self.assertEqual(
+            "unknown",
+            state(
+                cause="schema_builder_migration",
+                source_records=[],
+                procedure_records=[changed_source],
+                topology=no_topology,
+            ),
+        )
+        self.assertEqual(
+            "supported",
+            state(
+                cause="artifact_delivery_migration",
+                source_records=[],
+                procedure_records=[],
+                topology={
+                    "source_snapshot_relation": "unchanged",
+                    "transition": "artifact_delivery_externalization",
+                },
+            ),
+        )
+        self.assertEqual(
+            "unknown",
+            state(
+                cause="artifact_delivery_migration",
+                source_records=[],
+                procedure_records=[
+                    {
+                        "old_bytes": 100,
+                        "new_bytes": 120,
+                        "delta_bytes": 20,
+                    }
+                ],
+                topology={
+                    "source_snapshot_relation": "unchanged",
+                    "transition": "artifact_delivery_externalization",
+                },
+            ),
+        )
+
+    def test_budget_provenance_uses_the_executing_owner_checkout(self) -> None:
+        review_ref = (
+            "aoa-kag:docs/decisions/"
+            "AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md"
+        )
+        expected_review = REPO_ROOT / review_ref.removeprefix("aoa-kag:")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            shadow_procedure = target / BUDGET_PROCEDURE_PATHS[0]
+            shadow_procedure.parent.mkdir(parents=True)
+            shadow_procedure.write_text("downstream shadow\n", encoding="utf-8")
+            shadow_review = target / review_ref.removeprefix("aoa-kag:")
+            shadow_review.parent.mkdir(parents=True)
+            shadow_review.write_text("downstream review shadow\n", encoding="utf-8")
+
+            self.assertEqual(
+                _budget_procedure_identity(REPO_ROOT),
+                _budget_procedure_identity(target),
+            )
+            self.assertEqual(
+                sha256_bytes(expected_review.read_bytes()),
+                _review_identity(target, review_ref)["digest"],
+            )
 
     def test_portable_family_paths_do_not_amplify_repository_event_delta(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

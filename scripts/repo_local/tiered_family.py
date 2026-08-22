@@ -1699,6 +1699,15 @@ def tiered_budget_projection(
         "summary": {
             "tracked_bytes": distribution["summary"]["git_hot_bytes"],
         },
+        # Carry the owner-authored topology facts into the budget procedure's
+        # semantic projection.  They are not a second source of truth; they
+        # let the receipt validator prove typed source-free transitions such
+        # as shadow -> externalized without accepting arbitrary path lists.
+        "placement": {
+            "state": distribution["placement"]["state"],
+        },
+        "hot_profile": copy.deepcopy(distribution["hot_profile"]),
+        "partitioning": copy.deepcopy(build.corpus_manifest["partitioning"]),
         "shards": [
             {"path": path.as_posix()}
             for path in sorted({*control_paths, *expected_shards})

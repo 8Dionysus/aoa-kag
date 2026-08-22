@@ -3658,9 +3658,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             source_index_path = output_path.resolve().relative_to(repo_root)
         except ValueError as exc:
             raise SystemExit("--index-family output must stay inside --repo-root") from exc
+        family_source_index_path = (
+            DEFAULT_OUTPUT
+            if args.portable_family or args.tiered_family
+            else source_index_path
+        )
         family = build_repository_indexes(
             payload,
-            source_index_path=source_index_path,
+            source_index_path=family_source_index_path,
             repo_root=repo_root,
             previous_family=previous_family,
             history_ref=history_ref,
