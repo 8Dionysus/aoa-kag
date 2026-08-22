@@ -4036,6 +4036,50 @@
     "split_policy": "prefix-split-only",
     "target_shard_bytes": 131072
   },
+  "producer_identity": {
+    "base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "contract_version": "aoa-kag:budget-semantic-admission-v3",
+    "digest": "6f45e5ee11dd96c434568ccb419eda580a0486852c35f307841a33de5acf8a56",
+    "files": [
+      {
+        "bytes": 130978,
+        "digest": "8dc230a448e42fca2b4a05817c6a9e6235abea1da0112d8b7f4ee6dce70aa64a",
+        "path": "scripts/repo_local/portable_family.py",
+        "state": "present"
+      },
+      {
+        "bytes": 92445,
+        "digest": "791bffaeee8041de5e7c9bded7876c2f97f446c1b2e6b339c0357deadf06aa61",
+        "path": "scripts/repo_local/tiered_family.py",
+        "state": "present"
+      },
+      {
+        "bytes": 142630,
+        "digest": "677638901eb2d80ace39836a2ece7cb37d10e1ae2e6eb23a2f03590c5d2ffbe1",
+        "path": "scripts/generate_repo_local_kag_index.py",
+        "state": "present"
+      },
+      {
+        "bytes": 236821,
+        "digest": "12457effb91a6a72e35e75a2f99b0b41a58bd1de6746f579f8b26d3569fa93ca",
+        "path": "scripts/prepare_landing.py",
+        "state": "present"
+      },
+      {
+        "bytes": 11477,
+        "digest": "ceebf7bbe29f475c51f88ce233c2fb0072890d781663e1f85df365701fa16417",
+        "path": "schemas/repo-local-kag-budget-evidence.schema.json",
+        "state": "present"
+      },
+      {
+        "bytes": 2268,
+        "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
+        "path": "schemas/repo-local-kag-budget-receipt.schema.json",
+        "state": "present"
+      }
+    ],
+    "owner": "aoa-kag"
+  },
   "repo": {
     "git_ref": "git-index-source-tree",
     "name": "aoa-kag",

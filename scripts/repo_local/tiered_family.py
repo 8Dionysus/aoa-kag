@@ -354,6 +354,9 @@ def build_corpus_manifest(
     manifest: dict[str, Any] = {
         "schema_version": CORPUS_SCHEMA_VERSION,
         "repo": copy.deepcopy(portable_manifest["repo"]),
+        "producer_identity": copy.deepcopy(
+            portable_manifest.get("producer_identity")
+        ),
         "corpus_identity": {
             "local_id": "family:repo-local:logical-record-corpus",
             "artifact_kind": "repo_local_kag_corpus",
@@ -1688,6 +1691,9 @@ def tiered_budget_projection(
                 "content_digest"
             ],
         },
+        "producer_identity": copy.deepcopy(
+            build.corpus_manifest.get("producer_identity")
+        ),
         "budgets": {
             "tracked_bytes_max": distribution["budgets"][
                 "owner_git_hot_bytes_max"

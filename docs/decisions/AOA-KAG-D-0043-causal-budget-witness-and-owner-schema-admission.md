@@ -25,8 +25,10 @@ pruning could orphan the evidence paired with the current receipt, and a
 source edit could authorize unrelated generated churn. Exact-head review also
 exposed that a shallow packet could self-report its causal flags, that a
 downstream owner could compare against the current KAG procedure instead of
-the procedure that produced its base family, and that sub-1 KiB shards could
-escape duplicate admission.
+the procedure that produced its base family, that sub-1 KiB shards could
+escape duplicate admission, that shard-level lineage could mask unrelated row
+churn, and that an under-budget base family could lack producer provenance
+when no receipt was emitted.
 
 ## Decision
 
@@ -42,8 +44,10 @@ admits only a bounded, localized owner procedure witness; absent, partial, or
 ambiguous legacy evidence remains migration-required or unknown. Source and
 procedure witnesses use conservative localized-delta and generated
 amplification bounds; source causes additionally require a bounded generated
-dependency scan whose typed source IDs or paths explain the changed family
-rows, with only a shard-sized unrelated-byte tolerance. Deletions,
+dependency scan whose typed source IDs or paths explain every changed family
+row, with only a shard-sized unrelated-byte tolerance. The public evidence
+schema requires this dependency witness, including row-level digests and
+counts, rather than allowing an omitted or partial measurement. Deletions,
 insufficient deltas, unrelated procedure changes, and ambiguous transitions
 remain unknown. Partitioning transitions take precedence over hot-profile
 churn when both identities move. Exact source-free delivery transitions are
@@ -56,10 +60,12 @@ checkout, an over-budget admission fails closed: a current-head
 receipt/evidence packet is not a causal witness, and this contract has no
 independently authenticated full-history verdict. Downstream procedure deltas
 instead compare the executing procedure identity with the prior base head's
-digest-bound typed evidence; an absent or legacy prior identity leaves the
-cause unknown. The producer identity records immutable file sizes, and
-duplicate admission includes every nonempty shard. Current receipt and
-evidence files are one lifecycle pair during pruning.
+digest-bound typed evidence or its persisted producer identity; an absent or
+legacy prior identity leaves the cause unknown. The generated family and
+corpus control metadata persist that producer identity even when an under-
+budget base emits no receipt. The producer identity records immutable file
+sizes, and duplicate admission includes every nonempty shard. Current receipt
+and evidence files are one lifecycle pair during pruning.
 
 Older evidence remains `migration_required` before v2 schema validation. The
 receipt remains a separate digest-bound measurement envelope and both receipt
@@ -95,8 +101,10 @@ additional properties.
   it never trusts mutable packet measurements as a substitute for the causal
   base.
 - Downstream builder migration can be admitted only when the base family has a
-  schema-valid paired receipt/evidence packet with a size-bearing producer
-  identity; otherwise a positive procedure delta is unavailable.
+  schema-valid persisted producer identity, with a paired receipt/evidence
+  packet required when the base is over budget; otherwise a positive procedure
+  delta is unavailable. Source dependency admission cannot be evaluated from
+  shard-level counts alone because every changed row must be classified.
 - This repair changes only the aoa-kag owner procedure, schemas, projections,
   lifecycle helper, tests, examples, and decision indexes. It does not admit
   downstream consumers, runtime health, publication, proof, human acceptance,

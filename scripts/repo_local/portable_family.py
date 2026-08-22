@@ -655,6 +655,9 @@ def build_portable_family(
     manifest: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "repo": copy.deepcopy(dict(repo)),
+        "producer_identity": _budget_procedure_identity(
+            Path(__file__).resolve().parents[2]
+        ),
         "family_identity": {
             "local_id": "family:repo-local:portable-record-corpus",
             "artifact_kind": "repo_local_kag_portable_family",
@@ -1513,6 +1516,9 @@ def _base_manifest(
             "source_snapshot": corpus_identity.get("source_snapshot"),
             "distribution_digest": distribution_identity.get("content_digest"),
         }
+        producer_identity = corpus.get("producer_identity")
+        if isinstance(producer_identity, Mapping):
+            payload["producer_identity"] = copy.deepcopy(dict(producer_identity))
     return payload
 
 
@@ -1849,8 +1855,12 @@ def _source_dependency_measurement(
             "changed_source_paths_digest": empty_digest,
             "related_generated_paths_digest": empty_digest,
             "unrelated_generated_paths_digest": empty_digest,
+            "related_generated_rows_digest": empty_digest,
+            "unrelated_generated_rows_digest": empty_digest,
             "related_generated_files": 0,
             "unrelated_generated_files": 0,
+            "related_generated_rows": 0,
+            "unrelated_generated_rows": 0,
             "unrelated_generated_bytes": 0,
         }
     if not base_paths:
@@ -1861,8 +1871,12 @@ def _source_dependency_measurement(
             ),
             "related_generated_paths_digest": empty_digest,
             "unrelated_generated_paths_digest": empty_digest,
+            "related_generated_rows_digest": empty_digest,
+            "unrelated_generated_rows_digest": empty_digest,
             "related_generated_files": 0,
             "unrelated_generated_files": 0,
+            "related_generated_rows": 0,
+            "unrelated_generated_rows": 0,
             "unrelated_generated_bytes": 0,
         }
 
@@ -1901,29 +1915,48 @@ def _source_dependency_measurement(
     }
     related_paths: list[str] = []
     unrelated_paths: list[str] = []
+    related_rows: list[str] = []
+    unrelated_rows: list[str] = []
     unrelated_bytes = 0
     changed_source_paths = set(source_paths)
     for path in sorted(changed_generated_paths & shard_paths):
-        dependencies: set[str] = set()
         current_rows = rows_by_path.get(("current", path), [])
         base_rows = rows_by_path.get(("base", path), [])
         current_by_key = {_family_row_key(row): row for row in current_rows}
         base_by_key = {_family_row_key(row): row for row in base_rows}
-        for key in sorted(set(current_by_key) | set(base_by_key)):
+        path_has_related = False
+        path_has_unrelated = False
+        changed_row_keys = sorted(set(current_by_key) | set(base_by_key))
+        changed_row_count = 0
+        for key in changed_row_keys:
             current_row = current_by_key.get(key)
             base_row = base_by_key.get(key)
             if current_row == base_row:
                 continue
+            changed_row_count += 1
+            dependencies: set[str] = set()
             for row in (current_row, base_row):
                 if row is not None:
                     dependencies.update(_row_dependency_paths(row, source_ids))
-        if dependencies & changed_source_paths:
-            related_paths.append(path.as_posix())
-        else:
-            unrelated_paths.append(path.as_posix())
+            if dependencies & changed_source_paths:
+                path_has_related = True
+                related_rows.append(f"{path.as_posix()}::{key}")
+            else:
+                path_has_unrelated = True
+                unrelated_rows.append(f"{path.as_posix()}::{key}")
+                current_size = len(render_row(current_row)) if current_row is not None else 0
+                base_size = len(render_row(base_row)) if base_row is not None else 0
+                unrelated_bytes += max(current_size, base_size)
+        if changed_row_count == 0:
+            path_has_unrelated = True
+            unrelated_rows.append(f"{path.as_posix()}::file-without-changed-row")
             current = _current_bytes(repo_root, path)
             previous = _git_bytes(repo_root, base_ref, path)
             unrelated_bytes += max(len(current or b""), len(previous or b""))
+        if path_has_related:
+            related_paths.append(path.as_posix())
+        if path_has_unrelated:
+            unrelated_paths.append(path.as_posix())
 
     relation_state = (
         "matched"
@@ -1941,8 +1974,16 @@ def _source_dependency_measurement(
         "unrelated_generated_paths_digest": sha256_bytes(
             canonical_json_bytes(sorted(unrelated_paths))
         ),
+        "related_generated_rows_digest": sha256_bytes(
+            canonical_json_bytes(sorted(related_rows))
+        ),
+        "unrelated_generated_rows_digest": sha256_bytes(
+            canonical_json_bytes(sorted(unrelated_rows))
+        ),
         "related_generated_files": len(related_paths),
         "unrelated_generated_files": len(unrelated_paths),
+        "related_generated_rows": len(related_rows),
+        "unrelated_generated_rows": len(unrelated_rows),
         "unrelated_generated_bytes": unrelated_bytes,
     }
 
@@ -2350,6 +2391,30 @@ def _procedure_identity_change_records(
     return records
 
 
+def _valid_procedure_identity(
+    identity: Mapping[str, Any],
+) -> Mapping[str, Any] | None:
+    if (
+        identity.get("contract_version") != BUDGET_PROCEDURE_VERSION
+        or identity.get("owner") != "aoa-kag"
+    ):
+        return None
+    base_ref = identity.get("base_ref")
+    if (
+        not isinstance(base_ref, str)
+        or not 40 <= len(base_ref) <= 64
+        or any(character not in HEX_DIGITS for character in base_ref)
+    ):
+        return None
+    if _procedure_identity_files(identity, require_sizes=True) is None:
+        return None
+    if identity.get("digest") != sha256_bytes(
+        canonical_json_bytes(list(identity.get("files", [])))
+    ):
+        return None
+    return identity
+
+
 def _authenticated_base_procedure_identity(
     repo_root: Path,
     *,
@@ -2360,6 +2425,11 @@ def _authenticated_base_procedure_identity(
     if not _budget_base_supported(base_manifest):
         return None
     assert base_manifest is not None
+    producer_identity = base_manifest.get("producer_identity")
+    if isinstance(producer_identity, Mapping):
+        valid_producer = _valid_procedure_identity(producer_identity)
+        if valid_producer is not None:
+            return valid_producer
     receipt_path = receipt_path_for(base_manifest)
     evidence_path = evidence_path_for(base_manifest)
     receipt_bytes = _git_bytes(repo_root, base_ref, receipt_path)
@@ -2400,9 +2470,7 @@ def _authenticated_base_procedure_identity(
     procedure = evidence.get("procedure")
     if not isinstance(procedure, Mapping):
         return None
-    if _procedure_identity_files(procedure, require_sizes=True) is None:
-        return None
-    return procedure
+    return _valid_procedure_identity(procedure)
 
 
 def _review_identity(repo_root: Path, review_ref: str) -> dict[str, str]:

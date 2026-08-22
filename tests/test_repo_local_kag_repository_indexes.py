@@ -43,6 +43,7 @@ from scripts.repo_local.portable_family import (
     manifest_digest,
     render_manifest,
     sha256_bytes,
+    _authenticated_base_procedure_identity,
     _budget_procedure_identity,
     canonical_json_bytes,
     _procedure_identity_change_records,
@@ -848,6 +849,30 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(16, records[0]["delta_bytes"])
         self.assertEqual(BUDGET_PROCEDURE_PATHS[0].as_posix(), records[0]["path"])
 
+    def test_producer_identity_survives_without_a_budget_receipt(self) -> None:
+        producer = _budget_procedure_identity(REPO_ROOT)
+        base_manifest = {
+            "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+            "repo": {"name": "downstream-owner"},
+            "family_identity": {
+                "content_digest": "a" * 64,
+                "source_snapshot": "sha256:" + "b" * 64,
+                "distribution_digest": "sha256:" + "c" * 64,
+            },
+            "producer_identity": producer,
+        }
+        with mock.patch.object(
+            portable_family_module,
+            "_git_bytes",
+            side_effect=AssertionError("receipt fallback must not be needed"),
+        ):
+            recovered = _authenticated_base_procedure_identity(
+                Path("."),
+                base_ref="a" * 40,
+                base_manifest=base_manifest,
+            )
+        self.assertEqual(producer, recovered)
+
     def test_partitioning_transition_precedes_hot_profile_churn(self) -> None:
         identity = {
             "content_digest": "a" * 64,
@@ -1012,6 +1037,39 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 ],
             )["state"],
         )
+
+        mixed = measure(
+            [
+                {
+                    "_key": "source:input",
+                    "identity": {"id": "input", "path": "src/input.py"},
+                    "value": "new",
+                },
+                {
+                    "_key": "source:other",
+                    "identity": {"id": "other", "path": "src/other.py"},
+                    "value": "new",
+                    "payload": "x" * (128 * 1024 + 1),
+                },
+            ],
+            [
+                {
+                    "_key": "source:input",
+                    "identity": {"id": "input", "path": "src/input.py"},
+                    "value": "old",
+                },
+                {
+                    "_key": "source:other",
+                    "identity": {"id": "other", "path": "src/other.py"},
+                    "value": "old",
+                    "payload": "x" * (128 * 1024 + 1),
+                },
+            ],
+        )
+        self.assertEqual("unmatched", mixed["state"])
+        self.assertEqual(1, mixed["related_generated_rows"])
+        self.assertEqual(1, mixed["unrelated_generated_rows"])
+        self.assertGreater(mixed["unrelated_generated_bytes"], 128 * 1024)
 
     def test_first_family_migration_requires_typed_procedure_transition(self) -> None:
         causal = {

@@ -118,7 +118,7 @@
     "causeEvidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "source_paths_digest", "procedure_paths_digest", "generated_paths_digest", "source_delta_bytes", "procedure_delta_bytes", "source_deleted_files", "source_snapshot_relation", "transition"],
+      "required": ["kind", "source_paths_digest", "procedure_paths_digest", "generated_paths_digest", "source_delta_bytes", "procedure_delta_bytes", "source_deleted_files", "source_dependency_state", "source_snapshot_relation", "transition"],
       "properties": {
         "kind": {"enum": ["authored_source_delta", "procedure_delta", "distribution_transition", "generated_delta_amplification"]},
         "source_paths_digest": {"$ref": "#/$defs/digest"},
@@ -204,7 +204,7 @@
     "measurements": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["generated_delta", "tracked_size", "authored_source_delta", "procedure_delta", "topology", "amplification", "duplicate_materialization"],
+      "required": ["generated_delta", "tracked_size", "authored_source_delta", "procedure_delta", "source_dependency", "topology", "amplification", "duplicate_materialization"],
       "properties": {
         "generated_delta": {"$ref": "#/$defs/measurement"},
         "tracked_size": {"$ref": "#/$defs/tracked"},
@@ -219,14 +219,18 @@
     "sourceDependency": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["state", "changed_source_paths_digest", "related_generated_paths_digest", "unrelated_generated_paths_digest", "related_generated_files", "unrelated_generated_files", "unrelated_generated_bytes"],
+      "required": ["state", "changed_source_paths_digest", "related_generated_paths_digest", "unrelated_generated_paths_digest", "related_generated_rows_digest", "unrelated_generated_rows_digest", "related_generated_files", "unrelated_generated_files", "related_generated_rows", "unrelated_generated_rows", "unrelated_generated_bytes"],
       "properties": {
         "state": {"enum": ["matched", "unmatched", "not_applicable", "unknown"]},
         "changed_source_paths_digest": {"$ref": "#/$defs/digest"},
         "related_generated_paths_digest": {"$ref": "#/$defs/digest"},
         "unrelated_generated_paths_digest": {"$ref": "#/$defs/digest"},
+        "related_generated_rows_digest": {"$ref": "#/$defs/digest"},
+        "unrelated_generated_rows_digest": {"$ref": "#/$defs/digest"},
         "related_generated_files": {"type": "integer", "minimum": 0},
         "unrelated_generated_files": {"type": "integer", "minimum": 0},
+        "related_generated_rows": {"type": "integer", "minimum": 0},
+        "unrelated_generated_rows": {"type": "integer", "minimum": 0},
         "unrelated_generated_bytes": {"type": "integer", "minimum": 0}
       }
     },
