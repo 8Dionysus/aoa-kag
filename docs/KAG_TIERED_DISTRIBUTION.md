@@ -115,8 +115,10 @@ post-migration operating target is at most 234,881,024 bytes (70 percent).
 
 The per-owner hard ceiling remains 48 MiB and the default changed-generated
 budget remains 1 MiB. A one-change owner receipt cannot raise a standing
-budget or bypass the OS ceiling. Repeated receipts trigger topology review and
-then block further exceptions.
+budget or bypass the OS ceiling. Exceedance receipts use the v2 semantic
+owner-evidence contract; a legacy v1 receipt is structural-only and remains a
+migration state. Repeated receipts trigger topology review and then block
+further exceptions.
 
 ## CI Split
 

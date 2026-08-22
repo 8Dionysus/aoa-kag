@@ -47,6 +47,8 @@ def generator_command(
     check: bool = False,
     write_budget_receipt: bool = False,
     budget_reason: str | None = None,
+    budget_cause_class: str | None = None,
+    budget_review_ref: str | None = None,
 ) -> tuple[str, ...]:
     command = [
         sys.executable,
@@ -64,7 +66,17 @@ def generator_command(
     if check or write_budget_receipt:
         command.extend(("--budget-base-ref", refs.budget_base_ref))
     if write_budget_receipt:
-        command.extend(("--write-budget-receipt", "--budget-reason", budget_reason or ""))
+        command.extend(
+            (
+                "--write-budget-receipt",
+                "--budget-reason",
+                budget_reason or "",
+                "--budget-cause-class",
+                budget_cause_class or "",
+                "--budget-review-ref",
+                budget_review_ref or "",
+            )
+        )
     if check:
         command.append("--check")
     return tuple(command)
@@ -87,6 +99,8 @@ def generate_owner_family(
     output: str,
     refs: isolation.ResolvedRefs,
     budget_reason: str | None,
+    budget_cause_class: str | None = None,
+    budget_review_ref: str | None = None,
 ) -> str:
     isolation.run_command(
         generator_command(repo_root=repo_root, output=output, refs=refs),
@@ -108,6 +122,8 @@ def generate_owner_family(
         or "receipt field" in combined
         or "receipt scope" in combined
         or "receipt approval" in combined
+        or "semantic admission" in combined
+        or "semantic evidence" in combined
     )
     if not receipt_failure:
         raise isolation.PreparationFailure(
@@ -117,11 +133,18 @@ def generate_owner_family(
             command=check.command,
             details={"return_code": check.returncode, "duration_ms": check.duration_ms},
         )
-    if not budget_reason or not budget_reason.strip():
+    if (
+        not budget_reason
+        or not budget_reason.strip()
+        or not budget_cause_class
+        or not budget_cause_class.strip()
+        or not budget_review_ref
+        or not budget_review_ref.strip()
+    ):
         raise isolation.PreparationFailure(
-            "owner family requires an explicit digest-bound budget reason",
+            "owner family requires typed semantic budget evidence",
             failure_type="budget_receipt_authority_required",
-            action_class="provide_budget_reason",
+            action_class="provide_budget_evidence",
             command=check.command,
             details={"budget_base_ref": refs.budget_base_ref},
         )
@@ -132,6 +155,8 @@ def generate_owner_family(
             refs=refs,
             write_budget_receipt=True,
             budget_reason=budget_reason,
+            budget_cause_class=budget_cause_class,
+            budget_review_ref=budget_review_ref,
         ),
         repo_root=repo_root,
         failure_type="budget_receipt_generation_failure",
@@ -206,6 +231,8 @@ def prepare_owner_landing(
     budget_reason: str | None,
     jobs: int,
     temp_root: Path | None,
+    budget_cause_class: str | None = None,
+    budget_review_ref: str | None = None,
 ) -> tuple[int, dict[str, object]]:
     started = time.perf_counter()
     source_root = source_root.resolve()
@@ -255,6 +282,8 @@ def prepare_owner_landing(
             output=output,
             refs=refs,
             budget_reason=budget_reason,
+            budget_cause_class=budget_cause_class,
+            budget_review_ref=budget_review_ref,
         )
         prepared_tree = isolation.git_text(temporary_worktree, "write-tree")
         gate_code, gate_receipt = owner_gate.run_gate(
@@ -389,6 +418,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--event-history-ref")
     parser.add_argument("--budget-base-ref")
     parser.add_argument("--budget-reason")
+    parser.add_argument("--budget-cause-class")
+    parser.add_argument("--budget-review-ref")
     parser.add_argument("--jobs", type=int, choices=(1, 2, 3), default=2)
     parser.add_argument("--temp-root", type=Path)
     parser.add_argument("--receipt-output", type=Path)
@@ -415,6 +446,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         budget_reason=args.budget_reason,
         jobs=args.jobs,
         temp_root=args.temp_root,
+        budget_cause_class=args.budget_cause_class,
+        budget_review_ref=args.budget_review_ref,
     )
     if args.receipt_output is not None:
         write_receipt(args.receipt_output, receipt)

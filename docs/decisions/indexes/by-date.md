@@ -117,3 +117,4 @@
 
 - [AOA-KAG-D-0040 - AOA-KAG-D-0040 Routing Consumer Pin And Predecessor Archive Boundary](../AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md) (`docs/decisions/AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md`)
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)

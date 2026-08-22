@@ -4288,6 +4288,8 @@ class PrepareLandingTests(unittest.TestCase):
                 Path("/candidate"),
                 refs,
                 budget_reason="final candidate growth",
+                budget_cause_class="legitimate_bulk_authored_change",
+                budget_review_ref="aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
             )
 
         self.assertEqual("created", result)

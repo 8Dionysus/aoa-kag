@@ -1,0 +1,93 @@
+{
+  "base_identity": {
+    "distribution_digest": "sha256:c30e7771379c0b43fe459c13ce74fae7ffabe37e19823bdc29042b1adb28fca2",
+    "family_digest": "744675ad20ac1c780b5b29532676317a11abdcc69638b9b3c6079d2d988d3dab",
+    "ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "source_snapshot": "sha256:966789856f081cbf47616e488d8a9f8a1f118d6913f3628cd2ecf4c293e42b74"
+  },
+  "cause": {
+    "class": "schema_builder_migration",
+    "reason": "Introduce typed owner evidence for generic generated-family budget admission."
+  },
+  "fixed_point": {
+    "family_digest": "1b556d5e1a2469d9593884a0f63a290e4d432e848d76a6cf5c8d8b71a6435393",
+    "state": "required_external_gate"
+  },
+  "head_identity": {
+    "distribution_digest": "sha256:74fd0c5a31c2fce8fde5b90d8b68bf798c889e1c10c66582244a141040eff731",
+    "family_digest": "1b556d5e1a2469d9593884a0f63a290e4d432e848d76a6cf5c8d8b71a6435393",
+    "source_snapshot": "sha256:4ea70f6bafe9fdd3ca6523aa11a9e901f8fd39a97907f491e80f23e6a4b1fb2b"
+  },
+  "measurements": {
+    "amplification": {
+      "authored_source_bytes": 1070329,
+      "generated_bytes": 11975424,
+      "ratio_denominator": 1070329,
+      "ratio_numerator": 11975424
+    },
+    "authored_source_delta": {
+      "bytes": 1070329,
+      "files": 19,
+      "paths_digest": "e67ee889d3e2c5ef1ae037429d0480124735252819c228b8ffe911b98fe494ae"
+    },
+    "duplicate_materialization": {
+      "groups": [],
+      "state": "absent"
+    },
+    "generated_delta": {
+      "bytes": 11975424,
+      "files": 285,
+      "paths_digest": "a52f6d2569c76d17d3ee51246189a91bbc61f358c2a2183f6646b32a99f541de"
+    },
+    "tracked_size": {
+      "bytes": 2332930,
+      "limit_bytes": 4194304
+    }
+  },
+  "owner": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "procedure": {
+    "contract_version": "aoa-kag:budget-semantic-admission-v2",
+    "digest": "50a9d73d0debee3a79f28e6d81b1bd8e97dc37425f155e9d68a88b4ad2076a4d",
+    "files": [
+      {
+        "digest": "d7fc4df32b6f25b5ebc9d7a3a02374f77c6043b23df8dfd5252a37257f508d47",
+        "path": "scripts/repo_local/portable_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "2604eb0e47567f6856f93eb3cb745b947c0082729cbc247f3a4f312708104ca4",
+        "path": "scripts/repo_local/tiered_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "eb57a0df0e912460d6aaa24ceb6f80d375e1bc9cb3950729cb9e3a613ca33380",
+        "path": "scripts/generate_repo_local_kag_index.py",
+        "state": "present"
+      },
+      {
+        "digest": "9a8589657f95eaaa8ac9e2ca88f8e42c851fa8102af4d283c69d067bd0181eea",
+        "path": "schemas/repo-local-kag-budget-evidence.schema.json",
+        "state": "present"
+      },
+      {
+        "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
+        "path": "schemas/repo-local-kag-budget-receipt.schema.json",
+        "state": "present"
+      }
+    ],
+    "owner": "aoa-kag"
+  },
+  "review": {
+    "digest": "47d43b6914ec21d3d9553d38ceee9c1a656cda88ccea7ca336a63179256e2140",
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md"
+  },
+  "schema_version": "aoa-repo-local-kag-budget-evidence-v1",
+  "scope": "generated_delta",
+  "state": "supported"
+}

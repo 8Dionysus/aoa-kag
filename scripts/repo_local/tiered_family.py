@@ -1681,6 +1681,12 @@ def tiered_budget_projection(
         "repo": copy.deepcopy(distribution["repo"]),
         "family_identity": {
             "content_digest": corpus_digest,
+            "source_snapshot": build.corpus_manifest["corpus_identity"][
+                "source_snapshot"
+            ],
+            "distribution_digest": distribution["distribution_identity"][
+                "content_digest"
+            ],
         },
         "budgets": {
             "tracked_bytes_max": distribution["budgets"][

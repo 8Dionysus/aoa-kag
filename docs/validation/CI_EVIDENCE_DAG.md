@@ -117,9 +117,10 @@ the isolated worktree. Stage only its listed generated paths and run
 `--verify-applied-seal` against that receipt; exact worktree/provider identity
 plus staged-tree equality then makes an immediate unchanged full `--check`
 redundant. Any other candidate, index, or provider mutation invalidates that
-seal and requires a new preparation. A `provide_budget_reason` receipt is an owner gate, not an
-infrastructure retry. A typed source, portable-family, coverage, generated, or
-semantic failure requires a changed candidate before another hosted run.
+seal and requires a new preparation. A `provide_budget_evidence` receipt is an
+owner gate, not an infrastructure retry. A typed source, portable-family,
+coverage, generated, or semantic failure requires a changed candidate before
+another hosted run.
 Only a demonstrated transient infrastructure failure may be retried on the
 same SHA, and its failed receipt remains part of the evidence corpus.
 

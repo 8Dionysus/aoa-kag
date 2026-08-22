@@ -21,7 +21,42 @@ TIERED_CONTROL_PATHS = {
     Path("kag/indexes/hot_profile.json"),
     Path("kag/indexes/artifact_locators.json"),
 }
-BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
+BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v2"
+LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
+BUDGET_EVIDENCE_SCHEMA_VERSION = "aoa-repo-local-kag-budget-evidence-v1"
+SEMANTIC_BUDGET_DECISION_REF = (
+    "aoa-kag:docs/decisions/"
+    "AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md"
+)
+BUDGET_CAUSE_CLASSES = frozenset(
+    {
+        "deliberate_source_migration",
+        "legitimate_bulk_authored_change",
+        "schema_builder_migration",
+        "accidental_generated_amplification",
+        "hot_set_pressure",
+        "shard_topology_pressure",
+        "artifact_delivery_migration",
+    }
+)
+BUDGET_SEMANTIC_STATES = frozenset(
+    {"supported", "unsupported", "unknown", "migration_required"}
+)
+BUDGET_PROCEDURE_VERSION = "aoa-kag:budget-semantic-admission-v2"
+BUDGET_PROCEDURE_PATHS = (
+    Path("scripts/repo_local/portable_family.py"),
+    Path("scripts/repo_local/tiered_family.py"),
+    Path("scripts/generate_repo_local_kag_index.py"),
+    Path("schemas/repo-local-kag-budget-evidence.schema.json"),
+    Path("schemas/repo-local-kag-budget-receipt.schema.json"),
+)
+SEMANTIC_DERIVED_PATHS = {
+    Path("docs/validation/script_inventory.json"),
+    Path("docs/testing/test_inventory.json"),
+}
+SEMANTIC_DERIVED_ROOTS = {
+    Path("docs/decisions/indexes"),
+}
 DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0017-portable-content-addressed-repository-family.md"
@@ -1365,6 +1400,43 @@ def _base_manifest(
         raise PortableFamilyError(
             f"{base_ref} portable family manifest must be an object"
         )
+    if payload.get("schema_version") == TIERED_DISTRIBUTION_SCHEMA_VERSION:
+        corpus_content = _git_bytes(
+            repo_root,
+            base_ref,
+            Path("kag/indexes/corpus.manifest.json"),
+        )
+        if corpus_content is None:
+            raise PortableFamilyError(
+                f"{base_ref} tiered family corpus manifest is missing"
+            )
+        try:
+            corpus = json.loads(corpus_content)
+        except json.JSONDecodeError as exc:
+            raise PortableFamilyError(
+                f"{base_ref} tiered family corpus manifest is invalid"
+            ) from exc
+        if not isinstance(corpus, dict):
+            raise PortableFamilyError(
+                f"{base_ref} tiered family corpus manifest must be an object"
+            )
+        distribution_identity = payload.get("distribution_identity")
+        corpus_identity = corpus.get("corpus_identity")
+        if not isinstance(distribution_identity, Mapping) or not isinstance(
+            corpus_identity,
+            Mapping,
+        ):
+            raise PortableFamilyError(
+                f"{base_ref} tiered family identities are incomplete"
+            )
+        corpus_digest = distribution_identity.get("corpus_digest")
+        if isinstance(corpus_digest, str):
+            corpus_digest = corpus_digest.removeprefix("sha256:")
+        payload["family_identity"] = {
+            "content_digest": corpus_digest,
+            "source_snapshot": corpus_identity.get("source_snapshot"),
+            "distribution_digest": distribution_identity.get("content_digest"),
+        }
     return payload
 
 
@@ -1421,12 +1493,320 @@ def _validate_standing_budget(
 
 
 def _budget_decision_ref(manifest: Mapping[str, Any]) -> str:
-    return (
-        TIERED_DECISION_REF
-        if manifest.get("schema_version")
-        == TIERED_DISTRIBUTION_SCHEMA_VERSION
-        else DECISION_REF
+    del manifest
+    return SEMANTIC_BUDGET_DECISION_REF
+
+
+def _resolve_git_ref(repo_root: Path, ref: str) -> str:
+    return subprocess.run(
+        ("git", "rev-parse", ref),
+        cwd=repo_root.resolve(),
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _current_bytes(repo_root: Path, path: Path) -> bytes | None:
+    candidate = repo_root.resolve() / path
+    try:
+        if candidate.is_symlink():
+            return candidate.readlink().as_posix().encode("utf-8")
+        if candidate.is_file():
+            return candidate.read_bytes()
+    except OSError:
+        return None
+    return None
+
+
+def _path_change_records(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    paths: Iterable[Path],
+) -> list[dict[str, Any]]:
+    root = repo_root.resolve()
+    records: list[dict[str, Any]] = []
+    for path in sorted(set(paths)):
+        old = _git_bytes(root, base_ref, path)
+        new = _current_bytes(root, path)
+        if old == new:
+            continue
+        records.append(
+            {
+                "path": path.as_posix(),
+                "old_digest": sha256_bytes(old) if old is not None else None,
+                "new_digest": sha256_bytes(new) if new is not None else None,
+                "old_bytes": len(old) if old is not None else 0,
+                "new_bytes": len(new) if new is not None else 0,
+                "changed_bytes": max(
+                    len(old) if old is not None else 0,
+                    len(new) if new is not None else 0,
+                ),
+            }
+        )
+    return records
+
+
+def _measurement_digest(records: Sequence[Mapping[str, Any]]) -> str:
+    return sha256_bytes(canonical_json_bytes(list(records)))
+
+
+def _changed_generated_records(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    return _path_change_records(
+        repo_root,
+        base_ref=base_ref,
+        paths=(
+            expected_portable_paths(manifest)
+            | _base_portable_paths(repo_root.resolve(), base_ref)
+        ),
     )
+
+
+def _git_changed_paths(repo_root: Path, base_ref: str) -> set[Path]:
+    root = repo_root.resolve()
+    changed = subprocess.run(
+        ("git", "diff", "--name-only", "-z", base_ref, "--"),
+        cwd=root,
+        check=True,
+        capture_output=True,
+    ).stdout
+    untracked = subprocess.run(
+        ("git", "ls-files", "--others", "--exclude-standard", "-z"),
+        cwd=root,
+        check=True,
+        capture_output=True,
+    ).stdout
+    paths: set[Path] = set()
+    for encoded in (*changed.split(b"\0"), *untracked.split(b"\0")):
+        if not encoded:
+            continue
+        try:
+            path = Path(encoded.decode("utf-8"))
+        except UnicodeDecodeError as exc:
+            raise PortableFamilyError(
+                "Git changed path is not valid UTF-8"
+            ) from exc
+        if path.is_absolute() or ".." in path.parts:
+            raise PortableFamilyError(f"Git changed path is unsafe: {path}")
+        paths.add(path)
+    return paths
+
+
+def _is_semantic_derived_path(path: Path) -> bool:
+    return (
+        path in SEMANTIC_DERIVED_PATHS
+        or any(root in (path, *path.parents) for root in SEMANTIC_DERIVED_ROOTS)
+        or "generated" in path.parts
+    )
+
+
+def _changed_source_records(
+    repo_root: Path,
+    *,
+    base_ref: str,
+) -> list[dict[str, Any]]:
+    paths = {
+        path
+        for path in _git_changed_paths(repo_root, base_ref)
+        if not is_portable_control_path(path)
+        and not _is_semantic_derived_path(path)
+    }
+    return _path_change_records(repo_root, base_ref=base_ref, paths=paths)
+
+
+def _measurement_payload(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    return {
+        "bytes": sum(int(record["changed_bytes"]) for record in records),
+        "files": len(records),
+        "paths_digest": _measurement_digest(records),
+    }
+
+
+def _budget_identity(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    identity = manifest.get("family_identity")
+    if not isinstance(identity, Mapping):
+        raise PortableFamilyError("portable budget family identity is missing")
+    digest = identity.get("content_digest")
+    source_snapshot = identity.get("source_snapshot")
+    distribution_digest = identity.get("distribution_digest")
+    if not isinstance(digest, str) or not digest:
+        raise PortableFamilyError("portable budget family digest is missing")
+    if not isinstance(source_snapshot, str) or not source_snapshot:
+        raise PortableFamilyError("portable budget source snapshot is missing")
+    if distribution_digest is not None and not isinstance(distribution_digest, str):
+        raise PortableFamilyError("portable budget distribution digest is malformed")
+    return {
+        "family_digest": digest,
+        "source_snapshot": source_snapshot,
+        "distribution_digest": distribution_digest,
+    }
+
+
+def _base_identity(
+    base_ref: str,
+    base_manifest: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    identity = (
+        _budget_identity(base_manifest)
+        if base_manifest is not None
+        and isinstance(base_manifest.get("family_identity"), Mapping)
+        else {
+            "family_digest": None,
+            "source_snapshot": None,
+            "distribution_digest": None,
+        }
+    )
+    return {"ref": base_ref, **identity}
+
+
+def _budget_base_supported(base_manifest: Mapping[str, Any] | None) -> bool:
+    return bool(
+        base_manifest is not None
+        and base_manifest.get("schema_version")
+        in {SCHEMA_VERSION, TIERED_DISTRIBUTION_SCHEMA_VERSION}
+        and isinstance(base_manifest.get("family_identity"), Mapping)
+    )
+
+
+def _procedure_root(repo_root: Path) -> Path:
+    candidate = repo_root.resolve() / BUDGET_PROCEDURE_PATHS[0]
+    if candidate.is_file():
+        return repo_root.resolve()
+    return Path(__file__).resolve().parents[2]
+
+
+def _budget_procedure_identity(repo_root: Path) -> dict[str, Any]:
+    root = _procedure_root(repo_root)
+    files: list[dict[str, Any]] = []
+    for relative in BUDGET_PROCEDURE_PATHS:
+        path = root / relative
+        if not path.is_file():
+            files.append(
+                {"path": relative.as_posix(), "state": "missing"}
+            )
+            continue
+        files.append(
+            {
+                "path": relative.as_posix(),
+                "state": "present",
+                "digest": sha256_bytes(path.read_bytes()),
+            }
+        )
+    return {
+        "contract_version": BUDGET_PROCEDURE_VERSION,
+        "owner": "aoa-kag",
+        "files": files,
+        "digest": sha256_bytes(canonical_json_bytes(files)),
+    }
+
+
+def _review_identity(repo_root: Path, review_ref: str) -> dict[str, str]:
+    if not isinstance(review_ref, str) or not review_ref.startswith("aoa-kag:"):
+        raise PortableFamilyError(
+            "budget semantic evidence review_ref must use the aoa-kag owner ref"
+        )
+    relative = Path(review_ref.removeprefix("aoa-kag:"))
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or not relative.as_posix().startswith("docs/decisions/")
+        or _is_semantic_derived_path(relative)
+    ):
+        raise PortableFamilyError(
+            "budget semantic evidence review_ref must name an authored decision"
+        )
+    owner_root = repo_root.resolve()
+    path = owner_root / relative
+    if not path.is_file():
+        procedure_root = _procedure_root(owner_root)
+        if procedure_root != owner_root:
+            path = procedure_root / relative
+    if not path.is_file():
+        raise PortableFamilyError(
+            f"budget semantic evidence review ref is missing: {review_ref}"
+        )
+    return {
+        "ref": review_ref,
+        "digest": sha256_bytes(path.read_bytes()),
+    }
+
+
+def _duplicate_materialization(
+    records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    by_digest: dict[str, list[str]] = {}
+    for record in records:
+        digest = record.get("new_digest")
+        new_bytes = record.get("new_bytes")
+        if not isinstance(digest, str) or not isinstance(new_bytes, int):
+            continue
+        if new_bytes < 1024:
+            continue
+        by_digest.setdefault(digest, []).append(str(record["path"]))
+    groups = [
+        {"digest": digest, "paths": sorted(paths)}
+        for digest, paths in sorted(by_digest.items())
+        if len(paths) > 1
+    ]
+    return {
+        "state": "present" if groups else "absent",
+        "groups": groups,
+    }
+
+
+def _semantic_admission_state(
+    *,
+    base_supported: bool,
+    cause_class: str,
+    source_measurement: Mapping[str, Any],
+    duplicate_materialization: Mapping[str, Any],
+) -> str:
+    if not base_supported:
+        return "migration_required"
+    if cause_class == "accidental_generated_amplification":
+        return "unsupported"
+    if duplicate_materialization.get("state") == "present":
+        return "unsupported"
+    if int(source_measurement.get("bytes", 0)) <= 0:
+        return "unknown"
+    return "supported"
+
+
+def _budget_measurements(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    base_manifest: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    generated_records = _changed_generated_records(
+        repo_root,
+        base_ref=base_ref,
+        manifest=manifest,
+    )
+    source_records = _changed_source_records(repo_root, base_ref=base_ref)
+    budgets = manifest["budgets"]
+    summary = manifest["summary"]
+    return {
+        "generated_delta": _measurement_payload(generated_records),
+        "tracked_size": {
+            "bytes": summary["tracked_bytes"],
+            "limit_bytes": budgets["tracked_bytes_max"],
+        },
+        "authored_source_delta": _measurement_payload(source_records),
+        "duplicate_materialization": _duplicate_materialization(
+            generated_records
+        ),
+        "generated_records": generated_records,
+        "source_records": source_records,
+        "base_supported": _budget_base_supported(base_manifest),
+    }
 
 
 def changed_generated_bytes(
@@ -1436,26 +1816,14 @@ def changed_generated_bytes(
     manifest: Mapping[str, Any],
 ) -> tuple[int, int, str]:
     root = repo_root.resolve()
-    resolved = subprocess.run(
-        ("git", "rev-parse", base_ref),
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    head_paths = expected_portable_paths(manifest)
-    base_paths = _base_portable_paths(root, resolved)
-    changed_bytes = 0
-    changed_files = 0
-    for path in sorted(head_paths | base_paths):
-        old = _git_bytes(root, resolved, path)
-        new_path = root / path
-        new = new_path.read_bytes() if new_path.is_file() else None
-        if old == new:
-            continue
-        changed_files += 1
-        changed_bytes += max(len(old or b""), len(new or b""))
-    return changed_bytes, changed_files, resolved
+    resolved = _resolve_git_ref(root, base_ref)
+    records = _changed_generated_records(
+        root,
+        base_ref=resolved,
+        manifest=manifest,
+    )
+    measurement = _measurement_payload(records)
+    return measurement["bytes"], measurement["files"], resolved
 
 
 def receipt_path_for(manifest: Mapping[str, Any]) -> Path:
@@ -1466,16 +1834,200 @@ def receipt_path_for(manifest: Mapping[str, Any]) -> Path:
     )
 
 
+def evidence_path_for(manifest: Mapping[str, Any]) -> Path:
+    digest = manifest["family_identity"]["content_digest"]
+    return (
+        BUDGET_RECEIPT_ROOT_RELATIVE_PATH
+        / f"{digest}.evidence.json"
+    )
+
+
+def build_budget_evidence(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    reason: str,
+    cause_class: str,
+    review_ref: str,
+) -> tuple[Path, dict[str, Any]]:
+    if not isinstance(reason, str) or not reason.strip():
+        raise PortableFamilyError("budget semantic evidence reason must not be empty")
+    if cause_class not in BUDGET_CAUSE_CLASSES:
+        raise PortableFamilyError(
+            "budget semantic evidence cause_class is not a supported typed cause"
+        )
+    root = repo_root.resolve()
+    resolved = _resolve_git_ref(root, base_ref)
+    base_manifest = _base_manifest(root, resolved)
+    _validate_standing_budget(manifest, base_manifest)
+    measurements = _budget_measurements(
+        root,
+        base_ref=resolved,
+        manifest=manifest,
+        base_manifest=base_manifest,
+    )
+    state = _semantic_admission_state(
+        base_supported=measurements["base_supported"],
+        cause_class=cause_class,
+        source_measurement=measurements["authored_source_delta"],
+        duplicate_materialization=measurements["duplicate_materialization"],
+    )
+    head_identity = _budget_identity(manifest)
+    source_bytes = int(measurements["authored_source_delta"]["bytes"])
+    generated_bytes = int(measurements["generated_delta"]["bytes"])
+    evidence = {
+        "schema_version": BUDGET_EVIDENCE_SCHEMA_VERSION,
+        "state": state,
+        "owner": copy.deepcopy(manifest["repo"]),
+        "scope": _budget_receipt_scope(
+            base_has_v3=measurements["base_supported"],
+            generated_delta_exceeded=generated_bytes
+            > manifest["budgets"]["changed_generated_bytes_max"],
+            tracked_size_exceeded=manifest["summary"]["tracked_bytes"]
+            > manifest["budgets"]["tracked_bytes_max"],
+        ),
+        "base_identity": _base_identity(resolved, base_manifest),
+        "head_identity": head_identity,
+        "procedure": _budget_procedure_identity(root),
+        "review": _review_identity(root, review_ref),
+        "cause": {
+            "class": cause_class,
+            "reason": reason.strip(),
+        },
+        "measurements": {
+            "generated_delta": measurements["generated_delta"],
+            "tracked_size": measurements["tracked_size"],
+            "authored_source_delta": measurements["authored_source_delta"],
+            "amplification": {
+                "generated_bytes": generated_bytes,
+                "authored_source_bytes": source_bytes,
+                "ratio_numerator": generated_bytes,
+                "ratio_denominator": max(source_bytes, 1),
+            },
+            "duplicate_materialization": measurements[
+                "duplicate_materialization"
+            ],
+        },
+        "fixed_point": {
+            "state": "required_external_gate",
+            "family_digest": head_identity["family_digest"],
+        },
+    }
+    return evidence_path_for(manifest), evidence
+
+
+def _validate_budget_semantic_evidence(
+    repo_root: Path,
+    *,
+    manifest: Mapping[str, Any],
+    base_ref: str,
+    base_manifest: Mapping[str, Any] | None,
+    expected_scope: str,
+    receipt: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+) -> None:
+    if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "budget semantic admission is migration_required for legacy evidence"
+        )
+    state = evidence.get("state")
+    if state not in BUDGET_SEMANTIC_STATES:
+        raise PortableFamilyError("budget semantic evidence state is invalid")
+    if state != "supported":
+        raise PortableFamilyError(
+            f"budget semantic admission state={state}; supported owner evidence is required"
+        )
+    if evidence.get("owner") != manifest.get("repo"):
+        raise PortableFamilyError("budget semantic evidence owner identity mismatches family")
+    if evidence.get("scope") != expected_scope:
+        raise PortableFamilyError("budget semantic evidence scope mismatches exceedance")
+    if evidence.get("base_identity") != _base_identity(base_ref, base_manifest):
+        raise PortableFamilyError("budget semantic evidence base identity mismatches current base")
+    head_identity = _budget_identity(manifest)
+    if evidence.get("head_identity") != head_identity:
+        raise PortableFamilyError("budget semantic evidence head identity mismatches family")
+    if evidence.get("fixed_point") != {
+        "state": "required_external_gate",
+        "family_digest": head_identity["family_digest"],
+    }:
+        raise PortableFamilyError("budget semantic evidence fixed-point binding mismatches family")
+    if evidence.get("procedure") != _budget_procedure_identity(repo_root):
+        raise PortableFamilyError(
+            "budget semantic evidence procedure/environment identity is stale"
+        )
+    review = evidence.get("review")
+    if not isinstance(review, Mapping):
+        raise PortableFamilyError("budget semantic evidence review binding is missing")
+    expected_review = _review_identity(repo_root, str(review.get("ref", "")))
+    if dict(review) != expected_review:
+        raise PortableFamilyError("budget semantic evidence review binding is stale")
+    cause = evidence.get("cause")
+    if not isinstance(cause, Mapping) or cause.get("class") not in BUDGET_CAUSE_CLASSES:
+        raise PortableFamilyError("budget semantic evidence cause class is invalid")
+    if cause.get("reason") != receipt.get("reason"):
+        raise PortableFamilyError(
+            "budget semantic evidence reason is not bound to the receipt"
+        )
+    measurements = _budget_measurements(
+        repo_root,
+        base_ref=base_ref,
+        manifest=manifest,
+        base_manifest=base_manifest,
+    )
+    observed = evidence.get("measurements")
+    if not isinstance(observed, Mapping):
+        raise PortableFamilyError("budget semantic evidence measurements are missing")
+    expected_measurements = {
+        "generated_delta": measurements["generated_delta"],
+        "tracked_size": measurements["tracked_size"],
+        "authored_source_delta": measurements["authored_source_delta"],
+        "amplification": {
+            "generated_bytes": measurements["generated_delta"]["bytes"],
+            "authored_source_bytes": measurements["authored_source_delta"]["bytes"],
+            "ratio_numerator": measurements["generated_delta"]["bytes"],
+            "ratio_denominator": max(
+                measurements["authored_source_delta"]["bytes"],
+                1,
+            ),
+        },
+        "duplicate_materialization": measurements[
+            "duplicate_materialization"
+        ],
+    }
+    if dict(observed) != expected_measurements:
+        raise PortableFamilyError(
+            "budget semantic evidence measurements do not match current source and family"
+        )
+    expected_state = _semantic_admission_state(
+        base_supported=measurements["base_supported"],
+        cause_class=str(cause["class"]),
+        source_measurement=measurements["authored_source_delta"],
+        duplicate_materialization=measurements["duplicate_materialization"],
+    )
+    if expected_state != state:
+        raise PortableFamilyError(
+            f"budget semantic evidence state={state} does not match measured state={expected_state}"
+        )
+    if receipt.get("semantic_admission") != state:
+        raise PortableFamilyError("budget receipt semantic admission state is not supported")
+
+
 def build_budget_receipt(
     repo_root: Path,
     *,
     base_ref: str,
     manifest: Mapping[str, Any],
     reason: str,
+    semantic_evidence: Mapping[str, Any] | None = None,
     approved_by: str = "repository-owner",
 ) -> tuple[Path, dict[str, Any]]:
     if not reason.strip():
         raise PortableFamilyError("budget receipt reason must not be empty")
+    if semantic_evidence is None:
+        raise PortableFamilyError(
+            "budget receipt requires typed semantic owner evidence"
+        )
     changed_bytes, changed_files, resolved = changed_generated_bytes(
         repo_root,
         base_ref=base_ref,
@@ -1502,6 +2054,10 @@ def build_budget_receipt(
         "scope": scope,
         "base_ref": resolved,
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+        "head_distribution_digest": _budget_identity(manifest)[
+            "distribution_digest"
+        ],
         "changed_generated_bytes": changed_bytes,
         "changed_generated_files": changed_files,
         "default_limit_bytes": DEFAULT_DELTA_BYTES_MAX,
@@ -1512,8 +2068,34 @@ def build_budget_receipt(
         "reason": reason.strip(),
         "approved_by": approved_by,
         "decision_ref": _budget_decision_ref(manifest),
+        "semantic_admission": semantic_evidence.get("state"),
+        "semantic_evidence_ref": evidence_path_for(manifest).as_posix(),
+        "semantic_evidence_digest": sha256_bytes(
+            render_manifest(semantic_evidence)
+        ),
     }
+    _validate_budget_semantic_evidence(
+        repo_root,
+        manifest=manifest,
+        base_ref=resolved,
+        base_manifest=base_manifest,
+        expected_scope=scope,
+        receipt=receipt,
+        evidence=semantic_evidence,
+    )
     return receipt_path_for(manifest), receipt
+
+
+def write_budget_evidence(
+    repo_root: Path,
+    path: Path,
+    evidence: Mapping[str, Any],
+) -> None:
+    destination = repo_root.resolve() / path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    content = render_manifest(evidence)
+    if not destination.is_file() or destination.read_bytes() != content:
+        destination.write_bytes(content)
 
 
 def write_budget_receipt(
@@ -1560,6 +2142,11 @@ def validate_changed_generated_budget(
             f"tracked={summary['tracked_bytes']}/"
             f"{budgets['tracked_bytes_max']}"
         ) from exc
+    if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "budget receipt semantic admission is migration_required; legacy v1 "
+            "receipt is structural-only"
+        )
     expected_scope = _budget_receipt_scope(
         base_has_v3=base_manifest is not None,
         generated_delta_exceeded=delta_exceeded,
@@ -1570,9 +2157,13 @@ def validate_changed_generated_budget(
         "repo": manifest["repo"]["name"],
         "base_ref": resolved,
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+        "head_distribution_digest": _budget_identity(manifest)[
+            "distribution_digest"
+        ],
         "changed_generated_bytes": changed_bytes,
         "changed_generated_files": changed_files,
-        "default_limit_bytes": limit,
+        "default_limit_bytes": DEFAULT_DELTA_BYTES_MAX,
         "tracked_bytes": summary["tracked_bytes"],
         "tracked_bytes_max": budgets["tracked_bytes_max"],
         "decision_ref": _budget_decision_ref(manifest),
@@ -1596,6 +2187,35 @@ def validate_changed_generated_budget(
         < summary["tracked_bytes"]
     ):
         raise PortableFamilyError("budget receipt approval is incomplete")
+    evidence_ref = receipt.get("semantic_evidence_ref")
+    evidence_path = evidence_path_for(manifest)
+    if evidence_ref != evidence_path.as_posix():
+        raise PortableFamilyError(
+            "budget receipt semantic evidence ref does not match current family"
+        )
+    evidence_digest = receipt.get("semantic_evidence_digest")
+    if not isinstance(evidence_digest, str):
+        raise PortableFamilyError("budget receipt semantic evidence digest is missing")
+    evidence_file = repo_root.resolve() / evidence_path
+    try:
+        evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        raise PortableFamilyError(
+            "budget receipt semantic admission is migration_required; typed evidence is missing"
+        ) from exc
+    if not isinstance(evidence, dict) or sha256_bytes(
+        render_manifest(evidence)
+    ) != evidence_digest:
+        raise PortableFamilyError("budget semantic evidence digest does not match receipt")
+    _validate_budget_semantic_evidence(
+        repo_root,
+        manifest=manifest,
+        base_ref=resolved,
+        base_manifest=base_manifest,
+        expected_scope=expected_scope,
+        receipt=receipt,
+        evidence=evidence,
+    )
     return changed_bytes, changed_files, True
 
 
@@ -1611,12 +2231,21 @@ def _validate_tracked_size_receipt(
             "portable tracked byte budget is exceeded without a matching "
             "digest-bound receipt"
         ) from exc
+    if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            "portable tracked byte budget is migration_required; legacy v1 receipt "
+            "is structural-only"
+        )
     summary = manifest["summary"]
     budgets = manifest["budgets"]
     expected = {
         "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
         "repo": manifest["repo"]["name"],
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": _budget_identity(manifest)["source_snapshot"],
+        "head_distribution_digest": _budget_identity(manifest)[
+            "distribution_digest"
+        ],
         "tracked_bytes": summary["tracked_bytes"],
         "tracked_bytes_max": budgets["tracked_bytes_max"],
         "decision_ref": _budget_decision_ref(manifest),
@@ -1637,6 +2266,58 @@ def _validate_tracked_size_receipt(
         raise PortableFamilyError(
             "tracked-size receipt allowance is below the family size"
         )
+    base_ref = receipt.get("base_ref")
+    if not isinstance(base_ref, str) or not base_ref:
+        raise PortableFamilyError(
+            "tracked-size receipt semantic admission is missing base identity"
+        )
+    resolved = _resolve_git_ref(repo_root, base_ref)
+    if resolved != base_ref:
+        raise PortableFamilyError(
+            "tracked-size receipt base_ref must be the resolved full Git ref"
+        )
+    base_manifest = _base_manifest(repo_root, resolved)
+    changed_bytes, changed_files, _ = changed_generated_bytes(
+        repo_root,
+        base_ref=resolved,
+        manifest=manifest,
+    )
+    expected_scope = _budget_receipt_scope(
+        base_has_v3=_budget_base_supported(base_manifest),
+        generated_delta_exceeded=changed_bytes
+        > budgets.get("changed_generated_bytes_max", DEFAULT_DELTA_BYTES_MAX),
+        tracked_size_exceeded=True,
+    )
+    if receipt.get("scope") != expected_scope:
+        raise PortableFamilyError(
+            "tracked-size receipt scope does not match current generated delta"
+        )
+    evidence_path = evidence_path_for(manifest)
+    if receipt.get("semantic_evidence_ref") != evidence_path.as_posix():
+        raise PortableFamilyError(
+            "tracked-size receipt semantic evidence ref does not match family"
+        )
+    try:
+        evidence = json.loads(
+            (repo_root.resolve() / evidence_path).read_text(encoding="utf-8")
+        )
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        raise PortableFamilyError(
+            "portable tracked byte budget is migration_required; typed evidence is missing"
+        ) from exc
+    if not isinstance(evidence, dict) or sha256_bytes(
+        render_manifest(evidence)
+    ) != receipt.get("semantic_evidence_digest"):
+        raise PortableFamilyError("tracked-size semantic evidence digest does not match")
+    _validate_budget_semantic_evidence(
+        repo_root,
+        manifest=manifest,
+        base_ref=resolved,
+        base_manifest=base_manifest,
+        expected_scope=expected_scope,
+        receipt=receipt,
+        evidence=evidence,
+    )
 
 
 def write_compatibility_view(

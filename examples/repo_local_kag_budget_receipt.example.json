@@ -1,0 +1,22 @@
+{
+  "schema_version": "aoa-repo-local-kag-budget-receipt-v2",
+  "repo": "example-owner",
+  "scope": "generated_delta",
+  "base_ref": "0123456789abcdef0123456789abcdef01234567",
+  "head_family_digest": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+  "head_source_snapshot": "sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+  "head_distribution_digest": null,
+  "changed_generated_bytes": 2097152,
+  "changed_generated_files": 12,
+  "default_limit_bytes": 1048576,
+  "allowed_bytes": 2097152,
+  "tracked_bytes": 4194304,
+  "tracked_bytes_max": 4194304,
+  "allowed_tracked_bytes": 4194304,
+  "reason": "The owner source change has been measured against the generated family.",
+  "approved_by": "repository-owner",
+  "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
+  "semantic_admission": "supported",
+  "semantic_evidence_ref": "kag/receipts/index_family_budget/abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789.evidence.json",
+  "semantic_evidence_digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+}

@@ -283,9 +283,12 @@ tree to equal the already proved fixed-point tree. A verified staging
 transition therefore replaces only an immediate unchanged second preparation
 check. Worktree or provider mutation, or any other index transition,
 invalidates it; it never replaces source-fast, OS-wide proof, release, or
-landing authority. A budget exceedance requires an explicit
-`--budget-reason`, and that receipt is created only after the SCC has converged
-to its final family digest.
+landing authority. A budget exceedance requires an explicit `--budget-reason`,
+typed `--budget-cause-class`, and authored `--budget-review-ref`. The v2
+receipt also carries a digest-bound semantic-evidence packet; legacy v1
+receipts are structural-only and remain `migration_required`. The evidence
+and receipt are created only after the SCC has converged to its final family
+digest.
 
 Every other provider repository uses the owner-neutral preparation route from
 an `aoa-kag` checkout. It copies the target candidate into a detached temporary
@@ -300,7 +303,10 @@ python scripts/prepare_owner_landing.py --repo-root /path/to/owner --apply
 ```
 
 Both owner modes preserve the target Git index. A budget exceedance still
-requires `--budget-reason`; preparation never authors that owner judgment.
+requires `--budget-reason`, `--budget-cause-class`, and `--budget-review-ref`;
+preparation never authors that owner judgment. Typed evidence proves only the
+owner semantic-admission contract, not source acceptance, consumer admission,
+runtime health, proof, publication, or human acceptance.
 
 The CI-only preflight DAG overlaps a seed-only self-coverage sentinel with the
 existing bounded provider checkout wave. A failed sentinel cancels only that

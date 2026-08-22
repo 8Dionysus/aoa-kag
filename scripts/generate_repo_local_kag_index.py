@@ -3424,7 +3424,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--budget-reason",
         default="",
-        help="Owner reason recorded by --write-budget-receipt.",
+        help="Owner note recorded by --write-budget-receipt and bound to typed evidence.",
+    )
+    parser.add_argument(
+        "--budget-cause-class",
+        default="",
+        help="Typed owner cause class required when writing a budget receipt.",
+    )
+    parser.add_argument(
+        "--budget-review-ref",
+        default="",
+        help="Authored aoa-kag decision ref required when writing a budget receipt.",
     )
     parser.add_argument("--check", action="store_true", help="Check output parity without writing.")
     return parser.parse_args(argv)
@@ -3505,10 +3515,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         or args.check
         or not args.budget_base_ref
         or not args.budget_reason.strip()
+        or not args.budget_cause_class.strip()
+        or not args.budget_review_ref.strip()
     ):
         raise SystemExit(
             "--write-budget-receipt requires a write-mode portable or tiered family run "
-            "with --budget-base-ref and --budget-reason"
+            "with --budget-base-ref, --budget-reason, --budget-cause-class, "
+            "and --budget-review-ref"
         )
     output = Path(args.output)
     output_path = repo_root / output
@@ -3660,20 +3673,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         try:
             from scripts.repo_local.portable_family import (
                 PortableFamilyError,
+                build_budget_evidence,
                 build_budget_receipt,
                 build_portable_family,
                 check_portable_output,
                 validate_changed_generated_budget,
+                write_budget_evidence,
                 write_budget_receipt,
                 write_portable_output,
             )
         except ImportError:  # pragma: no cover - direct script execution
             from repo_local.portable_family import (  # type: ignore
                 PortableFamilyError,
+                build_budget_evidence,
                 build_budget_receipt,
                 build_portable_family,
                 check_portable_output,
                 validate_changed_generated_budget,
+                write_budget_evidence,
                 write_budget_receipt,
                 write_portable_output,
             )
@@ -3785,11 +3802,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             artifact_receipt = write_tiered_artifact(artifact_root, tiered)
             if args.write_budget_receipt:
                 try:
+                    evidence_path, evidence = build_budget_evidence(
+                        repo_root,
+                        base_ref=args.budget_base_ref,
+                        manifest=budget_manifest,
+                        reason=args.budget_reason,
+                        cause_class=args.budget_cause_class,
+                        review_ref=args.budget_review_ref,
+                    )
+                    write_budget_evidence(repo_root, evidence_path, evidence)
                     receipt_path, receipt = build_budget_receipt(
                         repo_root,
                         base_ref=args.budget_base_ref,
                         manifest=budget_manifest,
                         reason=args.budget_reason,
+                        semantic_evidence=evidence,
                     )
                 except (
                     PortableFamilyError,
@@ -3798,6 +3825,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
                     return 1
                 write_budget_receipt(repo_root, receipt_path, receipt)
+                print(f"[repo-local-kag-index] wrote {repo_root / evidence_path}")
                 print(f"[repo-local-kag-index] wrote {repo_root / receipt_path}")
             if args.budget_base_ref:
                 try:
@@ -3868,16 +3896,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         if args.write_budget_receipt:
             try:
+                evidence_path, evidence = build_budget_evidence(
+                    repo_root,
+                    base_ref=args.budget_base_ref,
+                    manifest=portable_manifest,
+                    reason=args.budget_reason,
+                    cause_class=args.budget_cause_class,
+                    review_ref=args.budget_review_ref,
+                )
+                write_budget_evidence(repo_root, evidence_path, evidence)
                 receipt_path, receipt = build_budget_receipt(
                     repo_root,
                     base_ref=args.budget_base_ref,
                     manifest=portable_manifest,
                     reason=args.budget_reason,
+                    semantic_evidence=evidence,
                 )
             except (PortableFamilyError, subprocess.CalledProcessError) as exc:
                 print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
                 return 1
             write_budget_receipt(repo_root, receipt_path, receipt)
+            print(f"[repo-local-kag-index] wrote {repo_root / evidence_path}")
             print(f"[repo-local-kag-index] wrote {repo_root / receipt_path}")
         if args.budget_base_ref:
             try:

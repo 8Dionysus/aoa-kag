@@ -33,9 +33,17 @@ from scripts.repo_local.portable_family import (
     HARD_MAX_SHARD_BYTES,
     MANIFEST_RELATIVE_PATH,
     PortableFamilyError,
+    build_budget_evidence,
+    build_budget_receipt,
     build_portable_family,
+    evidence_path_for,
     load_portable_family,
+    manifest_digest,
+    render_manifest,
+    sha256_bytes,
     validate_changed_generated_budget,
+    write_budget_evidence,
+    write_budget_receipt,
     write_portable_output,
 )
 from scripts.validators.common import ValidationError
@@ -516,6 +524,134 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(source_index, loaded_source)
         self.assertEqual(family, loaded_family)
         self.assertEqual(manifest, loaded_manifest)
+
+    def test_budget_receipt_requires_typed_semantic_owner_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "source"), cwd=root, check=True)
+
+            base_source = build_index(root)
+            base_family = build_repository_indexes(base_source, repo_root=root)
+            base_manifest, base_shards = build_portable_family(base_source, base_family)
+            write_portable_output(root, base_manifest, base_shards)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "portable base"), cwd=root, check=True)
+            base_ref = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+            (root / "docs" / "decisions" / "AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md").write_text(
+                "# Semantic owner evidence\n",
+                encoding="utf-8",
+            )
+            (root / "README.md").write_text(
+                "# Demo\n\n" + ("source-owned growth " * 40000),
+                encoding="utf-8",
+            )
+            subprocess.run(
+                ("git", "add", "README.md", "docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md"),
+                cwd=root,
+                check=True,
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+            manifest, shards = build_portable_family(source, family)
+            manifest["budgets"]["changed_generated_bytes_max"] = 0
+            manifest["summary"]["tracked_bytes"] = len(render_manifest(manifest)) + sum(
+                len(content) for content in shards.values()
+            )
+            manifest["family_identity"]["content_digest"] = manifest_digest(manifest)
+            write_portable_output(root, manifest, shards)
+
+            evidence_path, evidence = build_budget_evidence(
+                root,
+                base_ref=base_ref,
+                manifest=manifest,
+                reason="The owner source change is measured by the generic procedure.",
+                cause_class="legitimate_bulk_authored_change",
+                review_ref="aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
+            )
+            self.assertEqual("supported", evidence["state"])
+            write_budget_evidence(root, evidence_path, evidence)
+            receipt_path, receipt = build_budget_receipt(
+                root,
+                base_ref=base_ref,
+                manifest=manifest,
+                reason=evidence["cause"]["reason"],
+                semantic_evidence=evidence,
+            )
+            write_budget_receipt(root, receipt_path, receipt)
+            changed_bytes, changed_files, receipted = validate_changed_generated_budget(
+                root,
+                base_ref=base_ref,
+                manifest=manifest,
+            )
+            self.assertGreater(changed_bytes, 0)
+            self.assertGreater(changed_files, 0)
+            self.assertTrue(receipted)
+
+            tampered = json.loads((root / evidence_path).read_text(encoding="utf-8"))
+            tampered["head_identity"]["family_digest"] = "0" * 64
+            (root / evidence_path).write_text(render_manifest(tampered).decode("utf-8"), encoding="utf-8")
+            with self.assertRaisesRegex(PortableFamilyError, "semantic evidence digest"):
+                validate_changed_generated_budget(root, base_ref=base_ref, manifest=manifest)
+
+            legacy = dict(receipt)
+            legacy["schema_version"] = "aoa-repo-local-kag-budget-receipt-v1"
+            (root / receipt_path).write_text(render_manifest(legacy).decode("utf-8"), encoding="utf-8")
+            with self.assertRaisesRegex(PortableFamilyError, "migration_required"):
+                validate_changed_generated_budget(root, base_ref=base_ref, manifest=manifest)
+
+    def test_budget_semantic_states_preserve_unknown_unsupported_and_migration(self) -> None:
+        from scripts.repo_local.portable_family import _semantic_admission_state
+
+        no_source = {"bytes": 0, "files": 0}
+        no_duplicate = {"state": "absent"}
+        self.assertEqual(
+            "unknown",
+            _semantic_admission_state(
+                base_supported=True,
+                cause_class="legitimate_bulk_authored_change",
+                source_measurement=no_source,
+                duplicate_materialization=no_duplicate,
+            ),
+        )
+        self.assertEqual(
+            "unsupported",
+            _semantic_admission_state(
+                base_supported=True,
+                cause_class="accidental_generated_amplification",
+                source_measurement={"bytes": 1, "files": 1},
+                duplicate_materialization=no_duplicate,
+            ),
+        )
+        self.assertEqual(
+            "unsupported",
+            _semantic_admission_state(
+                base_supported=True,
+                cause_class="legitimate_bulk_authored_change",
+                source_measurement={"bytes": 1, "files": 1},
+                duplicate_materialization={"state": "present"},
+            ),
+        )
+        self.assertEqual(
+            "migration_required",
+            _semantic_admission_state(
+                base_supported=False,
+                cause_class="legitimate_bulk_authored_change",
+                source_measurement={"bytes": 1, "files": 1},
+                duplicate_materialization=no_duplicate,
+            ),
+        )
 
     def test_portable_family_paths_do_not_amplify_repository_event_delta(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

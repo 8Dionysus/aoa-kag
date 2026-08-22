@@ -67,11 +67,13 @@ repository, artifact, history, event-history, and budget-base coordinates.
 An intentional generated-delta exceedance needs one exact receipt:
 
 For an intentional exceedance, invoke the tiered write route with the
-write-receipt option and a non-empty owner reason while retaining the exact
-budget base.
+write-receipt option, a non-empty owner reason, a typed cause class, and an
+authored owner decision ref while retaining the exact budget base.
 
-The receipt is bound to exact base, head family digest, bytes, and files. It is
-not reusable and cannot raise a standing budget.
+The v2 receipt is bound to exact base, head family digest, source snapshot,
+procedure, evidence digest, bytes, and files. Its semantic packet is not
+reusable, legacy v1 receipts remain migration-only, and no receipt can raise a
+standing budget.
 
 ## Full Audit Snapshot Packet
 
