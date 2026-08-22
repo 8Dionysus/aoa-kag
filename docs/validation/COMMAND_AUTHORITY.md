@@ -318,8 +318,12 @@ Manual exact-head comparisons also pass the immutable PR-base commit through
 remains unchanged. The CI preflight may additionally receive a
 `coverage-seed-ref` pointing at the exact candidate head (or the checked-out
 default-branch head). That ref is used only by the seed-only preparation
-sentinels; it must be an ancestor of the candidate and match the canonical
-coverage runtime inputs. It never changes the `history_ref`, source-fast donor
+sentinels and reads the preparation-only payload at
+`generated/repo_local_kag_preparation_seed.json`; it must be an ancestor of the
+candidate and match the canonical coverage runtime inputs. The self sentinel
+does not promote seeded external rows into the authoritative coverage read
+model. Complete external-row parity remains blocking in the unchanged
+OS-wide proof. The seed never changes the `history_ref`, source-fast donor
 boundary, provider proof, release continuation, or landing authority.
 
 The hosted admission evidence distinguishes success latency from failure

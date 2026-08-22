@@ -38,6 +38,7 @@ COVERAGE_PATHS = (
     "generated/repo_local_kag_coverage.json",
     "generated/repo_local_kag_coverage.min.json",
 )
+PREPARATION_COVERAGE_SEED_PATH = "generated/repo_local_kag_preparation_seed.json"
 PORTABLE_FAMILY_PATHS = (
     "kag/indexes/index_family.manifest.json",
     "kag/indexes/shards",
@@ -4679,7 +4680,7 @@ def coverage_generation_module():
 
 
 def load_external_coverage_seed(repo_root: Path, seed_ref: str) -> dict[str, Any]:
-    relative = "generated/repo_local_kag_coverage.json"
+    relative = PREPARATION_COVERAGE_SEED_PATH
     try:
         content = git_bytes(repo_root, "show", f"{seed_ref}:{relative}")
         payload = json.loads(content.decode("utf-8", errors="strict"))
@@ -4899,6 +4900,71 @@ def build_preparation_coverage_from_payload(
     return payload
 
 
+def build_self_coverage_check_payload(
+    preparation_payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Keep the seed-only sentinel scoped to the KAG owner row.
+
+    A preparation seed may contain a locally repaired external owner that is
+    not yet admitted by its public provider pin.  The authoritative coverage
+    files must therefore remain on the public pinned rows while the early
+    sentinel compares only the rebuilt self row.  The unchanged full owner
+    proof still rebuilds and compares the complete payload later.
+    """
+
+    coverage_generation = coverage_generation_module()
+    current_path = coverage_generation.DEFAULT_OUTPUT
+    try:
+        current_payload = json.loads(current_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "authoritative repo-local KAG coverage is unavailable for the "
+            "preparation self sentinel"
+        ) from exc
+    if not isinstance(current_payload, dict):
+        raise RuntimeError("authoritative repo-local KAG coverage is not an object")
+    coverage_generation._validate_coverage_payload_schema(current_payload)
+    coverage_generation._validate_coverage_payload_schema(preparation_payload)
+
+    current_owners = current_payload.get("owners")
+    preparation_owners = preparation_payload.get("owners")
+    if not isinstance(current_owners, list) or not isinstance(preparation_owners, list):
+        raise RuntimeError("repo-local KAG coverage owner lists are invalid")
+    current_order = tuple(
+        row.get("repo") if isinstance(row, dict) else None for row in current_owners
+    )
+    preparation_order = tuple(
+        row.get("repo") if isinstance(row, dict) else None
+        for row in preparation_owners
+    )
+    if current_order != preparation_order:
+        raise RuntimeError(
+            "authoritative and preparation coverage owner ordering differs"
+        )
+    preparation_self = next(
+        (
+            row
+            for row in preparation_owners
+            if isinstance(row, dict) and row.get("repo") == SELF_OWNER
+        ),
+        None,
+    )
+    if not isinstance(preparation_self, dict):
+        raise RuntimeError("preparation coverage is missing the self owner row")
+    merged_owners = [
+        copy.deepcopy(preparation_self)
+        if isinstance(row, dict) and row.get("repo") == SELF_OWNER
+        else copy.deepcopy(row)
+        for row in current_owners
+    ]
+    merged = coverage_generation._assemble_coverage(
+        coverage_generation.DEFAULT_OS_ROOT,
+        merged_owners,
+    )
+    coverage_generation._validate_coverage_payload_schema(merged)
+    return merged
+
+
 def build_full_preparation_coverage(repo_root: Path) -> dict[str, Any]:
     """Rebuild every owner when the pinned coverage runtime cannot be reused.
 
@@ -5107,10 +5173,11 @@ def landing_sentinel(
                 external_seed_ref=external_seed_ref,
                 verify_external_manifests=False,
             )
+            check_payload = build_self_coverage_check_payload(payload)
             if not coverage_generation.check_outputs(
                 coverage_generation.DEFAULT_OUTPUT,
                 coverage_generation.DEFAULT_MIN_OUTPUT,
-                payload,
+                check_payload,
             ):
                 base_receipt.update(
                     {

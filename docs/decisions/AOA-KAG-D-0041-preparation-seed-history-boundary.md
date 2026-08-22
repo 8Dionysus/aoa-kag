@@ -30,7 +30,12 @@ two seed-only sentinels. The existing ancestry and canonical-runtime checks
 remain in `prepare_landing.py`, and sentinel receipts identify the seed as
 preparation-only. The seed never becomes owner proof, release evidence, or a
 landing verdict, and the unchanged full owner proof still reads the pinned
-provider checkouts.
+provider checkouts. The preparation payload is kept at
+`generated/repo_local_kag_preparation_seed.json`, separate from the
+authoritative `generated/repo_local_kag_coverage*.json` read model. The early
+self sentinel merges only the rebuilt `aoa-kag` row into the authoritative
+payload for its drift check; the complete external-row payload is still rebuilt
+and compared by the unchanged OS-wide proof.
 
 Advance the active `aoa-agents` provider pin to its landed main commit
 `cc4c2b55af22ada44874b6c8fa6668e7414ab7b6` in both the provider registry and

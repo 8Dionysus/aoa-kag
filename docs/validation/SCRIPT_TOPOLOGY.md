@@ -137,7 +137,10 @@ Its `--base-ref` remains the historical proof boundary. An optional
 `--coverage-seed-ref` supplies only the exact candidate/default-head seed for
 the preparation sentinels; runtime compatibility and ancestry are still
 required, and the separate seed cannot alter provider checkout identity or the
-downstream release commands.
+downstream release commands. The seed is stored at
+`generated/repo_local_kag_preparation_seed.json`; the self sentinel merges only
+the rebuilt `aoa-kag` row into the authoritative coverage payload. Complete
+external-row parity remains the responsibility of the unchanged OS-wide proof.
 Its manual-dispatch `direct-control` route is an exact-head measurement and
 rollback surface: it runs the same bounded checkout command without either
 sentinel and still fans into the identical canonical release continuation.
