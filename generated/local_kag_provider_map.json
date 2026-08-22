@@ -3277,7 +3277,7 @@
           "receipt_ref": "kag/receipts/validation_receipt.json",
           "checked_ref": "generated/workspace_memory_map.min.json",
           "state": "current",
-          "validator": "aoa-kag:scripts/validate_kag.py",
+          "validator": "python scripts/validate_workspace_memory_map.py",
           "owner_return_route": {
             "repo": "8Dionysus",
             "surface": "README.md",
@@ -3313,9 +3313,62 @@
           "source_class": "route_source",
           "role": "supporting",
           "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "stats/README.md",
+          "source_class": "route_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "skills/aoa-workspace-diagnose/SKILL.md",
+          "source_class": "skill_source",
+          "role": "primary",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "skills/README.md",
+          "source_class": "skill_source",
+          "role": "owner_route",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "skills/port.manifest.json",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "docs/decisions/8DION-D-0018-workspace-capability-diagnosis-home-skill.md",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "docs/decisions/8DION-D-0020-retire-unproven-launcher-plugin.md",
+          "source_class": "skill_source",
+          "role": "supporting",
+          "authority": "authored_source"
+        },
+        {
+          "repo": "8Dionysus",
+          "path": "docs/decisions/8DION-D-0021-gate-projection-on-current-owner-source.md",
+          "source_class": "route_source",
+          "role": "supporting",
+          "authority": "authored_source"
         }
       ],
       "validation_routes": [
+        {
+          "route": "aoa-skills:scripts/validate_home_skill_port.py --owner-root .",
+          "lane": "owner-home"
+        },
         {
           "route": "python scripts/build_workspace_memory_map.py --check",
           "lane": "owner-local"
@@ -3323,22 +3376,29 @@
         {
           "route": "python scripts/validate_workspace_memory_map.py",
           "lane": "owner-local"
-        },
-        {
-          "route": "aoa-kag:scripts/validate_kag.py",
-          "lane": "local-kag"
         }
       ],
       "consumer_routes": [
         "aoa-kag registry",
         "abyss-stack federation mirror",
-        "aoa-kag-mcp resource"
+        "aoa-kag-mcp resource",
+        "aoa-kag capability retrieval"
       ],
       "owner_return_routes": [
         {
           "repo": "8Dionysus",
           "surface": "README.md",
           "route_kind": "authored_meaning"
+        },
+        {
+          "repo": "8Dionysus",
+          "surface": "skills/README.md",
+          "route_kind": "skill_owner"
+        },
+        {
+          "repo": "8Dionysus",
+          "surface": "skills/aoa-workspace-diagnose/SKILL.md",
+          "route_kind": "procedure_owner"
         }
       ],
       "generation_profile": {
@@ -3384,7 +3444,7 @@
           "receipt": 1
         },
         "source_authority_counts": {
-          "authored_source": 2,
+          "authored_source": 9,
           "derived_readmodel": 2
         },
         "builder_routes": [
@@ -6726,7 +6786,7 @@
         "receipt": 1
       },
       "source_authority_counts": {
-        "authored_source": 2,
+        "authored_source": 9,
         "derived_readmodel": 2
       },
       "builder_routes": [
@@ -12017,7 +12077,7 @@
     },
     "provider_source_authority_counts": {
       "authored_control": 1,
-      "authored_source": 79,
+      "authored_source": 86,
       "derived_readmodel": 15,
       "source_owned_export": 3
     },
