@@ -63,9 +63,12 @@ instead compare the executing procedure identity with the prior base head's
 digest-bound typed evidence or its persisted producer identity; an absent or
 legacy prior identity leaves the cause unknown. The generated family and
 corpus control metadata persist that producer identity even when an under-
-budget base emits no receipt. The producer identity records immutable file
-sizes, and duplicate admission includes every nonempty shard. Current receipt
-and evidence files are one lifecycle pair during pruning.
+budget base emits no receipt. Legacy family/corpus manifests may omit this
+metadata for structural compatibility, but such a base remains
+`migration_required` and cannot authorize typed downstream procedure
+migration. The producer identity records immutable file sizes, and duplicate
+admission includes every nonempty shard. Current receipt and evidence files
+are one lifecycle pair during pruning.
 
 Older evidence remains `migration_required` before v2 schema validation. The
 receipt remains a separate digest-bound measurement envelope and both receipt
@@ -101,10 +104,11 @@ additional properties.
   it never trusts mutable packet measurements as a substitute for the causal
   base.
 - Downstream builder migration can be admitted only when the base family has a
-  schema-valid persisted producer identity, with a paired receipt/evidence
-  packet required when the base is over budget; otherwise a positive procedure
-  delta is unavailable. Source dependency admission cannot be evaluated from
-  shard-level counts alone because every changed row must be classified.
+  valid persisted producer identity, with a paired receipt/evidence packet
+  required when the base is over budget; an absent or legacy identity remains
+  `migration_required` and leaves a positive procedure delta unavailable.
+  Source dependency admission cannot be evaluated from shard-level counts
+  alone because every changed row must be classified.
 - This repair changes only the aoa-kag owner procedure, schemas, projections,
   lifecycle helper, tests, examples, and decision indexes. It does not admit
   downstream consumers, runtime health, publication, proof, human acceptance,
