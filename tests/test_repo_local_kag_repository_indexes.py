@@ -901,8 +901,16 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "new_digest": "b" * 64,
         }]
 
-        def measure(row: dict[str, object]) -> dict[str, object]:
-            content = (json.dumps(row) + "\n").encode("utf-8")
+        def measure(
+            current_rows: list[dict[str, object]],
+            base_rows: list[dict[str, object]],
+        ) -> dict[str, object]:
+            current_content = (
+                "\n".join(json.dumps(row) for row in current_rows) + "\n"
+            ).encode("utf-8")
+            base_content = (
+                "\n".join(json.dumps(row) for row in base_rows) + "\n"
+            ).encode("utf-8")
             with mock.patch.object(
                 portable_family_module,
                 "expected_portable_paths",
@@ -914,11 +922,11 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             ), mock.patch.object(
                 portable_family_module,
                 "_current_bytes",
-                return_value=content,
+                return_value=current_content,
             ), mock.patch.object(
                 portable_family_module,
                 "_git_bytes",
-                return_value=content,
+                return_value=base_content,
             ):
                 return _source_dependency_measurement(
                     Path("."),
@@ -930,15 +938,53 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
 
         self.assertEqual(
             "unmatched",
-            measure({"identity": {"id": "other", "path": "src/other.py"}})[
-                "state"
-            ],
+            measure(
+                [
+                    {
+                        "_key": "source:other",
+                        "identity": {"id": "other", "path": "src/other.py"},
+                    },
+                    {
+                        "_key": "source:input",
+                        "identity": {"id": "input", "path": "src/input.py"},
+                    },
+                ],
+                [
+                    {
+                        "_key": "source:other",
+                        "identity": {"id": "other", "path": "src/old.py"},
+                    },
+                    {
+                        "_key": "source:input",
+                        "identity": {"id": "input", "path": "src/input.py"},
+                    },
+                ],
+            )["state"],
         )
         self.assertEqual(
             "matched",
-            measure({"identity": {"id": "input", "path": "src/input.py"}})[
-                "state"
-            ],
+            measure(
+                [
+                    {
+                        "_key": "source:other",
+                        "identity": {"id": "other", "path": "src/other.py"},
+                    },
+                    {
+                        "_key": "source:input",
+                        "identity": {"id": "input", "path": "src/input.py"},
+                    },
+                ],
+                [
+                    {
+                        "_key": "source:other",
+                        "identity": {"id": "other", "path": "src/old.py"},
+                    },
+                    {
+                        "_key": "source:input",
+                        "identity": {"id": "input", "path": "src/old_input.py"},
+                    },
+                ],
+            )["state"],
         )
 
     def test_first_family_migration_requires_typed_procedure_transition(self) -> None:

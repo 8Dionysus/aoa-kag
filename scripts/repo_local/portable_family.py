@@ -1803,6 +1803,14 @@ def _row_dependency_paths(
     return paths
 
 
+def _family_row_key(row: Mapping[str, Any]) -> str:
+    for key in ("_key", "id"):
+        value = row.get(key)
+        if isinstance(value, str) and value:
+            return f"{key}:{value}"
+    return f"content:{sha256_bytes(canonical_json_bytes(row))}"
+
+
 def _source_dependency_measurement(
     repo_root: Path,
     *,
@@ -1897,9 +1905,18 @@ def _source_dependency_measurement(
     changed_source_paths = set(source_paths)
     for path in sorted(changed_generated_paths & shard_paths):
         dependencies: set[str] = set()
-        for ref in ("current", "base"):
-            for row in rows_by_path.get((ref, path), []):
-                dependencies.update(_row_dependency_paths(row, source_ids))
+        current_rows = rows_by_path.get(("current", path), [])
+        base_rows = rows_by_path.get(("base", path), [])
+        current_by_key = {_family_row_key(row): row for row in current_rows}
+        base_by_key = {_family_row_key(row): row for row in base_rows}
+        for key in sorted(set(current_by_key) | set(base_by_key)):
+            current_row = current_by_key.get(key)
+            base_row = base_by_key.get(key)
+            if current_row == base_row:
+                continue
+            for row in (current_row, base_row):
+                if row is not None:
+                    dependencies.update(_row_dependency_paths(row, source_ids))
         if dependencies & changed_source_paths:
             related_paths.append(path.as_posix())
         else:
