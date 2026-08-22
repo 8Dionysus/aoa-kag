@@ -49,6 +49,7 @@ from scripts.repo_local.portable_family import (
     _procedure_identity_change_records,
     _budget_topology_context,
     _duplicate_materialization,
+    _changed_source_records,
     _head_family_records,
     _review_identity,
     _semantic_admission_state,
@@ -1071,6 +1072,227 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(1, mixed["unrelated_generated_rows"])
         self.assertGreater(mixed["unrelated_generated_bytes"], 128 * 1024)
 
+    def test_source_dependency_scan_preserves_current_path_for_stable_id_rename(self) -> None:
+        anchor = Path("kag/indexes/shards/anchor/a.jsonl")
+        source = Path("kag/indexes/shards/source/s.jsonl")
+        current_rows = {
+            anchor: [
+                {
+                    "_key": "anchor:input",
+                    "source_id": "input",
+                    "value": "new",
+                }
+            ],
+            source: [
+                {
+                    "_key": "source:input",
+                    "identity": {"id": "input", "path": "src/new.py"},
+                }
+            ],
+        }
+        base_rows = {
+            anchor: [
+                {
+                    "_key": "anchor:input",
+                    "source_id": "input",
+                    "value": "old",
+                }
+            ],
+            source: [
+                {
+                    "_key": "source:input",
+                    "identity": {"id": "input", "path": "src/old.py"},
+                }
+            ],
+        }
+
+        def content(rows: list[dict[str, object]]) -> bytes:
+            return ("\n".join(json.dumps(row) for row in rows) + "\n").encode(
+                "utf-8"
+            )
+
+        with mock.patch.object(
+            portable_family_module,
+            "expected_portable_paths",
+            return_value={anchor, source},
+        ), mock.patch.object(
+            portable_family_module,
+            "_base_portable_paths",
+            return_value={anchor, source},
+        ), mock.patch.object(
+            portable_family_module,
+            "_current_bytes",
+            side_effect=lambda _root, path: content(current_rows[path]),
+        ), mock.patch.object(
+            portable_family_module,
+            "_git_bytes",
+            side_effect=lambda _root, _ref, path: content(base_rows[path]),
+        ):
+            result = _source_dependency_measurement(
+                Path("."),
+                base_ref="a" * 40,
+                manifest={},
+                source_records=[{"path": "src/new.py"}],
+                generated_records=[
+                    {
+                        "path": anchor.as_posix(),
+                        "old_digest": "a" * 64,
+                        "new_digest": "b" * 64,
+                    }
+                ],
+            )
+
+        self.assertEqual("matched", result["state"])
+        self.assertEqual(1, result["related_generated_rows"])
+        self.assertEqual(0, result["unrelated_generated_rows"])
+
+    def test_source_dependency_scan_rejects_unrelated_and_ambiguous_ids(self) -> None:
+        anchor = Path("kag/indexes/shards/anchor/a.jsonl")
+        source = Path("kag/indexes/shards/source/s.jsonl")
+
+        def measure(
+            current_source_rows: list[dict[str, object]],
+            base_source_rows: list[dict[str, object]],
+            *,
+            current_anchor: dict[str, object] | None = None,
+            base_anchor: dict[str, object] | None = None,
+        ) -> dict[str, object]:
+            current_rows = {
+                anchor: [
+                    current_anchor
+                    or {
+                        "_key": "anchor:other",
+                        "source_id": "other",
+                        "value": "new",
+                    }
+                ],
+                source: current_source_rows,
+            }
+            base_rows = {
+                anchor: [
+                    base_anchor
+                    or {
+                        "_key": "anchor:other",
+                        "source_id": "other",
+                        "value": "old",
+                    }
+                ],
+                source: base_source_rows,
+            }
+
+            def content(rows: list[dict[str, object]]) -> bytes:
+                return ("\n".join(json.dumps(row) for row in rows) + "\n").encode(
+                    "utf-8"
+                )
+
+            with mock.patch.object(
+                portable_family_module,
+                "expected_portable_paths",
+                return_value={anchor, source},
+            ), mock.patch.object(
+                portable_family_module,
+                "_base_portable_paths",
+                return_value={anchor, source},
+            ), mock.patch.object(
+                portable_family_module,
+                "_current_bytes",
+                side_effect=lambda _root, path: content(current_rows[path]),
+            ), mock.patch.object(
+                portable_family_module,
+                "_git_bytes",
+                side_effect=lambda _root, _ref, path: content(base_rows[path]),
+            ):
+                return _source_dependency_measurement(
+                    Path("."),
+                    base_ref="a" * 40,
+                    manifest={},
+                    source_records=[{"path": "src/new.py"}],
+                    generated_records=[
+                        {
+                            "path": anchor.as_posix(),
+                            "old_digest": "a" * 64,
+                            "new_digest": "b" * 64,
+                        }
+                    ],
+                )
+
+        unrelated = measure(
+            [
+                {
+                    "_key": "source:other",
+                    "identity": {"id": "other", "path": "src/other.py"},
+                }
+            ],
+            [
+                {
+                    "_key": "source:other",
+                    "identity": {"id": "other", "path": "src/old_other.py"},
+                }
+            ],
+        )
+        self.assertEqual("unmatched", unrelated["state"])
+        self.assertEqual(0, unrelated["related_generated_rows"])
+        self.assertEqual(1, unrelated["unrelated_generated_rows"])
+
+        pure_rename = measure(
+            [
+                {
+                    "_key": "source:input",
+                    "identity": {"id": "input", "path": "src/new.py"},
+                }
+            ],
+            [
+                {
+                    "_key": "source:input",
+                    "identity": {"id": "input", "path": "src/old.py"},
+                }
+            ],
+            current_anchor={
+                "_key": "anchor:input",
+                "source_id": "input",
+                "value": "same",
+            },
+            base_anchor={
+                "_key": "anchor:input",
+                "source_id": "input",
+                "value": "same",
+            },
+        )
+        self.assertEqual("unmatched", pure_rename["state"])
+        self.assertEqual(0, pure_rename["related_generated_rows"])
+
+        ambiguous = measure(
+            [
+                {
+                    "_key": "source:input-a",
+                    "identity": {"id": "input", "path": "src/new.py"},
+                },
+                {
+                    "_key": "source:input-b",
+                    "identity": {"id": "input", "path": "src/ambiguous.py"},
+                },
+            ],
+            [
+                {
+                    "_key": "source:input",
+                    "identity": {"id": "input", "path": "src/old.py"},
+                }
+            ],
+            current_anchor={
+                "_key": "anchor:input",
+                "source_id": "input",
+                "value": "new",
+            },
+            base_anchor={
+                "_key": "anchor:input",
+                "source_id": "input",
+                "value": "old",
+            },
+        )
+        self.assertEqual("unmatched", ambiguous["state"])
+        self.assertEqual(0, ambiguous["related_generated_rows"])
+        self.assertEqual(1, ambiguous["unrelated_generated_rows"])
+
     def test_first_family_migration_requires_typed_procedure_transition(self) -> None:
         causal = {
             "source_records": [],
@@ -1115,6 +1337,77 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 duplicate_materialization={"state": "absent"},
                 causal_measurements=causal,
             ),
+        )
+
+    def test_established_builder_admission_requires_unchanged_source(self) -> None:
+        def state(
+            *,
+            source_records: list[dict[str, object]],
+            source_snapshot_relation: str,
+        ) -> str:
+            return _semantic_admission_state(
+                base_supported=True,
+                cause_class="schema_builder_migration",
+                source_measurement={
+                    "bytes": 100 if source_records else 0,
+                    "files": len(source_records),
+                },
+                duplicate_materialization={"state": "absent"},
+                causal_measurements={
+                    "source_records": source_records,
+                    "procedure_records": [
+                        {"old_bytes": 100, "new_bytes": 132, "delta_bytes": 32}
+                    ],
+                    "generated_delta": {"bytes": 200, "files": 1},
+                    "topology": {
+                        "source_snapshot_relation": source_snapshot_relation,
+                        "transition": "none",
+                    },
+                },
+            )
+
+        self.assertEqual(
+            "supported",
+            state(source_records=[], source_snapshot_relation="unchanged"),
+        )
+        self.assertEqual(
+            "unknown",
+            state(
+                source_records=[
+                    {
+                        "path": "src/input.py",
+                        "old_bytes": 100,
+                        "new_bytes": 132,
+                        "delta_bytes": 32,
+                    }
+                ],
+                source_snapshot_relation="changed",
+            ),
+        )
+        self.assertEqual(
+            "unknown",
+            state(source_records=[], source_snapshot_relation="changed"),
+        )
+
+    def test_authored_source_measurement_excludes_procedure_paths(self) -> None:
+        changed_paths = {
+            *BUDGET_PROCEDURE_PATHS,
+            Path("src/input.py"),
+        }
+        with mock.patch.object(
+            portable_family_module,
+            "_git_changed_paths",
+            return_value=changed_paths,
+        ), mock.patch.object(
+            portable_family_module,
+            "_path_change_records",
+            return_value=[],
+        ) as path_change_records:
+            _changed_source_records(Path("."), base_ref="a" * 40)
+
+        self.assertEqual(
+            {Path("src/input.py")},
+            path_change_records.call_args.kwargs["paths"],
         )
 
     def test_budget_cause_requires_a_causal_witness_not_aggregate_delta(self) -> None:

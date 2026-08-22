@@ -1728,6 +1728,7 @@ def _changed_source_records(
         path
         for path in _git_changed_paths(repo_root, base_ref)
         if not is_portable_control_path(path)
+        and path not in BUDGET_PROCEDURE_PATHS
         and not _is_semantic_derived_path(path)
     }
     return _path_change_records(repo_root, base_ref=base_ref, paths=paths)
@@ -1772,8 +1773,18 @@ def _family_json_rows(
 def _row_dependency_paths(
     row: Mapping[str, Any],
     source_ids: Mapping[str, str],
+    *,
+    fallback_source_ids: Mapping[str, str] | None = None,
+    ambiguous_source_ids: set[str] | frozenset[str] = frozenset(),
 ) -> set[str]:
-    """Collect declared source lineage without inventing path conventions."""
+    """Collect declared source lineage without inventing path conventions.
+
+    The primary map belongs to the row's temporal version. A fallback map
+    covers rows whose source record exists only in the other version, while
+    current-version paths remain preferred when both versions know the ID.
+    IDs that resolve to multiple paths inside one version are intentionally
+    ignored so an ambiguous identity cannot authorize source-caused output.
+    """
     paths: set[str] = set()
     path_keys = {"path", "old_path", "source_path", "lineage_path"}
     id_keys = {
@@ -1801,9 +1812,15 @@ def _row_dependency_paths(
         if key in path_keys:
             paths.add(value)
         if key in id_keys:
+            if value in ambiguous_source_ids:
+                return
             source_path = source_ids.get(value)
             if source_path is not None:
                 paths.add(source_path)
+            elif fallback_source_ids is not None:
+                source_path = fallback_source_ids.get(value)
+                if source_path is not None:
+                    paths.add(source_path)
 
     visit(row)
     return paths
@@ -1881,7 +1898,11 @@ def _source_dependency_measurement(
         }
 
     rows_by_path: dict[tuple[str, Path], list[dict[str, Any]]] = {}
-    source_ids: dict[str, str] = {}
+    source_ids_by_ref: dict[str, dict[str, str]] = {
+        "current": {},
+        "base": {},
+    }
+    ambiguous_source_ids: set[str] = set()
     for ref, paths in (("current", current_paths), ("base", base_paths)):
         total_bytes = 0
         for path in sorted(paths):
@@ -1906,7 +1927,12 @@ def _source_dependency_measurement(
                 source_id = identity.get("id")
                 source_path = identity.get("path")
                 if isinstance(source_id, str) and isinstance(source_path, str):
-                    source_ids[source_id] = source_path
+                    source_ids = source_ids_by_ref[ref]
+                    previous_path = source_ids.get(source_id)
+                    if previous_path is None:
+                        source_ids[source_id] = source_path
+                    elif previous_path != source_path:
+                        ambiguous_source_ids.add(source_id)
 
     changed_generated_paths = {
         Path(str(record["path"]))
@@ -1935,9 +1961,24 @@ def _source_dependency_measurement(
                 continue
             changed_row_count += 1
             dependencies: set[str] = set()
-            for row in (current_row, base_row):
-                if row is not None:
-                    dependencies.update(_row_dependency_paths(row, source_ids))
+            if current_row is not None:
+                dependencies.update(
+                    _row_dependency_paths(
+                        current_row,
+                        source_ids_by_ref["current"],
+                        fallback_source_ids=source_ids_by_ref["base"],
+                        ambiguous_source_ids=ambiguous_source_ids,
+                    )
+                )
+            if base_row is not None:
+                dependencies.update(
+                    _row_dependency_paths(
+                        base_row,
+                        source_ids_by_ref["base"],
+                        fallback_source_ids=source_ids_by_ref["current"],
+                        ambiguous_source_ids=ambiguous_source_ids,
+                    )
+                )
             if dependencies & changed_source_paths:
                 path_has_related = True
                 related_rows.append(f"{path.as_posix()}::{key}")
@@ -2655,6 +2696,11 @@ def _semantic_admission_state(
                 or source_stats["deleted_files"] > 0
                 or topology.get("source_snapshot_relation") != "unknown"
             )
+        ):
+            return "unknown"
+        if base_supported and (
+            source_records
+            or topology.get("source_snapshot_relation") != "unchanged"
         ):
             return "unknown"
         if (
