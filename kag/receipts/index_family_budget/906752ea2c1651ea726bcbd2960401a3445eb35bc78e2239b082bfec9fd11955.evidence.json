@@ -1,0 +1,131 @@
+{
+  "base_identity": {
+    "distribution_digest": "sha256:c30e7771379c0b43fe459c13ce74fae7ffabe37e19823bdc29042b1adb28fca2",
+    "family_digest": "744675ad20ac1c780b5b29532676317a11abdcc69638b9b3c6079d2d988d3dab",
+    "ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "source_snapshot": "sha256:966789856f081cbf47616e488d8a9f8a1f118d6913f3628cd2ecf4c293e42b74"
+  },
+  "cause": {
+    "class": "schema_builder_migration",
+    "evidence": {
+      "generated_paths_digest": "8d16fd88830900473bb8c87e269defc1ebef9f6987372da4e837db7b11d90a34",
+      "kind": "procedure_delta",
+      "procedure_delta_bytes": 384668,
+      "procedure_paths_digest": "c730b3db7c03eb1e5046435296693343fcff7cb201ef692f17b685b8baa14a68",
+      "source_deleted_files": 0,
+      "source_delta_bytes": 501062,
+      "source_paths_digest": "de0efbc4b7ba2139ef17039f4d6f294dac096437b89a4f2b1914956041bbc13c",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "reason": "Repair complete-family duplicate admission, typed first-family migration, and owner receipt validation."
+  },
+  "fixed_point": {
+    "family_digest": "906752ea2c1651ea726bcbd2960401a3445eb35bc78e2239b082bfec9fd11955",
+    "state": "required_external_gate"
+  },
+  "head_identity": {
+    "distribution_digest": "sha256:9d841d3d53e0d54b2106db29d2ab5a3361d856efc11df5ce3680fe13e81e01e9",
+    "family_digest": "906752ea2c1651ea726bcbd2960401a3445eb35bc78e2239b082bfec9fd11955",
+    "source_snapshot": "sha256:6938f040506c5bd8bbe0972a5c64e81cef18a4f6e86d829aae4debcbc17f68aa"
+  },
+  "measurements": {
+    "amplification": {
+      "authored_source_bytes": 1142336,
+      "generated_bytes": 12222157,
+      "ratio_denominator": 1142336,
+      "ratio_numerator": 12222157
+    },
+    "authored_source_delta": {
+      "bytes": 1142336,
+      "delta_bytes": 501062,
+      "files": 21,
+      "paths_digest": "de0efbc4b7ba2139ef17039f4d6f294dac096437b89a4f2b1914956041bbc13c"
+    },
+    "duplicate_materialization": {
+      "groups": [],
+      "state": "absent"
+    },
+    "generated_delta": {
+      "bytes": 12222157,
+      "delta_bytes": 5891020,
+      "files": 290,
+      "paths_digest": "8d16fd88830900473bb8c87e269defc1ebef9f6987372da4e837db7b11d90a34"
+    },
+    "procedure_delta": {
+      "bytes": 599265,
+      "delta_bytes": 384668,
+      "files": 6,
+      "paths_digest": "c730b3db7c03eb1e5046435296693343fcff7cb201ef692f17b685b8baa14a68"
+    },
+    "topology": {
+      "base_hot_profile_digest": "sha256:1e8463aa5b61109efdb038d83330895cf38692f49669058ab396a56041deaabd",
+      "base_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "base_placement_state": "shadow",
+      "base_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "head_hot_profile_digest": "sha256:b7efcc4bfb73624c934c71f56212ae0a8f6e570ea7648bb45bea286a044ad897",
+      "head_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "head_placement_state": "shadow",
+      "head_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "procedure_base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "tracked_size": {
+      "bytes": 2337090,
+      "limit_bytes": 4194304
+    }
+  },
+  "owner": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "procedure": {
+    "base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "contract_version": "aoa-kag:budget-semantic-admission-v3",
+    "digest": "e4046d004246a8557c670d5f1e4e19cda93882dd601e7d9fda3f408c95cfa498",
+    "files": [
+      {
+        "digest": "56d8a4224bac8af9e65835dca52257ead9ab8416f8cc3e39100a8dfd89db446e",
+        "path": "scripts/repo_local/portable_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "05ff202e40d2e91ed1cb03d37c5967010c12737c74ac1efe8e02e12e0c0e03f2",
+        "path": "scripts/repo_local/tiered_family.py",
+        "state": "present"
+      },
+      {
+        "digest": "677638901eb2d80ace39836a2ece7cb37d10e1ae2e6eb23a2f03590c5d2ffbe1",
+        "path": "scripts/generate_repo_local_kag_index.py",
+        "state": "present"
+      },
+      {
+        "digest": "12457effb91a6a72e35e75a2f99b0b41a58bd1de6746f579f8b26d3569fa93ca",
+        "path": "scripts/prepare_landing.py",
+        "state": "present"
+      },
+      {
+        "digest": "122f6e45271d19be5a98236df412ad9ecc100735b07fb8b7aa721f804a11f36d",
+        "path": "schemas/repo-local-kag-budget-evidence.schema.json",
+        "state": "present"
+      },
+      {
+        "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
+        "path": "schemas/repo-local-kag-budget-receipt.schema.json",
+        "state": "present"
+      }
+    ],
+    "owner": "aoa-kag"
+  },
+  "review": {
+    "digest": "cd30d45c17740050a01a495551541fb71d63172288356799007297a253230ef2",
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md"
+  },
+  "schema_version": "aoa-repo-local-kag-budget-evidence-v2",
+  "scope": "generated_delta",
+  "state": "supported"
+}
