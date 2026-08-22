@@ -1,0 +1,147 @@
+{
+  "base_identity": {
+    "distribution_digest": "sha256:c30e7771379c0b43fe459c13ce74fae7ffabe37e19823bdc29042b1adb28fca2",
+    "family_digest": "744675ad20ac1c780b5b29532676317a11abdcc69638b9b3c6079d2d988d3dab",
+    "ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "source_snapshot": "sha256:966789856f081cbf47616e488d8a9f8a1f118d6913f3628cd2ecf4c293e42b74"
+  },
+  "cause": {
+    "class": "schema_builder_migration",
+    "evidence": {
+      "generated_paths_digest": "6102433a69af62ce300d2e10dbd677804faf4aa8d6500001b6e04715c781f055",
+      "kind": "procedure_delta",
+      "procedure_delta_bytes": 398438,
+      "procedure_paths_digest": "27d2fd93b570202ce2100c751c8e5fc15c5ec085d4ffad143c0b6dd5d05b8d14",
+      "source_deleted_files": 0,
+      "source_delta_bytes": 525108,
+      "source_dependency_state": "unmatched",
+      "source_paths_digest": "52d3faff924dfe7b6d9c93db0acc2e5a8bac4b063250b24d8e07b8fc3287874e",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "reason": "Repair shallow causal admission, authenticated producer identity migration, and complete nonempty duplicate scanning."
+  },
+  "fixed_point": {
+    "family_digest": "b614e812863178fbcb049ebc80126dada57019dbc67bc2e1e2addcd4c51baf1d",
+    "state": "required_external_gate"
+  },
+  "head_identity": {
+    "distribution_digest": "sha256:48e22aa04a4ec9d3d60bfb44a9bc6aad4e9d4ea0712f00862f50d748b1f12760",
+    "family_digest": "b614e812863178fbcb049ebc80126dada57019dbc67bc2e1e2addcd4c51baf1d",
+    "source_snapshot": "sha256:3a788a5a43f3da92ad463a859e1038219e25d5f0e14f05953eb429b56dae9de4"
+  },
+  "measurements": {
+    "amplification": {
+      "authored_source_bytes": 1196607,
+      "generated_bytes": 12302390,
+      "ratio_denominator": 1196607,
+      "ratio_numerator": 12302390
+    },
+    "authored_source_delta": {
+      "bytes": 1196607,
+      "delta_bytes": 525108,
+      "files": 23,
+      "paths_digest": "52d3faff924dfe7b6d9c93db0acc2e5a8bac4b063250b24d8e07b8fc3287874e"
+    },
+    "duplicate_materialization": {
+      "groups": [],
+      "state": "absent"
+    },
+    "generated_delta": {
+      "bytes": 12302390,
+      "delta_bytes": 5976461,
+      "files": 292,
+      "paths_digest": "6102433a69af62ce300d2e10dbd677804faf4aa8d6500001b6e04715c781f055"
+    },
+    "procedure_delta": {
+      "bytes": 613035,
+      "delta_bytes": 398438,
+      "files": 6,
+      "paths_digest": "27d2fd93b570202ce2100c751c8e5fc15c5ec085d4ffad143c0b6dd5d05b8d14"
+    },
+    "source_dependency": {
+      "changed_source_paths_digest": "7e17dcd7d0beb467c7729afcd6c1f0be78e4aba468a15b1a26f09a378d7f8df1",
+      "related_generated_files": 246,
+      "related_generated_paths_digest": "963d373a2d570bbf2e8ad250cc52fa51945bf8dda70c5e8ad9d09e2312243a27",
+      "state": "unmatched",
+      "unrelated_generated_bytes": 1477676,
+      "unrelated_generated_files": 42,
+      "unrelated_generated_paths_digest": "8c5d7bc66e4b172c6ddf440c1ddd5612c8219d405826ac57daae21bb9009fd5c"
+    },
+    "topology": {
+      "base_hot_profile_digest": "sha256:1e8463aa5b61109efdb038d83330895cf38692f49669058ab396a56041deaabd",
+      "base_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "base_placement_state": "shadow",
+      "base_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "head_hot_profile_digest": "sha256:6ebdfb175e5e5b3a2c0d5cbdc013fbf8767deea656c1c1e1d3ca4d8fb948b64c",
+      "head_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
+      "head_placement_state": "shadow",
+      "head_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "procedure_base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+      "source_snapshot_relation": "changed",
+      "transition": "hot_profile_change"
+    },
+    "tracked_size": {
+      "bytes": 2337093,
+      "limit_bytes": 4194304
+    }
+  },
+  "owner": {
+    "git_ref": "git-index-source-tree",
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "procedure": {
+    "base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+    "contract_version": "aoa-kag:budget-semantic-admission-v3",
+    "digest": "12796a1530d35f66cf2cffd2ec29c65ed014167fae4c911138508d787b815ac2",
+    "files": [
+      {
+        "bytes": 128068,
+        "digest": "13afc5f45ba7316238c1beb230f4edc335d981146fad8fae947e14a96940d6a7",
+        "path": "scripts/repo_local/portable_family.py",
+        "state": "present"
+      },
+      {
+        "bytes": 92221,
+        "digest": "05ff202e40d2e91ed1cb03d37c5967010c12737c74ac1efe8e02e12e0c0e03f2",
+        "path": "scripts/repo_local/tiered_family.py",
+        "state": "present"
+      },
+      {
+        "bytes": 142630,
+        "digest": "677638901eb2d80ace39836a2ece7cb37d10e1ae2e6eb23a2f03590c5d2ffbe1",
+        "path": "scripts/generate_repo_local_kag_index.py",
+        "state": "present"
+      },
+      {
+        "bytes": 236821,
+        "digest": "12457effb91a6a72e35e75a2f99b0b41a58bd1de6746f579f8b26d3569fa93ca",
+        "path": "scripts/prepare_landing.py",
+        "state": "present"
+      },
+      {
+        "bytes": 11027,
+        "digest": "8ba591914d26f7a799da44dc5844776df52bd486bd7eaca9dd40a9f3f3b02b8d",
+        "path": "schemas/repo-local-kag-budget-evidence.schema.json",
+        "state": "present"
+      },
+      {
+        "bytes": 2268,
+        "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
+        "path": "schemas/repo-local-kag-budget-receipt.schema.json",
+        "state": "present"
+      }
+    ],
+    "owner": "aoa-kag"
+  },
+  "review": {
+    "digest": "6009ead6e1f3c4c395c39d7d872a3361b8f7963fb6b2cf9b4e1f31920d2cef30",
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md"
+  },
+  "schema_version": "aoa-repo-local-kag-budget-evidence-v2",
+  "scope": "generated_delta",
+  "state": "supported"
+}
