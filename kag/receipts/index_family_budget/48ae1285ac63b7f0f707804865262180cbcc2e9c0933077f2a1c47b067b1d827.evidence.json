@@ -8,7 +8,7 @@
   "cause": {
     "class": "schema_builder_migration",
     "evidence": {
-      "generated_paths_digest": "ba7920260b28fd53c3f0dbf424a007134e3ba28f0e59840f4b2526e75abe273a",
+      "generated_paths_digest": "58a57c47f47fc41bc121535c65d7c0cc55cc00397431530ac769d78eba522ab9",
       "kind": "procedure_delta",
       "procedure_delta_bytes": 169880,
       "procedure_paths_digest": "d1ffd3f7d0c3900ff36e20d6fe1e6054b6a25fccb3adae2994a4f7a713b99565",
@@ -21,13 +21,13 @@
     "reason": "Repair causal semantic admission for current-head owner procedure changes."
   },
   "fixed_point": {
-    "family_digest": "eec5a3a95e1ee934accb84026579914d77f62efb390a84b541659523f4bead5b",
+    "family_digest": "48ae1285ac63b7f0f707804865262180cbcc2e9c0933077f2a1c47b067b1d827",
     "state": "required_external_gate"
   },
   "head_identity": {
-    "distribution_digest": "sha256:f0086e4dfa967f91d9b56d9795ad8654c398a0a99be1b8441f8e50b0ecd7b554",
-    "family_digest": "eec5a3a95e1ee934accb84026579914d77f62efb390a84b541659523f4bead5b",
-    "source_snapshot": "sha256:85dad3ed8070f8c187f93fadd6593b8665b915c14664d41e5fe2adf570e85e86"
+    "distribution_digest": "sha256:c66cc2746ce55787fa6b528f57b2b683746c7d53c0fa016092baffabc30c2acd",
+    "family_digest": "48ae1285ac63b7f0f707804865262180cbcc2e9c0933077f2a1c47b067b1d827",
+    "source_snapshot": "sha256:85905f03d92e7b59433f64e64e249a7ef698ba00e3498ed24a82da83f627e57c"
   },
   "measurements": {
     "amplification": {
@@ -48,9 +48,9 @@
     },
     "generated_delta": {
       "bytes": 12184937,
-      "delta_bytes": 5787367,
+      "delta_bytes": 5787371,
       "files": 290,
-      "paths_digest": "ba7920260b28fd53c3f0dbf424a007134e3ba28f0e59840f4b2526e75abe273a"
+      "paths_digest": "58a57c47f47fc41bc121535c65d7c0cc55cc00397431530ac769d78eba522ab9"
     },
     "procedure_delta": {
       "bytes": 584630,
@@ -63,7 +63,7 @@
       "base_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
       "base_placement_state": "shadow",
       "base_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
-      "head_hot_profile_digest": "sha256:819038a5219b281cbd1509f21bffa28ebb62b797441ed9af2f7b5f401b31890e",
+      "head_hot_profile_digest": "sha256:460501dbfa61d23525a3c39aa933a9d22d44ccf07514d83a7883b916c2d5464d",
       "head_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
       "head_placement_state": "shadow",
       "head_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
