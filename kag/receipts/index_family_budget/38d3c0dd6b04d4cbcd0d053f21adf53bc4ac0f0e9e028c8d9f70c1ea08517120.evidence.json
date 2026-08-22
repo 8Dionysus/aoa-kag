@@ -8,7 +8,7 @@
   "cause": {
     "class": "schema_builder_migration",
     "evidence": {
-      "generated_paths_digest": "58a57c47f47fc41bc121535c65d7c0cc55cc00397431530ac769d78eba522ab9",
+      "generated_paths_digest": "110d34335a49b061a1db7e93228468e6d2a5396fef924359c33a4f6708d22ccb",
       "kind": "procedure_delta",
       "procedure_delta_bytes": 169880,
       "procedure_paths_digest": "d1ffd3f7d0c3900ff36e20d6fe1e6054b6a25fccb3adae2994a4f7a713b99565",
@@ -21,13 +21,13 @@
     "reason": "Repair causal semantic admission for current-head owner procedure changes."
   },
   "fixed_point": {
-    "family_digest": "48ae1285ac63b7f0f707804865262180cbcc2e9c0933077f2a1c47b067b1d827",
+    "family_digest": "38d3c0dd6b04d4cbcd0d053f21adf53bc4ac0f0e9e028c8d9f70c1ea08517120",
     "state": "required_external_gate"
   },
   "head_identity": {
-    "distribution_digest": "sha256:c66cc2746ce55787fa6b528f57b2b683746c7d53c0fa016092baffabc30c2acd",
-    "family_digest": "48ae1285ac63b7f0f707804865262180cbcc2e9c0933077f2a1c47b067b1d827",
-    "source_snapshot": "sha256:85905f03d92e7b59433f64e64e249a7ef698ba00e3498ed24a82da83f627e57c"
+    "distribution_digest": "sha256:ece0b967da8ec7ebfe959b6192a16ef2d737f3f54a1d36e565161f99592bce09",
+    "family_digest": "38d3c0dd6b04d4cbcd0d053f21adf53bc4ac0f0e9e028c8d9f70c1ea08517120",
+    "source_snapshot": "sha256:e70ee024516079e140bb74f6fca03186b96794c40fe6629b93fd8393a3078787"
   },
   "measurements": {
     "amplification": {
@@ -50,7 +50,7 @@
       "bytes": 12184937,
       "delta_bytes": 5787371,
       "files": 290,
-      "paths_digest": "58a57c47f47fc41bc121535c65d7c0cc55cc00397431530ac769d78eba522ab9"
+      "paths_digest": "110d34335a49b061a1db7e93228468e6d2a5396fef924359c33a4f6708d22ccb"
     },
     "procedure_delta": {
       "bytes": 584630,
@@ -63,7 +63,7 @@
       "base_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
       "base_placement_state": "shadow",
       "base_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
-      "head_hot_profile_digest": "sha256:460501dbfa61d23525a3c39aa933a9d22d44ccf07514d83a7883b916c2d5464d",
+      "head_hot_profile_digest": "sha256:f1f20d8c27f852243610a3161495640ea8c9b4194ea41a874e6da9ab6eeb49ad",
       "head_partitioning_digest": "sha256:263e07206d838a9b2e8b1b28e2e215f14012a86a410d580a7316d6ac2b8e0f1d",
       "head_placement_state": "shadow",
       "head_schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
