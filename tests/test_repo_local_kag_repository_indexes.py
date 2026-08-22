@@ -711,6 +711,62 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     manifest=manifest,
                 )
 
+            incomplete_procedure_evidence = dict(valid_evidence)
+            incomplete_procedure = dict(valid_evidence["procedure"])
+            incomplete_procedure["files"] = [
+                dict(valid_evidence["procedure"]["files"][0])
+            ]
+            incomplete_procedure_evidence["procedure"] = incomplete_procedure
+            write_budget_evidence(
+                root,
+                evidence_path,
+                incomplete_procedure_evidence,
+            )
+            incomplete_procedure_receipt = dict(receipt)
+            incomplete_procedure_receipt["semantic_evidence_digest"] = sha256_bytes(
+                render_manifest(incomplete_procedure_evidence)
+            )
+            write_budget_receipt(
+                root,
+                receipt_path,
+                incomplete_procedure_receipt,
+            )
+            with self.assertRaisesRegex(PortableFamilyError, "published schema"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                )
+
+            unrelated_procedure_evidence = dict(valid_evidence)
+            unrelated_procedure = dict(valid_evidence["procedure"])
+            unrelated_files = [
+                dict(entry) for entry in valid_evidence["procedure"]["files"]
+            ]
+            unrelated_files[0]["path"] = "README.md"
+            unrelated_procedure["files"] = unrelated_files
+            unrelated_procedure_evidence["procedure"] = unrelated_procedure
+            write_budget_evidence(
+                root,
+                evidence_path,
+                unrelated_procedure_evidence,
+            )
+            unrelated_procedure_receipt = dict(receipt)
+            unrelated_procedure_receipt["semantic_evidence_digest"] = sha256_bytes(
+                render_manifest(unrelated_procedure_evidence)
+            )
+            write_budget_receipt(
+                root,
+                receipt_path,
+                unrelated_procedure_receipt,
+            )
+            with self.assertRaisesRegex(PortableFamilyError, "published schema"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref=base_ref,
+                    manifest=manifest,
+                )
+
             write_budget_evidence(root, evidence_path, valid_evidence)
             write_budget_receipt(root, receipt_path, receipt)
             invalid_receipt = dict(receipt)

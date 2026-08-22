@@ -76,7 +76,9 @@
         "base_ref": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
         "files": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -91,7 +93,15 @@
               {"if": {"properties": {"state": {"const": "present"}}}, "then": {"required": ["digest", "bytes"]}},
               {"if": {"properties": {"state": {"const": "missing"}}}, "then": {"not": {"required": ["digest", "bytes"]}}}
             ]
-          }
+          },
+          "allOf": [
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/portable_family.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/repo_local/tiered_family.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/generate_repo_local_kag_index.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "scripts/prepare_landing.py"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "schemas/repo-local-kag-budget-evidence.schema.json"}}}},
+            {"contains": {"type": "object", "required": ["path"], "properties": {"path": {"const": "schemas/repo-local-kag-budget-receipt.schema.json"}}}}
+          ]
         },
         "digest": {"$ref": "#/$defs/digest"}
       }
