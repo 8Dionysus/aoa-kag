@@ -188,7 +188,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--coverage-seed-ref",
         help=(
             "Preparation-only external coverage seed ref. This is separate "
-            "from the historical base-ref and never changes downstream proof."
+            "from the historical base-ref and never changes downstream proof; "
+            "defaults to the current candidate HEAD."
         ),
     )
     parser.add_argument("--jobs", type=int, default=3)
@@ -208,9 +209,7 @@ def run_preflight(
     receipt_parent: Path,
 ) -> int:
     started = time.perf_counter()
-    coverage_seed_ref = str(
-        getattr(args, "coverage_seed_ref", None) or args.base_ref
-    )
+    coverage_seed_ref = str(getattr(args, "coverage_seed_ref", None) or "HEAD")
     coverage_receipt = receipt_parent / "coverage-sentinel.json"
     generated_receipt = receipt_parent / "generated-sentinel.json"
     checkout_command = (
