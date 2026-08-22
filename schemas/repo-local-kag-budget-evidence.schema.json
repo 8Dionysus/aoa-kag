@@ -84,11 +84,12 @@
             "properties": {
               "path": {"type": "string", "minLength": 1},
               "state": {"enum": ["present", "missing"]},
-              "digest": {"$ref": "#/$defs/digest"}
+              "digest": {"$ref": "#/$defs/digest"},
+              "bytes": {"type": "integer", "minimum": 0}
             },
             "allOf": [
-              {"if": {"properties": {"state": {"const": "present"}}}, "then": {"required": ["digest"]}},
-              {"if": {"properties": {"state": {"const": "missing"}}}, "then": {"not": {"required": ["digest"]}}}
+              {"if": {"properties": {"state": {"const": "present"}}}, "then": {"required": ["digest", "bytes"]}},
+              {"if": {"properties": {"state": {"const": "missing"}}}, "then": {"not": {"required": ["digest", "bytes"]}}}
             ]
           }
         },

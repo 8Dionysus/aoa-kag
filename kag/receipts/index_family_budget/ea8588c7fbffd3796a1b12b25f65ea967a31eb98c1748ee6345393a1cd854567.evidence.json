@@ -10,16 +10,16 @@
     "evidence": {
       "generated_paths_digest": "a590aee21a0adf635b406069124f20788015a9a7d3b1a5619c0775c88ade2557",
       "kind": "procedure_delta",
-      "procedure_delta_bytes": 394633,
-      "procedure_paths_digest": "9dcc74921c62cbb4162450589a3d826ebdadcaf8684920f6e23bd4948a88cf39",
+      "procedure_delta_bytes": 398438,
+      "procedure_paths_digest": "27d2fd93b570202ce2100c751c8e5fc15c5ec085d4ffad143c0b6dd5d05b8d14",
       "source_deleted_files": 0,
-      "source_delta_bytes": 519249,
+      "source_delta_bytes": 525108,
       "source_dependency_state": "unmatched",
-      "source_paths_digest": "ac8dd408669b944a4699c93d550640df95696a1f438c0dcb4ac3bbb779bd3909",
+      "source_paths_digest": "52d3faff924dfe7b6d9c93db0acc2e5a8bac4b063250b24d8e07b8fc3287874e",
       "source_snapshot_relation": "changed",
       "transition": "hot_profile_change"
     },
-    "reason": "Repair complete-family duplicate admission, typed first-family migration, source dependency binding, and owner receipt validation."
+    "reason": "Repair shallow causal admission, authenticated producer identity migration, and complete nonempty duplicate scanning."
   },
   "fixed_point": {
     "family_digest": "ea8588c7fbffd3796a1b12b25f65ea967a31eb98c1748ee6345393a1cd854567",
@@ -32,16 +32,16 @@
   },
   "measurements": {
     "amplification": {
-      "authored_source_bytes": 1190748,
+      "authored_source_bytes": 1196607,
       "generated_bytes": 12290931,
-      "ratio_denominator": 1190748,
+      "ratio_denominator": 1196607,
       "ratio_numerator": 12290931
     },
     "authored_source_delta": {
-      "bytes": 1190748,
-      "delta_bytes": 519249,
+      "bytes": 1196607,
+      "delta_bytes": 525108,
       "files": 23,
-      "paths_digest": "ac8dd408669b944a4699c93d550640df95696a1f438c0dcb4ac3bbb779bd3909"
+      "paths_digest": "52d3faff924dfe7b6d9c93db0acc2e5a8bac4b063250b24d8e07b8fc3287874e"
     },
     "duplicate_materialization": {
       "groups": [],
@@ -54,10 +54,10 @@
       "paths_digest": "a590aee21a0adf635b406069124f20788015a9a7d3b1a5619c0775c88ade2557"
     },
     "procedure_delta": {
-      "bytes": 609230,
-      "delta_bytes": 394633,
+      "bytes": 613035,
+      "delta_bytes": 398438,
       "files": 6,
-      "paths_digest": "9dcc74921c62cbb4162450589a3d826ebdadcaf8684920f6e23bd4948a88cf39"
+      "paths_digest": "27d2fd93b570202ce2100c751c8e5fc15c5ec085d4ffad143c0b6dd5d05b8d14"
     },
     "source_dependency": {
       "changed_source_paths_digest": "7e17dcd7d0beb467c7729afcd6c1f0be78e4aba468a15b1a26f09a378d7f8df1",
@@ -96,34 +96,40 @@
   "procedure": {
     "base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
     "contract_version": "aoa-kag:budget-semantic-admission-v3",
-    "digest": "f14ba6d705e6d0826b62671ad1046861db51511f81becd486665effc9c93b280",
+    "digest": "12796a1530d35f66cf2cffd2ec29c65ed014167fae4c911138508d787b815ac2",
     "files": [
       {
-        "digest": "e8f10092e8735c55b7a0eedc74fab8e64ee898eb0d5d3662e1ed48323b5d1724",
+        "bytes": 128068,
+        "digest": "13afc5f45ba7316238c1beb230f4edc335d981146fad8fae947e14a96940d6a7",
         "path": "scripts/repo_local/portable_family.py",
         "state": "present"
       },
       {
+        "bytes": 92221,
         "digest": "05ff202e40d2e91ed1cb03d37c5967010c12737c74ac1efe8e02e12e0c0e03f2",
         "path": "scripts/repo_local/tiered_family.py",
         "state": "present"
       },
       {
+        "bytes": 142630,
         "digest": "677638901eb2d80ace39836a2ece7cb37d10e1ae2e6eb23a2f03590c5d2ffbe1",
         "path": "scripts/generate_repo_local_kag_index.py",
         "state": "present"
       },
       {
+        "bytes": 236821,
         "digest": "12457effb91a6a72e35e75a2f99b0b41a58bd1de6746f579f8b26d3569fa93ca",
         "path": "scripts/prepare_landing.py",
         "state": "present"
       },
       {
-        "digest": "cc36acd3fef9eec6a7f6702d80b865b8f3353671d4eafb6966aed584077ab68d",
+        "bytes": 11027,
+        "digest": "8ba591914d26f7a799da44dc5844776df52bd486bd7eaca9dd40a9f3f3b02b8d",
         "path": "schemas/repo-local-kag-budget-evidence.schema.json",
         "state": "present"
       },
       {
+        "bytes": 2268,
         "digest": "9dd3292907c08df71522ebdbde93951e27ac6dfe502aac4962672df02b8e89a9",
         "path": "schemas/repo-local-kag-budget-receipt.schema.json",
         "state": "present"
@@ -132,7 +138,7 @@
     "owner": "aoa-kag"
   },
   "review": {
-    "digest": "3cd381929057896ff07868be3f144be2f3e0db4b73b9fc2019bd52830623871e",
+    "digest": "6009ead6e1f3c4c395c39d7d872a3361b8f7963fb6b2cf9b4e1f31920d2cef30",
     "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md"
   },
   "schema_version": "aoa-repo-local-kag-budget-evidence-v2",

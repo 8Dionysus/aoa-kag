@@ -2252,6 +2252,7 @@ def _budget_procedure_identity(
                 "path": relative.as_posix(),
                 "state": "present",
                 "digest": sha256_bytes(path.read_bytes()),
+                "bytes": path.stat().st_size,
             }
         )
     return {
@@ -2261,6 +2262,147 @@ def _budget_procedure_identity(
         "files": files,
         "digest": sha256_bytes(canonical_json_bytes(files)),
     }
+
+
+def _procedure_identity_files(
+    identity: Mapping[str, Any],
+    *,
+    require_sizes: bool,
+) -> dict[str, Mapping[str, Any]] | None:
+    files = identity.get("files")
+    if not isinstance(files, Sequence) or isinstance(
+        files,
+        (str, bytes, bytearray),
+    ):
+        return None
+    by_path: dict[str, Mapping[str, Any]] = {}
+    for entry in files:
+        if not isinstance(entry, Mapping):
+            return None
+        path = entry.get("path")
+        state = entry.get("state")
+        digest = entry.get("digest")
+        size = entry.get("bytes")
+        if (
+            not isinstance(path, str)
+            or not path
+            or path in by_path
+            or state != "present"
+            or not isinstance(digest, str)
+            or (
+                require_sizes
+                and (not isinstance(size, int) or size < 0)
+            )
+        ):
+            return None
+        by_path[path] = entry
+    expected_paths = {path.as_posix() for path in BUDGET_PROCEDURE_PATHS}
+    if set(by_path) != expected_paths:
+        return None
+    return by_path
+
+
+def _procedure_identity_change_records(
+    previous: Mapping[str, Any],
+    current: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Compare producer identities carried by two authenticated family heads."""
+    previous_files = _procedure_identity_files(previous, require_sizes=True)
+    current_files = _procedure_identity_files(current, require_sizes=True)
+    if previous_files is None or current_files is None:
+        return []
+    if (
+        previous.get("contract_version") != BUDGET_PROCEDURE_VERSION
+        or current.get("contract_version") != BUDGET_PROCEDURE_VERSION
+        or previous.get("owner") != "aoa-kag"
+        or current.get("owner") != "aoa-kag"
+        or previous.get("digest")
+        != sha256_bytes(canonical_json_bytes(list(previous.get("files", []))))
+        or current.get("digest")
+        != sha256_bytes(canonical_json_bytes(list(current.get("files", []))))
+    ):
+        return []
+
+    records: list[dict[str, Any]] = []
+    for path in sorted(previous_files):
+        old = previous_files[path]
+        new = current_files[path]
+        if old.get("digest") == new.get("digest") and old.get("bytes") == new.get(
+            "bytes"
+        ):
+            continue
+        old_bytes = int(old["bytes"])
+        new_bytes = int(new["bytes"])
+        records.append(
+            {
+                "path": path,
+                "old_digest": old["digest"],
+                "new_digest": new["digest"],
+                "old_bytes": old_bytes,
+                "new_bytes": new_bytes,
+                "changed_bytes": max(old_bytes, new_bytes),
+                "delta_bytes": max(
+                    abs(new_bytes - old_bytes),
+                    MIN_CAUSAL_DELTA_BYTES,
+                ),
+            }
+        )
+    return records
+
+
+def _authenticated_base_procedure_identity(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    base_manifest: Mapping[str, Any] | None,
+) -> Mapping[str, Any] | None:
+    """Recover a producer identity only from the base head's paired proof."""
+    if not _budget_base_supported(base_manifest):
+        return None
+    assert base_manifest is not None
+    receipt_path = receipt_path_for(base_manifest)
+    evidence_path = evidence_path_for(base_manifest)
+    receipt_bytes = _git_bytes(repo_root, base_ref, receipt_path)
+    evidence_bytes = _git_bytes(repo_root, base_ref, evidence_path)
+    if receipt_bytes is None or evidence_bytes is None:
+        return None
+    try:
+        receipt = json.loads(receipt_bytes)
+        evidence = json.loads(evidence_bytes)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if not isinstance(receipt, dict) or not isinstance(evidence, dict):
+        return None
+    try:
+        _validate_published_budget_schema("receipt", receipt)
+        _validate_published_budget_schema("evidence", evidence)
+    except PortableFamilyError:
+        return None
+    base_identity = _budget_identity(base_manifest)
+    base_repo = base_manifest.get("repo")
+    if not isinstance(base_repo, Mapping):
+        return None
+    if (
+        receipt.get("repo") != base_repo.get("name")
+        or receipt.get("head_family_digest") != base_identity["family_digest"]
+        or receipt.get("head_source_snapshot") != base_identity["source_snapshot"]
+        or receipt.get("head_distribution_digest")
+        != base_identity["distribution_digest"]
+        or receipt.get("semantic_admission") != "supported"
+        or receipt.get("semantic_evidence_ref") != evidence_path.as_posix()
+        or receipt.get("semantic_evidence_digest")
+        != sha256_bytes(render_manifest(evidence))
+        or evidence.get("state") != "supported"
+        or evidence.get("owner") != base_repo
+        or evidence.get("head_identity") != base_identity
+    ):
+        return None
+    procedure = evidence.get("procedure")
+    if not isinstance(procedure, Mapping):
+        return None
+    if _procedure_identity_files(procedure, require_sizes=True) is None:
+        return None
+    return procedure
 
 
 def _review_identity(repo_root: Path, review_ref: str) -> dict[str, str]:
@@ -2301,7 +2443,7 @@ def _duplicate_materialization(
         new_bytes = record.get("new_bytes")
         if not isinstance(digest, str) or not isinstance(new_bytes, int):
             continue
-        if new_bytes < 1024:
+        if new_bytes <= 0:
             continue
         by_digest.setdefault(digest, []).append(str(record["path"]))
     groups = [
@@ -2553,11 +2695,27 @@ def _budget_measurements(
     source_records = _changed_source_records(repo_root, base_ref=base_ref)
     procedure_root = _procedure_root(repo_root)
     procedure_base_ref = _procedure_measurement_base_ref(repo_root, base_ref)
-    procedure_records = _path_change_records(
-        procedure_root,
-        base_ref=procedure_base_ref,
-        paths=BUDGET_PROCEDURE_PATHS,
+    current_procedure = _budget_procedure_identity(
+        repo_root,
+        procedure_base_ref=procedure_base_ref,
     )
+    if procedure_root == repo_root.resolve():
+        procedure_records = _path_change_records(
+            procedure_root,
+            base_ref=procedure_base_ref,
+            paths=BUDGET_PROCEDURE_PATHS,
+        )
+    else:
+        previous_procedure = _authenticated_base_procedure_identity(
+            repo_root,
+            base_ref=base_ref,
+            base_manifest=base_manifest,
+        )
+        procedure_records = (
+            _procedure_identity_change_records(previous_procedure, current_procedure)
+            if previous_procedure is not None
+            else []
+        )
     budgets = manifest["budgets"]
     summary = manifest["summary"]
     head_family_records = _head_family_records(repo_root, manifest)
@@ -2978,9 +3136,9 @@ def _validate_budget_receipt_without_history(
 ) -> tuple[int, int, bool]:
     """Validate a receipt when its immutable base object is outside a shallow clone.
 
-    The receipt and current head remain digest-bound, but no historical delta or
-    base family is guessed.  The caller gets a typed validation failure when the
-    packet cannot carry all of the missing historical evidence.
+    A receipt/evidence packet cannot replace the missing causal base.  The
+    structural current-head checks remain useful for an under-budget family,
+    but any exceedance fails closed until immutable history is available.
     """
     try:
         path = repo_root.resolve() / receipt_path_for(manifest)
@@ -3031,56 +3189,11 @@ def _validate_budget_receipt_without_history(
             )
         if not delta_exceeded and not tracked_exceeded:
             return changed_bytes, changed_files, False
-        expected_scopes = (
-            {"generated_delta_and_tracked_size"}
-            if delta_exceeded and tracked_exceeded
-            else {"generated_delta", "v2_to_v3_migration"}
-            if delta_exceeded
-            else {"tracked_size"}
+        raise PortableFamilyError(
+            "shallow checkout semantic admission requires immutable base history; "
+            "receipt/evidence cannot replace a causal base or an independently "
+            "authenticated full-history verdict"
         )
-        if receipt.get("scope") not in expected_scopes:
-            raise PortableFamilyError(
-                "shallow checkout receipt scope does not match current measurements"
-            )
-        if (
-            not isinstance(receipt.get("reason"), str)
-            or not receipt["reason"].strip()
-            or not isinstance(receipt.get("approved_by"), str)
-            or not receipt["approved_by"].strip()
-            or receipt.get("allowed_bytes", -1) < changed_bytes
-            or receipt.get("allowed_tracked_bytes", -1) < summary["tracked_bytes"]
-        ):
-            raise PortableFamilyError("shallow checkout receipt approval is incomplete")
-        evidence_path = evidence_path_for(manifest)
-        if receipt.get("semantic_evidence_ref") != evidence_path.as_posix():
-            raise PortableFamilyError(
-                "shallow checkout receipt semantic evidence ref does not match family"
-            )
-        evidence = json.loads(
-            (repo_root.resolve() / evidence_path).read_text(encoding="utf-8")
-        )
-        if not isinstance(evidence, dict) or sha256_bytes(
-            render_manifest(evidence)
-        ) != receipt.get("semantic_evidence_digest"):
-            raise PortableFamilyError(
-                "shallow checkout semantic evidence digest does not match receipt"
-            )
-        if evidence.get("schema_version") != BUDGET_EVIDENCE_SCHEMA_VERSION:
-            raise PortableFamilyError(
-                "budget semantic admission is migration_required for legacy evidence"
-            )
-        _validate_published_budget_schema("evidence", evidence)
-        _validate_budget_semantic_evidence(
-            repo_root,
-            manifest=manifest,
-            base_ref=base_ref,
-            base_manifest=None,
-            expected_scope=str(receipt["scope"]),
-            receipt=receipt,
-            evidence=evidence,
-            recompute_measurements=False,
-        )
-        return changed_bytes, changed_files, True
     except BudgetReceiptValidationError:
         raise
     except (FileNotFoundError, json.JSONDecodeError) as exc:

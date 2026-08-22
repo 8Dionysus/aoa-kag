@@ -44,6 +44,8 @@ from scripts.repo_local.portable_family import (
     render_manifest,
     sha256_bytes,
     _budget_procedure_identity,
+    canonical_json_bytes,
+    _procedure_identity_change_records,
     _budget_topology_context,
     _duplicate_materialization,
     _head_family_records,
@@ -676,19 +678,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     portable_family_module,
                     "_resolve_git_ref",
                     side_effect=resolve_without_target_history,
+                ), self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "shallow checkout semantic admission requires immutable base history",
                 ):
-                    shallow_bytes, shallow_files, shallow_receipted = (
-                        validate_changed_generated_budget(
-                            root,
-                            base_ref=base_ref,
-                            manifest=manifest,
-                        )
+                    validate_changed_generated_budget(
+                        root,
+                        base_ref=base_ref,
+                        manifest=manifest,
                     )
-                self.assertEqual((changed_bytes, changed_files, True), (
-                    shallow_bytes,
-                    shallow_files,
-                    shallow_receipted,
-                ))
             self.assertGreater(changed_bytes, 0)
             self.assertGreater(changed_files, 0)
             self.assertTrue(receipted)
@@ -807,7 +805,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             for path in ("a.jsonl", "b.jsonl"):
                 destination = root / "kag" / "indexes" / "shards" / "source" / path
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes(b"same materialization\n" * 128)
+                destination.write_bytes(b"same materialization\n")
 
             records = _head_family_records(root, manifest)
             self.assertEqual(
@@ -821,6 +819,34 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     changed_paths={"kag/indexes/shards/source/a.jsonl"},
                 )["state"],
             )
+
+    def test_procedure_identity_delta_uses_authenticated_prior_sizes(self) -> None:
+        files = [
+            {
+                "path": path.as_posix(),
+                "state": "present",
+                "digest": "a" * 64,
+                "bytes": 4096,
+            }
+            for path in BUDGET_PROCEDURE_PATHS
+        ]
+        previous = {
+            "contract_version": "aoa-kag:budget-semantic-admission-v3",
+            "owner": "aoa-kag",
+            "files": files,
+            "digest": sha256_bytes(canonical_json_bytes(files)),
+        }
+        current_files = [dict(entry) for entry in files]
+        current_files[0]["digest"] = "b" * 64
+        current = dict(previous)
+        current["files"] = current_files
+        current["digest"] = sha256_bytes(canonical_json_bytes(current_files))
+
+        records = _procedure_identity_change_records(previous, current)
+
+        self.assertEqual(1, len(records))
+        self.assertEqual(16, records[0]["delta_bytes"])
+        self.assertEqual(BUDGET_PROCEDURE_PATHS[0].as_posix(), records[0]["path"])
 
     def test_partitioning_transition_precedes_hot_profile_churn(self) -> None:
         identity = {

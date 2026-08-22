@@ -22,7 +22,11 @@ shard, first-family migration was rejected before typed causal evidence was
 considered, procedure and review identities could resolve from a target
 checkout, published-schema failures were not a typed regeneration signal,
 pruning could orphan the evidence paired with the current receipt, and a
-source edit could authorize unrelated generated churn.
+source edit could authorize unrelated generated churn. Exact-head review also
+exposed that a shallow packet could self-report its causal flags, that a
+downstream owner could compare against the current KAG procedure instead of
+the procedure that produced its base family, and that sub-1 KiB shards could
+escape duplicate admission.
 
 ## Decision
 
@@ -48,9 +52,14 @@ admitted only from the owner-authored topology projection. The executing
 resolution; a supplied target repository cannot shadow those bindings. The
 repo-local action installs its schema dependencies before the drift sentinel
 imports the owner procedure. When a base object is unavailable in a shallow
-checkout, admission may use only a receipt/evidence packet bound to the
-current head and explicitly avoids inventing historical measurements. Current
-receipt and evidence files are one lifecycle pair during pruning.
+checkout, an over-budget admission fails closed: a current-head
+receipt/evidence packet is not a causal witness, and this contract has no
+independently authenticated full-history verdict. Downstream procedure deltas
+instead compare the executing procedure identity with the prior base head's
+digest-bound typed evidence; an absent or legacy prior identity leaves the
+cause unknown. The producer identity records immutable file sizes, and
+duplicate admission includes every nonempty shard. Current receipt and
+evidence files are one lifecycle pair during pruning.
 
 Older evidence remains `migration_required` before v2 schema validation. The
 receipt remains a separate digest-bound measurement envelope and both receipt
@@ -81,6 +90,13 @@ additional properties.
 - `supported` requires a recomputable witness, exact owner provenance, and
   schema-valid paired artifacts. Insufficient or mixed evidence stays
   `unknown` or `unsupported` according to the existing state contract.
+- Shallow over-budget validation is typed
+  `budget_receipt_validation_failure` until immutable base history is present;
+  it never trusts mutable packet measurements as a substitute for the causal
+  base.
+- Downstream builder migration can be admitted only when the base family has a
+  schema-valid paired receipt/evidence packet with a size-bearing producer
+  identity; otherwise a positive procedure delta is unavailable.
 - This repair changes only the aoa-kag owner procedure, schemas, projections,
   lifecycle helper, tests, examples, and decision indexes. It does not admit
   downstream consumers, runtime health, publication, proof, human acceptance,
