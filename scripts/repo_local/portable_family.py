@@ -4,7 +4,10 @@ import copy
 import hashlib
 import json
 import math
+import os
+import stat
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -163,6 +166,10 @@ class BudgetReceiptValidationError(PortableFamilyError):
 
     def __init__(self, message: str) -> None:
         super().__init__(f"{BUDGET_RECEIPT_FAILURE_MARKER}: {message}")
+
+
+class BudgetPairPublicationError(PortableFamilyError):
+    """A paired receipt/evidence publication failed after semantic preflight."""
 
 
 def effective_index_surface_record(
@@ -3221,16 +3228,202 @@ def build_budget_receipt(
     return receipt_path_for(manifest), receipt
 
 
+def build_budget_publication(
+    repo_root: Path,
+    *,
+    base_ref: str,
+    manifest: Mapping[str, Any],
+    reason: str,
+    cause_class: str,
+    review_ref: str,
+    approved_by: str = "repository-owner",
+) -> tuple[Path, dict[str, Any], Path, dict[str, Any]]:
+    """Build and semantically validate both members before any pair write."""
+    evidence_path, evidence = build_budget_evidence(
+        repo_root,
+        base_ref=base_ref,
+        manifest=manifest,
+        reason=reason,
+        cause_class=cause_class,
+        review_ref=review_ref,
+    )
+    receipt_path, receipt = build_budget_receipt(
+        repo_root,
+        base_ref=base_ref,
+        manifest=manifest,
+        reason=reason,
+        semantic_evidence=evidence,
+        approved_by=approved_by,
+    )
+    return evidence_path, evidence, receipt_path, receipt
+
+
+def _budget_destination(repo_root: Path, path: Path) -> Path:
+    if path.is_absolute() or ".." in path.parts:
+        raise BudgetPairPublicationError(
+            f"budget pair path must be repo-relative: {path}"
+        )
+    return repo_root.resolve() / path
+
+
+def _stage_budget_bytes(destination: Path, content: bytes) -> Path:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=destination.parent,
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        mode = (
+            stat.S_IMODE(destination.stat().st_mode)
+            if destination.is_file()
+            else 0o644
+        )
+        os.chmod(temporary, mode)
+    except BaseException:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        temporary.unlink(missing_ok=True)
+        raise
+    return temporary
+
+
+def _replace_budget_pair_member(source: Path, destination: Path) -> None:
+    os.replace(source, destination)
+
+
+def _restore_budget_pair_member(
+    destination: Path,
+    previous: Path | None,
+) -> None:
+    if previous is None:
+        destination.unlink(missing_ok=True)
+    else:
+        _replace_budget_pair_member(previous, destination)
+
+
+def publish_budget_pair(
+    repo_root: Path,
+    *,
+    evidence_path: Path,
+    evidence: Mapping[str, Any],
+    receipt_path: Path,
+    receipt: Mapping[str, Any],
+) -> None:
+    """Publish a validated pair with rollback around the two-file boundary.
+
+    Each member is staged and replaced atomically.  If either replacement (or
+    an in-process interruption) fails, the exact previous member bytes and
+    presence are restored.  POSIX still cannot make two independent renames
+    crash-atomic; a process death between the replacements remains an
+    explicit bounded window rather than an implicit success claim.
+    """
+    evidence_content = render_manifest(evidence)
+    receipt_content = render_manifest(receipt)
+    if evidence_path == receipt_path:
+        raise BudgetPairPublicationError(
+            "budget pair evidence and receipt paths must be distinct"
+        )
+    if receipt.get("semantic_evidence_ref") != evidence_path.as_posix():
+        raise BudgetPairPublicationError(
+            "budget pair receipt does not reference the staged evidence path"
+        )
+    if receipt.get("semantic_evidence_digest") != sha256_bytes(evidence_content):
+        raise BudgetPairPublicationError(
+            "budget pair receipt digest does not match staged evidence"
+        )
+    if receipt.get("semantic_admission") != evidence.get("state"):
+        raise BudgetPairPublicationError(
+            "budget pair semantic admission does not match evidence state"
+        )
+
+    root = repo_root.resolve()
+    evidence_destination = _budget_destination(root, evidence_path)
+    receipt_destination = _budget_destination(root, receipt_path)
+    if evidence_destination.parent != receipt_destination.parent:
+        raise BudgetPairPublicationError(
+            "budget pair members must share one publication directory"
+        )
+    destinations = (
+        (evidence_destination, evidence_content),
+        (receipt_destination, receipt_content),
+    )
+    staged_new: dict[Path, Path] = {}
+    staged_previous: dict[Path, Path | None] = {}
+    cleanup_staged = True
+    try:
+        for destination, content in destinations:
+            staged_new[destination] = _stage_budget_bytes(destination, content)
+        for destination, _ in destinations:
+            if destination.exists() and not destination.is_file():
+                raise BudgetPairPublicationError(
+                    f"budget pair destination is not a regular file: {destination}"
+                )
+            staged_previous[destination] = (
+                _stage_budget_bytes(destination, destination.read_bytes())
+                if destination.is_file()
+                else None
+            )
+        try:
+            for destination, _ in destinations:
+                _replace_budget_pair_member(staged_new[destination], destination)
+        except BaseException as exc:
+            try:
+                for destination, _ in reversed(destinations):
+                    _restore_budget_pair_member(
+                        destination,
+                        staged_previous[destination],
+                    )
+            except BaseException as rollback_exc:
+                cleanup_staged = False
+                raise BudgetPairPublicationError(
+                    "budget pair publication failed and rollback failed; "
+                    "accepted pair recovery artifacts were retained"
+                ) from rollback_exc
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            raise BudgetPairPublicationError(
+                "budget pair publication failed; accepted pair was restored"
+            ) from exc
+    finally:
+        if cleanup_staged:
+            for temporary in (*staged_new.values(), *staged_previous.values()):
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
+
+
+def _write_budget_file_atomically(
+    repo_root: Path,
+    path: Path,
+    content: bytes,
+) -> None:
+    destination = _budget_destination(repo_root, path)
+    temporary: Path | None = None
+    try:
+        temporary = _stage_budget_bytes(destination, content)
+        _replace_budget_pair_member(temporary, destination)
+    except (OSError, BudgetPairPublicationError) as exc:
+        raise BudgetPairPublicationError(
+            f"budget file publication failed for {path}"
+        ) from exc
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def write_budget_evidence(
     repo_root: Path,
     path: Path,
     evidence: Mapping[str, Any],
 ) -> None:
-    destination = repo_root.resolve() / path
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    content = render_manifest(evidence)
-    if not destination.is_file() or destination.read_bytes() != content:
-        destination.write_bytes(content)
+    _write_budget_file_atomically(repo_root, path, render_manifest(evidence))
 
 
 def write_budget_receipt(
@@ -3238,11 +3431,7 @@ def write_budget_receipt(
     path: Path,
     receipt: Mapping[str, Any],
 ) -> None:
-    destination = repo_root.resolve() / path
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    content = render_manifest(receipt)
-    if not destination.is_file() or destination.read_bytes() != content:
-        destination.write_bytes(content)
+    _write_budget_file_atomically(repo_root, path, render_manifest(receipt))
 
 
 def _validate_budget_receipt_without_history(

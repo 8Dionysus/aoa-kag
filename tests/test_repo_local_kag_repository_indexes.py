@@ -37,6 +37,7 @@ from scripts.repo_local.portable_family import (
     MANIFEST_RELATIVE_PATH,
     PortableFamilyError,
     build_budget_evidence,
+    build_budget_publication,
     build_budget_receipt,
     build_portable_family,
     evidence_path_for,
@@ -55,6 +56,7 @@ from scripts.repo_local.portable_family import (
     _review_identity,
     _semantic_admission_state,
     _source_dependency_measurement,
+    publish_budget_pair,
     validate_changed_generated_budget,
     write_budget_evidence,
     write_budget_receipt,
@@ -644,7 +646,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "_path_change_records",
                 side_effect=path_change_records_without_dirty_owner,
             ):
-                evidence_path, evidence = build_budget_evidence(
+                evidence_path, evidence, receipt_path, receipt = build_budget_publication(
                     root,
                     base_ref=base_ref,
                     manifest=manifest,
@@ -653,15 +655,13 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     review_ref="aoa-kag:docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md",
                 )
                 self.assertEqual("supported", evidence["state"])
-                write_budget_evidence(root, evidence_path, evidence)
-                receipt_path, receipt = build_budget_receipt(
+                publish_budget_pair(
                     root,
-                    base_ref=base_ref,
-                    manifest=manifest,
-                    reason=evidence["cause"]["reason"],
-                    semantic_evidence=evidence,
+                    evidence_path=evidence_path,
+                    evidence=evidence,
+                    receipt_path=receipt_path,
+                    receipt=receipt,
                 )
-                write_budget_receipt(root, receipt_path, receipt)
                 changed_bytes, changed_files, receipted = validate_changed_generated_budget(
                     root,
                     base_ref=base_ref,
@@ -811,6 +811,153 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             (root / receipt_path).write_text(render_manifest(legacy).decode("utf-8"), encoding="utf-8")
             with self.assertRaisesRegex(PortableFamilyError, "migration_required"):
                 validate_changed_generated_budget(root, base_ref=base_ref, manifest=manifest)
+
+    def test_budget_pair_publication_restores_exact_bytes_on_write_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            evidence_path = Path("kag/receipts/index_family_budget/family.evidence.json")
+            receipt_path = Path("kag/receipts/index_family_budget/family.json")
+            evidence_destination = root / evidence_path
+            receipt_destination = root / receipt_path
+            evidence_destination.parent.mkdir(parents=True)
+            old_evidence = b"accepted-evidence\n"
+            old_receipt = b"accepted-receipt\n"
+            evidence_destination.write_bytes(old_evidence)
+            receipt_destination.write_bytes(old_receipt)
+
+            evidence = {"state": "supported", "candidate": "new"}
+            receipt = {
+                "semantic_admission": "supported",
+                "semantic_evidence_ref": evidence_path.as_posix(),
+                "semantic_evidence_digest": sha256_bytes(render_manifest(evidence)),
+            }
+            original_replace = portable_family_module._replace_budget_pair_member
+
+            for failure_call in (1, 2):
+                evidence_destination.write_bytes(old_evidence)
+                receipt_destination.write_bytes(old_receipt)
+                calls = 0
+
+                def fail_once(source: Path, destination: Path) -> None:
+                    nonlocal calls
+                    calls += 1
+                    if calls == failure_call:
+                        raise OSError(f"injected pair write {failure_call}")
+                    original_replace(source, destination)
+
+                with mock.patch.object(
+                    portable_family_module,
+                    "_replace_budget_pair_member",
+                    side_effect=fail_once,
+                ), self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "accepted pair was restored",
+                ):
+                    publish_budget_pair(
+                        root,
+                        evidence_path=evidence_path,
+                        evidence=evidence,
+                        receipt_path=receipt_path,
+                        receipt=receipt,
+                    )
+
+                self.assertEqual(old_evidence, evidence_destination.read_bytes())
+                self.assertEqual(old_receipt, receipt_destination.read_bytes())
+                self.assertEqual([], list(evidence_destination.parent.glob(".*.tmp")))
+
+            publish_budget_pair(
+                root,
+                evidence_path=evidence_path,
+                evidence=evidence,
+                receipt_path=receipt_path,
+                receipt=receipt,
+            )
+            self.assertEqual(render_manifest(evidence), evidence_destination.read_bytes())
+            self.assertEqual(render_manifest(receipt), receipt_destination.read_bytes())
+
+    def test_budget_pair_publication_rolls_back_in_process_crash_window(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            evidence_path = Path("kag/receipts/index_family_budget/family.evidence.json")
+            receipt_path = Path("kag/receipts/index_family_budget/family.json")
+            evidence_destination = root / evidence_path
+            receipt_destination = root / receipt_path
+            evidence_destination.parent.mkdir(parents=True)
+            old_evidence = b"accepted-evidence\n"
+            old_receipt = b"accepted-receipt\n"
+            evidence_destination.write_bytes(old_evidence)
+            receipt_destination.write_bytes(old_receipt)
+            evidence = {"state": "supported", "candidate": "interrupt"}
+            receipt = {
+                "semantic_admission": "supported",
+                "semantic_evidence_ref": evidence_path.as_posix(),
+                "semantic_evidence_digest": sha256_bytes(render_manifest(evidence)),
+            }
+            original_replace = portable_family_module._replace_budget_pair_member
+            calls = 0
+
+            def interrupt_between_replacements(
+                source: Path,
+                destination: Path,
+            ) -> None:
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise KeyboardInterrupt
+                original_replace(source, destination)
+
+            with mock.patch.object(
+                portable_family_module,
+                "_replace_budget_pair_member",
+                side_effect=interrupt_between_replacements,
+            ), self.assertRaises(KeyboardInterrupt):
+                publish_budget_pair(
+                    root,
+                    evidence_path=evidence_path,
+                    evidence=evidence,
+                    receipt_path=receipt_path,
+                    receipt=receipt,
+                )
+
+            self.assertEqual(old_evidence, evidence_destination.read_bytes())
+            self.assertEqual(old_receipt, receipt_destination.read_bytes())
+
+    def test_budget_publication_builds_receipt_before_any_pair_write(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            evidence_path = Path("kag/receipts/index_family_budget/family.evidence.json")
+            receipt_path = Path("kag/receipts/index_family_budget/family.json")
+            evidence_destination = root / evidence_path
+            receipt_destination = root / receipt_path
+            evidence_destination.parent.mkdir(parents=True)
+            old_evidence = b"accepted-evidence\n"
+            old_receipt = b"accepted-receipt\n"
+            evidence_destination.write_bytes(old_evidence)
+            receipt_destination.write_bytes(old_receipt)
+            rejected = {"state": "unknown"}
+            with mock.patch.object(
+                portable_family_module,
+                "build_budget_evidence",
+                return_value=(evidence_path, rejected),
+            ), mock.patch.object(
+                portable_family_module,
+                "build_budget_receipt",
+                side_effect=PortableFamilyError("semantic admission rejected"),
+            ):
+                with self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "semantic admission rejected",
+                ):
+                    build_budget_publication(
+                        root,
+                        base_ref="a" * 40,
+                        manifest={},
+                        reason="bounded test",
+                        cause_class="schema_builder_migration",
+                        review_ref="aoa-kag:docs/decisions/test.md",
+                    )
+            self.assertEqual(old_evidence, evidence_destination.read_bytes())
+            self.assertEqual(old_receipt, receipt_destination.read_bytes())
 
     def test_budget_semantic_states_preserve_unknown_unsupported_and_migration(self) -> None:
         no_source = {"bytes": 0, "files": 0}
