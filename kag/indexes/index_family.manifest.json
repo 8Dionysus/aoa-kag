@@ -1,6 +1,6 @@
 {
   "artifact_locators": {
-    "content_digest": "sha256:e6005b5e64aaa35ca592263843457b737344cec01dcaa205c31ee951f0f03bec",
+    "content_digest": "sha256:9a6f9adcdb4866ca6a7d5a025c7e1e660fc17091c5925fab2a38733cc2c3b49a",
     "path": "kag/indexes/artifact_locators.json"
   },
   "budgets": {
@@ -12,8 +12,8 @@
     "owner_hard_bytes_max": 50331648
   },
   "corpus_manifest": {
-    "content_digest": "sha256:bbf0a2be84ab7df71917e31eb7262bc2c9145b1ce5c55bc8359ed859d1631e6b",
-    "document_digest": "sha256:d1e35808a6ce43a5656ff9d32c6fc0801ce92f24037309236873589e624a7bb7",
+    "content_digest": "sha256:b309c4a37dbc125b947ba5f1e95f998a756c3479764f0b1d5ffeb632ee2b43d5",
+    "document_digest": "sha256:f966be6b8ce31ff41fda17a5dc0ccac9b7e42faa4eac4c3e743ef50324444922",
     "path": "kag/indexes/corpus.manifest.json"
   },
   "degradation": {
@@ -38,13 +38,13 @@
   },
   "distribution_identity": {
     "artifact_kind": "repo_local_kag_distribution",
-    "content_digest": "sha256:1396ae39e7e284dc082060c72342df592cb123cd3b6bfdf32d7a9c53d53a90c0",
-    "corpus_digest": "sha256:bbf0a2be84ab7df71917e31eb7262bc2c9145b1ce5c55bc8359ed859d1631e6b",
+    "content_digest": "sha256:bfcaa3dda8765e5aed371f3f36bef8d18ecfdf2fcb0080edb0d4462277b4b0b8",
+    "corpus_digest": "sha256:b309c4a37dbc125b947ba5f1e95f998a756c3479764f0b1d5ffeb632ee2b43d5",
     "local_id": "family:repo-local:tiered-distribution",
     "schema_ref": "aoa-kag:schemas/repo-local-kag-distribution-manifest.schema.json"
   },
   "hot_profile": {
-    "content_digest": "sha256:030e7a366dca08f652c1b304e3afdcfa6f847d7baf449c3a4aa539d6bc57514b",
+    "content_digest": "sha256:ceaa862b1e686d49f090f2d1c417d2ee105a1a15748e2bbc0b87ae19c652fe85",
     "path": "kag/indexes/hot_profile.json"
   },
   "lifecycle": {
@@ -55,7 +55,7 @@
   "placement": {
     "artifact_cold": {
       "object_key_template": "objects/sha256/{prefix}/{digest}",
-      "object_set_digest": "sha256:9efc98a05c2558315ba288983fafd202d87373cd6b5e219681b6d70c1aca5c1d",
+      "object_set_digest": "sha256:871240c3869935be22483ccfeeaa2cb60ad08d0d2a500c0d346b524c3e7ea7eb",
       "objects": 284,
       "record_kinds": [
         "anchor",
@@ -64,7 +64,7 @@
       "shadow_git_copy": true
     },
     "git_hot": {
-      "object_set_digest": "sha256:a07bb07bae33ba27f487b6ecd75e5bf484bd127f0b7435f12ec0b04e477f1e1f",
+      "object_set_digest": "sha256:a36f6a922a7e84f0d2c51d0862407c07dbd67db8e137a0df3f7a9c8b191bc75c",
       "objects": 203,
       "path_template": "kag/indexes/shards/{kind}/{range}.jsonl",
       "record_kinds": [
@@ -88,19 +88,19 @@
   },
   "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
   "summary": {
-    "artifact_cold_bytes": 12191556,
+    "artifact_cold_bytes": 12198868,
     "artifact_cold_objects": 284,
-    "corpus_total_bytes": 14393676,
-    "git_hot_bytes": 2320534,
+    "corpus_total_bytes": 14401471,
+    "git_hot_bytes": 2321018,
     "git_hot_objects": 203,
-    "git_hot_shard_bytes": 2202120,
-    "shadow_git_bytes": 12191556
+    "git_hot_shard_bytes": 2202603,
+    "shadow_git_bytes": 12198868
   },
   "transport": {
     "max_pack_bytes": 8388608,
     "object_identity": "sha256-shard-bytes",
     "pack_format": "concatenated-byte-ranges-v1",
-    "pack_index_digest": "sha256:b62249a7033f85289e241f5f025b0d7b21d4e6a8928b34e44c5d10a85ffa7f18",
+    "pack_index_digest": "sha256:5e4b303bc93bc3cef995d3a2177b962faea768b7a692de68d846ae14cef53252",
     "packs": 2,
     "repacking_changes_corpus_identity": false
   },
