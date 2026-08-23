@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-transition-trust.schema.json",
+  "title": "AoA repo-local KAG transition authority trust registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "owner",
+    "issuer_roots",
+    "acceptor_roots",
+    "replay_roots"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa-kag:transition-trust-registry-v1"},
+    "owner": {"const": "aoa-kag"},
+    "issuer_roots": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/issuerRoot"}
+    },
+    "acceptor_roots": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/acceptorRoot"}
+    },
+    "replay_roots": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/replayRoot"}
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "base64url": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$"
+    },
+    "root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "ref",
+        "owner",
+        "algorithm",
+        "signer_id",
+        "public_key_base64url",
+        "state"
+      ],
+      "properties": {
+        "role": {"enum": ["issuer", "acceptor", "replay"]},
+        "ref": {
+          "type": "string",
+          "pattern": "^aoa-kag://trust-root/(issuer|acceptor|replay)/[A-Za-z0-9._/-]+$"
+        },
+        "owner": {"type": "string", "minLength": 1},
+        "algorithm": {"const": "ed25519"},
+        "signer_id": {"$ref": "#/$defs/digest"},
+        "public_key_base64url": {"$ref": "#/$defs/base64url"},
+        "state": {"enum": ["active", "revoked"]}
+      }
+    },
+    "issuerRoot": {
+      "allOf": [
+        {"$ref": "#/$defs/root"},
+        {"properties": {"role": {"const": "issuer"}}}
+      ]
+    },
+    "acceptorRoot": {
+      "allOf": [
+        {"$ref": "#/$defs/root"},
+        {"properties": {"role": {"const": "acceptor"}}}
+      ]
+    },
+    "replayRoot": {
+      "allOf": [
+        {"$ref": "#/$defs/root"},
+        {"properties": {"role": {"const": "replay"}}}
+      ]
+    }
+  }
+}

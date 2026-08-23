@@ -16,9 +16,12 @@ from .portable_family import (
     SCHEMA_VERSION as PORTABLE_V3_SCHEMA_VERSION,
     SHARD_ROOT_RELATIVE_PATH,
     PortableFamilyError,
+    TransitionAuthorityError,
     canonical_json_bytes,
+    derive_transition_predecessor,
     manifest_digest as portable_v3_manifest_digest,
     reconstruct_compatibility_family,
+    trusted_transition_target_ref,
     render_manifest,
     sha256_bytes,
     validate_detached_producer_migration,
@@ -1726,15 +1729,18 @@ def tiered_budget_projection(
 def tiered_transition_target(
     build: TieredFamilyBuild,
     *,
-    target_ref: str,
+    target_ref: str | None = None,
+    repo_root: Path | None = None,
 ) -> dict[str, Any]:
     """Project one built v4 family into the transition target identity."""
-    if (
-        not isinstance(target_ref, str)
-        or not 40 <= len(target_ref) <= 64
-        or any(character not in "0123456789abcdef" for character in target_ref)
-    ):
-        raise TieredFamilyError("transition target ref must be an immutable Git ref")
+    if repo_root is None:
+        raise TieredFamilyError(
+            "transition target requires a trusted Git repository context"
+        )
+    try:
+        resolved_target_ref = trusted_transition_target_ref(repo_root, target_ref)
+    except PortableFamilyError as exc:
+        raise TieredFamilyError(str(exc)) from exc
     corpus = build.corpus_manifest
     distribution = build.distribution_manifest
     corpus_identity = corpus.get("corpus_identity")
@@ -1749,7 +1755,7 @@ def tiered_transition_target(
         "transition": "v3_to_v4_producer_bootstrap",
         "family": {
             "schema_version": DISTRIBUTION_SCHEMA_VERSION,
-            "ref": target_ref,
+            "ref": resolved_target_ref,
             "family_digest": _digest_hex(
                 str(corpus_identity["content_digest"])
             ),
@@ -1763,10 +1769,15 @@ def tiered_transition_target(
 def tiered_projection_target(
     build: TieredFamilyBuild,
     *,
-    target_ref: str,
+    target_ref: str | None = None,
+    repo_root: Path | None = None,
 ) -> dict[str, Any]:
     """Project one built v4 family into the complete-projection target lane."""
-    target = tiered_transition_target(build, target_ref=target_ref)
+    target = tiered_transition_target(
+        build,
+        target_ref=target_ref,
+        repo_root=repo_root,
+    )
     target["transition"] = "complete_projection_refresh"
     return target
 
@@ -1775,11 +1786,9 @@ def _tiered_projection_placement(
     build: TieredFamilyBuild | None,
 ) -> dict[str, Any]:
     if build is None:
-        return {
-            "state": None,
-            "hot_profile_digest": None,
-            "partitioning_digest": None,
-        }
+        raise TieredFamilyError(
+            "complete projection requires an exact predecessor placement"
+        )
     distribution = build.distribution_manifest
     placement = distribution.get("placement")
     corpus = build.corpus_manifest
@@ -1861,15 +1870,30 @@ def complete_tiered_projection_expectations(
     build: TieredFamilyBuild,
     *,
     predecessor_build: TieredFamilyBuild | None = None,
+    predecessor_placement: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Build exact before/after placement and complete output expectations."""
+    if predecessor_placement is None:
+        if predecessor_build is None:
+            raise TieredFamilyError(
+                "complete projection requires an exact predecessor placement"
+            )
+        predecessor_placement = _tiered_projection_placement(predecessor_build)
+    else:
+        predecessor_placement = copy.deepcopy(dict(predecessor_placement))
+        if (
+            predecessor_placement.get("state") not in {"legacy_v3", "shadow", "externalized"}
+            or not isinstance(predecessor_placement.get("hot_profile_digest"), str)
+            or not isinstance(predecessor_placement.get("partitioning_digest"), str)
+        ):
+            raise TieredFamilyError("complete projection predecessor placement is malformed")
     return (
         {
             "spec": {
                 "name": "aoa-kag:complete-tiered-family-projection",
                 "version": "v1",
             },
-            "before": _tiered_projection_placement(predecessor_build),
+            "before": predecessor_placement,
             "after": _tiered_projection_placement(build),
         },
         complete_tiered_projection_output(build),
@@ -1881,21 +1905,41 @@ def validate_tiered_producer_migration(
     *,
     predecessor: Mapping[str, Any],
     build: TieredFamilyBuild,
-    target_ref: str,
+    target_ref: str | None = None,
+    repo_root: Path | None = None,
+    base_ref: str | None = None,
     detached_authority_path: Path | None = None,
     acceptance_record: Mapping[str, Any] | None = None,
     replay_state: Mapping[str, Any] | None = None,
+    replay_state_path: Path | None = None,
     owner_root: Path | None = None,
     candidate_root: Path | None = None,
+    acceptance_record_path: Path | None = None,
 ) -> None:
     """Validate migration authority against the exact built v4 target."""
+    if repo_root is None or base_ref is None:
+        raise TieredFamilyError(
+            "producer migration requires trusted target and predecessor Git context"
+        )
+    expected_predecessor = derive_transition_predecessor(repo_root, base_ref)
+    if dict(predecessor) != expected_predecessor:
+        raise TransitionAuthorityError(
+            "unknown",
+            "producer migration predecessor is not derived from the requested Git base",
+        )
     validate_detached_producer_migration(
         migration,
-        predecessor=predecessor,
-        target=tiered_transition_target(build, target_ref=target_ref),
+        predecessor=expected_predecessor,
+        target=tiered_transition_target(
+            build,
+            target_ref=target_ref,
+            repo_root=repo_root,
+        ),
         detached_authority_path=detached_authority_path,
         acceptance_record=acceptance_record,
+        acceptance_record_path=acceptance_record_path,
         replay_state=replay_state,
+        replay_state_path=replay_state_path,
         owner_root=owner_root,
         candidate_root=candidate_root,
     )
@@ -1906,28 +1950,54 @@ def validate_tiered_projection_transition(
     *,
     predecessor: Mapping[str, Any],
     build: TieredFamilyBuild,
-    target_ref: str,
+    target_ref: str | None = None,
     predecessor_build: TieredFamilyBuild | None = None,
+    predecessor_placement: Mapping[str, Any] | None = None,
+    repo_root: Path | None = None,
+    base_ref: str | None = None,
     detached_authority_path: Path | None = None,
     acceptance_record: Mapping[str, Any] | None = None,
     replay_state: Mapping[str, Any] | None = None,
+    replay_state_path: Path | None = None,
     owner_root: Path | None = None,
     candidate_root: Path | None = None,
+    acceptance_record_path: Path | None = None,
 ) -> None:
     """Validate a complete v4 projection without using a budget receipt."""
+    if repo_root is None or base_ref is None:
+        raise TieredFamilyError(
+            "projection transition requires trusted target and predecessor Git context"
+        )
+    expected_predecessor = derive_transition_predecessor(repo_root, base_ref)
+    if dict(predecessor) != expected_predecessor:
+        raise TransitionAuthorityError(
+            "unknown",
+            "projection predecessor is not derived from the requested Git base",
+        )
     expected_projection, expected_output = complete_tiered_projection_expectations(
         build,
         predecessor_build=predecessor_build,
+        predecessor_placement=(
+            predecessor_placement
+            if predecessor_placement is not None
+            else expected_predecessor.get("placement")
+        ),
     )
     validate_full_projection_transition(
         transition,
-        predecessor=predecessor,
-        target=tiered_projection_target(build, target_ref=target_ref),
+        predecessor=expected_predecessor,
+        target=tiered_projection_target(
+            build,
+            target_ref=target_ref,
+            repo_root=repo_root,
+        ),
         expected_projection=expected_projection,
         expected_output=expected_output,
         detached_authority_path=detached_authority_path,
         acceptance_record=acceptance_record,
+        acceptance_record_path=acceptance_record_path,
         replay_state=replay_state,
+        replay_state_path=replay_state_path,
         owner_root=owner_root,
         candidate_root=candidate_root,
     )

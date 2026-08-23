@@ -50,13 +50,14 @@
     "decision": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ref", "digest", "posture"],
+      "required": ["ref", "digest", "posture", "source_commit"],
       "properties": {
         "ref": {
           "const": "aoa-kag:docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md"
         },
         "digest": {"$ref": "#/$defs/digest"},
-        "posture": {"enum": ["proposed", "accepted", "superseded"]}
+        "posture": {"enum": ["proposed", "accepted", "superseded"]},
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
       }
     },
     "family": {
@@ -67,7 +68,8 @@
         "ref",
         "family_digest",
         "source_snapshot",
-        "distribution_digest"
+        "distribution_digest",
+        "placement"
       ],
       "properties": {
         "schema_version": {
@@ -82,7 +84,8 @@
         "source_snapshot": {"$ref": "#/$defs/sha256Digest"},
         "distribution_digest": {
           "anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]
-        }
+        },
+        "placement": {"$ref": "#/$defs/placement"}
       }
     },
     "producerIdentity": {
@@ -116,12 +119,15 @@
     "replay": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["nonce", "sequence", "ledger_ref", "ledger_digest", "consumption"],
+      "required": ["nonce", "sequence", "ledger_ref", "ledger_digest", "snapshot_digest", "subject_digest", "source_ref", "consumption"],
       "properties": {
         "nonce": {"$ref": "#/$defs/sha256Digest"},
         "sequence": {"type": "integer", "minimum": 1},
         "ledger_ref": {"type": "string", "pattern": "^aoa-kag://replay/[A-Za-z0-9._/-]+$"},
         "ledger_digest": {"$ref": "#/$defs/sha256Digest"},
+        "snapshot_digest": {"$ref": "#/$defs/sha256Digest"},
+        "subject_digest": {"$ref": "#/$defs/sha256Digest"},
+        "source_ref": {"type": "string", "pattern": "^aoa-kag://replay/source/[A-Za-z0-9._/-]+$"},
         "consumption": {"$ref": "#/$defs/consumption"}
       }
     },
@@ -159,23 +165,59 @@
     "issuer": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["owner", "namespace", "ref", "artifact_digest"],
+      "required": ["owner", "namespace", "ref", "artifact_digest", "trust_root"],
       "properties": {
         "owner": {"const": "aoa-kag"},
         "namespace": {"const": "aoa:aoa-kag"},
         "ref": {"type": "string", "pattern": "^aoa-kag://issuer/[A-Za-z0-9._/-]+$"},
-        "artifact_digest": {"$ref": "#/$defs/sha256Digest"}
+        "artifact_digest": {"$ref": "#/$defs/sha256Digest"},
+        "trust_root": {"$ref": "#/$defs/issuerTrustRoot"}
       }
     },
     "acceptance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["state", "ref", "digest"],
+      "required": ["state", "ref", "digest", "trust_root"],
       "properties": {
         "state": {"enum": ["pending", "independently_accepted"]},
         "ref": {"type": "string", "pattern": "^aoa-kag://acceptance/[A-Za-z0-9._/-]+$"},
+        "digest": {"$ref": "#/$defs/sha256Digest"},
+        "trust_root": {"$ref": "#/$defs/acceptorTrustRoot"}
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "hot_profile_digest", "partitioning_digest"],
+      "properties": {
+        "state": {"enum": ["legacy_v3", "shadow", "externalized"]},
+        "hot_profile_digest": {"$ref": "#/$defs/sha256Digest"},
+        "partitioning_digest": {"$ref": "#/$defs/sha256Digest"}
+      }
+    },
+    "trustRoot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "ref", "registry_ref", "signer_id", "digest"],
+      "properties": {
+        "role": {"enum": ["issuer", "acceptor"]},
+        "ref": {"type": "string", "pattern": "^aoa-kag://trust-root/[A-Za-z0-9._/-]+$"},
+        "registry_ref": {"const": "aoa-kag:config/transition_authority_trust.json"},
+        "signer_id": {"$ref": "#/$defs/sha256Digest"},
         "digest": {"$ref": "#/$defs/sha256Digest"}
       }
+    },
+    "issuerTrustRoot": {
+      "allOf": [
+        {"$ref": "#/$defs/trustRoot"},
+        {"properties": {"role": {"const": "issuer"}}}
+      ]
+    },
+    "acceptorTrustRoot": {
+      "allOf": [
+        {"$ref": "#/$defs/trustRoot"},
+        {"properties": {"role": {"const": "acceptor"}}}
+      ]
     }
   }
 }

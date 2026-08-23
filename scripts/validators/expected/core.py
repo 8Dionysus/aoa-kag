@@ -72,6 +72,18 @@ REPO_LOCAL_KAG_PROJECTION_TRANSITION_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-projection-transition.schema.json"
 )
 
+REPO_LOCAL_KAG_TRANSITION_REPLAY_SNAPSHOT_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-transition-replay-snapshot.schema.json"
+)
+
+REPO_LOCAL_KAG_TRANSITION_TRUST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-transition-trust.schema.json"
+)
+
+REPO_LOCAL_KAG_TRANSITION_TRUST_REGISTRY_PATH = (
+    REPO_ROOT / "config" / "transition_authority_trust.json"
+)
+
 REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-hot-profile.schema.json"
 )

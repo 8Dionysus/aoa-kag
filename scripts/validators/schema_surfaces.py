@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from jsonschema.exceptions import SchemaError
+from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
+
 from .common import *
 
 def validate_top_level_schema(path: Path, label: str) -> None:
@@ -48,6 +51,14 @@ def validate_schema_surface() -> None:
             REPO_LOCAL_KAG_PROJECTION_TRANSITION_SCHEMA_PATH,
             "repo-local KAG projection transition",
         ),
+        (
+            REPO_LOCAL_KAG_TRANSITION_REPLAY_SNAPSHOT_SCHEMA_PATH,
+            "repo-local KAG transition replay snapshot",
+        ),
+        (
+            REPO_LOCAL_KAG_TRANSITION_TRUST_SCHEMA_PATH,
+            "repo-local KAG transition trust registry",
+        ),
         (REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH, "repo-local KAG hot profile"),
         (KAG_ARTIFACT_LOCATOR_SCHEMA_PATH, "KAG artifact locator"),
         (KAG_PACK_SCHEMA_PATH, "KAG transport pack"),
@@ -70,6 +81,13 @@ def validate_schema_surface() -> None:
         (KAG_COVERAGE_BUILD_PACKET_SCHEMA_PATH, "KAG coverage build packet"),
     ):
         validate_top_level_schema(path, label)
+    trust_schema = read_json(REPO_LOCAL_KAG_TRANSITION_TRUST_SCHEMA_PATH)
+    trust_registry = read_json(REPO_LOCAL_KAG_TRANSITION_TRUST_REGISTRY_PATH)
+    try:
+        Draft202012Validator.check_schema(trust_schema)
+        Draft202012Validator(trust_schema).validate(trust_registry)
+    except (SchemaError, JsonSchemaValidationError) as exc:
+        fail(f"repo-local KAG transition trust registry is invalid: {exc.message}")
 
 def validate_bridge_schema_surface() -> None:
     validate_top_level_schema(BRIDGE_SCHEMA_PATH, "bridge")

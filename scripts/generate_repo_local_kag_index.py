@@ -3482,59 +3482,11 @@ def _transition_predecessor(
     *,
     base_ref: str,
 ) -> dict[str, Any]:
-    resolved_ref = run_text(("git", "rev-parse", base_ref), repo_root)
-    manifest = git_json_at_ref(repo_root, resolved_ref, PORTABLE_FAMILY_MANIFEST)
-    if manifest is None:
-        raise ValueError(
-            f"transition predecessor is unavailable at {resolved_ref}"
-        )
-    schema_version = manifest.get("schema_version")
-    if schema_version == "aoa-repo-local-kag-family-manifest-v3":
-        identity = manifest.get("family_identity")
-        if not isinstance(identity, Mapping):
-            raise ValueError("transition predecessor v3 identity is malformed")
-        digest = identity.get("content_digest")
-        source_snapshot = identity.get("source_snapshot")
-        if not isinstance(digest, str) or not isinstance(source_snapshot, str):
-            raise ValueError("transition predecessor v3 identity is incomplete")
-        return {
-            "schema_version": schema_version,
-            "ref": resolved_ref,
-            "family_digest": digest,
-            "source_snapshot": source_snapshot,
-            "distribution_digest": None,
-        }
-    if schema_version != "aoa-repo-local-kag-distribution-manifest-v1":
-        raise ValueError(
-            f"unsupported transition predecessor schema: {schema_version}"
-        )
-    corpus = git_json_at_ref(
-        repo_root,
-        resolved_ref,
-        Path("kag/indexes/corpus.manifest.json"),
-    )
-    distribution_identity = manifest.get("distribution_identity")
-    corpus_identity = corpus.get("corpus_identity") if corpus else None
-    if not isinstance(corpus_identity, Mapping) or not isinstance(
-        distribution_identity,
-        Mapping,
-    ):
-        raise ValueError("transition predecessor tiered identities are incomplete")
-    corpus_digest = corpus_identity.get("content_digest")
-    source_snapshot = corpus_identity.get("source_snapshot")
-    distribution_digest = distribution_identity.get("content_digest")
-    if not all(
-        isinstance(value, str)
-        for value in (corpus_digest, source_snapshot, distribution_digest)
-    ):
-        raise ValueError("transition predecessor tiered identities are malformed")
-    return {
-        "schema_version": schema_version,
-        "ref": resolved_ref,
-        "family_digest": corpus_digest.removeprefix("sha256:"),
-        "source_snapshot": source_snapshot,
-        "distribution_digest": distribution_digest,
-    }
+    try:
+        from scripts.repo_local.portable_family import derive_transition_predecessor
+    except ImportError:  # pragma: no cover - direct script execution
+        from repo_local.portable_family import derive_transition_predecessor  # type: ignore
+    return derive_transition_predecessor(repo_root, base_ref)
 
 
 def _route_legacy_portable_invocation(
@@ -3868,16 +3820,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                         args.transition_acceptance_record,
                         "transition acceptance record",
                     )
+                    acceptance_path = Path(args.transition_acceptance_record)
+                    if not acceptance_path.is_absolute():
+                        acceptance_path = repo_root / acceptance_path
                     replay_state = _load_transition_json(
                         repo_root,
                         args.transition_replay_state,
                         "transition replay state",
                     )
+                    replay_path = Path(args.transition_replay_state)
+                    if not replay_path.is_absolute():
+                        replay_path = repo_root / replay_path
                     predecessor = _transition_predecessor(
                         repo_root,
                         base_ref=provenance_base_ref,
                     )
-                    target_ref = run_text(("git", "rev-parse", "HEAD"), repo_root)
                     if args.transition_kind == "producer_migration":
                         from scripts.repo_local.tiered_family import (
                             validate_tiered_producer_migration,
@@ -3887,10 +3844,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                             transition,
                             predecessor=predecessor,
                             build=tiered,
-                            target_ref=target_ref,
+                            target_ref=None,
+                            repo_root=repo_root,
+                            base_ref=provenance_base_ref,
                             detached_authority_path=authority_path,
                             acceptance_record=acceptance,
+                            acceptance_record_path=acceptance_path,
                             replay_state=replay_state,
+                            replay_state_path=replay_path,
                             owner_root=repo_root,
                             candidate_root=repo_root,
                         )
@@ -3903,10 +3864,15 @@ def main(argv: Sequence[str] | None = None) -> int:
                             transition,
                             predecessor=predecessor,
                             build=tiered,
-                            target_ref=target_ref,
+                            target_ref=None,
+                            repo_root=repo_root,
+                            base_ref=provenance_base_ref,
+                            predecessor_placement=predecessor.get("placement"),
                             detached_authority_path=authority_path,
                             acceptance_record=acceptance,
+                            acceptance_record_path=acceptance_path,
                             replay_state=replay_state,
+                            replay_state_path=replay_path,
                             owner_root=repo_root,
                             candidate_root=repo_root,
                         )

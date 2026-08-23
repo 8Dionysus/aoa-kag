@@ -35,6 +35,13 @@ before/after placement contract and a complete output identity covering corpus,
 distribution, hot profile, locators, pack index, owner release, placement
 object sets, and a fixed-point digest.
 
+External authority, acceptance, and replay records are canonical signed
+statements. Their issuer, acceptor, and replay keys are resolved by role and
+immutable source revision from the owner-committed transition trust registry;
+separate paths or self-declared root JSON do not establish independence. The
+current proposed registry contains no active roots, so this contract remains
+fail-closed until an independent owner supplies and reviews those anchors.
+
 The generator may validate supplied transition artifacts through an explicit
 read-only lane, but it never creates authority, advances replay state, writes a
 transition receipt, or turns the proposal into acceptance. The ordinary D-0043
@@ -87,6 +94,9 @@ runtime health, proof, and human acceptance distinct.
 - `scripts/generate_repo_local_kag_index.py`
 - `schemas/repo-local-kag-producer-migration.schema.json`
 - `schemas/repo-local-kag-projection-transition.schema.json`
+- `schemas/repo-local-kag-transition-replay-snapshot.schema.json`
+- `schemas/repo-local-kag-transition-trust.schema.json`
+- `config/transition_authority_trust.json`
 - `tests/test_repo_local_kag_repository_indexes.py`
 - `tests/test_repo_local_kag_tiered_family.py`
 - `docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`

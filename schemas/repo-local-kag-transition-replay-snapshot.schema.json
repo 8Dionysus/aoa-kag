@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-transition-replay-snapshot.schema.json",
+  "title": "AoA repo-local KAG transition replay snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "owner",
+    "transition_kind",
+    "subject_digest",
+    "snapshot_digest",
+    "source_ref",
+    "ledger_ref",
+    "ledger_digest",
+    "state",
+    "last_sequence",
+    "used_nonces",
+    "trust_root",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa-kag:transition-replay-snapshot-v1"},
+    "owner": {"const": "aoa-kag"},
+    "transition_kind": {
+      "enum": ["producer_migration", "projection_transition"]
+    },
+    "subject_digest": {"$ref": "#/$defs/sha256Digest"},
+    "snapshot_digest": {"$ref": "#/$defs/sha256Digest"},
+    "source_ref": {
+      "type": "string",
+      "pattern": "^aoa-kag://replay/source/[A-Za-z0-9._/-]+$"
+    },
+    "ledger_ref": {
+      "type": "string",
+      "pattern": "^aoa-kag://replay/[A-Za-z0-9._/-]+$"
+    },
+    "ledger_digest": {"$ref": "#/$defs/sha256Digest"},
+    "state": {"const": "current"},
+    "last_sequence": {"type": "integer", "minimum": 0},
+    "used_nonces": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sha256Digest"}
+    },
+    "trust_root": {"$ref": "#/$defs/replayTrustRoot"},
+    "signature": {"$ref": "#/$defs/signature"}
+  },
+  "$defs": {
+    "sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "signer_id", "value"],
+      "properties": {
+        "algorithm": {"const": "ed25519"},
+        "signer_id": {"$ref": "#/$defs/sha256Digest"},
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{86}$"
+        }
+      }
+    },
+    "replayTrustRoot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "ref", "registry_ref", "signer_id", "digest"],
+      "properties": {
+        "role": {"const": "replay"},
+        "ref": {
+          "type": "string",
+          "pattern": "^aoa-kag://trust-root/replay/[A-Za-z0-9._/-]+$"
+        },
+        "registry_ref": {
+          "const": "aoa-kag:config/transition_authority_trust.json"
+        },
+        "signer_id": {"$ref": "#/$defs/sha256Digest"},
+        "digest": {"$ref": "#/$defs/sha256Digest"}
+      }
+    }
+  }
+}

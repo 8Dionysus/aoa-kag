@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import base64
+import binascii
 import hashlib
 import json
 import math
@@ -66,6 +68,14 @@ TRANSITION_AUTHORITY_VERSION = "aoa-kag:transition-authority-v1"
 TRANSITION_AUTHORITY_ARTIFACT_VERSION = (
     "aoa-kag:detached-transition-authority-v1"
 )
+TRANSITION_REPLAY_SNAPSHOT_VERSION = (
+    "aoa-kag:transition-replay-snapshot-v1"
+)
+TRANSITION_ACCEPTANCE_RECORD_VERSION = (
+    "aoa-kag:transition-acceptance-record-v1"
+)
+TRANSITION_TRUST_REGISTRY_VERSION = "aoa-kag:transition-trust-registry-v1"
+TRANSITION_SIGNATURE_ALGORITHM = "ed25519"
 TRANSITION_DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0044-detached-transition-authority.md"
@@ -76,6 +86,9 @@ TRANSITION_CONTRACT_PATHS = (
     Path("scripts/generate_repo_local_kag_index.py"),
     Path("schemas/repo-local-kag-producer-migration.schema.json"),
     Path("schemas/repo-local-kag-projection-transition.schema.json"),
+    Path("schemas/repo-local-kag-transition-replay-snapshot.schema.json"),
+    Path("schemas/repo-local-kag-transition-trust.schema.json"),
+    Path("config/transition_authority_trust.json"),
 )
 PRODUCER_MIGRATION_SCHEMA_VERSION = (
     "aoa-repo-local-kag-producer-migration-v1"
@@ -89,6 +102,12 @@ PRODUCER_MIGRATION_SCHEMA_PATH = Path(
 PROJECTION_TRANSITION_SCHEMA_PATH = Path(
     "schemas/repo-local-kag-projection-transition.schema.json"
 )
+TRANSITION_TRUST_REGISTRY_PATH = Path(
+    "config/transition_authority_trust.json"
+)
+TRANSITION_TRUST_REGISTRY_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-transition-trust.schema.json"
+)
 BUDGET_EVIDENCE_SCHEMA_PATH = Path(
     "schemas/repo-local-kag-budget-evidence.schema.json"
 )
@@ -96,6 +115,8 @@ BUDGET_RECEIPT_SCHEMA_PATH = Path(
     "schemas/repo-local-kag-budget-receipt.schema.json"
 )
 BUDGET_RECEIPT_FAILURE_MARKER = "budget_receipt_validation_failure"
+TIERED_CORPUS_MANIFEST_PATH = Path("kag/indexes/corpus.manifest.json")
+TIERED_HOT_PROFILE_PATH = Path("kag/indexes/hot_profile.json")
 SOURCE_CAUSE_CLASSES = frozenset(
     {
         "deliberate_source_migration",
@@ -1637,6 +1658,67 @@ def _resolve_git_ref(repo_root: Path, ref: str) -> str:
     ).stdout.strip()
 
 
+def resolve_exact_git_commit(
+    repo_root: Path,
+    ref: str,
+    *,
+    require_clean: bool = False,
+) -> str:
+    """Resolve one immutable commit through the repository's Git boundary.
+
+    A transition ref is an identity, not a caller-provided label.  Requiring
+    Git to resolve a commit and, for target builds, a clean worktree keeps the
+    direct Python API and the CLI on the same trusted derivation path.
+    """
+    root = repo_root.resolve()
+    try:
+        resolved = _resolve_git_ref(root, f"{ref}^{{commit}}")
+    except (FileNotFoundError, OSError, subprocess.CalledProcessError) as exc:
+        raise PortableFamilyError(
+            f"cannot resolve exact Git commit for transition ref {ref!r}"
+        ) from exc
+    if (
+        len(resolved) != 40
+        or any(character not in HEX_DIGITS for character in resolved)
+    ):
+        raise PortableFamilyError(
+            f"Git resolved transition ref {ref!r} to a non-commit identity"
+        )
+    if require_clean:
+        try:
+            status = subprocess.run(
+                ("git", "status", "--porcelain=v1", "--untracked-files=all", "-z"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            ).stdout
+        except (FileNotFoundError, OSError, subprocess.CalledProcessError) as exc:
+            raise PortableFamilyError(
+                "cannot verify clean Git worktree for transition target"
+            ) from exc
+        if status:
+            raise PortableFamilyError(
+                "transition target requires a clean immutable Git worktree"
+            )
+    return resolved
+
+
+def trusted_transition_target_ref(
+    repo_root: Path,
+    target_ref: str | None = None,
+) -> str:
+    """Derive the only target ref admitted by the current clean worktree."""
+    head = resolve_exact_git_commit(repo_root, "HEAD", require_clean=True)
+    if target_ref is None:
+        return head
+    resolved = resolve_exact_git_commit(repo_root, target_ref)
+    if resolved != head:
+        raise PortableFamilyError(
+            "transition target ref does not describe the clean built HEAD"
+        )
+    return resolved
+
+
 def _current_bytes(repo_root: Path, path: Path) -> bytes | None:
     candidate = repo_root.resolve() / path
     try:
@@ -2144,6 +2226,98 @@ def _git_json(
     return payload
 
 
+def _legacy_v3_projection_placement(
+    manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Name the real placement represented by a portable v3 predecessor."""
+    partitioning = manifest.get("partitioning")
+    if not isinstance(partitioning, Mapping):
+        raise PortableFamilyError(
+            "legacy v3 predecessor has no exact partitioning placement"
+        )
+    legacy_hot_profile = {
+        "schema_version": SCHEMA_VERSION,
+        "placement": "git-hot-portable-shards",
+        "record_kinds": list(COMPATIBILITY_ORDER),
+        "surface": MANIFEST_RELATIVE_PATH.as_posix(),
+    }
+    return {
+        "state": "legacy_v3",
+        "hot_profile_digest": _digest_value(legacy_hot_profile),
+        "partitioning_digest": _digest_value(partitioning),
+    }
+
+
+def derive_transition_predecessor(
+    repo_root: Path,
+    base_ref: str,
+) -> dict[str, Any]:
+    """Derive an exact predecessor identity and placement from Git history."""
+    resolved_ref = resolve_exact_git_commit(repo_root, base_ref)
+    manifest = _git_json(repo_root, resolved_ref, MANIFEST_RELATIVE_PATH)
+    if manifest is None:
+        raise PortableFamilyError(
+            f"transition predecessor is unavailable at {resolved_ref}"
+        )
+    schema_version = manifest.get("schema_version")
+    if schema_version == SCHEMA_VERSION:
+        identity = manifest.get("family_identity")
+        if not isinstance(identity, Mapping):
+            raise PortableFamilyError("transition predecessor v3 identity is malformed")
+        digest = identity.get("content_digest")
+        source_snapshot = identity.get("source_snapshot")
+        if not isinstance(digest, str) or not isinstance(source_snapshot, str):
+            raise PortableFamilyError("transition predecessor v3 identity is incomplete")
+        return {
+            "schema_version": schema_version,
+            "ref": resolved_ref,
+            "family_digest": digest,
+            "source_snapshot": source_snapshot,
+            "distribution_digest": None,
+            "placement": _legacy_v3_projection_placement(manifest),
+        }
+    if schema_version != TIERED_DISTRIBUTION_SCHEMA_VERSION:
+        raise PortableFamilyError(
+            f"unsupported transition predecessor schema: {schema_version}"
+        )
+    corpus = _git_json(repo_root, resolved_ref, TIERED_CORPUS_MANIFEST_PATH)
+    hot_profile = _git_json(repo_root, resolved_ref, TIERED_HOT_PROFILE_PATH)
+    distribution_identity = manifest.get("distribution_identity")
+    corpus_identity = corpus.get("corpus_identity") if corpus else None
+    placement = manifest.get("placement")
+    if not isinstance(corpus_identity, Mapping) or not isinstance(
+        distribution_identity,
+        Mapping,
+    ) or not isinstance(placement, Mapping) or not isinstance(hot_profile, Mapping):
+        raise PortableFamilyError("transition predecessor tiered identities are incomplete")
+    corpus_digest = corpus_identity.get("content_digest")
+    source_snapshot = corpus_identity.get("source_snapshot")
+    distribution_digest = distribution_identity.get("content_digest")
+    placement_state = placement.get("state")
+    hot_identity = hot_profile.get("profile_identity")
+    partitioning = corpus.get("partitioning")
+    if (
+        not all(isinstance(value, str) for value in (corpus_digest, source_snapshot, distribution_digest))
+        or placement_state not in {"shadow", "externalized"}
+        or not isinstance(hot_identity, Mapping)
+        or not isinstance(hot_identity.get("content_digest"), str)
+        or not isinstance(partitioning, Mapping)
+    ):
+        raise PortableFamilyError("transition predecessor tiered identities are malformed")
+    return {
+        "schema_version": schema_version,
+        "ref": resolved_ref,
+        "family_digest": str(corpus_digest).removeprefix("sha256:"),
+        "source_snapshot": source_snapshot,
+        "distribution_digest": distribution_digest,
+        "placement": {
+            "state": placement_state,
+            "hot_profile_digest": hot_identity["content_digest"],
+            "partitioning_digest": _digest_value(partitioning),
+        },
+    }
+
+
 def _digest_value(value: object) -> str | None:
     if value is None:
         return None
@@ -2438,6 +2612,12 @@ def _transition_subject_digest(payload: Mapping[str, Any]) -> str:
         for key, value in payload.items()
         if key != "authority"
     }
+    replay = subject.get("replay")
+    if isinstance(replay, dict):
+        # These two fields are attestations of the external replay snapshot;
+        # including either in the subject would make the binding circular.
+        replay.pop("subject_digest", None)
+        replay.pop("snapshot_digest", None)
     return f"sha256:{sha256_bytes(canonical_json_bytes(subject))}"
 
 
@@ -2508,7 +2688,8 @@ def _transition_validate_decision(
     payload: Mapping[str, Any],
     *,
     owner_root: Path,
-) -> None:
+    candidate_root: Path | None,
+) -> str:
     decision = payload.get("decision")
     if not isinstance(decision, Mapping):
         raise TransitionAuthorityError(
@@ -2526,181 +2707,483 @@ def _transition_validate_decision(
             "migration_required",
             "transition decision is not independently accepted",
         )
+    if candidate_root is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "independent transition decision root is missing",
+        )
+    resolved_owner_root = owner_root.resolve()
+    resolved_candidate_root = candidate_root.resolve()
+    if (
+        resolved_owner_root == resolved_candidate_root
+        or resolved_owner_root in resolved_candidate_root.parents
+        or resolved_candidate_root in resolved_owner_root.parents
+    ):
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision source is not detached from the candidate",
+        )
+    try:
+        resolve_exact_git_commit(resolved_owner_root, "HEAD")
+    except PortableFamilyError as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision source has no immutable owner Git root",
+        ) from exc
+    source_commit = decision.get("source_commit")
+    if (
+        not isinstance(source_commit, str)
+        or len(source_commit) != 40
+        or any(character not in HEX_DIGITS for character in source_commit)
+    ):
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision has no immutable source commit",
+        )
+    try:
+        resolved_source_commit = resolve_exact_git_commit(
+            resolved_owner_root,
+            source_commit,
+        )
+    except PortableFamilyError as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision source commit is unavailable",
+        ) from exc
+    if resolved_source_commit != source_commit:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition decision source commit is not exact",
+        )
     relative = Path(TRANSITION_DECISION_REF.removeprefix("aoa-kag:"))
     if relative.is_absolute() or ".." in relative.parts:
         raise TransitionAuthorityError(
             "unsupported",
             "transition decision reference escapes the owner root",
         )
-    path = owner_root.resolve() / relative
-    if not path.is_file():
+    decision_bytes = _git_bytes(
+        resolved_owner_root,
+        source_commit,
+        relative,
+    )
+    if decision_bytes is None:
         raise TransitionAuthorityError(
             "migration_required",
             f"accepted transition decision is unavailable: {relative}",
         )
     digest = decision.get("digest")
-    if digest != sha256_bytes(path.read_bytes()):
+    if digest != sha256_bytes(decision_bytes):
         raise TransitionAuthorityError(
             "unknown",
             "transition decision digest is stale",
         )
-    posture_lines = [
-        line.strip()
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip().startswith("- Posture:")
-    ]
+    try:
+        posture_lines = [
+            line.strip()
+            for line in decision_bytes.decode("utf-8").splitlines()
+            if line.strip().startswith("- Posture:")
+        ]
+    except UnicodeDecodeError as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition decision source is not UTF-8 text",
+        ) from exc
     if posture_lines != ["- Posture: accepted"]:
         raise TransitionAuthorityError(
             "migration_required",
             "transition decision source is not accepted",
         )
+    return source_commit
 
 
-def _transition_validate_authority(
+def _external_transition_file(
+    path: Path | None,
+    *,
+    label: str,
+    candidate_root: Path,
+    owner_root: Path,
+) -> tuple[Path, bytes]:
+    if path is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"trusted {label} is missing",
+        )
+    resolved = Path(path).resolve()
+    if (
+        not resolved.is_file()
+        or resolved.is_symlink()
+        or resolved == candidate_root
+        or candidate_root in resolved.parents
+        or resolved == owner_root
+        or owner_root in resolved.parents
+    ):
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"trusted {label} is not an independent regular file",
+        )
+    try:
+        return resolved, resolved.read_bytes()
+    except (FileNotFoundError, IsADirectoryError, OSError) as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"trusted {label} is unavailable: {resolved}",
+        ) from exc
+
+
+def _transition_load_trust_registry(
+    owner_root: Path,
+    source_commit: str,
+) -> dict[str, Any]:
+    registry_bytes = _git_bytes(
+        owner_root.resolve(),
+        source_commit,
+        TRANSITION_TRUST_REGISTRY_PATH,
+    )
+    if registry_bytes is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition trust registry is unavailable at the immutable decision source",
+        )
+    schema_path = _procedure_root(Path(".")) / TRANSITION_TRUST_REGISTRY_SCHEMA_PATH
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        registry = json.loads(registry_bytes.decode("utf-8"))
+        Draft202012Validator(schema).validate(registry)
+    except FileNotFoundError as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition trust registry schema is unavailable",
+        ) from exc
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition trust registry is not typed JSON",
+        ) from exc
+    except SchemaError as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition trust registry schema is invalid",
+        ) from exc
+    except JsonSchemaValidationError as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition trust registry is not schema-valid: {exc.message}",
+        ) from exc
+    if registry.get("schema_version") != TRANSITION_TRUST_REGISTRY_VERSION:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition trust registry version is unsupported",
+        )
+    return dict(registry)
+
+
+def _transition_validate_trust_root(
+    *,
+    role: str,
+    root_binding: Mapping[str, Any],
+    registry: Mapping[str, Any],
+) -> tuple[dict[str, Any], bytes]:
+    if root_binding.get("role") != role:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust root role is wrong",
+        )
+    expected_keys = {"role", "ref", "registry_ref", "signer_id", "digest"}
+    if set(root_binding) != expected_keys:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust root has unknown or missing fields",
+        )
+    if root_binding.get("registry_ref") != (
+        "aoa-kag:config/transition_authority_trust.json"
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust root registry reference is not owner-pinned",
+        )
+    roots = registry.get(f"{role}_roots")
+    if not isinstance(roots, list):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust registry section is malformed",
+        )
+    matches = [
+        entry
+        for entry in roots
+        if isinstance(entry, dict)
+        and entry.get("ref") == root_binding.get("ref")
+    ]
+    if len(matches) != 1:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"transition {role} trust root is not independently registered",
+        )
+    entry = matches[0]
+    if entry.get("role") != role:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust root registry role is wrong",
+        )
+    if entry.get("state") != "active":
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"transition {role} trust root is not active",
+        )
+    if entry.get("owner") == "aoa-kag":
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"transition {role} trust root is not independently owned",
+        )
+    if (
+        root_binding.get("digest")
+        != f"sha256:{sha256_bytes(canonical_json_bytes(entry))}"
+        or root_binding.get("signer_id") != entry.get("signer_id")
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust root binding is stale",
+        )
+    encoded = entry.get("public_key_base64url")
+    try:
+        public_key = base64.b64decode(
+            str(encoded) + ("=" * (-len(str(encoded)) % 4)),
+            altchars=b"-_",
+            validate=True,
+        )
+    except (ValueError, binascii.Error) as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust root public key is malformed",
+        ) from exc
+    if (
+        len(public_key) != 32
+        or entry.get("signer_id")
+        != f"sha256:{hashlib.sha256(public_key).hexdigest()}"
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} trust root public key identity is stale",
+        )
+    return dict(entry), public_key
+
+
+def _transition_verify_signature(
+    signature: Mapping[str, Any] | None,
+    statement: Mapping[str, Any],
+    *,
+    role: str,
+    trust_entry: Mapping[str, Any],
+    public_key: bytes,
+) -> None:
+    if signature is None or set(signature) != {
+        "algorithm",
+        "signer_id",
+        "value",
+    }:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"transition {role} signature is unavailable or untyped",
+        )
+    if (
+        signature.get("algorithm") != TRANSITION_SIGNATURE_ALGORITHM
+        or signature.get("signer_id") != trust_entry.get("signer_id")
+        or trust_entry.get("algorithm") != TRANSITION_SIGNATURE_ALGORITHM
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} signature is not issued by its registered root",
+        )
+    encoded = signature.get("value")
+    try:
+        signature_bytes = base64.b64decode(
+            str(encoded) + ("=" * (-len(str(encoded)) % 4)),
+            altchars=b"-_",
+            validate=True,
+        )
+    except (ValueError, binascii.Error) as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} signature is malformed",
+        ) from exc
+    if len(signature_bytes) != 64:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} signature has the wrong length",
+        )
+    public_der = bytes.fromhex("302a300506032b6570032100") + public_key
+    with tempfile.TemporaryDirectory(prefix="aoa-kag-transition-verify-") as directory:
+        root = Path(directory)
+        public_path = root / "public.der"
+        statement_path = root / "statement.json"
+        signature_path = root / "signature.bin"
+        public_path.write_bytes(public_der)
+        statement_path.write_bytes(canonical_json_bytes(statement))
+        signature_path.write_bytes(signature_bytes)
+        result = subprocess.run(
+            (
+                "openssl",
+                "pkeyutl",
+                "-verify",
+                "-pubin",
+                "-inkey",
+                str(public_path),
+                "-keyform",
+                "DER",
+                "-rawin",
+                "-in",
+                str(statement_path),
+                "-sigfile",
+                str(signature_path),
+            ),
+            check=False,
+            capture_output=True,
+        )
+    if result.returncode != 0:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {role} signature verification failed",
+        )
+
+
+def _validate_transition_replay_snapshot(
     payload: Mapping[str, Any],
     *,
+    kind: str,
+    replay_state: Mapping[str, Any] | None,
+    replay_state_path: Path | None,
     owner_root: Path | None,
     candidate_root: Path | None,
-    detached_authority_path: Path | None,
-    acceptance_record: Mapping[str, Any] | None,
-    replay_state: Mapping[str, Any] | None,
 ) -> None:
+    if replay_state is None or replay_state_path is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "immutable external transition replay ledger snapshot is missing",
+        )
     effective_owner_root = (
         owner_root.resolve()
         if owner_root is not None
         else _procedure_root(Path("."))
     )
-    authority = payload.get("authority")
-    if not isinstance(authority, Mapping):
-        raise TransitionAuthorityError(
-            "unknown",
-            "transition issuer authority is missing",
-        )
-    contract = _transition_contract_identity(effective_owner_root)
-    if authority.get("contract_version") != TRANSITION_AUTHORITY_VERSION:
-        raise TransitionAuthorityError(
-            "unsupported",
-            "transition authority contract version is unsupported",
-        )
-    if authority.get("contract_digest") != contract["digest"]:
-        raise TransitionAuthorityError(
-            "unknown",
-            "transition authority contract identity is stale",
-        )
-    _transition_validate_decision(payload, owner_root=effective_owner_root)
-
-    issuer = authority.get("issuer")
-    acceptance = authority.get("acceptance")
-    if not isinstance(issuer, Mapping) or not isinstance(acceptance, Mapping):
-        raise TransitionAuthorityError(
-            "unknown",
-            "transition issuer or acceptance binding is missing",
-        )
-    if acceptance.get("state") != "independently_accepted":
-        raise TransitionAuthorityError(
-            "migration_required",
-            "transition acceptance is pending",
-        )
-    if detached_authority_path is None:
-        raise TransitionAuthorityError(
-            "migration_required",
-            "detached transition authority artifact is missing",
-        )
-    detached_path = Path(detached_authority_path).resolve()
     effective_candidate_root = (
         candidate_root.resolve()
         if candidate_root is not None
-        else effective_owner_root
+        else _procedure_root(Path("."))
     )
-    if detached_path == effective_candidate_root or effective_candidate_root in detached_path.parents:
+    source_commit = _transition_validate_decision(
+        payload,
+        owner_root=effective_owner_root,
+        candidate_root=candidate_root,
+    )
+    registry = _transition_load_trust_registry(
+        effective_owner_root,
+        source_commit,
+    )
+    snapshot_path, snapshot_bytes = _external_transition_file(
+        replay_state_path,
+        label="transition replay snapshot",
+        candidate_root=effective_candidate_root,
+        owner_root=effective_owner_root,
+    )
+    if snapshot_bytes != canonical_json_bytes(dict(replay_state)):
         raise TransitionAuthorityError(
-            "unsupported",
-            "candidate-authored transition authority is not independent",
+            "unknown",
+            f"transition replay snapshot bytes are not canonical: {snapshot_path}",
         )
+    schema_path = _procedure_root(Path(".")) / Path(
+        "schemas/repo-local-kag-transition-replay-snapshot.schema.json"
+    )
     try:
-        artifact_bytes = detached_path.read_bytes()
-    except (FileNotFoundError, IsADirectoryError, OSError) as exc:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(dict(replay_state))
+    except (FileNotFoundError, IsADirectoryError, OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise TransitionAuthorityError(
             "migration_required",
-            f"detached transition authority artifact is unavailable: {detached_path}",
+            "transition replay snapshot schema is unavailable",
         ) from exc
-    artifact_digest = issuer.get("artifact_digest")
-    if artifact_digest != f"sha256:{sha256_bytes(artifact_bytes)}":
+    except SchemaError as exc:
         raise TransitionAuthorityError(
             "unknown",
-            "detached transition authority artifact digest does not match",
-        )
-    try:
-        detached_record = json.loads(artifact_bytes.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise TransitionAuthorityError(
-            "unknown",
-            "detached transition authority artifact is not typed JSON",
+            "transition replay snapshot schema is invalid",
         ) from exc
-    expected_detached_record = {
-        "schema_version": TRANSITION_AUTHORITY_ARTIFACT_VERSION,
-        "owner": "aoa-kag",
-        "subject_digest": _transition_subject_digest(payload),
-        "issuer_ref": issuer.get("ref"),
-        "acceptance_ref": acceptance.get("ref"),
-        "acceptance_digest": acceptance.get("digest"),
-        "state": "independently_accepted",
-    }
-    if detached_record != expected_detached_record:
+    except JsonSchemaValidationError as exc:
         raise TransitionAuthorityError(
             "unknown",
-            "detached transition authority is not bound to this transition",
-        )
-    if acceptance_record is None:
-        raise TransitionAuthorityError(
-            "migration_required",
-            "independent transition acceptance record is missing",
-        )
-    expected_acceptance = {
-        "state": "independently_accepted",
-        "ref": acceptance.get("ref"),
-        "digest": acceptance.get("digest"),
-    }
-    if dict(acceptance_record) != expected_acceptance:
+            f"transition replay snapshot is not schema-valid: {exc.message}",
+        ) from exc
+    if replay_state.get("schema_version") != TRANSITION_REPLAY_SNAPSHOT_VERSION:
         raise TransitionAuthorityError(
             "unknown",
-            "independent transition acceptance does not match",
+            "transition replay snapshot version is unsupported",
         )
 
     replay = payload.get("replay")
-    consumption = replay.get("consumption") if isinstance(replay, Mapping) else None
-    if not isinstance(replay, Mapping) or not isinstance(
-        consumption,
-        Mapping,
-    ) or consumption.get("state") != "unconsumed":
+    if not isinstance(replay, Mapping):
+        raise TransitionAuthorityError("unknown", "transition replay is missing")
+    consumption = replay.get("consumption")
+    if not isinstance(consumption, Mapping) or consumption.get("state") != "unconsumed":
         raise TransitionAuthorityError(
             "unknown",
             "transition replay state is already consumed or malformed",
         )
-    if replay_state is None:
-        raise TransitionAuthorityError(
-            "migration_required",
-            "immutable transition replay ledger snapshot is missing",
-        )
+    subject_digest = _transition_subject_digest(payload)
     if (
-        replay_state.get("ledger_ref") != replay.get("ledger_ref")
+        replay.get("subject_digest") != subject_digest
+        or replay_state.get("subject_digest") != subject_digest
+        or replay_state.get("owner") != "aoa-kag"
+        or replay_state.get("transition_kind") != kind
+        or replay_state.get("state") != "current"
+        or replay_state.get("ledger_ref") != replay.get("ledger_ref")
         or replay_state.get("ledger_digest") != replay.get("ledger_digest")
-        or type(replay_state.get("last_sequence")) is not int
-        or replay_state.get("last_sequence", -1) < 0
+        or replay_state.get("snapshot_digest") != replay.get("snapshot_digest")
+        or replay_state.get("source_ref") != replay.get("source_ref")
     ):
         raise TransitionAuthorityError(
             "unknown",
-            "transition replay ledger snapshot is stale or wrong",
+            "transition replay snapshot is stale or bound to another subject",
         )
+    trust_binding = replay_state.get("trust_root")
+    if not isinstance(trust_binding, Mapping):
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition replay snapshot trust root is missing",
+        )
+    trust_entry, public_key = _transition_validate_trust_root(
+        role="replay",
+        root_binding=trust_binding,
+        registry=registry,
+    )
+    snapshot = copy.deepcopy(dict(replay_state))
+    snapshot["snapshot_digest"] = f"sha256:{ZERO_DIGEST}"
+    signature = snapshot.pop("signature", None)
+    expected_snapshot_digest = f"sha256:{sha256_bytes(canonical_json_bytes(snapshot))}"
+    if replay_state.get("snapshot_digest") != expected_snapshot_digest:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition replay snapshot content digest does not match",
+        )
+    _transition_verify_signature(
+        signature,
+        {
+            key: copy.deepcopy(value)
+            for key, value in replay_state.items()
+            if key != "signature"
+        },
+        role="replay snapshot",
+        trust_entry=trust_entry,
+        public_key=public_key,
+    )
     used_nonces = replay_state.get("used_nonces")
     nonce = replay.get("nonce")
     sequence = replay.get("sequence")
     if (
         not isinstance(used_nonces, list)
-        or not all(isinstance(value, str) for value in used_nonces)
         or len(used_nonces) != len(set(used_nonces))
         or not isinstance(nonce, str)
         or type(sequence) is not int
+        or type(replay_state.get("last_sequence")) is not int
+        or replay_state.get("last_sequence", -1) < 0
     ):
         raise TransitionAuthorityError(
             "unknown",
@@ -2713,6 +3196,196 @@ def _transition_validate_authority(
         )
 
 
+def _transition_validate_authority(
+    payload: Mapping[str, Any],
+    *,
+    kind: str,
+    owner_root: Path | None,
+    candidate_root: Path | None,
+    detached_authority_path: Path | None,
+    acceptance_record: Mapping[str, Any] | None,
+    acceptance_record_path: Path | None,
+) -> None:
+    effective_owner_root = (
+        owner_root.resolve()
+        if owner_root is not None
+        else _procedure_root(Path("."))
+    )
+    effective_candidate_root = (
+        candidate_root.resolve() if candidate_root is not None else effective_owner_root
+    )
+    authority = payload.get("authority")
+    if not isinstance(authority, Mapping):
+        raise TransitionAuthorityError("unknown", "transition issuer authority is missing")
+    contract = _transition_contract_identity(effective_owner_root)
+    if authority.get("contract_version") != TRANSITION_AUTHORITY_VERSION:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "transition authority contract version is unsupported",
+        )
+    if authority.get("contract_digest") != contract["digest"]:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition authority contract identity is stale",
+        )
+    source_commit = _transition_validate_decision(
+        payload,
+        owner_root=effective_owner_root,
+        candidate_root=candidate_root,
+    )
+    registry = _transition_load_trust_registry(
+        effective_owner_root,
+        source_commit,
+    )
+
+    issuer = authority.get("issuer")
+    acceptance = authority.get("acceptance")
+    if not isinstance(issuer, Mapping) or not isinstance(acceptance, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition issuer or acceptance binding is missing",
+        )
+    if acceptance.get("state") != "independently_accepted":
+        raise TransitionAuthorityError("migration_required", "transition acceptance is pending")
+    issuer_root = issuer.get("trust_root")
+    acceptor_root = acceptance.get("trust_root")
+    if not isinstance(issuer_root, Mapping) or not isinstance(acceptor_root, Mapping):
+        raise TransitionAuthorityError(
+            "migration_required",
+            "independent issuer and acceptor trust roots are missing",
+        )
+    if (
+        issuer_root.get("ref") == acceptor_root.get("ref")
+        or issuer_root.get("signer_id") == acceptor_root.get("signer_id")
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "issuer and acceptor trust roots must be independently distinct",
+        )
+    issuer_entry, issuer_public_key = _transition_validate_trust_root(
+        role="issuer",
+        root_binding=issuer_root,
+        registry=registry,
+    )
+    acceptor_entry, acceptor_public_key = _transition_validate_trust_root(
+        role="acceptor",
+        root_binding=acceptor_root,
+        registry=registry,
+    )
+    if issuer_entry.get("owner") == acceptor_entry.get("owner"):
+        raise TransitionAuthorityError(
+            "unknown",
+            "issuer and acceptor trust roots must have separate owners",
+        )
+    detached_path, artifact_bytes = _external_transition_file(
+        detached_authority_path,
+        label="detached transition authority artifact",
+        candidate_root=effective_candidate_root,
+        owner_root=effective_owner_root,
+    )
+    artifact_digest = f"sha256:{sha256_bytes(artifact_bytes)}"
+    if issuer.get("artifact_digest") != artifact_digest:
+        raise TransitionAuthorityError(
+            "unknown",
+            "detached transition authority artifact digest does not match",
+        )
+    acceptance_path, acceptance_bytes = _external_transition_file(
+        acceptance_record_path,
+        label="independent transition acceptance record",
+        candidate_root=effective_candidate_root,
+        owner_root=effective_owner_root,
+    )
+    if acceptance_record is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "independent transition acceptance record is missing",
+        )
+    try:
+        acceptance_payload = json.loads(acceptance_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            "independent transition acceptance record is not typed JSON",
+        ) from exc
+    if (
+        not isinstance(acceptance_payload, dict)
+        or acceptance_payload != dict(acceptance_record)
+        or acceptance_bytes != canonical_json_bytes(acceptance_payload)
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "independent transition acceptance record bytes are not canonical or do not match its input",
+        )
+    acceptance_digest = f"sha256:{sha256_bytes(acceptance_bytes)}"
+    if acceptance.get("digest") != acceptance_digest:
+        raise TransitionAuthorityError(
+            "unknown",
+            "independent transition acceptance digest does not match its bytes",
+        )
+    subject_digest = _transition_subject_digest(payload)
+    try:
+        detached_record = json.loads(artifact_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            "detached transition authority artifact is not typed JSON",
+        ) from exc
+    if (
+        not isinstance(detached_record, dict)
+        or artifact_bytes != canonical_json_bytes(detached_record)
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "detached transition authority artifact is not canonical",
+        )
+    detached_signature = detached_record.pop("signature", None)
+    expected_detached_record = {
+        "schema_version": TRANSITION_AUTHORITY_ARTIFACT_VERSION,
+        "owner": "aoa-kag",
+        "transition_kind": kind,
+        "subject_digest": subject_digest,
+        "issuer_root_ref": issuer_root.get("ref"),
+        "issuer_ref": issuer.get("ref"),
+        "acceptance_ref": acceptance.get("ref"),
+        "acceptance_digest": acceptance_digest,
+        "state": "independently_accepted",
+    }
+    if detached_record != expected_detached_record:
+        raise TransitionAuthorityError(
+            "unknown",
+            "detached transition authority is not bound to this transition",
+        )
+    _transition_verify_signature(
+        detached_signature,
+        detached_record,
+        role="issuer authority",
+        trust_entry=issuer_entry,
+        public_key=issuer_public_key,
+    )
+    acceptance_signature = acceptance_payload.pop("signature", None)
+    expected_acceptance = {
+        "schema_version": TRANSITION_ACCEPTANCE_RECORD_VERSION,
+        "owner": "aoa-kag",
+        "transition_kind": kind,
+        "subject_digest": subject_digest,
+        "acceptance_ref": acceptance.get("ref"),
+        "acceptor_root_ref": acceptor_root.get("ref"),
+        "state": "independently_accepted",
+    }
+    if acceptance_payload != expected_acceptance:
+        raise TransitionAuthorityError(
+            "unknown",
+            "independent transition acceptance does not match",
+        )
+    _transition_verify_signature(
+        acceptance_signature,
+        acceptance_payload,
+        role="acceptance",
+        trust_entry=acceptor_entry,
+        public_key=acceptor_public_key,
+    )
+
+
 def _validate_transition_binding(
     payload: Mapping[str, Any],
     *,
@@ -2723,7 +3396,9 @@ def _validate_transition_binding(
     candidate_root: Path | None,
     detached_authority_path: Path | None,
     acceptance_record: Mapping[str, Any] | None,
+    acceptance_record_path: Path | None,
     replay_state: Mapping[str, Any] | None,
+    replay_state_path: Path | None,
 ) -> None:
     owner = payload.get("owner")
     if isinstance(owner, Mapping) and owner.get("name") != "aoa-kag":
@@ -2801,13 +3476,22 @@ def _validate_transition_binding(
             "unsupported",
             "producer migration predecessor is not the legacy v3 family",
         )
+    _validate_transition_replay_snapshot(
+        payload,
+        kind=kind,
+        replay_state=replay_state,
+        replay_state_path=replay_state_path,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+    )
     _transition_validate_authority(
         payload,
+        kind=kind,
         owner_root=owner_root,
         candidate_root=candidate_root,
         detached_authority_path=detached_authority_path,
         acceptance_record=acceptance_record,
-        replay_state=replay_state,
+        acceptance_record_path=acceptance_record_path,
     )
 
 
@@ -2818,7 +3502,9 @@ def validate_detached_producer_migration(
     target: Mapping[str, Any],
     detached_authority_path: Path | None = None,
     acceptance_record: Mapping[str, Any] | None = None,
+    acceptance_record_path: Path | None = None,
     replay_state: Mapping[str, Any] | None = None,
+    replay_state_path: Path | None = None,
     owner_root: Path | None = None,
     candidate_root: Path | None = None,
 ) -> None:
@@ -2842,7 +3528,9 @@ def validate_detached_producer_migration(
         candidate_root=candidate_root,
         detached_authority_path=detached_authority_path,
         acceptance_record=acceptance_record,
+        acceptance_record_path=acceptance_record_path,
         replay_state=replay_state,
+        replay_state_path=replay_state_path,
     )
 
 
@@ -2855,7 +3543,9 @@ def validate_full_projection_transition(
     expected_output: Mapping[str, Any],
     detached_authority_path: Path | None = None,
     acceptance_record: Mapping[str, Any] | None = None,
+    acceptance_record_path: Path | None = None,
     replay_state: Mapping[str, Any] | None = None,
+    replay_state_path: Path | None = None,
     owner_root: Path | None = None,
     candidate_root: Path | None = None,
 ) -> None:
@@ -2874,7 +3564,9 @@ def validate_full_projection_transition(
         candidate_root=candidate_root,
         detached_authority_path=detached_authority_path,
         acceptance_record=acceptance_record,
+        acceptance_record_path=acceptance_record_path,
         replay_state=replay_state,
+        replay_state_path=replay_state_path,
     )
     if transition.get("projection") != dict(expected_projection):
         raise TransitionAuthorityError(
@@ -2927,6 +3619,8 @@ def transition_admission_state(
             return "unsupported"
     except TransitionAuthorityError as exc:
         return exc.state
+    except PortableFamilyError:
+        return "unknown"
     return "supported"
 
 
