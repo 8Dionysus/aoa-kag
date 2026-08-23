@@ -5,7 +5,232 @@ All notable changes to `aoa-kag` will be documented in this file.
 The format is intentionally simple and human-first.
 Tracking starts with the community-docs baseline for this repository.
 
+## [0.5.0] - 2026-08-22
+
+### Summary
+
+- Release the complete unpublished `v0.4.0..4ac1ae40` product contour as a
+  bounded derived KAG substrate: 106 first-parent commits, 1,126 tracked paths,
+  and `+117,809/-12,693` lines before release-preparation metadata.
+- Move from the repository-local KAG foundation to a source-first self-knowledge
+  kernel, five-operation MCP access plane, portable content-addressed family,
+  owner-family federation, and fail-closed release/support contracts.
+- Keep authored meaning, proof, memory, routing, runtime, and human acceptance
+  with their stronger owners. This release exposes derived, provenance-bound
+  surfaces only.
+
+### Added
+
+- Add `/kag` provider/readiness routes, pinned provider checkout validation,
+  source/artifact/anchor/entity/event/assertion/relation indexes, deterministic
+  retrieval plans, owner-return handles, and OS-wide federation coverage.
+- Add the five-operation MCP ABI (`discover`, `search`, `read`, `traverse`,
+  `explain`) with qualified resources, bounded pagination, provenance, trust,
+  freshness, access, and canonical degradation fields.
+- Add the portable content-addressed family with logical corpus identity,
+  Git-hot/bootstrap surfaces, cold artifact locators, exact v2 compatibility
+  assembly, byte budgets, rollback identity, and candidate/shadow maturity
+  controls.
+- Add owner-skill provenance and projection routes, source-fast handoff,
+  run-scoped coverage/fixed-point evidence, owner-family DAGs, process/provider
+  audits, candidate seals, deployment-bound canary inputs, and the KAG-owned
+  stats port.
+
+### Changed
+
+- Bind provider and consumer routes to exact source refs, owner pins, corpus and
+  distribution digests, schema ABI, freshness, compatibility, and explicit
+  source-versus-acceptance posture; pin the release consumer to the published
+  `aoa-stats@v0.2.0` commit.
+- Separate source-fast, generated, OS-wide, compatibility-canary, release, and
+  CI-continuation lanes. A same-run handoff may avoid only duplicate source-fast
+  work; standalone release validation remains complete.
+- Rebuild generated projections from authored manifests and source refs, keep
+  provider membership and federation inputs fail-closed, and preserve exact
+  history/event boundaries across preparation, landing, and rollback.
+- Move KAG routing succession to `aoa-sdk` while preserving `aoa-routing` as a
+  consumer/history boundary and keeping all sibling-owner meaning external.
+
+### Fixed
+
+- Make MIME/metadata classification, source-index identity, history extraction,
+  owner acceptance time comparison, deployed-revision binding, generated parity,
+  incremental migration, and legacy projection HEAD binding deterministic.
+- Prevent stale cross-run proof fragments, unbound provider coverage, weak schema
+  acceleration, candidate drift, and generated/read-model reuse from becoming
+  release or acceptance claims.
+
+### Deprecated
+
+- Deprecate provisional per-provider MCP hints in favor of the five-operation
+  generated handoff.
+- Reject structural-only legacy v1 budget receipts in semantic admission until
+  their owning provider performs the required migration.
+- Deprecate treating the seven-file compatibility view or Git-hot/shadow state as
+  the complete externally admitted family when the tiered manifest requires a
+  cold artifact and trust identity.
+
+### Removed
+
+- Replace seven tracked whole-corpus repo-self monoliths with the portable
+  source/structure/history family while preserving logical identity and query
+  semantics.
+- Remove no authored source meaning, runtime state, proof verdict, memory
+  object, routing policy, or protected provider repository from this release.
+
+### Security
+
+- Keep public derived payloads limited to compact refs, summaries, provenance,
+  and bounded records; exclude secrets, private session/memo bodies, private
+  source bodies, live runtime state, and local host evidence.
+- Keep artifact admission fail-closed on digest, signature, owner, source ref,
+  schema ABI, revocation, access policy, lifecycle, and rollback identity where
+  the selected artifact class requires them.
+- Do not read a validator, artifact receipt, canary, registry, runtime receipt,
+  or generated projection as proof, health, activation, causality, fit, or human
+  acceptance.
+
+### Validation
+
+- The release target is the exact landed main derived from `4ac1ae40`; the
+  release-prep PR must pass `Repo Validation`, standalone `scripts/release_check.py`,
+  strict federation preflight, artifact/trust gates, and exact-landed reruns.
+- The published dependency prerequisite is `aoa-stats@v0.2.0`, resolved to
+  `dc608fd5de3fcaf0301f356c9efd52e2bdd350ce`; this release excludes PR #219 and
+  its unadmitted Tree-of-Sophia migration.
+- Tiered cold externalization remains candidate/shadow unless the final artifact
+  route produces and admits a complete owner-family release. A green validator
+  proves only its declared lane.
+
+### Notes
+
+- Publication identity is the canonical changelog, an owner-correct annotated
+  `v0.5.0` tag on landed `main`, and the matching GitHub Release. No package
+  registry, runtime deployment, proof verdict, or human acceptance is implied.
+- `aoa-session-memory` remains a protected read-only provider. `aoa-routing` and
+  `abyss-stack_old` remain untouched and unpublished.
+
+### First-Parent Reconciliation (106/106)
+
+The product range is reconciled below. `worthy` means a human-facing release
+note is required; `generated`, `internal`, `duplicate`, `excluded`, and `merged`
+are retained as separate evidence with their reason. The release-preparation
+commit itself is bookkeeping and is recorded in the execution report after
+landing.
+
+1. `cab4757` — [#110](https://github.com/8Dionysus/aoa-kag/pull/110) Activate local KAG provider foundation — worthy
+2. `cbf42fa` — [#111](https://github.com/8Dionysus/aoa-kag/pull/111) Complete v0.4.0 changelog coverage — internal
+3. `85b50d4` — [#112](https://github.com/8Dionysus/aoa-kag/pull/112) Refactor changelog release memory — internal
+4. `4419454` — [#113](https://github.com/8Dionysus/aoa-kag/pull/113) Prepare KAG provider map for MCP handoff — worthy
+5. `d5a9ea8` — [#114](https://github.com/8Dionysus/aoa-kag/pull/114) Complete OS KAG provider map — worthy
+6. `19d7ab3` — [#115](https://github.com/8Dionysus/aoa-kag/pull/115) Track Codex plane in KAG readiness — worthy
+7. `3309eae` — [#116](https://github.com/8Dionysus/aoa-kag/pull/116) Register aoa-session-memory KAG provider — worthy
+8. `0b5906a` — [#117](https://github.com/8Dionysus/aoa-kag/pull/117) Register connector KAG providers — worthy
+9. `6f27d79` — [#118](https://github.com/8Dionysus/aoa-kag/pull/118) Add KAG generation readiness map — worthy
+10. `8f6f41f` — [#119](https://github.com/8Dionysus/aoa-kag/pull/119) Prepare repo-local KAG source index contract — worthy
+11. `2f13d75` — [#120](https://github.com/8Dionysus/aoa-kag/pull/120) Prepare OS KAG provider registry foundation — worthy
+12. `2049334` — [#121](https://github.com/8Dionysus/aoa-kag/pull/121) Expose repo-local KAG index status to providers — worthy
+13. `c6ffb65` — [#122](https://github.com/8Dionysus/aoa-kag/pull/122) Validate provider freshness checked refs — worthy
+14. `66d5b95` — [#123](https://github.com/8Dionysus/aoa-kag/pull/123) Classify bundle KAG indexes as owner specific — worthy
+15. `63dbf1e` — [#124](https://github.com/8Dionysus/aoa-kag/pull/124) Validate owner-specific provider record links — worthy
+16. `fe2aeb4` — [#125](https://github.com/8Dionysus/aoa-kag/pull/125) Track course connector KAG surface — worthy
+17. `a6a847f` — [#126](https://github.com/8Dionysus/aoa-kag/pull/126) Guard local KAG readiness coverage — worthy
+18. `2090ac2` — [#127](https://github.com/8Dionysus/aoa-kag/pull/127) Guard canonical KAG owner root coverage — worthy
+19. `bda1cca` — [#128](https://github.com/8Dionysus/aoa-kag/pull/128) Classify repo-local KAG source surfaces — worthy
+20. `7f8d926` — [#129](https://github.com/8Dionysus/aoa-kag/pull/129) Stabilize repo-local KAG source surfaces — worthy
+21. `809f430` — [#130](https://github.com/8Dionysus/aoa-kag/pull/130) Add pinned provider checkout runner — worthy
+22. `5debaf1` — [#131](https://github.com/8Dionysus/aoa-kag/pull/131) Add validate_kag phase progress — internal
+23. `a61e55f` — [#132](https://github.com/8Dionysus/aoa-kag/pull/132) Add KAG validation progress signals — internal
+24. `33d3116` — [#133](https://github.com/8Dionysus/aoa-kag/pull/133) Expose repo-local KAG index progress — internal
+25. `4c53c07` — [#134](https://github.com/8Dionysus/aoa-kag/pull/134) Add no-write check mode for KAG generation — worthy
+26. `16a52a6` — [#135](https://github.com/8Dionysus/aoa-kag/pull/135) Add generated KAG no-write parity lane — worthy
+27. `3d9f34e` — [#136](https://github.com/8Dionysus/aoa-kag/pull/136) Add repo-local KAG builder parity checks — worthy
+28. `ec0d626` — [#137](https://github.com/8Dionysus/aoa-kag/pull/137) Add schema contract for local KAG provider map — worthy
+29. `38d3848` — [#138](https://github.com/8Dionysus/aoa-kag/pull/138) Validate KAG MCP handoff semantics — worthy
+30. `0e9d016` — [#139](https://github.com/8Dionysus/aoa-kag/pull/139) Register course connector KAG provider — worthy
+31. `244ea20` — [#140](https://github.com/8Dionysus/aoa-kag/pull/140) Harden KAG MCP handoff contract — worthy
+32. `d439d03` — [#141](https://github.com/8Dionysus/aoa-kag/pull/141) Align KAG MCP consumer routes — worthy
+33. `beca158` — [#142](https://github.com/8Dionysus/aoa-kag/pull/142) Extend repo-local KAG source surface coverage — worthy
+34. `699e6e0` — [#143](https://github.com/8Dionysus/aoa-kag/pull/143) Pin connector KAG provider commits — worthy
+35. `19da86b` — [#144](https://github.com/8Dionysus/aoa-kag/pull/144) Keep session-memory KAG adapter owner-specific — worthy
+36. `2c1126a` — [#145](https://github.com/8Dionysus/aoa-kag/pull/145) Pin course connector KAG source index — generated
+37. `977427b` — [#146](https://github.com/8Dionysus/aoa-kag/pull/146) Pin course connector KAG index refresh — generated
+38. `6b85ec2` — [#147](https://github.com/8Dionysus/aoa-kag/pull/147) Pin course connector KAG index refresh — generated
+39. `b3d5f45` — [#148](https://github.com/8Dionysus/aoa-kag/pull/148) Pin course connector KAG index refresh — generated
+40. `66be753` — [#149](https://github.com/8Dionysus/aoa-kag/pull/149) Pin course connector KAG index refresh — generated
+41. `ffd53d4` — [#150](https://github.com/8Dionysus/aoa-kag/pull/150) Pin course connector KAG source index refresh — generated
+42. `0640e34` — [#151](https://github.com/8Dionysus/aoa-kag/pull/151) Pin course connector KAG source index refresh — generated
+43. `f312cfd` — [#152](https://github.com/8Dionysus/aoa-kag/pull/152) Pin course connector KAG source index refresh — generated
+44. `68891c2` — [#153](https://github.com/8Dionysus/aoa-kag/pull/153) Add repo-local KAG index parity action — worthy
+45. `7625cee` — [#154](https://github.com/8Dionysus/aoa-kag/pull/154) Refresh connector KAG provider readmodels — generated
+46. `d3b1f08` — [#155](https://github.com/8Dionysus/aoa-kag/pull/155) Make repo-local KAG MIME detection deterministic — worthy
+47. `34dded9` — [#156](https://github.com/8Dionysus/aoa-kag/pull/156) Make source index metadata portable and provenance-safe — worthy
+48. `04bf703` — [#157](https://github.com/8Dionysus/aoa-kag/pull/157) Complete OS-wide repo-local KAG coverage — worthy
+49. `717288f` — [#158](https://github.com/8Dionysus/aoa-kag/pull/158) Add repo-local KAG index family — worthy
+50. `a8045bd` — [#159](https://github.com/8Dionysus/aoa-kag/pull/159) Classify runtime source artifacts — worthy
+51. `cbeb71a` — [#160](https://github.com/8Dionysus/aoa-kag/pull/160) Integrate repository KAG index families — worthy
+52. `6bb1f57` — [#161](https://github.com/8Dionysus/aoa-kag/pull/161) Build canonical repository self-knowledge and federation — worthy
+53. `b53d680` — [#163](https://github.com/8Dionysus/aoa-kag/pull/163) Run repo-local KAG action in owner checkout — worthy
+54. `474ba0e` — [#162](https://github.com/8Dionysus/aoa-kag/pull/162) Stabilize KAG history across squash merges — duplicate
+55. `da9f50a` — [#164](https://github.com/8Dionysus/aoa-kag/pull/164) Harden repo-self KAG history and evidence resolution — worthy
+56. `a7719ae` — [#165](https://github.com/8Dionysus/aoa-kag/pull/165) Add the owner-local stats port — worthy
+57. `346a469` — [#166](https://github.com/8Dionysus/aoa-kag/pull/166) Federate repository-local KAG across OS Abyss — worthy
+58. `6793ad2` — [#167](https://github.com/8Dionysus/aoa-kag/pull/167) chore(release): prepare v0.5.0 — internal
+59. `672bad8` — [#168](https://github.com/8Dionysus/aoa-kag/pull/168) Define the repository KAG retrieval contract — worthy
+60. `d8bd62f` — [#169](https://github.com/8Dionysus/aoa-kag/pull/169) Pin merged runtime owner — worthy
+61. `c9f250d` — [#170](https://github.com/8Dionysus/aoa-kag/pull/170) Preserve owner skill projection provenance — worthy
+62. `1da2cb2` — [#171](https://github.com/8Dionysus/aoa-kag/pull/171) Fix incremental skill projection migration — worthy
+63. `b28f64a` — [#172](https://github.com/8Dionysus/aoa-kag/pull/172) Adopt portable content-addressed KAG family — worthy
+64. `47e7587` — [#173](https://github.com/8Dionysus/aoa-kag/pull/173) Finalize OS-wide portable KAG rollout — worthy
+65. `9a5f817` — [#175](https://github.com/8Dionysus/aoa-kag/pull/175) Add the canonical aoa-kag owner skill — worthy
+66. `cdd2286` — [#177](https://github.com/8Dionysus/aoa-kag/pull/177) Refresh skill owner federation pins — generated
+67. `58ab52f` — [#178](https://github.com/8Dionysus/aoa-kag/pull/178) Compact aoa-kag skill routing description — worthy
+68. `0ff9132` — [#179](https://github.com/8Dionysus/aoa-kag/pull/179) Bound ToS route example fixture — worthy
+69. `15e1639` — [#180](https://github.com/8Dionysus/aoa-kag/pull/180) Migrate KAG routing provider to aoa-sdk — worthy
+70. `30f75e8` — [#182](https://github.com/8Dionysus/aoa-kag/pull/182) Reuse immutable KAG coverage proof within a release — worthy
+71. `362b9c6` — [#183](https://github.com/8Dionysus/aoa-kag/pull/183) Separate local and OS-wide KAG validation — worthy
+72. `9c1b32b` — [#184](https://github.com/8Dionysus/aoa-kag/pull/184) Add fail-closed KAG impact routing — worthy
+73. `335ea09` — [#181](https://github.com/8Dionysus/aoa-kag/pull/181) Review KAG MCP results in owner — worthy
+74. `404f64d` — [#186](https://github.com/8Dionysus/aoa-kag/pull/186) Route fresh KAG MCP evidence through owner review — worthy
+75. `2e823cb` — [#187](https://github.com/8Dionysus/aoa-kag/pull/187) Batch immutable Git reads for KAG owner scans — worthy
+76. `ed78f21` — [#188](https://github.com/8Dionysus/aoa-kag/pull/188) Cancel superseded KAG pull request runs — internal
+77. `08d44e6` — [#190](https://github.com/8Dionysus/aoa-kag/pull/190) Reuse exact source-fast proof in CI release audit — worthy
+78. `32a8b6f` — [#191](https://github.com/8Dionysus/aoa-kag/pull/191) Measure real owner-local KAG workflow cost — worthy
+79. `558f8ed` — [#192](https://github.com/8Dionysus/aoa-kag/pull/192) Restore owner-local coverage fixed point — worthy
+80. `f758963` — [#189](https://github.com/8Dionysus/aoa-kag/pull/189) Authenticate KAG MCP owner evidence — worthy
+81. `90d02fe` — [#193](https://github.com/8Dionysus/aoa-kag/pull/193) Bound source-fast donor checkout history — worthy
+82. `963832a` — [#194](https://github.com/8Dionysus/aoa-kag/pull/194) Classify aoa-models as source preparation — excluded
+83. `f68edab` — [#195](https://github.com/8Dionysus/aoa-kag/pull/195) Fuse provider validation with coverage assembly — worthy
+84. `62888d6` — [#196](https://github.com/8Dionysus/aoa-kag/pull/196) Defer cross-run owner proof fragments — worthy
+85. `ba78051` — [#198](https://github.com/8Dionysus/aoa-kag/pull/198) Correct KAG provider membership — worthy
+86. `fd89a68` — [#199](https://github.com/8Dionysus/aoa-kag/pull/199) Add typed KAG cost evidence and exact schema reuse — worthy
+87. `6c6d94f` — [#200](https://github.com/8Dionysus/aoa-kag/pull/200) Accelerate schema validation without weakening KAG proof — worthy
+88. `6e3de28` — [#201](https://github.com/8Dionysus/aoa-kag/pull/201) Optimize repeated KAG validation work — worthy
+89. `cc74651` — [#203](https://github.com/8Dionysus/aoa-kag/pull/203) Optimize full-audit provider checkout DAG — worthy
+90. `fa6f71e` — [#204](https://github.com/8Dionysus/aoa-kag/pull/204) Optimize repository family reconstruction — worthy
+91. `e05080e` — [#205](https://github.com/8Dionysus/aoa-kag/pull/205) Record repository reconstruction decision — merged
+92. `ad400c0` — [#206](https://github.com/8Dionysus/aoa-kag/pull/206) Accept deployment-bound KAG canary v3 — worthy
+93. `eb0ce52` — [#207](https://github.com/8Dionysus/aoa-kag/pull/207) Keep legacy KAG projections HEAD-bound — worthy
+94. `8d4ad75` — [#208](https://github.com/8Dionysus/aoa-kag/pull/208) Fix owner acceptance RFC3339 comparison — worthy
+95. `4915882` — [#209](https://github.com/8Dionysus/aoa-kag/pull/209) Make KAG landing preparation atomic — worthy
+96. `30ce3b8` — [#210](https://github.com/8Dionysus/aoa-kag/pull/210) Optimize repo-local KAG owner-family gates — worthy
+97. `cc38624` — [#211](https://github.com/8Dionysus/aoa-kag/pull/211) Support nested validation checkouts in candidate identity — worthy
+98. `6a79e62` — [#212](https://github.com/8Dionysus/aoa-kag/pull/212) Use pre-push history for main validation — worthy
+99. `518978a` — [#213](https://github.com/8Dionysus/aoa-kag/pull/213) Record landed owner-family DAG revisions — worthy
+100. `c5c3b24` — [#214](https://github.com/8Dionysus/aoa-kag/pull/214) Add bounded process provider audit — worthy
+101. `2f3651c` — [#215](https://github.com/8Dionysus/aoa-kag/pull/215) Seal exact applied KAG candidates — worthy
+102. `7dfa5c3` — [#216](https://github.com/8Dionysus/aoa-kag/pull/216) Verify staged KAG candidate seals — worthy
+103. `cc0ba19` — [#217](https://github.com/8Dionysus/aoa-kag/pull/217) Preserve capability projection provenance — worthy
+104. `1f1a345` — [#174](https://github.com/8Dionysus/aoa-kag/pull/174) Add tiered content-addressed KAG distribution — worthy
+105. `ab1e100` — [#176](https://github.com/8Dionysus/aoa-kag/pull/176) Project semantic session-memory capability graph into KAG — worthy
+106. `4ac1ae4` — [#218](https://github.com/8Dionysus/aoa-kag/pull/218) Track post-merge KAG boundary eval intake — internal
+
 ## [Unreleased]
+
+No unreleased changes. The historical candidate notes are retained below for
+reconciliation provenance.
+
+## [0.5.0 Candidate Notes (superseded)] - 2026-07-13
 
 ### Added
 
@@ -60,7 +285,7 @@ Tracking starts with the community-docs baseline for this repository.
   source/structure/history corpus while preserving logical family digests,
   query semantics, federation inputs, and the five-tool MCP ABI.
 
-## [0.5.0] - 2026-07-13
+## [0.5.0 Candidate Reconciliation (superseded)] - 2026-07-13
 
 ### Summary
 
