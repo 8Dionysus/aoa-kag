@@ -5,6 +5,41 @@ All notable changes to `aoa-kag` will be documented in this file.
 The format is intentionally simple and human-first.
 Tracking starts with the community-docs baseline for this repository.
 
+## [0.5.1] - 2026-08-23
+
+### Summary
+
+- Reconcile the post-`v0.5.0` KAG provider wave with the published
+  `8Dionysus@3baafa395906e93dee23a9479ef4f9aed576bd8a` source and
+  `aoa-stats@v0.2.1` at `339ecb2db22ac4552fa88756b650896ebbff5b56`.
+- Keep this patch bounded to provider identity, generated coverage, and the
+  consumer validation contract; authored meaning and `v0.5.0` remain intact.
+
+### Fixed
+
+- Repair the compatibility-canary coverage packet failure caused by the
+  registry's stale `8Dionysus` pin while the scheduled canary checked out the
+  current provider. The fix binds the registry and source-fast donor to exact
+  published commits rather than relaxing the expected-hash check.
+- Rebuild local provider maps and OS-wide coverage packets from the exact
+  provider wave and verify their generated fixed point.
+
+### Validation
+
+- Pass the source-fast lane, including 691 unit tests and the local
+  `aoa-stats` v0.2.1 protocol adapter.
+- Pass the generated lane with OS-wide provider-home and coverage parity for
+  all 21 registry providers, generated-output checks, and portable-family
+  index checks.
+- Preserve separate artifact, runtime, proof, delivery, and human-acceptance
+  claims; this release does not promote any of them implicitly.
+
+### Notes
+
+- `v0.5.0` tag and GitHub Release remain immutable. This successor is required
+  because the provider rebind changes the public compatibility contour.
+- `aoa-session-memory`, `aoa-routing`, and `abyss-stack_old` are unchanged.
+
 ## [0.5.0] - 2026-08-22
 
 ### Summary

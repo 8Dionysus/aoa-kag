@@ -2,8 +2,8 @@
   "coverage_summary": {
     "aggregate_budget_state": "partial",
     "artifact_cold_bytes": 0,
-    "corpus_total_bytes": 268669922,
-    "git_hot_bytes": 268669922,
+    "corpus_total_bytes": 268713214,
+    "git_hot_bytes": 268713214,
     "measured_owner_count": 20,
     "migration_needed": 1,
     "missing": 0,
@@ -12,7 +12,7 @@
     "owner_count": 21,
     "owner_specific": 0,
     "passed": 20,
-    "portable_tracked_bytes": 268669922,
+    "portable_tracked_bytes": 268713214,
     "portable_v3": 20,
     "self_excluded_owner_count": 1,
     "target_budget_state": "exceeded",
@@ -23,7 +23,7 @@
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "asset": 6,
+            "asset": 7,
             "config": 41,
             "document": 124,
             "generated_readmodel": 17,
@@ -33,7 +33,7 @@
             "projection": 1,
             "receipt": 1,
             "record_log": 1,
-            "schema": 15,
+            "schema": 16,
             "script": 47,
             "source_code": 11,
             "test": 27,
@@ -41,7 +41,7 @@
           },
           "command_role": {
             "builder": 3,
-            "none": 222,
+            "none": 224,
             "script": 44,
             "test": 27,
             "validator": 11
@@ -49,22 +49,22 @@
           "document_role": {
             "agents": 21,
             "decision": 34,
-            "none": 176,
+            "none": 178,
             "readme": 13,
             "skill": 1,
             "unknown_document": 62
           },
           "mechanics_role": {
-            "none": 307
+            "none": 309
           },
           "primary_kind": {
-            "artifact": 23,
+            "artifact": 24,
             "command": 85,
             "document": 131,
-            "surface": 68
+            "surface": 69
           },
           "surface_state": {
-            "authored_source": 282,
+            "authored_source": 284,
             "generated_projection": 1,
             "generated_readmodel": 24
           }
@@ -85,7 +85,7 @@
         "documents": 131,
         "generated": 12,
         "mechanics": 0,
-        "schemas": 16,
+        "schemas": 17,
         "scripts": 34,
         "tests": 27,
         "validators": 11
@@ -105,12 +105,12 @@
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "9360f4f8342f69d43d4c7001c70da1f42b0dd115122983e9fbe6246e6708aa7a",
+        "content_digest": "13de6c7f3f5d6b70e73945822b1629a400723bcc51c9fead810b5ec7d4c70291",
         "corpus_digest": "",
-        "corpus_total_bytes": 4381831,
+        "corpus_total_bytes": 4418087,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 4381831,
+        "git_hot_bytes": 4418087,
         "git_hot_objects": 288,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
@@ -120,7 +120,7 @@
         "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 288,
-        "tracked_bytes": 4381831,
+        "tracked_bytes": 4418087,
         "tracked_bytes_max": 5242880
       },
       "repo": "8Dionysus",
@@ -1486,12 +1486,12 @@
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "ea39cb3095ff9cb28def5a15d876c2ef4dce797494ee099fb88c0b1b2e8dcb7e",
+        "content_digest": "c5bd5caabc805ac8eacbb156e6d953876a5e69a6682d811d3c730bfcbcc75f1b",
         "corpus_digest": "",
-        "corpus_total_bytes": 8916735,
+        "corpus_total_bytes": 8923771,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 8916735,
+        "git_hot_bytes": 8923771,
         "git_hot_objects": 396,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
@@ -1501,7 +1501,7 @@
         "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 396,
-        "tracked_bytes": 8916735,
+        "tracked_bytes": 8923771,
         "tracked_bytes_max": 9437184
       },
       "repo": "aoa-stats",
