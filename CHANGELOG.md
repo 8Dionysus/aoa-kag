@@ -5,6 +5,39 @@ All notable changes to `aoa-kag` will be documented in this file.
 The format is intentionally simple and human-first.
 Tracking starts with the community-docs baseline for this repository.
 
+## [0.5.2] - 2026-08-23
+
+### Summary
+
+- Revalidate the KAG consumer against the final published
+  `aoa-stats@v0.2.2` provider at
+  `f119805cda69b3edeb2a4c5e407368d70e68650d` and the current
+  `8Dionysus@3baafa395906e93dee23a9479ef4f9aed576bd8a` source.
+- Keep this successor bounded to exact provider/currentness repair, generated
+  family regeneration, and the compatibility-canary claim boundary.
+
+### Fixed
+
+- Align the authored provider registry and blocking source-fast checkout with
+  the exact published stats commit.
+- Pin only `aoa-stats` in the scheduled compatibility canary; document that
+  other scheduled sibling inputs remain moving and that canary evidence is not
+  immutable release proof.
+- Rebuild provider and coverage read models through the owner generators and
+  bind the official KAG artifact to the landed exact source.
+
+### Validation
+
+- Source-fast, generated, release, compatibility-canary, artifact verification,
+  and consumer-intent admission results are reported separately in the release
+  execution report; no artifact, runtime, proof, delivery, or acceptance claim
+  is inferred from a green source or canary result.
+
+### Notes
+
+- `v0.5.1` remains immutable and is preserved as the predecessor release.
+- `aoa-session-memory`, `aoa-routing`, and `abyss-stack_old` are unchanged.
+
 ## [0.5.1] - 2026-08-23
 
 ### Summary

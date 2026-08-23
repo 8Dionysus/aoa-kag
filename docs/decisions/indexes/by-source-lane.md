@@ -13,6 +13,7 @@
 ## 8Dionysus
 
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
 
 ## abyss-machine
 
@@ -108,6 +109,7 @@
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 - [AOA-KAG-D-0040 - AOA-KAG-D-0040 Routing Consumer Pin And Predecessor Archive Boundary](../AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md) (`docs/decisions/AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md`)
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
 
 ## aoa-memo
 
@@ -165,6 +167,7 @@
 
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
 
 ## aoa-techniques
 
