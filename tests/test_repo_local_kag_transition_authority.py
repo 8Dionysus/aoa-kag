@@ -196,6 +196,7 @@ def _signed_projection_fixture(
     projection: dict[str, object] | None = None,
     output: dict[str, object] | None = None,
     owner_registry: dict[str, object] | None = None,
+    transition_kind: str = "projection_transition",
 ):
     candidate = candidate or (base / "candidate")
     owner = base / "owner"
@@ -251,7 +252,11 @@ def _signed_projection_fixture(
     _git(owner, "init", "-q")
     source_commit = _git_commit(owner, "synthetic accepted transition source")
 
-    payload = _example("repo_local_kag_projection_transition.example.json")
+    payload = _example(
+        "repo_local_kag_producer_migration.example.json"
+        if transition_kind == "producer_migration"
+        else "repo_local_kag_projection_transition.example.json"
+    )
     if predecessor is not None:
         payload["predecessor"] = copy.deepcopy(predecessor)
     if projection is not None:
@@ -267,19 +272,20 @@ def _signed_projection_fixture(
         )
         payload["target"]["family"].update(
             {
-                "ref": "4" * 40,
+                "ref": _git(candidate, "rev-parse", "HEAD"),
                 "family_digest": "d" * 64,
                 "source_snapshot": "sha256:" + "e" * 64,
                 "distribution_digest": "sha256:" + "f" * 64,
             }
         )
-        payload["output"]["family_digest"] = "d" * 64
-        payload["output"]["source_snapshot"] = "sha256:" + "e" * 64
-        output_without_digest = copy.deepcopy(payload["output"])
-        output_without_digest["output_digest"] = "sha256:" + "0" * 64
-        payload["output"]["output_digest"] = "sha256:" + sha256_bytes(
-            canonical_json_bytes(output_without_digest)
-        )
+        if transition_kind == "projection_transition":
+            payload["output"]["family_digest"] = "d" * 64
+            payload["output"]["source_snapshot"] = "sha256:" + "e" * 64
+            output_without_digest = copy.deepcopy(payload["output"])
+            output_without_digest["output_digest"] = "sha256:" + "0" * 64
+            payload["output"]["output_digest"] = "sha256:" + sha256_bytes(
+                canonical_json_bytes(output_without_digest)
+            )
     else:
         payload["target"] = copy.deepcopy(target)
     contract = _transition_contract_identity()
@@ -322,7 +328,7 @@ def _signed_projection_fixture(
     acceptance_record = {
         "schema_version": TRANSITION_ACCEPTANCE_RECORD_VERSION,
         "owner": "aoa-kag",
-        "transition_kind": "projection_transition",
+        "transition_kind": transition_kind,
         "subject_digest": subject_digest,
         "acceptance_ref": payload["authority"]["acceptance"]["ref"],
         "acceptor_root_ref": acceptor_entry["ref"],
@@ -337,7 +343,7 @@ def _signed_projection_fixture(
     authority_record = {
         "schema_version": TRANSITION_AUTHORITY_ARTIFACT_VERSION,
         "owner": "aoa-kag",
-        "transition_kind": "projection_transition",
+        "transition_kind": transition_kind,
         "subject_digest": subject_digest,
         "issuer_root_ref": issuer_entry["ref"],
         "issuer_ref": payload["authority"]["issuer"]["ref"],
@@ -355,7 +361,7 @@ def _signed_projection_fixture(
     replay_state = {
         "schema_version": TRANSITION_REPLAY_SNAPSHOT_VERSION,
         "owner": "aoa-kag",
-        "transition_kind": "projection_transition",
+        "transition_kind": transition_kind,
         "subject_digest": subject_digest,
         "snapshot_digest": "sha256:" + "0" * 64,
         "source_ref": payload["replay"]["source_ref"],
@@ -432,6 +438,49 @@ def _signed_cli_fixture(base: Path):
         "transition": transition_path,
         "base_ref": base_ref,
     }
+
+
+def _signed_producer_fixture(base: Path):
+    candidate = base / "candidate"
+    target_build, base_ref = _git_fixture(candidate)
+    from scripts.repo_local.portable_family import derive_transition_predecessor
+
+    predecessor = derive_transition_predecessor(candidate, base_ref)
+    target = tiered_transition_target(target_build, repo_root=candidate)
+    signed_base = base / "signed"
+    signed_base.mkdir(parents=True, exist_ok=True)
+    signed = _signed_projection_fixture(
+        signed_base,
+        candidate=candidate,
+        build=target_build,
+        predecessor=predecessor,
+        target=target,
+        transition_kind="producer_migration",
+    )
+    return {
+        "payload": signed[0],
+        "candidate": signed[1],
+        "owner": signed[2],
+        "authority": signed[3],
+        "acceptance": signed[4],
+        "replay": signed[6],
+    }
+
+
+def _unrelated_clean_candidate(source: Path, destination: Path) -> Path:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ("git", "clone", "--local", str(source), str(destination)),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    (destination / "unrelated-candidate-change.txt").write_text(
+        "unrelated clean candidate\n",
+        encoding="utf-8",
+    )
+    _git_commit(destination, "unrelated candidate head")
+    return destination
 
 
 class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
@@ -696,6 +745,92 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                     owner_root=owner,
                     candidate_root=candidate,
                 )
+
+    def test_projection_api_rejects_unrelated_clean_candidate_head(self) -> None:
+        from scripts.repo_local.portable_family import validate_full_projection_transition
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fixture = _signed_cli_fixture(Path(tmpdir))
+            wrong_candidate = _unrelated_clean_candidate(
+                fixture["candidate"],
+                Path(tmpdir) / "wrong-projection-candidate",
+            )
+            payload = fixture["payload"]
+            validate_full_projection_transition(
+                payload,
+                predecessor=payload["predecessor"],
+                target=payload["target"],
+                expected_projection=payload["projection"],
+                expected_output=payload["output"],
+                detached_authority_path=fixture["authority"],
+                acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                acceptance_record_path=fixture["acceptance"],
+                replay_state=json.loads(fixture["replay"].read_text()),
+                replay_state_path=fixture["replay"],
+                owner_root=fixture["owner"],
+                candidate_root=fixture["candidate"],
+            )
+            with self.assertRaises(TransitionAuthorityError) as raised:
+                validate_full_projection_transition(
+                    payload,
+                    predecessor=payload["predecessor"],
+                    target=payload["target"],
+                    expected_projection=payload["projection"],
+                    expected_output=payload["output"],
+                    detached_authority_path=fixture["authority"],
+                    acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                    acceptance_record_path=fixture["acceptance"],
+                    replay_state=json.loads(fixture["replay"].read_text()),
+                    replay_state_path=fixture["replay"],
+                    owner_root=fixture["owner"],
+                    candidate_root=wrong_candidate,
+                )
+            self.assertEqual("migration_required", raised.exception.state)
+            self.assertEqual(
+                "transition candidate HEAD does not match target family ref",
+                str(raised.exception),
+            )
+
+    def test_producer_api_rejects_unrelated_clean_candidate_head(self) -> None:
+        from scripts.repo_local.portable_family import validate_detached_producer_migration
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fixture = _signed_producer_fixture(Path(tmpdir) / "producer")
+            wrong_candidate = _unrelated_clean_candidate(
+                fixture["candidate"],
+                Path(tmpdir) / "wrong-producer-candidate",
+            )
+            payload = fixture["payload"]
+            validate_detached_producer_migration(
+                payload,
+                predecessor=payload["predecessor"],
+                target=payload["target"],
+                detached_authority_path=fixture["authority"],
+                acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                acceptance_record_path=fixture["acceptance"],
+                replay_state=json.loads(fixture["replay"].read_text()),
+                replay_state_path=fixture["replay"],
+                owner_root=fixture["owner"],
+                candidate_root=fixture["candidate"],
+            )
+            with self.assertRaises(TransitionAuthorityError) as raised:
+                validate_detached_producer_migration(
+                    payload,
+                    predecessor=payload["predecessor"],
+                    target=payload["target"],
+                    detached_authority_path=fixture["authority"],
+                    acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                    acceptance_record_path=fixture["acceptance"],
+                    replay_state=json.loads(fixture["replay"].read_text()),
+                    replay_state_path=fixture["replay"],
+                    owner_root=fixture["owner"],
+                    candidate_root=wrong_candidate,
+                )
+            self.assertEqual("migration_required", raised.exception.state)
+            self.assertEqual(
+                "transition candidate HEAD does not match target family ref",
+                str(raised.exception),
+            )
 
     def test_current_empty_registry_cannot_authorize_current_source(self) -> None:
         from scripts.repo_local.portable_family import validate_full_projection_transition

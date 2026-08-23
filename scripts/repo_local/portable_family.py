@@ -2851,7 +2851,7 @@ def _validate_transition_roots(
     *,
     owner_root: Path | None,
     candidate_root: Path | None,
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path, str]:
     if owner_root is None:
         raise TransitionAuthorityError(
             "migration_required",
@@ -2883,7 +2883,7 @@ def _validate_transition_roots(
             "transition decision source is not detached from the candidate",
         )
     try:
-        resolve_exact_git_commit(
+        candidate_head = resolve_exact_git_commit(
             resolved_candidate_root,
             "HEAD",
             require_clean=True,
@@ -2893,7 +2893,7 @@ def _validate_transition_roots(
             "migration_required",
             "transition candidate is not a clean current Git root",
         ) from exc
-    return resolved_owner_root, resolved_candidate_root
+    return resolved_owner_root, resolved_candidate_root, candidate_head
 
 
 def _external_transition_file(
@@ -3531,7 +3531,11 @@ def _validate_transition_binding(
             "transition owner identity is not aoa-kag",
         )
     _validate_transition_schema(kind, payload)
-    resolved_owner_root, resolved_candidate_root = _validate_transition_roots(
+    (
+        resolved_owner_root,
+        resolved_candidate_root,
+        candidate_head,
+    ) = _validate_transition_roots(
         owner_root=owner_root,
         candidate_root=candidate_root,
     )
@@ -3564,6 +3568,11 @@ def _validate_transition_binding(
         target_payload["family"],
         label="target",
     )
+    if candidate_head != target_family.get("ref"):
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition candidate HEAD does not match target family ref",
+        )
     if target_family.get("schema_version") != TIERED_DISTRIBUTION_SCHEMA_VERSION:
         raise TransitionAuthorityError(
             "unsupported",
