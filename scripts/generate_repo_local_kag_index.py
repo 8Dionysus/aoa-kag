@@ -3460,6 +3460,21 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--transition-replay-state",
         help="Existing immutable replay-ledger snapshot JSON for transition admission.",
     )
+    parser.add_argument(
+        "--owner-root",
+        help=(
+            "Exact detached Git root containing the immutable D-0044 decision "
+            "and its committed transition trust registry."
+        ),
+    )
+    parser.add_argument(
+        "--candidate-root",
+        help=(
+            "Exact Git root of the candidate being built and validated; when "
+            "omitted for a transition, --repo-root is used and must itself be "
+            "the candidate root."
+        ),
+    )
     parser.add_argument("--check", action="store_true", help="Check output parity without writing.")
     return parser.parse_args(argv)
 
@@ -3487,6 +3502,24 @@ def _transition_predecessor(
     except ImportError:  # pragma: no cover - direct script execution
         from repo_local.portable_family import derive_transition_predecessor  # type: ignore
     return derive_transition_predecessor(repo_root, base_ref)
+
+
+def _exact_git_root(value: str, label: str) -> Path:
+    root = Path(value).resolve()
+    try:
+        actual = subprocess.run(
+            ("git", "rev-parse", "--show-toplevel"),
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (FileNotFoundError, OSError, subprocess.CalledProcessError) as exc:
+        raise ValueError(f"{label} is not an available Git repository root: {root}") from exc
+    actual_root = Path(actual).resolve()
+    if actual_root != root:
+        raise ValueError(f"{label} must name the exact Git repository root: {root}")
+    return root
 
 
 def _route_legacy_portable_invocation(
@@ -3579,6 +3612,39 @@ def main(argv: Sequence[str] | None = None) -> int:
             "--transition-evidence, --transition-authority-artifact, "
             "--transition-acceptance-record, and --transition-replay-state"
         )
+    owner_root: Path | None = None
+    candidate_root: Path | None = None
+    if args.transition_evidence is not None and args.owner_root is None:
+        raise SystemExit(
+            "--owner-root is required for detached transition validation"
+        )
+    if args.owner_root is not None or args.candidate_root is not None:
+        if not all(value is not None for value in transition_options):
+            raise SystemExit(
+                "--owner-root and --candidate-root require complete transition validation"
+            )
+        try:
+            candidate_root = _exact_git_root(
+                args.candidate_root or args.repo_root,
+                "--candidate-root",
+            )
+            if candidate_root != repo_root:
+                raise ValueError(
+                    "--candidate-root must identify the same exact Git root as --repo-root"
+                )
+            if args.owner_root is None:
+                raise ValueError("--owner-root is required for transition validation")
+            owner_root = _exact_git_root(args.owner_root, "--owner-root")
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        if (
+            owner_root == candidate_root
+            or owner_root in candidate_root.parents
+            or candidate_root in owner_root.parents
+        ):
+            raise SystemExit(
+                "--owner-root must be detached from the candidate Git root"
+            )
     if args.write_budget_receipt and (
         not (args.portable_family or args.tiered_family)
         or args.check
@@ -3836,9 +3902,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                         base_ref=provenance_base_ref,
                     )
                     if args.transition_kind == "producer_migration":
-                        from scripts.repo_local.tiered_family import (
-                            validate_tiered_producer_migration,
-                        )
+                        try:
+                            from scripts.repo_local.tiered_family import (
+                                validate_tiered_producer_migration,
+                            )
+                        except ImportError:  # pragma: no cover - direct script execution
+                            from repo_local.tiered_family import (  # type: ignore
+                                validate_tiered_producer_migration,
+                            )
 
                         validate_tiered_producer_migration(
                             transition,
@@ -3852,13 +3923,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                             acceptance_record_path=acceptance_path,
                             replay_state=replay_state,
                             replay_state_path=replay_path,
-                            owner_root=repo_root,
-                            candidate_root=repo_root,
+                            owner_root=owner_root,
+                            candidate_root=candidate_root,
                         )
                     else:
-                        from scripts.repo_local.tiered_family import (
-                            validate_tiered_projection_transition,
-                        )
+                        try:
+                            from scripts.repo_local.tiered_family import (
+                                validate_tiered_projection_transition,
+                            )
+                        except ImportError:  # pragma: no cover - direct script execution
+                            from repo_local.tiered_family import (  # type: ignore
+                                validate_tiered_projection_transition,
+                            )
 
                         validate_tiered_projection_transition(
                             transition,
@@ -3873,8 +3949,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             acceptance_record_path=acceptance_path,
                             replay_state=replay_state,
                             replay_state_path=replay_path,
-                            owner_root=repo_root,
-                            candidate_root=repo_root,
+                            owner_root=owner_root,
+                            candidate_root=candidate_root,
                         )
                     print(
                         "[repo-local-kag-index] transition authority "

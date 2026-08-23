@@ -1761,6 +1761,7 @@ def tiered_transition_target(
             ),
             "source_snapshot": corpus_identity["source_snapshot"],
             "distribution_digest": distribution_identity["content_digest"],
+            "placement": _tiered_projection_placement(build),
         },
         "producer_identity": copy.deepcopy(dict(producer_identity)),
     }
@@ -1921,6 +1922,11 @@ def validate_tiered_producer_migration(
         raise TieredFamilyError(
             "producer migration requires trusted target and predecessor Git context"
         )
+    candidate_context = repo_root.resolve()
+    if candidate_root is not None and candidate_root.resolve() != candidate_context:
+        raise TieredFamilyError(
+            "producer migration candidate root is not the built repository root"
+        )
     expected_predecessor = derive_transition_predecessor(repo_root, base_ref)
     if dict(predecessor) != expected_predecessor:
         raise TransitionAuthorityError(
@@ -1941,7 +1947,7 @@ def validate_tiered_producer_migration(
         replay_state=replay_state,
         replay_state_path=replay_state_path,
         owner_root=owner_root,
-        candidate_root=candidate_root,
+        candidate_root=candidate_context,
     )
 
 
@@ -1967,6 +1973,11 @@ def validate_tiered_projection_transition(
     if repo_root is None or base_ref is None:
         raise TieredFamilyError(
             "projection transition requires trusted target and predecessor Git context"
+        )
+    candidate_context = repo_root.resolve()
+    if candidate_root is not None and candidate_root.resolve() != candidate_context:
+        raise TieredFamilyError(
+            "projection transition candidate root is not the built repository root"
         )
     expected_predecessor = derive_transition_predecessor(repo_root, base_ref)
     if dict(predecessor) != expected_predecessor:
@@ -1999,7 +2010,7 @@ def validate_tiered_projection_transition(
         replay_state=replay_state,
         replay_state_path=replay_state_path,
         owner_root=owner_root,
-        candidate_root=candidate_root,
+        candidate_root=candidate_context,
     )
 
 

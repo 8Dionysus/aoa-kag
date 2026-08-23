@@ -30,6 +30,24 @@ Shadow mode keeps cold Git copies while publishing their immutable CAS
 objects. A repeated build of the same source snapshot must preserve corpus and
 distribution digests and report object reuse rather than new objects.
 
+For a supplied transition artifact, keep the candidate and owner authority
+sources explicit and detached. The canonical direct-script invocation accepts
+`--repo-root CANDIDATE`, `--candidate-root CANDIDATE`, and
+`--owner-root DETACHED_OWNER` together with `--tiered-family`,
+`--artifact-root ARTIFACT_ROOT`, `--history-ref BASE`, and
+`--event-history-ref BASE`. The transition arguments are
+`--transition-kind projection_transition`, `--transition-evidence
+TRANSITION_JSON`, `--transition-authority-artifact AUTHORITY_JSON`,
+`--transition-acceptance-record ACCEPTANCE_JSON`, and
+`--transition-replay-state REPLAY_JSON`.
+
+`CANDIDATE` must be the clean Git root whose exact `HEAD` derives the target;
+`DETACHED_OWNER` must be a separate exact Git root whose immutable decision
+commit supplies D-0044 and `config/transition_authority_trust.json`. The
+transition lane validates supplied artifacts only: it does not activate the
+proposed registry, issue authority, consume replay state, or admit a real
+candidate.
+
 For the OS-wide proof, invoke
 `scripts/run_repo_local_kag_rollout.py --phase shadow` with explicit output,
 CAS, and `abyss-machine` roots plus an `OWNER=PATH` artifact binding for every

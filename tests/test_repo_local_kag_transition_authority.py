@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -184,14 +185,24 @@ def _ed25519_signer(root: Path, label: str, owner: str, role: str):
     return entry, sign
 
 
-def _signed_projection_fixture(base: Path):
-    candidate = base / "candidate"
+def _signed_projection_fixture(
+    base: Path,
+    *,
+    candidate: Path | None = None,
+    build=None,
+    predecessor: dict[str, object] | None = None,
+    target: dict[str, object] | None = None,
+    projection: dict[str, object] | None = None,
+    output: dict[str, object] | None = None,
+):
+    candidate = candidate or (base / "candidate")
     owner = base / "owner"
     external = base / "external"
-    candidate.mkdir()
+    candidate.mkdir(exist_ok=True)
     owner.mkdir()
     external.mkdir()
-    build, _ = _build_fixture(candidate)
+    if build is None:
+        build, _ = _build_fixture(candidate)
 
     issuer_entry, sign_issuer = _ed25519_signer(
         external,
@@ -233,27 +244,36 @@ def _signed_projection_fixture(base: Path):
     source_commit = _git_commit(owner, "synthetic accepted transition source")
 
     payload = _example("repo_local_kag_projection_transition.example.json")
+    if predecessor is not None:
+        payload["predecessor"] = copy.deepcopy(predecessor)
+    if projection is not None:
+        payload["projection"] = copy.deepcopy(projection)
+    if output is not None:
+        payload["output"] = copy.deepcopy(output)
     payload["decision"]["digest"] = sha256_bytes(decision_bytes)
     payload["decision"]["posture"] = "accepted"
     payload["decision"]["source_commit"] = source_commit
-    payload["target"]["producer_identity"] = copy.deepcopy(
-        build.corpus_manifest["producer_identity"]
-    )
-    payload["target"]["family"].update(
-        {
-            "ref": "4" * 40,
-            "family_digest": "d" * 64,
-            "source_snapshot": "sha256:" + "e" * 64,
-            "distribution_digest": "sha256:" + "f" * 64,
-        }
-    )
-    payload["output"]["family_digest"] = "d" * 64
-    payload["output"]["source_snapshot"] = "sha256:" + "e" * 64
-    output_without_digest = copy.deepcopy(payload["output"])
-    output_without_digest["output_digest"] = "sha256:" + "0" * 64
-    payload["output"]["output_digest"] = "sha256:" + sha256_bytes(
-        canonical_json_bytes(output_without_digest)
-    )
+    if target is None:
+        payload["target"]["producer_identity"] = copy.deepcopy(
+            build.corpus_manifest["producer_identity"]
+        )
+        payload["target"]["family"].update(
+            {
+                "ref": "4" * 40,
+                "family_digest": "d" * 64,
+                "source_snapshot": "sha256:" + "e" * 64,
+                "distribution_digest": "sha256:" + "f" * 64,
+            }
+        )
+        payload["output"]["family_digest"] = "d" * 64
+        payload["output"]["source_snapshot"] = "sha256:" + "e" * 64
+        output_without_digest = copy.deepcopy(payload["output"])
+        output_without_digest["output_digest"] = "sha256:" + "0" * 64
+        payload["output"]["output_digest"] = "sha256:" + sha256_bytes(
+            canonical_json_bytes(output_without_digest)
+        )
+    else:
+        payload["target"] = copy.deepcopy(target)
     contract = _transition_contract_identity()
     payload["authority"]["contract_version"] = TRANSITION_AUTHORITY_VERSION
     payload["authority"]["contract_digest"] = contract["digest"]
@@ -357,6 +377,53 @@ def _signed_projection_fixture(base: Path):
         replay_path,
         replay_state,
     )
+
+
+def _signed_cli_fixture(base: Path):
+    candidate = base / "candidate"
+    target_build, base_ref = _git_fixture(candidate)
+    target_build = _rebuild_fixture(candidate)
+    from scripts.repo_local.portable_family import derive_transition_predecessor
+
+    predecessor = derive_transition_predecessor(candidate, base_ref)
+    target = tiered_projection_target(target_build, repo_root=candidate)
+    projection, output = complete_tiered_projection_expectations(
+        target_build,
+        predecessor_placement=predecessor["placement"],
+    )
+    signed = _signed_projection_fixture(
+        base,
+        candidate=candidate,
+        build=target_build,
+        predecessor=predecessor,
+        target=target,
+        projection=projection,
+        output=output,
+    )
+    transition_path = base / "external" / "transition.json"
+    transition_path.write_bytes(canonical_json_bytes(signed[0]))
+    direct_candidate = base / "direct" / "candidate"
+    direct_candidate.parent.mkdir()
+    subprocess.run(
+        ("git", "clone", "--local", str(candidate), str(direct_candidate)),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return {
+        "payload": signed[0],
+        "build": target_build,
+        "predecessor": predecessor,
+        "candidate": candidate,
+        "direct_candidate": direct_candidate,
+        "owner": signed[2],
+        "external": base / "external",
+        "authority": signed[3],
+        "acceptance": signed[4],
+        "replay": signed[6],
+        "transition": transition_path,
+        "base_ref": base_ref,
+    }
 
 
 class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
@@ -598,6 +665,216 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                     owner_root=owner,
                     candidate_root=candidate,
                 )
+
+    def test_signed_builder_validator_module_and_direct_cli_parity(self) -> None:
+        from scripts.repo_local.portable_family import validate_full_projection_transition
+        from scripts.repo_local.tiered_family import validate_tiered_projection_transition
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fixture = _signed_cli_fixture(Path(tmpdir))
+            payload = fixture["payload"]
+            schema = json.loads(
+                (REPO_ROOT / "schemas/repo-local-kag-projection-transition.schema.json").read_text()
+            )
+            Draft202012Validator(schema).validate(payload)
+            self.assertEqual(
+                _git(fixture["candidate"], "rev-parse", "HEAD"),
+                payload["target"]["family"]["ref"],
+            )
+            self.assertEqual(
+                fixture["payload"]["target"]["family"]["placement"],
+                payload["projection"]["after"],
+            )
+            validate_full_projection_transition(
+                payload,
+                predecessor=payload["predecessor"],
+                target=payload["target"],
+                expected_projection=payload["projection"],
+                expected_output=payload["output"],
+                detached_authority_path=fixture["authority"],
+                acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                acceptance_record_path=fixture["acceptance"],
+                replay_state=json.loads(fixture["replay"].read_text()),
+                replay_state_path=fixture["replay"],
+                owner_root=fixture["owner"],
+                candidate_root=fixture["candidate"],
+            )
+            validate_tiered_projection_transition(
+                payload,
+                predecessor=fixture["predecessor"],
+                build=fixture["build"],
+                repo_root=fixture["candidate"],
+                base_ref=fixture["base_ref"],
+                predecessor_placement=fixture["predecessor"]["placement"],
+                detached_authority_path=fixture["authority"],
+                acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                acceptance_record_path=fixture["acceptance"],
+                replay_state=json.loads(fixture["replay"].read_text()),
+                replay_state_path=fixture["replay"],
+                owner_root=fixture["owner"],
+                candidate_root=fixture["candidate"],
+            )
+            with self.assertRaises(TieredFamilyError):
+                validate_tiered_projection_transition(
+                    payload,
+                    predecessor=fixture["predecessor"],
+                    build=fixture["build"],
+                    repo_root=fixture["candidate"],
+                    base_ref=fixture["base_ref"],
+                    predecessor_placement=fixture["predecessor"]["placement"],
+                    detached_authority_path=fixture["authority"],
+                    acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                    acceptance_record_path=fixture["acceptance"],
+                    replay_state=json.loads(fixture["replay"].read_text()),
+                    replay_state_path=fixture["replay"],
+                    owner_root=fixture["owner"],
+                    candidate_root=fixture["direct_candidate"],
+                )
+            wrong_placement = copy.deepcopy(payload)
+            wrong_placement["target"]["family"]["placement"]["state"] = "legacy_v3"
+            with self.assertRaises(TransitionAuthorityError):
+                validate_tiered_projection_transition(
+                    wrong_placement,
+                    predecessor=fixture["predecessor"],
+                    build=fixture["build"],
+                    repo_root=fixture["candidate"],
+                    base_ref=fixture["base_ref"],
+                    predecessor_placement=fixture["predecessor"]["placement"],
+                    detached_authority_path=fixture["authority"],
+                    acceptance_record=json.loads(fixture["acceptance"].read_text()),
+                    acceptance_record_path=fixture["acceptance"],
+                    replay_state=json.loads(fixture["replay"].read_text()),
+                    replay_state_path=fixture["replay"],
+                    owner_root=fixture["owner"],
+                    candidate_root=fixture["candidate"],
+                )
+
+            def run_cli(
+                candidate: Path,
+                artifact_root: Path,
+                *,
+                module: bool,
+                owner_root: Path | None = None,
+                history_ref: str | None = None,
+            ) -> subprocess.CompletedProcess[str]:
+                command = [sys.executable]
+                if module:
+                    command.extend(["-m", "scripts.generate_repo_local_kag_index"])
+                else:
+                    command.append("scripts/generate_repo_local_kag_index.py")
+                command.extend(
+                    [
+                        "--repo-root",
+                        str(candidate),
+                        "--candidate-root",
+                        str(candidate),
+                        "--owner-root",
+                        str(owner_root or fixture["owner"]),
+                        "--tiered-family",
+                        "--artifact-root",
+                        str(artifact_root),
+                        "--history-ref",
+                        history_ref or fixture["base_ref"],
+                        "--event-history-ref",
+                        fixture["base_ref"],
+                        "--transition-kind",
+                        "projection_transition",
+                        "--transition-evidence",
+                        str(fixture["transition"]),
+                        "--transition-authority-artifact",
+                        str(fixture["authority"]),
+                        "--transition-acceptance-record",
+                        str(fixture["acceptance"]),
+                        "--transition-replay-state",
+                        str(fixture["replay"]),
+                    ]
+                )
+                return subprocess.run(
+                    command,
+                    cwd=REPO_ROOT,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+
+            module_result = run_cli(
+                fixture["candidate"],
+                Path(tmpdir) / "module-artifacts",
+                module=True,
+            )
+            self.assertEqual(
+                0,
+                module_result.returncode,
+                module_result.stdout + module_result.stderr,
+            )
+            self.assertIn(
+                "transition authority admitted kind=projection_transition",
+                module_result.stdout,
+            )
+
+            direct_result = run_cli(
+                fixture["direct_candidate"],
+                Path(tmpdir) / "direct-artifacts",
+                module=False,
+            )
+            self.assertEqual(
+                0,
+                direct_result.returncode,
+                direct_result.stdout + direct_result.stderr,
+            )
+            self.assertIn(
+                "transition authority admitted kind=projection_transition",
+                direct_result.stdout,
+            )
+
+            equal_root = run_cli(
+                fixture["direct_candidate"],
+                Path(tmpdir) / "equal-root-artifacts",
+                module=True,
+                owner_root=fixture["direct_candidate"],
+            )
+            self.assertNotEqual(0, equal_root.returncode)
+            self.assertIn("detached", equal_root.stderr)
+
+            def fresh_candidate(label: str) -> Path:
+                path = Path(tmpdir) / label / "candidate"
+                path.parent.mkdir()
+                subprocess.run(
+                    ("git", "clone", "--local", str(fixture["candidate"]), str(path)),
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                return path
+
+            wrong_owner = Path(tmpdir) / "wrong-owner"
+            wrong_owner.mkdir()
+            (wrong_owner / "README.md").write_text("wrong owner\n", encoding="utf-8")
+            _git(wrong_owner, "init", "-q")
+            _git_commit(wrong_owner, "wrong owner source")
+            wrong_owner_result = run_cli(
+                fresh_candidate("wrong-owner-candidate"),
+                Path(tmpdir) / "wrong-owner-artifacts",
+                module=False,
+                owner_root=wrong_owner,
+            )
+            self.assertNotEqual(0, wrong_owner_result.returncode)
+            self.assertIn("transition decision", wrong_owner_result.stderr)
+
+            wrong_base_result = run_cli(
+                fresh_candidate("wrong-base-candidate"),
+                Path(tmpdir) / "wrong-base-artifacts",
+                module=True,
+                history_ref=_git(fixture["candidate"], "rev-parse", "HEAD"),
+            )
+            self.assertNotEqual(0, wrong_base_result.returncode)
+            self.assertIn("predecessor", wrong_base_result.stderr)
+
+            missing_placement = copy.deepcopy(payload)
+            del missing_placement["target"]["family"]["placement"]
+            self.assertTrue(
+                list(Draft202012Validator(schema).iter_errors(missing_placement))
+            )
 
     def test_transition_schema_rejects_unhashed_replay_and_consumed_variants(self) -> None:
         schema = json.loads(
