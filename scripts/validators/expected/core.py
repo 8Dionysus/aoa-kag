@@ -64,6 +64,14 @@ REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-distribution-manifest.schema.json"
 )
 
+REPO_LOCAL_KAG_PRODUCER_MIGRATION_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-producer-migration.schema.json"
+)
+
+REPO_LOCAL_KAG_PROJECTION_TRANSITION_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-projection-transition.schema.json"
+)
+
 REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-hot-profile.schema.json"
 )

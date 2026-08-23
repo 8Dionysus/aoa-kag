@@ -226,6 +226,7 @@
 
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
 - [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Detached Transition Authority](../AOA-KAG-D-0044-detached-transition-authority.md) (`docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md`)
 
 ## owner return
 
@@ -314,6 +315,7 @@
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Semantic Owner Evidence For Budget Admission](../AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md) (`docs/decisions/AOA-KAG-D-0042-semantic-owner-evidence-for-budget-admission.md`)
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Detached Transition Authority](../AOA-KAG-D-0044-detached-transition-authority.md) (`docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md`)
 
 ## schema engine
 
@@ -368,6 +370,10 @@
 ## tests/decision-indexes
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
+
+## transition admission
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Detached Transition Authority](../AOA-KAG-D-0044-detached-transition-authority.md) (`docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md`)
 
 ## validation
 

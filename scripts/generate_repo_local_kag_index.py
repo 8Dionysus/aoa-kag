@@ -3436,8 +3436,105 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default="",
         help="Authored aoa-kag decision ref required when writing a budget receipt.",
     )
+    parser.add_argument(
+        "--transition-kind",
+        choices=("producer_migration", "projection_transition"),
+        help="Typed transition lane to validate when --transition-evidence is supplied.",
+    )
+    parser.add_argument(
+        "--transition-evidence",
+        help=(
+            "Existing detached producer-migration or complete-projection JSON "
+            "to validate; this option never creates or writes authority."
+        ),
+    )
+    parser.add_argument(
+        "--transition-authority-artifact",
+        help="Existing detached owner authority artifact required by transition admission.",
+    )
+    parser.add_argument(
+        "--transition-acceptance-record",
+        help="Existing independent acceptance record JSON for transition admission.",
+    )
+    parser.add_argument(
+        "--transition-replay-state",
+        help="Existing immutable replay-ledger snapshot JSON for transition admission.",
+    )
     parser.add_argument("--check", action="store_true", help="Check output parity without writing.")
     return parser.parse_args(argv)
+
+
+def _load_transition_json(repo_root: Path, value: str, label: str) -> dict[str, Any]:
+    path = Path(value)
+    if not path.is_absolute():
+        path = repo_root / path
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, IsADirectoryError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError(f"cannot read {label}: {path}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} must be a JSON object: {path}")
+    return payload
+
+
+def _transition_predecessor(
+    repo_root: Path,
+    *,
+    base_ref: str,
+) -> dict[str, Any]:
+    resolved_ref = run_text(("git", "rev-parse", base_ref), repo_root)
+    manifest = git_json_at_ref(repo_root, resolved_ref, PORTABLE_FAMILY_MANIFEST)
+    if manifest is None:
+        raise ValueError(
+            f"transition predecessor is unavailable at {resolved_ref}"
+        )
+    schema_version = manifest.get("schema_version")
+    if schema_version == "aoa-repo-local-kag-family-manifest-v3":
+        identity = manifest.get("family_identity")
+        if not isinstance(identity, Mapping):
+            raise ValueError("transition predecessor v3 identity is malformed")
+        digest = identity.get("content_digest")
+        source_snapshot = identity.get("source_snapshot")
+        if not isinstance(digest, str) or not isinstance(source_snapshot, str):
+            raise ValueError("transition predecessor v3 identity is incomplete")
+        return {
+            "schema_version": schema_version,
+            "ref": resolved_ref,
+            "family_digest": digest,
+            "source_snapshot": source_snapshot,
+            "distribution_digest": None,
+        }
+    if schema_version != "aoa-repo-local-kag-distribution-manifest-v1":
+        raise ValueError(
+            f"unsupported transition predecessor schema: {schema_version}"
+        )
+    corpus = git_json_at_ref(
+        repo_root,
+        resolved_ref,
+        Path("kag/indexes/corpus.manifest.json"),
+    )
+    distribution_identity = manifest.get("distribution_identity")
+    corpus_identity = corpus.get("corpus_identity") if corpus else None
+    if not isinstance(corpus_identity, Mapping) or not isinstance(
+        distribution_identity,
+        Mapping,
+    ):
+        raise ValueError("transition predecessor tiered identities are incomplete")
+    corpus_digest = corpus_identity.get("content_digest")
+    source_snapshot = corpus_identity.get("source_snapshot")
+    distribution_digest = distribution_identity.get("content_digest")
+    if not all(
+        isinstance(value, str)
+        for value in (corpus_digest, source_snapshot, distribution_digest)
+    ):
+        raise ValueError("transition predecessor tiered identities are malformed")
+    return {
+        "schema_version": schema_version,
+        "ref": resolved_ref,
+        "family_digest": corpus_digest.removeprefix("sha256:"),
+        "source_snapshot": source_snapshot,
+        "distribution_digest": distribution_digest,
+    }
 
 
 def _route_legacy_portable_invocation(
@@ -3509,6 +3606,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     ):
         raise SystemExit(
             "--materialize-artifact-on-check requires --tiered-family --check"
+        )
+    transition_options = (
+        args.transition_kind,
+        args.transition_evidence,
+        args.transition_authority_artifact,
+        args.transition_acceptance_record,
+        args.transition_replay_state,
+    )
+    if any(value is not None for value in transition_options) and not (
+        args.tiered_family
+        and args.transition_kind
+        and args.transition_evidence
+        and args.transition_authority_artifact
+        and args.transition_acceptance_record
+        and args.transition_replay_state
+    ):
+        raise SystemExit(
+            "transition validation requires --tiered-family, --transition-kind, "
+            "--transition-evidence, --transition-authority-artifact, "
+            "--transition-acceptance-record, and --transition-replay-state"
         )
     if args.write_budget_receipt and (
         not (args.portable_family or args.tiered_family)
@@ -3737,6 +3854,66 @@ def main(argv: Sequence[str] | None = None) -> int:
                     shadow_mode=not args.externalize_cold,
                     migration=migration,
                 )
+                if args.transition_evidence:
+                    transition = _load_transition_json(
+                        repo_root,
+                        args.transition_evidence,
+                        "transition evidence",
+                    )
+                    authority_path = Path(args.transition_authority_artifact)
+                    if not authority_path.is_absolute():
+                        authority_path = repo_root / authority_path
+                    acceptance = _load_transition_json(
+                        repo_root,
+                        args.transition_acceptance_record,
+                        "transition acceptance record",
+                    )
+                    replay_state = _load_transition_json(
+                        repo_root,
+                        args.transition_replay_state,
+                        "transition replay state",
+                    )
+                    predecessor = _transition_predecessor(
+                        repo_root,
+                        base_ref=provenance_base_ref,
+                    )
+                    target_ref = run_text(("git", "rev-parse", "HEAD"), repo_root)
+                    if args.transition_kind == "producer_migration":
+                        from scripts.repo_local.tiered_family import (
+                            validate_tiered_producer_migration,
+                        )
+
+                        validate_tiered_producer_migration(
+                            transition,
+                            predecessor=predecessor,
+                            build=tiered,
+                            target_ref=target_ref,
+                            detached_authority_path=authority_path,
+                            acceptance_record=acceptance,
+                            replay_state=replay_state,
+                            owner_root=repo_root,
+                            candidate_root=repo_root,
+                        )
+                    else:
+                        from scripts.repo_local.tiered_family import (
+                            validate_tiered_projection_transition,
+                        )
+
+                        validate_tiered_projection_transition(
+                            transition,
+                            predecessor=predecessor,
+                            build=tiered,
+                            target_ref=target_ref,
+                            detached_authority_path=authority_path,
+                            acceptance_record=acceptance,
+                            replay_state=replay_state,
+                            owner_root=repo_root,
+                            candidate_root=repo_root,
+                        )
+                    print(
+                        "[repo-local-kag-index] transition authority "
+                        f"admitted kind={args.transition_kind}"
+                    )
             except (PortableFamilyError, ValueError) as exc:
                 print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
                 return 1

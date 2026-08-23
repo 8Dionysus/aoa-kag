@@ -1,0 +1,72 @@
+{
+  "schema_version": "aoa-repo-local-kag-producer-migration-v1",
+  "kind": "detached_producer_lineage_migration",
+  "owner": {
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "decision": {
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md",
+    "digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "posture": "proposed"
+  },
+  "predecessor": {
+    "schema_version": "aoa-repo-local-kag-family-manifest-v3",
+    "ref": "1111111111111111111111111111111111111111",
+    "family_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "source_snapshot": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "distribution_digest": null
+  },
+  "target": {
+    "transition": "v3_to_v4_producer_bootstrap",
+    "family": {
+      "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "ref": "4444444444444444444444444444444444444444",
+      "family_digest": "5555555555555555555555555555555555555555555555555555555555555555",
+      "source_snapshot": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "distribution_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "producer_identity": {
+      "contract_version": "aoa-kag:budget-semantic-admission-v3",
+      "owner": "aoa-kag",
+      "base_ref": "8888888888888888888888888888888888888888",
+      "files": [
+        {"path": "scripts/repo_local/portable_family.py", "state": "present", "digest": "9999999999999999999999999999999999999999999999999999999999999999", "bytes": 1},
+        {"path": "scripts/repo_local/tiered_family.py", "state": "present", "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bytes": 1},
+        {"path": "scripts/generate_repo_local_kag_index.py", "state": "present", "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1},
+        {"path": "scripts/repo_local/history.py", "state": "present", "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "bytes": 1},
+        {"path": "scripts/repo_local/identity.py", "state": "present", "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "bytes": 1},
+        {"path": "scripts/repo_local/indexes.py", "state": "present", "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "bytes": 1},
+        {"path": "scripts/repo_local/structure.py", "state": "present", "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "bytes": 1},
+        {"path": "scripts/prepare_landing.py", "state": "present", "digest": "1212121212121212121212121212121212121212121212121212121212121212", "bytes": 1},
+        {"path": "schemas/repo-local-kag-budget-evidence.schema.json", "state": "present", "digest": "1313131313131313131313131313131313131313131313131313131313131313", "bytes": 1},
+        {"path": "schemas/repo-local-kag-budget-receipt.schema.json", "state": "present", "digest": "1414141414141414141414141414141414141414141414141414141414141414", "bytes": 1}
+      ],
+      "digest": "1515151515151515151515151515151515151515151515151515151515151515"
+    }
+  },
+  "replay": {
+    "nonce": "sha256:1616161616161616161616161616161616161616161616161616161616161616",
+    "sequence": 1,
+    "ledger_ref": "aoa-kag://replay/example-ledger",
+    "ledger_digest": "sha256:1717171717171717171717171717171717171717171717171717171717171717",
+    "consumption": {"state": "unconsumed"}
+  },
+  "authority": {
+    "contract_version": "aoa-kag:transition-authority-v1",
+    "contract_digest": "sha256:1818181818181818181818181818181818181818181818181818181818181818",
+    "issuer": {
+      "owner": "aoa-kag",
+      "namespace": "aoa:aoa-kag",
+      "ref": "aoa-kag://issuer/example",
+      "artifact_digest": "sha256:1919191919191919191919191919191919191919191919191919191919191919"
+    },
+    "acceptance": {
+      "state": "pending",
+      "ref": "aoa-kag://acceptance/example",
+      "digest": "sha256:2020202020202020202020202020202020202020202020202020202020202020"
+    }
+  }
+}

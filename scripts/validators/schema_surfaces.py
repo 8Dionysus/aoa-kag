@@ -40,6 +40,14 @@ def validate_schema_surface() -> None:
     for path, label in (
         (REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH, "repo-local KAG corpus manifest"),
         (REPO_LOCAL_KAG_DISTRIBUTION_MANIFEST_SCHEMA_PATH, "repo-local KAG distribution manifest"),
+        (
+            REPO_LOCAL_KAG_PRODUCER_MIGRATION_SCHEMA_PATH,
+            "repo-local KAG producer migration",
+        ),
+        (
+            REPO_LOCAL_KAG_PROJECTION_TRANSITION_SCHEMA_PATH,
+            "repo-local KAG projection transition",
+        ),
         (REPO_LOCAL_KAG_HOT_PROFILE_SCHEMA_PATH, "repo-local KAG hot profile"),
         (KAG_ARTIFACT_LOCATOR_SCHEMA_PATH, "KAG artifact locator"),
         (KAG_PACK_SCHEMA_PATH, "KAG transport pack"),

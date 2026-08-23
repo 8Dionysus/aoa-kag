@@ -122,3 +122,4 @@
 ## 2026-08-22
 
 - [AOA-KAG-D-0043 - AOA-KAG-D-0043 Causal Budget Witness And Owner Schema Admission](../AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md) (`docs/decisions/AOA-KAG-D-0043-causal-budget-witness-and-owner-schema-admission.md`)
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Detached Transition Authority](../AOA-KAG-D-0044-detached-transition-authority.md) (`docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md`)

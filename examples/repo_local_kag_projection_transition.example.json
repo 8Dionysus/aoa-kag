@@ -1,0 +1,102 @@
+{
+  "schema_version": "aoa-repo-local-kag-projection-transition-v1",
+  "kind": "complete_projection_transition",
+  "owner": {
+    "name": "aoa-kag",
+    "namespace": "aoa:aoa-kag",
+    "owner_type": "organ",
+    "root": "."
+  },
+  "decision": {
+    "ref": "aoa-kag:docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md",
+    "digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "posture": "proposed"
+  },
+  "predecessor": {
+    "schema_version": "aoa-repo-local-kag-family-manifest-v3",
+    "ref": "1111111111111111111111111111111111111111",
+    "family_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "source_snapshot": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "distribution_digest": null
+  },
+  "target": {
+    "transition": "complete_projection_refresh",
+    "family": {
+      "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+      "ref": "4444444444444444444444444444444444444444",
+      "family_digest": "5555555555555555555555555555555555555555555555555555555555555555",
+      "source_snapshot": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "distribution_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "producer_identity": {
+      "contract_version": "aoa-kag:budget-semantic-admission-v3",
+      "owner": "aoa-kag",
+      "base_ref": "8888888888888888888888888888888888888888",
+      "files": [
+        {"path": "one", "state": "present", "digest": "9999999999999999999999999999999999999999999999999999999999999999", "bytes": 1},
+        {"path": "two", "state": "present", "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bytes": 1},
+        {"path": "three", "state": "present", "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1},
+        {"path": "four", "state": "present", "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "bytes": 1},
+        {"path": "five", "state": "present", "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "bytes": 1},
+        {"path": "six", "state": "present", "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "bytes": 1},
+        {"path": "seven", "state": "present", "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "bytes": 1},
+        {"path": "eight", "state": "present", "digest": "1212121212121212121212121212121212121212121212121212121212121212", "bytes": 1},
+        {"path": "nine", "state": "present", "digest": "1313131313131313131313131313131313131313131313131313131313131313", "bytes": 1},
+        {"path": "ten", "state": "present", "digest": "1414141414141414141414141414141414141414141414141414141414141414", "bytes": 1}
+      ],
+      "digest": "1515151515151515151515151515151515151515151515151515151515151515"
+    }
+  },
+  "projection": {
+    "spec": {"name": "aoa-kag:complete-tiered-family-projection", "version": "v1"},
+    "before": {"state": null, "hot_profile_digest": null, "partitioning_digest": null},
+    "after": {
+      "state": "shadow",
+      "hot_profile_digest": "sha256:1616161616161616161616161616161616161616161616161616161616161616",
+      "partitioning_digest": "sha256:1717171717171717171717171717171717171717171717171717171717171717"
+    }
+  },
+  "output": {
+    "state": "complete",
+    "family_digest": "5555555555555555555555555555555555555555555555555555555555555555",
+    "source_snapshot": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "component_digests": {
+      "corpus_manifest": "sha256:1818181818181818181818181818181818181818181818181818181818181818",
+      "distribution_manifest": "sha256:1919191919191919191919191919191919191919191919191919191919191919",
+      "hot_profile": "sha256:2020202020202020202020202020202020202020202020202020202020202020",
+      "artifact_locators": "sha256:2121212121212121212121212121212121212121212121212121212121212121",
+      "pack_index": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "owner_release": "sha256:2323232323232323232323232323232323232323232323232323232323232323"
+    },
+    "placement": {
+      "state": "shadow",
+      "git_hot_object_set_digest": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+      "artifact_cold_object_set_digest": "sha256:2525252525252525252525252525252525252525252525252525252525252525",
+      "git_hot_objects": 1,
+      "artifact_cold_objects": 1
+    },
+    "output_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "replay": {
+    "nonce": "sha256:2626262626262626262626262626262626262626262626262626262626262626",
+    "sequence": 1,
+    "ledger_ref": "aoa-kag://replay/example-ledger",
+    "ledger_digest": "sha256:2727272727272727272727272727272727272727272727272727272727272727",
+    "consumption": {"state": "unconsumed"}
+  },
+  "authority": {
+    "contract_version": "aoa-kag:transition-authority-v1",
+    "contract_digest": "sha256:2828282828282828282828282828282828282828282828282828282828282828",
+    "issuer": {
+      "owner": "aoa-kag",
+      "namespace": "aoa:aoa-kag",
+      "ref": "aoa-kag://issuer/example",
+      "artifact_digest": "sha256:2929292929292929292929292929292929292929292929292929292929292929"
+    },
+    "acceptance": {
+      "state": "pending",
+      "ref": "aoa-kag://acceptance/example",
+      "digest": "sha256:3030303030303030303030303030303030303030303030303030303030303030"
+    }
+  }
+}

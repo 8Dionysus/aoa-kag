@@ -300,6 +300,20 @@
       ]
     },
     {
+      "path": "tests/test_repo_local_kag_transition_authority.py",
+      "family": "kag/transition-authority",
+      "protects": "Detached producer-lineage authority, complete projection transition identity, replay and self-issuance guards, and separation from ordinary D-0043 budget receipts.",
+      "owner_surface": "docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md",
+      "runtime_cost": "fast",
+      "focused_target": "tests/test_repo_local_kag_transition_authority.py",
+      "failure_route": "Route through D-0044, the transition schemas, portable/tiered owner validators, or the explicit generator validation lane.",
+      "coverage_kinds": [
+        "source/route-contract",
+        "generated/parity",
+        "release/artifact-trust"
+      ]
+    },
+    {
       "path": "tests/test_repo_local_kag_tiered_family.py",
       "family": "kag/tiered-family-distribution",
       "protects": "Separated corpus and distribution identity, deterministic Git-hot selection, CAS object reuse, bounded pack ranges, dual-reader exact parity, explicit degradation, corruption rejection, and offline export/import.",

@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-projection-transition.schema.json",
+  "title": "AoA repo-local KAG complete projection transition authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "owner",
+    "decision",
+    "predecessor",
+    "target",
+    "projection",
+    "output",
+    "replay",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa-repo-local-kag-projection-transition-v1"},
+    "kind": {"const": "complete_projection_transition"},
+    "owner": {"$ref": "#/$defs/owner"},
+    "decision": {"$ref": "#/$defs/decision"},
+    "predecessor": {"$ref": "#/$defs/family"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transition", "family", "producer_identity"],
+      "properties": {
+        "transition": {"const": "complete_projection_refresh"},
+        "family": {"$ref": "#/$defs/family"},
+        "producer_identity": {"$ref": "#/$defs/producerIdentity"}
+      }
+    },
+    "projection": {"$ref": "#/$defs/projection"},
+    "output": {"$ref": "#/$defs/output"},
+    "replay": {"$ref": "#/$defs/replay"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sha256Digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "namespace", "owner_type", "root"],
+      "properties": {
+        "name": {"const": "aoa-kag"},
+        "namespace": {"const": "aoa:aoa-kag"},
+        "owner_type": {"const": "organ"},
+        "root": {"const": "."}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "digest", "posture"],
+      "properties": {
+        "ref": {
+          "const": "aoa-kag:docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md"
+        },
+        "digest": {"$ref": "#/$defs/digest"},
+        "posture": {"enum": ["proposed", "accepted", "superseded"]}
+      }
+    },
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "ref",
+        "family_digest",
+        "source_snapshot",
+        "distribution_digest"
+      ],
+      "properties": {
+        "schema_version": {
+          "enum": [
+            "aoa-repo-local-kag-family-manifest-v3",
+            "aoa-repo-local-kag-corpus-manifest-v1",
+            "aoa-repo-local-kag-distribution-manifest-v1"
+          ]
+        },
+        "ref": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "family_digest": {"$ref": "#/$defs/digest"},
+        "source_snapshot": {"$ref": "#/$defs/sha256Digest"},
+        "distribution_digest": {
+          "anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]
+        }
+      }
+    },
+    "producerIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_version", "owner", "base_ref", "files", "digest"],
+      "properties": {
+        "contract_version": {"const": "aoa-kag:budget-semantic-admission-v3"},
+        "owner": {"const": "aoa-kag"},
+        "base_ref": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "files": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "state", "digest", "bytes"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "state": {"const": "present"},
+              "digest": {"$ref": "#/$defs/digest"},
+              "bytes": {"type": "integer", "minimum": 0}
+            }
+          }
+        },
+        "digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spec", "before", "after"],
+      "properties": {
+        "spec": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version"],
+          "properties": {
+            "name": {"const": "aoa-kag:complete-tiered-family-projection"},
+            "version": {"const": "v1"}
+          }
+        },
+        "before": {"$ref": "#/$defs/placement"},
+        "after": {"$ref": "#/$defs/placement"}
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "hot_profile_digest", "partitioning_digest"],
+      "properties": {
+        "state": {
+          "anyOf": [
+            {"type": "string", "enum": ["shadow", "externalized"]},
+            {"type": "null"}
+          ]
+        },
+        "hot_profile_digest": {
+          "anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]
+        },
+        "partitioning_digest": {
+          "anyOf": [{"$ref": "#/$defs/sha256Digest"}, {"type": "null"}]
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "family_digest",
+        "source_snapshot",
+        "component_digests",
+        "placement",
+        "output_digest"
+      ],
+      "properties": {
+        "state": {"const": "complete"},
+        "family_digest": {"$ref": "#/$defs/digest"},
+        "source_snapshot": {"$ref": "#/$defs/sha256Digest"},
+        "component_digests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "corpus_manifest",
+            "distribution_manifest",
+            "hot_profile",
+            "artifact_locators",
+            "pack_index",
+            "owner_release"
+          ],
+          "properties": {
+            "corpus_manifest": {"$ref": "#/$defs/sha256Digest"},
+            "distribution_manifest": {"$ref": "#/$defs/sha256Digest"},
+            "hot_profile": {"$ref": "#/$defs/sha256Digest"},
+            "artifact_locators": {"$ref": "#/$defs/sha256Digest"},
+            "pack_index": {"$ref": "#/$defs/sha256Digest"},
+            "owner_release": {"$ref": "#/$defs/sha256Digest"}
+          }
+        },
+        "placement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "git_hot_object_set_digest",
+            "artifact_cold_object_set_digest",
+            "git_hot_objects",
+            "artifact_cold_objects"
+          ],
+          "properties": {
+            "state": {"enum": ["shadow", "externalized"]},
+            "git_hot_object_set_digest": {"$ref": "#/$defs/sha256Digest"},
+            "artifact_cold_object_set_digest": {"$ref": "#/$defs/sha256Digest"},
+            "git_hot_objects": {"type": "integer", "minimum": 0},
+            "artifact_cold_objects": {"type": "integer", "minimum": 0}
+          }
+        },
+        "output_digest": {"$ref": "#/$defs/sha256Digest"}
+      }
+    },
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nonce", "sequence", "ledger_ref", "ledger_digest", "consumption"],
+      "properties": {
+        "nonce": {"$ref": "#/$defs/sha256Digest"},
+        "sequence": {"type": "integer", "minimum": 1},
+        "ledger_ref": {"type": "string", "pattern": "^aoa-kag://replay/[A-Za-z0-9._/-]+$"},
+        "ledger_digest": {"$ref": "#/$defs/sha256Digest"},
+        "consumption": {"$ref": "#/$defs/consumption"}
+      }
+    },
+    "consumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {"enum": ["unconsumed", "consumed"]},
+        "record_ref": {"type": "string", "minLength": 1},
+        "record_digest": {"$ref": "#/$defs/sha256Digest"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "consumed"}}},
+          "then": {"required": ["record_ref", "record_digest"]}
+        },
+        {
+          "if": {"properties": {"state": {"const": "unconsumed"}}},
+          "then": {"not": {"anyOf": [{"required": ["record_ref"]}, {"required": ["record_digest"]}]}}
+        }
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_version", "contract_digest", "issuer", "acceptance"],
+      "properties": {
+        "contract_version": {"const": "aoa-kag:transition-authority-v1"},
+        "contract_digest": {"$ref": "#/$defs/sha256Digest"},
+        "issuer": {"$ref": "#/$defs/issuer"},
+        "acceptance": {"$ref": "#/$defs/acceptance"}
+      }
+    },
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "namespace", "ref", "artifact_digest"],
+      "properties": {
+        "owner": {"const": "aoa-kag"},
+        "namespace": {"const": "aoa:aoa-kag"},
+        "ref": {"type": "string", "pattern": "^aoa-kag://issuer/[A-Za-z0-9._/-]+$"},
+        "artifact_digest": {"$ref": "#/$defs/sha256Digest"}
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "ref", "digest"],
+      "properties": {
+        "state": {"enum": ["pending", "independently_accepted"]},
+        "ref": {"type": "string", "pattern": "^aoa-kag://acceptance/[A-Za-z0-9._/-]+$"},
+        "digest": {"$ref": "#/$defs/sha256Digest"}
+      }
+    }
+  }
+}

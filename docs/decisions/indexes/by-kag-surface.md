@@ -61,6 +61,10 @@
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 
+## complete tiered projection
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Detached Transition Authority](../AOA-KAG-D-0044-detached-transition-authority.md) (`docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md`)
+
 ## content-addressed cold shards
 
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
@@ -149,6 +153,10 @@
 ## generated-change budget
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## generator validation
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Detached Transition Authority](../AOA-KAG-D-0044-detached-transition-authority.md) (`docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md`)
 
 ## Git-hot bootstrap
 
@@ -313,6 +321,10 @@
 ## portable record corpus
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## producer lineage
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Detached Transition Authority](../AOA-KAG-D-0044-detached-transition-authority.md) (`docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md`)
 
 ## profile-aware query
 

@@ -62,6 +62,33 @@ BUDGET_PROCEDURE_PATHS = (
     Path("schemas/repo-local-kag-budget-evidence.schema.json"),
     Path("schemas/repo-local-kag-budget-receipt.schema.json"),
 )
+TRANSITION_AUTHORITY_VERSION = "aoa-kag:transition-authority-v1"
+TRANSITION_AUTHORITY_ARTIFACT_VERSION = (
+    "aoa-kag:detached-transition-authority-v1"
+)
+TRANSITION_DECISION_REF = (
+    "aoa-kag:docs/decisions/"
+    "AOA-KAG-D-0044-detached-transition-authority.md"
+)
+TRANSITION_CONTRACT_PATHS = (
+    Path("scripts/repo_local/portable_family.py"),
+    Path("scripts/repo_local/tiered_family.py"),
+    Path("scripts/generate_repo_local_kag_index.py"),
+    Path("schemas/repo-local-kag-producer-migration.schema.json"),
+    Path("schemas/repo-local-kag-projection-transition.schema.json"),
+)
+PRODUCER_MIGRATION_SCHEMA_VERSION = (
+    "aoa-repo-local-kag-producer-migration-v1"
+)
+PROJECTION_TRANSITION_SCHEMA_VERSION = (
+    "aoa-repo-local-kag-projection-transition-v1"
+)
+PRODUCER_MIGRATION_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-producer-migration.schema.json"
+)
+PROJECTION_TRANSITION_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-projection-transition.schema.json"
+)
 BUDGET_EVIDENCE_SCHEMA_PATH = Path(
     "schemas/repo-local-kag-budget-evidence.schema.json"
 )
@@ -170,6 +197,16 @@ class BudgetReceiptValidationError(PortableFamilyError):
 
 class BudgetPairPublicationError(PortableFamilyError):
     """A paired receipt/evidence publication failed after semantic preflight."""
+
+
+class TransitionAuthorityError(PortableFamilyError):
+    """A detached transition cannot be admitted by the owner contract."""
+
+    def __init__(self, state: str, message: str) -> None:
+        if state not in BUDGET_SEMANTIC_STATES:
+            raise ValueError(f"unknown transition authority state: {state}")
+        self.state = state
+        super().__init__(message)
 
 
 def effective_index_surface_record(
@@ -2319,6 +2356,578 @@ def _validate_published_budget_schema(
             f"budget {kind} does not match its published schema{suffix}: "
             f"{exc.message}"
         ) from exc
+
+
+def _transition_schema_path(kind: str) -> Path:
+    if kind == "producer_migration":
+        return _procedure_root(Path(".")) / PRODUCER_MIGRATION_SCHEMA_PATH
+    if kind == "projection_transition":
+        return _procedure_root(Path(".")) / PROJECTION_TRANSITION_SCHEMA_PATH
+    raise TransitionAuthorityError(
+        "unsupported",
+        f"unknown transition authority kind: {kind}",
+    )
+
+
+def _validate_transition_schema(
+    kind: str,
+    payload: Mapping[str, Any],
+) -> None:
+    path = _transition_schema_path(kind)
+    try:
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(dict(payload))
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"transition {kind} schema is unavailable: {path}",
+        ) from exc
+    except SchemaError as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {kind} schema is invalid: {path}",
+        ) from exc
+    except JsonSchemaValidationError as exc:
+        location = ".".join(str(part) for part in exc.absolute_path)
+        suffix = f" at {location}" if location else ""
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {kind} does not match its published schema{suffix}: "
+            f"{exc.message}",
+        ) from exc
+
+
+def _transition_contract_identity(
+    owner_root: Path | None = None,
+) -> dict[str, Any]:
+    """Return the exact non-authorizing code/schema contract identity.
+
+    This identity is intentionally separate from ``BUDGET_PROCEDURE_PATHS``.
+    A transition authority can bind this stricter contract without changing
+    the ordinary D-0043 producer identity or receipt ABI.
+    """
+    del owner_root
+    root = _procedure_root(Path("."))
+    files: list[dict[str, Any]] = []
+    for relative in TRANSITION_CONTRACT_PATHS:
+        path = root / relative
+        if not path.is_file():
+            raise TransitionAuthorityError(
+                "migration_required",
+                f"transition contract surface is missing: {relative}",
+            )
+        files.append(
+            {
+                "path": relative.as_posix(),
+                "digest": sha256_bytes(path.read_bytes()),
+                "bytes": path.stat().st_size,
+            }
+        )
+    return {
+        "contract_version": TRANSITION_AUTHORITY_VERSION,
+        "owner": "aoa-kag",
+        "files": files,
+        "digest": f"sha256:{sha256_bytes(canonical_json_bytes(files))}",
+    }
+
+
+def _transition_subject_digest(payload: Mapping[str, Any]) -> str:
+    subject = {
+        key: copy.deepcopy(value)
+        for key, value in payload.items()
+        if key != "authority"
+    }
+    return f"sha256:{sha256_bytes(canonical_json_bytes(subject))}"
+
+
+def _transition_family_identity(
+    payload: Mapping[str, Any],
+    *,
+    label: str,
+) -> Mapping[str, Any]:
+    if not isinstance(payload, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {label} family identity is not an object",
+        )
+    family_digest = payload.get("family_digest")
+    source_snapshot = payload.get("source_snapshot")
+    distribution_digest = payload.get("distribution_digest")
+    if (
+        not isinstance(family_digest, str)
+        or len(family_digest) != 64
+        or any(character not in HEX_DIGITS for character in family_digest)
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {label} family digest is malformed",
+        )
+    if (
+        not isinstance(source_snapshot, str)
+        or not source_snapshot.startswith("sha256:")
+        or len(source_snapshot.removeprefix("sha256:")) != 64
+        or any(
+            character not in HEX_DIGITS
+            for character in source_snapshot.removeprefix("sha256:")
+        )
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {label} source snapshot is malformed",
+        )
+    if distribution_digest is not None and (
+        not isinstance(distribution_digest, str)
+        or not distribution_digest.startswith("sha256:")
+        or len(distribution_digest.removeprefix("sha256:")) != 64
+        or any(
+            character not in HEX_DIGITS
+            for character in distribution_digest.removeprefix("sha256:")
+        )
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {label} distribution digest is malformed",
+        )
+    ref = payload.get("ref")
+    schema_version = payload.get("schema_version")
+    if (
+        not isinstance(ref, str)
+        or not 40 <= len(ref) <= 64
+        or any(character not in HEX_DIGITS for character in ref)
+        or not isinstance(schema_version, str)
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            f"transition {label} family reference is malformed",
+        )
+    return payload
+
+
+def _transition_validate_decision(
+    payload: Mapping[str, Any],
+    *,
+    owner_root: Path,
+) -> None:
+    decision = payload.get("decision")
+    if not isinstance(decision, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition decision binding is missing",
+        )
+    if decision.get("ref") != TRANSITION_DECISION_REF:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "transition decision is not the owner transition decision",
+        )
+    posture = decision.get("posture")
+    if posture != "accepted":
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision is not independently accepted",
+        )
+    relative = Path(TRANSITION_DECISION_REF.removeprefix("aoa-kag:"))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "transition decision reference escapes the owner root",
+        )
+    path = owner_root.resolve() / relative
+    if not path.is_file():
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"accepted transition decision is unavailable: {relative}",
+        )
+    digest = decision.get("digest")
+    if digest != sha256_bytes(path.read_bytes()):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition decision digest is stale",
+        )
+    posture_lines = [
+        line.strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip().startswith("- Posture:")
+    ]
+    if posture_lines != ["- Posture: accepted"]:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision source is not accepted",
+        )
+
+
+def _transition_validate_authority(
+    payload: Mapping[str, Any],
+    *,
+    owner_root: Path | None,
+    candidate_root: Path | None,
+    detached_authority_path: Path | None,
+    acceptance_record: Mapping[str, Any] | None,
+    replay_state: Mapping[str, Any] | None,
+) -> None:
+    effective_owner_root = (
+        owner_root.resolve()
+        if owner_root is not None
+        else _procedure_root(Path("."))
+    )
+    authority = payload.get("authority")
+    if not isinstance(authority, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition issuer authority is missing",
+        )
+    contract = _transition_contract_identity(effective_owner_root)
+    if authority.get("contract_version") != TRANSITION_AUTHORITY_VERSION:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "transition authority contract version is unsupported",
+        )
+    if authority.get("contract_digest") != contract["digest"]:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition authority contract identity is stale",
+        )
+    _transition_validate_decision(payload, owner_root=effective_owner_root)
+
+    issuer = authority.get("issuer")
+    acceptance = authority.get("acceptance")
+    if not isinstance(issuer, Mapping) or not isinstance(acceptance, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition issuer or acceptance binding is missing",
+        )
+    if acceptance.get("state") != "independently_accepted":
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition acceptance is pending",
+        )
+    if detached_authority_path is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "detached transition authority artifact is missing",
+        )
+    detached_path = Path(detached_authority_path).resolve()
+    effective_candidate_root = (
+        candidate_root.resolve()
+        if candidate_root is not None
+        else effective_owner_root
+    )
+    if detached_path == effective_candidate_root or effective_candidate_root in detached_path.parents:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "candidate-authored transition authority is not independent",
+        )
+    try:
+        artifact_bytes = detached_path.read_bytes()
+    except (FileNotFoundError, IsADirectoryError, OSError) as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"detached transition authority artifact is unavailable: {detached_path}",
+        ) from exc
+    artifact_digest = issuer.get("artifact_digest")
+    if artifact_digest != f"sha256:{sha256_bytes(artifact_bytes)}":
+        raise TransitionAuthorityError(
+            "unknown",
+            "detached transition authority artifact digest does not match",
+        )
+    try:
+        detached_record = json.loads(artifact_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise TransitionAuthorityError(
+            "unknown",
+            "detached transition authority artifact is not typed JSON",
+        ) from exc
+    expected_detached_record = {
+        "schema_version": TRANSITION_AUTHORITY_ARTIFACT_VERSION,
+        "owner": "aoa-kag",
+        "subject_digest": _transition_subject_digest(payload),
+        "issuer_ref": issuer.get("ref"),
+        "acceptance_ref": acceptance.get("ref"),
+        "acceptance_digest": acceptance.get("digest"),
+        "state": "independently_accepted",
+    }
+    if detached_record != expected_detached_record:
+        raise TransitionAuthorityError(
+            "unknown",
+            "detached transition authority is not bound to this transition",
+        )
+    if acceptance_record is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "independent transition acceptance record is missing",
+        )
+    expected_acceptance = {
+        "state": "independently_accepted",
+        "ref": acceptance.get("ref"),
+        "digest": acceptance.get("digest"),
+    }
+    if dict(acceptance_record) != expected_acceptance:
+        raise TransitionAuthorityError(
+            "unknown",
+            "independent transition acceptance does not match",
+        )
+
+    replay = payload.get("replay")
+    consumption = replay.get("consumption") if isinstance(replay, Mapping) else None
+    if not isinstance(replay, Mapping) or not isinstance(
+        consumption,
+        Mapping,
+    ) or consumption.get("state") != "unconsumed":
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition replay state is already consumed or malformed",
+        )
+    if replay_state is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "immutable transition replay ledger snapshot is missing",
+        )
+    if (
+        replay_state.get("ledger_ref") != replay.get("ledger_ref")
+        or replay_state.get("ledger_digest") != replay.get("ledger_digest")
+        or type(replay_state.get("last_sequence")) is not int
+        or replay_state.get("last_sequence", -1) < 0
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition replay ledger snapshot is stale or wrong",
+        )
+    used_nonces = replay_state.get("used_nonces")
+    nonce = replay.get("nonce")
+    sequence = replay.get("sequence")
+    if (
+        not isinstance(used_nonces, list)
+        or not all(isinstance(value, str) for value in used_nonces)
+        or len(used_nonces) != len(set(used_nonces))
+        or not isinstance(nonce, str)
+        or type(sequence) is not int
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition replay nonce or sequence is malformed",
+        )
+    if nonce in used_nonces or sequence <= replay_state["last_sequence"]:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition nonce or sequence was already consumed",
+        )
+
+
+def _validate_transition_binding(
+    payload: Mapping[str, Any],
+    *,
+    kind: str,
+    predecessor: Mapping[str, Any],
+    target: Mapping[str, Any],
+    owner_root: Path | None,
+    candidate_root: Path | None,
+    detached_authority_path: Path | None,
+    acceptance_record: Mapping[str, Any] | None,
+    replay_state: Mapping[str, Any] | None,
+) -> None:
+    owner = payload.get("owner")
+    if isinstance(owner, Mapping) and owner.get("name") != "aoa-kag":
+        raise TransitionAuthorityError(
+            "unsupported",
+            "transition owner identity is not aoa-kag",
+        )
+    _validate_transition_schema(kind, payload)
+    if payload.get("owner") != {
+        "name": "aoa-kag",
+        "namespace": "aoa:aoa-kag",
+        "owner_type": "organ",
+        "root": ".",
+    }:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "transition owner identity is not aoa-kag",
+        )
+    if payload.get("predecessor") != dict(predecessor):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition predecessor is not the immutable base family",
+        )
+    if payload.get("target") != dict(target):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition target identity is stale or wrong",
+        )
+    predecessor_family = _transition_family_identity(
+        payload["predecessor"],
+        label="predecessor",
+    )
+    target_payload = payload["target"]
+    target_family = _transition_family_identity(
+        target_payload["family"],
+        label="target",
+    )
+    if target_family.get("schema_version") != TIERED_DISTRIBUTION_SCHEMA_VERSION:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "transition target is not the v4 distribution family",
+        )
+    if target_family.get("distribution_digest") is None:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition target is missing its distribution identity",
+        )
+    if (
+        predecessor_family.get("schema_version") == SCHEMA_VERSION
+        and predecessor_family.get("distribution_digest") is not None
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "legacy v3 predecessor carries an invalid distribution identity",
+        )
+    if target_family.get("family_digest") == predecessor_family.get(
+        "family_digest"
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition target does not differ from its predecessor",
+        )
+    producer_identity = target_payload.get("producer_identity")
+    if not isinstance(producer_identity, Mapping) or _valid_procedure_identity(
+        producer_identity
+    ) is None:
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition target producer identity is not authenticated",
+        )
+    if kind == "producer_migration" and predecessor_family.get(
+        "schema_version"
+    ) != SCHEMA_VERSION:
+        raise TransitionAuthorityError(
+            "unsupported",
+            "producer migration predecessor is not the legacy v3 family",
+        )
+    _transition_validate_authority(
+        payload,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+        detached_authority_path=detached_authority_path,
+        acceptance_record=acceptance_record,
+        replay_state=replay_state,
+    )
+
+
+def validate_detached_producer_migration(
+    migration: Mapping[str, Any],
+    *,
+    predecessor: Mapping[str, Any],
+    target: Mapping[str, Any],
+    detached_authority_path: Path | None = None,
+    acceptance_record: Mapping[str, Any] | None = None,
+    replay_state: Mapping[str, Any] | None = None,
+    owner_root: Path | None = None,
+    candidate_root: Path | None = None,
+) -> None:
+    """Admit one detached v3 -> v4 producer-lineage transition.
+
+    The function validates supplied evidence only.  It never issues a
+    migration, advances a replay ledger, writes a receipt, or mutates a
+    generated family.
+    """
+    if not isinstance(migration, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            "producer migration must be an object",
+        )
+    _validate_transition_binding(
+        migration,
+        kind="producer_migration",
+        predecessor=predecessor,
+        target=target,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+        detached_authority_path=detached_authority_path,
+        acceptance_record=acceptance_record,
+        replay_state=replay_state,
+    )
+
+
+def validate_full_projection_transition(
+    transition: Mapping[str, Any],
+    *,
+    predecessor: Mapping[str, Any],
+    target: Mapping[str, Any],
+    expected_projection: Mapping[str, Any],
+    expected_output: Mapping[str, Any],
+    detached_authority_path: Path | None = None,
+    acceptance_record: Mapping[str, Any] | None = None,
+    replay_state: Mapping[str, Any] | None = None,
+    owner_root: Path | None = None,
+    candidate_root: Path | None = None,
+) -> None:
+    """Admit a complete projection transition as a separate typed lane."""
+    if not isinstance(transition, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            "projection transition must be an object",
+        )
+    _validate_transition_binding(
+        transition,
+        kind="projection_transition",
+        predecessor=predecessor,
+        target=target,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+        detached_authority_path=detached_authority_path,
+        acceptance_record=acceptance_record,
+        replay_state=replay_state,
+    )
+    if transition.get("projection") != dict(expected_projection):
+        raise TransitionAuthorityError(
+            "unknown",
+            "complete projection transition has a partition or placement residue",
+        )
+    if transition.get("output") != dict(expected_output):
+        raise TransitionAuthorityError(
+            "unknown",
+            "complete projection output is incomplete or stale",
+        )
+    output = transition["output"]
+    output_digest = output.get("output_digest")
+    candidate_output = copy.deepcopy(dict(output))
+    candidate_output["output_digest"] = f"sha256:{ZERO_DIGEST}"
+    expected_digest = f"sha256:{sha256_bytes(canonical_json_bytes(candidate_output))}"
+    if output_digest != expected_digest:
+        raise TransitionAuthorityError(
+            "unknown",
+            "complete projection output fixed point does not match",
+        )
+    target_family = target["family"]
+    if (
+        output.get("state") != "complete"
+        or output.get("family_digest") != target_family.get("family_digest")
+        or output.get("source_snapshot") != target_family.get("source_snapshot")
+        or output.get("placement", {}).get("state")
+        != transition.get("projection", {}).get("after", {}).get("state")
+    ):
+        raise TransitionAuthorityError(
+            "unknown",
+            "complete projection output is not bound to the target family",
+        )
+
+
+def transition_admission_state(
+    kind: str,
+    payload: Mapping[str, Any] | None,
+    **kwargs: Any,
+) -> str:
+    """Return a fail-closed transition state without changing owner state."""
+    if payload is None:
+        return "migration_required"
+    try:
+        if kind == "producer_migration":
+            validate_detached_producer_migration(payload, **kwargs)
+        elif kind == "projection_transition":
+            validate_full_projection_transition(payload, **kwargs)
+        else:
+            return "unsupported"
+    except TransitionAuthorityError as exc:
+        return exc.state
+    return "supported"
 
 
 def _budget_procedure_identity(

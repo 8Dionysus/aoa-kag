@@ -21,6 +21,8 @@ from .portable_family import (
     reconstruct_compatibility_family,
     render_manifest,
     sha256_bytes,
+    validate_detached_producer_migration,
+    validate_full_projection_transition,
 )
 
 
@@ -1719,6 +1721,216 @@ def tiered_budget_projection(
             for path in sorted({*control_paths, *expected_shards})
         ],
     }
+
+
+def tiered_transition_target(
+    build: TieredFamilyBuild,
+    *,
+    target_ref: str,
+) -> dict[str, Any]:
+    """Project one built v4 family into the transition target identity."""
+    if (
+        not isinstance(target_ref, str)
+        or not 40 <= len(target_ref) <= 64
+        or any(character not in "0123456789abcdef" for character in target_ref)
+    ):
+        raise TieredFamilyError("transition target ref must be an immutable Git ref")
+    corpus = build.corpus_manifest
+    distribution = build.distribution_manifest
+    corpus_identity = corpus.get("corpus_identity")
+    distribution_identity = distribution.get("distribution_identity")
+    producer_identity = corpus.get("producer_identity")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (corpus_identity, distribution_identity, producer_identity)
+    ):
+        raise TieredFamilyError("tiered transition target identities are incomplete")
+    return {
+        "transition": "v3_to_v4_producer_bootstrap",
+        "family": {
+            "schema_version": DISTRIBUTION_SCHEMA_VERSION,
+            "ref": target_ref,
+            "family_digest": _digest_hex(
+                str(corpus_identity["content_digest"])
+            ),
+            "source_snapshot": corpus_identity["source_snapshot"],
+            "distribution_digest": distribution_identity["content_digest"],
+        },
+        "producer_identity": copy.deepcopy(dict(producer_identity)),
+    }
+
+
+def tiered_projection_target(
+    build: TieredFamilyBuild,
+    *,
+    target_ref: str,
+) -> dict[str, Any]:
+    """Project one built v4 family into the complete-projection target lane."""
+    target = tiered_transition_target(build, target_ref=target_ref)
+    target["transition"] = "complete_projection_refresh"
+    return target
+
+
+def _tiered_projection_placement(
+    build: TieredFamilyBuild | None,
+) -> dict[str, Any]:
+    if build is None:
+        return {
+            "state": None,
+            "hot_profile_digest": None,
+            "partitioning_digest": None,
+        }
+    distribution = build.distribution_manifest
+    placement = distribution.get("placement")
+    corpus = build.corpus_manifest
+    hot_profile = build.hot_profile
+    if not isinstance(placement, Mapping):
+        raise TieredFamilyError("tiered transition placement is missing")
+    if placement.get("state") not in {"shadow", "externalized"}:
+        raise TieredFamilyError("tiered transition placement state is invalid")
+    return {
+        "state": placement["state"],
+        "hot_profile_digest": hot_profile["profile_identity"][
+            "content_digest"
+        ],
+        "partitioning_digest": _sha256_uri(
+            canonical_json_bytes(corpus["partitioning"])
+        ),
+    }
+
+
+def complete_tiered_projection_output(
+    build: TieredFamilyBuild,
+) -> dict[str, Any]:
+    """Return a fixed-point identity for every v4 projection component."""
+    corpus = build.corpus_manifest
+    distribution = build.distribution_manifest
+    corpus_identity = corpus.get("corpus_identity")
+    distribution_identity = distribution.get("distribution_identity")
+    placement = distribution.get("placement")
+    if not isinstance(corpus_identity, Mapping) or not isinstance(
+        distribution_identity,
+        Mapping,
+    ) or not isinstance(placement, Mapping):
+        raise TieredFamilyError("complete projection identities are incomplete")
+    hot_placement = placement.get("git_hot")
+    cold_placement = placement.get("artifact_cold")
+    if not isinstance(hot_placement, Mapping) or not isinstance(
+        cold_placement,
+        Mapping,
+    ):
+        raise TieredFamilyError("complete projection placement is incomplete")
+    output: dict[str, Any] = {
+        "state": "complete",
+        "family_digest": _digest_hex(str(corpus_identity["content_digest"])),
+        "source_snapshot": corpus_identity["source_snapshot"],
+        "component_digests": {
+            "corpus_manifest": corpus_manifest_document_digest(corpus),
+            "distribution_manifest": distribution_identity["content_digest"],
+            "hot_profile": build.hot_profile["profile_identity"][
+                "content_digest"
+            ],
+            "artifact_locators": build.locator_manifest["locator_identity"][
+                "content_digest"
+            ],
+            "pack_index": build.pack_index["pack_index_identity"][
+                "content_digest"
+            ],
+            "owner_release": build.owner_release["release_identity"][
+                "content_digest"
+            ],
+        },
+        "placement": {
+            "state": placement["state"],
+            "git_hot_object_set_digest": hot_placement["object_set_digest"],
+            "artifact_cold_object_set_digest": cold_placement[
+                "object_set_digest"
+            ],
+            "git_hot_objects": hot_placement["objects"],
+            "artifact_cold_objects": cold_placement["objects"],
+        },
+        "output_digest": ZERO_DIGEST_URI,
+    }
+    output["output_digest"] = _sha256_uri(
+        canonical_json_bytes(output)
+    )
+    return output
+
+
+def complete_tiered_projection_expectations(
+    build: TieredFamilyBuild,
+    *,
+    predecessor_build: TieredFamilyBuild | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build exact before/after placement and complete output expectations."""
+    return (
+        {
+            "spec": {
+                "name": "aoa-kag:complete-tiered-family-projection",
+                "version": "v1",
+            },
+            "before": _tiered_projection_placement(predecessor_build),
+            "after": _tiered_projection_placement(build),
+        },
+        complete_tiered_projection_output(build),
+    )
+
+
+def validate_tiered_producer_migration(
+    migration: Mapping[str, Any],
+    *,
+    predecessor: Mapping[str, Any],
+    build: TieredFamilyBuild,
+    target_ref: str,
+    detached_authority_path: Path | None = None,
+    acceptance_record: Mapping[str, Any] | None = None,
+    replay_state: Mapping[str, Any] | None = None,
+    owner_root: Path | None = None,
+    candidate_root: Path | None = None,
+) -> None:
+    """Validate migration authority against the exact built v4 target."""
+    validate_detached_producer_migration(
+        migration,
+        predecessor=predecessor,
+        target=tiered_transition_target(build, target_ref=target_ref),
+        detached_authority_path=detached_authority_path,
+        acceptance_record=acceptance_record,
+        replay_state=replay_state,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+    )
+
+
+def validate_tiered_projection_transition(
+    transition: Mapping[str, Any],
+    *,
+    predecessor: Mapping[str, Any],
+    build: TieredFamilyBuild,
+    target_ref: str,
+    predecessor_build: TieredFamilyBuild | None = None,
+    detached_authority_path: Path | None = None,
+    acceptance_record: Mapping[str, Any] | None = None,
+    replay_state: Mapping[str, Any] | None = None,
+    owner_root: Path | None = None,
+    candidate_root: Path | None = None,
+) -> None:
+    """Validate a complete v4 projection without using a budget receipt."""
+    expected_projection, expected_output = complete_tiered_projection_expectations(
+        build,
+        predecessor_build=predecessor_build,
+    )
+    validate_full_projection_transition(
+        transition,
+        predecessor=predecessor,
+        target=tiered_projection_target(build, target_ref=target_ref),
+        expected_projection=expected_projection,
+        expected_output=expected_output,
+        detached_authority_path=detached_authority_path,
+        acceptance_record=acceptance_record,
+        replay_state=replay_state,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+    )
 
 
 def write_tiered_artifact(
