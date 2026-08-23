@@ -1703,6 +1703,43 @@ def resolve_exact_git_commit(
     return resolved
 
 
+def resolve_exact_git_root(repo_root: Path, label: str) -> Path:
+    """Resolve one supplied path only when it is the Git repository top-level."""
+    try:
+        root = Path(repo_root).resolve()
+    except (OSError, RuntimeError) as exc:
+        raise PortableFamilyError(
+            f"{label} is not an available Git repository root: {repo_root}"
+        ) from exc
+    try:
+        actual = subprocess.run(
+            ("git", "rev-parse", "--show-toplevel"),
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (FileNotFoundError, OSError, subprocess.CalledProcessError) as exc:
+        raise PortableFamilyError(
+            f"{label} is not an available Git repository root: {root}"
+        ) from exc
+    if not actual:
+        raise PortableFamilyError(
+            f"{label} is not an available Git repository root: {root}"
+        )
+    try:
+        actual_root = Path(actual).resolve()
+    except (OSError, RuntimeError) as exc:
+        raise PortableFamilyError(
+            f"{label} is not an available Git repository root: {root}"
+        ) from exc
+    if actual_root != root:
+        raise PortableFamilyError(
+            f"{label} must name the exact Git repository root: {root}"
+        )
+    return root
+
+
 def trusted_transition_target_ref(
     repo_root: Path,
     target_ref: str | None = None,
@@ -2810,6 +2847,55 @@ def _transition_validate_decision(
     return source_commit
 
 
+def _validate_transition_roots(
+    *,
+    owner_root: Path | None,
+    candidate_root: Path | None,
+) -> tuple[Path, Path]:
+    if owner_root is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition owner root is missing",
+        )
+    if candidate_root is None:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition candidate root is missing",
+        )
+    try:
+        resolved_owner_root = resolve_exact_git_root(owner_root, "owner_root")
+        resolved_candidate_root = resolve_exact_git_root(
+            candidate_root,
+            "candidate_root",
+        )
+    except PortableFamilyError as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            str(exc),
+        ) from exc
+    if (
+        resolved_owner_root == resolved_candidate_root
+        or resolved_owner_root in resolved_candidate_root.parents
+        or resolved_candidate_root in resolved_owner_root.parents
+    ):
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision source is not detached from the candidate",
+        )
+    try:
+        resolve_exact_git_commit(
+            resolved_candidate_root,
+            "HEAD",
+            require_clean=True,
+        )
+    except PortableFamilyError as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition candidate is not a clean current Git root",
+        ) from exc
+    return resolved_owner_root, resolved_candidate_root
+
+
 def _external_transition_file(
     path: Path | None,
     *,
@@ -3445,6 +3531,10 @@ def _validate_transition_binding(
             "transition owner identity is not aoa-kag",
         )
     _validate_transition_schema(kind, payload)
+    resolved_owner_root, resolved_candidate_root = _validate_transition_roots(
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+    )
     if payload.get("owner") != {
         "name": "aoa-kag",
         "namespace": "aoa:aoa-kag",
@@ -3519,14 +3609,14 @@ def _validate_transition_binding(
         kind=kind,
         replay_state=replay_state,
         replay_state_path=replay_state_path,
-        owner_root=owner_root,
-        candidate_root=candidate_root,
+        owner_root=resolved_owner_root,
+        candidate_root=resolved_candidate_root,
     )
     _transition_validate_authority(
         payload,
         kind=kind,
-        owner_root=owner_root,
-        candidate_root=candidate_root,
+        owner_root=resolved_owner_root,
+        candidate_root=resolved_candidate_root,
         detached_authority_path=detached_authority_path,
         acceptance_record=acceptance_record,
         acceptance_record_path=acceptance_record_path,

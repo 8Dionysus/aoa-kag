@@ -3505,21 +3505,11 @@ def _transition_predecessor(
 
 
 def _exact_git_root(value: str, label: str) -> Path:
-    root = Path(value).resolve()
     try:
-        actual = subprocess.run(
-            ("git", "rev-parse", "--show-toplevel"),
-            cwd=root,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    except (FileNotFoundError, OSError, subprocess.CalledProcessError) as exc:
-        raise ValueError(f"{label} is not an available Git repository root: {root}") from exc
-    actual_root = Path(actual).resolve()
-    if actual_root != root:
-        raise ValueError(f"{label} must name the exact Git repository root: {root}")
-    return root
+        from scripts.repo_local.portable_family import resolve_exact_git_root
+    except ImportError:  # pragma: no cover - direct script execution
+        from repo_local.portable_family import resolve_exact_git_root  # type: ignore
+    return resolve_exact_git_root(Path(value), label)
 
 
 def _route_legacy_portable_invocation(

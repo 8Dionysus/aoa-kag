@@ -21,6 +21,7 @@ from .portable_family import (
     derive_transition_predecessor,
     manifest_digest as portable_v3_manifest_digest,
     reconstruct_compatibility_family,
+    resolve_exact_git_root,
     trusted_transition_target_ref,
     render_manifest,
     sha256_bytes,
@@ -1901,6 +1902,40 @@ def complete_tiered_projection_expectations(
     )
 
 
+def _resolve_tiered_transition_roots(
+    *,
+    operation: str,
+    repo_root: Path,
+    owner_root: Path | None,
+    candidate_root: Path | None,
+) -> tuple[Path, Path]:
+    if owner_root is None:
+        raise TieredFamilyError(
+            f"{operation} requires an explicit owner Git root"
+        )
+    if candidate_root is None:
+        raise TieredFamilyError(
+            f"{operation} requires an explicit candidate Git root"
+        )
+    try:
+        candidate_context = resolve_exact_git_root(repo_root, "--repo-root")
+        supplied_candidate = resolve_exact_git_root(
+            candidate_root,
+            "--candidate-root",
+        )
+        resolved_owner_root = resolve_exact_git_root(
+            owner_root,
+            "--owner-root",
+        )
+    except PortableFamilyError as exc:
+        raise TieredFamilyError(str(exc)) from exc
+    if supplied_candidate != candidate_context:
+        raise TieredFamilyError(
+            f"{operation} candidate root is not the built repository root"
+        )
+    return candidate_context, resolved_owner_root
+
+
 def validate_tiered_producer_migration(
     migration: Mapping[str, Any],
     *,
@@ -1922,12 +1957,13 @@ def validate_tiered_producer_migration(
         raise TieredFamilyError(
             "producer migration requires trusted target and predecessor Git context"
         )
-    candidate_context = repo_root.resolve()
-    if candidate_root is not None and candidate_root.resolve() != candidate_context:
-        raise TieredFamilyError(
-            "producer migration candidate root is not the built repository root"
-        )
-    expected_predecessor = derive_transition_predecessor(repo_root, base_ref)
+    candidate_context, resolved_owner_root = _resolve_tiered_transition_roots(
+        operation="producer migration",
+        repo_root=repo_root,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+    )
+    expected_predecessor = derive_transition_predecessor(candidate_context, base_ref)
     if dict(predecessor) != expected_predecessor:
         raise TransitionAuthorityError(
             "unknown",
@@ -1939,14 +1975,14 @@ def validate_tiered_producer_migration(
         target=tiered_transition_target(
             build,
             target_ref=target_ref,
-            repo_root=repo_root,
+            repo_root=candidate_context,
         ),
         detached_authority_path=detached_authority_path,
         acceptance_record=acceptance_record,
         acceptance_record_path=acceptance_record_path,
         replay_state=replay_state,
         replay_state_path=replay_state_path,
-        owner_root=owner_root,
+        owner_root=resolved_owner_root,
         candidate_root=candidate_context,
     )
 
@@ -1974,12 +2010,13 @@ def validate_tiered_projection_transition(
         raise TieredFamilyError(
             "projection transition requires trusted target and predecessor Git context"
         )
-    candidate_context = repo_root.resolve()
-    if candidate_root is not None and candidate_root.resolve() != candidate_context:
-        raise TieredFamilyError(
-            "projection transition candidate root is not the built repository root"
-        )
-    expected_predecessor = derive_transition_predecessor(repo_root, base_ref)
+    candidate_context, resolved_owner_root = _resolve_tiered_transition_roots(
+        operation="projection transition",
+        repo_root=repo_root,
+        owner_root=owner_root,
+        candidate_root=candidate_root,
+    )
+    expected_predecessor = derive_transition_predecessor(candidate_context, base_ref)
     if dict(predecessor) != expected_predecessor:
         raise TransitionAuthorityError(
             "unknown",
@@ -2000,7 +2037,7 @@ def validate_tiered_projection_transition(
         target=tiered_projection_target(
             build,
             target_ref=target_ref,
-            repo_root=repo_root,
+            repo_root=candidate_context,
         ),
         expected_projection=expected_projection,
         expected_output=expected_output,
@@ -2009,7 +2046,7 @@ def validate_tiered_projection_transition(
         acceptance_record_path=acceptance_record_path,
         replay_state=replay_state,
         replay_state_path=replay_state_path,
-        owner_root=owner_root,
+        owner_root=resolved_owner_root,
         candidate_root=candidate_context,
     )
 

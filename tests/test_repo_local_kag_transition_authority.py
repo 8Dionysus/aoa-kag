@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Callable
 
 from jsonschema import Draft202012Validator
 
@@ -204,6 +205,8 @@ def _signed_projection_fixture(
     external.mkdir()
     if build is None:
         build, _ = _build_fixture(candidate)
+        _git(candidate, "init", "-q")
+        _git_commit(candidate, "synthetic candidate source")
 
     issuer_entry, sign_issuer = _ed25519_signer(
         external,
@@ -1074,6 +1077,159 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                 list(Draft202012Validator(schema).iter_errors(missing_placement))
             )
 
+    def test_callable_transition_validators_reject_nested_missing_and_non_git_roots(
+        self,
+    ) -> None:
+        from scripts.repo_local.portable_family import (
+            validate_detached_producer_migration,
+            validate_full_projection_transition,
+        )
+        from scripts.repo_local.tiered_family import (
+            validate_tiered_producer_migration,
+            validate_tiered_projection_transition,
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fixture = _signed_cli_fixture(Path(tmpdir))
+            payload = fixture["payload"]
+            producer = _example("repo_local_kag_producer_migration.example.json")
+
+            def validate_low_level(
+                validator: object,
+                owner_root: Path | None,
+                candidate_root: Path | None,
+            ) -> None:
+                if validator is validate_full_projection_transition:
+                    validator(
+                        payload,
+                        predecessor=payload["predecessor"],
+                        target=payload["target"],
+                        expected_projection=payload["projection"],
+                        expected_output=payload["output"],
+                        detached_authority_path=fixture["authority"],
+                        acceptance_record=json.loads(
+                            fixture["acceptance"].read_text()
+                        ),
+                        acceptance_record_path=fixture["acceptance"],
+                        replay_state=json.loads(fixture["replay"].read_text()),
+                        replay_state_path=fixture["replay"],
+                        owner_root=owner_root,
+                        candidate_root=candidate_root,
+                    )
+                else:
+                    validator(
+                        producer,
+                        predecessor={},
+                        target={},
+                        owner_root=owner_root,
+                        candidate_root=candidate_root,
+                    )
+
+            root_cases = (
+                ("nested owner", fixture["owner"] / "docs", fixture["candidate"]),
+                (
+                    "nested candidate",
+                    fixture["owner"],
+                    fixture["candidate"] / "kag",
+                ),
+                ("missing owner", None, fixture["candidate"]),
+                ("missing candidate", fixture["owner"], None),
+            )
+            for validator in (
+                validate_full_projection_transition,
+                validate_detached_producer_migration,
+            ):
+                for label, owner_root, candidate_root in root_cases:
+                    with self.subTest(
+                        low_level_validator=validator.__name__,
+                        low_level_root=label,
+                    ):
+                        with self.assertRaises(TransitionAuthorityError) as raised:
+                            validate_low_level(
+                                validator,
+                                owner_root,
+                                candidate_root,
+                            )
+                        self.assertEqual(
+                            "migration_required",
+                            raised.exception.state,
+                        )
+
+            non_git = Path(tmpdir) / "non-git-owner"
+            non_git.mkdir()
+            with self.assertRaises(TransitionAuthorityError) as raised:
+                validate_low_level(
+                    validate_full_projection_transition,
+                    non_git,
+                    fixture["candidate"],
+                )
+            self.assertEqual("migration_required", raised.exception.state)
+
+            non_git_candidate = Path(tmpdir) / "non-git-candidate"
+            non_git_candidate.mkdir()
+            with self.assertRaises(TransitionAuthorityError) as raised:
+                validate_low_level(
+                    validate_full_projection_transition,
+                    fixture["owner"],
+                    non_git_candidate,
+                )
+            self.assertEqual("migration_required", raised.exception.state)
+
+            def validate_tiered(
+                validator: Callable[..., None],
+                transition: dict[str, object],
+                owner_root: Path | None,
+                candidate_root: Path | None,
+            ) -> None:
+                if validator is validate_tiered_projection_transition:
+                    validator(
+                        transition,
+                        predecessor=fixture["predecessor"],
+                        build=fixture["build"],
+                        repo_root=fixture["candidate"],
+                        base_ref=fixture["base_ref"],
+                        predecessor_placement=fixture["predecessor"]["placement"],
+                        owner_root=owner_root,
+                        candidate_root=candidate_root,
+                    )
+                else:
+                    validator(
+                        transition,
+                        predecessor=fixture["predecessor"],
+                        build=fixture["build"],
+                        repo_root=fixture["candidate"],
+                        base_ref=fixture["base_ref"],
+                        owner_root=owner_root,
+                        candidate_root=candidate_root,
+                    )
+
+            tiered_cases = (
+                ("nested owner", fixture["owner"] / "docs", fixture["candidate"]),
+                (
+                    "nested candidate",
+                    fixture["owner"],
+                    fixture["candidate"] / "kag",
+                ),
+                ("missing owner", None, fixture["candidate"]),
+                ("missing candidate", fixture["owner"], None),
+            )
+            for validator, transition in (
+                (validate_tiered_projection_transition, payload),
+                (validate_tiered_producer_migration, producer),
+            ):
+                for label, owner_root, candidate_root in tiered_cases:
+                    with self.subTest(
+                        tiered_validator=validator.__name__,
+                        tiered_root=label,
+                    ):
+                        with self.assertRaises(TieredFamilyError):
+                            validate_tiered(
+                                validator,
+                                transition,
+                                owner_root,
+                                candidate_root,
+                            )
+
     def test_transition_schema_rejects_unhashed_replay_and_consumed_variants(self) -> None:
         schema = json.loads(
             (REPO_ROOT / "schemas/repo-local-kag-projection-transition.schema.json").read_text()
@@ -1090,7 +1246,7 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
             "record_digest": "sha256:" + "a" * 64,
         }
         self.assertEqual(
-            "unknown",
+            "migration_required",
             transition_admission_state(
                 "projection_transition",
                 consumed,
