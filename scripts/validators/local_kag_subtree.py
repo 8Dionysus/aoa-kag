@@ -39,7 +39,7 @@ PROVIDER_AUDIT_WORKER_CHOICES = {1, 2, 3}
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
 RETIRED_REFERENCE_REPOS = {"Dionysus", "aoa-routing"}
-SOURCE_PREPARATION_REPOS = {"ATM10-Agent", "aoa-models"}
+SOURCE_PREPARATION_REPOS = {"ATM10-Agent", "aoa-dashboard", "aoa-models"}
 EXPECTED_DIRECT_REPOS = (
     set(PROVIDER_REPO_ROOTS)
     | RETIRED_REFERENCE_REPOS

@@ -1083,6 +1083,19 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             REPO_LOCAL_GENERATOR_HELPER_PATHS <= set(BUDGET_PROCEDURE_PATHS)
         )
 
+    def test_producer_identity_reference_is_stable_across_git_baselines(self) -> None:
+        first = _budget_procedure_identity(
+            REPO_ROOT,
+            procedure_base_ref="0" * 40,
+        )
+        second = _budget_procedure_identity(
+            REPO_ROOT,
+            procedure_base_ref="f" * 40,
+        )
+
+        self.assertEqual(first["base_ref"], second["base_ref"])
+        self.assertEqual(first["base_ref"], first["digest"])
+
     def test_partitioning_transition_precedes_hot_profile_churn(self) -> None:
         identity = {
             "content_digest": "a" * 64,

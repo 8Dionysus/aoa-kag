@@ -2530,7 +2530,11 @@ def _procedure_measurement_base_ref(
     owner_root = _procedure_root(repo_root)
     if owner_root == repo_root.resolve():
         return _resolve_git_ref(owner_root, target_base_ref)
-    return _procedure_baseline_ref(owner_root)
+    # A downstream owner cannot use the moving KAG default branch as the
+    # procedure baseline.  Its causal comparison is against the producer
+    # identity persisted by the base family; the topology witness therefore
+    # carries the current immutable procedure-content reference.
+    return str(_budget_procedure_identity(repo_root)["base_ref"])
 
 
 def _published_budget_schema_path(kind: str) -> Path:
@@ -3767,11 +3771,7 @@ def _budget_procedure_identity(
     procedure_base_ref: str | None = None,
 ) -> dict[str, Any]:
     root = _procedure_root(repo_root)
-    resolved_base_ref = (
-        _procedure_baseline_ref(root)
-        if procedure_base_ref is None
-        else _resolve_git_ref(root, procedure_base_ref)
-    )
+    del procedure_base_ref
     files: list[dict[str, Any]] = []
     for relative in BUDGET_PROCEDURE_PATHS:
         path = root / relative
@@ -3788,12 +3788,17 @@ def _budget_procedure_identity(
                 "bytes": path.stat().st_size,
             }
         )
+    identity_digest = sha256_bytes(canonical_json_bytes(files))
     return {
         "contract_version": BUDGET_PROCEDURE_VERSION,
         "owner": "aoa-kag",
-        "base_ref": resolved_base_ref,
+        # This is a content reference, not a moving Git baseline.  The
+        # measured Git baseline remains in the topology witness for the
+        # owner-local case; downstream procedure deltas compare this stable
+        # identity's file digests with the persisted base identity.
+        "base_ref": identity_digest,
         "files": files,
-        "digest": sha256_bytes(canonical_json_bytes(files)),
+        "digest": identity_digest,
     }
 
 

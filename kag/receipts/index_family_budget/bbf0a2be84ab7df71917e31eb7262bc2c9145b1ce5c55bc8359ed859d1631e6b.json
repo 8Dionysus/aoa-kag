@@ -1,0 +1,17 @@
+{
+  "allowed_bytes": 5985542,
+  "allowed_tracked_bytes": 2320534,
+  "approved_by": "repository-owner",
+  "base_ref": "4ac1ae40c4eb530b9dd6fd74141a4a4681f04118",
+  "changed_generated_bytes": 5985542,
+  "changed_generated_files": 141,
+  "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
+  "default_limit_bytes": 1048576,
+  "head_family_digest": "bbf0a2be84ab7df71917e31eb7262bc2c9145b1ce5c55bc8359ed859d1631e6b",
+  "reason": "Release v0.5.0 is the first current-main owner-family refresh after the wave-1 recon slice; regenerate the exact tiered KAG family at the release history boundary, bind the measured generated delta to the release candidate, and retain the 4 MiB owner hot-surface ceiling without raising any standing budget.",
+  "repo": "aoa-kag",
+  "schema_version": "aoa-repo-local-kag-budget-receipt-v1",
+  "scope": "generated_delta",
+  "tracked_bytes": 2320534,
+  "tracked_bytes_max": 4194304
+}
