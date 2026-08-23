@@ -35,7 +35,7 @@
 | `scripts/generate_repo_local_kag_coverage.py` | OS Abyss repo-local KAG coverage builder |
 | `.github/actions/repo-local-kag-index/action.yml` | owner-callable incremental drift sentinel plus bounded full/contract/assembly DAG using explicit repo-scoped source-lineage and event-history boundaries |
 | `.github/workflows/repo-validation.yml` | always-required source-fast and self owner-family proof, conditional full pinned-provider audit, and stable required summary |
-| `.github/workflows/compatibility-canary.yml` | scheduled floating-provider compatibility proof with complete Git history |
+| `.github/workflows/compatibility-canary.yml` | scheduled compatibility proof with exact `aoa-stats` provider pin and moving sibling inputs |
 
 ## Repo-local KAG History Boundaries
 
