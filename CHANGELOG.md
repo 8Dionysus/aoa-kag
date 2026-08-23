@@ -5,81 +5,13 @@ All notable changes to `aoa-kag` will be documented in this file.
 The format is intentionally simple and human-first.
 Tracking starts with the community-docs baseline for this repository.
 
-## [0.5.2] - 2026-08-23
+## [0.5.0] - 2026-08-23
 
 ### Summary
 
-- Revalidate the KAG consumer against the final published
-  `aoa-stats@v0.2.2` provider at
-  `f119805cda69b3edeb2a4c5e407368d70e68650d` and the current
-  `8Dionysus@3baafa395906e93dee23a9479ef4f9aed576bd8a` source.
-- Keep this successor bounded to exact provider/currentness repair, generated
-  family regeneration, and the compatibility-canary claim boundary.
-
-### Fixed
-
-- Align the authored provider registry and blocking source-fast checkout with
-  the exact published stats commit.
-- Pin only `aoa-stats` in the scheduled compatibility canary; document that
-  other scheduled sibling inputs remain moving and that canary evidence is not
-  immutable release proof.
-- Rebuild provider and coverage read models through the owner generators and
-  bind the official KAG artifact to the landed exact source.
-
-### Validation
-
-- Source-fast, generated, release, compatibility-canary, artifact verification,
-  and consumer-intent admission results are reported separately in the release
-  execution report; no artifact, runtime, proof, delivery, or acceptance claim
-  is inferred from a green source or canary result.
-
-### Notes
-
-- `v0.5.1` remains immutable and is preserved as the predecessor release.
-- `aoa-session-memory`, `aoa-routing`, and `abyss-stack_old` are unchanged.
-
-## [0.5.1] - 2026-08-23
-
-### Summary
-
-- Reconcile the post-`v0.5.0` KAG provider wave with the published
-  `8Dionysus@3baafa395906e93dee23a9479ef4f9aed576bd8a` source and
-  `aoa-stats@v0.2.1` at `339ecb2db22ac4552fa88756b650896ebbff5b56`.
-- Keep this patch bounded to provider identity, generated coverage, and the
-  consumer validation contract; authored meaning and `v0.5.0` remain intact.
-
-### Fixed
-
-- Repair the compatibility-canary coverage packet failure caused by the
-  registry's stale `8Dionysus` pin while the scheduled canary checked out the
-  current provider. The fix binds the registry and source-fast donor to exact
-  published commits rather than relaxing the expected-hash check.
-- Rebuild local provider maps and OS-wide coverage packets from the exact
-  provider wave and verify their generated fixed point.
-
-### Validation
-
-- Pass the source-fast lane, including 691 unit tests and the local
-  `aoa-stats` v0.2.1 protocol adapter.
-- Pass the generated lane with OS-wide provider-home and coverage parity for
-  all 21 registry providers, generated-output checks, and portable-family
-  index checks.
-- Preserve separate artifact, runtime, proof, delivery, and human-acceptance
-  claims; this release does not promote any of them implicitly.
-
-### Notes
-
-- `v0.5.0` tag and GitHub Release remain immutable. This successor is required
-  because the provider rebind changes the public compatibility contour.
-- `aoa-session-memory`, `aoa-routing`, and `abyss-stack_old` are unchanged.
-
-## [0.5.0] - 2026-08-22
-
-### Summary
-
-- Release the complete unpublished `v0.4.0..4ac1ae40` product contour as a
-  bounded derived KAG substrate: 106 first-parent commits, 1,126 tracked paths,
-  and `+117,809/-12,693` lines before release-preparation metadata.
+- Release the complete unpublished `v0.4.0..8136d3eb` product contour as a
+  bounded derived KAG substrate: 109 first-parent commits, 1,132 tracked paths,
+  and `+118,492/-12,693` lines before release-preparation metadata.
 - Move from the repository-local KAG foundation to a source-first self-knowledge
   kernel, five-operation MCP access plane, portable content-addressed family,
   owner-family federation, and fail-closed release/support contracts.
@@ -160,12 +92,12 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Validation
 
-- The release target is the exact landed main derived from `4ac1ae40`; the
-  release-prep PR must pass `Repo Validation`, standalone `scripts/release_check.py`,
+- The release target is the exact landed main containing the reconciled
+  `v0.4.0..main` contour; the release-prep PR must pass `Repo Validation`, standalone `scripts/release_check.py`,
   strict federation preflight, artifact/trust gates, and exact-landed reruns.
-- The published dependency prerequisite is `aoa-stats@v0.2.0`, resolved to
-  `dc608fd5de3fcaf0301f356c9efd52e2bdd350ce`; this release excludes PR #219 and
-  its unadmitted Tree-of-Sophia migration.
+- The published dependency prerequisite is `aoa-stats@v0.2.0`, resolved to the
+  exact provider commit recorded by the validated provider handoff; this release
+  excludes PR #219 and its unadmitted Tree-of-Sophia migration.
 - Tiered cold externalization remains candidate/shadow unless the final artifact
   route produces and admits a complete owner-family release. A green validator
   proves only its declared lane.
@@ -178,13 +110,75 @@ Tracking starts with the community-docs baseline for this repository.
 - `aoa-session-memory` remains a protected read-only provider. `aoa-routing` and
   `abyss-stack_old` remain untouched and unpublished.
 
-### First-Parent Reconciliation (106/106)
+### Consolidated Same-Day Release Material
 
-The product range is reconciled below. `worthy` means a human-facing release
+This single dated section absorbs the three same-day campaign snapshots without
+rewriting their historical evidence. The line-level ledger records every line
+of every captured Release body and every tag-scoped `CHANGELOG.md`, including
+blank formatting lines, duplicate cumulative snapshots, generated/internal
+churn, validation results, limitations, and non-claims.
+
+#### Superseded `v0.5.1` provider-wave material
+
+- Reconcile the post-`v0.5.0` KAG provider wave with the published
+  `8Dionysus@3baafa395906e93dee23a9479ef4f9aed576bd8a` source and the
+  `aoa-stats@v0.2.1` provider at `339ecb2db22ac4552fa88756b650896ebbff5b56`;
+  this historical provider identity is retained in the ledger and is not the
+  final consolidated dependency.
+- Repair the compatibility-canary coverage packet caused by the stale
+  `8Dionysus` registry pin while the scheduled canary checked out the current
+  provider; bind registry and source-fast donor inputs to exact published
+  commits rather than relaxing expected-hash checks.
+- Rebuild local provider maps and OS-wide coverage packets from the exact
+  provider wave and verify their generated fixed point.
+- Preserve the source-fast result (including the recorded 691 tests and local
+  protocol adapter), generated provider-home/coverage parity for all 21
+  registry providers, portable-family index checks, and the separate
+  artifact/runtime/proof/delivery/human-acceptance boundaries.
+
+#### Superseded `v0.5.2` provider-revalidation material
+
+- Revalidate the KAG consumer against the then-final published
+  `aoa-stats@v0.2.2` provider at `f119805cda69b3edeb2a4c5e407368d70e68650d` and
+  the current `8Dionysus@3baafa395906e93dee23a9479ef4f9aed576bd8a` source;
+  this identity is historical campaign evidence, not the consolidated
+  dependency.
+- Align the authored provider registry and blocking source-fast checkout to
+  the exact provider commit, pin only `aoa-stats` in the scheduled canary, and
+  state that other scheduled sibling inputs remain moving and that canary
+  evidence is not immutable release proof.
+- Rebuild provider and coverage read models through owner generators and bind
+  the official KAG artifact to the landed exact source.
+- Preserve the hosted Source Fast/Owner Family, Full OS-wide Release Audit, and
+  Repo Validation results as their declared CI claims only; no artifact,
+  runtime, proof, delivery, closure, or acceptance claim is inferred.
+- The final consolidated source binds only to `aoa-stats@v0.2.0` at the exact
+  landed provider commit `88ff38b1b38eef939f2c5b4541cbe8363a05fc8d`, returned
+  by `release-cleanup-aoa-stats-consolidate-v020`; the source-only GitHub
+  Release has no assets, and any
+  separately recorded host-managed artifact remains manual-review-required
+  until a production release trust-root is supplied.
+
+#### Historical identity and preservation boundary
+
+- The superseded same-day Release bodies, tag objects, peeled commits, and
+  changelog snapshots remain preserved by the pretruth corpus and task-local
+  ledger; the public cleanup removes only the three enumerated same-day
+  campaign Releases and tags after landed-main gates.
+- `aoa-session-memory`, `aoa-routing`, and `abyss-stack_old` remain untouched;
+  PR #219 remains an open failed/conflicting non-claim and is not part of the
+  landed source contour.
+- The final GitHub Release body is generated from this dated section's canonical
+  `CHANGELOG.md`; no package registry, runtime deployment, proof verdict, or
+  human acceptance is implied.
+
+### First-Parent Reconciliation (109/109)
+
+The full campaign contour is reconciled below. `worthy` means a human-facing release
 note is required; `generated`, `internal`, `duplicate`, `excluded`, and `merged`
-are retained as separate evidence with their reason. The release-preparation
-commit itself is bookkeeping and is recorded in the execution report after
-landing.
+are retained as separate evidence with their reason. The superseded release-preparation
+commits and the consolidation commit are preserved as explicit history in the
+content-conservation ledger and execution report.
 
 1. `cab4757` — [#110](https://github.com/8Dionysus/aoa-kag/pull/110) Activate local KAG provider foundation — worthy
 2. `cbf42fa` — [#111](https://github.com/8Dionysus/aoa-kag/pull/111) Complete v0.4.0 changelog coverage — internal
@@ -292,6 +286,10 @@ landing.
 104. `1f1a345` — [#174](https://github.com/8Dionysus/aoa-kag/pull/174) Add tiered content-addressed KAG distribution — worthy
 105. `ab1e100` — [#176](https://github.com/8Dionysus/aoa-kag/pull/176) Project semantic session-memory capability graph into KAG — worthy
 106. `4ac1ae4` — [#218](https://github.com/8Dionysus/aoa-kag/pull/218) Track post-merge KAG boundary eval intake — internal
+107. `813a7f6` — [#220](https://github.com/8Dionysus/aoa-kag/pull/220) Prepare the v0.5.0 release contour — release-preparation metadata
+108. `ef87fb1` — [#221](https://github.com/8Dionysus/aoa-kag/pull/221) Reconcile exact aoa-stats v0.2.1 coverage provider — material provider-currentness and generated coverage
+109. `8136d3e` — [#222](https://github.com/8Dionysus/aoa-kag/pull/222) Revalidate exact aoa-stats provider — material provider-currentness and generated coverage
+
 
 ## [Unreleased]
 

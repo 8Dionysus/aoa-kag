@@ -124,7 +124,7 @@ jobs:
           # Provider-before-consumer: bind this canary to the exact published
           # aoa-stats provider. Other scheduled sibling checkouts remain moving
           # by canary intent; this lane is not immutable release proof.
-          ref: f119805cda69b3edeb2a4c5e407368d70e68650d
+          ref: 88ff38b1b38eef939f2c5b4541cbe8363a05fc8d
           path: .deps/aoa-stats
           fetch-depth: 0
 
