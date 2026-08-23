@@ -42,11 +42,20 @@ TRANSITION_JSON`, `--transition-authority-artifact AUTHORITY_JSON`,
 `--transition-replay-state REPLAY_JSON`.
 
 `CANDIDATE` must be the clean Git root whose exact `HEAD` derives the target;
-`DETACHED_OWNER` must be a separate exact Git root whose immutable decision
-commit supplies D-0044 and `config/transition_authority_trust.json`. The
-transition lane validates supplied artifacts only: it does not activate the
-proposed registry, issue authority, consume replay state, or admit a real
-candidate.
+`DETACHED_OWNER` must be a separate exact, clean Git root whose current `HEAD`
+is exactly the `decision.source_commit` named by the supplied transition and
+whose current decision bytes, accepted posture, and
+`config/transition_authority_trust.json` are therefore the same owner revision
+used by admission. A historical decision object reachable from a moving owner
+does not authorize a transition. The transition lane validates supplied
+artifacts only: it does not activate the proposed registry, issue authority,
+consume replay state, or admit a real candidate.
+
+The authority, acceptance, and replay inputs must be supplied as external
+regular-file paths; a symlink is rejected before canonical path resolution.
+Hard-link aliases outside the candidate and owner roots remain valid by
+design: D-0044 binds canonical bytes and digests to role-specific immutable
+registry entries and signatures, so inode identity is not an authority input.
 
 For the OS-wide proof, invoke
 `scripts/run_repo_local_kag_rollout.py --phase shadow` with explicit output,

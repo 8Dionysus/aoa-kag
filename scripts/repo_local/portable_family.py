@@ -2723,13 +2723,6 @@ def _transition_validate_decision(
             "migration_required",
             "transition decision source is not detached from the candidate",
         )
-    try:
-        resolve_exact_git_commit(resolved_owner_root, "HEAD")
-    except PortableFamilyError as exc:
-        raise TransitionAuthorityError(
-            "migration_required",
-            "transition decision source has no immutable owner Git root",
-        ) from exc
     source_commit = decision.get("source_commit")
     if (
         not isinstance(source_commit, str)
@@ -2740,6 +2733,22 @@ def _transition_validate_decision(
             "migration_required",
             "transition decision has no immutable source commit",
         )
+    # Currentness law: the owner root is authoritative only as one clean Git
+    # checkout whose current HEAD is the exact decision source commit.  A
+    # future lawful immutable-owner route can satisfy this with a clean
+    # detached checkout at the accepted commit; historical object reachability
+    # alone must never lend authority to a moving owner.
+    try:
+        current_owner_commit = resolve_exact_git_commit(
+            resolved_owner_root,
+            "HEAD",
+            require_clean=True,
+        )
+    except PortableFamilyError as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision source is not a clean current owner Git root",
+        ) from exc
     try:
         resolved_source_commit = resolve_exact_git_commit(
             resolved_owner_root,
@@ -2754,6 +2763,11 @@ def _transition_validate_decision(
         raise TransitionAuthorityError(
             "unknown",
             "transition decision source commit is not exact",
+        )
+    if current_owner_commit != source_commit:
+        raise TransitionAuthorityError(
+            "migration_required",
+            "transition decision source commit is not the current clean owner HEAD",
         )
     relative = Path(TRANSITION_DECISION_REF.removeprefix("aoa-kag:"))
     if relative.is_absolute() or ".." in relative.parts:
@@ -2808,10 +2822,34 @@ def _external_transition_file(
             "migration_required",
             f"trusted {label} is missing",
         )
-    resolved = Path(path).resolve()
+    supplied = Path(path)
+    try:
+        supplied_mode = supplied.lstat().st_mode
+    except (FileNotFoundError, OSError) as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"trusted {label} is unavailable: {supplied}",
+        ) from exc
+    if stat.S_ISLNK(supplied_mode):
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"trusted {label} supplied path is a symlink",
+        )
+    try:
+        # The lexical supplied-path identity gate must precede canonical
+        # resolution.  D-0044 authenticates canonical bytes and role-bound
+        # signatures from the immutable registry; inode identity is not an
+        # authority input, so an external hard-link alias remains equivalent
+        # only after this regular-file and containment check.
+        resolved = supplied.resolve()
+        resolved_mode = resolved.stat().st_mode
+    except (FileNotFoundError, OSError, RuntimeError) as exc:
+        raise TransitionAuthorityError(
+            "migration_required",
+            f"trusted {label} is unavailable: {supplied}",
+        ) from exc
     if (
-        not resolved.is_file()
-        or resolved.is_symlink()
+        not stat.S_ISREG(resolved_mode)
         or resolved == candidate_root
         or candidate_root in resolved.parents
         or resolved == owner_root

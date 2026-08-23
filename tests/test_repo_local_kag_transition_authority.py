@@ -194,6 +194,7 @@ def _signed_projection_fixture(
     target: dict[str, object] | None = None,
     projection: dict[str, object] | None = None,
     output: dict[str, object] | None = None,
+    owner_registry: dict[str, object] | None = None,
 ):
     candidate = candidate or (base / "candidate")
     owner = base / "owner"
@@ -222,13 +223,17 @@ def _signed_projection_fixture(
         "independent-replay-ledger",
         "replay",
     )
-    registry = {
-        "schema_version": "aoa-kag:transition-trust-registry-v1",
-        "owner": "aoa-kag",
-        "issuer_roots": [issuer_entry],
-        "acceptor_roots": [acceptor_entry],
-        "replay_roots": [replay_entry],
-    }
+    registry = (
+        owner_registry
+        if owner_registry is not None
+        else {
+            "schema_version": "aoa-kag:transition-trust-registry-v1",
+            "owner": "aoa-kag",
+            "issuer_roots": [issuer_entry],
+            "acceptor_roots": [acceptor_entry],
+            "replay_roots": [replay_entry],
+        }
+    )
     (owner / TRANSITION_TRUST_REGISTRY_PATH).parent.mkdir(
         parents=True,
         exist_ok=True,
@@ -609,6 +614,29 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                 candidate_root=candidate,
             )
 
+            hardlink_root = Path(tmpdir) / "hardlink-aliases"
+            hardlink_root.mkdir()
+            authority_alias = hardlink_root / "authority.json"
+            acceptance_alias = hardlink_root / "acceptance.json"
+            replay_alias = hardlink_root / "replay.json"
+            authority_alias.hardlink_to(authority_path)
+            acceptance_alias.hardlink_to(acceptance_path)
+            replay_alias.hardlink_to(replay_path)
+            validate_full_projection_transition(
+                payload,
+                predecessor=payload["predecessor"],
+                target=payload["target"],
+                expected_projection=payload["projection"],
+                expected_output=payload["output"],
+                detached_authority_path=authority_alias,
+                acceptance_record=acceptance_record,
+                acceptance_record_path=acceptance_alias,
+                replay_state=replay_state,
+                replay_state_path=replay_alias,
+                owner_root=owner,
+                candidate_root=candidate,
+            )
+
             copied = candidate / "copied-authority.json"
             copied.write_bytes(authority_path.read_bytes())
             with self.assertRaises(TransitionAuthorityError) as raised:
@@ -665,6 +693,47 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                     owner_root=owner,
                     candidate_root=candidate,
                 )
+
+    def test_current_empty_registry_cannot_authorize_current_source(self) -> None:
+        from scripts.repo_local.portable_family import validate_full_projection_transition
+
+        empty_registry = {
+            "schema_version": "aoa-kag:transition-trust-registry-v1",
+            "owner": "aoa-kag",
+            "issuer_roots": [],
+            "acceptor_roots": [],
+            "replay_roots": [],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            (
+                payload,
+                candidate,
+                owner,
+                authority_path,
+                acceptance_path,
+                acceptance_record,
+                replay_path,
+                replay_state,
+            ) = _signed_projection_fixture(
+                Path(tmpdir),
+                owner_registry=empty_registry,
+            )
+            with self.assertRaises(TransitionAuthorityError) as raised:
+                validate_full_projection_transition(
+                    payload,
+                    predecessor=payload["predecessor"],
+                    target=payload["target"],
+                    expected_projection=payload["projection"],
+                    expected_output=payload["output"],
+                    detached_authority_path=authority_path,
+                    acceptance_record=acceptance_record,
+                    acceptance_record_path=acceptance_path,
+                    replay_state=replay_state,
+                    replay_state_path=replay_path,
+                    owner_root=owner,
+                    candidate_root=candidate,
+                )
+            self.assertEqual("migration_required", raised.exception.state)
 
     def test_signed_builder_validator_module_and_direct_cli_parity(self) -> None:
         from scripts.repo_local.portable_family import validate_full_projection_transition
@@ -756,6 +825,9 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                 module: bool,
                 owner_root: Path | None = None,
                 history_ref: str | None = None,
+                authority_path: Path | None = None,
+                acceptance_path: Path | None = None,
+                replay_path: Path | None = None,
             ) -> subprocess.CompletedProcess[str]:
                 command = [sys.executable]
                 if module:
@@ -782,11 +854,11 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                         "--transition-evidence",
                         str(fixture["transition"]),
                         "--transition-authority-artifact",
-                        str(fixture["authority"]),
+                        str(authority_path or fixture["authority"]),
                         "--transition-acceptance-record",
-                        str(fixture["acceptance"]),
+                        str(acceptance_path or fixture["acceptance"]),
                         "--transition-replay-state",
-                        str(fixture["replay"]),
+                        str(replay_path or fixture["replay"]),
                     ]
                 )
                 return subprocess.run(
@@ -846,6 +918,132 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                     text=True,
                 )
                 return path
+
+            def fresh_owner(label: str) -> Path:
+                path = Path(tmpdir) / label / "owner"
+                path.parent.mkdir()
+                subprocess.run(
+                    ("git", "clone", "--local", str(fixture["owner"]), str(path)),
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                return path
+
+            def assert_owner_variant_rejected(
+                label: str,
+                owner_root: Path,
+                expected_message: str = "current clean owner",
+            ) -> None:
+                for module in (True, False):
+                    with self.subTest(owner_variant=label, module=module):
+                        result = run_cli(
+                            fresh_candidate(f"{label}-{'module' if module else 'direct'}"),
+                            Path(tmpdir) / f"{label}-{'module' if module else 'direct'}-artifacts",
+                            module=module,
+                            owner_root=owner_root,
+                        )
+                        self.assertNotEqual(
+                            0,
+                            result.returncode,
+                            result.stdout + result.stderr,
+                        )
+                        self.assertIn(expected_message, result.stderr)
+
+            owner_head_drift = fresh_owner("owner-head-drift")
+            (owner_head_drift / "owner-change.txt").write_text(
+                "new current owner state\n",
+                encoding="utf-8",
+            )
+            _git_commit(owner_head_drift, "owner HEAD drift")
+            assert_owner_variant_rejected("owner-head-drift", owner_head_drift)
+
+            proposed_owner = fresh_owner("owner-current-proposed")
+            proposed_decision = proposed_owner / "docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md"
+            proposed_decision.write_text(
+                proposed_decision.read_text(encoding="utf-8").replace(
+                    "- Posture: accepted", "- Posture: proposed"
+                ),
+                encoding="utf-8",
+            )
+            _git_commit(proposed_owner, "current proposed transition decision")
+            assert_owner_variant_rejected("owner-current-proposed", proposed_owner)
+
+            superseded_owner = fresh_owner("owner-current-superseded")
+            superseded_decision = superseded_owner / "docs/decisions/AOA-KAG-D-0044-detached-transition-authority.md"
+            superseded_decision.write_text(
+                superseded_decision.read_text(encoding="utf-8").replace(
+                    "- Posture: accepted", "- Posture: superseded"
+                ),
+                encoding="utf-8",
+            )
+            _git_commit(superseded_owner, "current superseded transition decision")
+            assert_owner_variant_rejected("owner-current-superseded", superseded_owner)
+
+            empty_registry_owner = fresh_owner("owner-current-empty-registry")
+            (empty_registry_owner / TRANSITION_TRUST_REGISTRY_PATH).write_bytes(
+                canonical_json_bytes(
+                    {
+                        "schema_version": "aoa-kag:transition-trust-registry-v1",
+                        "owner": "aoa-kag",
+                        "issuer_roots": [],
+                        "acceptor_roots": [],
+                        "replay_roots": [],
+                    }
+                )
+            )
+            _git_commit(empty_registry_owner, "current empty transition registry")
+            assert_owner_variant_rejected(
+                "owner-current-empty-registry",
+                empty_registry_owner,
+            )
+
+            dirty_owner = fresh_owner("owner-dirty")
+            (dirty_owner / "uncommitted-owner-state.txt").write_text(
+                "dirty\n",
+                encoding="utf-8",
+            )
+            assert_owner_variant_rejected(
+                "owner-dirty",
+                dirty_owner,
+                expected_message="clean current owner",
+            )
+
+            symlink_root = Path(tmpdir) / "symlink-inputs"
+            symlink_root.mkdir()
+            symlink_inputs = {
+                "authority": symlink_root / "authority.json",
+                "acceptance": symlink_root / "acceptance.json",
+                "replay": symlink_root / "replay.json",
+            }
+            for field, symlink_path in symlink_inputs.items():
+                symlink_path.symlink_to(fixture[field])
+                for module in (True, False):
+                    with self.subTest(symlink_input=field, module=module):
+                        candidate = fresh_candidate(
+                            f"symlink-{field}-{'module' if module else 'direct'}"
+                        )
+                        result = run_cli(
+                            candidate,
+                            Path(tmpdir)
+                            / f"symlink-{field}-{'module' if module else 'direct'}-artifacts",
+                            module=module,
+                            authority_path=(
+                                symlink_path if field == "authority" else None
+                            ),
+                            acceptance_path=(
+                                symlink_path if field == "acceptance" else None
+                            ),
+                            replay_path=(
+                                symlink_path if field == "replay" else None
+                            ),
+                        )
+                        self.assertNotEqual(
+                            0,
+                            result.returncode,
+                            result.stdout + result.stderr,
+                        )
+                        self.assertIn("supplied path is a symlink", result.stderr)
 
             wrong_owner = Path(tmpdir) / "wrong-owner"
             wrong_owner.mkdir()
