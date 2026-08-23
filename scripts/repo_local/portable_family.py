@@ -2648,10 +2648,20 @@ def _transition_contract_identity(
 
 
 def _transition_subject_digest(payload: Mapping[str, Any]) -> str:
+    authority = payload.get("authority")
+    if not isinstance(authority, Mapping):
+        raise TransitionAuthorityError(
+            "unknown",
+            "transition authority is missing",
+        )
     subject = {
         key: copy.deepcopy(value)
         for key, value in payload.items()
         if key != "authority"
+    }
+    subject["transition_contract"] = {
+        "contract_version": copy.deepcopy(authority.get("contract_version")),
+        "contract_digest": copy.deepcopy(authority.get("contract_digest")),
     }
     replay = subject.get("replay")
     if isinstance(replay, dict):

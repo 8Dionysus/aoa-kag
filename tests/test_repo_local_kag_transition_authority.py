@@ -197,6 +197,7 @@ def _signed_projection_fixture(
     output: dict[str, object] | None = None,
     owner_registry: dict[str, object] | None = None,
     transition_kind: str = "projection_transition",
+    return_signers: bool = False,
 ):
     candidate = candidate or (base / "candidate")
     owner = base / "owner"
@@ -381,7 +382,7 @@ def _signed_projection_fixture(
     replay_path = external / "replay.json"
     replay_path.write_bytes(canonical_json_bytes(replay_state))
     payload["replay"]["snapshot_digest"] = replay_digest
-    return (
+    result = (
         payload,
         candidate,
         owner,
@@ -391,6 +392,9 @@ def _signed_projection_fixture(
         replay_path,
         replay_state,
     )
+    if return_signers:
+        return result + (sign_issuer, sign_acceptor, sign_replay)
+    return result
 
 
 def _signed_cli_fixture(base: Path):
@@ -554,6 +558,42 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
             (root / "uncommitted.txt").write_text("dirty", encoding="utf-8")
             with self.assertRaises(TieredFamilyError):
                 tiered_projection_target(build, repo_root=root)
+
+    def test_transition_subject_is_finite_and_contract_bound(self) -> None:
+        payload = _example("repo_local_kag_projection_transition.example.json")
+        expected_subject = copy.deepcopy(payload)
+        authority = expected_subject.pop("authority")
+        expected_subject["transition_contract"] = {
+            "contract_version": authority["contract_version"],
+            "contract_digest": authority["contract_digest"],
+        }
+        expected_subject["replay"].pop("subject_digest", None)
+        expected_subject["replay"].pop("snapshot_digest", None)
+        expected_digest = "sha256:" + sha256_bytes(
+            canonical_json_bytes(expected_subject)
+        )
+        self.assertEqual(expected_digest, _transition_subject_digest(payload))
+
+        authority_only_mutation = copy.deepcopy(payload)
+        authority_only_mutation["authority"]["issuer"]["ref"] = (
+            "aoa-kag://issuer/another"
+        )
+        self.assertEqual(
+            expected_digest,
+            _transition_subject_digest(authority_only_mutation),
+        )
+
+        for field, value in (
+            ("contract_version", "aoa-kag:transition-authority-v0"),
+            ("contract_digest", "sha256:" + "a" * 64),
+        ):
+            substituted = copy.deepcopy(payload)
+            substituted["authority"][field] = value
+            with self.subTest(field=field):
+                self.assertNotEqual(
+                    expected_digest,
+                    _transition_subject_digest(substituted),
+                )
 
     def test_predecessor_derivation_and_projection_before_are_non_null_and_exact(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -745,6 +785,204 @@ class RepoLocalKagTransitionAuthorityTests(unittest.TestCase):
                     owner_root=owner,
                     candidate_root=candidate,
                 )
+
+    def test_contract_identity_substitution_rejects_each_signed_artifact(self) -> None:
+        from scripts.repo_local.portable_family import validate_full_projection_transition
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            (
+                payload,
+                candidate,
+                owner,
+                authority_path,
+                acceptance_path,
+                acceptance_record,
+                replay_path,
+                replay_state,
+                sign_issuer,
+                sign_acceptor,
+                sign_replay,
+            ) = _signed_projection_fixture(
+                Path(tmpdir),
+                return_signers=True,
+            )
+
+            def validate(
+                candidate_payload: dict[str, object],
+                *,
+                authority: Path,
+                acceptance: Path,
+                acceptance_payload: dict[str, object],
+                replay: Path,
+                replay_payload: dict[str, object],
+            ) -> None:
+                validate_full_projection_transition(
+                    candidate_payload,
+                    predecessor=candidate_payload["predecessor"],
+                    target=candidate_payload["target"],
+                    expected_projection=candidate_payload["projection"],
+                    expected_output=candidate_payload["output"],
+                    detached_authority_path=authority,
+                    acceptance_record=acceptance_payload,
+                    acceptance_record_path=acceptance,
+                    replay_state=replay_payload,
+                    replay_state_path=replay,
+                    owner_root=owner,
+                    candidate_root=candidate,
+                )
+
+            validate(
+                payload,
+                authority=authority_path,
+                acceptance=acceptance_path,
+                acceptance_payload=acceptance_record,
+                replay=replay_path,
+                replay_payload=replay_state,
+            )
+            current_subject_digest = _transition_subject_digest(payload)
+
+            variants = (
+                (
+                    "version-only",
+                    "contract_version",
+                    "aoa-kag:transition-authority-v0",
+                ),
+                (
+                    "digest-only",
+                    "contract_digest",
+                    "sha256:" + "a" * 64,
+                ),
+            )
+            expected_messages = {
+                "issuer": "detached transition authority is not bound to this transition",
+                "acceptor": "independent transition acceptance does not match",
+                "replay": "transition replay snapshot is stale or bound to another subject",
+            }
+            for variant_label, field, value in variants:
+                substituted = copy.deepcopy(payload)
+                substituted["authority"][field] = value
+                substituted_subject_digest = _transition_subject_digest(substituted)
+                self.assertNotEqual(
+                    current_subject_digest,
+                    substituted_subject_digest,
+                )
+
+                for artifact_role in ("issuer", "acceptor", "replay"):
+                    with self.subTest(
+                        substitution=variant_label,
+                        artifact=artifact_role,
+                    ):
+                        candidate_payload = copy.deepcopy(payload)
+                        variant_authority_path = authority_path
+                        variant_acceptance_path = acceptance_path
+                        variant_acceptance_record = acceptance_record
+                        variant_replay_path = replay_path
+                        variant_replay_state = replay_state
+                        variant_dir = (
+                            Path(tmpdir)
+                            / "substitutions"
+                            / f"{variant_label}-{artifact_role}"
+                        )
+                        variant_dir.mkdir(parents=True)
+
+                        if artifact_role == "issuer":
+                            authority_record = json.loads(
+                                authority_path.read_text(encoding="utf-8")
+                            )
+                            authority_record["subject_digest"] = (
+                                substituted_subject_digest
+                            )
+                            authority_record.pop("signature", None)
+                            authority_record["signature"] = sign_issuer(
+                                authority_record
+                            )
+                            variant_authority_path = variant_dir / "authority.json"
+                            variant_authority_path.write_bytes(
+                                canonical_json_bytes(authority_record)
+                            )
+                            candidate_payload["authority"]["issuer"][
+                                "artifact_digest"
+                            ] = "sha256:" + sha256_bytes(
+                                variant_authority_path.read_bytes()
+                            )
+                        elif artifact_role == "acceptor":
+                            acceptance_variant = copy.deepcopy(acceptance_record)
+                            acceptance_variant["subject_digest"] = (
+                                substituted_subject_digest
+                            )
+                            acceptance_variant.pop("signature", None)
+                            acceptance_variant["signature"] = sign_acceptor(
+                                acceptance_variant
+                            )
+                            variant_acceptance_path = variant_dir / "acceptance.json"
+                            variant_acceptance_path.write_bytes(
+                                canonical_json_bytes(acceptance_variant)
+                            )
+                            variant_acceptance_record = acceptance_variant
+                            acceptance_digest = "sha256:" + sha256_bytes(
+                                variant_acceptance_path.read_bytes()
+                            )
+                            candidate_payload["authority"]["acceptance"][
+                                "digest"
+                            ] = acceptance_digest
+
+                            authority_record = json.loads(
+                                authority_path.read_text(encoding="utf-8")
+                            )
+                            authority_record["acceptance_digest"] = acceptance_digest
+                            authority_record["subject_digest"] = current_subject_digest
+                            authority_record.pop("signature", None)
+                            authority_record["signature"] = sign_issuer(
+                                authority_record
+                            )
+                            variant_authority_path = variant_dir / "authority.json"
+                            variant_authority_path.write_bytes(
+                                canonical_json_bytes(authority_record)
+                            )
+                            candidate_payload["authority"]["issuer"][
+                                "artifact_digest"
+                            ] = "sha256:" + sha256_bytes(
+                                variant_authority_path.read_bytes()
+                            )
+                        else:
+                            replay_variant = copy.deepcopy(replay_state)
+                            replay_variant["subject_digest"] = (
+                                substituted_subject_digest
+                            )
+                            replay_variant["snapshot_digest"] = (
+                                "sha256:" + "0" * 64
+                            )
+                            replay_variant.pop("signature", None)
+                            replay_digest = "sha256:" + sha256_bytes(
+                                canonical_json_bytes(replay_variant)
+                            )
+                            replay_variant["snapshot_digest"] = replay_digest
+                            replay_variant["signature"] = sign_replay(replay_variant)
+                            variant_replay_path = variant_dir / "replay.json"
+                            variant_replay_path.write_bytes(
+                                canonical_json_bytes(replay_variant)
+                            )
+                            variant_replay_state = replay_variant
+                            candidate_payload["replay"][
+                                "subject_digest"
+                            ] = substituted_subject_digest
+                            candidate_payload["replay"][
+                                "snapshot_digest"
+                            ] = replay_digest
+
+                        with self.assertRaises(TransitionAuthorityError) as raised:
+                            validate(
+                                candidate_payload,
+                                authority=variant_authority_path,
+                                acceptance=variant_acceptance_path,
+                                acceptance_payload=variant_acceptance_record,
+                                replay=variant_replay_path,
+                                replay_payload=variant_replay_state,
+                            )
+                        self.assertEqual(
+                            expected_messages[artifact_role],
+                            str(raised.exception),
+                        )
 
     def test_projection_api_rejects_unrelated_clean_candidate_head(self) -> None:
         from scripts.repo_local.portable_family import validate_full_projection_transition
