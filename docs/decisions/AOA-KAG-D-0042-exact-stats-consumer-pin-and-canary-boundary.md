@@ -8,7 +8,14 @@
 - KAG surfaces: exact provider identity, generated provider maps, consumer validation, release artifact inputs
 - Source lanes: aoa-kag, aoa-stats, 8Dionysus
 - Guard families: source-owned authority, provider-before-consumer, moving-lane claim boundary, fail-closed artifact admission
-- Posture: accepted
+- Posture: superseded
+
+## Supersession
+
+This record is retained as historical rationale for the earlier provider and
+release-contour repair. `AOA-KAG-D-0043` supersedes its current release and
+consumer-identity route; the exact `f119805...` provider and `v0.5.1`
+successor references below are historical evidence, not current instructions.
 
 ## Context
 

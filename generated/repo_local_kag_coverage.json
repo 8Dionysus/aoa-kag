@@ -2,8 +2,8 @@
   "coverage_summary": {
     "aggregate_budget_state": "partial",
     "artifact_cold_bytes": 0,
-    "corpus_total_bytes": 268758518,
-    "git_hot_bytes": 268758518,
+    "corpus_total_bytes": 268760592,
+    "git_hot_bytes": 268760592,
     "measured_owner_count": 20,
     "migration_needed": 1,
     "missing": 0,
@@ -12,7 +12,7 @@
     "owner_count": 21,
     "owner_specific": 0,
     "passed": 20,
-    "portable_tracked_bytes": 268758518,
+    "portable_tracked_bytes": 268760592,
     "portable_v3": 20,
     "self_excluded_owner_count": 1,
     "target_budget_state": "exceeded",
@@ -699,7 +699,7 @@
         "counts": {
           "artifact_kind": {
             "config": 93,
-            "document": 344,
+            "document": 345,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -717,7 +717,7 @@
           "command_role": {
             "builder": 9,
             "lane_entrypoint": 3,
-            "none": 715,
+            "none": 716,
             "script": 21,
             "test": 65,
             "validator": 16
@@ -726,7 +726,7 @@
             "agents": 58,
             "boundary": 1,
             "changelog": 1,
-            "decision": 49,
+            "decision": 50,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
@@ -745,7 +745,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 408,
+            "none": 409,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -755,11 +755,11 @@
           "primary_kind": {
             "artifact": 40,
             "command": 114,
-            "document": 352,
+            "document": 353,
             "surface": 323
           },
           "surface_state": {
-            "authored_source": 768,
+            "authored_source": 769,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -777,7 +777,7 @@
       },
       "coverage": {
         "commands": 226,
-        "documents": 352,
+        "documents": 353,
         "generated": 36,
         "mechanics": 421,
         "schemas": 97,
@@ -1486,12 +1486,12 @@
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "aff32661f15c4d4dd8ddf0058e20687d3f3c5dffc9c9d44e2540a10d1d1d8460",
+        "content_digest": "67651ddf18f95e74b65c67b2a79b0c7bb86f779a9a062260eea37782137f0ab9",
         "corpus_digest": "",
-        "corpus_total_bytes": 8969075,
+        "corpus_total_bytes": 8971149,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 8969075,
+        "git_hot_bytes": 8971149,
         "git_hot_objects": 396,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
@@ -1501,7 +1501,7 @@
         "placement_state": "git-full",
         "receipt_ref": "",
         "shards": 396,
-        "tracked_bytes": 8969075,
+        "tracked_bytes": 8971149,
         "tracked_bytes_max": 9437184
       },
       "repo": "aoa-stats",
