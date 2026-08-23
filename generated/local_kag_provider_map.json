@@ -3495,13 +3495,13 @@
           "artifact_cold_objects": 0,
           "artifact_locator_ref": "",
           "budget_state": "passed",
-          "content_digest": "15882ea67c810d73a93bf02e107009544ee48b721053ec9d90904aed1903fcbe",
+          "content_digest": "ea39cb3095ff9cb28def5a15d876c2ef4dce797494ee099fb88c0b1b2e8dcb7e",
           "corpus_digest": "",
-          "corpus_total_bytes": 8441345,
+          "corpus_total_bytes": 8916735,
           "digest_state": "published",
           "distribution_digest": "",
-          "git_hot_bytes": 8441345,
-          "git_hot_objects": 395,
+          "git_hot_bytes": 8916735,
+          "git_hot_objects": 396,
           "hot_profile_ref": "",
           "manifest_ref": "kag/indexes/index_family.manifest.json",
           "measurement_ref": "",
@@ -3509,8 +3509,8 @@
           "os_git_hot_target_bytes": 234881024,
           "placement_state": "git-full",
           "receipt_ref": "",
-          "shards": 395,
-          "tracked_bytes": 8441345,
+          "shards": 396,
+          "tracked_bytes": 8916735,
           "tracked_bytes_max": 9437184
         },
         "repository_index_family": {
@@ -3524,21 +3524,21 @@
         },
         "domain_index_catalog_ref": "",
         "coverage": {
-          "commands": 97,
-          "documents": 375,
+          "commands": 102,
+          "documents": 378,
           "generated": 32,
-          "mechanics": 512,
-          "schemas": 95,
-          "scripts": 40,
-          "tests": 57,
+          "mechanics": 518,
+          "schemas": 101,
+          "scripts": 41,
+          "tests": 61,
           "validators": 19
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
-              "config": 133,
+              "config": 134,
               "dependency_manifest": 1,
-              "document": 367,
+              "document": 370,
               "generated_readmodel": 39,
               "index": 1,
               "license": 1,
@@ -3546,30 +3546,30 @@
               "owner_metadata": 2,
               "projection": 1,
               "receipt": 1,
-              "schema": 94,
-              "script": 21,
+              "schema": 100,
+              "script": 22,
               "security": 1,
               "service_unit": 2,
-              "source_code": 31,
-              "test": 57,
+              "source_code": 34,
+              "test": 61,
               "validator": 19
             },
             "command_role": {
-              "builder": 10,
+              "builder": 11,
               "lane_entrypoint": 1,
-              "none": 691,
+              "none": 704,
               "script": 10,
-              "test": 57,
+              "test": 61,
               "validator": 19
             },
             "document_role": {
               "agents": 45,
               "boundary": 1,
               "changelog": 1,
-              "decision": 23,
+              "decision": 26,
               "design": 1,
               "mechanics_doc": 180,
-              "none": 413,
+              "none": 428,
               "parts": 11,
               "provenance": 11,
               "readme": 85,
@@ -3580,22 +3580,22 @@
             "mechanics_role": {
               "legacy": 23,
               "mechanic_package": 51,
-              "mechanic_part": 92,
-              "none": 276,
+              "mechanic_part": 93,
+              "none": 288,
               "part_contract": 42,
               "part_doc": 183,
-              "part_schema": 58,
+              "part_schema": 60,
               "part_script": 21,
-              "part_test": 42
+              "part_test": 45
             },
             "primary_kind": {
               "artifact": 40,
-              "command": 97,
-              "document": 375,
-              "surface": 276
+              "command": 102,
+              "document": 378,
+              "surface": 286
             },
             "surface_state": {
-              "authored_source": 721,
+              "authored_source": 739,
               "generated_readmodel": 44,
               "legacy": 23
             }
@@ -9009,13 +9009,13 @@
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
         "budget_state": "passed",
-        "content_digest": "15882ea67c810d73a93bf02e107009544ee48b721053ec9d90904aed1903fcbe",
+        "content_digest": "ea39cb3095ff9cb28def5a15d876c2ef4dce797494ee099fb88c0b1b2e8dcb7e",
         "corpus_digest": "",
-        "corpus_total_bytes": 8441345,
+        "corpus_total_bytes": 8916735,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 8441345,
-        "git_hot_objects": 395,
+        "git_hot_bytes": 8916735,
+        "git_hot_objects": 396,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "measurement_ref": "",
@@ -9023,8 +9023,8 @@
         "os_git_hot_target_bytes": 234881024,
         "placement_state": "git-full",
         "receipt_ref": "",
-        "shards": 395,
-        "tracked_bytes": 8441345,
+        "shards": 396,
+        "tracked_bytes": 8916735,
         "tracked_bytes_max": 9437184
       },
       "repository_index_family": {
@@ -9038,21 +9038,21 @@
       },
       "domain_index_catalog_ref": "",
       "coverage": {
-        "commands": 97,
-        "documents": 375,
+        "commands": 102,
+        "documents": 378,
         "generated": 32,
-        "mechanics": 512,
-        "schemas": 95,
-        "scripts": 40,
-        "tests": 57,
+        "mechanics": 518,
+        "schemas": 101,
+        "scripts": 41,
+        "tests": 61,
         "validators": 19
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 133,
+            "config": 134,
             "dependency_manifest": 1,
-            "document": 367,
+            "document": 370,
             "generated_readmodel": 39,
             "index": 1,
             "license": 1,
@@ -9060,30 +9060,30 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 94,
-            "script": 21,
+            "schema": 100,
+            "script": 22,
             "security": 1,
             "service_unit": 2,
-            "source_code": 31,
-            "test": 57,
+            "source_code": 34,
+            "test": 61,
             "validator": 19
           },
           "command_role": {
-            "builder": 10,
+            "builder": 11,
             "lane_entrypoint": 1,
-            "none": 691,
+            "none": 704,
             "script": 10,
-            "test": 57,
+            "test": 61,
             "validator": 19
           },
           "document_role": {
             "agents": 45,
             "boundary": 1,
             "changelog": 1,
-            "decision": 23,
+            "decision": 26,
             "design": 1,
             "mechanics_doc": 180,
-            "none": 413,
+            "none": 428,
             "parts": 11,
             "provenance": 11,
             "readme": 85,
@@ -9094,22 +9094,22 @@
           "mechanics_role": {
             "legacy": 23,
             "mechanic_package": 51,
-            "mechanic_part": 92,
-            "none": 276,
+            "mechanic_part": 93,
+            "none": 288,
             "part_contract": 42,
             "part_doc": 183,
-            "part_schema": 58,
+            "part_schema": 60,
             "part_script": 21,
-            "part_test": 42
+            "part_test": 45
           },
           "primary_kind": {
             "artifact": 40,
-            "command": 97,
-            "document": 375,
-            "surface": 276
+            "command": 102,
+            "document": 378,
+            "surface": 286
           },
           "surface_state": {
-            "authored_source": 721,
+            "authored_source": 739,
             "generated_readmodel": 44,
             "legacy": 23
           }
@@ -11040,9 +11040,9 @@
     "aoa-stats": {
       "counts": {
         "artifact_kind": {
-          "config": 133,
+          "config": 134,
           "dependency_manifest": 1,
-          "document": 367,
+          "document": 370,
           "generated_readmodel": 39,
           "index": 1,
           "license": 1,
@@ -11050,30 +11050,30 @@
           "owner_metadata": 2,
           "projection": 1,
           "receipt": 1,
-          "schema": 94,
-          "script": 21,
+          "schema": 100,
+          "script": 22,
           "security": 1,
           "service_unit": 2,
-          "source_code": 31,
-          "test": 57,
+          "source_code": 34,
+          "test": 61,
           "validator": 19
         },
         "command_role": {
-          "builder": 10,
+          "builder": 11,
           "lane_entrypoint": 1,
-          "none": 691,
+          "none": 704,
           "script": 10,
-          "test": 57,
+          "test": 61,
           "validator": 19
         },
         "document_role": {
           "agents": 45,
           "boundary": 1,
           "changelog": 1,
-          "decision": 23,
+          "decision": 26,
           "design": 1,
           "mechanics_doc": 180,
-          "none": 413,
+          "none": 428,
           "parts": 11,
           "provenance": 11,
           "readme": 85,
@@ -11084,22 +11084,22 @@
         "mechanics_role": {
           "legacy": 23,
           "mechanic_package": 51,
-          "mechanic_part": 92,
-          "none": 276,
+          "mechanic_part": 93,
+          "none": 288,
           "part_contract": 42,
           "part_doc": 183,
-          "part_schema": 58,
+          "part_schema": 60,
           "part_script": 21,
-          "part_test": 42
+          "part_test": 45
         },
         "primary_kind": {
           "artifact": 40,
-          "command": 97,
-          "document": 375,
-          "surface": 276
+          "command": 102,
+          "document": 378,
+          "surface": 286
         },
         "surface_state": {
-          "authored_source": 721,
+          "authored_source": 739,
           "generated_readmodel": 44,
           "legacy": 23
         }
