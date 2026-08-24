@@ -154,21 +154,43 @@ class KagGenerationTestCase(unittest.TestCase):
                 label="absolute_path",
             )
 
-    def test_eval_catalog_rejects_absolute_paths(self) -> None:
-        with self.patched_read_json(
-            {
-                kag_generation.EVAL_CATALOG_PATH: {
-                    "evals": [
-                        {
-                            "name": "aoa-long-horizon-depth",
-                            "eval_path": "/tmp/outside/EVAL.md",
-                        }
-                    ]
+    def test_eval_catalog_accepts_repo_relative_paths(self) -> None:
+        payload = {
+            "evals": [
+                {
+                    "name": "aoa-long-horizon-depth",
+                    "eval_path": r"bundles\aoa-long-horizon-depth\EVAL.md",
                 }
-            }
-        ):
-            with self.assertRaises(kag_generation.GenerationError) as context:
-                kag_generation.load_eval_paths_by_name()
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            catalog_path = Path(tmpdir) / "eval_catalog.min.json"
+            catalog_path.touch()
+            with self.patch_generation_attribute("EVAL_CATALOG_PATH", catalog_path):
+                with self.patched_read_json({catalog_path: payload}):
+                    self.assertEqual(
+                        {
+                            "aoa-long-horizon-depth": "bundles/aoa-long-horizon-depth/EVAL.md"
+                        },
+                        kag_generation.load_eval_paths_by_name(),
+                    )
+
+    def test_eval_catalog_rejects_absolute_paths(self) -> None:
+        payload = {
+            "evals": [
+                {
+                    "name": "aoa-long-horizon-depth",
+                    "eval_path": "/tmp/outside/EVAL.md",
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            catalog_path = Path(tmpdir) / "eval_catalog.min.json"
+            catalog_path.touch()
+            with self.patch_generation_attribute("EVAL_CATALOG_PATH", catalog_path):
+                with self.patched_read_json({catalog_path: payload}):
+                    with self.assertRaises(kag_generation.GenerationError) as context:
+                        kag_generation.load_eval_paths_by_name()
 
         self.assertIn("repo-relative", str(context.exception))
 
