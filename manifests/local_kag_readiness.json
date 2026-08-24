@@ -673,6 +673,68 @@
       "first_record_classes": []
     },
     {
+      "repo": "aoa-dashboard",
+      "repo_role": "owner-bounded operator read model and non-executing dashboard projection",
+      "source_home_surfaces": [
+        "src/",
+        "contracts/",
+        "docs/"
+      ],
+      "surface_inventory": {
+        "evals": false,
+        "memo": false,
+        "mechanics": false,
+        "generated": false,
+        "manifests": false,
+        "schemas": true,
+        "examples": false,
+        "scripts": true,
+        "tests": true
+      },
+      "kag_pressure": [
+        "owner-source and provenance bindings for a derived operator view",
+        "future local KAG provider surface after a separate owner admission"
+      ],
+      "source_owned_exports": [],
+      "candidate_source_surfaces": [
+        "README.md",
+        "docs/OWNER_SURFACES.md",
+        "docs/ADMISSION.md",
+        "contracts/"
+      ],
+      "graph_entities": [
+        "dashboard projection",
+        "owner source binding",
+        "goal correlation"
+      ],
+      "event_surfaces": [
+        "docs/"
+      ],
+      "document_surfaces": [
+        "README.md",
+        "docs/OWNER_SURFACES.md",
+        "docs/ADMISSION.md"
+      ],
+      "validators": [
+        "python scripts/validate_organ_contract.py",
+        "python -m unittest discover -s tests -v"
+      ],
+      "release_gate": "owner-bounded source validation and separate provider admission",
+      "runtime_consumers": [
+        "aoa-dashboard operator surface"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-dashboard",
+          "surface": "docs/OWNER_SURFACES.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "provider_status": "source_preparation",
+      "adoption_order": 25,
+      "first_record_classes": []
+    },
+    {
       "repo": "aoa-playbooks",
       "repo_role": "playbook source home and scenario choreography",
       "source_home_surfaces": [

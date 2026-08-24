@@ -605,7 +605,7 @@ class ValidateKagTestCase(unittest.TestCase):
     def test_local_kag_readiness_keeps_unadmitted_owners_in_source_preparation(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)
-        for repo in ("ATM10-Agent", "aoa-models"):
+        for repo in ("ATM10-Agent", "aoa-dashboard", "aoa-models"):
             with self.subTest(repo=repo):
                 row = next(entry for entry in payload["repos"] if entry["repo"] == repo)
                 self.assertEqual("source_preparation", row["provider_status"])
@@ -616,7 +616,7 @@ class ValidateKagTestCase(unittest.TestCase):
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)
         broken_payload = copy.deepcopy(payload)
-        for repo in ("ATM10-Agent", "aoa-models"):
+        for repo in ("ATM10-Agent", "aoa-dashboard", "aoa-models"):
             candidate = copy.deepcopy(broken_payload)
             next(entry for entry in candidate["repos"] if entry["repo"] == repo)[
                 "provider_status"
