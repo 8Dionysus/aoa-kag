@@ -658,12 +658,11 @@ def _budget_source_epoch_files(root: Path) -> tuple[str, list[dict[str, Any]]]:
 def capture_budget_source_epoch(repo_root: Path) -> str:
     """Capture one clean source epoch shared by generation and receipt checks."""
     root = repo_root.resolve()
-    head, files = _budget_source_epoch_files(root)
+    _head, files = _budget_source_epoch_files(root)
     return "sha256:" + sha256_bytes(
         canonical_json_bytes(
             {
                 "contract_version": BUDGET_SOURCE_EPOCH_VERSION,
-                "head": head,
                 "files": files,
             }
         )
