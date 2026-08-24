@@ -2966,6 +2966,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "generated/local_kag_provider_map.json",
             dashboard_hit["path"],
         )
+        self.assertEqual([], query.exact("helper python_function"))
 
     def test_query_core_discovers_reads_and_filters_canonical_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

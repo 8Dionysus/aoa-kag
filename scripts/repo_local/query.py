@@ -752,15 +752,6 @@ class RepoKagQuery:
                 matches.append((1.0, node))
             elif any(field.startswith(needle) for field in fields if field):
                 matches.append((0.9, node))
-            elif (
-                needle
-                and any(character.isspace() for character in value)
-                and re.search(
-                    rf"(?<!\w){re.escape(needle)}(?!\w)",
-                    node.text.casefold(),
-                )
-            ):
-                matches.append((1.0, node))
         matches.sort(key=lambda item: (-item[0], item[1].id))
         return [self._hit(node, score) for score, node in matches[:limit]]
 

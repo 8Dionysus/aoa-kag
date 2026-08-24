@@ -58,7 +58,7 @@
       "additionalProperties": false,
       "required": ["kind", "ref"],
       "properties": {
-        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"type": "string", "enum": ["git_commit", "repository_snapshot", "source_anchor"]},
         "ref": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
