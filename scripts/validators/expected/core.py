@@ -60,6 +60,10 @@ REPO_LOCAL_KAG_BUDGET_RECEIPT_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-budget-receipt.schema.json"
 )
 
+REPO_LOCAL_KAG_BUDGET_PRODUCER_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "repo-local-kag-budget-producer-manifest.schema.json"
+)
+
 REPO_LOCAL_KAG_CORPUS_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-corpus-manifest.schema.json"
 )

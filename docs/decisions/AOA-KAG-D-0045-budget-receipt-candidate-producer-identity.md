@@ -8,7 +8,11 @@
 - KAG surfaces: repo-local family budget receipt, candidate seal, producer action identity
 - Source lanes: aoa-kag, provider repositories, abyss-stack owner-family consumers
 - Guard families: content identity, producer provenance, self-reference safety, fail-closed budget admission
-- Posture: accepted
+- Posture: superseded
+
+`AOA-KAG-D-0046` supersedes the producer allowlist, broad receipt-prefix
+exclusion, and unstaged source-epoch assumptions recorded here. This file
+remains the historical rationale for the first v2 identity-bound receipt.
 
 ## Context
 

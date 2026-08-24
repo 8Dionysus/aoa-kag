@@ -521,6 +521,50 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(family, loaded_family)
         self.assertEqual(manifest, loaded_manifest)
 
+    def _prepare_budget_fixture(self) -> tuple[Path, dict[str, object], tempfile.TemporaryDirectory]:
+        tmpdir = tempfile.TemporaryDirectory()
+        root = Path(tmpdir.name)
+        write_fixture(root)
+        subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+        subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+        subprocess.run(
+            ("git", "config", "user.email", "kag@example.test"),
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(("git", "add", "."), cwd=root, check=True)
+        subprocess.run(("git", "commit", "-qm", "source"), cwd=root, check=True)
+        source_index = build_index(root)
+        family = build_repository_indexes(source_index, repo_root=root)
+        base_manifest, base_shards = build_portable_family(source_index, family)
+        write_portable_output(root, base_manifest, base_shards)
+        subprocess.run(("git", "add", "."), cwd=root, check=True)
+        subprocess.run(
+            ("git", "commit", "-qm", "portable base"),
+            cwd=root,
+            check=True,
+        )
+        manifest, shards = build_portable_family(
+            source_index,
+            family,
+            previous_manifest={"budgets": {"tracked_bytes_max": 1}},
+        )
+        write_portable_output(root, manifest, shards)
+        receipt_path, receipt = build_budget_receipt(
+            root,
+            base_ref="HEAD",
+            manifest=manifest,
+            reason="identity-bound adversarial test",
+        )
+        write_budget_receipt = root / receipt_path
+        write_budget_receipt.parent.mkdir(parents=True, exist_ok=True)
+        write_budget_receipt.write_text(
+            json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        Draft202012Validator(load_json(BUDGET_RECEIPT_SCHEMA_FILE)).validate(receipt)
+        return root, manifest, tmpdir
+
     def test_budget_receipt_rejects_candidate_base_family_and_producer_replay(self) -> None:
         schema = load_json(BUDGET_RECEIPT_SCHEMA_FILE)
         Draft202012Validator.check_schema(schema)
@@ -591,7 +635,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             (root / "README.md").write_text("candidate replay\n", encoding="utf-8")
             with self.assertRaisesRegex(
                 PortableFamilyError,
-                "candidate identity does not match",
+                "source epoch",
             ):
                 validate_changed_generated_budget(root, base_ref="HEAD", manifest=manifest)
         finally:
@@ -645,6 +689,78 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                         base_ref="HEAD",
                         manifest=manifest,
                     )
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_producer_manifest_rejects_an_omitted_import(self) -> None:
+        original_loader = portable_family_module._budget_load_producer_manifest
+
+        def omit_identity(root: Path) -> tuple[dict[str, object], bytes]:
+            manifest, raw = original_loader(root)
+            changed = copy.deepcopy(manifest)
+            changed["python_import_closure"] = [
+                path
+                for path in changed["python_import_closure"]
+                if path != "scripts/repo_local/identity.py"
+            ]
+            return changed, raw
+
+        with mock.patch.object(
+            portable_family_module,
+            "_budget_load_producer_manifest",
+            side_effect=omit_identity,
+        ):
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "import closure differs",
+            ):
+                portable_family_module._budget_producer_identity()
+
+    def test_budget_source_epoch_rejects_staged_source_drift(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            (root / "README.md").write_text("staged source drift\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            with self.assertRaisesRegex(PortableFamilyError, "source epoch"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                )
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_receipt_rejects_exact_receipt_symlink_and_parent_symlink(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            receipt_file = root / portable_family_module.receipt_path_for(manifest)
+            outside = root.parent / f"{root.name}-outside.json"
+            receipt_file.unlink()
+            receipt_file.symlink_to(outside)
+            with self.assertRaisesRegex(PortableFamilyError, "regular in-root"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                )
+        finally:
+            tmpdir.cleanup()
+
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            receipt_root = root / portable_family_module.BUDGET_RECEIPT_ROOT_RELATIVE_PATH
+            receipt_file = root / portable_family_module.receipt_path_for(manifest)
+            outside_root = root / "receipt-root-outside"
+            outside_root.mkdir()
+            receipt_file.unlink()
+            receipt_root.rmdir()
+            receipt_root.symlink_to(outside_root, target_is_directory=True)
+            with self.assertRaisesRegex(PortableFamilyError, "parent must be"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                )
         finally:
             tmpdir.cleanup()
 

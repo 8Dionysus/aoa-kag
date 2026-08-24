@@ -41,6 +41,10 @@ try:
         markdown_headings,
         validate_capability_graph_against_sources,
     )
+    from scripts.repo_local.portable_family import (
+        PortableFamilyError as PortableFamilyBoundaryError,
+        capture_budget_source_epoch,
+    )
 except ImportError:  # pragma: no cover - direct script execution
     from repo_local.identity import (  # type: ignore
         artifact_identity,
@@ -61,6 +65,10 @@ except ImportError:  # pragma: no cover - direct script execution
         extract_structure,
         markdown_headings,
         validate_capability_graph_against_sources,
+    )
+    from repo_local.portable_family import (  # type: ignore
+        PortableFamilyError as PortableFamilyBoundaryError,
+        capture_budget_source_epoch,
     )
 
 
@@ -3514,7 +3522,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     output = Path(args.output)
     output_path = repo_root / output
-    source_snapshot = OwnerSourceSnapshot.capture(repo_root)
+    try:
+        source_epoch_before = capture_budget_source_epoch(repo_root)
+        source_snapshot = OwnerSourceSnapshot.capture(repo_root)
+        source_epoch = capture_budget_source_epoch(repo_root)
+    except (PortableFamilyBoundaryError, SourceSnapshotError) as exc:
+        print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+        return 1
+    if source_epoch != source_epoch_before:
+        print(
+            "[repo-local-kag-index] source epoch changed during capture",
+            file=sys.stderr,
+        )
+        return 1
     history_ref = effective_history_ref(
         repo_root,
         args.history_ref,
@@ -3792,6 +3812,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         base_ref=args.budget_base_ref,
                         manifest=budget_manifest,
                         reason=args.budget_reason,
+                        source_epoch=source_epoch,
                     )
                 except (
                     PortableFamilyError,
@@ -3875,6 +3896,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     base_ref=args.budget_base_ref,
                     manifest=portable_manifest,
                     reason=args.budget_reason,
+                    source_epoch=source_epoch,
                 )
             except (PortableFamilyError, subprocess.CalledProcessError) as exc:
                 print(f"[repo-local-kag-index] {exc}", file=sys.stderr)

@@ -492,6 +492,10 @@ def validate_repo_local_kag_index_schema_surface() -> None:
         REPO_LOCAL_KAG_BUDGET_RECEIPT_SCHEMA_PATH,
         "repo-local KAG budget receipt",
     )
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_BUDGET_PRODUCER_MANIFEST_SCHEMA_PATH,
+        "repo-local KAG budget producer manifest",
+    )
     validate_top_level_schema(REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH, "repo-local KAG query result")
     validate_top_level_schema(KAG_MCP_CAPABILITIES_SCHEMA_PATH, "KAG MCP capabilities")
     validate_top_level_schema(KAG_MCP_RESULT_SCHEMA_PATH, "KAG MCP result")

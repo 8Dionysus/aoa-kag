@@ -117,17 +117,18 @@
         "algorithm",
         "seal",
         "file_count",
-        "excluded_prefix",
+        "excluded_path",
         "base_ref",
         "family_digest",
-        "source_snapshot"
+        "source_snapshot",
+        "source_epoch"
       ],
       "properties": {
         "contract_version": {
-          "const": "aoa-kag:budget-receipt-candidate-identity-v1"
+          "const": "aoa-kag:budget-receipt-candidate-identity-v2"
         },
         "algorithm": {
-          "const": "sha256:canonical-json-file-inventory-v1"
+          "const": "sha256:canonical-json-file-inventory-v2"
         },
         "seal": {
           "$ref": "#/$defs/digest"
@@ -136,8 +137,9 @@
           "type": "integer",
           "minimum": 0
         },
-        "excluded_prefix": {
-          "const": "kag/receipts/index_family_budget/"
+        "excluded_path": {
+          "type": "string",
+          "pattern": "^kag/receipts/index_family_budget/[a-f0-9]{64}\\.json$"
         },
         "base_ref": {
           "$ref": "#/$defs/commit"
@@ -146,6 +148,9 @@
           "$ref": "#/$defs/digest"
         },
         "source_snapshot": {
+          "$ref": "#/$defs/sha256Digest"
+        },
+        "source_epoch": {
           "$ref": "#/$defs/sha256Digest"
         }
       }
@@ -189,27 +194,30 @@
         "owner",
         "revision_binding",
         "source_digest",
+        "procedure_manifest",
         "files",
         "action",
         "identity_digest"
       ],
       "properties": {
         "contract_version": {
-          "const": "aoa-kag:budget-receipt-producer-identity-v1"
+          "const": "aoa-kag:budget-receipt-producer-identity-v2"
         },
         "owner": {
           "const": "aoa-kag"
         },
         "revision_binding": {
-          "const": "content-addressed-procedure-and-action-blob"
+          "const": "content-addressed-procedure-import-closure-and-action-v2"
         },
         "source_digest": {
           "$ref": "#/$defs/digest"
         },
+        "procedure_manifest": {
+          "$ref": "#/$defs/procedureManifest"
+        },
         "files": {
           "type": "array",
-          "minItems": 7,
-          "maxItems": 7,
+          "minItems": 1,
           "items": {
             "$ref": "#/$defs/producerFile"
           }
@@ -219,6 +227,123 @@
         },
         "identity_digest": {
           "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"
+    },
+    "environmentInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "role": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "dependencyInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "procedureManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_path",
+        "manifest_digest",
+        "schema_path",
+        "closure_mode",
+        "python_entrypoints",
+        "python_import_closure",
+        "schema_inputs",
+        "action_path",
+        "action_inputs",
+        "environment",
+        "dependencies"
+      ],
+      "properties": {
+        "manifest_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "closure_mode": {
+          "const": "ast-import-closure-v1"
+        },
+        "python_entrypoints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "python_import_closure": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "schema_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "action_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "action_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "environment": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/environmentInput"
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/dependencyInput"
+          }
         }
       }
     }

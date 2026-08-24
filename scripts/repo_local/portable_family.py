@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import json
@@ -19,6 +20,12 @@ BUDGET_RECEIPT_ROOT_RELATIVE_PATH = Path(
     "kag/receipts/index_family_budget"
 )
 BUDGET_RECEIPT_EXCLUDED_PREFIX = "kag/receipts/index_family_budget/"
+BUDGET_RECEIPT_PRODUCER_MANIFEST_PATH = Path(
+    "config/repo-local-kag-budget-producer.json"
+)
+BUDGET_RECEIPT_PRODUCER_MANIFEST_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-budget-producer-manifest.schema.json"
+)
 BUDGET_RECEIPT_SCHEMA_PATH = Path(
     "schemas/repo-local-kag-budget-receipt.schema.json"
 )
@@ -29,19 +36,15 @@ TIERED_CONTROL_PATHS = {
 }
 BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v2"
 BUDGET_CANDIDATE_IDENTITY_VERSION = (
-    "aoa-kag:budget-receipt-candidate-identity-v1"
+    "aoa-kag:budget-receipt-candidate-identity-v2"
 )
-BUDGET_CANDIDATE_SEAL_ALGORITHM = "sha256:canonical-json-file-inventory-v1"
-BUDGET_PRODUCER_IDENTITY_VERSION = "aoa-kag:budget-receipt-producer-identity-v1"
-BUDGET_PRODUCER_PATHS = (
-    Path("scripts/repo_local/portable_family.py"),
-    Path("scripts/repo_local/tiered_family.py"),
-    Path("scripts/generate_repo_local_kag_index.py"),
-    Path("scripts/repo_local_kag_gate.py"),
-    Path("schemas/repo-local-kag-family-manifest.schema.json"),
-    BUDGET_RECEIPT_SCHEMA_PATH,
-    Path(".github/actions/repo-local-kag-index/action.yml"),
+BUDGET_CANDIDATE_SEAL_ALGORITHM = "sha256:canonical-json-file-inventory-v2"
+BUDGET_PRODUCER_IDENTITY_VERSION = "aoa-kag:budget-receipt-producer-identity-v2"
+BUDGET_PRODUCER_MANIFEST_VERSION = (
+    "aoa-kag:budget-receipt-producer-manifest-v1"
 )
+BUDGET_PRODUCER_CLOSURE_MODE = "ast-import-closure-v1"
+BUDGET_SOURCE_EPOCH_VERSION = "aoa-kag:budget-receipt-source-epoch-v1"
 BUDGET_PRODUCER_ACTION_PATH = Path(
     ".github/actions/repo-local-kag-index/action.yml"
 )
@@ -134,9 +137,9 @@ class PortableFamilyError(ValueError):
 def _budget_procedure_root() -> Path:
     """Resolve the checkout that owns the budget procedure itself."""
     root = Path(__file__).resolve().parents[2]
-    if not (root / BUDGET_PRODUCER_PATHS[0]).is_file():
+    if not (root / BUDGET_RECEIPT_PRODUCER_MANIFEST_PATH).is_file():
         raise PortableFamilyError(
-            "executing aoa-kag procedure checkout is missing its owner module"
+            "executing aoa-kag procedure checkout is missing its producer manifest"
         )
     return root
 
@@ -159,42 +162,328 @@ def _budget_git_blob(root: Path, relative: Path) -> str:
     return f"sha1:{blob}"
 
 
-def _budget_producer_identity() -> dict[str, Any]:
-    """Return the content identity of the executing owner procedure.
+def _budget_relative_path(value: object, *, label: str) -> Path:
+    if not isinstance(value, str) or not value:
+        raise PortableFamilyError(f"{label} must be a non-empty relative path")
+    relative = Path(value)
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise PortableFamilyError(f"{label} is outside the owner root: {value}")
+    return relative
 
-    The identity deliberately binds procedure bytes and the callable action
-    blob, not the containing producer commit/tree. A receipt can therefore be
-    committed by aoa-kag itself without creating a commit/receipt fixed-point
-    cycle.
+
+def _budget_regular_owner_file(
+    root: Path,
+    relative: Path,
+    *,
+    label: str,
+) -> Path:
+    path = root.joinpath(*relative.parts)
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError as exc:
+        raise PortableFamilyError(
+            f"{label} is missing: {relative.as_posix()}"
+        ) from exc
+    if not stat.S_ISREG(metadata.st_mode):
+        raise PortableFamilyError(
+            f"{label} must be a regular in-root file: {relative.as_posix()}"
+        )
+    try:
+        path.resolve(strict=True).relative_to(root.resolve())
+    except ValueError as exc:
+        raise PortableFamilyError(
+            f"{label} resolves outside the owner root: {relative.as_posix()}"
+        ) from exc
+    return path
+
+
+def _budget_load_producer_manifest(
+    root: Path,
+) -> tuple[dict[str, Any], bytes]:
+    manifest_path = _budget_regular_owner_file(
+        root,
+        BUDGET_RECEIPT_PRODUCER_MANIFEST_PATH,
+        label="producer manifest",
+    )
+    raw = manifest_path.read_bytes()
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PortableFamilyError("producer manifest is not valid UTF-8 JSON") from exc
+    if not isinstance(payload, dict):
+        raise PortableFamilyError("producer manifest must contain an object")
+    if payload.get("schema_version") != BUDGET_PRODUCER_MANIFEST_VERSION:
+        raise PortableFamilyError("producer manifest schema version is unsupported")
+    if payload.get("owner") != "aoa-kag":
+        raise PortableFamilyError("producer manifest owner must be aoa-kag")
+    if payload.get("closure_mode") != BUDGET_PRODUCER_CLOSURE_MODE:
+        raise PortableFamilyError("producer manifest closure mode is unsupported")
+    for key in (
+        "python_entrypoints",
+        "python_import_closure",
+        "schema_inputs",
+        "action_inputs",
+        "environment",
+        "dependencies",
+    ):
+        if not isinstance(payload.get(key), list) or not payload[key]:
+            raise PortableFamilyError(f"producer manifest {key} must be non-empty")
+    action_path = _budget_relative_path(
+        payload.get("action_path"),
+        label="producer manifest action_path",
+    )
+    if action_path != BUDGET_PRODUCER_ACTION_PATH:
+        raise PortableFamilyError("producer manifest action_path is not canonical")
+    for key in ("python_entrypoints", "python_import_closure", "schema_inputs"):
+        values: list[Path] = []
+        for index, value in enumerate(payload[key]):
+            values.append(
+                _budget_relative_path(
+                    value,
+                    label=f"producer manifest {key}[{index}]",
+                )
+            )
+        if len(values) != len(set(values)):
+            raise PortableFamilyError(
+                f"producer manifest {key} contains duplicate paths"
+            )
+    entrypoints = {
+        _budget_relative_path(value, label="producer manifest entrypoint")
+        for value in payload["python_entrypoints"]
+    }
+    closure = {
+        _budget_relative_path(value, label="producer manifest closure path")
+        for value in payload["python_import_closure"]
+    }
+    if not entrypoints <= closure:
+        raise PortableFamilyError(
+            "producer manifest entrypoints must be in the import closure"
+        )
+    for index, item in enumerate(payload["environment"]):
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("name"), str)
+            or not item["name"]
+            or not isinstance(item.get("role"), str)
+            or not item["role"]
+        ):
+            raise PortableFamilyError(
+                f"producer manifest environment[{index}] is malformed"
+            )
+    for index, item in enumerate(payload["dependencies"]):
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("name"), str)
+            or not item["name"]
+            or not isinstance(item.get("version"), str)
+            or not item["version"]
+        ):
+            raise PortableFamilyError(
+                f"producer manifest dependencies[{index}] is malformed"
+            )
+    return payload, raw
+
+
+def _budget_module_name(root: Path, relative: Path) -> list[str]:
+    parts = list(relative.with_suffix("").parts)
+    if parts[-1] == "__init__":
+        parts.pop()
+    return parts
+
+
+def _budget_local_module_path(root: Path, module: str) -> Path | None:
+    if not module:
+        return None
+    parts = module.split(".")
+    for base in (root, root / "scripts"):
+        candidate = base.joinpath(*parts)
+        file_candidate = candidate.with_suffix(".py")
+        if file_candidate.is_file():
+            return file_candidate.relative_to(root)
+        init_candidate = candidate / "__init__.py"
+        if init_candidate.is_file():
+            return init_candidate.relative_to(root)
+    return None
+
+
+def _budget_resolve_local_import(
+    root: Path,
+    relative: Path,
+    module: str,
+    level: int,
+) -> Path | None:
+    current = _budget_module_name(root, relative)
+    package = current if relative.name == "__init__.py" else current[:-1]
+    if level:
+        if level - 1 > len(package):
+            return None
+        prefix = package[: len(package) - (level - 1)]
+        qualified = ".".join(prefix + ([*module.split(".")] if module else []))
+        return _budget_local_module_path(root, qualified)
+    return _budget_local_module_path(root, module)
+
+
+def _budget_import_closure(
+    root: Path,
+    entrypoints: Sequence[Path],
+) -> list[Path]:
+    seen: set[Path] = set()
+    queue = list(entrypoints)
+    unresolved: list[str] = []
+    while queue:
+        relative = queue.pop()
+        if relative in seen:
+            continue
+        path = _budget_regular_owner_file(
+            root,
+            relative,
+            label="producer import closure file",
+        )
+        seen.add(relative)
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (SyntaxError, UnicodeDecodeError) as exc:
+            raise PortableFamilyError(
+                f"producer import closure cannot parse {relative.as_posix()}"
+            ) from exc
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    target = _budget_resolve_local_import(
+                        root,
+                        relative,
+                        alias.name,
+                        0,
+                    )
+                    if target is not None:
+                        queue.append(target)
+                    elif alias.name not in {"scripts", "repo_local"} and (
+                        alias.name.startswith(("scripts", "repo_local"))
+                    ):
+                        unresolved.append(f"{relative.as_posix()}:{alias.name}")
+            elif isinstance(node, ast.ImportFrom):
+                base_target = _budget_resolve_local_import(
+                    root,
+                    relative,
+                    node.module or "",
+                    node.level,
+                )
+                if base_target is not None:
+                    queue.append(base_target)
+                for alias in node.names:
+                    module = ".".join(
+                        part for part in ((node.module or ""), alias.name) if part
+                    )
+                    target = _budget_resolve_local_import(
+                        root,
+                        relative,
+                        module,
+                        node.level,
+                    )
+                    if target is not None:
+                        queue.append(target)
+                    elif node.level and node.module is None:
+                        unresolved.append(
+                            f"{relative.as_posix()}:{'.' * node.level}{alias.name}"
+                        )
+                    elif module.startswith(("scripts", "repo_local")) and (
+                        base_target is None and module not in {"scripts", "repo_local"}
+                    ):
+                        unresolved.append(f"{relative.as_posix()}:{module}")
+    if unresolved:
+        raise PortableFamilyError(
+            "producer import closure has unresolved local imports: "
+            + ", ".join(sorted(set(unresolved)))
+        )
+    return sorted(seen)
+
+
+def _budget_producer_file_entry(root: Path, relative: Path) -> dict[str, Any]:
+    path = _budget_regular_owner_file(
+        root,
+        relative,
+        label="producer identity source",
+    )
+    content = path.read_bytes()
+    return {
+        "path": relative.as_posix(),
+        "state": "present",
+        "content_digest": sha256_bytes(content),
+        "bytes": len(content),
+        "git_blob": _budget_git_blob(root, relative),
+    }
+
+
+def _budget_producer_identity() -> dict[str, Any]:
+    """Return a reviewed, content-addressed producer closure identity.
+
+    The manifest names the callable entrypoints, their complete local Python
+    import closure, admitted schema inputs, action inputs, environment names,
+    and dependency versions. The AST replay is deliberately fail-closed when
+    a new local import is not reviewed into that manifest. Producer commit and
+    tree identities remain outside the receipt to avoid a self-owner cycle.
     """
     root = _budget_procedure_root()
-    files: list[dict[str, Any]] = []
-    for relative in BUDGET_PRODUCER_PATHS:
-        path = root / relative
-        if not path.is_file():
-            raise PortableFamilyError(
-                f"producer identity source is missing: {relative.as_posix()}"
-            )
-        content = path.read_bytes()
-        files.append(
-            {
-                "path": relative.as_posix(),
-                "state": "present",
-                "content_digest": sha256_bytes(content),
-                "bytes": len(content),
-                "git_blob": _budget_git_blob(root, relative),
-            }
+    manifest, manifest_raw = _budget_load_producer_manifest(root)
+    entrypoints = [
+        _budget_relative_path(value, label="producer entrypoint")
+        for value in manifest["python_entrypoints"]
+    ]
+    declared_closure = [
+        _budget_relative_path(value, label="producer import closure")
+        for value in manifest["python_import_closure"]
+    ]
+    actual_closure = _budget_import_closure(root, entrypoints)
+    if actual_closure != sorted(declared_closure):
+        missing = sorted(set(actual_closure) - set(declared_closure))
+        extra = sorted(set(declared_closure) - set(actual_closure))
+        details = []
+        if missing:
+            details.append("missing=" + ",".join(path.as_posix() for path in missing))
+        if extra:
+            details.append("extra=" + ",".join(path.as_posix() for path in extra))
+        raise PortableFamilyError(
+            "producer import closure differs from reviewed manifest"
+            + (f" ({'; '.join(details)})" if details else "")
         )
+    schema_inputs = [
+        _budget_relative_path(value, label="producer schema input")
+        for value in manifest["schema_inputs"]
+    ]
+    manifest_paths = [
+        *actual_closure,
+        *schema_inputs,
+        BUDGET_RECEIPT_PRODUCER_MANIFEST_PATH,
+        BUDGET_RECEIPT_PRODUCER_MANIFEST_SCHEMA_PATH,
+        BUDGET_PRODUCER_ACTION_PATH,
+    ]
+    unique_paths = sorted(set(manifest_paths))
+    files = [_budget_producer_file_entry(root, relative) for relative in unique_paths]
     action = next(
-        entry for entry in files
-        if entry["path"] == BUDGET_PRODUCER_ACTION_PATH.as_posix()
+        entry for entry in files if entry["path"] == BUDGET_PRODUCER_ACTION_PATH.as_posix()
     )
+    procedure_manifest = {
+        "manifest_path": BUDGET_RECEIPT_PRODUCER_MANIFEST_PATH.as_posix(),
+        "manifest_digest": sha256_bytes(manifest_raw),
+        "schema_path": BUDGET_RECEIPT_PRODUCER_MANIFEST_SCHEMA_PATH.as_posix(),
+        "closure_mode": manifest["closure_mode"],
+        "python_entrypoints": [path.as_posix() for path in entrypoints],
+        "python_import_closure": [path.as_posix() for path in actual_closure],
+        "schema_inputs": [path.as_posix() for path in schema_inputs],
+        "action_path": BUDGET_PRODUCER_ACTION_PATH.as_posix(),
+        "action_inputs": copy.deepcopy(manifest["action_inputs"]),
+        "environment": copy.deepcopy(manifest["environment"]),
+        "dependencies": copy.deepcopy(manifest["dependencies"]),
+    }
     source_digest = sha256_bytes(canonical_json_bytes(files))
     identity_material = {
         "contract_version": BUDGET_PRODUCER_IDENTITY_VERSION,
         "owner": "aoa-kag",
-        "revision_binding": "content-addressed-procedure-and-action-blob",
+        "revision_binding": (
+            "content-addressed-procedure-import-closure-and-action-v2"
+        ),
         "source_digest": source_digest,
+        "procedure_manifest": procedure_manifest,
         "action": action,
     }
     return {
@@ -204,8 +493,202 @@ def _budget_producer_identity() -> dict[str, Any]:
     }
 
 
-def _budget_candidate_file_inventory(repo_root: Path) -> list[dict[str, Any]]:
+def _budget_is_receipt_control_path(relative: Path) -> bool:
+    return (
+        Path("kag/indexes") in (relative, *relative.parents)
+        or relative in {
+            Path("kag/indexes/corpus.manifest.json"),
+            Path("kag/indexes/hot_profile.json"),
+            Path("kag/indexes/artifact_locators.json"),
+        }
+        or Path("kag/indexes/shards") in (relative, *relative.parents)
+        or BUDGET_RECEIPT_ROOT_RELATIVE_PATH in (relative, *relative.parents)
+    )
+
+
+def _budget_filesystem_source_epoch_files(
+    root: Path,
+) -> tuple[str, list[dict[str, Any]]]:
+    entries: list[dict[str, Any]] = []
+    for path in root.rglob("*"):
+        if not path.is_file() and not path.is_symlink():
+            continue
+        relative = path.relative_to(root)
+        if _budget_is_receipt_control_path(relative):
+            continue
+        metadata = path.lstat()
+        if stat.S_ISREG(metadata.st_mode):
+            content = path.read_bytes()
+            kind = "file"
+            mode = "0755" if metadata.st_mode & stat.S_IXUSR else "0644"
+        elif stat.S_ISLNK(metadata.st_mode):
+            content = os.readlink(path).encode("utf-8", errors="surrogateescape")
+            kind = "symlink"
+            mode = "0777"
+        else:
+            continue
+        entries.append(
+            {
+                "path": relative.as_posix(),
+                "mode": mode,
+                "kind": kind,
+                "bytes": len(content),
+                "content_digest": sha256_bytes(content),
+            }
+        )
+    return "nogit", sorted(entries, key=lambda item: item["path"])
+
+
+def _budget_git_nul_paths(root: Path, *arguments: str) -> set[Path]:
+    result = subprocess.run(
+        ("git", *arguments, "-z"),
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise PortableFamilyError("source epoch requires a readable Git worktree")
+    paths: set[Path] = set()
+    for raw in result.stdout.split(b"\0"):
+        if not raw:
+            continue
+        try:
+            relative = Path(raw.decode("utf-8", errors="strict"))
+        except UnicodeDecodeError as exc:
+            raise PortableFamilyError("source epoch encountered a non-UTF-8 path") from exc
+        if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+            raise PortableFamilyError("source epoch encountered an unsafe path")
+        paths.add(relative)
+    return paths
+
+
+def _budget_source_epoch_files(root: Path) -> tuple[str, list[dict[str, Any]]]:
+    try:
+        head = subprocess.run(
+            ("git", "rev-parse", "HEAD"),
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return _budget_filesystem_source_epoch_files(root)
+    try:
+        staged = _budget_git_nul_paths(root, "diff", "--name-only", "--cached")
+        unstaged = _budget_git_nul_paths(root, "diff", "--name-only")
+        untracked = _budget_git_nul_paths(
+            root,
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+        )
+        dirty = {
+            path
+            for path in staged | unstaged | untracked
+            if not _budget_is_receipt_control_path(path)
+        }
+        if dirty:
+            raise PortableFamilyError(
+                "source epoch is not clean; source drift is present at: "
+                + ", ".join(path.as_posix() for path in sorted(dirty))
+            )
+        raw = subprocess.run(
+            ("git", "ls-files", "-s", "--cached", "-z"),
+            cwd=root,
+            check=True,
+            capture_output=True,
+        ).stdout
+        entries: list[dict[str, Any]] = []
+        for item in raw.split(b"\0"):
+            if not item:
+                continue
+            metadata, separator, path_bytes = item.partition(b"\t")
+            fields = metadata.split(b" ")
+            if not separator or len(fields) != 3:
+                raise PortableFamilyError("source epoch found a malformed Git index entry")
+            mode, blob_id, stage = (field.decode("ascii") for field in fields)
+            relative = Path(path_bytes.decode("utf-8", errors="strict"))
+            if stage != "0" or relative.is_absolute() or ".." in relative.parts:
+                raise PortableFamilyError(
+                    f"source epoch found an unstable Git index entry: {relative}"
+                )
+            if _budget_is_receipt_control_path(relative):
+                continue
+            path = root / relative
+            metadata = path.lstat()
+            if mode == "160000":
+                entries.append(
+                    {
+                        "path": relative.as_posix(),
+                        "mode": mode,
+                        "blob_id": blob_id,
+                        "kind": "gitlink",
+                    }
+                )
+                continue
+            if stat.S_ISREG(metadata.st_mode):
+                content = path.read_bytes()
+                kind = "file"
+            elif stat.S_ISLNK(metadata.st_mode):
+                content = os.readlink(path).encode("utf-8", errors="surrogateescape")
+                kind = "symlink"
+            else:
+                raise PortableFamilyError(
+                    f"source epoch found a non-file source path: {relative.as_posix()}"
+                )
+            expected_kind = "symlink" if mode == "120000" else "file"
+            if kind != expected_kind:
+                raise PortableFamilyError(
+                    f"source epoch mode changed for {relative.as_posix()}"
+                )
+            entries.append(
+                {
+                    "path": relative.as_posix(),
+                    "mode": mode,
+                    "kind": kind,
+                    "bytes": len(content),
+                    "content_digest": sha256_bytes(content),
+                }
+            )
+        return head, sorted(entries, key=lambda item: item["path"])
+    except subprocess.CalledProcessError as exc:
+        raise PortableFamilyError("source epoch cannot inspect the Git worktree") from exc
+
+
+def capture_budget_source_epoch(repo_root: Path) -> str:
+    """Capture one clean source epoch shared by generation and receipt checks."""
     root = repo_root.resolve()
+    head, files = _budget_source_epoch_files(root)
+    return "sha256:" + sha256_bytes(
+        canonical_json_bytes(
+            {
+                "contract_version": BUDGET_SOURCE_EPOCH_VERSION,
+                "head": head,
+                "files": files,
+            }
+        )
+    )
+
+
+def _budget_require_source_epoch(
+    repo_root: Path,
+    expected: str | None = None,
+) -> str:
+    actual = capture_budget_source_epoch(repo_root)
+    if expected is not None and actual != expected:
+        raise PortableFamilyError(
+            "source epoch changed between generation and receipt construction"
+        )
+    return actual
+
+
+def _budget_candidate_file_inventory(
+    repo_root: Path,
+    *,
+    excluded_path: Path,
+) -> list[dict[str, Any]]:
+    root = repo_root.resolve()
+    _budget_confined_receipt_path(root, excluded_path, allow_missing=True)
     result = subprocess.run(
         ("git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"),
         cwd=root,
@@ -233,7 +716,7 @@ def _budget_candidate_file_inventory(repo_root: Path) -> list[dict[str, Any]]:
         ):
             raise PortableFamilyError("candidate identity encountered an unsafe path")
         relative_text = relative.as_posix()
-        if relative_text.startswith(BUDGET_RECEIPT_EXCLUDED_PREFIX):
+        if relative == excluded_path:
             continue
         relative_paths.add(relative_text)
 
@@ -286,6 +769,7 @@ def _budget_candidate_identity(
     *,
     resolved_base_ref: str,
     manifest: Mapping[str, Any],
+    source_epoch: str | None = None,
 ) -> dict[str, Any]:
     family_identity = manifest.get("family_identity")
     if not isinstance(family_identity, Mapping):
@@ -304,11 +788,16 @@ def _budget_candidate_identity(
         raise PortableFamilyError(
             "budget candidate needs content-addressed family and source identities"
         )
-    inventory = _budget_candidate_file_inventory(repo_root)
+    actual_source_epoch = _budget_require_source_epoch(repo_root, source_epoch)
+    excluded_path = receipt_path_for(manifest)
+    inventory = _budget_candidate_file_inventory(
+        repo_root,
+        excluded_path=excluded_path,
+    )
     seal_material = {
         "contract_version": BUDGET_CANDIDATE_IDENTITY_VERSION,
         "algorithm": BUDGET_CANDIDATE_SEAL_ALGORITHM,
-        "excluded_prefix": BUDGET_RECEIPT_EXCLUDED_PREFIX,
+        "excluded_path": excluded_path.as_posix(),
         "files": inventory,
     }
     return {
@@ -316,10 +805,11 @@ def _budget_candidate_identity(
         "algorithm": BUDGET_CANDIDATE_SEAL_ALGORITHM,
         "seal": sha256_bytes(canonical_json_bytes(seal_material)),
         "file_count": len(inventory),
-        "excluded_prefix": BUDGET_RECEIPT_EXCLUDED_PREFIX,
+        "excluded_path": excluded_path.as_posix(),
         "base_ref": resolved_base_ref,
         "family_digest": family_digest,
         "source_snapshot": source_snapshot,
+        "source_epoch": actual_source_epoch,
     }
 
 
@@ -328,12 +818,15 @@ def _budget_receipt_identities(
     *,
     resolved_base_ref: str,
     manifest: Mapping[str, Any],
+    source_epoch: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    actual_source_epoch = _budget_require_source_epoch(repo_root, source_epoch)
     return (
         _budget_candidate_identity(
             repo_root,
             resolved_base_ref=resolved_base_ref,
             manifest=manifest,
+            source_epoch=actual_source_epoch,
         ),
         _budget_producer_identity(),
     )
@@ -1812,6 +2305,76 @@ def receipt_path_for(manifest: Mapping[str, Any]) -> Path:
     )
 
 
+def _budget_confined_receipt_path(
+    root: Path,
+    relative: Path,
+    *,
+    allow_missing: bool,
+) -> Path:
+    if (
+        relative.is_absolute()
+        or not relative.parts
+        or ".." in relative.parts
+        or relative.parent != BUDGET_RECEIPT_ROOT_RELATIVE_PATH
+        or relative.suffix != ".json"
+    ):
+        raise PortableFamilyError(
+            f"budget receipt path is not the exact in-root receipt object: {relative}"
+        )
+    resolved_root = root.resolve()
+    parent = resolved_root
+    for component in relative.parts[:-1]:
+        parent = parent / component
+        try:
+            metadata = parent.lstat()
+        except FileNotFoundError:
+            if allow_missing:
+                continue
+            raise PortableFamilyError(
+                f"budget receipt parent is missing: {parent}"
+            )
+        if not stat.S_ISDIR(metadata.st_mode):
+            raise PortableFamilyError(
+                f"budget receipt parent must be a regular directory: {parent}"
+            )
+    destination = resolved_root.joinpath(*relative.parts)
+    try:
+        metadata = destination.lstat()
+    except FileNotFoundError:
+        if allow_missing:
+            return destination
+        raise PortableFamilyError(f"budget receipt is missing: {relative}")
+    if not stat.S_ISREG(metadata.st_mode):
+        raise PortableFamilyError(
+            f"budget receipt must be a regular in-root file: {relative}"
+        )
+    try:
+        destination.resolve(strict=True).relative_to(resolved_root)
+    except ValueError as exc:
+        raise PortableFamilyError(
+            f"budget receipt resolves outside the owner root: {relative}"
+        ) from exc
+    return destination
+
+
+def _budget_read_receipt(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    path = _budget_confined_receipt_path(
+        repo_root,
+        receipt_path_for(manifest),
+        allow_missing=False,
+    )
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PortableFamilyError(
+            f"budget receipt is unreadable: {path.relative_to(repo_root.resolve())}"
+        ) from exc
+    return _validate_budget_receipt_shape(payload)
+
+
 def build_budget_receipt(
     repo_root: Path,
     *,
@@ -1819,6 +2382,7 @@ def build_budget_receipt(
     manifest: Mapping[str, Any],
     reason: str,
     approved_by: str = "repository-owner",
+    source_epoch: str | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     if not reason.strip():
         raise PortableFamilyError("budget receipt reason must not be empty")
@@ -1846,6 +2410,7 @@ def build_budget_receipt(
         repo_root,
         resolved_base_ref=resolved,
         manifest=manifest,
+        source_epoch=source_epoch,
     )
     receipt = {
         "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
@@ -1875,11 +2440,47 @@ def write_budget_receipt(
     path: Path,
     receipt: Mapping[str, Any],
 ) -> None:
-    destination = repo_root.resolve() / path
-    destination.parent.mkdir(parents=True, exist_ok=True)
+    candidate_identity = receipt.get("candidate_identity")
+    expected_path = (
+        Path(candidate_identity["excluded_path"])
+        if isinstance(candidate_identity, Mapping)
+        and isinstance(candidate_identity.get("excluded_path"), str)
+        else None
+    )
+    if expected_path is None or path != expected_path:
+        raise PortableFamilyError(
+            "budget receipt write path must match candidate excluded_path"
+        )
+    root = repo_root.resolve()
+    parent = root
+    for component in path.parts[:-1]:
+        parent = parent / component
+        try:
+            metadata = parent.lstat()
+        except FileNotFoundError:
+            parent.mkdir()
+            metadata = parent.lstat()
+        if not stat.S_ISDIR(metadata.st_mode):
+            raise PortableFamilyError(
+                f"budget receipt parent must be a regular directory: {parent}"
+            )
+    destination = _budget_confined_receipt_path(root, path, allow_missing=True)
     content = render_manifest(receipt)
-    if not destination.is_file() or destination.read_bytes() != content:
-        destination.write_bytes(content)
+    try:
+        if destination.read_bytes() == content:
+            return
+    except FileNotFoundError:
+        pass
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    no_follow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(destination, flags | no_follow, 0o644)
+    except OSError as exc:
+        raise PortableFamilyError(
+            f"budget receipt cannot be opened as a regular in-root file: {path}"
+        ) from exc
+    with os.fdopen(descriptor, "wb") as stream:
+        stream.write(content)
 
 
 def validate_changed_generated_budget(
@@ -1888,6 +2489,7 @@ def validate_changed_generated_budget(
     base_ref: str,
     manifest: Mapping[str, Any],
 ) -> tuple[int, int, bool]:
+    _budget_require_source_epoch(repo_root)
     changed_bytes, changed_files, resolved = changed_generated_bytes(
         repo_root,
         base_ref=base_ref,
@@ -1904,17 +2506,15 @@ def validate_changed_generated_budget(
     )
     if not delta_exceeded and not tracked_exceeded:
         return changed_bytes, changed_files, False
-    path = repo_root.resolve() / receipt_path_for(manifest)
     try:
-        receipt = json.loads(path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        receipt = _budget_read_receipt(repo_root, manifest)
+    except PortableFamilyError as exc:
         raise PortableFamilyError(
             "portable family budget is exceeded and no matching receipt exists: "
             f"changed={changed_bytes}/{limit}, "
             f"tracked={summary['tracked_bytes']}/"
-            f"{budgets['tracked_bytes_max']}"
+            f"{budgets['tracked_bytes_max']}; {exc}"
         ) from exc
-    receipt = _validate_budget_receipt_shape(receipt)
     expected_scope = _budget_receipt_scope(
         base_has_v3=base_manifest is not None,
         generated_delta_exceeded=delta_exceeded,
@@ -1960,15 +2560,13 @@ def _validate_tracked_size_receipt(
     repo_root: Path,
     manifest: Mapping[str, Any],
 ) -> None:
-    path = repo_root.resolve() / receipt_path_for(manifest)
     try:
-        receipt = json.loads(path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        receipt = _budget_read_receipt(repo_root, manifest)
+    except PortableFamilyError as exc:
         raise PortableFamilyError(
             "portable tracked byte budget is exceeded without a matching "
-            "digest-bound receipt"
+            f"digest-bound receipt; {exc}"
         ) from exc
-    receipt = _validate_budget_receipt_shape(receipt)
     resolved_base_ref = _resolve_receipt_base_ref(repo_root, receipt)
     summary = manifest["summary"]
     budgets = manifest["budgets"]
