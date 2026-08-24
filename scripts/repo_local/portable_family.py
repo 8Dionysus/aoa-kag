@@ -4,6 +4,8 @@ import copy
 import hashlib
 import json
 import math
+import os
+import stat
 import subprocess
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
@@ -16,12 +18,55 @@ SHARD_ROOT_RELATIVE_PATH = Path("kag/indexes/shards")
 BUDGET_RECEIPT_ROOT_RELATIVE_PATH = Path(
     "kag/receipts/index_family_budget"
 )
+BUDGET_RECEIPT_EXCLUDED_PREFIX = "kag/receipts/index_family_budget/"
+BUDGET_RECEIPT_SCHEMA_PATH = Path(
+    "schemas/repo-local-kag-budget-receipt.schema.json"
+)
 TIERED_CONTROL_PATHS = {
     Path("kag/indexes/corpus.manifest.json"),
     Path("kag/indexes/hot_profile.json"),
     Path("kag/indexes/artifact_locators.json"),
 }
-BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
+BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v2"
+BUDGET_CANDIDATE_IDENTITY_VERSION = (
+    "aoa-kag:budget-receipt-candidate-identity-v1"
+)
+BUDGET_CANDIDATE_SEAL_ALGORITHM = "sha256:canonical-json-file-inventory-v1"
+BUDGET_PRODUCER_IDENTITY_VERSION = "aoa-kag:budget-receipt-producer-identity-v1"
+BUDGET_PRODUCER_PATHS = (
+    Path("scripts/repo_local/portable_family.py"),
+    Path("scripts/repo_local/tiered_family.py"),
+    Path("scripts/generate_repo_local_kag_index.py"),
+    Path("scripts/repo_local_kag_gate.py"),
+    Path("schemas/repo-local-kag-family-manifest.schema.json"),
+    BUDGET_RECEIPT_SCHEMA_PATH,
+    Path(".github/actions/repo-local-kag-index/action.yml"),
+)
+BUDGET_PRODUCER_ACTION_PATH = Path(
+    ".github/actions/repo-local-kag-index/action.yml"
+)
+BUDGET_RECEIPT_FIELDS = frozenset(
+    {
+        "schema_version",
+        "repo",
+        "scope",
+        "base_ref",
+        "head_family_digest",
+        "head_source_snapshot",
+        "candidate_identity",
+        "producer_identity",
+        "changed_generated_bytes",
+        "changed_generated_files",
+        "default_limit_bytes",
+        "allowed_bytes",
+        "tracked_bytes",
+        "tracked_bytes_max",
+        "allowed_tracked_bytes",
+        "reason",
+        "approved_by",
+        "decision_ref",
+    }
+)
 DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0017-portable-content-addressed-repository-family.md"
@@ -84,6 +129,214 @@ CHUNKABLE_FIELDS = {
 
 class PortableFamilyError(ValueError):
     pass
+
+
+def _budget_procedure_root() -> Path:
+    """Resolve the checkout that owns the budget procedure itself."""
+    root = Path(__file__).resolve().parents[2]
+    if not (root / BUDGET_PRODUCER_PATHS[0]).is_file():
+        raise PortableFamilyError(
+            "executing aoa-kag procedure checkout is missing its owner module"
+        )
+    return root
+
+
+def _budget_git_blob(root: Path, relative: Path) -> str:
+    result = subprocess.run(
+        ("git", "hash-object", "--no-filters", "--", relative.as_posix()),
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    blob = result.stdout.strip()
+    if result.returncode != 0 or len(blob) != 40 or any(
+        character not in HEX_DIGITS for character in blob
+    ):
+        raise PortableFamilyError(
+            f"cannot resolve producer Git blob for {relative.as_posix()}"
+        )
+    return f"sha1:{blob}"
+
+
+def _budget_producer_identity() -> dict[str, Any]:
+    """Return the content identity of the executing owner procedure.
+
+    The identity deliberately binds procedure bytes and the callable action
+    blob, not the containing producer commit/tree. A receipt can therefore be
+    committed by aoa-kag itself without creating a commit/receipt fixed-point
+    cycle.
+    """
+    root = _budget_procedure_root()
+    files: list[dict[str, Any]] = []
+    for relative in BUDGET_PRODUCER_PATHS:
+        path = root / relative
+        if not path.is_file():
+            raise PortableFamilyError(
+                f"producer identity source is missing: {relative.as_posix()}"
+            )
+        content = path.read_bytes()
+        files.append(
+            {
+                "path": relative.as_posix(),
+                "state": "present",
+                "content_digest": sha256_bytes(content),
+                "bytes": len(content),
+                "git_blob": _budget_git_blob(root, relative),
+            }
+        )
+    action = next(
+        entry for entry in files
+        if entry["path"] == BUDGET_PRODUCER_ACTION_PATH.as_posix()
+    )
+    source_digest = sha256_bytes(canonical_json_bytes(files))
+    identity_material = {
+        "contract_version": BUDGET_PRODUCER_IDENTITY_VERSION,
+        "owner": "aoa-kag",
+        "revision_binding": "content-addressed-procedure-and-action-blob",
+        "source_digest": source_digest,
+        "action": action,
+    }
+    return {
+        **identity_material,
+        "files": files,
+        "identity_digest": sha256_bytes(canonical_json_bytes(identity_material)),
+    }
+
+
+def _budget_candidate_file_inventory(repo_root: Path) -> list[dict[str, Any]]:
+    root = repo_root.resolve()
+    result = subprocess.run(
+        ("git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"),
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise PortableFamilyError(
+            "candidate identity requires a readable Git worktree"
+        )
+    relative_paths: set[str] = set()
+    for raw in result.stdout.split(b"\0"):
+        if not raw:
+            continue
+        try:
+            relative = Path(raw.decode("utf-8", errors="strict"))
+        except UnicodeDecodeError as exc:
+            raise PortableFamilyError(
+                "candidate identity encountered a non-UTF-8 Git path"
+            ) from exc
+        if (
+            relative.is_absolute()
+            or not relative.parts
+            or ".." in relative.parts
+        ):
+            raise PortableFamilyError("candidate identity encountered an unsafe path")
+        relative_text = relative.as_posix()
+        if relative_text.startswith(BUDGET_RECEIPT_EXCLUDED_PREFIX):
+            continue
+        relative_paths.add(relative_text)
+
+    inventory: list[dict[str, Any]] = []
+    for relative_text in sorted(relative_paths):
+        relative = Path(relative_text)
+        path = root / relative
+        try:
+            metadata = path.lstat()
+        except FileNotFoundError:
+            inventory.append(
+                {
+                    "path": relative_text,
+                    "state": "missing",
+                    "kind": "missing",
+                    "mode": "missing",
+                    "bytes": 0,
+                    "content_digest": ZERO_DIGEST,
+                }
+            )
+            continue
+        if stat.S_ISREG(metadata.st_mode):
+            content = path.read_bytes()
+            kind = "file"
+            mode = "0755" if metadata.st_mode & stat.S_IXUSR else "0644"
+        elif stat.S_ISLNK(metadata.st_mode):
+            target = os.readlink(path).encode("utf-8", errors="surrogateescape")
+            content = target
+            kind = "symlink"
+            mode = "0777"
+        else:
+            raise PortableFamilyError(
+                f"candidate identity cannot inventory non-file path {relative_text}"
+            )
+        inventory.append(
+            {
+                "path": relative_text,
+                "state": "present",
+                "kind": kind,
+                "mode": mode,
+                "bytes": len(content),
+                "content_digest": sha256_bytes(content),
+            }
+        )
+    return inventory
+
+
+def _budget_candidate_identity(
+    repo_root: Path,
+    *,
+    resolved_base_ref: str,
+    manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    family_identity = manifest.get("family_identity")
+    if not isinstance(family_identity, Mapping):
+        raise PortableFamilyError("budget candidate needs family identity")
+    family_digest = family_identity.get("content_digest")
+    source_snapshot = family_identity.get("source_snapshot")
+    if isinstance(family_digest, str):
+        family_digest = family_digest.removeprefix("sha256:")
+    if (
+        not isinstance(family_digest, str)
+        or len(family_digest) != 64
+        or any(character not in HEX_DIGITS for character in family_digest)
+        or not isinstance(source_snapshot, str)
+        or not source_snapshot.startswith("sha256:")
+    ):
+        raise PortableFamilyError(
+            "budget candidate needs content-addressed family and source identities"
+        )
+    inventory = _budget_candidate_file_inventory(repo_root)
+    seal_material = {
+        "contract_version": BUDGET_CANDIDATE_IDENTITY_VERSION,
+        "algorithm": BUDGET_CANDIDATE_SEAL_ALGORITHM,
+        "excluded_prefix": BUDGET_RECEIPT_EXCLUDED_PREFIX,
+        "files": inventory,
+    }
+    return {
+        "contract_version": BUDGET_CANDIDATE_IDENTITY_VERSION,
+        "algorithm": BUDGET_CANDIDATE_SEAL_ALGORITHM,
+        "seal": sha256_bytes(canonical_json_bytes(seal_material)),
+        "file_count": len(inventory),
+        "excluded_prefix": BUDGET_RECEIPT_EXCLUDED_PREFIX,
+        "base_ref": resolved_base_ref,
+        "family_digest": family_digest,
+        "source_snapshot": source_snapshot,
+    }
+
+
+def _budget_receipt_identities(
+    repo_root: Path,
+    *,
+    resolved_base_ref: str,
+    manifest: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    return (
+        _budget_candidate_identity(
+            repo_root,
+            resolved_base_ref=resolved_base_ref,
+            manifest=manifest,
+        ),
+        _budget_producer_identity(),
+    )
 
 
 def effective_index_surface_record(
@@ -1458,6 +1711,99 @@ def changed_generated_bytes(
     return changed_bytes, changed_files, resolved
 
 
+def _resolve_receipt_base_ref(repo_root: Path, receipt: Mapping[str, Any]) -> str:
+    base_ref = receipt.get("base_ref")
+    if not isinstance(base_ref, str) or not base_ref:
+        raise PortableFamilyError("budget receipt base_ref is missing")
+    try:
+        resolved = subprocess.run(
+            ("git", "rev-parse", base_ref),
+            cwd=repo_root.resolve(),
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except subprocess.CalledProcessError as exc:
+        raise PortableFamilyError(
+            "budget receipt base_ref cannot be resolved"
+        ) from exc
+    if resolved != base_ref:
+        raise PortableFamilyError(
+            "budget receipt base_ref must be an exact resolved commit"
+        )
+    return resolved
+
+
+def _validate_budget_receipt_shape(receipt: object) -> dict[str, Any]:
+    if not isinstance(receipt, dict):
+        raise PortableFamilyError("budget receipt must be a JSON object")
+    if set(receipt) != set(BUDGET_RECEIPT_FIELDS):
+        missing = sorted(BUDGET_RECEIPT_FIELDS - set(receipt))
+        extra = sorted(set(receipt) - BUDGET_RECEIPT_FIELDS)
+        details: list[str] = []
+        if missing:
+            details.append(f"missing={','.join(missing)}")
+        if extra:
+            details.append(f"extra={','.join(extra)}")
+        raise PortableFamilyError(
+            "budget receipt shape is not the current identity-bound contract"
+            + (f" ({'; '.join(details)})" if details else "")
+        )
+    return receipt
+
+
+def _validate_budget_receipt_identities(
+    repo_root: Path,
+    *,
+    manifest: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+    resolved_base_ref: str,
+) -> None:
+    candidate_identity, producer_identity = _budget_receipt_identities(
+        repo_root,
+        resolved_base_ref=resolved_base_ref,
+        manifest=manifest,
+    )
+    expected_source_snapshot = manifest["family_identity"]["source_snapshot"]
+    if receipt.get("head_source_snapshot") != expected_source_snapshot:
+        raise PortableFamilyError(
+            "budget receipt source snapshot does not match current family"
+        )
+    if receipt.get("candidate_identity") != candidate_identity:
+        raise PortableFamilyError(
+            "budget receipt candidate identity does not match current candidate"
+        )
+    if receipt.get("producer_identity") != producer_identity:
+        raise PortableFamilyError(
+            "budget receipt producer identity does not match executing aoa-kag procedure"
+        )
+
+
+def _validate_budget_receipt_approval(
+    receipt: Mapping[str, Any],
+    *,
+    changed_bytes: int | None,
+    tracked_bytes: int,
+) -> None:
+    reason = receipt.get("reason")
+    approved_by = receipt.get("approved_by")
+    allowed_bytes = receipt.get("allowed_bytes")
+    allowed_tracked_bytes = receipt.get("allowed_tracked_bytes")
+    if (
+        not isinstance(reason, str)
+        or not reason.strip()
+        or not isinstance(approved_by, str)
+        or not approved_by.strip()
+        or not isinstance(allowed_bytes, int)
+        or isinstance(allowed_bytes, bool)
+        or not isinstance(allowed_tracked_bytes, int)
+        or isinstance(allowed_tracked_bytes, bool)
+        or allowed_tracked_bytes < tracked_bytes
+        or (changed_bytes is not None and allowed_bytes < changed_bytes)
+    ):
+        raise PortableFamilyError("budget receipt approval is incomplete")
+
+
 def receipt_path_for(manifest: Mapping[str, Any]) -> Path:
     digest = manifest["family_identity"]["content_digest"]
     return (
@@ -1496,12 +1842,20 @@ def build_budget_receipt(
         generated_delta_exceeded=delta_exceeded,
         tracked_size_exceeded=tracked_exceeded,
     )
+    candidate_identity, producer_identity = _budget_receipt_identities(
+        repo_root,
+        resolved_base_ref=resolved,
+        manifest=manifest,
+    )
     receipt = {
         "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
         "repo": manifest["repo"]["name"],
         "scope": scope,
         "base_ref": resolved,
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": manifest["family_identity"]["source_snapshot"],
+        "candidate_identity": candidate_identity,
+        "producer_identity": producer_identity,
         "changed_generated_bytes": changed_bytes,
         "changed_generated_files": changed_files,
         "default_limit_bytes": DEFAULT_DELTA_BYTES_MAX,
@@ -1560,6 +1914,7 @@ def validate_changed_generated_budget(
             f"tracked={summary['tracked_bytes']}/"
             f"{budgets['tracked_bytes_max']}"
         ) from exc
+    receipt = _validate_budget_receipt_shape(receipt)
     expected_scope = _budget_receipt_scope(
         base_has_v3=base_manifest is not None,
         generated_delta_exceeded=delta_exceeded,
@@ -1570,6 +1925,7 @@ def validate_changed_generated_budget(
         "repo": manifest["repo"]["name"],
         "base_ref": resolved,
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": manifest["family_identity"]["source_snapshot"],
         "changed_generated_bytes": changed_bytes,
         "changed_generated_files": changed_files,
         "default_limit_bytes": limit,
@@ -1582,20 +1938,21 @@ def validate_changed_generated_budget(
             raise PortableFamilyError(
                 f"budget receipt field {field} does not match current delta"
             )
+    _validate_budget_receipt_identities(
+        repo_root,
+        manifest=manifest,
+        receipt=receipt,
+        resolved_base_ref=resolved,
+    )
     if receipt.get("scope") != expected_scope:
         raise PortableFamilyError(
             "budget receipt scope does not match the current exceedance"
         )
-    if (
-        not isinstance(receipt.get("reason"), str)
-        or not receipt["reason"].strip()
-        or not isinstance(receipt.get("approved_by"), str)
-        or not receipt["approved_by"].strip()
-        or receipt.get("allowed_bytes", -1) < changed_bytes
-        or receipt.get("allowed_tracked_bytes", -1)
-        < summary["tracked_bytes"]
-    ):
-        raise PortableFamilyError("budget receipt approval is incomplete")
+    _validate_budget_receipt_approval(
+        receipt,
+        changed_bytes=changed_bytes,
+        tracked_bytes=summary["tracked_bytes"],
+    )
     return changed_bytes, changed_files, True
 
 
@@ -1611,12 +1968,16 @@ def _validate_tracked_size_receipt(
             "portable tracked byte budget is exceeded without a matching "
             "digest-bound receipt"
         ) from exc
+    receipt = _validate_budget_receipt_shape(receipt)
+    resolved_base_ref = _resolve_receipt_base_ref(repo_root, receipt)
     summary = manifest["summary"]
     budgets = manifest["budgets"]
     expected = {
         "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
         "repo": manifest["repo"]["name"],
+        "base_ref": resolved_base_ref,
         "head_family_digest": manifest["family_identity"]["content_digest"],
+        "head_source_snapshot": manifest["family_identity"]["source_snapshot"],
         "tracked_bytes": summary["tracked_bytes"],
         "tracked_bytes_max": budgets["tracked_bytes_max"],
         "decision_ref": _budget_decision_ref(manifest),
@@ -1626,6 +1987,12 @@ def _validate_tracked_size_receipt(
             raise PortableFamilyError(
                 f"tracked-size receipt field {field} does not match family"
             )
+    _validate_budget_receipt_identities(
+        repo_root,
+        manifest=manifest,
+        receipt=receipt,
+        resolved_base_ref=resolved_base_ref,
+    )
     if receipt.get("scope") not in {
         "tracked_size",
         "generated_delta_and_tracked_size",
@@ -1633,10 +2000,11 @@ def _validate_tracked_size_receipt(
         raise PortableFamilyError(
             "tracked-size receipt scope does not authorize this exceedance"
         )
-    if receipt.get("allowed_tracked_bytes", -1) < summary["tracked_bytes"]:
-        raise PortableFamilyError(
-            "tracked-size receipt allowance is below the family size"
-        )
+    _validate_budget_receipt_approval(
+        receipt,
+        changed_bytes=None,
+        tracked_bytes=summary["tracked_bytes"],
+    )
 
 
 def write_compatibility_view(

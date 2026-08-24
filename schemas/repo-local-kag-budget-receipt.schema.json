@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-budget-receipt.schema.json",
+  "title": "AoA repo-local KAG identity-bound budget receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "scope",
+    "base_ref",
+    "head_family_digest",
+    "head_source_snapshot",
+    "candidate_identity",
+    "producer_identity",
+    "changed_generated_bytes",
+    "changed_generated_files",
+    "default_limit_bytes",
+    "allowed_bytes",
+    "tracked_bytes",
+    "tracked_bytes_max",
+    "allowed_tracked_bytes",
+    "reason",
+    "approved_by",
+    "decision_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-budget-receipt-v2"
+    },
+    "repo": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "scope": {
+      "enum": [
+        "generated_delta",
+        "tracked_size",
+        "generated_delta_and_tracked_size",
+        "v2_to_v3_migration"
+      ]
+    },
+    "base_ref": {
+      "$ref": "#/$defs/commit"
+    },
+    "head_family_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "head_source_snapshot": {
+      "$ref": "#/$defs/sha256Digest"
+    },
+    "candidate_identity": {
+      "$ref": "#/$defs/candidateIdentity"
+    },
+    "producer_identity": {
+      "$ref": "#/$defs/producerIdentity"
+    },
+    "changed_generated_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "changed_generated_files": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "default_limit_bytes": {
+      "const": 1048576
+    },
+    "allowed_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tracked_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tracked_bytes_max": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "allowed_tracked_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reason": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "approved_by": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "decision_ref": {
+      "type": "string",
+      "pattern": "^aoa-kag:docs/decisions/.+\\.md$"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40,64}$"
+    },
+    "candidateIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "algorithm",
+        "seal",
+        "file_count",
+        "excluded_prefix",
+        "base_ref",
+        "family_digest",
+        "source_snapshot"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "aoa-kag:budget-receipt-candidate-identity-v1"
+        },
+        "algorithm": {
+          "const": "sha256:canonical-json-file-inventory-v1"
+        },
+        "seal": {
+          "$ref": "#/$defs/digest"
+        },
+        "file_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excluded_prefix": {
+          "const": "kag/receipts/index_family_budget/"
+        },
+        "base_ref": {
+          "$ref": "#/$defs/commit"
+        },
+        "family_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "source_snapshot": {
+          "$ref": "#/$defs/sha256Digest"
+        }
+      }
+    },
+    "producerFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "state",
+        "content_digest",
+        "bytes",
+        "git_blob"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "const": "present"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "git_blob": {
+          "type": "string",
+          "pattern": "^sha1:[0-9a-f]{40}$"
+        }
+      }
+    },
+    "producerIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "owner",
+        "revision_binding",
+        "source_digest",
+        "files",
+        "action",
+        "identity_digest"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "aoa-kag:budget-receipt-producer-identity-v1"
+        },
+        "owner": {
+          "const": "aoa-kag"
+        },
+        "revision_binding": {
+          "const": "content-addressed-procedure-and-action-blob"
+        },
+        "source_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "files": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "$ref": "#/$defs/producerFile"
+          }
+        },
+        "action": {
+          "$ref": "#/$defs/producerFile"
+        },
+        "identity_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    }
+  }
+}

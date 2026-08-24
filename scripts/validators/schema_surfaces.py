@@ -19,6 +19,10 @@ def validate_schema_surface() -> None:
         REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH,
         "repo-local KAG repository index",
     )
+    validate_top_level_schema(
+        REPO_LOCAL_KAG_BUDGET_RECEIPT_SCHEMA_PATH,
+        "repo-local KAG budget receipt",
+    )
     validate_top_level_schema(REPO_LOCAL_KAG_QUERY_RESULT_SCHEMA_PATH, "repo-local KAG query result")
     validate_top_level_schema(
         REPO_LOCAL_KAG_QUERY_UNAVAILABLE_SCHEMA_PATH,

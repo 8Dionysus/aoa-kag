@@ -117,9 +117,15 @@ validation or landing authority.
 provider repository without treating that repository as the root KAG SCC. It
 copies the exact tracked, staged, unstaged, and untracked candidate into a
 detached temporary worktree, regenerates only its portable family and optional
-digest-bound budget receipt, then requires the common owner-family gate. Its
+identity-bound budget receipt, then requires the common owner-family gate. Its
 `--apply` route changes only allowed KAG worktree outputs and preserves the
 caller's Git index.
+
+`scripts/repo_local/portable_family.py` owns the v2 budget receipt boundary:
+it binds the measured base/family/source coordinates, a candidate seal that
+excludes only the receipt projection, and the content-addressed producer
+procedure plus action blob. Missing, stale, replayed, or tampered identity
+fields fail closed at `validate_changed_generated_budget`.
 
 `scripts/repo_local_kag_gate.py` owns the reusable owner-family component DAG.
 Incremental parity is an early drift sentinel; after it passes, full parity,
