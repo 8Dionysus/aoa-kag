@@ -36,6 +36,7 @@
 - [AOA-KAG-D-0015 - KAG MCP Retrieval Contract](../AOA-KAG-D-0015-kag-mcp-retrieval-contract.md) (`docs/decisions/AOA-KAG-D-0015-kag-mcp-retrieval-contract.md`)
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 - [AOA-KAG-D-0026 - Separate MCP Source Identity From Acceptance](../AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md) (`docs/decisions/AOA-KAG-D-0026-separate-mcp-source-identity-from-acceptance.md`)
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
 
 ## abyss-stack MCP access plane
 
@@ -112,6 +113,7 @@
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
 - [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
 
 ## aoa-memo
 

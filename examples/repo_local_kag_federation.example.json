@@ -26,7 +26,7 @@
         "artifact": 1,
         "anchor": 0,
         "entity": 0,
-        "event": 0,
+        "event": 1,
         "assertion": 0
       },
       "relation_count": 0
@@ -34,7 +34,7 @@
   ],
   "summary": {
     "owner_count": 1,
-    "node_count": 1,
+    "node_count": 2,
     "relation_count": 0,
     "cross_repo_relation_count": 0,
     "unresolved_reference_count": 0,
@@ -55,6 +55,26 @@
         "aoa:aoa-example:anchor:example"
       ],
       "access_scope": "public"
+    },
+    {
+      "id": "aoa:aoa-example:event:owner-commit",
+      "repo": "aoa-example",
+      "namespace": "aoa:aoa-example",
+      "node_class": "event",
+      "kind": "git_commit",
+      "label": "immutable owner commit",
+      "search_text": "immutable owner commit f46f146cc79a26fa81ad0f400b9c5774df293e57",
+      "source_record_ids": [
+        "aoa:aoa-example:event:owner-commit"
+      ],
+      "anchor_ids": [],
+      "access_scope": "public",
+      "evidence_refs": [
+        {
+          "kind": "git_commit",
+          "ref": "f46f146cc79a26fa81ad0f400b9c5774df293e57"
+        }
+      ]
     }
   ],
   "relations": [],

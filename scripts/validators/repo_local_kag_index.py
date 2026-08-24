@@ -541,6 +541,26 @@ def validate_repo_local_kag_index_example() -> None:
         schema_path=REPO_LOCAL_KAG_FEDERATION_SCHEMA_PATH,
         label="repo-local KAG federation example",
     )
+    federation_nodes = federation.get("nodes") if isinstance(federation, dict) else None
+    if not isinstance(federation_nodes, list):
+        fail("repo-local KAG federation example nodes must be a list")
+    event_nodes = [
+        node
+        for node in federation_nodes
+        if isinstance(node, dict) and node.get("node_class") == "event"
+    ]
+    if not event_nodes:
+        fail("repo-local KAG federation example must include an event projection")
+    if not any(
+        ref.get("kind") == "git_commit"
+        for node in event_nodes
+        for ref in (node.get("evidence_refs") or [])
+        if isinstance(ref, dict)
+    ):
+        fail(
+            "repo-local KAG federation example event projection must preserve a "
+            "git_commit evidence reference"
+        )
     retrieval_plan = read_json(REPO_LOCAL_KAG_RETRIEVAL_PLAN_EXAMPLE_PATH)
     repo_local_kag_validate_payload(
         retrieval_plan,

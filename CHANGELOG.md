@@ -15,6 +15,14 @@ Tracking starts with the community-docs baseline for this repository.
   published `v0.5.0` provenance route.
 - Exclude tiered-family control surfaces from repository snapshot deltas so a
   landed generated family cannot invalidate its own event-index provenance.
+- Bind event evidence references into public projection handles and exact
+  matching, including immutable git-commit lookups, without exposing fields
+  outside the existing public reference contract.
+- Constrain projected evidence kinds to the canonical enum, keep the paired
+  federation example executable, and make exact matching field-bounded rather
+  than treating whitespace-separated phrases as arbitrary text.
+- Restrict federation `evidence_refs` to event nodes so non-event projections
+  cannot masquerade as immutable event coordinates.
 
 ## [0.5.0] - 2026-08-23
 

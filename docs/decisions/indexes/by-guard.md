@@ -215,6 +215,10 @@
 
 - [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 
+## fail-closed delivery
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
+
 ## fail-closed fallback
 
 - [AOA-KAG-D-0025 - Exact Same-Run Source-Fast Handoff](../AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md) (`docs/decisions/AOA-KAG-D-0025-exact-same-run-source-fast-handoff.md`)
@@ -521,6 +525,10 @@
 
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
+## public-safe projection
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
+
 ## Python shadow
 
 - [AOA-KAG-D-0032 - Fail-Closed Accelerated Schema Validation](../AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md) (`docs/decisions/AOA-KAG-D-0032-fail-closed-accelerated-schema-validation.md`)
@@ -643,6 +651,7 @@
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
 - [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
 
 ## source-return route
 

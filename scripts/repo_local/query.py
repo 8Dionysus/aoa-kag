@@ -16,6 +16,23 @@ def tokenize(value: str) -> tuple[str, ...]:
     return tuple(token.casefold() for token in TOKEN.findall(value) if len(token) > 1)
 
 
+def _public_evidence_refs(record: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Return only the immutable public coordinates carried by an event."""
+
+    raw_refs = record.get("evidence_refs")
+    if not isinstance(raw_refs, list):
+        return []
+    refs: list[dict[str, str]] = []
+    for raw_ref in raw_refs:
+        if not isinstance(raw_ref, Mapping):
+            continue
+        kind = raw_ref.get("kind")
+        ref = raw_ref.get("ref")
+        if isinstance(kind, str) and kind and isinstance(ref, str) and ref:
+            refs.append({"kind": kind, "ref": ref})
+    return refs
+
+
 def retrieval_document_role(record: dict[str, Any]) -> str:
     path = str(record["identity"]["path"])
     folded_parts = {part.casefold() for part in path.replace("\\", "/").split("/")}
@@ -318,6 +335,10 @@ class RepoKagQuery:
             handle["owner_return_route"] = copy.deepcopy(
                 primary_source["owner_return_route"]
             )
+        if node.node_class == "event":
+            evidence_refs = _public_evidence_refs(node.record)
+            if evidence_refs:
+                handle["evidence_refs"] = evidence_refs
         return handle
 
     def _build_nodes(self) -> dict[str, _Node]:
@@ -415,12 +436,19 @@ class RepoKagQuery:
                 f"{item['change_kind']} {item['old_path']} {item['path']}"
                 for item in event["changes"]
             )
+            evidence_text = " ".join(
+                f"{item['kind']} {item['ref']}"
+                for item in _public_evidence_refs(event)
+            )
             nodes[event_id] = _Node(
                 id=event_id,
                 node_class="event",
                 kind=str(event["event_kind"]),
                 label=str(event["label"]),
-                text=f"{event['label']} {event['event_kind']} {change_text}",
+                text=(
+                    f"{event['label']} {event['event_kind']} {change_text} "
+                    f"{evidence_text}"
+                ).strip(),
                 path="",
                 source_record_ids=source_ids,
                 anchor_ids=tuple(str(item) for item in event["anchor_ids"]),
@@ -714,7 +742,12 @@ class RepoKagQuery:
                 continue
             if not self._allowed(node, access_scopes=access_scopes):
                 continue
-            fields = (node.id.casefold(), node.path.casefold(), node.label.casefold())
+            fields = [node.id.casefold(), node.path.casefold(), node.label.casefold()]
+            if node.node_class == "event":
+                fields.extend(
+                    ref["ref"].casefold()
+                    for ref in _public_evidence_refs(node.record)
+                )
             if needle in fields:
                 matches.append((1.0, node))
             elif any(field.startswith(needle) for field in fields if field):

@@ -262,6 +262,14 @@
 
 - [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
 
+## public projection
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
+
+## query contract
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
+
 ## query foundation
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
@@ -370,6 +378,10 @@
 ## tests/decision-indexes
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
+
+## tiered delivery
+
+- [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
 
 ## validation
 
