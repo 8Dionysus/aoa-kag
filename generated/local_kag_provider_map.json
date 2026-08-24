@@ -30,8 +30,8 @@
         "receipts": 1
       },
       "repo_local_index": {
-        "status": "passed",
-        "source_index_ref": "kag/indexes/source_surface_index.json",
+        "status": "migration-needed",
+        "source_index_ref": "",
         "index_files": [
           "kag/indexes/artifact_locators.json",
           "kag/indexes/corpus.manifest.json",
@@ -64,15 +64,7 @@
           "tracked_bytes": 0,
           "tracked_bytes_max": 4194304
         },
-        "repository_index_family": {
-          "anchor": "kag/indexes/repo_anchor_index.json",
-          "artifact": "kag/indexes/repo_artifact_index.json",
-          "assertion": "kag/indexes/repo_assertion_index.json",
-          "entity": "kag/indexes/repo_entity_index.json",
-          "event": "kag/indexes/repo_event_index.json",
-          "relation": "kag/indexes/repo_relation_index.json",
-          "source": "kag/indexes/source_surface_index.json"
-        },
+        "repository_index_family": {},
         "domain_index_catalog_ref": "",
         "coverage": {
           "commands": 226,
@@ -158,11 +150,11 @@
             "has_kag_home": true,
             "has_owner_commands": true,
             "has_record_classes": true,
-            "has_source_index": true,
+            "has_source_index": false,
             "has_validation_route": true,
             "unknown_count": 0
           },
-          "source": "source_surface_index"
+          "source": "source_tree_scan"
         },
         "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
         "coverage_owner_key": "aoa-kag"
@@ -7395,8 +7387,8 @@
   },
   "provider_repo_local_indexes": {
     "aoa-kag": {
-      "status": "passed",
-      "source_index_ref": "kag/indexes/source_surface_index.json",
+      "status": "migration-needed",
+      "source_index_ref": "",
       "index_files": [
         "kag/indexes/artifact_locators.json",
         "kag/indexes/corpus.manifest.json",
@@ -7429,15 +7421,7 @@
         "tracked_bytes": 0,
         "tracked_bytes_max": 4194304
       },
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
+      "repository_index_family": {},
       "domain_index_catalog_ref": "",
       "coverage": {
         "commands": 226,
@@ -7523,11 +7507,11 @@
           "has_kag_home": true,
           "has_owner_commands": true,
           "has_record_classes": true,
-          "has_source_index": true,
+          "has_source_index": false,
           "has_validation_route": true,
           "unknown_count": 0
         },
-        "source": "source_surface_index"
+        "source": "source_tree_scan"
       },
       "coverage_report_ref": "generated/repo_local_kag_coverage.min.json",
       "coverage_owner_key": "aoa-kag"
@@ -10166,11 +10150,11 @@
         "has_kag_home": true,
         "has_owner_commands": true,
         "has_record_classes": true,
-        "has_source_index": true,
+        "has_source_index": false,
         "has_validation_route": true,
         "unknown_count": 0
       },
-      "source": "source_surface_index"
+      "source": "source_tree_scan"
     },
     "Tree-of-Sophia": {
       "counts": {
