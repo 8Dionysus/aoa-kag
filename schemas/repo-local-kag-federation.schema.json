@@ -138,18 +138,21 @@
     "node": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [
+      "oneOf": [
         {
-          "if": {
-            "properties": {
-              "node_class": {"const": "event"}
-            },
-            "required": ["node_class"]
+          "properties": {
+            "node_class": {"const": "event"}
           },
-          "then": {},
-          "else": {
-            "not": {"required": ["evidence_refs"]}
-          }
+          "required": ["node_class"]
+        },
+        {
+          "properties": {
+            "node_class": {
+              "enum": ["artifact", "anchor", "entity", "assertion"]
+            }
+          },
+          "required": ["node_class"],
+          "not": {"required": ["evidence_refs"]}
         }
       ],
       "required": [
