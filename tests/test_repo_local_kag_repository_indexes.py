@@ -547,7 +547,22 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             )
             manifest, shards = build_portable_family(source_index, family)
             write_portable_output(root, manifest, shards)
+            for relative in (
+                Path("kag/indexes/corpus.manifest.json"),
+                Path("kag/indexes/hot_profile.json"),
+                Path("kag/indexes/artifact_locators.json"),
+                Path("generated/repo_local_kag_preparation_seed.json"),
+            ):
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}\n", encoding="utf-8")
             subprocess.run(("git", "add", "kag"), cwd=root, check=True)
+            subprocess.run(("git", "add", "generated"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "generated family controls"),
+                cwd=root,
+                check=True,
+            )
 
             rebuilt = build_repository_indexes(
                 source_index,

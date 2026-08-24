@@ -13,6 +13,8 @@ Tracking starts with the community-docs baseline for this repository.
   `source_preparation` row in the local KAG readiness matrix, so strict
   federation preflight can resolve the owner root without weakening the
   published `v0.5.0` provenance route.
+- Exclude tiered-family control surfaces from repository snapshot deltas so a
+  landed generated family cannot invalidate its own event-index provenance.
 
 ## [0.5.0] - 2026-08-23
 

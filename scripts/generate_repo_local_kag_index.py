@@ -75,6 +75,15 @@ PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT = Path(
 PREPARATION_COVERAGE_SEED = Path(
     "generated/repo_local_kag_preparation_seed.json"
 )
+PORTABLE_FAMILY_CONTROL_PATHS = frozenset(
+    {
+        PORTABLE_FAMILY_MANIFEST,
+        Path("kag/indexes/corpus.manifest.json"),
+        Path("kag/indexes/hot_profile.json"),
+        Path("kag/indexes/artifact_locators.json"),
+        PREPARATION_COVERAGE_SEED,
+    }
+)
 REPOSITORY_INDEX_FILENAMES = {
     "entity": "repo_entity_index.json",
     "artifact": "repo_artifact_index.json",
@@ -578,14 +587,7 @@ def is_source_path(path: Path) -> bool:
 
 def is_portable_family_control_path(path: Path) -> bool:
     return (
-        path == PORTABLE_FAMILY_MANIFEST
-        or path
-        in {
-            Path("kag/indexes/corpus.manifest.json"),
-            Path("kag/indexes/hot_profile.json"),
-            Path("kag/indexes/artifact_locators.json"),
-            PREPARATION_COVERAGE_SEED,
-        }
+        path in PORTABLE_FAMILY_CONTROL_PATHS
         or PORTABLE_FAMILY_SHARD_ROOT in (path, *path.parents)
         or PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT in (path, *path.parents)
     )
@@ -3178,7 +3180,7 @@ def build_repository_indexes(
     entities = project_entity_entries(repo, records)
     family_paths = {
         source_index_path.as_posix(),
-        PORTABLE_FAMILY_MANIFEST.as_posix(),
+        *(path.as_posix() for path in PORTABLE_FAMILY_CONTROL_PATHS),
         PORTABLE_FAMILY_SHARD_ROOT.as_posix() + "/",
         PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT.as_posix() + "/",
         *(
