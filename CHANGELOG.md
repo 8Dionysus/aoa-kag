@@ -5,6 +5,17 @@ All notable changes to `aoa-kag` will be documented in this file.
 The format is intentionally simple and human-first.
 Tracking starts with the community-docs baseline for this repository.
 
+## [Unreleased]
+
+### Fixed
+
+- Keep the canonical `aoa-dashboard` checkout represented as an admitted
+  `source_preparation` row in the local KAG readiness matrix, so strict
+  federation preflight can resolve the owner root without weakening the
+  published `v0.5.0` provenance route.
+- Exclude tiered-family control surfaces from repository snapshot deltas so a
+  landed generated family cannot invalidate its own event-index provenance.
+
 ## [0.5.0] - 2026-08-23
 
 ### Summary
