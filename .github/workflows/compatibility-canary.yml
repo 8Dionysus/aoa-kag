@@ -121,6 +121,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: 8Dionysus/aoa-stats
+          # Provider-before-consumer: bind this canary to the exact published
+          # aoa-stats provider. Other scheduled sibling checkouts remain moving
+          # by canary intent; this lane is not immutable release proof.
+          ref: 88ff38b1b38eef939f2c5b4541cbe8363a05fc8d
           path: .deps/aoa-stats
           fetch-depth: 0
 

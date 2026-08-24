@@ -206,6 +206,11 @@
 - [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
 - [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
 
+## fail-closed artifact admission
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
+
 ## fail-closed cold fallback
 
 - [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
@@ -316,6 +321,7 @@
 
 - [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
 - [AOA-KAG-D-0040 - AOA-KAG-D-0040 Routing Consumer Pin And Predecessor Archive Boundary](../AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md) (`docs/decisions/AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
 
 ## history boundary
 
@@ -324,6 +330,10 @@
 ## identity separation
 
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
+
+## immutable release identity
+
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
 
 ## incremental parity
 
@@ -383,6 +393,10 @@
 ## mechanics topology
 
 - [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
+
+## moving-lane claim boundary
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
 
 ## mutable-reference isolation
 
@@ -497,6 +511,11 @@
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 - [AOA-KAG-D-0030 - AOA-KAG-D-0030 ATM10 Autonomy Source Preparation](../AOA-KAG-D-0030-atm10-autonomy-source-preparation.md) (`docs/decisions/AOA-KAG-D-0030-atm10-autonomy-source-preparation.md`)
 - [AOA-KAG-D-0031 - AOA-KAG-D-0031 Dionysus Retired Provider Reference](../AOA-KAG-D-0031-dionysus-retired-provider-reference.md) (`docs/decisions/AOA-KAG-D-0031-dionysus-retired-provider-reference.md`)
+
+## provider-before-consumer
+
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
 
 ## public safety
 
@@ -622,6 +641,8 @@
 - [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 - [AOA-KAG-D-0040 - AOA-KAG-D-0040 Routing Consumer Pin And Predecessor Archive Boundary](../AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md) (`docs/decisions/AOA-KAG-D-0040-routing-consumer-pin-and-predecessor-archive-boundary.md`)
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
+- [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
+- [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
 
 ## source-return route
 

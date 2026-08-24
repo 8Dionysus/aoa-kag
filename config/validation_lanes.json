@@ -7,7 +7,8 @@
     "scripts/validation_lanes.py is the loader/API for Python callers; workflow YAML and release_check.py must not duplicate full lane sequences.",
     "The source-fast lane always runs validate_kag local scope; generated and compatibility lanes add one explicit OS-wide provider-home and coverage scope inside the same run-scoped packet epoch.",
     "Impact routing never replaces source-fast or the self owner-family check; it only decides whether an additional full OS-wide release audit is required.",
-    "The CI release continuation may omit only a source-fast proof accepted through the exact same-run handoff contract; any absent, malformed, stale, mismatched, or ambiguous receipt falls back to the full release sequence."
+    "The CI release continuation may omit only a source-fast proof accepted through the exact same-run handoff contract; any absent, malformed, stale, mismatched, or ambiguous receipt falls back to the full release sequence.",
+    "The compatibility canary pins aoa-stats to its exact published consumer commit while retaining moving sibling inputs as an explicitly non-immutable compatibility lane."
   ],
   "lanes": {
     "source_fast": {

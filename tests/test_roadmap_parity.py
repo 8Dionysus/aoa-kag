@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -46,10 +47,17 @@ class RoadmapParityTestCase(unittest.TestCase):
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-        self.assertIn("Current release: `v0.5.1`", readme)
-        self.assertIn("## [0.5.1]", changelog)
+        self.assertIn("Current release: `v0.5.0`", readme)
         self.assertIn("## [0.5.0]", changelog)
-        self.assertIn("`v0.5.1`", roadmap)
+        dated_sections = re.findall(
+            r"(?m)^## \[(\d+\.\d+\.\d+)\] - \d{4}-\d{2}-\d{2}$",
+            changelog,
+        )
+        self.assertEqual(dated_sections[0], "0.5.0")
+        self.assertEqual(dated_sections.count("0.5.0"), 1)
+        self.assertNotIn("0.5.1", dated_sections)
+        self.assertNotIn("0.5.2", dated_sections)
+        self.assertIn("`v0.5.0`", roadmap)
         self.assertIn("release contour", roadmap)
         self.assertIn("Roadmap drift", roadmap)
         self.assertIn("source repositories remain authoritative", roadmap)
