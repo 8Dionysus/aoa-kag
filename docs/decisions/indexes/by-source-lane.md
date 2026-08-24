@@ -119,6 +119,7 @@
 - [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
 - [AOA-KAG-D-0044 - AOA-KAG-D-0044 Cold CAS Evidence-Ref Exact Search](../AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md) (`docs/decisions/AOA-KAG-D-0044-cold-cas-evidence-ref-exact-search.md`)
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## aoa-memo
 
@@ -235,6 +236,10 @@
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 
+## owner-family validation
+
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
+
 ## owner-local capability homes
 
 - [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
@@ -266,6 +271,7 @@
 - [AOA-KAG-D-0036 - Bounded Process Provider Audit Wave](../AOA-KAG-D-0036-bounded-process-provider-audit-wave.md) (`docs/decisions/AOA-KAG-D-0036-bounded-process-provider-audit-wave.md`)
 - [AOA-KAG-D-0037 - Exact Applied Candidate Seal](../AOA-KAG-D-0037-exact-applied-candidate-seal.md) (`docs/decisions/AOA-KAG-D-0037-exact-applied-candidate-seal.md`)
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## runtime source repositories
 

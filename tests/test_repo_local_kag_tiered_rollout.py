@@ -177,8 +177,8 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
             distribution["distribution_identity"]["content_digest"],
         )
 
-    def test_externalization_preparation_removes_only_cold_current_tree(
-        self,
+    def test_externalization_preparation_rejects_staged_input(
+    self,
     ) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             base = Path(tmpdir)
@@ -193,39 +193,15 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
                 cwd=root,
                 check=True,
             )
-            receipt = prepare_owner_externalization(
-                OwnerSource(owner="owner-demo", root=root),
-                artifact_root=base / "cas",
-            )
-            distribution = read_json(
-                root / "kag/indexes/index_family.manifest.json",
-                "distribution",
-            )
-            source_index, _, _, state = load_tiered_family(
-                root,
-                artifact_root=base / "cas",
-                allow_shadow_git=False,
-            )
 
-        self.assertEqual(
-            "externalized",
-            distribution["placement"]["state"],
-        )
-        self.assertGreater(receipt["artifact_cold_bytes"], 0)
-        self.assertTrue(receipt["changed_paths"])
-        self.assertTrue(receipt["budget_receipt"])
-        self.assertTrue(state["complete"])
-        self.assertIn(
-            "staged-source.md",
-            {
-                record["identity"]["path"]
-                for record in source_index["records"]
-            },
-        )
-        self.assertEqual(
-            "pending-owner-commit",
-            receipt["head_commit_state"],
-        )
+            with self.assertRaisesRegex(
+                TieredRolloutError,
+                "authoritative externalization builder failed",
+            ):
+                prepare_owner_externalization(
+                    OwnerSource(owner="owner-demo", root=root),
+                    artifact_root=base / "cas",
+                )
 
     def test_externalization_preparation_rejects_unstaged_input(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

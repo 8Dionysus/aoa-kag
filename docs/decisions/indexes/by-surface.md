@@ -129,6 +129,7 @@
 ## generated budget receipt
 
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## generated projection
 
@@ -333,6 +334,7 @@
 - [AOA-KAG-D-0023 - Review Captured MCP Results In The Owner](../AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md) (`docs/decisions/AOA-KAG-D-0023-review-captured-mcp-results-in-the-owner.md`)
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## schema engine
 
@@ -427,6 +429,7 @@
 - [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## validation workflow
 

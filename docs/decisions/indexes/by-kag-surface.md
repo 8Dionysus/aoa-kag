@@ -341,6 +341,10 @@
 
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
 
+## producer closure
+
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
+
 ## profile-aware query
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
@@ -437,6 +441,7 @@
 ## repo-local family budget receipt
 
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## repo-local source index
 
@@ -493,6 +498,10 @@
 ## skill projection provenance
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+
+## source epoch
+
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## source refs
 
