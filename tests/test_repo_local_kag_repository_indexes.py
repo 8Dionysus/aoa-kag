@@ -2928,6 +2928,45 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(hybrid, query.query("demo helper", mode="hybrid", limit=5))
         Draft202012Validator(load_json(QUERY_RESULT_SCHEMA_PATH)).validate(hybrid)
 
+    def test_query_exact_indexes_event_evidence_and_dashboard_readiness_path(self) -> None:
+        immutable_ref = "f46f146cc79a26fa81ad0f400b9c5774df293e57"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            dashboard_map = root / "generated" / "local_kag_provider_map.json"
+            dashboard_map.parent.mkdir(parents=True, exist_ok=True)
+            dashboard_map.write_text(
+                '{"repo":"aoa-dashboard","provider_status":"source_preparation"}\n',
+                encoding="utf-8",
+            )
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            event = family["event"]["entries"][0]
+            event["evidence_refs"] = [{"kind": "git_commit", "ref": immutable_ref}]
+            query = RepoKagQuery(source_index, family)
+
+        event_hits = query.exact(immutable_ref, node_classes={"event"})
+        self.assertEqual(1, len(event_hits))
+        self.assertEqual(
+            [{"kind": "git_commit", "ref": immutable_ref}],
+            event_hits[0]["record"]["evidence_refs"],
+        )
+        handle = query.projection_handle(event["id"])
+        self.assertIsNotNone(handle)
+        self.assertEqual(
+            [{"kind": "git_commit", "ref": immutable_ref}],
+            handle["evidence_refs"],
+        )
+
+        dashboard_hits = query.exact("generated/local_kag_provider_map.json")
+        dashboard_hit = next(
+            hit for hit in dashboard_hits if hit["node_class"] == "artifact"
+        )
+        self.assertEqual(
+            "generated/local_kag_provider_map.json",
+            dashboard_hit["path"],
+        )
+
     def test_query_core_discovers_reads_and_filters_canonical_records(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

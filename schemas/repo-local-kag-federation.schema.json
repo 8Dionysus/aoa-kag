@@ -53,6 +53,15 @@
       "uniqueItems": true,
       "items": {"$ref": "#/$defs/nonEmptyString"}
     },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
     "repo": {
       "type": "object",
       "additionalProperties": false,
@@ -157,6 +166,10 @@
         "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
         "trust_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidenceRef"}
+        },
         "abi": {"type": "object"},
         "signs": {"type": "object"},
         "owner_return_route": {"type": "object"}
