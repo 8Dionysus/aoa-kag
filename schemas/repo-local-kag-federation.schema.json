@@ -138,6 +138,20 @@
     "node": {
       "type": "object",
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "node_class": {"const": "event"}
+            },
+            "required": ["node_class"]
+          },
+          "then": {},
+          "else": {
+            "not": {"required": ["evidence_refs"]}
+          }
+        }
+      ],
       "required": [
         "id",
         "repo",

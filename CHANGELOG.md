@@ -21,6 +21,8 @@ Tracking starts with the community-docs baseline for this repository.
 - Constrain projected evidence kinds to the canonical enum, keep the paired
   federation example executable, and make exact matching field-bounded rather
   than treating whitespace-separated phrases as arbitrary text.
+- Restrict federation `evidence_refs` to event nodes so non-event projections
+  cannot masquerade as immutable event coordinates.
 
 ## [0.5.0] - 2026-08-23
 

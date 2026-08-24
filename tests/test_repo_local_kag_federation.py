@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import tempfile
@@ -99,6 +100,32 @@ class RepoKagFederationTests(unittest.TestCase):
         node_ids = {node["id"] for node in projection["nodes"]}
         self.assertIn(cross[0]["from_id"], node_ids)
         self.assertIn(cross[0]["to_id"], node_ids)
+
+    def test_federation_rejects_evidence_refs_on_non_event_nodes(self) -> None:
+        with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
+            first = owner_bundle(Path(first_tmp), "aoa-first")
+            second = owner_bundle(Path(second_tmp), "aoa-second")
+            projection = RepoKagFederation(
+                {"aoa-first": first, "aoa-second": second}
+            ).projection()
+
+        schema = json.loads(FEDERATION_SCHEMA.read_text(encoding="utf-8"))
+        invalid = copy.deepcopy(projection)
+        non_event_index = next(
+            index
+            for index, node in enumerate(invalid["nodes"])
+            if node["node_class"] != "event"
+        )
+        invalid["nodes"][non_event_index]["evidence_refs"] = [
+            {"kind": "git_commit", "ref": "a" * 40}
+        ]
+        errors = list(Draft202012Validator(schema).iter_errors(invalid))
+        self.assertTrue(
+            any(
+                list(error.absolute_path)[:2] == ["nodes", non_event_index]
+                for error in errors
+            )
+        )
 
     def test_federation_resolves_historical_source_path_through_git_lineage(self) -> None:
         with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
