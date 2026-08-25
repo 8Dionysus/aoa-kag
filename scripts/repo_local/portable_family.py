@@ -48,6 +48,14 @@ BUDGET_PRODUCER_MANIFEST_VERSION = (
 )
 BUDGET_PRODUCER_CLOSURE_MODE = "ast-import-closure-runtime-inputs-v2"
 BUDGET_PRODUCER_DYNAMIC_IMPORT_POLICY = "fail-closed-unresolved-local-v1"
+BUDGET_DYNAMIC_IMPORT_ATTRIBUTES = frozenset(
+    {
+        "__import__",
+        "import_module",
+        "module_from_spec",
+        "spec_from_file_location",
+    }
+)
 BUDGET_PRODUCER_RUNTIME_INPUTS_VERSION = (
     "aoa-kag:budget-receipt-producer-runtime-inputs-v1"
 )
@@ -336,18 +344,251 @@ def _budget_resolve_local_import(
     return _budget_local_module_path(root, module)
 
 
-def _budget_dynamic_import_call(node: ast.Call) -> str | None:
-    function = node.func
-    if isinstance(function, ast.Name) and function.id == "__import__":
-        return "__import__"
-    if not isinstance(function, ast.Attribute):
+def _budget_import_aliases(
+    tree: ast.AST,
+) -> tuple[set[str], set[str], set[str], set[str]]:
+    """Collect a deliberately bounded set of import-capability aliases.
+
+    This is not a general Python data-flow engine.  It follows only direct
+    imports and simple assignments so the producer can fail closed on the
+    common ways a dynamic import primitive is hidden without claiming whole-
+    language analysis.
+    """
+    importlib_modules: set[str] = set()
+    dynamic_imports: set[str] = {"__import__"}
+    getattr_aliases: set[str] = {"getattr"}
+    builtin_modules: set[str] = set()
+    assignments: list[tuple[ast.AST, ast.AST]] = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                bound_name = alias.asname or alias.name.split(".", 1)[0]
+                if alias.name == "builtins":
+                    builtin_modules.add(bound_name)
+                if alias.name == "importlib" or alias.name.startswith(
+                    "importlib."
+                ):
+                    importlib_modules.add(bound_name)
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            if module == "builtins":
+                for alias in node.names:
+                    bound_name = alias.asname or alias.name
+                    if alias.name == "getattr":
+                        getattr_aliases.add(bound_name)
+                    elif alias.name == "__import__":
+                        dynamic_imports.add(bound_name)
+            elif module == "importlib" or module.startswith("importlib."):
+                for alias in node.names:
+                    bound_name = alias.asname or alias.name
+                    if alias.name in BUDGET_DYNAMIC_IMPORT_ATTRIBUTES:
+                        dynamic_imports.add(bound_name)
+                    elif alias.name != "*":
+                        importlib_modules.add(bound_name)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                assignments.append((target, node.value))
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            assignments.append((node.target, node.value))
+        elif isinstance(node, ast.NamedExpr):
+            assignments.append((node.target, node.value))
+
+    changed = True
+    while changed:
+        changed = False
+        for target, value in assignments:
+            names = set(_budget_assignment_names(target))
+            if not names:
+                continue
+            if _budget_is_importlib_reference(
+                value,
+                importlib_modules=importlib_modules,
+            ):
+                before = len(importlib_modules)
+                importlib_modules.update(names)
+                changed |= len(importlib_modules) != before
+            if _budget_dynamic_import_reference(
+                value,
+                importlib_modules=importlib_modules,
+                dynamic_imports=dynamic_imports,
+                getattr_aliases=getattr_aliases,
+                builtin_modules=builtin_modules,
+            ):
+                before = len(dynamic_imports)
+                dynamic_imports.update(names)
+                changed |= len(dynamic_imports) != before
+            if _budget_is_getattr_reference(
+                value,
+                getattr_aliases=getattr_aliases,
+                builtin_modules=builtin_modules,
+            ):
+                before = len(getattr_aliases)
+                getattr_aliases.update(names)
+                changed |= len(getattr_aliases) != before
+
+    return importlib_modules, dynamic_imports, getattr_aliases, builtin_modules
+
+
+def _budget_assignment_names(target: ast.AST) -> Iterable[str]:
+    if isinstance(target, ast.Name):
+        yield target.id
+    elif isinstance(target, (ast.List, ast.Tuple)):
+        for element in target.elts:
+            yield from _budget_assignment_names(element)
+
+
+def _budget_is_importlib_reference(
+    node: ast.AST,
+    *,
+    importlib_modules: set[str],
+) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in importlib_modules
+    if isinstance(node, ast.Attribute):
+        return _budget_is_importlib_reference(
+            node.value,
+            importlib_modules=importlib_modules,
+        )
+    return False
+
+
+def _budget_is_builtin_reference(
+    node: ast.AST,
+    *,
+    builtin_modules: set[str],
+) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in builtin_modules
+    if isinstance(node, ast.Attribute):
+        return _budget_is_builtin_reference(
+            node.value,
+            builtin_modules=builtin_modules,
+        )
+    return False
+
+
+def _budget_is_getattr_callable(
+    node: ast.AST,
+    *,
+    getattr_aliases: set[str],
+    builtin_modules: set[str],
+) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in getattr_aliases
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr == "getattr"
+        and _budget_is_builtin_reference(
+            node.value,
+            builtin_modules=builtin_modules,
+        )
+    )
+
+
+def _budget_dynamic_getattr_call(
+    node: ast.AST,
+    *,
+    importlib_modules: set[str],
+    getattr_aliases: set[str],
+    builtin_modules: set[str],
+) -> str | None:
+    if not isinstance(node, ast.Call) or not _budget_is_getattr_callable(
+        node.func,
+        getattr_aliases=getattr_aliases,
+        builtin_modules=builtin_modules,
+    ):
         return None
-    if function.attr in {
-        "import_module",
-        "module_from_spec",
-        "spec_from_file_location",
-    }:
-        return function.attr
+    if len(node.args) < 2:
+        return None
+    if _budget_is_importlib_reference(
+        node.args[0],
+        importlib_modules=importlib_modules,
+    ):
+        return "getattr(importlib)"
+    attribute = node.args[1]
+    if (
+        isinstance(attribute, ast.Constant)
+        and isinstance(attribute.value, str)
+        and attribute.value in BUDGET_DYNAMIC_IMPORT_ATTRIBUTES
+    ):
+        return f"getattr({attribute.value})"
+    return None
+
+
+def _budget_dynamic_import_reference(
+    node: ast.AST,
+    *,
+    importlib_modules: set[str],
+    dynamic_imports: set[str],
+    getattr_aliases: set[str],
+    builtin_modules: set[str],
+) -> str | None:
+    if isinstance(node, ast.Name):
+        return node.id if node.id in dynamic_imports else None
+    if isinstance(node, ast.Attribute):
+        if node.attr in BUDGET_DYNAMIC_IMPORT_ATTRIBUTES:
+            return node.attr
+        return None
+    if isinstance(node, ast.Call):
+        dynamic_getattr = _budget_dynamic_getattr_call(
+            node,
+            importlib_modules=importlib_modules,
+            getattr_aliases=getattr_aliases,
+            builtin_modules=builtin_modules,
+        )
+        if dynamic_getattr is not None:
+            return dynamic_getattr
+        return _budget_dynamic_import_reference(
+            node.func,
+            importlib_modules=importlib_modules,
+            dynamic_imports=dynamic_imports,
+            getattr_aliases=getattr_aliases,
+            builtin_modules=builtin_modules,
+        )
+    return None
+
+
+def _budget_is_getattr_reference(
+    node: ast.AST,
+    *,
+    getattr_aliases: set[str],
+    builtin_modules: set[str],
+) -> bool:
+    return _budget_is_getattr_callable(
+        node,
+        getattr_aliases=getattr_aliases,
+        builtin_modules=builtin_modules,
+    )
+
+
+def _budget_dynamic_import_call(
+    node: ast.Call,
+    *,
+    importlib_modules: set[str],
+    dynamic_imports: set[str],
+    getattr_aliases: set[str],
+    builtin_modules: set[str],
+) -> str | None:
+    return _budget_dynamic_import_reference(
+        node.func,
+        importlib_modules=importlib_modules,
+        dynamic_imports=dynamic_imports,
+        getattr_aliases=getattr_aliases,
+        builtin_modules=builtin_modules,
+    )
+
+
+def _budget_dynamic_import_from(node: ast.ImportFrom) -> str | None:
+    module = node.module or ""
+    if module == "importlib" or module.startswith("importlib."):
+        for alias in node.names:
+            if alias.name == "*" or alias.name in BUDGET_DYNAMIC_IMPORT_ATTRIBUTES:
+                return f"from {module} import {alias.name}"
+    if module == "builtins":
+        for alias in node.names:
+            if alias.name in {"__import__", "getattr"}:
+                return f"from builtins import {alias.name}"
     return None
 
 
@@ -374,9 +615,41 @@ def _budget_import_closure(
             raise PortableFamilyError(
                 f"producer import closure cannot parse {relative.as_posix()}"
             ) from exc
+        (
+            importlib_modules,
+            dynamic_imports,
+            getattr_aliases,
+            builtin_modules,
+        ) = _budget_import_aliases(tree)
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
-                dynamic_import = _budget_dynamic_import_call(node)
+            if isinstance(node, ast.ImportFrom):
+                dynamic_import = _budget_dynamic_import_from(node)
+                if dynamic_import is not None:
+                    raise PortableFamilyError(
+                        "producer import closure contains an unresolved dynamic "
+                        f"import ({dynamic_import}) in {relative.as_posix()}"
+                    )
+            elif isinstance(node, ast.Attribute):
+                dynamic_import = _budget_dynamic_import_reference(
+                    node,
+                    importlib_modules=importlib_modules,
+                    dynamic_imports=dynamic_imports,
+                    getattr_aliases=getattr_aliases,
+                    builtin_modules=builtin_modules,
+                )
+                if dynamic_import is not None:
+                    raise PortableFamilyError(
+                        "producer import closure contains an unresolved dynamic "
+                        f"import ({dynamic_import}) in {relative.as_posix()}"
+                    )
+            elif isinstance(node, ast.Call):
+                dynamic_import = _budget_dynamic_import_call(
+                    node,
+                    importlib_modules=importlib_modules,
+                    dynamic_imports=dynamic_imports,
+                    getattr_aliases=getattr_aliases,
+                    builtin_modules=builtin_modules,
+                )
                 if dynamic_import is not None:
                     raise PortableFamilyError(
                         "producer import closure contains an unresolved dynamic "

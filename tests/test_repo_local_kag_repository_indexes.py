@@ -741,6 +741,85 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     [Path("scripts/entry.py")],
                 )
 
+    def test_budget_producer_rejects_dynamic_import_aliases_and_nested_forms(
+        self,
+    ) -> None:
+        cases = {
+            "from_import_direct": (
+                "from importlib import import_module\n"
+                "import_module('scripts.dynamic')\n"
+            ),
+            "from_import_alias": (
+                "from importlib import import_module as load\n"
+                "load('scripts.dynamic')\n"
+            ),
+            "getattr_direct": (
+                "import importlib\n"
+                "getattr(importlib, 'import_module')('scripts.dynamic')\n"
+            ),
+            "assigned_attribute_alias": (
+                "import importlib\n"
+                "load = importlib.import_module\n"
+                "load('scripts.dynamic')\n"
+            ),
+            "assigned_getattr_alias": (
+                "import importlib\n"
+                "load = getattr(importlib, 'import_module')\n"
+                "load('scripts.dynamic')\n"
+            ),
+            "nested_getattr_and_indirect_call": (
+                "import importlib as il\n"
+                "get = getattr\n"
+                "load = get(il, 'import_' + 'module')\n"
+                "invoke = load\n"
+                "invoke('scripts.dynamic')\n"
+            ),
+            "builtin_import_alias": (
+                "from builtins import __import__ as load\n"
+                "load('scripts.dynamic')\n"
+            ),
+        }
+        for name, source in cases.items():
+            with self.subTest(case=name):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    (root / "scripts").mkdir()
+                    (root / "scripts" / "entry.py").write_text(
+                        source,
+                        encoding="utf-8",
+                    )
+                    with self.assertRaisesRegex(
+                        PortableFamilyError,
+                        "unresolved dynamic import",
+                    ):
+                        portable_family_module._budget_import_closure(
+                            root,
+                            [Path("scripts/entry.py")],
+                        )
+
+    def test_budget_import_closure_preserves_static_local_import_resolution(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts").mkdir()
+            (root / "scripts" / "static.py").write_text(
+                "VALUE = 'static'\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "entry.py").write_text(
+                "import scripts.static\n"
+                "from scripts.static import VALUE\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                [Path("scripts/entry.py"), Path("scripts/static.py")],
+                portable_family_module._budget_import_closure(
+                    root,
+                    [Path("scripts/entry.py")],
+                ),
+            )
+
     def test_budget_receipt_rejects_legacy_v1_at_the_current_digest_path(self) -> None:
         root, manifest, tmpdir = self._prepare_budget_fixture()
         try:
