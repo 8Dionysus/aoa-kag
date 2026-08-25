@@ -765,8 +765,10 @@ def capture_budget_producer_execution_inputs(
         "family_mode": family_mode,
         "artifact_root": (
             {
-                "path": artifact_root.resolve().as_posix(),
-                "path_digest": _budget_runtime_path_digest(artifact_root.resolve())
+                "path": "<task-local-artifact-root>",
+                "path_digest": _budget_runtime_path_digest(
+                    Path("<task-local-artifact-root>")
+                ),
             }
             if artifact_root is not None
             else None
