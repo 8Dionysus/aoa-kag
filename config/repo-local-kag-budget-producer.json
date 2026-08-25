@@ -2,7 +2,8 @@
   "$schema": "https://aoa-kag/schemas/repo-local-kag-budget-producer-manifest.schema.json",
   "schema_version": "aoa-kag:budget-receipt-producer-manifest-v1",
   "owner": "aoa-kag",
-  "closure_mode": "ast-import-closure-v1",
+  "closure_mode": "ast-import-closure-runtime-inputs-v2",
+  "dynamic_import_policy": "fail-closed-unresolved-local-v1",
   "python_entrypoints": [
     "scripts/generate_repo_local_kag_index.py",
     "scripts/repo_local/portable_family.py",
@@ -155,7 +156,8 @@
     },
     {
       "name": "jsonschema-rs",
-      "version": "0.49.2"
+      "version": "0.49.2",
+      "required": false
     }
   ]
 }

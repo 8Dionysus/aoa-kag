@@ -67,7 +67,12 @@ class RepoLocalKagGateTests(unittest.TestCase):
     def test_incremental_failure_stops_before_expensive_fanout(self) -> None:
         calls: list[str] = []
 
-        def fake_run(component: GATE.Component, *, repo_root: Path) -> GATE.ComponentResult:
+        def fake_run(
+            component: GATE.Component,
+            *,
+            repo_root: Path,
+            jobs: int | None = None,
+        ) -> GATE.ComponentResult:
             self.assertEqual(REPO_ROOT, repo_root)
             calls.append(component.component_id)
             return result(component, returncode=1)
@@ -92,7 +97,12 @@ class RepoLocalKagGateTests(unittest.TestCase):
     def test_clean_sentinel_runs_every_canonical_component(self) -> None:
         calls: list[str] = []
 
-        def fake_run(component: GATE.Component, *, repo_root: Path) -> GATE.ComponentResult:
+        def fake_run(
+            component: GATE.Component,
+            *,
+            repo_root: Path,
+            jobs: int | None = None,
+        ) -> GATE.ComponentResult:
             self.assertEqual(REPO_ROOT, repo_root)
             calls.append(component.component_id)
             return result(component)
@@ -151,7 +161,7 @@ class RepoLocalKagGateTests(unittest.TestCase):
             mock.patch.object(
                 GATE,
                 "run_component",
-                side_effect=lambda component, *, repo_root: result(component),
+                side_effect=lambda component, *, repo_root, jobs=None: result(component),
             ),
         ):
             code, receipt = self.gate()
@@ -248,7 +258,12 @@ class RepoLocalKagGateTests(unittest.TestCase):
             "candidate_identity": "sha256:" + "c" * 64,
         }
 
-        def fake_run(component: GATE.Component, *, repo_root: Path) -> GATE.ComponentResult:
+        def fake_run(
+            component: GATE.Component,
+            *,
+            repo_root: Path,
+            jobs: int | None = None,
+        ) -> GATE.ComponentResult:
             self.assertEqual(REPO_ROOT, repo_root)
             return result(
                 component,
@@ -274,7 +289,12 @@ class RepoLocalKagGateTests(unittest.TestCase):
         }
         calls: list[str] = []
 
-        def fake_run(component: GATE.Component, *, repo_root: Path) -> GATE.ComponentResult:
+        def fake_run(
+            component: GATE.Component,
+            *,
+            repo_root: Path,
+            jobs: int | None = None,
+        ) -> GATE.ComponentResult:
             self.assertEqual(REPO_ROOT, repo_root)
             calls.append(component.component_id)
             return result(component)

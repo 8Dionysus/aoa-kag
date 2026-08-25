@@ -9,6 +9,7 @@
     "schema_version",
     "owner",
     "closure_mode",
+    "dynamic_import_policy",
     "python_entrypoints",
     "python_import_closure",
     "schema_inputs",
@@ -28,7 +29,10 @@
       "const": "aoa-kag"
     },
     "closure_mode": {
-      "const": "ast-import-closure-v1"
+      "const": "ast-import-closure-runtime-inputs-v2"
+    },
+    "dynamic_import_policy": {
+      "const": "fail-closed-unresolved-local-v1"
     },
     "python_entrypoints": {
       "type": "array",
@@ -119,6 +123,9 @@
         },
         "version": {
           "$ref": "#/$defs/nonEmptyString"
+        },
+        "required": {
+          "type": "boolean"
         }
       }
     }

@@ -8,7 +8,12 @@
 - KAG surfaces: repo-local family budget receipt, producer closure, source epoch
 - Source lanes: aoa-kag, provider repositories, owner-family validation
 - Guard families: content identity, source provenance, path confinement, fail-closed budget admission
-- Posture: accepted
+- Posture: superseded
+
+`AOA-KAG-D-0047` supersedes the runtime and receipt-I/O portions of this
+record. The source-epoch and candidate-seal boundaries remain historical
+context; current producer admission requires concrete runtime-input binding
+and descriptor-pinned receipt publication.
 
 ## Context
 
