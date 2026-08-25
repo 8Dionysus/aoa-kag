@@ -70,6 +70,26 @@ BUDGET_RECEIPT_FIELDS = frozenset(
         "decision_ref",
     }
 )
+LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
+LEGACY_BUDGET_RECEIPT_FIELDS = frozenset(
+    {
+        "schema_version",
+        "repo",
+        "scope",
+        "base_ref",
+        "head_family_digest",
+        "changed_generated_bytes",
+        "changed_generated_files",
+        "default_limit_bytes",
+        "allowed_bytes",
+        "tracked_bytes",
+        "tracked_bytes_max",
+        "allowed_tracked_bytes",
+        "reason",
+        "approved_by",
+        "decision_ref",
+    }
+)
 DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0017-portable-content-addressed-repository-family.md"
@@ -2229,6 +2249,11 @@ def _resolve_receipt_base_ref(repo_root: Path, receipt: Mapping[str, Any]) -> st
 def _validate_budget_receipt_shape(receipt: object) -> dict[str, Any]:
     if not isinstance(receipt, dict):
         raise PortableFamilyError("budget receipt must be a JSON object")
+    if (
+        receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION
+        and set(receipt) == set(LEGACY_BUDGET_RECEIPT_FIELDS)
+    ):
+        return receipt
     if set(receipt) != set(BUDGET_RECEIPT_FIELDS):
         missing = sorted(BUDGET_RECEIPT_FIELDS - set(receipt))
         extra = sorted(set(receipt) - BUDGET_RECEIPT_FIELDS)
@@ -2566,6 +2591,9 @@ def _validate_tracked_size_receipt(
             "portable tracked byte budget is exceeded without a matching "
             f"digest-bound receipt; {exc}"
         ) from exc
+    if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+        _validate_legacy_tracked_size_receipt(repo_root, manifest, receipt)
+        return
     resolved_base_ref = _resolve_receipt_base_ref(repo_root, receipt)
     summary = manifest["summary"]
     budgets = manifest["budgets"]
@@ -2596,6 +2624,43 @@ def _validate_tracked_size_receipt(
     }:
         raise PortableFamilyError(
             "tracked-size receipt scope does not authorize this exceedance"
+        )
+    _validate_budget_receipt_approval(
+        receipt,
+        changed_bytes=None,
+        tracked_bytes=summary["tracked_bytes"],
+    )
+
+
+def _validate_legacy_tracked_size_receipt(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+) -> None:
+    """Admit historical external v3 receipts without weakening owner v2."""
+    resolved_base_ref = _resolve_receipt_base_ref(repo_root, receipt)
+    summary = manifest["summary"]
+    budgets = manifest["budgets"]
+    expected = {
+        "schema_version": LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION,
+        "repo": manifest["repo"]["name"],
+        "base_ref": resolved_base_ref,
+        "head_family_digest": manifest["family_identity"]["content_digest"],
+        "tracked_bytes": summary["tracked_bytes"],
+        "tracked_bytes_max": budgets["tracked_bytes_max"],
+        "decision_ref": _budget_decision_ref(manifest),
+    }
+    for field, value in expected.items():
+        if receipt.get(field) != value:
+            raise PortableFamilyError(
+                f"legacy tracked-size receipt field {field} does not match family"
+            )
+    if receipt.get("scope") not in {
+        "tracked_size",
+        "generated_delta_and_tracked_size",
+    }:
+        raise PortableFamilyError(
+            "legacy tracked-size receipt scope does not authorize this exceedance"
         )
     _validate_budget_receipt_approval(
         receipt,
