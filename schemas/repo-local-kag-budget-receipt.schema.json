@@ -1,0 +1,569 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-budget-receipt.schema.json",
+  "title": "AoA repo-local KAG identity-bound budget receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "scope",
+    "base_ref",
+    "head_family_digest",
+    "head_source_snapshot",
+    "candidate_identity",
+    "producer_identity",
+    "changed_generated_bytes",
+    "changed_generated_files",
+    "default_limit_bytes",
+    "allowed_bytes",
+    "tracked_bytes",
+    "tracked_bytes_max",
+    "allowed_tracked_bytes",
+    "reason",
+    "approved_by",
+    "decision_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-repo-local-kag-budget-receipt-v2"
+    },
+    "repo": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "scope": {
+      "enum": [
+        "generated_delta",
+        "tracked_size",
+        "generated_delta_and_tracked_size",
+        "v2_to_v3_migration"
+      ]
+    },
+    "base_ref": {
+      "$ref": "#/$defs/commit"
+    },
+    "head_family_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "head_source_snapshot": {
+      "$ref": "#/$defs/sha256Digest"
+    },
+    "candidate_identity": {
+      "$ref": "#/$defs/candidateIdentity"
+    },
+    "producer_identity": {
+      "$ref": "#/$defs/producerIdentity"
+    },
+    "changed_generated_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "changed_generated_files": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "default_limit_bytes": {
+      "const": 1048576
+    },
+    "allowed_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tracked_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tracked_bytes_max": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "allowed_tracked_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reason": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "approved_by": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "decision_ref": {
+      "type": "string",
+      "pattern": "^aoa-kag:docs/decisions/.+\\.md$"
+    }
+  },
+  "$defs": {
+    "runtimeValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "kind",
+        "value_digest",
+        "bytes"
+      ],
+      "properties": {
+        "state": {
+          "enum": ["set", "unset"]
+        },
+        "kind": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "value_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "runtimeEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role",
+        "state",
+        "kind",
+        "value_digest",
+        "bytes"
+      ],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "role": {"$ref": "#/$defs/nonEmptyString"},
+        "state": {"enum": ["set", "unset"]},
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "value_digest": {"$ref": "#/$defs/digest"},
+        "bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "runtimeDependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "declared_version",
+        "required",
+        "state",
+        "resolved_version",
+        "path_digest",
+        "artifact_digest",
+        "artifact_bytes",
+        "artifact_files"
+      ],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "declared_version": {"$ref": "#/$defs/nonEmptyString"},
+        "required": {"type": "boolean"},
+        "state": {"enum": ["available", "unavailable"]},
+        "resolved_version": {"type": ["string", "null"]},
+        "path_digest": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        },
+        "artifact_digest": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        },
+        "artifact_bytes": {"type": "integer", "minimum": 0},
+        "artifact_files": {"type": "integer", "minimum": 0}
+      }
+    },
+    "runtimeFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "content_digest", "bytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "executionInputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "action_inputs",
+        "environment",
+        "dependencies",
+        "interpreter",
+        "non_python_inputs",
+        "dynamic_imports",
+        "command_targets",
+        "manifest_digest"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "aoa-kag:budget-receipt-producer-runtime-inputs-v1"
+        },
+        "action_inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "repo-root",
+            "output",
+            "history-ref",
+            "event-history-ref",
+            "jobs"
+          ],
+          "properties": {
+            "repo-root": {"$ref": "#/$defs/runtimeValue"},
+            "output": {"$ref": "#/$defs/runtimeValue"},
+            "history-ref": {"$ref": "#/$defs/runtimeValue"},
+            "event-history-ref": {"$ref": "#/$defs/runtimeValue"},
+            "jobs": {"$ref": "#/$defs/runtimeValue"}
+          }
+        },
+        "environment": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/runtimeEnvironment"}
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/runtimeDependency"}
+        },
+        "interpreter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "implementation",
+            "version",
+            "invoked_path_digest",
+            "resolved_path_digest",
+            "artifact_digest"
+          ],
+          "properties": {
+            "implementation": {"$ref": "#/$defs/nonEmptyString"},
+            "version": {"$ref": "#/$defs/nonEmptyString"},
+            "invoked_path_digest": {"$ref": "#/$defs/digest"},
+            "resolved_path_digest": {"$ref": "#/$defs/digest"},
+            "artifact_digest": {"$ref": "#/$defs/digest"}
+          }
+        },
+        "non_python_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/runtimeFile"}
+        },
+        "dynamic_imports": {
+          "const": []
+        },
+        "command_targets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "repo_root",
+            "base_ref",
+            "history_ref",
+            "event_history_ref",
+            "output",
+            "family_mode",
+            "artifact_root",
+            "externalized",
+            "jobs"
+          ],
+          "properties": {
+            "repo_root": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path_digest", "resolved_path_digest"],
+              "properties": {
+                "path_digest": {"$ref": "#/$defs/digest"},
+                "resolved_path_digest": {"$ref": "#/$defs/digest"}
+              }
+            },
+            "base_ref": {"$ref": "#/$defs/nonEmptyString"},
+            "history_ref": {"$ref": "#/$defs/nonEmptyString"},
+            "event_history_ref": {"$ref": "#/$defs/nonEmptyString"},
+            "output": {"$ref": "#/$defs/nonEmptyString"},
+            "family_mode": {"enum": ["portable", "tiered"]},
+            "artifact_root": {
+              "anyOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["path", "path_digest"],
+                  "properties": {
+                    "path": {"$ref": "#/$defs/nonEmptyString"},
+                    "path_digest": {"$ref": "#/$defs/digest"}
+                  }
+                }
+              ]
+            },
+            "externalized": {"type": "boolean"},
+            "jobs": {"$ref": "#/$defs/nonEmptyString"}
+          }
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40,64}$"
+    },
+    "candidateIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "algorithm",
+        "seal",
+        "file_count",
+        "excluded_path",
+        "base_ref",
+        "family_digest",
+        "source_snapshot",
+        "source_epoch"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "aoa-kag:budget-receipt-candidate-identity-v2"
+        },
+        "algorithm": {
+          "const": "sha256:canonical-json-file-inventory-v2"
+        },
+        "seal": {
+          "$ref": "#/$defs/digest"
+        },
+        "file_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excluded_path": {
+          "type": "string",
+          "pattern": "^kag/receipts/index_family_budget/[a-f0-9]{64}\\.json$"
+        },
+        "base_ref": {
+          "$ref": "#/$defs/commit"
+        },
+        "family_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "source_snapshot": {
+          "$ref": "#/$defs/sha256Digest"
+        },
+        "source_epoch": {
+          "$ref": "#/$defs/sha256Digest"
+        }
+      }
+    },
+    "producerFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "state",
+        "content_digest",
+        "bytes",
+        "git_blob"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "const": "present"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "git_blob": {
+          "type": "string",
+          "pattern": "^sha1:[0-9a-f]{40}$"
+        }
+      }
+    },
+    "producerIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "owner",
+        "revision_binding",
+        "source_digest",
+        "procedure_manifest",
+        "files",
+        "action",
+        "execution_inputs",
+        "identity_digest"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "aoa-kag:budget-receipt-producer-identity-v3"
+        },
+        "owner": {
+          "const": "aoa-kag"
+        },
+        "revision_binding": {
+          "const": "content-addressed-procedure-import-closure-runtime-inputs-and-descriptor-io-v1"
+        },
+        "source_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "procedure_manifest": {
+          "$ref": "#/$defs/procedureManifest"
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/producerFile"
+          }
+        },
+        "action": {
+          "$ref": "#/$defs/producerFile"
+        },
+        "execution_inputs": {
+          "$ref": "#/$defs/executionInputs"
+        },
+        "identity_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"
+    },
+    "environmentInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "role": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "dependencyInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "procedureManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_path",
+        "manifest_digest",
+        "schema_path",
+        "closure_mode",
+        "dynamic_import_policy",
+        "python_entrypoints",
+        "python_import_closure",
+        "schema_inputs",
+        "action_path",
+        "action_inputs",
+        "environment",
+        "dependencies"
+      ],
+      "properties": {
+        "manifest_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "schema_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "closure_mode": {
+          "const": "ast-import-closure-runtime-inputs-v2"
+        },
+        "dynamic_import_policy": {
+          "const": "fail-closed-unresolved-local-v1"
+        },
+        "python_entrypoints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "python_import_closure": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "schema_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "action_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "action_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "environment": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/environmentInput"
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/dependencyInput"
+          }
+        }
+      }
+    }
+  }
+}

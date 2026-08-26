@@ -1,0 +1,163 @@
+{
+  "$schema": "https://aoa-kag/schemas/repo-local-kag-budget-producer-manifest.schema.json",
+  "schema_version": "aoa-kag:budget-receipt-producer-manifest-v1",
+  "owner": "aoa-kag",
+  "closure_mode": "ast-import-closure-runtime-inputs-v2",
+  "dynamic_import_policy": "fail-closed-unresolved-local-v1",
+  "python_entrypoints": [
+    "scripts/generate_repo_local_kag_index.py",
+    "scripts/repo_local/portable_family.py",
+    "scripts/repo_local/tiered_family.py",
+    "scripts/repo_local_kag_gate.py",
+    "scripts/validate_repo_local_kag_family.py",
+    "scripts/validators/repo_local_kag_index.py"
+  ],
+  "python_import_closure": [
+    "scripts/coverage_run.py",
+    "scripts/generate_repo_local_kag_coverage.py",
+    "scripts/generate_repo_local_kag_index.py",
+    "scripts/generation/__init__.py",
+    "scripts/generation/common.py",
+    "scripts/generation/consumer.py",
+    "scripts/generation/context.py",
+    "scripts/generation/federation.py",
+    "scripts/generation/governance.py",
+    "scripts/generation/handoff.py",
+    "scripts/generation/markdown.py",
+    "scripts/generation/provider_map.py",
+    "scripts/generation/registry.py",
+    "scripts/generation/regrounding.py",
+    "scripts/generation/source_refs.py",
+    "scripts/generation/technique.py",
+    "scripts/generation/tos.py",
+    "scripts/generation/writer.py",
+    "scripts/kag_generation.py",
+    "scripts/prepare_landing.py",
+    "scripts/provider_registry.py",
+    "scripts/repo_local/history.py",
+    "scripts/repo_local/identity.py",
+    "scripts/repo_local/indexes.py",
+    "scripts/repo_local/portable_family.py",
+    "scripts/repo_local/structure.py",
+    "scripts/repo_local/tiered_family.py",
+    "scripts/repo_local_kag_gate.py",
+    "scripts/validate_mechanics_skeleton.py",
+    "scripts/validate_nested_agents.py",
+    "scripts/validate_repo_local_kag_family.py",
+    "scripts/validators/common.py",
+    "scripts/validators/expected/__init__.py",
+    "scripts/validators/expected/consumer_contracts.py",
+    "scripts/validators/expected/core.py",
+    "scripts/validators/expected/cross_source_contracts.py",
+    "scripts/validators/expected/docs_contracts.py",
+    "scripts/validators/expected/federation_contracts.py",
+    "scripts/validators/expected/governance_contracts.py",
+    "scripts/validators/expected/handoff_contracts.py",
+    "scripts/validators/expected/recurrence_contracts.py",
+    "scripts/validators/expected/registry_contracts.py",
+    "scripts/validators/expected/registry_surface_inputs.py",
+    "scripts/validators/expected/technique_contracts.py",
+    "scripts/validators/expected/tos_contracts.py",
+    "scripts/validators/expected_contracts.py",
+    "scripts/validators/generation.py",
+    "scripts/validators/local_kag_subtree.py",
+    "scripts/validators/repo_local_kag_index.py",
+    "scripts/validators/schema_surfaces.py"
+  ],
+  "schema_inputs": [
+    "schemas/domain-index-catalog.schema.json",
+    "schemas/kag-artifact-locator.schema.json",
+    "schemas/kag-mcp-capabilities.schema.json",
+    "schemas/kag-mcp-result.schema.json",
+    "schemas/repo-local-kag-budget-receipt.schema.json",
+    "schemas/repo-local-kag-corpus-manifest.schema.json",
+    "schemas/repo-local-kag-coverage.schema.json",
+    "schemas/repo-local-kag-distribution-manifest.schema.json",
+    "schemas/repo-local-kag-family-manifest.schema.json",
+    "schemas/repo-local-kag-federation.schema.json",
+    "schemas/repo-local-kag-hot-profile.schema.json",
+    "schemas/repo-local-kag-index.schema.json",
+    "schemas/repo-local-kag-query-result.schema.json",
+    "schemas/repo-local-kag-retrieval-bundle.schema.json",
+    "schemas/repo-local-kag-retrieval-plan.schema.json",
+    "schemas/repo-local-kag-repository-index.schema.json",
+    "schemas/repo-local-kag-budget-producer-manifest.schema.json"
+  ],
+  "action_path": ".github/actions/repo-local-kag-index/action.yml",
+  "action_inputs": [
+    "repo-root",
+    "output",
+    "history-ref",
+    "event-history-ref",
+    "jobs"
+  ],
+  "environment": [
+    {
+      "name": "AOA_REPO_LOCAL_KAG_HISTORY_REPO",
+      "role": "action-to-generator history owner"
+    },
+    {
+      "name": "AOA_REPO_LOCAL_KAG_HISTORY_REF",
+      "role": "action-to-generator history boundary"
+    },
+    {
+      "name": "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF",
+      "role": "action-to-generator event history boundary"
+    },
+    {
+      "name": "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION",
+      "role": "validator engine rollback"
+    },
+    {
+      "name": "AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION",
+      "role": "validator engine rollback"
+    },
+    {
+      "name": "PYTHONDONTWRITEBYTECODE",
+      "role": "deterministic validation process"
+    },
+    {
+      "name": "RUNNER_TEMP",
+      "role": "bounded action artifact root"
+    },
+    {
+      "name": "TMPDIR",
+      "role": "bounded local artifact fallback"
+    },
+    {
+      "name": "GITHUB_ACTION_PATH",
+      "role": "composite action owner path"
+    },
+    {
+      "name": "GITHUB_WORKSPACE",
+      "role": "composite action workspace"
+    },
+    {
+      "name": "GITHUB_ENV",
+      "role": "action environment publication"
+    },
+    {
+      "name": "GITHUB_OUTPUT",
+      "role": "action output publication"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "python",
+      "version": ">=3.11"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.23.0"
+    },
+    {
+      "name": "jsonschema-rs",
+      "version": "0.49.2",
+      "required": false
+    }
+  ]
+}

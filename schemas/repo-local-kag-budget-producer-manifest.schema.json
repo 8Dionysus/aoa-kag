@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-budget-producer-manifest.schema.json",
+  "title": "AoA repo-local KAG budget receipt producer manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "owner",
+    "closure_mode",
+    "dynamic_import_policy",
+    "python_entrypoints",
+    "python_import_closure",
+    "schema_inputs",
+    "action_path",
+    "action_inputs",
+    "environment",
+    "dependencies"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://aoa-kag/schemas/repo-local-kag-budget-producer-manifest.schema.json"
+    },
+    "schema_version": {
+      "const": "aoa-kag:budget-receipt-producer-manifest-v1"
+    },
+    "owner": {
+      "const": "aoa-kag"
+    },
+    "closure_mode": {
+      "const": "ast-import-closure-runtime-inputs-v2"
+    },
+    "dynamic_import_policy": {
+      "const": "fail-closed-unresolved-local-v1"
+    },
+    "python_entrypoints": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/relativePath"
+      }
+    },
+    "python_import_closure": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/relativePath"
+      }
+    },
+    "schema_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/relativePath"
+      }
+    },
+    "action_path": {
+      "const": ".github/actions/repo-local-kag-index/action.yml"
+    },
+    "action_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "environment": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/environmentInput"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/dependencyInput"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"
+    },
+    "environmentInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "role": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "dependencyInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

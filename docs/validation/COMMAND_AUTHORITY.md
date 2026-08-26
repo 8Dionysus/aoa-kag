@@ -259,6 +259,12 @@ portable-family identity matches the pinned manifest. Any mismatch rejects the
 shortcut and routes to the unchanged full owner build; no proof verdict is
 reused.
 
+The v2 family budget receipt is accepted only when its exact resolved base,
+family digest, source snapshot, candidate file-inventory seal, and executing
+producer procedure/action identity all match. The candidate seal excludes only
+the receipt directory itself so publication can remain self-reference-safe;
+the receipt reason and approver are context, not authority.
+
 ```bash
 python scripts/prepare_landing.py --check
 python scripts/prepare_landing.py --apply

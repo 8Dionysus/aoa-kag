@@ -41,6 +41,11 @@ try:
         markdown_headings,
         validate_capability_graph_against_sources,
     )
+    from scripts.repo_local.portable_family import (
+        PortableFamilyError as PortableFamilyBoundaryError,
+        capture_budget_source_epoch,
+        capture_budget_producer_execution_inputs,
+    )
 except ImportError:  # pragma: no cover - direct script execution
     from repo_local.identity import (  # type: ignore
         artifact_identity,
@@ -61,6 +66,11 @@ except ImportError:  # pragma: no cover - direct script execution
         extract_structure,
         markdown_headings,
         validate_capability_graph_against_sources,
+    )
+    from repo_local.portable_family import (  # type: ignore
+        PortableFamilyError as PortableFamilyBoundaryError,
+        capture_budget_source_epoch,
+        capture_budget_producer_execution_inputs,
     )
 
 
@@ -3514,7 +3524,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     output = Path(args.output)
     output_path = repo_root / output
-    source_snapshot = OwnerSourceSnapshot.capture(repo_root)
+    try:
+        source_epoch_before = capture_budget_source_epoch(repo_root)
+        source_snapshot = OwnerSourceSnapshot.capture(repo_root)
+        source_epoch = capture_budget_source_epoch(repo_root)
+    except (PortableFamilyBoundaryError, SourceSnapshotError) as exc:
+        print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+        return 1
+    if source_epoch != source_epoch_before:
+        print(
+            "[repo-local-kag-index] source epoch changed during capture",
+            file=sys.stderr,
+        )
+        return 1
     history_ref = effective_history_ref(
         repo_root,
         args.history_ref,
@@ -3567,6 +3589,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             previous_manifest = loaded_manifest
     provenance_base_ref = args.budget_base_ref or history_ref
+    producer_execution_inputs: dict[str, Any] | None = None
+    if args.budget_base_ref or args.write_budget_receipt:
+        try:
+            producer_execution_inputs = capture_budget_producer_execution_inputs(
+                repo_root,
+                base_ref=provenance_base_ref,
+                history_ref=history_ref,
+                event_history_ref=event_history_ref,
+                output=output,
+                family_mode="tiered" if args.tiered_family else "portable",
+                artifact_root=(
+                    Path(args.artifact_root).resolve()
+                    if args.tiered_family and args.artifact_root
+                    else None
+                ),
+                externalized=args.externalize_cold,
+            )
+        except PortableFamilyBoundaryError as exc:
+            print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+            return 1
     if args.tiered_family:
         try:
             previous_manifest = tiered_previous_portable_manifest(
@@ -3605,6 +3647,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             previous_index, previous_family, _ = load_portable_family(
                 repo_root,
                 artifact_root=previous_artifact_root,
+                producer_execution_inputs=producer_execution_inputs,
             )
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
@@ -3764,6 +3807,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 repo_root,
                                 base_ref=args.budget_base_ref,
                                 manifest=budget_manifest,
+                                producer_execution_inputs=producer_execution_inputs,
                             )
                         )
                     except (
@@ -3792,6 +3836,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                         base_ref=args.budget_base_ref,
                         manifest=budget_manifest,
                         reason=args.budget_reason,
+                        source_epoch=source_epoch,
+                        producer_execution_inputs=producer_execution_inputs,
                     )
                 except (
                     PortableFamilyError,
@@ -3808,6 +3854,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             repo_root,
                             base_ref=args.budget_base_ref,
                             manifest=budget_manifest,
+                            producer_execution_inputs=producer_execution_inputs,
                         )
                     )
                 except (
@@ -3851,6 +3898,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             repo_root,
                             base_ref=args.budget_base_ref,
                             manifest=portable_manifest,
+                            producer_execution_inputs=producer_execution_inputs,
                         )
                     )
                 except (PortableFamilyError, subprocess.CalledProcessError) as exc:
@@ -3875,6 +3923,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     base_ref=args.budget_base_ref,
                     manifest=portable_manifest,
                     reason=args.budget_reason,
+                    source_epoch=source_epoch,
+                    producer_execution_inputs=producer_execution_inputs,
                 )
             except (PortableFamilyError, subprocess.CalledProcessError) as exc:
                 print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
@@ -3888,6 +3938,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         repo_root,
                         base_ref=args.budget_base_ref,
                         manifest=portable_manifest,
+                        producer_execution_inputs=producer_execution_inputs,
                     )
                 )
             except (PortableFamilyError, subprocess.CalledProcessError) as exc:

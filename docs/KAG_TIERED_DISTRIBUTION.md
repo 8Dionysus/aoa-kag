@@ -33,7 +33,10 @@ Git keeps:
 - the deterministic hot profile and bounded bootstrap shards;
 - artifact locators and rebuild routes;
 - owner-return/provenance coordinates;
-- durable release and budget receipts.
+- durable release and identity-bound budget receipts. A budget receipt binds
+  the resolved base, family/source coordinates, current candidate seal, and
+  executing producer/action content; its receipt directory is the only
+  candidate-seal exclusion.
 
 Committed hot selection is deterministic and based on bootstrap, discovery,
 audit, and owner-return needs. Runtime LRU/LFU information cannot churn the
