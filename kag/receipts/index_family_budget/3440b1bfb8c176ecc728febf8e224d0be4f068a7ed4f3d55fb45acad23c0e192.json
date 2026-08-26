@@ -160,12 +160,12 @@
           "value_digest": "5a42f60a790863f8c06e57327bf7116900a94dc23154b1e785a0b734d7afaf74"
         },
         {
-          "bytes": 0,
+          "bytes": 7,
           "kind": "environment",
           "name": "AOA_REPO_LOCAL_KAG_HISTORY_REPO",
           "role": "action-to-generator history owner",
-          "state": "unset",
-          "value_digest": "5a42f60a790863f8c06e57327bf7116900a94dc23154b1e785a0b734d7afaf74"
+          "state": "set",
+          "value_digest": "d1489b376f51d7ba8aa28666a53994762cc181388ea8daea1b76eaad1e9e8d31"
         },
         {
           "bytes": 0,
@@ -816,7 +816,7 @@
         "state": "present"
       }
     ],
-    "identity_digest": "db16a4fe55d5791f7ec60f1fcc4d77ba0d0cb030a3e310fffda53d635508957b",
+    "identity_digest": "69f0219db4947066fcdf377a7e18b060adce9a8ddf83679a06f2b8cfafa0683a",
     "owner": "aoa-kag",
     "procedure_manifest": {
       "action_inputs": [
