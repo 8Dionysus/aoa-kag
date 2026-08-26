@@ -889,6 +889,34 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         finally:
             tmpdir.cleanup()
 
+    def test_budget_producer_runtime_contract_is_checkout_portable(self) -> None:
+        first_root, _, first_tmpdir = self._prepare_budget_fixture()
+        second_root, _, second_tmpdir = self._prepare_budget_fixture()
+        try:
+            first = capture_budget_producer_execution_inputs(
+                first_root,
+                base_ref="HEAD",
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+            )
+            second = capture_budget_producer_execution_inputs(
+                second_root,
+                base_ref="HEAD",
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+            )
+            self.assertEqual(first, second)
+            rendered = json.dumps(first, sort_keys=True)
+            self.assertNotIn(str(first_root), rendered)
+            self.assertNotIn(str(second_root), rendered)
+            self.assertEqual("declared", next(
+                item for item in first["dependencies"]
+                if item["name"] == "jsonschema-rs"
+            )["state"])
+        finally:
+            first_tmpdir.cleanup()
+            second_tmpdir.cleanup()
+
     def test_budget_source_epoch_rejects_staged_source_drift(self) -> None:
         root, manifest, tmpdir = self._prepare_budget_fixture()
         try:

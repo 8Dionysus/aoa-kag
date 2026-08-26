@@ -23,13 +23,19 @@
       "const": "https://aoa-kag/schemas/repo-local-kag-budget-producer-manifest.schema.json"
     },
     "schema_version": {
-      "const": "aoa-kag:budget-receipt-producer-manifest-v1"
+      "enum": [
+        "aoa-kag:budget-receipt-producer-manifest-v1",
+        "aoa-kag:budget-receipt-producer-manifest-v2"
+      ]
     },
     "owner": {
       "const": "aoa-kag"
     },
     "closure_mode": {
-      "const": "ast-import-closure-runtime-inputs-v2"
+      "enum": [
+        "ast-import-closure-runtime-inputs-v2",
+        "ast-import-closure-portable-runtime-contract-v1"
+      ]
     },
     "dynamic_import_policy": {
       "const": "fail-closed-unresolved-local-v1"

@@ -4,7 +4,6 @@ import ast
 import copy
 import hashlib
 import importlib.metadata
-import importlib.util
 import json
 import math
 import os
@@ -42,11 +41,11 @@ BUDGET_CANDIDATE_IDENTITY_VERSION = (
     "aoa-kag:budget-receipt-candidate-identity-v2"
 )
 BUDGET_CANDIDATE_SEAL_ALGORITHM = "sha256:canonical-json-file-inventory-v2"
-BUDGET_PRODUCER_IDENTITY_VERSION = "aoa-kag:budget-receipt-producer-identity-v3"
+BUDGET_PRODUCER_IDENTITY_VERSION = "aoa-kag:budget-receipt-producer-identity-v4"
 BUDGET_PRODUCER_MANIFEST_VERSION = (
-    "aoa-kag:budget-receipt-producer-manifest-v1"
+    "aoa-kag:budget-receipt-producer-manifest-v2"
 )
-BUDGET_PRODUCER_CLOSURE_MODE = "ast-import-closure-runtime-inputs-v2"
+BUDGET_PRODUCER_CLOSURE_MODE = "ast-import-closure-portable-runtime-contract-v1"
 BUDGET_PRODUCER_DYNAMIC_IMPORT_POLICY = "fail-closed-unresolved-local-v1"
 BUDGET_DYNAMIC_IMPORT_ATTRIBUTES = frozenset(
     {
@@ -57,7 +56,7 @@ BUDGET_DYNAMIC_IMPORT_ATTRIBUTES = frozenset(
     }
 )
 BUDGET_PRODUCER_RUNTIME_INPUTS_VERSION = (
-    "aoa-kag:budget-receipt-producer-runtime-inputs-v1"
+    "aoa-kag:budget-receipt-producer-runtime-inputs-v2"
 )
 BUDGET_SOURCE_EPOCH_VERSION = "aoa-kag:budget-receipt-source-epoch-v1"
 BUDGET_PRODUCER_ACTION_PATH = Path(
@@ -750,89 +749,10 @@ def _budget_runtime_path_digest(path: Path) -> str:
     return sha256_bytes(path.as_posix().encode("utf-8", errors="surrogateescape"))
 
 
-def _budget_runtime_artifact_digest(path: Path) -> tuple[str, int, int]:
-    """Hash one runtime artifact without relying on its mutable mtime."""
-    try:
-        metadata = path.lstat()
-    except OSError as exc:
-        raise PortableFamilyError(f"runtime artifact is unreadable: {path}") from exc
-    if stat.S_ISREG(metadata.st_mode):
-        content = path.read_bytes()
-        return sha256_bytes(content), len(content), 1
-    if stat.S_ISLNK(metadata.st_mode):
-        target = os.readlink(path).encode("utf-8", errors="surrogateescape")
-        return sha256_bytes(target), len(target), 1
-    if not stat.S_ISDIR(metadata.st_mode):
-        raise PortableFamilyError(f"runtime artifact has an unsupported type: {path}")
-    entries: list[dict[str, Any]] = []
-    total_bytes = 0
-    for child in sorted(path.rglob("*")):
-        relative = child.relative_to(path)
-        if "__pycache__" in relative.parts or child.suffix == ".pyc":
-            continue
-        try:
-            child_metadata = child.lstat()
-        except OSError as exc:
-            raise PortableFamilyError(
-                f"runtime artifact changed during capture: {child}"
-            ) from exc
-        if stat.S_ISREG(child_metadata.st_mode):
-            content = child.read_bytes()
-            entry = {
-                "path": relative.as_posix(),
-                "kind": "file",
-                "bytes": len(content),
-                "content_digest": sha256_bytes(content),
-            }
-            total_bytes += len(content)
-        elif stat.S_ISLNK(child_metadata.st_mode):
-            target = os.readlink(child).encode("utf-8", errors="surrogateescape")
-            entry = {
-                "path": relative.as_posix(),
-                "kind": "symlink",
-                "bytes": len(target),
-                "content_digest": sha256_bytes(target),
-            }
-            total_bytes += len(target)
-        else:
-            continue
-        entries.append(entry)
-    return sha256_bytes(canonical_json_bytes(entries)), total_bytes, len(entries)
-
-
-def _budget_dependency_artifact(
-    name: str,
-) -> tuple[str, str, int, int]:
-    module_name = {
-        "PyYAML": "yaml",
-        "jsonschema": "jsonschema",
-        "jsonschema-rs": "jsonschema_rs",
-    }.get(name)
-    if module_name is None:
-        raise PortableFamilyError(
-            f"producer dependency has no reviewed import target: {name}"
-        )
-    try:
-        spec = importlib.util.find_spec(module_name)
-    except (ImportError, ModuleNotFoundError, ValueError) as exc:
-        raise PortableFamilyError(
-            f"producer dependency import target is not resolvable: {name}"
-        ) from exc
-    if spec is None:
-        raise PortableFamilyError(
-            f"producer dependency import target is unavailable: {name}"
-        )
-    locations = list(spec.submodule_search_locations or ())
-    if locations:
-        artifact_path = Path(locations[0])
-    elif spec.origin and spec.origin not in {"built-in", "frozen"}:
-        artifact_path = Path(spec.origin)
-    else:
-        raise PortableFamilyError(
-            f"producer dependency has no content-addressable artifact: {name}"
-        )
-    digest, byte_count, file_count = _budget_runtime_artifact_digest(artifact_path)
-    return digest, _budget_runtime_path_digest(artifact_path), byte_count, file_count
+def _budget_runtime_contract_digest(value: str) -> str:
+    return sha256_bytes(
+        ("aoa-kag:budget-producer-runtime-contract:" + value).encode("utf-8")
+    )
 
 
 def _budget_dependency_inputs(
@@ -843,8 +763,11 @@ def _budget_dependency_inputs(
         name = item["name"]
         declared = item["version"]
         required = item.get("required", True)
+        contract_digest = _budget_runtime_contract_digest(f"dependency:{name}:{declared}")
+        contract_path_digest = _budget_runtime_path_digest(
+            Path(f"<approved-dependency-root>/{name}")
+        )
         if name == "python":
-            resolved = ".".join(str(part) for part in sys.version_info[:3])
             if not (
                 declared.startswith(">=")
                 and tuple(sys.version_info[:2])
@@ -853,20 +776,31 @@ def _budget_dependency_inputs(
                 raise PortableFamilyError(
                     f"producer dependency version does not satisfy python {declared}"
                 )
-            interpreter = Path(sys.executable).resolve()
-            if not interpreter.is_file():
-                raise PortableFamilyError("producer Python interpreter is unavailable")
-            artifact_digest = sha256_bytes(interpreter.read_bytes())
             result.append(
                 {
                     "name": name,
                     "declared_version": declared,
                     "required": required,
                     "state": "available",
-                    "resolved_version": resolved,
-                    "path_digest": _budget_runtime_path_digest(interpreter),
-                    "artifact_digest": artifact_digest,
-                    "artifact_bytes": interpreter.stat().st_size,
+                    "resolved_version": declared,
+                    "path_digest": contract_path_digest,
+                    "artifact_digest": contract_digest,
+                    "artifact_bytes": len(contract_digest),
+                    "artifact_files": 1,
+                }
+            )
+            continue
+        if not required:
+            result.append(
+                {
+                    "name": name,
+                    "declared_version": declared,
+                    "required": required,
+                    "state": "declared",
+                    "resolved_version": None,
+                    "path_digest": contract_path_digest,
+                    "artifact_digest": contract_digest,
+                    "artifact_bytes": len(contract_digest),
                     "artifact_files": 1,
                 }
             )
@@ -874,31 +808,13 @@ def _budget_dependency_inputs(
         try:
             resolved = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
-            if required:
-                raise PortableFamilyError(
-                    f"required producer dependency is unavailable: {name}"
-                )
-            result.append(
-                {
-                    "name": name,
-                    "declared_version": declared,
-                    "required": required,
-                    "state": "unavailable",
-                    "resolved_version": None,
-                    "path_digest": None,
-                    "artifact_digest": None,
-                    "artifact_bytes": 0,
-                    "artifact_files": 0,
-                }
+            raise PortableFamilyError(
+                f"required producer dependency is unavailable: {name}"
             )
-            continue
         if resolved != declared:
             raise PortableFamilyError(
                 f"producer dependency {name} is {resolved}, expected {declared}"
             )
-        artifact_digest, path_digest, byte_count, file_count = _budget_dependency_artifact(
-            name
-        )
         result.append(
             {
                 "name": name,
@@ -906,10 +822,10 @@ def _budget_dependency_inputs(
                 "required": required,
                 "state": "available",
                 "resolved_version": resolved,
-                "path_digest": path_digest,
-                "artifact_digest": artifact_digest,
-                "artifact_bytes": byte_count,
-                "artifact_files": file_count,
+                "path_digest": contract_path_digest,
+                "artifact_digest": contract_digest,
+                "artifact_bytes": len(contract_digest),
+                "artifact_files": 1,
             }
         )
     return result
@@ -971,7 +887,7 @@ def capture_budget_producer_execution_inputs(
         else os.environ.get("AOA_REPO_LOCAL_KAG_JOBS", "2")
     )
     action_values = {
-        "repo-root": _budget_runtime_value(target_root, kind="path"),
+        "repo-root": _budget_runtime_value(Path("<owner-root>"), kind="path"),
         "output": _budget_runtime_value(output_value, kind="relative-path"),
         "history-ref": _budget_runtime_value(resolved_history, kind="git-ref"),
         "event-history-ref": _budget_runtime_value(resolved_event, kind="git-ref"),
@@ -1023,13 +939,17 @@ def capture_budget_producer_execution_inputs(
                 "bytes": len(content),
             }
         )
-    interpreter = Path(sys.executable).resolve()
-    if not interpreter.is_file():
-        raise PortableFamilyError("producer Python interpreter is unavailable")
+    dependencies = _budget_dependency_inputs(manifest)
+    python_dependency = next(
+        (item for item in dependencies if item["name"] == "python"),
+        None,
+    )
+    if python_dependency is None:
+        raise PortableFamilyError("producer dependency contract omits python")
     command_targets = {
         "repo_root": {
-            "path_digest": _budget_runtime_path_digest(target_root),
-            "resolved_path_digest": _budget_runtime_path_digest(target_root.resolve()),
+            "path_digest": _budget_runtime_path_digest(Path("<owner-root>")),
+            "resolved_path_digest": _budget_runtime_path_digest(Path("<owner-root>")),
         },
         "base_ref": base_ref,
         "history_ref": resolved_history,
@@ -1055,13 +975,20 @@ def capture_budget_producer_execution_inputs(
             key: action_values[key] for key in sorted(action_values)
         },
         "environment": sorted(environment_inputs, key=lambda item: item["name"]),
-        "dependencies": _budget_dependency_inputs(manifest),
+        "dependencies": dependencies,
         "interpreter": {
             "implementation": sys.implementation.name,
-            "version": ".".join(str(part) for part in sys.version_info[:3]),
-            "invoked_path_digest": _budget_runtime_path_digest(Path(sys.executable)),
-            "resolved_path_digest": _budget_runtime_path_digest(interpreter),
-            "artifact_digest": sha256_bytes(interpreter.read_bytes()),
+            "version": python_dependency["declared_version"],
+            "invoked_path_digest": _budget_runtime_path_digest(
+                Path("<approved-python-interpreter>")
+            ),
+            "resolved_path_digest": _budget_runtime_path_digest(
+                Path("<approved-python-interpreter>")
+            ),
+            "artifact_digest": _budget_runtime_contract_digest(
+                "python:" + sys.implementation.name + ":"
+                + str(python_dependency["declared_version"])
+            ),
         },
         "non_python_inputs": runtime_files,
         "dynamic_imports": [],
@@ -1149,8 +1076,8 @@ def _budget_producer_identity(
         "contract_version": BUDGET_PRODUCER_IDENTITY_VERSION,
         "owner": "aoa-kag",
         "revision_binding": (
-            "content-addressed-procedure-import-closure-runtime-inputs-and-"
-            "descriptor-io-v1"
+            "content-addressed-procedure-import-closure-portable-runtime-"
+            "contract-and-descriptor-io-v1"
         ),
         "source_digest": source_digest,
         "procedure_manifest": procedure_manifest,

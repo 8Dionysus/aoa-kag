@@ -156,7 +156,7 @@
         "name": {"$ref": "#/$defs/nonEmptyString"},
         "declared_version": {"$ref": "#/$defs/nonEmptyString"},
         "required": {"type": "boolean"},
-        "state": {"enum": ["available", "unavailable"]},
+        "state": {"enum": ["available", "unavailable", "declared"]},
         "resolved_version": {"type": ["string", "null"]},
         "path_digest": {
           "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
@@ -194,7 +194,10 @@
       ],
       "properties": {
         "schema_version": {
-          "const": "aoa-kag:budget-receipt-producer-runtime-inputs-v1"
+          "enum": [
+            "aoa-kag:budget-receipt-producer-runtime-inputs-v1",
+            "aoa-kag:budget-receipt-producer-runtime-inputs-v2"
+          ]
         },
         "action_inputs": {
           "type": "object",
@@ -409,13 +412,19 @@
       ],
       "properties": {
         "contract_version": {
-          "const": "aoa-kag:budget-receipt-producer-identity-v3"
+          "enum": [
+            "aoa-kag:budget-receipt-producer-identity-v3",
+            "aoa-kag:budget-receipt-producer-identity-v4"
+          ]
         },
         "owner": {
           "const": "aoa-kag"
         },
         "revision_binding": {
-          "const": "content-addressed-procedure-import-closure-runtime-inputs-and-descriptor-io-v1"
+          "enum": [
+            "content-addressed-procedure-import-closure-runtime-inputs-and-descriptor-io-v1",
+            "content-addressed-procedure-import-closure-portable-runtime-contract-and-descriptor-io-v1"
+          ]
         },
         "source_digest": {
           "$ref": "#/$defs/digest"
@@ -509,7 +518,10 @@
           "$ref": "#/$defs/relativePath"
         },
         "closure_mode": {
-          "const": "ast-import-closure-runtime-inputs-v2"
+          "enum": [
+            "ast-import-closure-runtime-inputs-v2",
+            "ast-import-closure-portable-runtime-contract-v1"
+          ]
         },
         "dynamic_import_policy": {
           "const": "fail-closed-unresolved-local-v1"

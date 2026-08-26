@@ -1,8 +1,8 @@
 {
   "$schema": "https://aoa-kag/schemas/repo-local-kag-budget-producer-manifest.schema.json",
-  "schema_version": "aoa-kag:budget-receipt-producer-manifest-v1",
+  "schema_version": "aoa-kag:budget-receipt-producer-manifest-v2",
   "owner": "aoa-kag",
-  "closure_mode": "ast-import-closure-runtime-inputs-v2",
+  "closure_mode": "ast-import-closure-portable-runtime-contract-v1",
   "dynamic_import_policy": "fail-closed-unresolved-local-v1",
   "python_entrypoints": [
     "scripts/generate_repo_local_kag_index.py",
@@ -93,52 +93,12 @@
   ],
   "environment": [
     {
-      "name": "AOA_REPO_LOCAL_KAG_HISTORY_REPO",
-      "role": "action-to-generator history owner"
-    },
-    {
-      "name": "AOA_REPO_LOCAL_KAG_HISTORY_REF",
-      "role": "action-to-generator history boundary"
-    },
-    {
-      "name": "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF",
-      "role": "action-to-generator event history boundary"
-    },
-    {
       "name": "AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION",
       "role": "validator engine rollback"
     },
     {
       "name": "AOA_KAG_FORCE_PYTHON_SCHEMA_VALIDATION",
       "role": "validator engine rollback"
-    },
-    {
-      "name": "PYTHONDONTWRITEBYTECODE",
-      "role": "deterministic validation process"
-    },
-    {
-      "name": "RUNNER_TEMP",
-      "role": "bounded action artifact root"
-    },
-    {
-      "name": "TMPDIR",
-      "role": "bounded local artifact fallback"
-    },
-    {
-      "name": "GITHUB_ACTION_PATH",
-      "role": "composite action owner path"
-    },
-    {
-      "name": "GITHUB_WORKSPACE",
-      "role": "composite action workspace"
-    },
-    {
-      "name": "GITHUB_ENV",
-      "role": "action environment publication"
-    },
-    {
-      "name": "GITHUB_OUTPUT",
-      "role": "action output publication"
     }
   ],
   "dependencies": [
