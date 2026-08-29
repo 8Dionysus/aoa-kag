@@ -2758,7 +2758,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 sarif={"runs": [{"results": [{"ruleId": "unsafe-eval", "locations": [{"physicalLocation": {"region": {"startLine": 2, "startColumn": 3}}}]}]}]},
             ),
             observe_sbom(
-                **common, provider_id="syft", provider_version="1.45.1",
+                **{**common, "content": b"\x1f\x8bfixture"}, provider_id="syft", provider_version="1.45.1",
                 sbom={"bomFormat": "CycloneDX", "components": [{"name": "aoa-kag", "version": "1"}]},
             ),
             observe_artifact_provenance(

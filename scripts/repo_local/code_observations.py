@@ -1071,8 +1071,10 @@ def normalize_provider_observations(
         raise ValueError(f"unsupported provider provenance mode: {provenance_mode}")
     if capability_class not in CAPABILITY_CLASSES:
         raise ValueError(f"unsupported capability class: {capability_class}")
-    source_text, source_bytes = _content_bytes(content)
-    del source_text
+    # Adjacent observations may bind to binary artifact subjects.  Parsing
+    # providers still decode their own source before this boundary; the common
+    # envelope only needs exact content bytes for identity and provenance.
+    source_bytes = content if isinstance(content, bytes) else content.encode("utf-8")
     content_digest = hashlib.sha256(source_bytes).hexdigest()
     config = dict(provider_config or {})
     config.setdefault("binding", "supplied")
