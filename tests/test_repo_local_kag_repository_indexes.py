@@ -2670,6 +2670,45 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             load_json(REPO_ROOT / "schemas" / "code-observation-delta.schema.json")
         ).validate(measured)
 
+    def test_lineage_does_not_match_relations_with_different_targets(self) -> None:
+        before = observe_source(
+            repo="demo",
+            path="src/caller.py",
+            lineage_path="src/caller.py",
+            content="def caller():\n    foo()\n",
+            source_epoch="epoch-before",
+        )
+        after = observe_source(
+            repo="demo",
+            path="lib/caller.py",
+            lineage_path="src/caller.py",
+            content="def caller():\n    bar()\n",
+            source_epoch="epoch-after",
+        )
+        before_relation_id = next(
+            item["observation_id"]
+            for item in before["observations"]
+            if item["observation_kind"] == "relation"
+        )
+        after_relation_id = next(
+            item["observation_id"]
+            for item in after["observations"]
+            if item["observation_kind"] == "relation"
+        )
+
+        matches = plan_observation_delta(before, after)["lineage"]["matches"]
+
+        self.assertNotIn(
+            (before_relation_id, after_relation_id),
+            {
+                (
+                    item["before_observation_id"],
+                    item["after_observation_id"],
+                )
+                for item in matches
+            },
+        )
+
     def test_observation_delta_keeps_transformation_candidates_unselected(self) -> None:
         split_before = observe_source(
             repo="demo",
@@ -3016,6 +3055,71 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 item["from_id"] == accidental_id and item["to_id"] == helper_id
                 for item in calls
             )
+        )
+
+    def test_parent_directory_imports_resolve_from_the_importing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "src" / "pages").mkdir(parents=True)
+            (root / "src" / "pages" / "view.ts").write_text(
+                "import { api } from '../api';\n"
+                "export function view() { return api(); }\n",
+                encoding="utf-8",
+            )
+            (root / "src" / "api.ts").write_text(
+                "export function api() { return 1; }\n",
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        artifact_by_path = {
+            item["path"]: item for item in family["artifact"]["entries"]
+        }
+        imports = [
+            item
+            for item in family["relation"]["entries"]
+            if item["relation_kind"] == "imports"
+        ]
+        self.assertTrue(
+            any(
+                item["to_id"] == artifact_by_path["src/api.ts"]["id"]
+                for item in imports
+            )
+        )
+
+    def test_projected_relations_preserve_each_call_occurrence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "caller.py").write_text(
+                "def helper():\n    return 1\n\n"
+                "def caller():\n    helper()\n    helper()\n",
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        entities = {
+            item["semantic_key"]: item for item in family["entity"]["entries"]
+        }
+        calls = [
+            item
+            for item in family["relation"]["entries"]
+            if item["relation_kind"] == "calls"
+            and item["from_id"] == entities["python:function:caller"]["id"]
+            and item["to_id"] == entities["python:function:helper"]["id"]
+        ]
+        self.assertEqual(2, len(calls))
+        anchors = {
+            item["id"]: item for item in family["anchor"]["entries"]
+        }
+        evidence = [
+            anchors[relation["evidence_anchor_ids"][0]] for relation in calls
+        ]
+        self.assertEqual({5, 6}, {item["locator"]["start_line"] for item in evidence})
+        self.assertEqual(
+            {"python_relation"},
+            {item["anchor_kind"] for item in evidence},
         )
 
     def test_self_calls_resolve_only_within_the_declaring_class(self) -> None:

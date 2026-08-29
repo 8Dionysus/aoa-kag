@@ -103,6 +103,9 @@ def anchor_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
             source_path = reference.get("source_path")
             if isinstance(source_path, str) and source_path:
                 outbound_entry["source_path"] = source_path
+            source_entity_anchor_id = reference.get("source_entity_anchor_id")
+            if isinstance(source_entity_anchor_id, str) and source_entity_anchor_id:
+                outbound_entry["source_entity_anchor_id"] = source_entity_anchor_id
             outbound_by_anchor.setdefault(source_anchor_id, []).append(outbound_entry)
         for anchor in anchors if isinstance(anchors, list) else []:
             if not isinstance(anchor, dict):
@@ -830,13 +833,12 @@ def relation_entries(
                     candidate_paths: list[str] = []
                     for module in module_candidates:
                         normalized_module = module.replace("\\", "/")
-                        relative_module = normalized_module.lstrip("./")
-                        if normalized_module.startswith("./"):
+                        if normalized_module.startswith(("./", "../")):
                             candidate_paths.append(
                                 posixpath.normpath(
                                     posixpath.join(
                                         PurePosixPath(source_path).parent.as_posix(),
-                                        relative_module,
+                                        normalized_module,
                                     )
                                 )
                             )
@@ -853,7 +855,8 @@ def relation_entries(
                                     posixpath.join(package.as_posix(), remainder)
                                 )
                             )
-                        candidate_paths.append(relative_module.replace(".", "/"))
+                        else:
+                            candidate_paths.append(normalized_module.replace(".", "/"))
                     extensions = {
                         "python": (".py", ".pyi"),
                         "javascript": (".js", ".jsx", ".mjs", ".cjs"),
@@ -891,9 +894,12 @@ def relation_entries(
             evidence_anchor_id = str(anchor["id"])
             if not target_id or evidence_anchor_id not in anchor_by_id:
                 continue
+            source_entity_anchor_id = str(
+                reference.get("source_entity_anchor_id") or evidence_anchor_id
+            )
             source_node = (
                 source_node
-                or entity_by_anchor.get(evidence_anchor_id)
+                or entity_by_anchor.get(source_entity_anchor_id)
                 or source_entity
             )
             relation = _relation(

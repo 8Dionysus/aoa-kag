@@ -106,11 +106,9 @@
       "limits": "proof-status is an aoa-evals owner route, not a proof verdict; mcp-source-readiness is a source declaration, not transport or runtime evidence"
     },
     "generated_family": {
-      "corpus_digest": "sha256:33c5fd243eca78bbb106a044ef460d8a3b30440b2c63fce9dcbf3a89588fcf03",
-      "distribution_digest": "sha256:fa05344967a8a50c263bbbd1769ea939615b191c04c10480e4f5e84fd8a9c416",
-      "source_snapshot_digest": "sha256:2315e14a79c73975275a3f0f81ba596fc46989b311a30f19540929414a1c5519",
-      "canonical_records": 13766,
-      "objects": 487,
+      "manifest_ref": "kag/indexes/index_family.manifest.json",
+      "receipt_selector": "kag/receipts/index_family_budget/<family-digest>.json",
+      "identity_authority": "The manifest and its digest-addressed receipt carry the exact current corpus, distribution, source-snapshot, object-count, and budget measurements; this report intentionally does not duplicate them.",
       "state": "candidate; generated read model only"
     },
     "g59_machine_binding": {
@@ -141,11 +139,11 @@
   "strongest_owner_local_validation": [
     {
       "command": "python3 -m unittest tests.test_repo_local_kag_index tests.test_repo_local_kag_repository_indexes",
-      "result": "170 tests passed; 1 optional test skipped"
+      "result": "owner repository-index suite passed after review closure; the final combined count is carried by the terminal CI receipt"
     },
     {
       "command": "focused INDEXED observation, machine-envelope, delta, parity, and query-handle tests",
-      "result": "passed, including canonical provider rebind tamper rejection, malformed-batch rejection, multiline lexical comment masking, invalid-UTF8 degraded envelopes, after-batch currentness, rename/move, bounded affectedness, unselected transformations, MIME-only source identity, lexical fallback posture, exact G59 unadmitted binding, and schema-valid query handles"
+      "result": "passed, including canonical provider rebind tamper rejection, malformed-batch rejection, multiline lexical comment masking, invalid-UTF8 degraded envelopes, after-batch currentness, rename/move, bounded affectedness, unselected transformations, parent-directory import resolution, relation-target lineage identity, occurrence-specific relation evidence, MIME-only source identity, lexical fallback posture, exact G59 unadmitted binding, and schema-valid query handles"
     },
     {
       "command": "python3 -m py_compile scripts/repo_local/code_observations.py scripts/repo_local/structure.py scripts/repo_local/indexes.py tests/test_repo_local_kag_repository_indexes.py",
@@ -153,7 +151,7 @@
     },
     {
       "command": "python3 scripts/generate_repo_local_kag_index.py --repo-root . --output kag/indexes/source_surface_index.json --portable-family",
-      "result": "passed; corpus sha256:33c5fd243eca78bbb106a044ef460d8a3b30440b2c63fce9dcbf3a89588fcf03, distribution sha256:fa05344967a8a50c263bbbd1769ea939615b191c04c10480e4f5e84fd8a9c416, 13,766 canonical records and 487 objects"
+      "result": "passed; exact current identities and measurements are selected by kag/indexes/index_family.manifest.json"
     },
     {
       "command": "python3 scripts/generate_repo_local_kag_index.py --repo-root . --output kag/indexes/source_surface_index.json --portable-family --check",

@@ -655,6 +655,7 @@
       "properties": {
         "relation_kind": {"$ref": "#/$defs/nonEmptyString"},
         "source_context": {"$ref": "#/$defs/nonEmptyString"},
+        "source_entity_anchor_id": {"$ref": "#/$defs/nonEmptyString"},
         "target_ref": {"$ref": "#/$defs/nonEmptyString"},
         "evidence_class": {
           "type": "string",

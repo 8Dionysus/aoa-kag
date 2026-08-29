@@ -3107,6 +3107,9 @@ def previous_structure_refs(
                 "python_symbol",
                 "javascript_symbol",
                 "typescript_symbol",
+                "python_relation",
+                "javascript_relation",
+                "typescript_relation",
             }
             if not preserve_code_qualification:
                 raw_anchor.pop("evidence_class", None)

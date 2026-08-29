@@ -853,12 +853,19 @@ def _code_structure(
             continue
         subject = observation.get("subject")
         relation = observation.get("relation")
-        if not isinstance(subject, Mapping) or not isinstance(relation, Mapping):
+        occurrence = observation.get("occurrence")
+        if (
+            not isinstance(subject, Mapping)
+            or not isinstance(relation, Mapping)
+            or not isinstance(occurrence, Mapping)
+        ):
             continue
-        source_anchor_id = anchor_by_symbol.get(str(subject.get("symbol_id") or ""))
+        source_entity_anchor_id = anchor_by_symbol.get(
+            str(subject.get("symbol_id") or "")
+        )
         target_name = str(relation.get("target_name") or "")
         relation_kind = str(relation.get("kind") or "references")
-        if not source_anchor_id or not target_name:
+        if not source_entity_anchor_id or not target_name:
             continue
         confidence = observation.get("confidence")
         relation_evidence = (
@@ -866,10 +873,42 @@ def _code_structure(
             if isinstance(confidence, Mapping)
             else evidence_class
         )
+        relation_anchor = _anchor(
+            repo=repo,
+            source_id=source_id,
+            kind=f"{language}_relation",
+            semantic_key=str(observation.get("semantic_key") or "relation"),
+            label=target_name,
+            line=int(occurrence.get("start_line") or 1),
+            end_line=int(
+                occurrence.get("end_line") or occurrence.get("start_line") or 1
+            ),
+            column=int(occurrence.get("start_column") or 1),
+            end_column=int(
+                occurrence.get("end_column") or occurrence.get("start_column") or 1
+            ),
+            symbol_kind=relation_kind,
+            qualified_name=(
+                f"{subject.get('qualified_name', '')} -> {target_name}"
+            ),
+            parser=provider_id,
+            parser_version=provider_version,
+            observation_id=str(observation.get("observation_id") or ""),
+            source_epoch=str(source.get("source_epoch") or ""),
+            provider_ref=parser_ref,
+            language=language,
+            currentness_state=currentness_state,
+            evidence_class="deterministic",
+            trust_ref=trust_ref,
+            qualification=dict(qualification),
+            semantic_confidence=dict(semantic_confidence),
+        )
+        anchors.append(relation_anchor)
         outbound.append(
             {
                 "relation_kind": relation_kind,
-                "source_anchor_id": source_anchor_id,
+                "source_anchor_id": relation_anchor["id"],
+                "source_entity_anchor_id": source_entity_anchor_id,
                 "source_context": f"{language}:{subject.get('qualified_name', '')}",
                 "target_ref": f"{language}:{target_name}",
                 "evidence_class": relation_evidence,

@@ -3382,15 +3382,27 @@ def _path_change_kind(before_path: str, after_path: str) -> str:
     return "move"
 
 
-def _observation_signature(observation: Mapping[str, Any]) -> tuple[str, str, str, str]:
+def _observation_signature(
+    observation: Mapping[str, Any],
+) -> tuple[str, str, str, str, str, str]:
     subject = observation.get("subject")
     if not isinstance(subject, Mapping):
-        return (str(observation.get("observation_kind") or ""), "", "", "")
+        return (str(observation.get("observation_kind") or ""), "", "", "", "", "")
+    relation = observation.get("relation")
+    relation_kind = ""
+    relation_target = ""
+    if isinstance(relation, Mapping):
+        relation_kind = str(relation.get("kind") or "")
+        relation_target = str(
+            relation.get("target_symbol_id") or relation.get("target_name") or ""
+        )
     return (
         str(observation.get("observation_kind") or ""),
         str(subject.get("symbol_kind") or ""),
         str(subject.get("qualified_name") or ""),
         str(subject.get("label") or ""),
+        relation_kind,
+        relation_target,
     )
 
 
@@ -3466,8 +3478,8 @@ def _lineage_matches(
         matched_before.add(before_id)
         matched_after.add(after_id)
 
-    before_by_signature: dict[tuple[str, str, str, str], list[str]] = {}
-    after_by_signature: dict[tuple[str, str, str, str], list[str]] = {}
+    before_by_signature: dict[tuple[str, str, str, str, str, str], list[str]] = {}
+    after_by_signature: dict[tuple[str, str, str, str, str, str], list[str]] = {}
     for observation_id, observation in before_map.items():
         if observation_id not in matched_before:
             before_by_signature.setdefault(_observation_signature(observation), []).append(observation_id)
