@@ -51,15 +51,13 @@ def artifact_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
             if isinstance(code_observation, dict)
             else None
         )
+        # An empty observation list is still a meaningful code batch (empty,
+        # degraded, or unparseable).  Preserve its provider/currentness axes.
         has_code_observations = bool(
             isinstance(code_observation, dict)
-            and (
-                (
-                    isinstance(code_observation.get("observations"), list)
-                    and code_observation["observations"]
-                )
-                or code_observation.get("projection_has_observations") is True
-            )
+            and isinstance(code_source, dict)
+            and isinstance(code_provider, dict)
+            and isinstance(code_currentness, dict)
         )
         if not has_code_observations:
             code_source = None
@@ -565,6 +563,7 @@ def relation_entries(
     artifacts: Sequence[dict[str, Any]],
     anchors: Sequence[dict[str, Any]],
     entities: Sequence[dict[str, Any]],
+    source_bound_bare_calls: bool = True,
 ) -> list[dict[str, Any]]:
     relations: dict[str, dict[str, Any]] = {}
     artifact_by_source = {entry["id"]: entry for entry in artifacts}
@@ -793,11 +792,22 @@ def relation_entries(
                             (language, target_name.removeprefix("self.")), []
                         )
                 unique = {item["id"]: item for item in matches}
+                relation_kind = str(reference.get("relation_kind") or "")
+                if (
+                    source_bound_bare_calls
+                    and "." not in target_name
+                    and relation_kind == "calls"
+                ):
+                    unique = {
+                        item_id: item
+                        for item_id, item in unique.items()
+                        if source_id in item.get("source_record_ids", [])
+                    }
                 if len(unique) == 1:
                     target_id = next(iter(unique))
                 elif (
                     enriched_code_reference
-                    and str(reference.get("relation_kind")) == "imports"
+                    and relation_kind == "imports"
                 ):
                     source_path = str(identity["path"])
                     module_candidates = [target_name]
@@ -814,6 +824,19 @@ def relation_entries(
                                         PurePosixPath(source_path).parent.as_posix(),
                                         relative_module,
                                     )
+                                )
+                            )
+                        elif language == "python" and normalized_module.startswith("."):
+                            leading = len(normalized_module) - len(
+                                normalized_module.lstrip(".")
+                            )
+                            package = PurePosixPath(source_path).parent
+                            for _ in range(max(leading - 1, 0)):
+                                package = package.parent
+                            remainder = normalized_module[leading:].replace(".", "/")
+                            candidate_paths.append(
+                                posixpath.normpath(
+                                    posixpath.join(package.as_posix(), remainder)
                                 )
                             )
                         candidate_paths.append(relative_module.replace(".", "/"))

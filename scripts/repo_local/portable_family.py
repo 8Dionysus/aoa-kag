@@ -291,6 +291,37 @@ def _portable_rows(
             )
         )
 
+    artifact_payload = family.get("artifact")
+    artifact_entries = (
+        artifact_payload.get("entries")
+        if isinstance(artifact_payload, Mapping)
+        else None
+    )
+    if not isinstance(artifact_entries, list):
+        raise PortableFamilyError("repository family must carry artifact entries")
+    code_metadata_fields = (
+        "code_observation_language",
+        "code_observation_provider_ref",
+        "code_observation_state",
+    )
+    for artifact in artifact_entries:
+        if not isinstance(artifact, Mapping) or not isinstance(artifact.get("id"), str):
+            raise PortableFamilyError("artifact entries must carry id")
+        metadata = {
+            field: artifact[field]
+            for field in code_metadata_fields
+            if field in artifact
+        }
+        if metadata:
+            rows.append(
+                {
+                    "_kind": "code_profile",
+                    "_key": f"code-profile:{artifact['id']}",
+                    "id": artifact["id"],
+                    **metadata,
+                }
+            )
+
     anchor_payload = family.get("anchor")
     anchor_entries = (
         anchor_payload.get("entries") if isinstance(anchor_payload, Mapping) else None
@@ -1039,6 +1070,23 @@ def reconstruct_compatibility_family(
 
     repo = str(source_index["repo"]["name"])
     artifacts = artifact_entries(structure_records)
+    portable_artifacts = {
+        str(item.get("id")): _strip_portable_fields(item)
+        for item in _expanded_parents(rows, parent_kind="code_profile")
+        if isinstance(item.get("id"), str)
+    }
+    code_metadata_fields = {
+        "code_observation_language",
+        "code_observation_provider_ref",
+        "code_observation_state",
+    }
+    for artifact in artifacts:
+        portable_artifact = portable_artifacts.get(str(artifact["id"]))
+        if portable_artifact is None:
+            continue
+        for field in code_metadata_fields:
+            if field in portable_artifact:
+                artifact[field] = portable_artifact[field]
     entities = entity_entries(repo, structure_records)
     assertions = assertion_entries(
         repo,
@@ -1051,6 +1099,10 @@ def reconstruct_compatibility_family(
         artifacts=artifacts,
         anchors=anchors,
         entities=entities,
+        # ``code_profile`` was introduced with source-bound bare-call
+        # resolution.  Older portable families must continue to reconstruct
+        # their committed compatibility view with the legacy resolver.
+        source_bound_bare_calls=bool(portable_artifacts),
     )
     entries = {
         "artifact": artifacts,

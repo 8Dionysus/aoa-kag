@@ -2519,6 +2519,17 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 provider_batch=tampered,
             )
 
+        forged_subject = copy.deepcopy(batch)
+        forged_subject["observations"][0]["subject"]["symbol_id"] = "forged-symbol-id"
+        with self.assertRaisesRegex(ValueError, "subject id is not bound"):
+            observe_source(
+                repo="demo",
+                path="src/provider.py",
+                content="def helper():\n    pass\n",
+                source_epoch="source-epoch",
+                provider_batch=forged_subject,
+            )
+
         self.assertEqual(
             "supplied_unadmitted",
             batch["provider"]["lane"]["status"],
@@ -2654,6 +2665,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "matched",
             measured["measurement"]["full_rebuild_parity"]["state"],
         )
+        self.assertGreater(measured["metrics"]["blast_radius_ratio"], 0)
         Draft202012Validator(
             load_json(REPO_ROOT / "schemas" / "code-observation-delta.schema.json")
         ).validate(measured)
@@ -2722,6 +2734,282 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual("source_local_fallback", typescript["provider"]["lane"]["status"])
         self.assertEqual("source_local", javascript["qualification"]["materialization"]["state"])
         self.assertEqual("source_local", typescript["qualification"]["materialization"]["state"])
+
+    def test_lexical_fallback_preserves_js_ts_scope_and_import_integrity(self) -> None:
+        batch = observe_source(
+            repo="demo",
+            path="src/integrity.ts",
+            content=(
+                "/*\nimport ghost from 'ghost';\n*/\n"
+                "import client, { helper as alias, other } from './api';\n"
+                "class Service\n{\n"
+                "  field = helper();\n"
+                "  constructor() { helper(); }\n"
+                "  method()\n  {\n    other();\n  }\n"
+                "}\n"
+                "function first(){} function second(){}\n"
+                "function regexSafe() { return /\\{/.test('x'); }\n"
+            ),
+            source_epoch="source-epoch",
+        )
+        symbols = {
+            item["subject"]["qualified_name"]
+            for item in batch["observations"]
+            if item["observation_kind"] == "symbol"
+        }
+        relations = [
+            item for item in batch["observations"]
+            if item["observation_kind"] == "relation"
+        ]
+        self.assertNotIn("ghost", symbols)
+        self.assertTrue({"client", "alias", "other"}.issubset(symbols))
+        self.assertTrue(
+            {"./api.default", "./api.helper", "./api.other"}.issubset(
+                {item["relation"]["target_name"] for item in relations}
+            )
+        )
+        self.assertTrue(
+            {"Service", "Service.constructor", "Service.method", "first", "second", "regexSafe"}.issubset(symbols)
+        )
+        self.assertNotIn("Service.helper", symbols)
+        self.assertNotIn("return.test", {item["relation"]["target_name"] for item in relations})
+
+    def test_python_definition_time_calls_stay_in_the_enclosing_scope(self) -> None:
+        batch = observe_source(
+            repo="demo",
+            path="src/decorators.py",
+            content=(
+                "def outer():\n"
+                "    @deco(helper())\n"
+                "    def inner(value: annotation() = default()):\n"
+                "        body()\n"
+            ),
+            source_epoch="source-epoch",
+        )
+        callers = {
+            item["relation"]["target_name"]: item["subject"]["qualified_name"]
+            for item in batch["observations"]
+            if item["observation_kind"] == "relation"
+            and item["relation"]["kind"] == "calls"
+        }
+        for target in ("deco", "helper", "annotation", "default"):
+            self.assertEqual("outer", callers[target])
+        self.assertEqual("outer.inner", callers["body"])
+
+    def test_supplied_provider_adapters_reject_cross_source_attribution(self) -> None:
+        ctags = observe_source(
+            repo="demo",
+            path="src/current.py",
+            content="def current():\n    pass\n",
+            source_epoch="epoch",
+            provider_batch=normalize_provider_observations(
+                repo="demo",
+                path="src/current.py",
+                content="def current():\n    pass\n",
+                source_epoch="epoch",
+                language="python",
+                provider_id="fixture",
+                provider_version="1",
+                observations=[],
+            ),
+        )
+        self.assertEqual([], ctags["observations"])
+
+        foreign_ctags = observe_source(
+            repo="demo",
+            path="src/current.py",
+            content="def current():\n    pass\n",
+            source_epoch="sha256:" + "0" * 64,
+            provider_batch={
+                "schema": MACHINE_OBSERVATION_SCHEMA,
+                "version": "0.1.0",
+                "generated_at": "2026-08-26T12:00:00+00:00",
+                "provider": {"id": "universal-ctags", "owner": "abyss-machine", "config_digest": "sha256:" + "1" * 64},
+                "source": {"owner": "abyss-machine", "ref": "repo:demo/src/current.py", "epoch": "sha256:" + "0" * 64, "binding_status": "bound"},
+                "provenance": {"evidence_ref": "receipt:ctags", "binding_status": "bound"},
+                "lineage": {"derived_from_source": True, "canonical_source": "owner_repository", "observation_consumer": "aoa-kag"},
+                "semantic": {"status": "unproven", "proof_owner": "aoa-evals", "admission_is_not_semantic_proof": True},
+                "policy": {"machine_layer_materializes_no_kag_truth": True, "unbound_source_or_provenance_is_not_admitted": True},
+                "records": [{"_type": "tag", "name": "foreign", "kind": "function", "line": 1, "path": "src/foreign.py"}],
+                "record_count": 1,
+            },
+        )
+        self.assertEqual([], foreign_ctags["observations"])
+        self.assertEqual("foreign_ctags_path", foreign_ctags["diagnostics"][0]["kind"])
+
+    def test_external_provider_shapes_keep_only_bound_relations_and_locations(self) -> None:
+        common = {
+            "repo": "demo", "path": "src/current.ts", "content": "function current() {}\n",
+            "source_epoch": "epoch", "language": "typescript",
+        }
+        tree = observe_tree_sitter_source(
+            **common, provider_version="1",
+            captures={"captures": [{
+                "name": "call.function", "text": "helper", "qualified_name": "helper",
+                "node": {"startPosition": {"row": 0, "column": 0}, "endPosition": {"row": 0, "column": 6}},
+            }]},
+        )
+        self.assertEqual([], tree["observations"])
+        self.assertEqual("unbound_tree_sitter_relation", tree["diagnostics"][0]["kind"])
+        imported = observe_tree_sitter_source(
+            **common, provider_version="1",
+            captures={"captures": [{
+                "name": "import.module", "text": "helper", "qualified_name": "helper", "source_scope": "current",
+                "node": {"startPosition": {"row": 0, "column": 0}, "endPosition": {"row": 0, "column": 6}},
+            }]},
+        )
+        self.assertEqual("imports", imported["observations"][0]["relation"]["kind"])
+        foreign_scip = observe_scip_source(
+            **common, provider_version="1",
+            scip_json={"documents": [{"relativePath": "src/foreign.ts", "occurrences": []}]},
+        )
+        self.assertEqual([], foreign_scip["observations"])
+        self.assertEqual("missing_scip_document", foreign_scip["diagnostics"][0]["kind"])
+        lsp = observe_lsp_document_symbols(
+            **common, provider_version="1",
+            result=[{"name": "current", "containerName": "Module", "kind": 12, "location": {"range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 7}}}}],
+        )
+        self.assertEqual("Module.current", lsp["observations"][0]["subject"]["qualified_name"])
+
+    def test_adjacent_observations_keep_path_and_digest_identity(self) -> None:
+        sarif = observe_sarif(
+            repo="demo", path="src/current.py", content="pass\n", source_epoch="epoch",
+            language="python", provider_id="semgrep", provider_version="1",
+            sarif={"runs": [{"results": [
+                {"ruleId": "foreign", "locations": [{"physicalLocation": {"artifactLocation": {"uri": "src/foreign.py"}, "region": {"startLine": 1}}}]},
+                {"ruleId": "current", "locations": [{"physicalLocation": {"artifactLocation": {"uri": "src/current.py"}, "region": {"startLine": 1}}}]},
+            ]}]},
+        )
+        self.assertEqual(["current"], [item["subject"]["label"] for item in sarif["observations"]])
+        provenance = observe_artifact_provenance(
+            repo="demo", path="bundle.intoto.jsonl", content="{}", source_epoch="epoch",
+            provider_id="in-toto", provider_version="1",
+            statement={"subject": [
+                {"name": "bundle", "digest": {"sha256": "a" * 64}},
+                {"name": "bundle", "digest": {"sha256": "b" * 64}},
+            ]},
+        )
+        identities = {item["subject"]["qualified_name"] for item in provenance["observations"]}
+        self.assertEqual(2, len(identities))
+
+    def test_scip_relations_keep_enclosing_subject_distinct_from_target(self) -> None:
+        caller_symbol = "scip-typescript npm demo 1 caller()."
+        helper_symbol = "scip-typescript npm demo 1 helper()."
+        batch = observe_scip_source(
+            repo="demo", path="src/current.ts",
+            content="function caller() { helper(); }\nfunction helper() {}\n",
+            source_epoch="epoch", language="typescript", provider_version="1",
+            scip_json={"documents": [{
+                "relativePath": "src/current.ts",
+                "symbols": [
+                    {"symbol": caller_symbol, "displayName": "caller", "kind": "Function"},
+                    {"symbol": helper_symbol, "displayName": "helper", "kind": "Function"},
+                ],
+                "occurrences": [
+                    {"range": [0, 9, 15], "symbol": caller_symbol, "symbolRoles": 1},
+                    {"range": [0, 20, 26], "symbol": helper_symbol, "enclosingSymbol": caller_symbol},
+                    {"range": [1, 9, 15], "symbol": helper_symbol, "symbolRoles": 1},
+                ],
+            }]},
+        )
+        relation = next(
+            item for item in batch["observations"]
+            if item["observation_kind"] == "relation"
+        )
+        self.assertEqual("caller", relation["subject"]["qualified_name"])
+        self.assertEqual("helper", relation["relation"]["target_name"])
+        self.assertNotEqual(
+            relation["subject"]["symbol_id"],
+            relation["relation"]["target_symbol_id"],
+        )
+
+    def test_repository_relations_respect_module_and_relative_import_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "pkg").mkdir()
+            (root / "pkg" / "caller.py").write_text(
+                "from .helper import helper\n\ndef caller():\n    helper()\n",
+                encoding="utf-8",
+            )
+            (root / "pkg" / "helper.py").write_text(
+                "def helper():\n    return 1\n",
+                encoding="utf-8",
+            )
+            (root / "other.py").write_text(
+                "def accidental():\n    helper()\n",
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        artifact_by_path = {
+            item["path"]: item for item in family["artifact"]["entries"]
+        }
+        imports = [
+            item for item in family["relation"]["entries"]
+            if item["relation_kind"] == "imports"
+        ]
+        self.assertTrue(
+            any(
+                item["to_id"] == artifact_by_path["pkg/helper.py"]["id"]
+                for item in imports
+            )
+        )
+        entities = {
+            item["semantic_key"]: item for item in family["entity"]["entries"]
+        }
+        calls = [
+            item for item in family["relation"]["entries"]
+            if item["relation_kind"] == "calls"
+        ]
+        accidental_id = entities["python:function:accidental"]["id"]
+        helper_id = entities["python:function:helper"]["id"]
+        self.assertFalse(
+            any(
+                item["from_id"] == accidental_id and item["to_id"] == helper_id
+                for item in calls
+            )
+        )
+
+    def test_empty_code_batch_keeps_profile_and_incremental_epoch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            subprocess.run(("git", "init", "-q"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=root, check=True)
+            (root / "empty.py").write_text("", encoding="utf-8")
+            (root / "stable.py").write_text("def stable():\n    return 1\n", encoding="utf-8")
+            (root / "changed.py").write_text("def changed():\n    return 1\n", encoding="utf-8")
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "initial"), cwd=root, check=True)
+            before_source = build_index(root)
+            before_family = build_repository_indexes(before_source, repo_root=root)
+            (root / "changed.py").write_text("def changed():\n    return 2\n", encoding="utf-8")
+            subprocess.run(("git", "add", "changed.py"), cwd=root, check=True)
+            after_source = build_index_incremental(root, before_source)
+            after_family = build_repository_indexes_incremental(
+                after_source, before_family, repo_root=root,
+            )
+
+        empty_artifact = next(
+            item for item in after_family["artifact"]["entries"]
+            if item["path"] == "empty.py"
+        )
+        self.assertEqual("python", empty_artifact["code_observation_language"])
+        self.assertEqual("python-ast@1", empty_artifact["code_observation_provider_ref"])
+        stable_record = next(
+            item for item in after_source["records"]
+            if item["identity"]["path"] == "stable.py"
+        )
+        # Rebuild the family returns a new structure view without mutating the
+        # canonical source index object; recover it through the unchanged file's
+        # provider-qualified anchor.
+        stable_anchor = next(
+            item for item in after_family["anchor"]["entries"]
+            if item["source_record_id"] == stable_record["identity"]["id"]
+            and item.get("language") == "python"
+        )
+        self.assertEqual(after_source["repo"]["git_ref"], stable_anchor["source_epoch"])
 
     def test_typescript_hybrid_provider_outputs_share_one_envelope(self) -> None:
         source = "export function render(value: string): string { return value; }\n"
@@ -2884,7 +3172,7 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             },
             "source": {
                 "owner": "abyss-machine",
-                "ref": "git:abyss-machine/source",
+                "ref": "repo:demo/src/demo.py",
                 "epoch": epoch,
                 "binding_status": "bound",
             },

@@ -400,9 +400,30 @@ class _PythonObservationVisitor(ast.NodeVisitor):
         kind: str,
     ) -> None:
         self._symbol(node, node.name, kind)
+        # Decorators, defaults and annotations are evaluated in the enclosing
+        # scope, before the function body owns execution.
+        for decorator in node.decorator_list:
+            self.visit(decorator)
+        for default in (*node.args.defaults, *node.args.kw_defaults):
+            if default is not None:
+                self.visit(default)
+        for argument in (
+            *node.args.posonlyargs,
+            *node.args.args,
+            *node.args.kwonlyargs,
+        ):
+            if argument.annotation is not None:
+                self.visit(argument.annotation)
+        if node.args.vararg is not None and node.args.vararg.annotation is not None:
+            self.visit(node.args.vararg.annotation)
+        if node.args.kwarg is not None and node.args.kwarg.annotation is not None:
+            self.visit(node.args.kwarg.annotation)
+        if node.returns is not None:
+            self.visit(node.returns)
         self.scope.append(node.name)
         self.scope_kinds.append("function")
-        self.generic_visit(node)
+        for statement in node.body:
+            self.visit(statement)
         self.scope_kinds.pop()
         self.scope.pop()
 
@@ -1295,7 +1316,10 @@ _JS_ARROW_RE = re.compile(
     r"(?:\:\s*[^=;{]+?)?=>"
 )
 _JS_METHOD_RE = re.compile(
-    r"(?<![\w$])(?:async\s+)?([A-Za-z_$][\w$]*)\s*\("
+    r"(?:^|[{};])\s*"
+    r"(?:(?:public|private|protected|static|readonly|abstract|override|async|get|set)\s+)*"
+    r"([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*"
+    r"(?:\:\s*[^={;]+)?(?=\{|$)"
 )
 _JS_INTERFACE_RE = re.compile(
     r"\b(?:export\s+)?interface\s+([A-Za-z_$][\w$]*)"
@@ -1372,6 +1396,42 @@ def _mask_javascript_line(line: str, state: dict[str, Any] | None = None) -> str
             in_block_comment = True
             index += 2
             continue
+        elif char == "/":
+            # A bounded lexical fallback must not count braces inside regular
+            # expression literals.  Treat slash as a regex opener only in
+            # expression-start positions; division remains visible.
+            prefix = "".join(chars[:index]).rstrip()
+            regex_start = not prefix or prefix.endswith(
+                ("=", "(", "[", "{", ",", ":", ";", "!", "&", "|", "?", "return")
+            )
+            if regex_start:
+                cursor = index + 1
+                regex_escaped = False
+                in_class = False
+                regex_closed = False
+                while cursor < len(chars):
+                    current = chars[cursor]
+                    if regex_escaped:
+                        regex_escaped = False
+                    elif current == "\\":
+                        regex_escaped = True
+                    elif current == "[":
+                        in_class = True
+                    elif current == "]":
+                        in_class = False
+                    elif current == "/" and not in_class:
+                        for masked_index in range(index, cursor + 1):
+                            chars[masked_index] = " "
+                        cursor += 1
+                        while cursor < len(chars) and chars[cursor].isalpha():
+                            chars[cursor] = " "
+                            cursor += 1
+                        index = cursor
+                        regex_closed = True
+                        break
+                    cursor += 1
+                if regex_closed:
+                    continue
         index += 1
     mask_state["in_block_comment"] = in_block_comment
     mask_state["quote"] = quote
@@ -1409,6 +1469,7 @@ class _JavaScriptObservationCollector:
         self.symbols_by_label: dict[str, list[dict[str, Any]]] = {}
         self.observations: list[dict[str, Any]] = []
         self.mask_state: dict[str, Any] = {}
+        self.pending_frames: list[tuple[str, str]] = []
 
     def _roles_for(self, name: str, symbol_kind: str) -> list[str]:
         if symbol_kind in {"function", "method", "class"} and (
@@ -1516,6 +1577,8 @@ class _JavaScriptObservationCollector:
         return None
 
     def _record_imports(self, line: str, masked: str, line_number: int) -> None:
+        if re.search(r"\b(?:import|require)\b", masked) is None:
+            return
         match = _JS_IMPORT_FROM_RE.match(line)
         if match is not None:
             bindings, module = match.groups()
@@ -1531,9 +1594,16 @@ class _JavaScriptObservationCollector:
                 if namespace:
                     names.append((namespace.group(1), "*"))
             else:
-                default_name = bindings.split(",", 1)[0].strip()
+                default_name, separator, remainder = bindings.partition(",")
+                default_name = default_name.strip()
                 if default_name:
                     names.append((default_name, "default"))
+                if separator and remainder.strip().startswith("{"):
+                    inside = remainder.strip()[1:-1]
+                    for item in inside.split(","):
+                        parts = re.split(r"\s+as\s+", item.strip())
+                        if item.strip():
+                            names.append((parts[-1].strip(), parts[0].strip()))
             for name, imported in names:
                 column = max(line.find(name) + 1, 1)
                 subject = self._symbol(name, "import", line_number, column)
@@ -1568,7 +1638,7 @@ class _JavaScriptObservationCollector:
         for match in _JS_CALL_RE.finditer(masked):
             target_name = re.sub(r"\s+", "", match.group(1))
             label = target_name.rsplit(".", 1)[-1]
-            if label in _JS_RESERVED_CALL_NAMES:
+            if label in _JS_RESERVED_CALL_NAMES or target_name.split(".", 1)[0] in _JS_RESERVED_CALL_NAMES:
                 continue
             if any(start <= match.start() < end for start, end in declaration_spans):
                 continue
@@ -1604,6 +1674,17 @@ class _JavaScriptObservationCollector:
             while self.scope and self.brace_depth < int(self.scope[-1]["body_depth"]):
                 self.scope.pop()
 
+            if self.pending_frames:
+                opening = masked.find("{")
+                if opening >= 0:
+                    for name, kind in self.pending_frames:
+                        self._push_frame(
+                            name,
+                            kind,
+                            self.brace_depth + masked[:opening].count("{") + 1,
+                        )
+                    self.pending_frames.clear()
+
             self._record_imports(line, masked, line_number)
             declaration_spans: list[tuple[int, int]] = []
             line_subject: dict[str, Any] | None = None
@@ -1625,6 +1706,8 @@ class _JavaScriptObservationCollector:
                 opening_depth = self._open_depth(masked, class_match.end())
                 if opening_depth is not None:
                     self._push_frame(name, "class", opening_depth)
+                else:
+                    self.pending_frames.append((name, "class"))
                 declaration_spans.append((class_match.start(), class_match.end()))
 
             interface_match = _JS_INTERFACE_RE.search(masked)
@@ -1648,8 +1731,7 @@ class _JavaScriptObservationCollector:
                 self._symbol(name, "type", line_number, type_match.start(1) + 1)
                 declaration_spans.append((type_match.start(), type_match.end()))
 
-            function_match = _JS_FUNCTION_RE.search(masked)
-            if function_match is not None:
+            for function_match in _JS_FUNCTION_RE.finditer(masked):
                 name = function_match.group(1)
                 column = function_match.start(1) + 1
                 kind = (
@@ -1660,7 +1742,12 @@ class _JavaScriptObservationCollector:
                 line_subject = self._symbol(name, kind, line_number, column)
                 opening_depth = self._open_depth(masked, function_match.end())
                 if opening_depth is not None:
-                    self._push_frame(name, kind, opening_depth)
+                    opening = masked.find("{", function_match.end())
+                    closing = masked.find("}", opening + 1)
+                    if closing < 0:
+                        self._push_frame(name, kind, opening_depth)
+                else:
+                    self.pending_frames.append((name, kind))
                 declaration_spans.append((function_match.start(), function_match.end()))
 
             arrow_match = _JS_ARROW_RE.search(masked)
@@ -1681,7 +1768,7 @@ class _JavaScriptObservationCollector:
             if self.scope and self.scope[-1]["kind"] == "class":
                 for method_match in _JS_METHOD_RE.finditer(masked):
                     name = method_match.group(1)
-                    if name in _JS_RESERVED_CALL_NAMES:
+                    if name in (_JS_RESERVED_CALL_NAMES - {"constructor"}):
                         continue
                     if any(start <= method_match.start() < end for start, end in declaration_spans):
                         continue
@@ -1690,8 +1777,9 @@ class _JavaScriptObservationCollector:
                     opening_depth = self._open_depth(masked, method_match.end())
                     if opening_depth is not None:
                         self._push_frame(name, "method", opening_depth)
+                    else:
+                        self.pending_frames.append((name, "method"))
                     declaration_spans.append((method_match.start(), method_match.end()))
-                    break
 
             self._record_calls(
                 masked,
@@ -1790,6 +1878,7 @@ def parse_ctags_json_observations(
     payload: str | bytes,
     *,
     language: str,
+    path: str | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Parse Ctags JSON as supplied observations; never infer admission."""
 
@@ -1814,6 +1903,18 @@ def parse_ctags_json_observations(
             continue
         if not isinstance(tag, Mapping) or tag.get("_type") != "tag":
             continue
+        if path is not None and tag.get("path") is not None:
+            expected_path = _normalized_path(path, field_name="path")
+            tag_path = _normalized_path(str(tag["path"]), field_name="ctags path")
+            if tag_path != expected_path and not tag_path.endswith(f"/{expected_path}"):
+                diagnostics.append(
+                    {
+                        "kind": "foreign_ctags_path",
+                        "message": f"tag path {tag_path!r} does not match {expected_path!r}",
+                        "line": line_number,
+                    }
+                )
+                continue
         name = tag.get("name")
         kind = _CTAGS_SYMBOL_KINDS.get(str(tag.get("kind") or ""))
         tag_line = tag.get("line")
@@ -1875,6 +1976,7 @@ def observe_ctags_json_source(
     observations, diagnostics = parse_ctags_json_observations(
         ctags_json,
         language=language,
+        path=path,
     )
     return normalize_provider_observations(
         repo=repo,
@@ -2024,18 +2126,29 @@ def parse_tree_sitter_captures(
         kind = _symbol_kind(capture.get("symbol_kind") or next((part for part in reversed(parts) if part not in {"definition", "reference", "name"}), None))
         qualified_name = str(capture.get("qualified_name") or label)
         semantic_key = f"{language}:tree-sitter:{capture_name}:{qualified_name}:{occurrence['start_line']}:{occurrence['start_column']}"
+        source_scope = str(capture.get("source_scope") or "").strip()
+        if is_reference and not source_scope:
+            diagnostics.append({
+                "kind": "unbound_tree_sitter_relation",
+                "message": f"capture {index} has no enclosing source scope",
+            })
+            continue
         observations.append({
             "observation_kind": "relation" if is_reference else "symbol",
             "semantic_key": semantic_key,
             "subject": {
-                "qualified_name": str(capture.get("source_scope") or qualified_name),
+                "qualified_name": source_scope or qualified_name,
                 "symbol_kind": kind,
                 "label": label,
                 **({"symbol_id": str(capture["symbol_id"])} if capture.get("symbol_id") else {}),
             },
             "occurrence": occurrence,
             "relation": ({
-                "kind": "calls" if "call" in parts else "references",
+                "kind": (
+                    "calls" if "call" in parts
+                    else "imports" if "import" in parts
+                    else "references"
+                ),
                 "target_name": qualified_name,
                 "resolution": "resolved_local" if capture.get("target_symbol_id") else "unresolved",
                 **({"target_symbol_id": str(capture["target_symbol_id"])} if capture.get("target_symbol_id") else {}),
@@ -2082,7 +2195,12 @@ def parse_scip_json_document(
     documents = index.get("documents") if isinstance(index.get("documents"), list) else [index]
     document = next((item for item in documents if isinstance(item, Mapping) and str(item.get("relativePath", item.get("relative_path", ""))) == path), None)
     if document is None and len(documents) == 1 and isinstance(documents[0], Mapping):
-        document = documents[0]
+        declared_path = str(
+            documents[0].get("relativePath", documents[0].get("relative_path", ""))
+            or ""
+        )
+        if not declared_path:
+            document = documents[0]
     if not isinstance(document, Mapping):
         return [], [{"kind": "missing_scip_document", "message": f"no SCIP document for {path}"}]
     symbol_info = {
@@ -2110,10 +2228,32 @@ def parse_scip_json_document(
         is_definition = bool(roles & 1)
         qualified_name = display_name or label or symbol
         kind = _symbol_kind(info.get("kind"), fallback="symbol")
+        source_symbol = str(
+            occurrence_data.get("enclosingSymbol")
+            or occurrence_data.get("enclosing_symbol")
+            or occurrence_data.get("sourceSymbol")
+            or occurrence_data.get("source_symbol")
+            or ""
+        ).strip()
+        if not is_definition and not source_symbol:
+            diagnostics.append({
+                "kind": "unbound_scip_relation",
+                "message": f"occurrence {ordinal} has no enclosing source symbol",
+            })
+            continue
+        source_info = symbol_info.get(source_symbol, {})
+        source_display_name = str(
+            source_info.get("displayName") or source_info.get("display_name") or ""
+        ).strip()
         observations.append({
             "observation_kind": "symbol" if is_definition else "relation",
             "semantic_key": f"{language}:scip:{symbol}:{ordinal}:{occurrence['start_line']}:{occurrence['start_column']}",
-            "subject": {"qualified_name": qualified_name if is_definition else path, "symbol_kind": kind, "label": label, "symbol_id": symbol},
+            "subject": {
+                "qualified_name": qualified_name if is_definition else (source_display_name or source_symbol),
+                "symbol_kind": kind if is_definition else _symbol_kind(source_info.get("kind")),
+                "label": label if is_definition else (source_display_name or source_symbol),
+                "symbol_id": symbol if is_definition else source_symbol,
+            },
             "occurrence": occurrence,
             "relation": None if is_definition else {"kind": "references", "target_name": qualified_name, "resolution": "resolved_local" if symbol in symbol_info else "unresolved", "target_symbol_id": symbol} if symbol in symbol_info else {"kind": "references", "target_name": qualified_name, "resolution": "unresolved"},
             "confidence": {"evidence_class": "observed", "value": 0.95},
@@ -2166,11 +2306,20 @@ def parse_lsp_document_symbols(
             if not isinstance(item, Mapping):
                 continue
             name = str(item.get("name") or "").strip()
-            occurrence = _provider_occurrence(item.get("selectionRange") or item.get("range"), zero_based=True)
+            location = item.get("location")
+            location_range = location.get("range") if isinstance(location, Mapping) else None
+            occurrence = _provider_occurrence(
+                item.get("selectionRange") or item.get("range") or location_range,
+                zero_based=True,
+            )
             if not name or occurrence is None:
                 diagnostics.append({"kind": "invalid_lsp_symbol", "message": f"symbol {ordinal} lacks name or range"})
                 continue
-            qualified_name = ".".join((*parents, name))
+            container_name = str(item.get("containerName") or "").strip()
+            effective_parents = parents or tuple(
+                part for part in container_name.split(".") if part
+            )
+            qualified_name = ".".join((*effective_parents, name))
             raw_kind = item.get("kind")
             kind_name = _LSP_SYMBOL_KINDS.get(raw_kind, str(raw_kind or "symbol")) if isinstance(raw_kind, int) else raw_kind
             observations.append({
@@ -2239,6 +2388,23 @@ def observe_sarif(
             rule_id = str(result.get("ruleId") or result.get("rule_id") or "unidentified-rule")
             locations = result.get("locations") if isinstance(result.get("locations"), list) else []
             physical = locations[0].get("physicalLocation", {}) if locations and isinstance(locations[0], Mapping) else {}
+            artifact_location = (
+                physical.get("artifactLocation", {})
+                if isinstance(physical, Mapping)
+                else {}
+            )
+            artifact_uri = str(
+                artifact_location.get("uri") or ""
+                if isinstance(artifact_location, Mapping)
+                else ""
+            ).strip()
+            if artifact_uri:
+                normalized_uri = artifact_uri.removeprefix("file://").lstrip("/")
+                expected_path = _normalized_path(path, field_name="path")
+                if normalized_uri != expected_path and not normalized_uri.endswith(
+                    f"/{expected_path}"
+                ):
+                    continue
             region = physical.get("region", {}) if isinstance(physical, Mapping) else {}
             observations.append({
                 "observation_kind": "symbol",
@@ -2309,10 +2475,19 @@ def observe_artifact_provenance(
         if not isinstance(subject, Mapping):
             continue
         name = str(subject.get("name") or "").strip()
+        digest = subject.get("digest")
+        digest_items = sorted(
+            (str(algorithm).lower(), str(value).lower())
+            for algorithm, value in digest.items()
+        ) if isinstance(digest, Mapping) else []
         if name:
+            digest_identity = ",".join(
+                f"{algorithm}:{value}" for algorithm, value in digest_items
+            )
+            qualified_name = f"{name}@{digest_identity}" if digest_identity else name
             observations.append({
-                "observation_kind": "symbol", "semantic_key": f"provenance:subject:{index}:{name}",
-                "subject": {"qualified_name": name, "symbol_kind": "artifact_subject", "label": name},
+                "observation_kind": "symbol", "semantic_key": f"provenance:subject:{index}:{qualified_name}",
+                "subject": {"qualified_name": qualified_name, "symbol_kind": "artifact_subject", "label": name},
                 "occurrence": _adjacent_occurrence(None), "relation": None,
                 "confidence": {"evidence_class": "observed", "value": 1.0},
             })
@@ -2482,6 +2657,12 @@ def validate_machine_provider_binding(
         raise ValueError("machine observation envelope source epoch mismatch")
     if source.get("binding_status") != "bound":
         raise ValueError("machine observation envelope source is not bound")
+    expected_source_ref = f"repo:{repo}/{_normalized_path(path, field_name='path')}"
+    if source.get("ref") != expected_source_ref:
+        raise ValueError(
+            "machine observation envelope source ref mismatch: "
+            f"expected={expected_source_ref!r} actual={source.get('ref')!r}"
+        )
     if not _machine_evidence_ref(provenance.get("evidence_ref")):
         raise ValueError("machine observation envelope provenance is not bound")
     if provenance.get("binding_status") != "bound":
@@ -2521,6 +2702,7 @@ def validate_machine_provider_binding(
         parsed, diagnostics = parse_ctags_json_observations(
             ctags_lines,
             language="python",
+            path=path,
         )
         normalized_records = parsed
 
@@ -2997,10 +3179,20 @@ def validate_provider_observation_batch(
             raise ValueError(f"provider observation {index} observation_kind is invalid")
         if observation.get("capability_class") != capability_class:
             raise ValueError(f"provider observation {index} capability class is invalid")
-        _validated_canonical_subject(
+        canonical_subject = _validated_canonical_subject(
             observation.get("subject"),
             observation_index=index,
         )
+        expected_symbol_id = _provider_symbol_id(
+            str(repo),
+            expected_lineage,
+            str(language),
+            canonical_subject,
+        )
+        if canonical_subject["symbol_id"] != expected_symbol_id:
+            raise ValueError(
+                f"provider observation {index} subject id is not bound to its source identity"
+            )
         _validate_occurrence(observation.get("occurrence"), observation_index=index)
         if observation.get("observation_kind") == "symbol" and observation.get("relation") is not None:
             raise ValueError(
@@ -3742,10 +3934,19 @@ def plan_observation_delta(
     declared_observation_ids = (
         {str(observation_id) for observation_id in stable_universe_observation_ids}
         if stable_universe_observation_ids is not None
-        else before_ids | after_ids
+        else before_ids
+        | after_ids
+        | {
+            str(observation.get("observation_id"))
+            for batch in dependency_batches or ()
+            for observation in batch.get("observations", [])
+            if isinstance(observation, Mapping) and observation.get("observation_id")
+        }
     )
     affected_path_set = set(affected_paths) & declared_paths
-    affected_observation_set = changed_ids & declared_observation_ids
+    affected_observation_set = (
+        changed_ids | set(affected_graph["affected_observation_ids"])
+    ) & declared_observation_ids
     if declared_observation_ids:
         blast_radius_ratio = len(affected_observation_set) / len(declared_observation_ids)
         universe_basis = "observation_ids"

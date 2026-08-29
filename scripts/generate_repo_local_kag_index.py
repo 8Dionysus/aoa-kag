@@ -3259,6 +3259,72 @@ def build_repository_indexes(
         if source_id in reusable_structure and provider_batch is None:
             refs = record["refs"]
             refs.update(copy.deepcopy(reusable_structure[source_id]))
+            reused_batch = refs.get("code_observation")
+            if isinstance(reused_batch, dict):
+                source = reused_batch.get("source")
+                provider = reused_batch.get("provider")
+                if (
+                    isinstance(source, dict)
+                    and isinstance(provider, dict)
+                    and all(
+                        source.get(field)
+                        for field in ("lineage_path", "content_digest")
+                    )
+                    and all(
+                        provider.get(field)
+                        for field in ("id", "version", "config_digest")
+                    )
+                ):
+                    current_epoch = str(
+                        source_index["repo"].get("git_ref")
+                        or source_index["repo"].get("source_ref")
+                        or GIT_INDEX_SOURCE_REF
+                    )
+                    source["source_epoch"] = current_epoch
+                    parser_ref = f"{provider['id']}@{provider['version']}"
+                    reused_batch["batch_id"] = qualified_id(
+                        repo,
+                        "code-observation-batch",
+                        (
+                            f"{source['lineage_path']}:{current_epoch}:"
+                            f"{source['content_digest']}:{parser_ref}:"
+                            f"{provider['config_digest']}"
+                        ),
+                    )
+                    reused_batch["currentness"] = {
+                        "state": (
+                            "degraded"
+                            if reused_batch.get("parse_status") == "degraded"
+                            else "unparseable"
+                            if reused_batch.get("parse_status") == "unparseable"
+                            else "current"
+                        ),
+                        "batch_id": reused_batch["batch_id"],
+                        "source_epoch": current_epoch,
+                        "current_source_epoch": current_epoch,
+                        "content_digest": source["content_digest"],
+                        "current_content_digest": source["content_digest"],
+                        "provider": {
+                            "id": provider["id"],
+                            "version": provider["version"],
+                            "config_digest": provider["config_digest"],
+                        },
+                        "reasons": (
+                            ["diagnostic_degradation"]
+                            if reused_batch.get("parse_status") == "degraded"
+                            else ["source_unparseable"]
+                            if reused_batch.get("parse_status") == "unparseable"
+                            else []
+                        ),
+                    }
+                    for anchor in refs.get("anchor_refs", []):
+                        if (
+                            isinstance(anchor, dict)
+                            and anchor.get("provider_ref") == parser_ref
+                            and anchor.get("language") == source.get("language")
+                        ):
+                            anchor["source_epoch"] = current_epoch
+                            anchor["currentness_state"] = reused_batch["currentness"]["state"]
             continue
         content = b""
         if repo_root is not None:
