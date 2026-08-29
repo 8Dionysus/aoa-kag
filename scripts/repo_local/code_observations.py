@@ -2072,10 +2072,14 @@ def parse_scip_json_document(
             diagnostics.append({"kind": "invalid_scip_occurrence", "message": f"occurrence {ordinal} lacks symbol or range"})
             continue
         info = symbol_info.get(symbol, {})
-        label = str(info.get("displayName") or info.get("display_name") or symbol.rstrip("#./").rsplit("/", 1)[-1].rsplit("#", 1)[-1])
+        display_name = str(info.get("displayName") or info.get("display_name") or "").strip()
+        descriptor = symbol.rstrip("#./").rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+        descriptor = descriptor.removesuffix(".").removesuffix("()")
+        descriptor = descriptor.strip("`")
+        label = display_name or descriptor
         roles = int(occurrence_data.get("symbolRoles", occurrence_data.get("symbol_roles", 0)) or 0)
         is_definition = bool(roles & 1)
-        qualified_name = str(info.get("displayName") or info.get("display_name") or symbol)
+        qualified_name = display_name or label or symbol
         kind = _symbol_kind(info.get("kind"), fallback="symbol")
         observations.append({
             "observation_kind": "symbol" if is_definition else "relation",

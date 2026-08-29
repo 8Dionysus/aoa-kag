@@ -2715,6 +2715,32 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual("render", batch["observations"][0]["subject"]["label"])
         self.assertEqual(1, batch["observations"][0]["occurrence"]["start_line"])
 
+    def test_scip_protobuf_json_snake_case_derives_descriptor_label(self) -> None:
+        batch = observe_scip_source(
+            repo="aoa-dashboard",
+            path="render.ts",
+            content="export function render(): string { return ''; }\n",
+            source_epoch="git:scip-protobuf-json",
+            language="typescript",
+            provider_version="0.4.0",
+            scip_json={
+                "documents": [{
+                    "relative_path": "render.ts",
+                    "symbols": [{
+                        "symbol": "scip-typescript npm . . `render.ts`/render().",
+                        "display_name": "",
+                        "kind": 0,
+                    }],
+                    "occurrences": [{
+                        "range": [0, 16, 22],
+                        "symbol": "scip-typescript npm . . `render.ts`/render().",
+                        "symbol_roles": 1,
+                    }],
+                }],
+            },
+        )
+        self.assertEqual("render", batch["observations"][0]["subject"]["label"])
+
     def test_g59_machine_envelope_is_bound_but_remains_unadmitted(self) -> None:
         epoch = "sha256:" + ("0" * 64)
         envelope = {
