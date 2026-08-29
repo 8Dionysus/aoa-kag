@@ -4973,6 +4973,20 @@ def build_full_preparation_coverage(repo_root: Path) -> dict[str, Any]:
     stable. All ordinary portable-family loads still require that receipt.
     """
     coverage_generation = coverage_generation_module()
+    try:
+        from scripts.generate_repo_local_kag_index import (
+            DEFAULT_OUTPUT as SOURCE_INDEX_OUTPUT,
+            build_index,
+            build_repository_indexes,
+        )
+        from scripts.repo_local.portable_family import build_portable_family
+    except ImportError:  # pragma: no cover - direct script execution
+        from generate_repo_local_kag_index import (  # type: ignore
+            DEFAULT_OUTPUT as SOURCE_INDEX_OUTPUT,
+            build_index,
+            build_repository_indexes,
+        )
+        from repo_local.portable_family import build_portable_family  # type: ignore
     expected_order = tuple(coverage_generation.provider_repo_order())
     configured = coverage_generation.configured_owner_roots()
     if tuple(owner for owner, _root in configured) != expected_order:
@@ -4996,7 +5010,32 @@ def build_full_preparation_coverage(repo_root: Path) -> dict[str, Any]:
                     f"full preparation coverage external pin mismatch for {owner}: "
                     f"expected {expected_ref or '<missing>'}, got {observed_ref}"
                 )
-            portable_bundle = None
+            # A central runtime change can legitimately make a checked-in
+            # compatibility projection unreadable before every owner has
+            # regenerated it.  The full-owner route must still evaluate the
+            # exact pinned owner source with the candidate runtime instead of
+            # flattening that state into ``migration-needed`` or trusting an
+            # older projection.  Build the portable family in memory; no
+            # provider checkout is mutated and the cache remains bound to the
+            # provider identities verified above.
+            source_index = build_index(
+                owner_root,
+                output=owner_root / SOURCE_INDEX_OUTPUT,
+            )
+            repository_family = build_repository_indexes(
+                source_index,
+                source_index_path=SOURCE_INDEX_OUTPUT,
+                repo_root=owner_root,
+            )
+            transient_manifest, _transient_shards = build_portable_family(
+                source_index,
+                repository_family,
+            )
+            portable_bundle = (
+                source_index,
+                repository_family,
+                transient_manifest,
+            )
         rebuilt, _timing = coverage_generation._build_owner_coverage(
             owner,
             owner_root,
@@ -5077,7 +5116,12 @@ def load_preparation_coverage_cache(
     return build_preparation_coverage_from_payload(
         repo_root,
         payload,
-        verify_external_manifests=True,
+        # The private cache is already bound above to the exact provider heads,
+        # trees, worktree identities, and candidate runtime digest.  Its
+        # external rows may be transient projections deliberately newer than
+        # the checked-in provider manifests, so re-check the identity envelope
+        # rather than incorrectly requiring those older manifests here.
+        verify_external_manifests=False,
     )
 
 
@@ -5373,13 +5417,21 @@ def _current_budget_receipt_path(repo_root: Path) -> Path:
     manifest_path = repo_root / PORTABLE_FAMILY_PATHS[0]
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        digest = manifest["family_identity"]["content_digest"]
+        schema_version = manifest.get("schema_version")
+        if schema_version == "aoa-repo-local-kag-family-manifest-v1":
+            digest = manifest["family_identity"]["content_digest"]
+        elif schema_version == "aoa-repo-local-kag-distribution-manifest-v1":
+            digest = manifest["distribution_identity"]["corpus_digest"]
+        else:
+            raise KeyError("unsupported portable-family manifest schema")
     except (FileNotFoundError, KeyError, TypeError, json.JSONDecodeError) as exc:
         raise PreparationFailure(
             "cannot resolve the current portable-family budget receipt path",
             failure_type="budget_receipt_generation_failure",
             action_class="code_fix",
         ) from exc
+    if isinstance(digest, str):
+        digest = digest.removeprefix("sha256:")
     if (
         not isinstance(digest, str)
         or len(digest) != 64
@@ -5553,11 +5605,30 @@ def final_confirmation(
         ("python", "scripts/validate_kag.py", "--scope", "local"),
         repo_root=repo_root,
     )
-    if git_bytes(repo_root, "diff", "--binary", "--no-ext-diff", "--no-textconv"):
+    unstaged = git_bytes(
+        repo_root,
+        "diff",
+        "--binary",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
+    if unstaged:
+        changed = git_text(
+            repo_root,
+            "diff",
+            "--name-only",
+            "--no-ext-diff",
+            "--no-textconv",
+        ).splitlines()
         raise PreparationFailure(
             "final confirmation left unstaged worktree drift in the isolated candidate",
             failure_type="generated_cleanliness_failure",
             action_class="code_fix",
+            details={
+                "changed_paths": changed,
+                "diff_bytes": len(unstaged),
+                "diff_sha256": sha256_bytes(unstaged),
+            },
         )
 
 

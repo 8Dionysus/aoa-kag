@@ -4054,7 +4054,7 @@ class PrepareLandingTests(unittest.TestCase):
         verify_cache.assert_called_once_with(
             Path("/candidate"),
             cached,
-            verify_external_manifests=True,
+            verify_external_manifests=False,
         )
 
     def test_full_owner_cache_rejects_provider_edit_without_head_move(self) -> None:
@@ -4265,6 +4265,32 @@ class PrepareLandingTests(unittest.TestCase):
                 )
 
         self.assertEqual("budget_receipt_authority_required", raised.exception.failure_type)
+
+    def test_tiered_budget_receipt_uses_corpus_digest(self) -> None:
+        digest = "a" * 64
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            manifest = root / "kag" / "indexes" / "index_family.manifest.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+                        "distribution_identity": {
+                            "corpus_digest": f"sha256:{digest}"
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            receipt = prepare_landing._current_budget_receipt_path(root)
+
+        self.assertEqual(
+            Path("kag/receipts/index_family_budget") / f"{digest}.json",
+            receipt,
+        )
 
     def test_budget_receipt_is_created_only_after_final_check_requests_it(self) -> None:
         refs = prepare_landing.ResolvedRefs("h", "e", "b")
