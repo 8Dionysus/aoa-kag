@@ -24,7 +24,7 @@
       "$ref": "#/$defs/nonEmptyString"
     },
     "capability_class": {
-      "const": "code-structure"
+      "$ref": "#/$defs/capabilityClass"
     },
     "provider": {
       "$ref": "#/$defs/provider"
@@ -65,6 +65,15 @@
     }
   },
   "$defs": {
+    "capabilityClass": {
+      "enum": [
+        "code-structure",
+        "static-security",
+        "software-components",
+        "artifact-provenance",
+        "document-structure"
+      ]
+    },
     "nonEmptyString": {
       "type": "string",
       "minLength": 1
@@ -532,7 +541,7 @@
           ]
         },
         "capability_class": {
-          "const": "code-structure"
+          "$ref": "#/$defs/capabilityClass"
         },
         "semantic_key": {
           "$ref": "#/$defs/nonEmptyString"

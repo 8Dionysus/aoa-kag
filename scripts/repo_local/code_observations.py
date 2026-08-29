@@ -34,6 +34,13 @@ PROVIDER_ID = "python-ast"
 PROVIDER_VERSION = "1"
 PARSER_REF = f"{PROVIDER_ID}@{PROVIDER_VERSION}"
 CAPABILITY_CLASS = "code-structure"
+CAPABILITY_CLASSES = frozenset({
+    CAPABILITY_CLASS,
+    "static-security",
+    "software-components",
+    "artifact-provenance",
+    "document-structure",
+})
 EXTRACTOR_REF = "aoa-kag:scripts/repo_local/code_observations.py"
 CTAGS_PROVIDER_ID = "universal-ctags"
 CTAGS_EXTRACTOR_REF = "aoa-kag:scripts/repo_local/code_observations.py#ctags-json"
@@ -944,6 +951,7 @@ def _normalize_provider_observations(
     lineage_path: str,
     language: str,
     observations: Sequence[Mapping[str, Any]],
+    capability_class: str = CAPABILITY_CLASS,
 ) -> list[dict[str, Any]]:
     """Normalize one provider's raw observations into the stable envelope shape."""
 
@@ -984,7 +992,7 @@ def _normalize_provider_observations(
                     f"{lineage_path}:{semantic_key}",
                 ),
                 "observation_kind": str(kind),
-                "capability_class": CAPABILITY_CLASS,
+                "capability_class": capability_class,
                 "semantic_key": semantic_key,
                 "subject": subject,
                 "occurrence": _validate_occurrence(
@@ -1036,6 +1044,7 @@ def normalize_provider_observations(
     diagnostics: Sequence[Mapping[str, Any]] = (),
     provenance_mode: str = "observed",
     extractor_ref: str = EXTRACTOR_REF,
+    capability_class: str = CAPABILITY_CLASS,
 ) -> dict[str, Any]:
     """Bind supplied provider output to source identity without launching a provider.
 
@@ -1060,6 +1069,8 @@ def normalize_provider_observations(
         raise ValueError(f"unsupported provider parse status: {parse_status}")
     if provenance_mode not in _OBSERVATION_EVIDENCE_CLASSES:
         raise ValueError(f"unsupported provider provenance mode: {provenance_mode}")
+    if capability_class not in CAPABILITY_CLASSES:
+        raise ValueError(f"unsupported capability class: {capability_class}")
     source_text, source_bytes = _content_bytes(content)
     del source_text
     content_digest = hashlib.sha256(source_bytes).hexdigest()
@@ -1073,6 +1084,7 @@ def normalize_provider_observations(
         lineage_path=lineage,
         language=language,
         observations=observations,
+        capability_class=capability_class,
     )
     batch = {
         "schema_version": OBSERVATION_SCHEMA_VERSION,
@@ -1081,7 +1093,7 @@ def normalize_provider_observations(
             "code-observation-batch",
             f"{lineage}:{source_epoch}:{content_digest}:{parser_ref}:{config_digest}",
         ),
-        "capability_class": CAPABILITY_CLASS,
+        "capability_class": capability_class,
         "provider": {
             "id": provider_id,
             "version": provider_version,
@@ -1862,6 +1874,21 @@ def observe_ctags_json_source(
         ctags_json,
         language=language,
     )
+    return normalize_provider_observations(
+        repo=repo,
+        path=path,
+        content=content,
+        source_epoch=source_epoch,
+        language=language,
+        provider_id=CTAGS_PROVIDER_ID,
+        provider_version=provider_version,
+        observations=observations,
+        lineage_path=lineage_path,
+        parse_status="degraded" if diagnostics else "parsed",
+        diagnostics=diagnostics,
+        provenance_mode="observed",
+        extractor_ref=CTAGS_EXTRACTOR_REF,
+    )
 
 
 _SYMBOL_KIND_ALIASES = {
@@ -2172,20 +2199,158 @@ def observe_lsp_document_symbols(
         parse_status="degraded" if diagnostics else "parsed", diagnostics=diagnostics,
         provenance_mode="observed", extractor_ref=LSP_EXTRACTOR_REF,
     )
+
+
+def _adjacent_occurrence(value: object) -> dict[str, int]:
+    if isinstance(value, Mapping) and "startLine" in value:
+        start_line = max(int(value.get("startLine", 1)), 1)
+        start_column = max(int(value.get("startColumn", 1)), 1)
+        end_line = max(int(value.get("endLine", start_line)), start_line)
+        end_column = max(int(value.get("endColumn", start_column)), start_column)
+        return {
+            "start_line": start_line, "end_line": end_line,
+            "start_column": start_column, "end_column": end_column,
+        }
+    occurrence = _provider_occurrence(value, zero_based=False)
+    return occurrence or {
+        "start_line": 1, "end_line": 1, "start_column": 1, "end_column": 1,
+    }
+
+
+def observe_sarif(
+    *, repo: str, path: str, content: str | bytes, source_epoch: str,
+    sarif: str | bytes | Mapping[str, Any], provider_id: str,
+    provider_version: str, language: str, lineage_path: str | None = None,
+) -> dict[str, Any]:
+    """Normalize SARIF findings without promoting scanner correctness."""
+
+    document = json.loads(_content_bytes(sarif)[0]) if isinstance(sarif, (str, bytes)) else sarif
+    if not isinstance(document, Mapping):
+        raise ValueError("SARIF root must be an object")
+    observations: list[dict[str, Any]] = []
+    for run_index, run in enumerate(document.get("runs", [])):
+        if not isinstance(run, Mapping):
+            continue
+        for result_index, result in enumerate(run.get("results", [])):
+            if not isinstance(result, Mapping):
+                continue
+            rule_id = str(result.get("ruleId") or result.get("rule_id") or "unidentified-rule")
+            locations = result.get("locations") if isinstance(result.get("locations"), list) else []
+            physical = locations[0].get("physicalLocation", {}) if locations and isinstance(locations[0], Mapping) else {}
+            region = physical.get("region", {}) if isinstance(physical, Mapping) else {}
+            observations.append({
+                "observation_kind": "symbol",
+                "semantic_key": f"sarif:{run_index}:{result_index}:{rule_id}",
+                "subject": {"qualified_name": rule_id, "symbol_kind": "security_finding", "label": rule_id},
+                "occurrence": _adjacent_occurrence(region), "relation": None,
+                "confidence": {"evidence_class": "observed", "value": 0.9},
+            })
     return normalize_provider_observations(
-        repo=repo,
-        path=path,
-        content=content,
-        source_epoch=source_epoch,
-        language=language,
-        provider_id=CTAGS_PROVIDER_ID,
-        provider_version=provider_version,
-        observations=observations,
-        lineage_path=lineage_path,
-        parse_status="degraded" if diagnostics else "parsed",
-        diagnostics=diagnostics,
-        provenance_mode="observed",
-        extractor_ref=CTAGS_EXTRACTOR_REF,
+        repo=repo, path=path, content=content, source_epoch=source_epoch,
+        language=language, provider_id=provider_id, provider_version=provider_version,
+        observations=observations, lineage_path=lineage_path,
+        provider_config={"format": "sarif-2.1.0"}, provenance_mode="observed",
+        extractor_ref="aoa-kag:code-observations#sarif", capability_class="static-security",
+    )
+
+
+def observe_sbom(
+    *, repo: str, path: str, content: str | bytes, source_epoch: str,
+    sbom: str | bytes | Mapping[str, Any], provider_id: str,
+    provider_version: str, language: str = "artifact", lineage_path: str | None = None,
+) -> dict[str, Any]:
+    """Normalize CycloneDX or SPDX component identities into the common envelope."""
+
+    document = json.loads(_content_bytes(sbom)[0]) if isinstance(sbom, (str, bytes)) else sbom
+    if not isinstance(document, Mapping):
+        raise ValueError("SBOM root must be an object")
+    components = document.get("components")
+    if not isinstance(components, list):
+        components = document.get("packages") if isinstance(document.get("packages"), list) else []
+    observations: list[dict[str, Any]] = []
+    for index, component in enumerate(components):
+        if not isinstance(component, Mapping):
+            continue
+        name = str(component.get("name") or component.get("PackageName") or "").strip()
+        version = str(component.get("version") or component.get("versionInfo") or "").strip()
+        if not name:
+            continue
+        identity = f"{name}@{version}" if version else name
+        observations.append({
+            "observation_kind": "symbol", "semantic_key": f"component:{index}:{identity}",
+            "subject": {"qualified_name": identity, "symbol_kind": "software_component", "label": name},
+            "occurrence": _adjacent_occurrence(None), "relation": None,
+            "confidence": {"evidence_class": "observed", "value": 0.95},
+        })
+    return normalize_provider_observations(
+        repo=repo, path=path, content=content, source_epoch=source_epoch,
+        language=language, provider_id=provider_id, provider_version=provider_version,
+        observations=observations, lineage_path=lineage_path,
+        provider_config={"format": str(document.get("bomFormat") or document.get("spdxVersion") or "sbom")},
+        provenance_mode="observed", extractor_ref="aoa-kag:code-observations#sbom",
+        capability_class="software-components",
+    )
+
+
+def observe_artifact_provenance(
+    *, repo: str, path: str, content: str | bytes, source_epoch: str,
+    statement: str | bytes | Mapping[str, Any], provider_id: str,
+    provider_version: str, lineage_path: str | None = None,
+) -> dict[str, Any]:
+    """Normalize in-toto/SLSA subjects without treating statements as verified."""
+
+    document = json.loads(_content_bytes(statement)[0]) if isinstance(statement, (str, bytes)) else statement
+    if not isinstance(document, Mapping):
+        raise ValueError("provenance statement root must be an object")
+    observations = []
+    for index, subject in enumerate(document.get("subject", [])):
+        if not isinstance(subject, Mapping):
+            continue
+        name = str(subject.get("name") or "").strip()
+        if name:
+            observations.append({
+                "observation_kind": "symbol", "semantic_key": f"provenance:subject:{index}:{name}",
+                "subject": {"qualified_name": name, "symbol_kind": "artifact_subject", "label": name},
+                "occurrence": _adjacent_occurrence(None), "relation": None,
+                "confidence": {"evidence_class": "observed", "value": 1.0},
+            })
+    return normalize_provider_observations(
+        repo=repo, path=path, content=content, source_epoch=source_epoch,
+        language="artifact", provider_id=provider_id, provider_version=provider_version,
+        observations=observations, lineage_path=lineage_path,
+        provider_config={"predicate_type": str(document.get("predicateType") or "in-toto")},
+        provenance_mode="observed", extractor_ref="aoa-kag:code-observations#artifact-provenance",
+        capability_class="artifact-provenance",
+    )
+
+
+def observe_document_structure(
+    *, repo: str, path: str, content: str | bytes, source_epoch: str,
+    blocks: Sequence[Mapping[str, Any]], provider_id: str,
+    provider_version: str, language: str = "document", lineage_path: str | None = None,
+) -> dict[str, Any]:
+    """Normalize ordered document blocks without replacing authored content."""
+
+    observations: list[dict[str, Any]] = []
+    for index, block in enumerate(blocks):
+        label = str(block.get("text") or block.get("label") or "").strip()
+        if not label:
+            continue
+        kind = str(block.get("kind") or "document_block")
+        observations.append({
+            "observation_kind": "symbol",
+            "semantic_key": f"document:{index}:{kind}:{hashlib.sha256(label.encode()).hexdigest()[:16]}",
+            "subject": {"qualified_name": f"{path}#{index}", "symbol_kind": kind, "label": label},
+            "occurrence": _adjacent_occurrence(block.get("range")), "relation": None,
+            "confidence": {"evidence_class": "observed", "value": 0.9},
+        })
+    return normalize_provider_observations(
+        repo=repo, path=path, content=content, source_epoch=source_epoch,
+        language=language, provider_id=provider_id, provider_version=provider_version,
+        observations=observations, lineage_path=lineage_path,
+        provider_config={"format": "ordered-document-blocks"}, provenance_mode="observed",
+        extractor_ref="aoa-kag:code-observations#document-structure",
+        capability_class="document-structure",
     )
 
 
@@ -2648,6 +2813,7 @@ def validate_provider_observation_batch(
     source_epoch: str,
     language: str,
     lineage_path: str | None = None,
+    capability_class: str = CAPABILITY_CLASS,
 ) -> dict[str, Any]:
     """Validate and rebind a supplied canonical batch to the current source."""
 
@@ -2656,7 +2822,9 @@ def validate_provider_observation_batch(
     bound = copy.deepcopy(dict(batch))
     if bound.get("schema_version") != OBSERVATION_SCHEMA_VERSION:
         raise ValueError("provider observation batch schema version is unsupported")
-    if bound.get("capability_class") != CAPABILITY_CLASS:
+    if capability_class not in CAPABILITY_CLASSES:
+        raise ValueError("provider observation batch expected capability class is unsupported")
+    if bound.get("capability_class") != capability_class:
         raise ValueError("provider observation batch capability class is unsupported")
     parse_status = bound.get("parse_status")
     if parse_status not in _PARSE_STATUSES:
@@ -2825,7 +2993,7 @@ def validate_provider_observation_batch(
             )
         if observation.get("observation_kind") not in _OBSERVATION_KINDS:
             raise ValueError(f"provider observation {index} observation_kind is invalid")
-        if observation.get("capability_class") != CAPABILITY_CLASS:
+        if observation.get("capability_class") != capability_class:
             raise ValueError(f"provider observation {index} capability class is invalid")
         _validated_canonical_subject(
             observation.get("subject"),

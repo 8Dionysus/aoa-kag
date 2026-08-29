@@ -33,7 +33,11 @@ from scripts.repo_local.code_observations import (
     MACHINE_OBSERVATION_SCHEMA,
     measure_observation_delta,
     normalize_provider_observations,
+    observe_artifact_provenance,
+    observe_document_structure,
     observe_lsp_document_symbols,
+    observe_sarif,
+    observe_sbom,
     observe_scip_source,
     observe_source,
     observe_tree_sitter_source,
@@ -2740,6 +2744,39 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             },
         )
         self.assertEqual("render", batch["observations"][0]["subject"]["label"])
+
+    def test_adjacent_provider_classes_share_the_observation_envelope(self) -> None:
+        common = {
+            "repo": "abyss-machine",
+            "path": "fixture.txt",
+            "content": "fixture\n",
+            "source_epoch": "git:adjacent-provider-fixture",
+        }
+        batches = [
+            observe_sarif(
+                **common, language="python", provider_id="semgrep", provider_version="1.175.0",
+                sarif={"runs": [{"results": [{"ruleId": "unsafe-eval", "locations": [{"physicalLocation": {"region": {"startLine": 2, "startColumn": 3}}}]}]}]},
+            ),
+            observe_sbom(
+                **common, provider_id="syft", provider_version="1.45.1",
+                sbom={"bomFormat": "CycloneDX", "components": [{"name": "aoa-kag", "version": "1"}]},
+            ),
+            observe_artifact_provenance(
+                **common, provider_id="in-toto", provider_version="3.1.0",
+                statement={"predicateType": "https://slsa.dev/provenance/v1", "subject": [{"name": "bundle.tar"}]},
+            ),
+            observe_document_structure(
+                **common, provider_id="markitdown", provider_version="0.1.7",
+                blocks=[{"kind": "heading", "text": "Architecture"}],
+            ),
+        ]
+        expected = ["static-security", "software-components", "artifact-provenance", "document-structure"]
+        schema = load_json(REPO_ROOT / "schemas" / "code-observation.schema.json")
+        for batch, capability in zip(batches, expected, strict=True):
+            Draft202012Validator(schema).validate(batch)
+            self.assertEqual(capability, batch["capability_class"])
+            self.assertEqual(capability, batch["observations"][0]["capability_class"])
+            self.assertEqual("supplied_unadmitted", batch["provider"]["lane"]["status"])
 
     def test_g59_machine_envelope_is_bound_but_remains_unadmitted(self) -> None:
         epoch = "sha256:" + ("0" * 64)
