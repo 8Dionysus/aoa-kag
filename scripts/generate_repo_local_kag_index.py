@@ -2887,7 +2887,7 @@ def repository_index_profiles(entries: Sequence[dict[str, Any]]) -> dict[str, An
     }
     if any(str(entry.get("trust_ref") or "") == "untrusted" for entry in entries):
         trust_profiles["untrusted"] = {"class": "untrusted", "confidence": 0.0}
-    return {
+    profiles = {
         "extractors": {
             "aoa-repo-local-kag@2": {"name": "aoa-repo-local-kag", "version": "2"}
         },
@@ -2901,8 +2901,13 @@ def repository_index_profiles(entries: Sequence[dict[str, Any]]) -> dict[str, An
             "historical": {"state": "historical", "valid_from": "", "valid_to": ""},
         },
         "trust": trust_profiles,
-        "code_observations": code_observation_profile,
     }
+    # Preserve the exact v2 compatibility payload for owners whose portable
+    # family predates code observations.  An empty optional profile is not
+    # evidence and must not invalidate an otherwise reconstructable family.
+    if code_entries:
+        profiles["code_observations"] = code_observation_profile
+    return profiles
 
 
 def repository_index_payload(
@@ -3124,6 +3129,11 @@ def previous_structure_refs(
                 "source": {"language": code_language},
                 "provider": {"id": provider_id, "version": provider_version},
                 "currentness": {"state": code_state},
+                # Repository projections intentionally do not retain the raw
+                # observation batch.  This internal marker preserves the fact
+                # that the projected fields came from a non-empty batch when
+                # an unchanged record is reused incrementally.
+                "projection_has_observations": True,
             }
         reusable[source_id] = {
             "anchor_refs": raw_anchors,

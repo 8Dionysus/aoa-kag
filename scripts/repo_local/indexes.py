@@ -53,30 +53,20 @@ def artifact_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
         )
         has_code_observations = bool(
             isinstance(code_observation, dict)
-            and isinstance(code_observation.get("observations"), list)
-            and code_observation["observations"]
+            and (
+                (
+                    isinstance(code_observation.get("observations"), list)
+                    and code_observation["observations"]
+                )
+                or code_observation.get("projection_has_observations") is True
+            )
         )
         if not has_code_observations:
             code_source = None
             code_provider = None
             code_currentness = None
-        code_anchor = next(
-            (
-                item
-                for item in anchors
-                if isinstance(item, dict)
-                and item.get("anchor_kind") in {
-                    "python_symbol",
-                    "javascript_symbol",
-                    "typescript_symbol",
-                }
-            ),
-            None,
-        )
         if isinstance(code_source, dict) and code_source.get("language"):
             entry["code_observation_language"] = str(code_source["language"])
-        elif isinstance(code_anchor, dict) and code_anchor.get("language"):
-            entry["code_observation_language"] = str(code_anchor["language"])
         if (
             isinstance(code_provider, dict)
             and code_provider.get("id")
@@ -85,16 +75,8 @@ def artifact_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
             entry["code_observation_provider_ref"] = (
                 f"{code_provider['id']}@{code_provider['version']}"
             )
-        elif isinstance(code_anchor, dict) and code_anchor.get("provider_ref"):
-            entry["code_observation_provider_ref"] = str(
-                code_anchor["provider_ref"]
-            )
         if isinstance(code_currentness, dict) and code_currentness.get("state"):
             entry["code_observation_state"] = str(code_currentness["state"])
-        elif isinstance(code_anchor, dict) and code_anchor.get("currentness_state"):
-            entry["code_observation_state"] = str(
-                code_anchor["currentness_state"]
-            )
         entries.append(entry)
     return entries
 
@@ -373,7 +355,10 @@ def entity_entries(
                     else None
                 ),
                 roles=anchor.get("roles", []),
-                language=str(anchor.get("language") or language),
+                # Legacy Python anchors predate provider-neutral observations.
+                # Their v3 compatibility views did not carry a language field,
+                # so enrich only anchors that explicitly declare one.
+                language=str(anchor.get("language") or ""),
                 currentness_state=str(anchor.get("currentness_state") or ""),
                 provider_ref=str(anchor.get("provider_ref") or ""),
                 trust_ref=str(anchor.get("trust_ref") or ""),
@@ -609,6 +594,7 @@ def relation_entries(
         == lineage_by_source.get(entry["source_record_ids"][0], "")
     }
     entity_by_anchor: dict[str, dict[str, Any]] = {}
+    legacy_python_entities_by_name: dict[str, list[dict[str, Any]]] = {}
     code_entities_by_language_name: dict[tuple[str, str], list[dict[str, Any]]] = {}
     capability_entities_by_name: dict[str, dict[str, Any]] = {}
 
@@ -624,10 +610,18 @@ def relation_entries(
     for entity in entities:
         for anchor_id in entity["anchor_ids"]:
             entity_by_anchor[anchor_id] = entity
+        if (
+            entity["entity_kind"].startswith("python_")
+            and not entity.get("language")
+        ):
+            key = str(entity["semantic_key"]).split(":", 2)[-1]
+            qualified_name = key.rsplit(":", 1)[-1]
+            legacy_python_entities_by_name.setdefault(qualified_name, []).append(entity)
         for language in ("python", "javascript", "typescript"):
             if (
                 entity["entity_kind"].startswith(f"{language}_")
                 and not entity["entity_kind"].endswith("_import")
+                and entity.get("language") == language
             ):
                 semantic_key = str(entity["semantic_key"])
                 qualified_name = semantic_key
@@ -779,15 +773,32 @@ def relation_entries(
                 for language in ("python", "javascript", "typescript")
             ):
                 language, _, target_name = target_ref.partition(":")
-                matches = code_entities_by_language_name.get((language, target_name), [])
-                if not matches and target_name.startswith("self."):
+                enriched_code_reference = bool(
+                    anchor.get("language")
+                    or anchor.get("provider_ref")
+                    or anchor.get("qualification")
+                    or anchor.get("semantic_confidence")
+                )
+                if language == "python" and not enriched_code_reference:
+                    # Preserve the v2 projection of pre-observation Python
+                    # anchors byte-for-byte while newer provider-qualified
+                    # anchors use the cross-language resolver below.
+                    matches = legacy_python_entities_by_name.get(target_name, [])
+                else:
                     matches = code_entities_by_language_name.get(
-                        (language, target_name.removeprefix("self.")), []
+                        (language, target_name), []
                     )
+                    if not matches and target_name.startswith("self."):
+                        matches = code_entities_by_language_name.get(
+                            (language, target_name.removeprefix("self.")), []
+                        )
                 unique = {item["id"]: item for item in matches}
                 if len(unique) == 1:
                     target_id = next(iter(unique))
-                elif str(reference.get("relation_kind")) == "imports":
+                elif (
+                    enriched_code_reference
+                    and str(reference.get("relation_kind")) == "imports"
+                ):
                     source_path = str(identity["path"])
                     module_candidates = [target_name]
                     if "." in target_name:

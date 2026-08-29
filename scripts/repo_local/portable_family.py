@@ -982,6 +982,33 @@ def reconstruct_compatibility_family(
                 item["target_ref"],
             )
         )
+        # Raw provider batches are intentionally absent from the portable
+        # projection, but provider-qualified anchors retain enough evidence to
+        # reconstruct the artifact-level observation posture.  Keep this at
+        # the compatibility boundary so legacy anchors without explicit
+        # provider metadata remain byte-for-byte unchanged.
+        code_anchor = next(
+            (
+                item
+                for item in refs["anchor_refs"]
+                if isinstance(item, dict)
+                and item.get("language")
+                and item.get("provider_ref")
+                and item.get("currentness_state")
+            ),
+            None,
+        )
+        if isinstance(code_anchor, dict):
+            provider_id, separator, provider_version = str(
+                code_anchor["provider_ref"]
+            ).rpartition("@")
+            if separator and provider_id and provider_version:
+                refs["code_observation"] = {
+                    "source": {"language": str(code_anchor["language"])},
+                    "provider": {"id": provider_id, "version": provider_version},
+                    "currentness": {"state": str(code_anchor["currentness_state"])},
+                    "projection_has_observations": True,
+                }
 
     event_rows = _expanded_parents(rows, parent_kind="event")
     events = [_strip_portable_fields(row) for row in event_rows]

@@ -24,10 +24,12 @@ from scripts.generate_repo_local_kag_index import (
     local_default_history_ref,
     main,
     payload_digest,
+    repository_index_profiles,
 )
 from scripts.generate_repo_local_kag_coverage import source_index_matches_owner
 from scripts.generation.provider_map import _is_repo_local_meta_index_payload
 from scripts.repo_local.projections import build_repo_retrieval_documents
+from scripts.repo_local.indexes import relation_entries
 from scripts.repo_local.query import RepoKagQuery
 from scripts.repo_local.code_observations import (
     MACHINE_OBSERVATION_SCHEMA,
@@ -366,6 +368,70 @@ def write_capability_graph_fixture(root: Path) -> None:
 
 
 class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
+    def test_empty_code_observation_profile_preserves_legacy_compatibility(self) -> None:
+        profiles = repository_index_profiles(
+            [
+                {
+                    "id": "legacy-entry",
+                    "parser_ref": "python-ast@1",
+                    "trust_ref": "deterministic",
+                }
+            ]
+        )
+
+        self.assertNotIn("code_observations", profiles)
+
+    def test_legacy_python_relations_do_not_gain_short_name_resolution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        entities = copy.deepcopy(family["entity"]["entries"])
+        anchors = copy.deepcopy(family["anchor"]["entries"])
+        helper = next(
+            entry
+            for entry in entities
+            if entry["semantic_key"] == "python:function:helper"
+        )
+        helper["semantic_key"] = "python:function:Namespace.helper"
+        helper["label"] = "Namespace.helper"
+        for entity in entities:
+            for field in (
+                "language",
+                "currentness_state",
+                "provider_ref",
+                "qualification",
+                "semantic_confidence",
+            ):
+                entity.pop(field, None)
+        for anchor in anchors:
+            for field in (
+                "language",
+                "currentness_state",
+                "provider_ref",
+                "qualification",
+                "semantic_confidence",
+            ):
+                anchor.pop(field, None)
+
+        relations = relation_entries(
+            source["repo"]["name"],
+            source["records"],
+            artifacts=family["artifact"]["entries"],
+            anchors=anchors,
+            entities=entities,
+        )
+
+        self.assertFalse(
+            any(
+                relation["relation_kind"] == "calls"
+                and relation["to_id"] == helper["id"]
+                for relation in relations
+            )
+        )
+
     def test_portable_family_round_trips_exact_v2_compatibility_view(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
