@@ -394,6 +394,33 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             "kag/indexes/index_family.manifest.json",
         )
 
+    def test_tiered_bridge_can_partition_above_legacy_git_ceiling(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            with mock.patch(
+                "scripts.repo_local.portable_family.GLOBAL_TRACKED_BYTES_MAX",
+                1,
+            ):
+                with self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "global owner ceiling",
+                ):
+                    build_portable_family(source_index, family)
+                manifest, shards = build_portable_family(
+                    source_index,
+                    family,
+                    enforce_global_tracked_ceiling=False,
+                )
+
+        self.assertGreater(
+            manifest["summary"]["tracked_bytes"],
+            manifest["budgets"]["global_tracked_bytes_max"],
+        )
+        self.assertTrue(shards)
+
     def test_portable_family_preserves_ranges_and_localizes_small_change(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

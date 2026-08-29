@@ -490,6 +490,7 @@ def build_portable_family(
     *,
     previous_manifest: Mapping[str, Any] | None = None,
     manifest_path: Path = MANIFEST_RELATIVE_PATH,
+    enforce_global_tracked_ceiling: bool = True,
 ) -> tuple[dict[str, Any], dict[Path, bytes]]:
     rows = _portable_rows(source_index, family)
     rows_by_kind: dict[str, list[dict[str, Any]]] = {}
@@ -652,7 +653,8 @@ def build_portable_family(
             )
 
     if (
-        manifest["summary"]["tracked_bytes"]
+        enforce_global_tracked_ceiling
+        and manifest["summary"]["tracked_bytes"]
         > manifest["budgets"]["global_tracked_bytes_max"]
     ):
         raise PortableFamilyError(

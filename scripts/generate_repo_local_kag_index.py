@@ -3786,6 +3786,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 payload,
                 family,
                 previous_manifest=previous_manifest,
+                # Tiered generation uses the v3 document only as an in-memory
+                # logical-corpus bridge.  Its own distribution contract
+                # enforces the actual Git-hot and artifact budgets after
+                # partitioning; applying the legacy Git ceiling before that
+                # split would make large owners impossible to tier.
+                enforce_global_tracked_ceiling=not args.tiered_family,
             )
         except PortableFamilyError as exc:
             print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
