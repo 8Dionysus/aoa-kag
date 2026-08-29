@@ -16,19 +16,19 @@ Status is `review_required` / `submit_for_review` for the G61 whole-continuation
 
 Passed:
 
-- `python3 -m unittest tests.test_repo_local_kag_index tests.test_repo_local_kag_repository_indexes` — 166 tests passed, 1 optional test skipped.
+- The focused repository-index unit suite passed 166 tests with 1 optional test skipped.
 - Focused observation, delta, lineage, affectedness, transformation, machine-envelope, fallback, and query-handle tests.
-- Repository-family generation and stable `--check`; the second check reused all 487 generated objects.
-- `python scripts/validate_kag.py --scope local` — local KAG, schema, generated-index, rebuild, payload, parity, and family checks passed; cross-repo checks were skipped because sibling roots are unavailable.
+- Repository-family generation and its parity check were stable; the second check reused all 487 generated objects.
+- The local KAG validation lane passed schema, generated-index, rebuild, payload, parity, and family checks; cross-repo checks were skipped because sibling roots were unavailable.
 - Nested AGENTS, mechanics skeleton, decision index, decision records, semantic AGENTS, Python compilation, and whitespace checks.
 
 Not green, with exact residuals retained:
 
-- `python scripts/ci_gate.py --mode source-fast` — exit 1 after 699 tests: 4 failures, 25 errors, 1 skipped. The residuals are unavailable `abyss-stack`, `aoa-sdk`, Tree-of-Sophia, and sibling generated fixtures, host-temp authority, and the known absolute-path assertion. Portable repository-family validation passed in that run.
-- `python scripts/ci_gate.py --mode generated` — exit 1 at external coverage prebuild: expected provider pin `3baafa395906e93dee23a9479ef4f9aed576bd8a`, observed `7ff7bb4375154577b0793cfd31e37280c764b83d3`.
-- `python scripts/run_part_local_checks.py` — missing sibling `generated/kag_export.min.json`.
-- `python scripts/validate_local_stats_port.py` — sibling `aoa-stats` validator unavailable.
-- `python scripts/release_check.py` — exit 1 because the release lane invokes the non-green source-fast prerequisite and retains the same external residuals.
+- The source-fast lane exited 1 after 699 tests: 4 failures, 25 errors, 1 skipped. The residuals were unavailable abyss-stack, aoa-sdk, Tree-of-Sophia, and sibling generated fixtures, host-temp authority, and the known absolute-path assertion. Portable repository-family validation passed in that run.
+- The generated lane exited 1 at external coverage prebuild because the observed provider revision did not match the expected pinned revision.
+- Part-local checks lacked the sibling KAG export fixture.
+- Local stats-port validation lacked the sibling aoa-stats validator.
+- The release lane exited 1 because it invoked the same non-green source-fast prerequisite and retained those external residuals.
 
 These failures are not represented as local passes and do not establish a provider, runtime, proof, or acceptance claim.
 
