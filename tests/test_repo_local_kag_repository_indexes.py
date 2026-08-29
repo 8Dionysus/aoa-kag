@@ -778,6 +778,13 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "from builtins import __import__ as load\n"
                 "load('scripts.dynamic')\n"
             ),
+            "globals_import_lookup": (
+                "globals()['__import__']('scripts.dynamic')\n"
+            ),
+            "importlib_getattribute_lookup": (
+                "import importlib\n"
+                "importlib.__getattribute__('import_module')('scripts.dynamic')\n"
+            ),
         }
         for name, source in cases.items():
             with self.subTest(case=name):
@@ -898,14 +905,18 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 base_ref="HEAD",
                 history_ref="HEAD",
                 event_history_ref="HEAD",
+                jobs=1,
             )
             second = capture_budget_producer_execution_inputs(
                 second_root,
                 base_ref="HEAD",
                 history_ref="HEAD",
                 event_history_ref="HEAD",
+                jobs=3,
             )
             self.assertEqual(first, second)
+            self.assertNotIn("jobs", first["action_inputs"])
+            self.assertNotIn("jobs", first["command_targets"])
             rendered = json.dumps(first, sort_keys=True)
             self.assertNotIn(str(first_root), rendered)
             self.assertNotIn(str(second_root), rendered)

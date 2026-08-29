@@ -488,8 +488,8 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             action.index("--sentinel-only"),
         )
         self.assertLess(
-            action.index("--sentinel-only"),
             action.index("importlib.metadata.version('jsonschema') == '4.23.0'"),
+            action.index("--sentinel-only"),
         )
         self.assertLess(
             action.index("importlib.metadata.version('jsonschema') == '4.23.0'"),

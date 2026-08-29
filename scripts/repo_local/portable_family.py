@@ -578,6 +578,44 @@ def _budget_dynamic_import_call(
     )
 
 
+def _budget_static_string(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return None
+
+
+def _budget_indirect_dynamic_import_lookup(
+    node: ast.AST,
+    *,
+    importlib_modules: set[str],
+) -> str | None:
+    """Reject importer lookups that bypass the bounded alias recognizer."""
+    if isinstance(node, ast.Subscript):
+        key = _budget_static_string(node.slice)
+        if key in BUDGET_DYNAMIC_IMPORT_ATTRIBUTES:
+            return f"subscript[{key}]"
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
+            if node.value.func.id in {"globals", "locals", "vars"}:
+                return f"{node.value.func.id}()[...]"
+        if isinstance(node.value, ast.Name) and node.value.id in {
+            "__builtins__",
+            "builtins",
+        }:
+            return "builtins[...]"
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+        if node.func.attr not in {"__getattribute__", "__getattr__"}:
+            return None
+        if _budget_is_importlib_reference(
+            node.func.value,
+            importlib_modules=importlib_modules,
+        ):
+            return f"importlib.{node.func.attr}(...)"
+        attribute = _budget_static_string(node.args[1]) if len(node.args) > 1 else None
+        if attribute in BUDGET_DYNAMIC_IMPORT_ATTRIBUTES:
+            return f"{node.func.attr}({attribute})"
+    return None
+
+
 def _budget_dynamic_import_from(node: ast.ImportFrom) -> str | None:
     module = node.module or ""
     if module == "importlib" or module.startswith("importlib."):
@@ -621,6 +659,15 @@ def _budget_import_closure(
             builtin_modules,
         ) = _budget_import_aliases(tree)
         for node in ast.walk(tree):
+            indirect_dynamic_import = _budget_indirect_dynamic_import_lookup(
+                node,
+                importlib_modules=importlib_modules,
+            )
+            if indirect_dynamic_import is not None:
+                raise PortableFamilyError(
+                    "producer import closure contains an unresolved dynamic "
+                    f"import ({indirect_dynamic_import}) in {relative.as_posix()}"
+                )
             if isinstance(node, ast.ImportFrom):
                 dynamic_import = _budget_dynamic_import_from(node)
                 if dynamic_import is not None:
@@ -881,17 +928,13 @@ def capture_budget_producer_execution_inputs(
     if not isinstance(resolved_event, str) or not resolved_event:
         raise PortableFamilyError("producer execution inputs require event_history_ref")
     output_value = Path(output).as_posix()
-    jobs_value = (
-        str(jobs)
-        if jobs is not None
-        else os.environ.get("AOA_REPO_LOCAL_KAG_JOBS", "2")
-    )
+    # Scheduler fan-out changes only execution parallelism; it is not a
+    # generated-output input and must not change the producer identity.
     action_values = {
         "repo-root": _budget_runtime_value(Path("<owner-root>"), kind="path"),
         "output": _budget_runtime_value(output_value, kind="relative-path"),
         "history-ref": _budget_runtime_value(resolved_history, kind="git-ref"),
         "event-history-ref": _budget_runtime_value(resolved_event, kind="git-ref"),
-        "jobs": _budget_runtime_value(jobs_value, kind="bounded-integer"),
     }
     missing_action_inputs = sorted(
         set(manifest["action_inputs"]) - set(action_values)
@@ -967,7 +1010,6 @@ def capture_budget_producer_execution_inputs(
             else None
         ),
         "externalized": bool(externalized),
-        "jobs": jobs_value,
     }
     return {
         "schema_version": BUDGET_PRODUCER_RUNTIME_INPUTS_VERSION,

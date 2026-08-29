@@ -206,15 +206,13 @@
             "repo-root",
             "output",
             "history-ref",
-            "event-history-ref",
-            "jobs"
+            "event-history-ref"
           ],
           "properties": {
             "repo-root": {"$ref": "#/$defs/runtimeValue"},
             "output": {"$ref": "#/$defs/runtimeValue"},
             "history-ref": {"$ref": "#/$defs/runtimeValue"},
-            "event-history-ref": {"$ref": "#/$defs/runtimeValue"},
-            "jobs": {"$ref": "#/$defs/runtimeValue"}
+            "event-history-ref": {"$ref": "#/$defs/runtimeValue"}
           }
         },
         "environment": {
@@ -262,8 +260,7 @@
             "output",
             "family_mode",
             "artifact_root",
-            "externalized",
-            "jobs"
+            "externalized"
           ],
           "properties": {
             "repo_root": {
@@ -294,8 +291,7 @@
                 }
               ]
             },
-            "externalized": {"type": "boolean"},
-            "jobs": {"$ref": "#/$defs/nonEmptyString"}
+            "externalized": {"type": "boolean"}
           }
         },
         "manifest_digest": {
