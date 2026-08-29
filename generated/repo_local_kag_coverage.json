@@ -5,13 +5,13 @@
     "corpus_total_bytes": 149874583,
     "git_hot_bytes": 149874583,
     "measured_owner_count": 14,
-    "migration_needed": 6,
+    "migration_needed": 7,
     "missing": 0,
     "os_aggregate_tracked_bytes_max": 335544320,
     "os_git_hot_target_bytes": 234881024,
     "owner_count": 21,
     "owner_specific": 0,
-    "passed": 15,
+    "passed": 14,
     "portable_tracked_bytes": 149874583,
     "portable_v3": 14,
     "self_excluded_owner_count": 1,
@@ -755,11 +755,11 @@
           "has_kag_home": true,
           "has_owner_commands": true,
           "has_record_classes": true,
-          "has_source_index": true,
+          "has_source_index": false,
           "has_validation_route": true,
           "unknown_count": 0
         },
-        "source": "source_surface_index"
+        "source": "source_tree_scan"
       },
       "coverage": {
         "commands": 226,
@@ -780,7 +780,7 @@
         "kag/indexes/index_family.manifest.json",
         "kag/indexes/provider_readiness_index.json"
       ],
-      "index_status": "passed",
+      "index_status": "migration-needed",
       "kag_home": "/srv/AbyssOS/aoa-kag/kag",
       "owner_type": "organ",
       "portable_family": {
@@ -808,15 +808,7 @@
         "tracked_bytes_max": 4194304
       },
       "repo": "aoa-kag",
-      "repository_index_family": {
-        "anchor": "kag/indexes/repo_anchor_index.json",
-        "artifact": "kag/indexes/repo_artifact_index.json",
-        "assertion": "kag/indexes/repo_assertion_index.json",
-        "entity": "kag/indexes/repo_entity_index.json",
-        "event": "kag/indexes/repo_event_index.json",
-        "relation": "kag/indexes/repo_relation_index.json",
-        "source": "kag/indexes/source_surface_index.json"
-      },
+      "repository_index_family": {},
       "root": "/srv/AbyssOS/aoa-kag"
     },
     {
