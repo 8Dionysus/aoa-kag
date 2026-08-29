@@ -33,7 +33,10 @@ from scripts.repo_local.code_observations import (
     MACHINE_OBSERVATION_SCHEMA,
     measure_observation_delta,
     normalize_provider_observations,
+    observe_lsp_document_symbols,
+    observe_scip_source,
     observe_source,
+    observe_tree_sitter_source,
     plan_observation_delta,
     provider_lane_posture,
 )
@@ -2622,6 +2625,95 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual("source_local_fallback", typescript["provider"]["lane"]["status"])
         self.assertEqual("source_local", javascript["qualification"]["materialization"]["state"])
         self.assertEqual("source_local", typescript["qualification"]["materialization"]["state"])
+
+    def test_typescript_hybrid_provider_outputs_share_one_envelope(self) -> None:
+        source = "export function render(value: string): string { return value; }\n"
+        common = {
+            "repo": "aoa-dashboard",
+            "path": "src/render.ts",
+            "content": source,
+            "source_epoch": "git:typescript-epoch",
+            "language": "typescript",
+        }
+        tree_sitter = observe_tree_sitter_source(
+            **common,
+            provider_version="0.25.10",
+            captures={"captures": [{
+                "name": "definition.function",
+                "text": "render",
+                "qualified_name": "render",
+                "node": {
+                    "type": "identifier",
+                    "startPosition": {"row": 0, "column": 16},
+                    "endPosition": {"row": 0, "column": 22},
+                },
+            }]},
+        )
+        scip = observe_scip_source(
+            **common,
+            provider_version="0.3.0",
+            scip_json={
+                "documents": [{
+                    "relativePath": "src/render.ts",
+                    "symbols": [{
+                        "symbol": "scip-typescript npm aoa-dashboard 1.0.0 render().",
+                        "displayName": "render",
+                        "kind": "Function",
+                    }],
+                    "occurrences": [{
+                        "range": [0, 16, 22],
+                        "symbol": "scip-typescript npm aoa-dashboard 1.0.0 render().",
+                        "symbolRoles": 1,
+                    }],
+                }],
+            },
+        )
+        lsp = observe_lsp_document_symbols(
+            **common,
+            provider_version="4.3.4",
+            result={"jsonrpc": "2.0", "id": 2, "result": [{
+                "name": "render",
+                "kind": 12,
+                "range": {
+                    "start": {"line": 0, "character": 0},
+                    "end": {"line": 0, "character": 66},
+                },
+                "selectionRange": {
+                    "start": {"line": 0, "character": 16},
+                    "end": {"line": 0, "character": 22},
+                },
+            }]},
+        )
+        for batch, provider in (
+            (tree_sitter, "tree-sitter"),
+            (scip, "scip"),
+            (lsp, "lsp"),
+        ):
+            Draft202012Validator(
+                load_json(REPO_ROOT / "schemas" / "code-observation.schema.json")
+            ).validate(batch)
+            self.assertEqual(provider, batch["provider"]["id"])
+            self.assertEqual("typescript", batch["source"]["language"])
+            self.assertEqual("supplied_unadmitted", batch["provider"]["lane"]["status"])
+            self.assertEqual("not_admitted", batch["qualification"]["machine_admission"]["state"])
+            self.assertEqual("render", batch["observations"][0]["subject"]["label"])
+
+    def test_tree_sitter_cli_capture_output_is_normalized(self) -> None:
+        batch = observe_tree_sitter_source(
+            repo="aoa-dashboard",
+            path="src/render.ts",
+            content="export function render(): string { return ''; }\n",
+            source_epoch="git:tree-sitter-cli",
+            language="typescript",
+            provider_version="0.26.13",
+            captures=(
+                "src/render.ts\n"
+                "    pattern:  0, capture: 0 - definition.function, start: (0, 16), end: (0, 22), text: `render`\n"
+            ),
+        )
+        self.assertEqual("parsed", batch["parse_status"])
+        self.assertEqual("render", batch["observations"][0]["subject"]["label"])
+        self.assertEqual(1, batch["observations"][0]["occurrence"]["start_line"])
 
     def test_g59_machine_envelope_is_bound_but_remains_unadmitted(self) -> None:
         epoch = "sha256:" + ("0" * 64)

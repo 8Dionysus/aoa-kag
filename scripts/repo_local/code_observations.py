@@ -37,6 +37,14 @@ CAPABILITY_CLASS = "code-structure"
 EXTRACTOR_REF = "aoa-kag:scripts/repo_local/code_observations.py"
 CTAGS_PROVIDER_ID = "universal-ctags"
 CTAGS_EXTRACTOR_REF = "aoa-kag:scripts/repo_local/code_observations.py#ctags-json"
+TREE_SITTER_PROVIDER_ID = "tree-sitter"
+TREE_SITTER_EXTRACTOR_REF = (
+    "aoa-kag:scripts/repo_local/code_observations.py#tree-sitter-captures"
+)
+SCIP_PROVIDER_ID = "scip"
+SCIP_EXTRACTOR_REF = "aoa-kag:scripts/repo_local/code_observations.py#scip-json"
+LSP_PROVIDER_ID = "lsp"
+LSP_EXTRACTOR_REF = "aoa-kag:scripts/repo_local/code_observations.py#lsp-json-rpc"
 MACHINE_OBSERVATION_SCHEMA = "abyss_machine_code_observation_envelope_v1"
 MACHINE_PROVIDER_BINDING_SCHEMA = (
     "abyss-machine-code-intelligence-provider-binding-v1"
@@ -1853,6 +1861,312 @@ def observe_ctags_json_source(
     observations, diagnostics = parse_ctags_json_observations(
         ctags_json,
         language=language,
+    )
+
+
+_SYMBOL_KIND_ALIASES = {
+    "class": "class",
+    "constant": "variable",
+    "constructor": "method",
+    "enum": "enum",
+    "enum_member": "member",
+    "field": "member",
+    "function": "function",
+    "interface": "interface",
+    "method": "method",
+    "module": "namespace",
+    "namespace": "namespace",
+    "property": "member",
+    "struct": "struct",
+    "type": "type",
+    "type_parameter": "type",
+    "variable": "variable",
+}
+
+
+def _provider_occurrence(
+    value: object,
+    *,
+    zero_based: bool,
+) -> dict[str, int] | None:
+    """Normalize provider ranges while keeping the stable envelope one-based."""
+
+    if isinstance(value, Mapping):
+        start = value.get("start") or value.get("startPosition")
+        end = value.get("end") or value.get("endPosition")
+        if isinstance(start, Mapping) and isinstance(end, Mapping):
+            start_line = start.get("line", start.get("row"))
+            start_column = start.get("character", start.get("column"))
+            end_line = end.get("line", end.get("row"))
+            end_column = end.get("character", end.get("column"))
+        else:
+            return None
+    elif isinstance(value, list) and len(value) in {3, 4}:
+        start_line, start_column = value[0], value[1]
+        if len(value) == 3:
+            end_line, end_column = start_line, value[2]
+        else:
+            end_line, end_column = value[2], value[3]
+    else:
+        return None
+    coordinates = (start_line, start_column, end_line, end_column)
+    if any(isinstance(item, bool) or not isinstance(item, int) for item in coordinates):
+        return None
+    offset = 1 if zero_based else 0
+    return {
+        "start_line": int(start_line) + offset,
+        "end_line": int(end_line) + offset,
+        "start_column": int(start_column) + offset,
+        "end_column": max(int(end_column) + offset, 1),
+    }
+
+
+def _symbol_kind(value: object, *, fallback: str = "symbol") -> str:
+    normalized = str(value or "").strip().lower().replace(" ", "_")
+    return _SYMBOL_KIND_ALIASES.get(normalized, fallback)
+
+
+def parse_tree_sitter_captures(
+    payload: str | bytes | Mapping[str, Any],
+    *,
+    language: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Normalize Tree-sitter query captures, not an inferred syntax tree.
+
+    The accepted object is the stable output of a query runner: ``captures``
+    contains capture names and Tree-sitter nodes with start/end positions.
+    Query authors therefore decide which grammar nodes are definitions or
+    references; this adapter only preserves their observed result.
+    """
+
+    if isinstance(payload, Mapping):
+        document = dict(payload)
+    else:
+        text, _ = _content_bytes(payload)
+        try:
+            decoded = json.loads(text)
+        except json.JSONDecodeError as exc:
+            cli_captures = []
+            capture_pattern = re.compile(
+                r"capture:\s*\d+\s*-\s*(?P<name>[\w.-]+),\s*"
+                r"start:\s*\((?P<sl>\d+),\s*(?P<sc>\d+)\),\s*"
+                r"end:\s*\((?P<el>\d+),\s*(?P<ec>\d+)\),\s*"
+                r"text:\s*`(?P<text>.*)`\s*$"
+            )
+            for line in text.splitlines():
+                match = capture_pattern.search(line)
+                if match is None:
+                    continue
+                cli_captures.append({
+                    "name": match.group("name"),
+                    "text": match.group("text"),
+                    "node": {
+                        "startPosition": {"row": int(match.group("sl")), "column": int(match.group("sc"))},
+                        "endPosition": {"row": int(match.group("el")), "column": int(match.group("ec"))},
+                    },
+                })
+            if not cli_captures:
+                return [], [{"kind": "invalid_tree_sitter_output", "message": exc.msg}]
+            decoded = {"captures": cli_captures}
+        if not isinstance(decoded, Mapping):
+            return [], [{"kind": "invalid_tree_sitter_payload", "message": "root must be an object"}]
+        document = dict(decoded)
+    captures = document.get("captures")
+    if not isinstance(captures, list):
+        return [], [{"kind": "invalid_tree_sitter_payload", "message": "captures must be a list"}]
+    observations: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    for index, capture in enumerate(captures):
+        if not isinstance(capture, Mapping):
+            diagnostics.append({"kind": "invalid_tree_sitter_capture", "message": f"capture {index} is not an object"})
+            continue
+        node = capture.get("node")
+        capture_name = str(capture.get("name") or capture.get("capture") or "")
+        if not isinstance(node, Mapping) or not capture_name:
+            diagnostics.append({"kind": "invalid_tree_sitter_capture", "message": f"capture {index} lacks name or node"})
+            continue
+        occurrence = _provider_occurrence(node, zero_based=True)
+        label = str(capture.get("text") or node.get("text") or capture.get("label") or "").strip()
+        if occurrence is None or not label:
+            diagnostics.append({"kind": "invalid_tree_sitter_capture", "message": f"capture {index} lacks text or range"})
+            continue
+        parts = capture_name.replace("-", ".").split(".")
+        is_reference = any(part in {"reference", "call", "import"} for part in parts)
+        kind = _symbol_kind(capture.get("symbol_kind") or next((part for part in reversed(parts) if part not in {"definition", "reference", "name"}), None))
+        qualified_name = str(capture.get("qualified_name") or label)
+        semantic_key = f"{language}:tree-sitter:{capture_name}:{qualified_name}:{occurrence['start_line']}:{occurrence['start_column']}"
+        observations.append({
+            "observation_kind": "relation" if is_reference else "symbol",
+            "semantic_key": semantic_key,
+            "subject": {
+                "qualified_name": str(capture.get("source_scope") or qualified_name),
+                "symbol_kind": kind,
+                "label": label,
+                **({"symbol_id": str(capture["symbol_id"])} if capture.get("symbol_id") else {}),
+            },
+            "occurrence": occurrence,
+            "relation": ({
+                "kind": "calls" if "call" in parts else "references",
+                "target_name": qualified_name,
+                "resolution": "resolved_local" if capture.get("target_symbol_id") else "unresolved",
+                **({"target_symbol_id": str(capture["target_symbol_id"])} if capture.get("target_symbol_id") else {}),
+            } if is_reference else None),
+            "confidence": {"evidence_class": "observed", "value": 0.9},
+        })
+    return observations, diagnostics
+
+
+def observe_tree_sitter_source(
+    *, repo: str, path: str, content: str | bytes, source_epoch: str,
+    captures: str | bytes | Mapping[str, Any], provider_version: str,
+    language: str, lineage_path: str | None = None,
+) -> dict[str, Any]:
+    observations, diagnostics = parse_tree_sitter_captures(captures, language=language)
+    return normalize_provider_observations(
+        repo=repo, path=path, content=content, source_epoch=source_epoch,
+        language=language, provider_id=TREE_SITTER_PROVIDER_ID,
+        provider_version=provider_version, observations=observations,
+        lineage_path=lineage_path, parse_status="degraded" if diagnostics else "parsed",
+        diagnostics=diagnostics, provenance_mode="observed",
+        extractor_ref=TREE_SITTER_EXTRACTOR_REF,
+    )
+
+
+def parse_scip_json_document(
+    payload: str | bytes | Mapping[str, Any],
+    *,
+    path: str,
+    language: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Normalize one document from SCIP's protobuf-JSON representation."""
+
+    if isinstance(payload, Mapping):
+        index = payload
+    else:
+        text, _ = _content_bytes(payload)
+        try:
+            index = json.loads(text)
+        except json.JSONDecodeError as exc:
+            return [], [{"kind": "invalid_scip_json", "message": exc.msg}]
+    if not isinstance(index, Mapping):
+        return [], [{"kind": "invalid_scip_payload", "message": "root must be an object"}]
+    documents = index.get("documents") if isinstance(index.get("documents"), list) else [index]
+    document = next((item for item in documents if isinstance(item, Mapping) and str(item.get("relativePath", item.get("relative_path", ""))) == path), None)
+    if document is None and len(documents) == 1 and isinstance(documents[0], Mapping):
+        document = documents[0]
+    if not isinstance(document, Mapping):
+        return [], [{"kind": "missing_scip_document", "message": f"no SCIP document for {path}"}]
+    symbol_info = {
+        str(item.get("symbol")): item
+        for item in document.get("symbols", [])
+        if isinstance(item, Mapping) and item.get("symbol")
+    }
+    observations: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    for ordinal, occurrence_data in enumerate(document.get("occurrences", [])):
+        if not isinstance(occurrence_data, Mapping):
+            continue
+        occurrence = _provider_occurrence(occurrence_data.get("range"), zero_based=True)
+        symbol = str(occurrence_data.get("symbol") or "")
+        if occurrence is None or not symbol:
+            diagnostics.append({"kind": "invalid_scip_occurrence", "message": f"occurrence {ordinal} lacks symbol or range"})
+            continue
+        info = symbol_info.get(symbol, {})
+        label = str(info.get("displayName") or info.get("display_name") or symbol.rstrip("#./").rsplit("/", 1)[-1].rsplit("#", 1)[-1])
+        roles = int(occurrence_data.get("symbolRoles", occurrence_data.get("symbol_roles", 0)) or 0)
+        is_definition = bool(roles & 1)
+        qualified_name = str(info.get("displayName") or info.get("display_name") or symbol)
+        kind = _symbol_kind(info.get("kind"), fallback="symbol")
+        observations.append({
+            "observation_kind": "symbol" if is_definition else "relation",
+            "semantic_key": f"{language}:scip:{symbol}:{ordinal}:{occurrence['start_line']}:{occurrence['start_column']}",
+            "subject": {"qualified_name": qualified_name if is_definition else path, "symbol_kind": kind, "label": label, "symbol_id": symbol},
+            "occurrence": occurrence,
+            "relation": None if is_definition else {"kind": "references", "target_name": qualified_name, "resolution": "resolved_local" if symbol in symbol_info else "unresolved", "target_symbol_id": symbol} if symbol in symbol_info else {"kind": "references", "target_name": qualified_name, "resolution": "unresolved"},
+            "confidence": {"evidence_class": "observed", "value": 0.95},
+        })
+    return observations, diagnostics
+
+
+def observe_scip_source(
+    *, repo: str, path: str, content: str | bytes, source_epoch: str,
+    scip_json: str | bytes | Mapping[str, Any], provider_version: str,
+    language: str, lineage_path: str | None = None,
+) -> dict[str, Any]:
+    observations, diagnostics = parse_scip_json_document(scip_json, path=path, language=language)
+    return normalize_provider_observations(
+        repo=repo, path=path, content=content, source_epoch=source_epoch,
+        language=language, provider_id=SCIP_PROVIDER_ID, provider_version=provider_version,
+        observations=observations, lineage_path=lineage_path,
+        parse_status="degraded" if diagnostics else "parsed", diagnostics=diagnostics,
+        provenance_mode="observed", extractor_ref=SCIP_EXTRACTOR_REF,
+    )
+
+
+_LSP_SYMBOL_KINDS = {2: "namespace", 3: "namespace", 5: "class", 6: "method", 7: "member", 8: "member", 9: "constructor", 10: "enum", 11: "interface", 12: "function", 13: "variable", 14: "constant", 22: "enum_member", 23: "struct", 26: "type_parameter"}
+
+
+def parse_lsp_document_symbols(
+    payload: str | bytes | Sequence[Mapping[str, Any]],
+    *,
+    language: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Normalize a textDocument/documentSymbol JSON-RPC result."""
+
+    if isinstance(payload, (str, bytes)):
+        text, _ = _content_bytes(payload)
+        try:
+            decoded = json.loads(text)
+        except json.JSONDecodeError as exc:
+            return [], [{"kind": "invalid_lsp_json", "message": exc.msg}]
+    else:
+        decoded = payload
+    if isinstance(decoded, Mapping) and "result" in decoded:
+        decoded = decoded.get("result")
+    if not isinstance(decoded, list):
+        return [], [{"kind": "invalid_lsp_result", "message": "documentSymbol result must be a list"}]
+    observations: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+
+    def visit(items: Sequence[object], parents: tuple[str, ...]) -> None:
+        for ordinal, item in enumerate(items):
+            if not isinstance(item, Mapping):
+                continue
+            name = str(item.get("name") or "").strip()
+            occurrence = _provider_occurrence(item.get("selectionRange") or item.get("range"), zero_based=True)
+            if not name or occurrence is None:
+                diagnostics.append({"kind": "invalid_lsp_symbol", "message": f"symbol {ordinal} lacks name or range"})
+                continue
+            qualified_name = ".".join((*parents, name))
+            raw_kind = item.get("kind")
+            kind_name = _LSP_SYMBOL_KINDS.get(raw_kind, str(raw_kind or "symbol")) if isinstance(raw_kind, int) else raw_kind
+            observations.append({
+                "observation_kind": "symbol",
+                "semantic_key": f"{language}:lsp:{qualified_name}:{occurrence['start_line']}:{occurrence['start_column']}",
+                "subject": {"qualified_name": qualified_name, "symbol_kind": _symbol_kind(kind_name), "label": name},
+                "occurrence": occurrence, "relation": None,
+                "confidence": {"evidence_class": "observed", "value": 0.9},
+            })
+            children = item.get("children")
+            if isinstance(children, list):
+                visit(children, (*parents, name))
+
+    visit(decoded, ())
+    return observations, diagnostics
+
+
+def observe_lsp_document_symbols(
+    *, repo: str, path: str, content: str | bytes, source_epoch: str,
+    result: str | bytes | Sequence[Mapping[str, Any]], provider_version: str,
+    language: str, lineage_path: str | None = None,
+) -> dict[str, Any]:
+    observations, diagnostics = parse_lsp_document_symbols(result, language=language)
+    return normalize_provider_observations(
+        repo=repo, path=path, content=content, source_epoch=source_epoch,
+        language=language, provider_id=LSP_PROVIDER_ID, provider_version=provider_version,
+        observations=observations, lineage_path=lineage_path,
+        parse_status="degraded" if diagnostics else "parsed", diagnostics=diagnostics,
+        provenance_mode="observed", extractor_ref=LSP_EXTRACTOR_REF,
     )
     return normalize_provider_observations(
         repo=repo,
