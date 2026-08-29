@@ -2826,7 +2826,11 @@ def entry_kind_counts(entries: Sequence[dict[str, Any]], key: str) -> dict[str, 
     return dict(sorted(counts.items()))
 
 
-def repository_index_profiles(entries: Sequence[dict[str, Any]]) -> dict[str, Any]:
+def repository_index_profiles(
+    entries: Sequence[dict[str, Any]],
+    *,
+    include_code_observations: bool = False,
+) -> dict[str, Any]:
     parsers: dict[str, dict[str, str]] = {}
     for entry in entries:
         parser_ref = entry.get("parser_ref")
@@ -2905,7 +2909,7 @@ def repository_index_profiles(entries: Sequence[dict[str, Any]]) -> dict[str, An
     # Preserve the exact v2 compatibility payload for owners whose portable
     # family predates code observations.  An empty optional profile is not
     # evidence and must not invalidate an otherwise reconstructable family.
-    if code_entries:
+    if code_entries or include_code_observations:
         profiles["code_observations"] = code_observation_profile
     return profiles
 
@@ -2916,6 +2920,7 @@ def repository_index_payload(
     index_kind: str,
     entries: list[dict[str, Any]],
     source_index_path: Path,
+    include_code_observations: bool = False,
 ) -> dict[str, Any]:
     kind_field = f"{index_kind}_kind"
     local_id_suffix = {
@@ -3013,7 +3018,10 @@ def repository_index_payload(
             "entry_count": len(entries),
             "kind_counts": entry_kind_counts(entries, kind_field),
         },
-        "profiles": repository_index_profiles(entries),
+        "profiles": repository_index_profiles(
+            entries,
+            include_code_observations=include_code_observations,
+        ),
         "entries": entries,
         "registry_output": {
             "consumer": "aoa-kag",
@@ -3319,42 +3327,51 @@ def build_repository_indexes(
         anchors=anchors,
         entities=entities,
     )
+    include_code_observations = any(
+        entry.get("code_observation_provider_ref") for entry in artifacts
+    )
     return {
         "entity": repository_index_payload(
             source_index,
             index_kind="entity",
             entries=entities,
             source_index_path=source_index_path,
+            include_code_observations=include_code_observations,
         ),
         "artifact": repository_index_payload(
             source_index,
             index_kind="artifact",
             entries=artifacts,
             source_index_path=source_index_path,
+            include_code_observations=include_code_observations,
         ),
         "anchor": repository_index_payload(
             source_index,
             index_kind="anchor",
             entries=anchors,
             source_index_path=source_index_path,
+            include_code_observations=include_code_observations,
         ),
         "event": repository_index_payload(
             source_index,
             index_kind="event",
             entries=events,
             source_index_path=source_index_path,
+            include_code_observations=include_code_observations,
         ),
         "assertion": repository_index_payload(
             source_index,
             index_kind="assertion",
             entries=assertions,
             source_index_path=source_index_path,
+            include_code_observations=include_code_observations,
         ),
         "relation": repository_index_payload(
             source_index,
             index_kind="relation",
             entries=relations,
             source_index_path=source_index_path,
+            include_code_observations=include_code_observations,
         ),
     }
 

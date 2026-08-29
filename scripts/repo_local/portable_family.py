@@ -1060,12 +1060,16 @@ def reconstruct_compatibility_family(
         "assertion": assertions,
         "relation": relations,
     }
+    include_code_observations = any(
+        entry.get("code_observation_provider_ref") for entry in artifacts
+    )
     family = {
         kind: repository_index_payload(
             source_index,
             index_kind=kind,
             entries=entries[kind],
             source_index_path=DEFAULT_OUTPUT,
+            include_code_observations=include_code_observations,
         )
         for kind in (
             "entity",
