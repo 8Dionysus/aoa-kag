@@ -2742,6 +2742,8 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             content=(
                 "/*\nimport ghost from 'ghost';\n*/\n"
                 "import client, { helper as alias, other } from './api';\n"
+                "import type { Foo, Bar as Baz } from './types';\n"
+                "import { type Qux, type Zap as Zip } from './more-types';\n"
                 "class Service\n{\n"
                 "  field = helper();\n"
                 "  constructor() { helper(); }\n"
@@ -2762,9 +2764,22 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             if item["observation_kind"] == "relation"
         ]
         self.assertNotIn("ghost", symbols)
-        self.assertTrue({"client", "alias", "other"}.issubset(symbols))
         self.assertTrue(
-            {"./api.default", "./api.helper", "./api.other"}.issubset(
+            {"client", "alias", "other", "Foo", "Baz", "Qux", "Zip"}.issubset(
+                symbols
+            )
+        )
+        self.assertFalse(any(name.startswith("type ") for name in symbols))
+        self.assertTrue(
+            {
+                "./api.default",
+                "./api.helper",
+                "./api.other",
+                "./types.Foo",
+                "./types.Bar",
+                "./more-types.Qux",
+                "./more-types.Zap",
+            }.issubset(
                 {item["relation"]["target_name"] for item in relations}
             )
         )
@@ -2783,6 +2798,10 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "    @deco(helper())\n"
                 "    def inner(value: annotation() = default()):\n"
                 "        body()\n"
+                "    @class_deco(class_helper())\n"
+                "    class Inner(Base(base_factory()), metaclass=meta_factory()):\n"
+                "        def method(self):\n"
+                "            class_body()\n"
             ),
             source_epoch="source-epoch",
         )
@@ -2795,6 +2814,15 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         for target in ("deco", "helper", "annotation", "default"):
             self.assertEqual("outer", callers[target])
         self.assertEqual("outer.inner", callers["body"])
+        for target in (
+            "class_deco",
+            "class_helper",
+            "Base",
+            "base_factory",
+            "meta_factory",
+        ):
+            self.assertEqual("outer", callers[target])
+        self.assertEqual("outer.Inner.method", callers["class_body"])
 
     def test_supplied_provider_adapters_reject_cross_source_attribution(self) -> None:
         ctags = observe_source(
@@ -2891,6 +2919,25 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         )
         identities = {item["subject"]["qualified_name"] for item in provenance["observations"]}
         self.assertEqual(2, len(identities))
+        sbom = observe_sbom(
+            repo="demo",
+            path="bundle.cdx.json",
+            content="{}",
+            source_epoch="epoch",
+            provider_id="syft",
+            provider_version="1",
+            sbom={
+                "bomFormat": "CycloneDX",
+                "components": [
+                    {"name": "common", "version": "1", "purl": "pkg:npm/common@1"},
+                    {"name": "common", "version": "1", "purl": "pkg:pypi/common@1"},
+                ],
+            },
+        )
+        component_ids = {
+            item["subject"]["symbol_id"] for item in sbom["observations"]
+        }
+        self.assertEqual(2, len(component_ids))
 
     def test_scip_relations_keep_enclosing_subject_distinct_from_target(self) -> None:
         caller_symbol = "scip-typescript npm demo 1 caller()."
@@ -2968,6 +3015,45 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             any(
                 item["from_id"] == accidental_id and item["to_id"] == helper_id
                 for item in calls
+            )
+        )
+
+    def test_self_calls_resolve_only_within_the_declaring_class(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "caller.py").write_text(
+                "class A:\n"
+                "    def run(self):\n"
+                "        self.helper()\n"
+                "    def helper(self):\n"
+                "        return 2\n",
+                encoding="utf-8",
+            )
+            (root / "foreign.py").write_text(
+                "class B:\n"
+                "    def helper(self):\n"
+                "        return 1\n",
+                encoding="utf-8",
+            )
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        entities = {
+            item["semantic_key"]: item for item in family["entity"]["entries"]
+        }
+        run_id = entities["python:method:A.run"]["id"]
+        local_helper_id = entities["python:method:A.helper"]["id"]
+        foreign_helper_id = entities["python:method:B.helper"]["id"]
+        calls = [
+            relation
+            for relation in family["relation"]["entries"]
+            if relation["relation_kind"] == "calls" and relation["from_id"] == run_id
+        ]
+        self.assertTrue(any(relation["to_id"] == local_helper_id for relation in calls))
+        self.assertFalse(
+            any(
+                relation["to_id"] == foreign_helper_id
+                for relation in calls
             )
         )
 

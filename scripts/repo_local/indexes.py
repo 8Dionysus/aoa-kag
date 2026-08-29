@@ -788,9 +788,23 @@ def relation_entries(
                         (language, target_name), []
                     )
                     if not matches and target_name.startswith("self."):
-                        matches = code_entities_by_language_name.get(
-                            (language, target_name.removeprefix("self.")), []
+                        source_context = str(reference.get("source_context") or "")
+                        context_prefix = f"{language}:"
+                        caller_name = (
+                            source_context.removeprefix(context_prefix)
+                            if source_context.startswith(context_prefix)
+                            else ""
                         )
+                        declaring_class = (
+                            caller_name.rsplit(".", 1)[0]
+                            if "." in caller_name
+                            else ""
+                        )
+                        if declaring_class:
+                            member_name = target_name.removeprefix("self.")
+                            matches = code_entities_by_language_name.get(
+                                (language, f"{declaring_class}.{member_name}"), []
+                            )
                 unique = {item["id"]: item for item in matches}
                 relation_kind = str(reference.get("relation_kind") or "")
                 if (

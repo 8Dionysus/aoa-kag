@@ -368,13 +368,23 @@ class _PythonObservationVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         subject = self._symbol(node, node.name, "class")
+        # Decorators, bases, class keywords and type parameters are evaluated
+        # before the class body exists, in the enclosing lexical scope.
+        for decorator in node.decorator_list:
+            self.visit(decorator)
         for base in node.bases:
             target_name = _python_name(base)
             if target_name:
                 self._relation(node, subject, "inherits", target_name)
+            self.visit(base)
+        for keyword in node.keywords:
+            self.visit(keyword.value)
+        for type_param in getattr(node, "type_params", []):
+            self.visit(type_param)
         self.scope.append(node.name)
         self.scope_kinds.append("class")
-        self.generic_visit(node)
+        for statement in node.body:
+            self.visit(statement)
         self.scope_kinds.pop()
         self.scope.pop()
 
@@ -1582,12 +1592,14 @@ class _JavaScriptObservationCollector:
         match = _JS_IMPORT_FROM_RE.match(line)
         if match is not None:
             bindings, module = match.groups()
+            bindings = re.sub(r"^type\s+", "", bindings.strip())
             names: list[tuple[str, str]] = []
             if bindings.strip().startswith("{"):
                 inside = bindings.strip()[1:-1]
                 for item in inside.split(","):
-                    parts = re.split(r"\s+as\s+", item.strip())
-                    if item.strip():
+                    specifier = re.sub(r"^type\s+", "", item.strip())
+                    parts = re.split(r"\s+as\s+", specifier)
+                    if specifier:
                         names.append((parts[-1].strip(), parts[0].strip()))
             elif bindings.strip().startswith("*"):
                 namespace = re.search(r"\bas\s+([A-Za-z_$][\w$]*)", bindings)
@@ -1601,8 +1613,9 @@ class _JavaScriptObservationCollector:
                 if separator and remainder.strip().startswith("{"):
                     inside = remainder.strip()[1:-1]
                     for item in inside.split(","):
-                        parts = re.split(r"\s+as\s+", item.strip())
-                        if item.strip():
+                        specifier = re.sub(r"^type\s+", "", item.strip())
+                        parts = re.split(r"\s+as\s+", specifier)
+                        if specifier:
                             names.append((parts[-1].strip(), parts[0].strip()))
             for name, imported in names:
                 column = max(line.find(name) + 1, 1)
@@ -2444,6 +2457,13 @@ def observe_sbom(
         if not name:
             continue
         identity = f"{name}@{version}" if version else name
+        coordinates = [
+            f"{field}:{str(component[field]).strip()}"
+            for field in ("purl", "bom-ref", "SPDXID", "group")
+            if str(component.get(field) or "").strip()
+        ]
+        if coordinates:
+            identity += "|" + "|".join(coordinates)
         observations.append({
             "observation_kind": "symbol", "semantic_key": f"component:{index}:{identity}",
             "subject": {"qualified_name": identity, "symbol_kind": "software_component", "label": name},
