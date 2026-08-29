@@ -5137,6 +5137,7 @@ def prepare_self_coverage(
     full_coverage_cache: Path | None = None,
 ) -> int:
     coverage_generation = coverage_generation_module()
+    transient_external_rows = False
 
     try:
         payload = build_preparation_coverage(
@@ -5156,6 +5157,7 @@ def prepare_self_coverage(
                 full_coverage_cache,
             )
             strategy = "verified-full-owner-cache+self-rebuild"
+            transient_external_rows = True
         else:
             print(
                 "[prepare-landing] pinned coverage reuse inapplicable; "
@@ -5166,6 +5168,14 @@ def prepare_self_coverage(
             if full_coverage_cache is not None:
                 write_preparation_coverage_cache(repo_root, full_coverage_cache, payload)
             strategy = "full-owner-rebuild+self-budget-deferred"
+            transient_external_rows = True
+    if transient_external_rows:
+        # The full-owner rebuild proves that every pinned owner source can be
+        # projected by the candidate runtime, but its transient external
+        # families are preparation evidence, not published owner state. Keep
+        # authoritative external rows on their checked-in posture and carry
+        # only the rebuilt self row into the SCC.
+        payload = build_self_coverage_check_payload(payload)
     print(
         f"[prepare-landing] coverage strategy={strategy} "
         "proof=preparation-only",

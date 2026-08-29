@@ -3955,7 +3955,8 @@ class PrepareLandingTests(unittest.TestCase):
         coverage = unittest.mock.Mock()
         coverage.DEFAULT_OUTPUT = Path("coverage.json")
         coverage.DEFAULT_MIN_OUTPUT = Path("coverage.min.json")
-        payload = {"owners": []}
+        payload = {"owners": [{"repo": "transient"}]}
+        authoritative = {"owners": [{"repo": "authoritative"}]}
         with patch.object(
             prepare_landing,
             "coverage_generation_module",
@@ -3968,7 +3969,11 @@ class PrepareLandingTests(unittest.TestCase):
             prepare_landing,
             "build_full_preparation_coverage",
             return_value=payload,
-        ) as full_build:
+        ) as full_build, patch.object(
+            prepare_landing,
+            "build_self_coverage_check_payload",
+            return_value=authoritative,
+        ) as merge_authoritative:
             result = prepare_landing.prepare_self_coverage(
                 Path("/candidate"),
                 external_seed_ref="base",
@@ -3978,17 +3983,19 @@ class PrepareLandingTests(unittest.TestCase):
 
         self.assertEqual(0, result)
         full_build.assert_called_once_with(Path("/candidate"))
+        merge_authoritative.assert_called_once_with(payload)
         coverage.write_outputs.assert_called_once_with(
             coverage.DEFAULT_OUTPUT,
             coverage.DEFAULT_MIN_OUTPUT,
-            payload,
+            authoritative,
         )
 
     def test_prepare_coverage_reuses_verified_full_owner_cache_within_scc(self) -> None:
         coverage = unittest.mock.Mock()
         coverage.DEFAULT_OUTPUT = Path("coverage.json")
         coverage.DEFAULT_MIN_OUTPUT = Path("coverage.min.json")
-        payload = {"owners": []}
+        payload = {"owners": [{"repo": "transient"}]}
+        authoritative = {"owners": [{"repo": "authoritative"}]}
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = Path(tmpdir) / "full-owner.json"
             cache.write_text("cached\n", encoding="utf-8")
@@ -4009,7 +4016,11 @@ class PrepareLandingTests(unittest.TestCase):
             ) as load_cache, patch.object(
                 prepare_landing,
                 "build_full_preparation_coverage",
-            ) as full_build:
+            ) as full_build, patch.object(
+                prepare_landing,
+                "build_self_coverage_check_payload",
+                return_value=authoritative,
+            ) as merge_authoritative:
                 result = prepare_landing.prepare_self_coverage(
                     Path("/candidate"),
                     external_seed_ref="base",
@@ -4021,6 +4032,12 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertEqual(0, result)
         load_cache.assert_called_once_with(Path("/candidate"), cache)
         full_build.assert_not_called()
+        merge_authoritative.assert_called_once_with(payload)
+        coverage.write_outputs.assert_called_once_with(
+            coverage.DEFAULT_OUTPUT,
+            coverage.DEFAULT_MIN_OUTPUT,
+            authoritative,
+        )
 
     def test_full_owner_cache_is_private_runtime_bound_and_reverified(self) -> None:
         coverage = unittest.mock.Mock()
