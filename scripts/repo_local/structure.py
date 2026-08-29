@@ -895,13 +895,13 @@ def _code_structure(
             parser=provider_id,
             parser_version=provider_version,
             observation_id=str(observation.get("observation_id") or ""),
-            # Source epoch, language and provider qualification are inherited
-            # from the source record and parser ref.  Occurrence anchors retain
-            # only evidence that varies per relation.
+            # Source epoch, language, provider qualification and numeric
+            # provider confidence are inherited from the observation batch and
+            # source record.  The outbound edge below retains the evidence
+            # class that varies per relation occurrence.
             currentness_state=currentness_state,
             evidence_class="deterministic",
             trust_ref=trust_ref,
-            semantic_confidence=dict(semantic_confidence),
         )
         anchors.append(relation_anchor)
         outbound.append(

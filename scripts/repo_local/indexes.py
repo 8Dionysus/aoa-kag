@@ -776,7 +776,9 @@ def relation_entries(
             ):
                 language, _, target_name = target_ref.partition(":")
                 enriched_code_reference = bool(
-                    anchor.get("language")
+                    anchor.get("observation_id")
+                    or anchor.get("currentness_state")
+                    or anchor.get("language")
                     or anchor.get("provider_ref")
                     or anchor.get("qualification")
                     or anchor.get("semantic_confidence")
