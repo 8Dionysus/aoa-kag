@@ -888,19 +888,19 @@ def _code_structure(
                 occurrence.get("end_column") or occurrence.get("start_column") or 1
             ),
             symbol_kind=relation_kind,
-            qualified_name=(
-                f"{subject.get('qualified_name', '')} -> {target_name}"
-            ),
+            # The caller identity already lives in the occurrence semantic key
+            # and the outbound source-entity link.  Repeating it here for every
+            # occurrence materially inflates the portable family.
+            qualified_name=target_name,
             parser=provider_id,
             parser_version=provider_version,
             observation_id=str(observation.get("observation_id") or ""),
-            source_epoch=str(source.get("source_epoch") or ""),
-            provider_ref=parser_ref,
-            language=language,
+            # Source epoch, language and provider qualification are inherited
+            # from the source record and parser ref.  Occurrence anchors retain
+            # only evidence that varies per relation.
             currentness_state=currentness_state,
             evidence_class="deterministic",
             trust_ref=trust_ref,
-            qualification=dict(qualification),
             semantic_confidence=dict(semantic_confidence),
         )
         anchors.append(relation_anchor)
