@@ -29,6 +29,15 @@ from scripts.generate_repo_local_kag_coverage import source_index_matches_owner
 from scripts.generation.provider_map import _is_repo_local_meta_index_payload
 from scripts.repo_local.projections import build_repo_retrieval_documents
 from scripts.repo_local.query import RepoKagQuery
+from scripts.repo_local.code_observations import (
+    MACHINE_OBSERVATION_SCHEMA,
+    measure_observation_delta,
+    normalize_provider_observations,
+    observe_source,
+    plan_observation_delta,
+    provider_lane_posture,
+)
+from scripts.repo_local.structure import extract_structure
 from scripts.repo_local.portable_family import (
     HARD_MAX_SHARD_BYTES,
     MANIFEST_RELATIVE_PATH,
@@ -2251,6 +2260,459 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             {entry["semantic_key"] for entry in anchors},
         )
 
+    def test_code_observation_projection_preserves_epoch_provider_and_local_calls(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            source = build_index(root)
+            family = build_repository_indexes(source, repo_root=root)
+
+        source_record = next(
+            record
+            for record in source["records"]
+            if record["identity"]["path"] == "src/demo.py"
+        )
+        source_id = source_record["identity"]["id"]
+        code_anchors = [
+            anchor
+            for anchor in family["anchor"]["entries"]
+            if anchor["source_record_id"] == source_id
+            and anchor["anchor_kind"] == "python_symbol"
+        ]
+        self.assertTrue(code_anchors)
+        self.assertTrue(
+            all(anchor["language"] == "python" for anchor in code_anchors)
+        )
+        self.assertTrue(
+            all(anchor["provider_ref"] == "python-ast@1" for anchor in code_anchors)
+        )
+        self.assertTrue(
+            all(
+                anchor["source_epoch"] == source["repo"]["git_ref"]
+                for anchor in code_anchors
+            )
+        )
+        self.assertTrue(
+            all(
+                anchor["qualification"]["materialization"]["state"] == "source_local"
+                for anchor in code_anchors
+            )
+        )
+        entities = {
+            entry["semantic_key"]: entry for entry in family["entity"]["entries"]
+        }
+        calls = [
+            relation
+            for relation in family["relation"]["entries"]
+            if relation["relation_kind"] == "calls"
+        ]
+        self.assertTrue(
+            any(
+                relation["from_id"] == entities["python:method:Demo.run"]["id"]
+                and relation["to_id"] == entities["python:function:helper"]["id"]
+                for relation in calls
+            )
+        )
+
+    def test_mime_only_code_observation_preserves_the_authored_source_path(self) -> None:
+        structure = extract_structure(
+            repo="demo",
+            source_id="source:demo:entry",
+            path="src/entry",
+            mime="text/x-python",
+            content=b"def helper():\n    return 1\n",
+            source_epoch="source-epoch",
+        )
+        self.assertEqual(
+            "src/entry",
+            structure["code_observation"]["source"]["path"],
+        )
+        self.assertEqual(
+            "python",
+            structure["code_observation"]["source"]["language"],
+        )
+
+    def test_invalid_utf8_code_keeps_a_degraded_observation_envelope(self) -> None:
+        structure = extract_structure(
+            repo="demo",
+            source_id="source:demo:invalid",
+            path="src/invalid.py",
+            mime="text/x-python",
+            content=b"def broken(:\n\xff\n",
+            source_epoch="source-epoch",
+        )
+
+        batch = structure["code_observation"]
+        self.assertEqual("degraded", batch["parse_status"])
+        self.assertEqual("invalid_utf8", batch["diagnostics"][0]["kind"])
+        self.assertEqual("src/invalid.py", batch["source"]["path"])
+        self.assertEqual(
+            ["artifact"],
+            [anchor["anchor_kind"] for anchor in structure["anchor_refs"]],
+        )
+
+    def test_lexical_fallback_masks_block_comments_across_lines(self) -> None:
+        batch = observe_source(
+            repo="demo",
+            path="src/comments.js",
+            content=(
+                "/* function fake() { return nope(); }\n"
+                "   class AlsoFake {} */\n"
+                "export function real() { return okay(); }\n"
+            ),
+            source_epoch="source-epoch",
+        )
+
+        symbols = {
+            observation["subject"]["qualified_name"]
+            for observation in batch["observations"]
+            if observation["observation_kind"] == "symbol"
+        }
+        targets = {
+            observation["relation"]["target_name"]
+            for observation in batch["observations"]
+            if observation["observation_kind"] == "relation"
+        }
+        self.assertEqual({"real"}, symbols)
+        self.assertNotIn("nope", targets)
+        self.assertNotIn("fake", symbols)
+        self.assertNotIn("AlsoFake", symbols)
+
+    def test_canonical_provider_rebind_requires_source_bound_observation_ids(self) -> None:
+        batch = normalize_provider_observations(
+            repo="demo",
+            path="src/provider.py",
+            content="def helper():\n    pass\n",
+            source_epoch="source-epoch",
+            language="python",
+            provider_id="future-provider",
+            provider_version="1",
+            observations=[
+                {
+                    "observation_kind": "symbol",
+                    "semantic_key": "future:function:helper",
+                    "subject": {
+                        "qualified_name": "helper",
+                        "symbol_kind": "function",
+                        "label": "helper",
+                    },
+                    "occurrence": {
+                        "start_line": 1,
+                        "end_line": 1,
+                        "start_column": 1,
+                        "end_column": 7,
+                    },
+                    "relation": None,
+                    "confidence": {"evidence_class": "observed", "value": 0.8},
+                }
+            ],
+        )
+        tampered = copy.deepcopy(batch)
+        tampered["observations"][0]["observation_id"] = "forged-observation-id"
+
+        with self.assertRaisesRegex(ValueError, "not bound to its semantic key"):
+            observe_source(
+                repo="demo",
+                path="src/provider.py",
+                content="def helper():\n    pass\n",
+                source_epoch="source-epoch",
+                provider_batch=tampered,
+            )
+
+        self.assertEqual(
+            "supplied_unadmitted",
+            batch["provider"]["lane"]["status"],
+        )
+        self.assertEqual(
+            provider_lane_posture("future-provider", supplied=True),
+            batch["provider"]["lane"],
+        )
+
+    def test_observation_delta_defaults_currentness_to_the_after_batch(self) -> None:
+        before = observe_source(
+            repo="demo",
+            path="src/current.py",
+            content="def helper():\n    return 1\n",
+            source_epoch="epoch-before",
+        )
+        after = observe_source(
+            repo="demo",
+            path="src/current.py",
+            content="def helper():\n    return 2\n",
+            source_epoch="epoch-after",
+        )
+
+        delta = plan_observation_delta(before, after)
+
+        self.assertEqual("stale", delta["currentness"]["before"]["state"])
+        self.assertIn("source_epoch_mismatch", delta["currentness"]["before"]["reasons"])
+        self.assertIn("content_digest_mismatch", delta["currentness"]["before"]["reasons"])
+        self.assertEqual("current", delta["currentness"]["after"]["state"])
+
+    def test_observation_delta_keeps_git_lineage_and_bounded_dependency_closure(self) -> None:
+        before = observe_source(
+            repo="demo",
+            path="src/pkg.py",
+            lineage_path="src/pkg.py",
+            content="def helper():\n    return 1\n",
+            source_epoch="epoch-before",
+        )
+        renamed = observe_source(
+            repo="demo",
+            path="src/renamed.py",
+            lineage_path="src/pkg.py",
+            content="def helper():\n    return 1\n",
+            source_epoch="epoch-after",
+        )
+        moved = observe_source(
+            repo="demo",
+            path="lib/pkg.py",
+            lineage_path="src/pkg.py",
+            content="def helper():\n    return 1\n",
+            source_epoch="epoch-after",
+        )
+        renamed_delta = plan_observation_delta(before, renamed)
+        moved_delta = plan_observation_delta(before, moved)
+        self.assertEqual("rename", renamed_delta["change_kind"])
+        self.assertEqual("move", moved_delta["change_kind"])
+        self.assertEqual("stable", renamed_delta["lineage"]["state"])
+        self.assertTrue(renamed_delta["lineage"]["matches"])
+        self.assertEqual([], renamed_delta["lineage"]["alternatives"])
+        self.assertTrue(renamed_delta["invalidation"]["path_reanchored_observation_ids"])
+
+        added_delta = plan_observation_delta(None, renamed)
+        deleted_delta = plan_observation_delta(before, None)
+        self.assertEqual("add", added_delta["change_kind"])
+        self.assertEqual(
+            sorted(
+                observation["observation_id"]
+                for observation in renamed["observations"]
+            ),
+            added_delta["invalidation"]["recomputed_observation_ids"],
+        )
+        self.assertEqual("delete", deleted_delta["change_kind"])
+        self.assertEqual(
+            sorted(
+                observation["observation_id"]
+                for observation in before["observations"]
+            ),
+            deleted_delta["invalidation"]["invalidated_observation_ids"],
+        )
+
+        helper_before = observe_source(
+            repo="demo",
+            path="src/helper.py",
+            content="def helper():\n    return 1\n",
+            source_epoch="epoch-before",
+        )
+        helper_after = observe_source(
+            repo="demo",
+            path="src/helper.py",
+            content="def helper():\n    return 2\n",
+            source_epoch="epoch-after",
+        )
+        caller = observe_source(
+            repo="demo",
+            path="src/caller.py",
+            content="def caller():\n    helper()\n",
+            source_epoch="epoch-after",
+        )
+        helper_symbol_id = next(
+            observation["subject"]["symbol_id"]
+            for observation in helper_after["observations"]
+            if observation["observation_kind"] == "symbol"
+        )
+        caller = copy.deepcopy(caller)
+        for observation in caller["observations"]:
+            if observation["observation_kind"] == "relation":
+                observation["relation"]["target_symbol_id"] = helper_symbol_id
+                observation["relation"]["resolution"] = "resolved_local"
+        dependency_delta = plan_observation_delta(
+            helper_before,
+            helper_after,
+            dependency_batches=[caller],
+            max_graph_hops=2,
+        )
+        self.assertEqual("graph", dependency_delta["invalidation"]["scope"])
+        self.assertIn(
+            "src/caller.py",
+            dependency_delta["affected_graph"]["affected_paths"],
+        )
+        self.assertTrue(dependency_delta["affected_graph"]["dependent_symbol_ids"])
+        self.assertTrue(
+            dependency_delta["invalidation"][
+                "dependency_invalidated_observation_ids"
+            ]
+        )
+        measured = measure_observation_delta(
+            helper_before,
+            helper_after,
+            full_rebuild=helper_after,
+            dependency_batches=[caller],
+        )
+        self.assertEqual(
+            "matched",
+            measured["measurement"]["full_rebuild_parity"]["state"],
+        )
+        Draft202012Validator(
+            load_json(REPO_ROOT / "schemas" / "code-observation-delta.schema.json")
+        ).validate(measured)
+
+    def test_observation_delta_keeps_transformation_candidates_unselected(self) -> None:
+        split_before = observe_source(
+            repo="demo",
+            path="src/split.py",
+            content="def foo():\n    return 1\n",
+            source_epoch="epoch-before",
+        )
+        split_after = observe_source(
+            repo="demo",
+            path="src/split.py",
+            content=(
+                "def foo_one():\n    return 1\n\n"
+                "def foo_two():\n    return 2\n"
+            ),
+            source_epoch="epoch-after",
+        )
+        split_alternatives = plan_observation_delta(split_before, split_after)[
+            "lineage"
+        ]["alternatives"]
+        self.assertIn("split", {item["kind"] for item in split_alternatives})
+        self.assertTrue(all(item["selected"] is False for item in split_alternatives))
+
+        merge_before = observe_source(
+            repo="demo",
+            path="src/merge.py",
+            content=(
+                "def foo_one():\n    return 1\n\n"
+                "def foo_two():\n    return 2\n"
+            ),
+            source_epoch="epoch-before",
+        )
+        merge_after = observe_source(
+            repo="demo",
+            path="src/merge.py",
+            content="def foo():\n    return 1\n",
+            source_epoch="epoch-after",
+        )
+        merge_alternatives = plan_observation_delta(merge_before, merge_after)[
+            "lineage"
+        ]["alternatives"]
+        self.assertIn("merge", {item["kind"] for item in merge_alternatives})
+        self.assertTrue(all(item["selected"] is False for item in merge_alternatives))
+
+    def test_lexical_js_ts_fallback_is_explicitly_non_portable(self) -> None:
+        epoch = "source-epoch"
+        javascript = observe_source(
+            repo="demo",
+            path="src/demo.js",
+            content="export function testRender() { return helper(); }\n",
+            source_epoch=epoch,
+        )
+        typescript = observe_source(
+            repo="demo",
+            path="src/demo.ts",
+            content="export function testRender(): string { return helper(); }\n",
+            source_epoch=epoch,
+        )
+        self.assertEqual("javascript-lexical", javascript["provider"]["id"])
+        self.assertEqual("source_local_fallback", javascript["provider"]["lane"]["status"])
+        self.assertIn("not semantic portability", javascript["provider"]["lane"]["claim_limit"])
+        self.assertEqual("typescript-lexical", typescript["provider"]["id"])
+        self.assertEqual("source_local_fallback", typescript["provider"]["lane"]["status"])
+        self.assertEqual("source_local", javascript["qualification"]["materialization"]["state"])
+        self.assertEqual("source_local", typescript["qualification"]["materialization"]["state"])
+
+    def test_g59_machine_envelope_is_bound_but_remains_unadmitted(self) -> None:
+        epoch = "sha256:" + ("0" * 64)
+        envelope = {
+            "schema": MACHINE_OBSERVATION_SCHEMA,
+            "version": "0.1.0",
+            "generated_at": "2026-08-26T12:00:00+00:00",
+            "provider": {
+                "id": "universal-ctags",
+                "owner": "abyss-machine",
+                "config_digest": "sha256:" + ("1" * 64),
+            },
+            "source": {
+                "owner": "abyss-machine",
+                "ref": "git:abyss-machine/source",
+                "epoch": epoch,
+                "binding_status": "bound",
+            },
+            "provenance": {
+                "evidence_ref": "receipt:ctags-observation-1",
+                "binding_status": "bound",
+            },
+            "lineage": {
+                "derived_from_source": True,
+                "canonical_source": "owner_repository",
+                "observation_consumer": "aoa-kag",
+            },
+            "semantic": {
+                "status": "unproven",
+                "proof_owner": "aoa-evals",
+                "admission_is_not_semantic_proof": True,
+            },
+            "policy": {
+                "machine_layer_materializes_no_kag_truth": True,
+                "unbound_source_or_provenance_is_not_admitted": True,
+            },
+            "records": [
+                {"_type": "tag", "name": "helper", "kind": "f", "line": 1}
+            ],
+            "record_count": 1,
+        }
+        batch = observe_source(
+            repo="demo",
+            path="src/demo.py",
+            content="def helper():\n    pass\n",
+            source_epoch=epoch,
+            provider_batch=envelope,
+        )
+        Draft202012Validator(
+            load_json(REPO_ROOT / "schemas" / "code-observation.schema.json")
+        ).validate(batch)
+        self.assertEqual("universal-ctags", batch["provider"]["id"])
+        self.assertEqual("supplied_unadmitted", batch["provider"]["lane"]["status"])
+        self.assertEqual("not_admitted", batch["qualification"]["machine_admission"]["state"])
+        self.assertEqual("untrusted", batch["qualification"]["materialization"]["trust_ref"])
+        self.assertEqual("not_signed", batch["machine_binding"]["candidate_artifact"]["signature_status"])
+        self.assertEqual("not_promoted", batch["machine_binding"]["candidate_artifact"]["registry_status"])
+        self.assertEqual("not_admitted", batch["machine_binding"]["admission"]["status"])
+
+        structure_envelope = copy.deepcopy(envelope)
+        structure_envelope["records"][0]["kind"] = "function"
+        structure = extract_structure(
+            repo="demo",
+            source_id="source:demo:ctags",
+            path="src/demo.py",
+            mime="text/x-python",
+            content=b"def helper():\n    pass\n",
+            source_epoch=epoch,
+            provider_batch=structure_envelope,
+        )
+        code_anchor = next(
+            anchor
+            for anchor in structure["anchor_refs"]
+            if anchor["anchor_kind"] == "python_symbol"
+        )
+        self.assertEqual(
+            {"name": "universal-ctags", "version": "6.2.1"},
+            code_anchor["parser"],
+        )
+
+        unbound = copy.deepcopy(envelope)
+        unbound["source"]["binding_status"] = "unbound"
+        with self.assertRaisesRegex(ValueError, "source is not bound"):
+            observe_source(
+                repo="demo",
+                path="src/demo.py",
+                content="def helper():\n    pass\n",
+                source_epoch=epoch,
+                provider_batch=unbound,
+            )
+
     def test_event_index_separates_producers_declarations_and_receipts(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -2926,6 +3388,12 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertTrue(helper["anchor_ids"])
         self.assertTrue(hybrid["hits"])
         self.assertEqual(hybrid, query.query("demo helper", mode="hybrid", limit=5))
+        self.assertEqual(
+            "aoa-evals",
+            query.query_handle("proof_status")["owner_route"],
+        )
+        self.assertIn("handles", hybrid)
+        self.assertIn("language", query.discover()["filter_fields"])
         Draft202012Validator(load_json(QUERY_RESULT_SCHEMA_PATH)).validate(hybrid)
 
     def test_query_exact_indexes_event_evidence_and_dashboard_readiness_path(self) -> None:

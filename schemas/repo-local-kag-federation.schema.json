@@ -187,6 +187,8 @@
           "type": "array",
           "items": {"$ref": "#/$defs/evidenceRef"}
         },
+        "qualification": {"$ref": "#/$defs/qualification"},
+        "semantic_confidence": {"$ref": "#/$defs/confidence"},
         "abi": {"type": "object"},
         "signs": {"type": "object"},
         "owner_return_route": {"type": "object"}
@@ -264,6 +266,71 @@
           "type": "string",
           "enum": ["external-web", "external-owner", "github-object"]
         }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_class", "value"],
+      "properties": {
+        "evidence_class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "value": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_lifecycle",
+        "machine_admission",
+        "semantic_confidence",
+        "materialization"
+      ],
+      "properties": {
+        "provider_lifecycle": {"$ref": "#/$defs/providerLifecycle"},
+        "machine_admission": {"$ref": "#/$defs/machineAdmission"},
+        "semantic_confidence": {"$ref": "#/$defs/confidence"},
+        "materialization": {"$ref": "#/$defs/materialization"}
+      }
+    },
+    "providerLifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "health", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["source_local", "unobserved"]},
+        "health": {"enum": ["source_local", "unobserved"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "machineAdmission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["not_applicable", "not_admitted"]},
+        "trust_ref": {"enum": ["not_applicable", "untrusted"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref"],
+      "properties": {
+        "state": {"enum": ["source_local", "untrusted_observation"]},
+        "trust_ref": {"enum": ["deterministic", "untrusted"]}
       }
     }
   }

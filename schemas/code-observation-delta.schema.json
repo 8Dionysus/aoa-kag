@@ -1,0 +1,654 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/code-observation-delta.schema.json",
+  "title": "AoA bounded code observation delta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "delta_id",
+    "capability_class",
+    "repository",
+    "provider",
+    "change_kind",
+    "before",
+    "after",
+    "observation_delta",
+    "invalidation",
+    "provenance",
+    "qualification"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-code-observation-delta-v1"
+    },
+    "delta_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "capability_class": {
+      "const": "code-structure"
+    },
+    "repository": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "provider": {
+      "$ref": "#/$defs/providerSummary"
+    },
+    "change_kind": {
+      "enum": [
+        "add",
+        "delete",
+        "modify",
+        "rename",
+        "move",
+        "unchanged"
+      ]
+    },
+    "before": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/sourceSummary"
+        }
+      ]
+    },
+    "after": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/sourceSummary"
+        }
+      ]
+    },
+    "observation_delta": {
+      "$ref": "#/$defs/observationDelta"
+    },
+    "invalidation": {
+      "$ref": "#/$defs/invalidation"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "qualification": {
+      "$ref": "#/$defs/qualificationDelta"
+    },
+    "currentness": {
+      "$ref": "#/$defs/currentnessDelta"
+    },
+    "lineage": {
+      "$ref": "#/$defs/lineage"
+    },
+    "affected_graph": {
+      "$ref": "#/$defs/affectedGraph"
+    },
+    "metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "measurement": {
+      "$ref": "#/$defs/measurement"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "sourceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batch_id",
+        "repo",
+        "path",
+        "lineage_path",
+        "source_epoch",
+        "content_digest",
+        "language"
+      ],
+      "properties": {
+        "batch_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "repo": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "lineage_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "source_epoch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "language": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "providerSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "config_digest"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "config_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "lineageMatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "before_observation_id",
+        "after_observation_id",
+        "match_kind",
+        "confidence"
+      ],
+      "properties": {
+        "before_observation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "after_observation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "match_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "confidence": {"$ref": "#/$defs/confidence"}
+      }
+    },
+    "transformationAlternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "before_observation_ids",
+        "after_observation_ids",
+        "confidence",
+        "selected",
+        "reason",
+        "claim_limit"
+      ],
+      "properties": {
+        "kind": {
+          "enum": ["split", "merge", "symbol_rename", "ambiguous"]
+        },
+        "before_observation_ids": {"$ref": "#/$defs/idList"},
+        "after_observation_ids": {"$ref": "#/$defs/idList"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "selected": {"type": "boolean"},
+        "reason": {"$ref": "#/$defs/nonEmptyString"},
+        "claim_limit": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "nullableRelativePath": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/relativePath"}
+      ]
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "before_path",
+        "after_path",
+        "before_lineage_path",
+        "after_lineage_path",
+        "stable_lineage_path",
+        "matches",
+        "alternatives",
+        "claim_limit"
+      ],
+      "properties": {
+        "state": {
+          "enum": ["added", "deleted", "stable", "recovered_by_content", "changed"]
+        },
+        "before_path": {"$ref": "#/$defs/nullableRelativePath"},
+        "after_path": {"$ref": "#/$defs/nullableRelativePath"},
+        "before_lineage_path": {"$ref": "#/$defs/nullableRelativePath"},
+        "after_lineage_path": {"$ref": "#/$defs/nullableRelativePath"},
+        "stable_lineage_path": {"$ref": "#/$defs/relativePath"},
+        "matches": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/lineageMatch"}
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/transformationAlternative"}
+        },
+        "claim_limit": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "graphEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_symbol_id",
+        "target_symbol_id",
+        "relation_kind",
+        "observation_id",
+        "confidence",
+        "distance",
+        "direction"
+      ],
+      "properties": {
+        "source_symbol_id": {"$ref": "#/$defs/nonEmptyString"},
+        "target_symbol_id": {"$ref": "#/$defs/nonEmptyString"},
+        "relation_kind": {"$ref": "#/$defs/nonEmptyString"},
+        "observation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "distance": {"type": "integer", "minimum": 1},
+        "direction": {"const": "dependent_of_changed_symbol"}
+      }
+    },
+    "graphCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batch_count",
+        "observation_count",
+        "unresolved_edge_count",
+        "claim_limit"
+      ],
+      "properties": {
+        "batch_count": {"type": "integer", "minimum": 0},
+        "observation_count": {"type": "integer", "minimum": 0},
+        "unresolved_edge_count": {"type": "integer", "minimum": 0},
+        "claim_limit": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "affectedGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "changed_symbol_ids",
+        "affected_symbol_ids",
+        "dependent_symbol_ids",
+        "affected_observation_ids",
+        "affected_paths",
+        "edges",
+        "max_hops",
+        "truncated",
+        "coverage"
+      ],
+      "properties": {
+        "scope": {"const": "supplied_observation_batches"},
+        "changed_symbol_ids": {"$ref": "#/$defs/idList"},
+        "affected_symbol_ids": {"$ref": "#/$defs/idList"},
+        "dependent_symbol_ids": {"$ref": "#/$defs/idList"},
+        "affected_observation_ids": {"$ref": "#/$defs/idList"},
+        "affected_paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/relativePath"}
+        },
+        "edges": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/graphEdge"}
+        },
+        "max_hops": {"type": "integer", "minimum": 1},
+        "truncated": {"type": "boolean"},
+        "coverage": {"$ref": "#/$defs/graphCoverage"}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "before_observation_count",
+        "after_observation_count",
+        "reused_observation_count",
+        "recomputation_count",
+        "direct_invalidation_count",
+        "dependency_invalidation_count",
+        "affected_symbol_count",
+        "affected_graph_edge_count",
+        "reuse_ratio",
+        "blast_radius_ratio"
+      ],
+      "properties": {
+        "before_observation_count": {"type": "integer", "minimum": 0},
+        "after_observation_count": {"type": "integer", "minimum": 0},
+        "reused_observation_count": {"type": "integer", "minimum": 0},
+        "recomputation_count": {"type": "integer", "minimum": 0},
+        "direct_invalidation_count": {"type": "integer", "minimum": 0},
+        "dependency_invalidation_count": {"type": "integer", "minimum": 0},
+        "affected_symbol_count": {"type": "integer", "minimum": 0},
+        "affected_graph_edge_count": {"type": "integer", "minimum": 0},
+        "reuse_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+        "blast_radius_ratio": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "parity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "matched", "claim_limit"],
+      "properties": {
+        "state": {"enum": ["not_supplied", "matched", "mismatch"]},
+        "matched": {"type": "boolean"},
+        "expected_observation_digest": {"$ref": "#/$defs/digest"},
+        "full_rebuild_observation_digest": {"$ref": "#/$defs/digest"},
+        "claim_limit": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["latency_ms", "peak_rss_kib", "full_rebuild_parity"],
+      "properties": {
+        "latency_ms": {"type": "number", "minimum": 0},
+        "peak_rss_kib": {"type": "integer", "minimum": 0},
+        "full_rebuild_parity": {"$ref": "#/$defs/parity"}
+      }
+    },
+    "qualificationDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/qualification"}
+          ]
+        },
+        "after": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/qualification"}
+          ]
+        }
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_lifecycle",
+        "machine_admission",
+        "semantic_confidence",
+        "materialization"
+      ],
+      "properties": {
+        "provider_lifecycle": {
+          "$ref": "#/$defs/providerLifecycle"
+        },
+        "machine_admission": {
+          "$ref": "#/$defs/machineAdmission"
+        },
+        "semantic_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "materialization": {
+          "$ref": "#/$defs/materialization"
+        }
+      }
+    },
+    "providerLifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "health", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["source_local", "unobserved"]},
+        "health": {"enum": ["source_local", "unobserved"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "machineAdmission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["not_applicable", "not_admitted"]},
+        "trust_ref": {"enum": ["not_applicable", "untrusted"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref"],
+      "properties": {
+        "state": {"enum": ["source_local", "untrusted_observation"]},
+        "trust_ref": {"enum": ["deterministic", "untrusted"]}
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_class", "value"],
+      "properties": {
+        "evidence_class": {
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "idList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "observationDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "added_observation_ids",
+        "removed_observation_ids",
+        "updated_observation_ids",
+        "reused_observation_ids",
+        "affected_symbol_ids"
+      ],
+      "properties": {
+        "added_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "removed_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "updated_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "reused_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "affected_symbol_ids": {
+          "$ref": "#/$defs/idList"
+        }
+      }
+    },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "affected_paths",
+        "recomputed_observation_ids",
+        "invalidated_observation_ids",
+        "blast_radius"
+      ],
+      "properties": {
+        "scope": {
+          "enum": [
+            "none",
+            "file",
+            "graph"
+          ]
+        },
+        "affected_paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        },
+        "recomputed_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "invalidated_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "dependency_invalidated_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "path_reanchored_observation_ids": {
+          "$ref": "#/$defs/idList"
+        },
+        "source_content_changed": {
+          "type": "boolean"
+        },
+        "blast_radius": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blast_radius_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stable_universe": {
+          "$ref": "#/$defs/stableUniverse"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planner_ref",
+        "input_batch_ids"
+      ],
+      "properties": {
+        "planner_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "input_batch_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "stableUniverse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis",
+        "declared",
+        "path_count",
+        "affected_path_count",
+        "observation_count",
+        "affected_observation_count"
+      ],
+      "properties": {
+        "basis": {
+          "enum": ["observation_ids", "path_union", "empty"]
+        },
+        "declared": {"type": "boolean"},
+        "path_count": {"type": "integer", "minimum": 0},
+        "affected_path_count": {"type": "integer", "minimum": 0},
+        "observation_count": {"type": "integer", "minimum": 0},
+        "affected_observation_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "currentnessClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "batch_id",
+        "source_epoch",
+        "current_source_epoch",
+        "content_digest",
+        "current_content_digest",
+        "provider",
+        "reasons"
+      ],
+      "properties": {
+        "state": {
+          "enum": ["current", "stale", "degraded", "unparseable"]
+        },
+        "batch_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_epoch": {"$ref": "#/$defs/nonEmptyString"},
+        "current_source_epoch": {"$ref": "#/$defs/nonEmptyString"},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "current_content_digest": {"$ref": "#/$defs/digest"},
+        "provider": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "config_digest"],
+          "properties": {
+            "id": {"$ref": "#/$defs/nonEmptyString"},
+            "version": {"$ref": "#/$defs/nonEmptyString"},
+            "config_digest": {"$ref": "#/$defs/digest"}
+          }
+        },
+        "reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "currentnessDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/currentnessClassification"}
+          ]
+        },
+        "after": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/currentnessClassification"}
+          ]
+        }
+      }
+    }
+  }
+}

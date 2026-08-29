@@ -108,6 +108,7 @@ HISTORY_REF_ENV = "AOA_REPO_LOCAL_KAG_HISTORY_REF"
 EVENT_HISTORY_REF_ENV = "AOA_REPO_LOCAL_KAG_EVENT_HISTORY_REF"
 LOCAL_INDEX_GENERATOR_ROUTE = "scripts/generate_repo_local_kag_index.py"
 REPO_LOCAL_GENERATOR_HELPER_PATHS = {
+    Path("scripts/repo_local/code_observations.py"),
     Path("scripts/repo_local/history.py"),
     Path("scripts/repo_local/identity.py"),
     Path("scripts/repo_local/indexes.py"),
@@ -2833,6 +2834,59 @@ def repository_index_profiles(entries: Sequence[dict[str, Any]]) -> dict[str, An
             continue
         name, version = parser_ref.rsplit("@", 1)
         parsers[parser_ref] = {"name": name, "version": version}
+
+    code_entries = [
+        entry
+        for entry in entries
+        if str(entry.get("language") or entry.get("code_observation_language") or "")
+        in {"python", "javascript", "typescript"}
+    ]
+
+    def value_counts(values: Sequence[str]) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for value in values:
+            if value:
+                counts[value] = counts.get(value, 0) + 1
+        return dict(sorted(counts.items()))
+
+    code_observation_profile = {
+        "entry_count": len(code_entries),
+        "language_counts": value_counts(
+            [
+                str(entry.get("language") or entry.get("code_observation_language") or "")
+                for entry in code_entries
+            ]
+        ),
+        "provider_counts": value_counts(
+            [
+                str(
+                    entry.get("provider_ref")
+                    or entry.get("code_observation_provider_ref")
+                    or entry.get("parser_ref")
+                    or ""
+                )
+                for entry in code_entries
+            ]
+        ),
+        "currentness_counts": value_counts(
+            [
+                str(
+                    entry.get("currentness_state")
+                    or entry.get("code_observation_state")
+                    or ""
+                )
+                for entry in code_entries
+            ]
+        ),
+    }
+    trust_profiles = {
+        "declared": {"class": "declared", "confidence": 0.75},
+        "deterministic": {"class": "deterministic", "confidence": 1.0},
+        "inferred": {"class": "inferred", "confidence": 0.5},
+        "observed": {"class": "observed", "confidence": 1.0},
+    }
+    if any(str(entry.get("trust_ref") or "") == "untrusted" for entry in entries):
+        trust_profiles["untrusted"] = {"class": "untrusted", "confidence": 0.0}
     return {
         "extractors": {
             "aoa-repo-local-kag@2": {"name": "aoa-repo-local-kag", "version": "2"}
@@ -2846,12 +2900,8 @@ def repository_index_profiles(entries: Sequence[dict[str, Any]]) -> dict[str, An
             "current": {"state": "current", "valid_from": "", "valid_to": ""},
             "historical": {"state": "historical", "valid_from": "", "valid_to": ""},
         },
-        "trust": {
-            "declared": {"class": "declared", "confidence": 0.75},
-            "deterministic": {"class": "deterministic", "confidence": 1.0},
-            "inferred": {"class": "inferred", "confidence": 0.5},
-            "observed": {"class": "observed", "confidence": 1.0},
-        },
+        "trust": trust_profiles,
+        "code_observations": code_observation_profile,
     }
 
 
@@ -2975,7 +3025,7 @@ def previous_structure_refs(
     previous_family: dict[str, dict[str, Any]] | None,
     *,
     capability_graph_path: Path | None,
-) -> dict[str, dict[str, list[dict[str, Any]]]]:
+) -> dict[str, dict[str, Any]]:
     if not previous_family or set(previous_family) != set(REPOSITORY_INDEX_FILENAMES):
         return {}
     if any(
@@ -2990,6 +3040,11 @@ def previous_structure_refs(
         for entry in previous_family["artifact"].get("entries", [])
         if isinstance(entry, dict)
     }
+    previous_artifacts = {
+        str(entry["id"]): entry
+        for entry in previous_family["artifact"].get("entries", [])
+        if isinstance(entry, dict)
+    }
     anchors_by_source: dict[str, list[dict[str, Any]]] = {}
     for anchor in previous_family["anchor"].get("entries", []):
         if isinstance(anchor, dict):
@@ -3001,7 +3056,7 @@ def previous_structure_refs(
         and anchor.get("parser_ref") == "aoa-capability-graph@1"
     }
 
-    reusable: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    reusable: dict[str, dict[str, Any]] = {}
     for record in source_index["records"]:
         identity = record["identity"]
         source_id = str(identity["id"])
@@ -3035,19 +3090,47 @@ def previous_structure_refs(
             parser_name, parser_version = parser_ref.rsplit("@", 1)
             raw_anchor["parser"] = {"name": parser_name, "version": parser_version}
             raw_anchor.pop("source_record_id", None)
-            raw_anchor.pop("evidence_class", None)
+            preserve_code_qualification = raw_anchor.get("anchor_kind") in {
+                "python_symbol",
+                "javascript_symbol",
+                "typescript_symbol",
+            }
+            if not preserve_code_qualification:
+                raw_anchor.pop("evidence_class", None)
             raw_anchor.pop("provenance_ref", None)
             raw_anchor.pop("temporal_ref", None)
-            raw_anchor.pop("trust_ref", None)
+            if not preserve_code_qualification:
+                raw_anchor.pop("trust_ref", None)
             for reference in raw_anchor.pop("outbound_refs", []):
                 outbound_refs.append(
                     {**copy.deepcopy(reference), "source_anchor_id": str(raw_anchor["id"])}
                 )
             raw_anchors.append(raw_anchor)
+        previous_artifact = previous_artifacts.get(source_id, {})
+        code_observation: dict[str, Any] | None = None
+        code_language = previous_artifact.get("code_observation_language")
+        code_provider_ref = previous_artifact.get("code_observation_provider_ref")
+        code_state = previous_artifact.get("code_observation_state")
+        if (
+            isinstance(code_language, str)
+            and code_language
+            and isinstance(code_provider_ref, str)
+            and "@" in code_provider_ref
+            and isinstance(code_state, str)
+            and code_state
+        ):
+            provider_id, provider_version = code_provider_ref.rsplit("@", 1)
+            code_observation = {
+                "source": {"language": code_language},
+                "provider": {"id": provider_id, "version": provider_version},
+                "currentness": {"state": code_state},
+            }
         reusable[source_id] = {
             "anchor_refs": raw_anchors,
             "outbound_refs": outbound_refs,
         }
+        if code_observation is not None:
+            reusable[source_id]["code_observation"] = code_observation
     return reusable
 
 
@@ -3060,6 +3143,7 @@ def build_repository_indexes(
     history_ref: str | None = None,
     event_history_ref: str | None = None,
     source_snapshot: OwnerSourceSnapshot | None = None,
+    provider_batches: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, dict[str, Any]]:
     resolved_root: Path | None = None
     if repo_root is not None:
@@ -3148,11 +3232,16 @@ def build_repository_indexes(
     for record in records:
         identity = record["identity"]
         source_id = str(identity["id"])
-        if source_id in reusable_structure:
+        rel = Path(str(identity["path"]))
+        provider_batch = None
+        if provider_batches:
+            provider_batch = provider_batches.get(rel.as_posix())
+            if provider_batch is None:
+                provider_batch = provider_batches.get(source_id)
+        if source_id in reusable_structure and provider_batch is None:
             refs = record["refs"]
             refs.update(copy.deepcopy(reusable_structure[source_id]))
             continue
-        rel = Path(str(identity["path"]))
         content = b""
         if repo_root is not None:
             content = source_bytes(
@@ -3165,8 +3254,17 @@ def build_repository_indexes(
             repo=repo,
             source_id=source_id,
             path=rel.as_posix(),
+            lineage_path=str(identity.get("lineage_path") or rel.as_posix()),
             mime=str(identity["mime"]),
             content=content,
+            source_epoch=str(
+                source_index["repo"].get("git_ref")
+                or source_index["repo"].get("source_ref")
+                or GIT_INDEX_SOURCE_REF
+            ),
+            provider_batch=(
+                copy.deepcopy(provider_batch) if provider_batch is not None else None
+            ),
             enable_capability_graph=rel == capability_graph_path,
             capability_graph_sources=(
                 capability_graph_sources if rel == capability_graph_path else None
@@ -3175,6 +3273,8 @@ def build_repository_indexes(
         refs = record["refs"]
         refs["anchor_refs"] = structure["anchor_refs"]
         refs["outbound_refs"] = structure["outbound_refs"]
+        if "code_observation" in structure:
+            refs["code_observation"] = structure["code_observation"]
     artifacts = project_artifact_entries(records)
     anchors = project_anchor_entries(records)
     entities = project_entity_entries(repo, records)
@@ -3258,6 +3358,7 @@ def build_repository_indexes_incremental(
     history_ref: str | None = None,
     event_history_ref: str | None = None,
     source_snapshot: OwnerSourceSnapshot | None = None,
+    provider_batches: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, dict[str, Any]]:
     return build_repository_indexes(
         source_index,
@@ -3267,6 +3368,7 @@ def build_repository_indexes_incremental(
         history_ref=history_ref,
         event_history_ref=event_history_ref,
         source_snapshot=source_snapshot,
+        provider_batches=provider_batches,
     )
 
 

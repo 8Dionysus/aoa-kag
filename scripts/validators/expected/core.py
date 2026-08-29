@@ -48,6 +48,12 @@ LOCAL_KAG_PROVIDER_MAP_SCHEMA_PATH = REPO_ROOT / "schemas" / "local-kag-provider
 
 REPO_LOCAL_KAG_INDEX_SCHEMA_PATH = REPO_ROOT / "schemas" / "repo-local-kag-index.schema.json"
 
+CODE_OBSERVATION_SCHEMA_PATH = REPO_ROOT / "schemas" / "code-observation.schema.json"
+
+CODE_OBSERVATION_DELTA_SCHEMA_PATH = (
+    REPO_ROOT / "schemas" / "code-observation-delta.schema.json"
+)
+
 REPO_LOCAL_KAG_REPOSITORY_INDEX_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-repository-index.schema.json"
 )

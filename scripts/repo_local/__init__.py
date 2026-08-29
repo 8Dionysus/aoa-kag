@@ -1,11 +1,53 @@
 """Deterministic repo-local KAG extraction and projection helpers."""
 
 from .identity import artifact_identity, qualified_id, repository_namespace
+from .code_observations import (
+    build_dependency_affected_graph,
+    classify_observation_currentness,
+    extract_source_observations,
+    extract_python_observations,
+    extract_javascript_observations,
+    extract_typescript_observations,
+    language_for_path,
+    measure_observation_delta,
+    normalize_machine_observation_envelope,
+    normalize_provider_observations,
+    observe_ctags_json_source,
+    observe_javascript_source,
+    observe_python_source,
+    observe_source,
+    observe_typescript_source,
+    parse_ctags_json_observations,
+    plan_observation_delta,
+    provider_lane_posture,
+    validate_machine_provider_binding,
+    validate_provider_observation_batch,
+)
 from .structure import extract_structure
 
 __all__ = [
     "artifact_identity",
+    "build_dependency_affected_graph",
+    "classify_observation_currentness",
     "extract_structure",
+    "extract_source_observations",
+    "extract_python_observations",
+    "extract_javascript_observations",
+    "extract_typescript_observations",
+    "language_for_path",
+    "measure_observation_delta",
+    "normalize_machine_observation_envelope",
+    "normalize_provider_observations",
+    "observe_ctags_json_source",
+    "observe_javascript_source",
+    "observe_python_source",
+    "observe_source",
+    "observe_typescript_source",
+    "parse_ctags_json_observations",
+    "plan_observation_delta",
+    "provider_lane_posture",
     "qualified_id",
     "repository_namespace",
+    "validate_machine_provider_binding",
+    "validate_provider_observation_batch",
 ]

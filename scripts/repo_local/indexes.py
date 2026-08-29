@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import posixpath
 from pathlib import PurePosixPath
 from typing import Any, Iterable, Sequence
 
@@ -13,28 +14,88 @@ def artifact_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for record in records:
         identity = record["identity"]
-        anchors = record.get("refs", {}).get("anchor_refs", [])
+        refs = record.get("refs") if isinstance(record.get("refs"), dict) else {}
+        anchors = refs.get("anchor_refs", [])
         artifact_anchor_ids = [
             item["id"]
             for item in anchors
             if isinstance(item, dict) and item.get("anchor_kind") == "artifact"
         ]
-        entries.append(
-            {
-                "id": str(identity["id"]),
-                "version_id": str(identity["version_id"]),
-                "artifact_kind": str(record.get("artifact_kind") or "unknown"),
-                "surface_state": str(record.get("surface_state") or "authored_source"),
-                "anchor_id": artifact_anchor_ids[0],
-                "path": str(identity["path"]),
-                "lineage_path": str(identity["lineage_path"]),
-                "content_hash": str(identity["content_hash"]),
-                "mime": str(identity["mime"]),
-                "provenance_ref": "deterministic",
-                "temporal_ref": "current",
-                "trust_ref": "deterministic",
-            }
+        entry: dict[str, Any] = {
+            "id": str(identity["id"]),
+            "version_id": str(identity["version_id"]),
+            "artifact_kind": str(record.get("artifact_kind") or "unknown"),
+            "surface_state": str(record.get("surface_state") or "authored_source"),
+            "anchor_id": artifact_anchor_ids[0],
+            "path": str(identity["path"]),
+            "lineage_path": str(identity["lineage_path"]),
+            "content_hash": str(identity["content_hash"]),
+            "mime": str(identity["mime"]),
+            "provenance_ref": "deterministic",
+            "temporal_ref": "current",
+            "trust_ref": "deterministic",
+        }
+        code_observation = refs.get("code_observation")
+        code_source = (
+            code_observation.get("source")
+            if isinstance(code_observation, dict)
+            else None
         )
+        code_provider = (
+            code_observation.get("provider")
+            if isinstance(code_observation, dict)
+            else None
+        )
+        code_currentness = (
+            code_observation.get("currentness")
+            if isinstance(code_observation, dict)
+            else None
+        )
+        has_code_observations = bool(
+            isinstance(code_observation, dict)
+            and isinstance(code_observation.get("observations"), list)
+            and code_observation["observations"]
+        )
+        if not has_code_observations:
+            code_source = None
+            code_provider = None
+            code_currentness = None
+        code_anchor = next(
+            (
+                item
+                for item in anchors
+                if isinstance(item, dict)
+                and item.get("anchor_kind") in {
+                    "python_symbol",
+                    "javascript_symbol",
+                    "typescript_symbol",
+                }
+            ),
+            None,
+        )
+        if isinstance(code_source, dict) and code_source.get("language"):
+            entry["code_observation_language"] = str(code_source["language"])
+        elif isinstance(code_anchor, dict) and code_anchor.get("language"):
+            entry["code_observation_language"] = str(code_anchor["language"])
+        if (
+            isinstance(code_provider, dict)
+            and code_provider.get("id")
+            and code_provider.get("version")
+        ):
+            entry["code_observation_provider_ref"] = (
+                f"{code_provider['id']}@{code_provider['version']}"
+            )
+        elif isinstance(code_anchor, dict) and code_anchor.get("provider_ref"):
+            entry["code_observation_provider_ref"] = str(
+                code_anchor["provider_ref"]
+            )
+        if isinstance(code_currentness, dict) and code_currentness.get("state"):
+            entry["code_observation_state"] = str(code_currentness["state"])
+        elif isinstance(code_anchor, dict) and code_anchor.get("currentness_state"):
+            entry["code_observation_state"] = str(
+                code_anchor["currentness_state"]
+            )
+        entries.append(entry)
     return entries
 
 
@@ -56,6 +117,9 @@ def anchor_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
                 "target_ref": str(reference.get("target_ref") or ""),
                 "evidence_class": str(reference.get("evidence_class") or "deterministic"),
             }
+            trust_ref = reference.get("trust_ref")
+            if isinstance(trust_ref, str) and trust_ref:
+                outbound_entry["trust_ref"] = trust_ref
             source_path = reference.get("source_path")
             if isinstance(source_path, str) and source_path:
                 outbound_entry["source_path"] = source_path
@@ -66,6 +130,27 @@ def anchor_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
             entry = copy.deepcopy(anchor)
             parser = entry.pop("parser")
             entry["parser_ref"] = f"{parser['name']}@{parser['version']}"
+            qualification = entry.get("qualification")
+            materialization = (
+                qualification.get("materialization")
+                if isinstance(qualification, dict)
+                else None
+            )
+            trust_ref = str(entry.get("trust_ref") or "")
+            if not trust_ref:
+                trust_ref = str(
+                    materialization.get("trust_ref")
+                    if isinstance(materialization, dict)
+                    else "deterministic"
+                )
+            semantic_confidence = entry.get("semantic_confidence")
+            evidence_class = str(entry.get("evidence_class") or "")
+            if not evidence_class and isinstance(semantic_confidence, dict):
+                evidence_class = str(
+                    semantic_confidence.get("evidence_class") or "inferred"
+                )
+            if not evidence_class:
+                evidence_class = "deterministic"
             entry.update(
                 {
                     "source_record_id": str(identity["id"]),
@@ -73,10 +158,10 @@ def anchor_entries(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
                         outbound_by_anchor.get(str(entry["id"]), []),
                         key=lambda item: (item["relation_kind"], item["target_ref"]),
                     ),
-                    "evidence_class": "deterministic",
-                    "provenance_ref": "deterministic",
+                    "evidence_class": evidence_class,
+                    "provenance_ref": "observed" if trust_ref == "untrusted" else "deterministic",
                     "temporal_ref": "current",
-                    "trust_ref": "deterministic",
+                    "trust_ref": trust_ref,
                 }
             )
             entries.append(entry)
@@ -128,10 +213,17 @@ def _entity(
     semantic_key: str,
     source_digest: str,
     source_path: str | None = None,
+    roles: Iterable[str] = (),
+    language: str = "",
+    currentness_state: str = "",
+    provider_ref: str = "",
+    trust_ref: str = "",
+    qualification: dict[str, Any] | None = None,
+    semantic_confidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     sources = sorted(set(source_record_ids))
     anchors = sorted(set(anchor_ids))
-    entity = {
+    entry: dict[str, Any] = {
         "id": entity_id,
         "entity_kind": entity_kind,
         "label": label,
@@ -139,13 +231,26 @@ def _entity(
         "source_record_ids": sources,
         "anchor_ids": anchors,
         "source_digest": source_digest,
-        "provenance_ref": "deterministic",
+        "provenance_ref": "observed" if trust_ref == "untrusted" else "deterministic",
         "temporal_ref": "current",
-        "trust_ref": "deterministic",
+        "trust_ref": trust_ref or "deterministic",
     }
     if source_path:
-        entity["source_path"] = source_path
-    return entity
+        entry["source_path"] = source_path
+    normalized_roles = sorted(set(str(role) for role in roles if str(role)))
+    if normalized_roles:
+        entry["roles"] = normalized_roles
+    if language:
+        entry["language"] = language
+    if currentness_state:
+        entry["currentness_state"] = currentness_state
+    if provider_ref:
+        entry["provider_ref"] = provider_ref
+    if qualification is not None:
+        entry["qualification"] = copy.deepcopy(qualification)
+    if semantic_confidence is not None:
+        entry["semantic_confidence"] = copy.deepcopy(semantic_confidence)
+    return entry
 
 
 def _aggregate_source_digest(
@@ -222,9 +327,15 @@ def entity_entries(
             entity_kind = ""
             semantic_key = str(anchor.get("semantic_key") or anchor["id"])
             capability_node = False
-            if anchor_kind == "python_symbol":
+            language = ""
+            if anchor_kind in {
+                "python_symbol",
+                "javascript_symbol",
+                "typescript_symbol",
+            }:
                 symbol_kind = str(anchor.get("symbol_kind") or "symbol")
-                entity_kind = f"python_{symbol_kind}"
+                language = anchor_kind.removesuffix("_symbol")
+                entity_kind = f"{language}_{symbol_kind}"
             elif anchor_kind == "json_pointer":
                 symbol_kind = str(anchor.get("symbol_kind") or "")
                 if symbol_kind.startswith("capability_graph_node:"):
@@ -259,6 +370,21 @@ def entity_entries(
                     str(anchor["source_path"])
                     if isinstance(anchor.get("source_path"), str)
                     and anchor["source_path"]
+                    else None
+                ),
+                roles=anchor.get("roles", []),
+                language=str(anchor.get("language") or language),
+                currentness_state=str(anchor.get("currentness_state") or ""),
+                provider_ref=str(anchor.get("provider_ref") or ""),
+                trust_ref=str(anchor.get("trust_ref") or ""),
+                qualification=(
+                    copy.deepcopy(anchor["qualification"])
+                    if isinstance(anchor.get("qualification"), dict)
+                    else None
+                ),
+                semantic_confidence=(
+                    copy.deepcopy(anchor["semantic_confidence"])
+                    if isinstance(anchor.get("semantic_confidence"), dict)
                     else None
                 ),
             )
@@ -422,6 +548,7 @@ def _relation(
     evidence_anchor_ids: Iterable[str],
     evidence_class: str = "deterministic",
     source_path: str | None = None,
+    trust_ref: str = "",
 ) -> dict[str, Any]:
     evidence = sorted(set(evidence_anchor_ids))
     relation_id = qualified_id(
@@ -439,7 +566,7 @@ def _relation(
         "confidence": 1.0 if evidence_class == "deterministic" else 0.75,
         "temporal_ref": "current",
         "provenance_ref": evidence_class,
-        "trust_ref": evidence_class,
+        "trust_ref": trust_ref or evidence_class,
     }
     if source_path:
         relation["source_path"] = source_path
@@ -482,15 +609,36 @@ def relation_entries(
         == lineage_by_source.get(entry["source_record_ids"][0], "")
     }
     entity_by_anchor: dict[str, dict[str, Any]] = {}
-    python_entities_by_name: dict[str, list[dict[str, Any]]] = {}
+    code_entities_by_language_name: dict[tuple[str, str], list[dict[str, Any]]] = {}
     capability_entities_by_name: dict[str, dict[str, Any]] = {}
+
+    def add_code_name(language: str, name: str, entity: dict[str, Any]) -> None:
+        normalized = name.strip()
+        if not normalized:
+            return
+        code_entities_by_language_name.setdefault((language, normalized), []).append(entity)
+        short_name = normalized.rsplit(".", 1)[-1]
+        if short_name != normalized:
+            code_entities_by_language_name.setdefault((language, short_name), []).append(entity)
+
     for entity in entities:
         for anchor_id in entity["anchor_ids"]:
             entity_by_anchor[anchor_id] = entity
-        if entity["entity_kind"].startswith("python_"):
-            key = entity["semantic_key"].split(":", 2)[-1]
-            qualified_name = key.rsplit(":", 1)[-1]
-            python_entities_by_name.setdefault(qualified_name, []).append(entity)
+        for language in ("python", "javascript", "typescript"):
+            if (
+                entity["entity_kind"].startswith(f"{language}_")
+                and not entity["entity_kind"].endswith("_import")
+            ):
+                semantic_key = str(entity["semantic_key"])
+                qualified_name = semantic_key
+                parts = semantic_key.split(":", 2)
+                if len(parts) == 3:
+                    qualified_name = parts[2]
+                elif len(parts) == 2:
+                    qualified_name = parts[1]
+                add_code_name(language, qualified_name, entity)
+                add_code_name(language, str(entity.get("label") or ""), entity)
+                break
         if str(entity["semantic_key"]).startswith("capability:"):
             capability_entities_by_name[
                 str(entity["semantic_key"]).removeprefix("capability:")
@@ -626,11 +774,60 @@ def relation_entries(
                 if source_node is None or target is None:
                     continue
                 target_id = str(target["id"])
-            elif target_ref.startswith("python:"):
-                matches = python_entities_by_name.get(target_ref.removeprefix("python:"), [])
+            elif any(
+                target_ref.startswith(f"{language}:")
+                for language in ("python", "javascript", "typescript")
+            ):
+                language, _, target_name = target_ref.partition(":")
+                matches = code_entities_by_language_name.get((language, target_name), [])
+                if not matches and target_name.startswith("self."):
+                    matches = code_entities_by_language_name.get(
+                        (language, target_name.removeprefix("self.")), []
+                    )
                 unique = {item["id"]: item for item in matches}
                 if len(unique) == 1:
                     target_id = next(iter(unique))
+                elif str(reference.get("relation_kind")) == "imports":
+                    source_path = str(identity["path"])
+                    module_candidates = [target_name]
+                    if "." in target_name:
+                        module_candidates.append(target_name.rsplit(".", 1)[0])
+                    candidate_paths: list[str] = []
+                    for module in module_candidates:
+                        normalized_module = module.replace("\\", "/")
+                        relative_module = normalized_module.lstrip("./")
+                        if normalized_module.startswith("./"):
+                            candidate_paths.append(
+                                posixpath.normpath(
+                                    posixpath.join(
+                                        PurePosixPath(source_path).parent.as_posix(),
+                                        relative_module,
+                                    )
+                                )
+                            )
+                        candidate_paths.append(relative_module.replace(".", "/"))
+                    extensions = {
+                        "python": (".py", ".pyi"),
+                        "javascript": (".js", ".jsx", ".mjs", ".cjs"),
+                        "typescript": (".ts", ".tsx", ".mts", ".cts"),
+                    }[language]
+                    for candidate in candidate_paths:
+                        options = [candidate, *(candidate + ext for ext in extensions)]
+                        options.extend(
+                            posixpath.join(candidate, f"index{ext}")
+                            for ext in extensions
+                        )
+                        target_artifact = next(
+                            (
+                                artifact_by_path.get(option)
+                                for option in options
+                                if artifact_by_path.get(option) is not None
+                            ),
+                            None,
+                        )
+                        if target_artifact is not None:
+                            target_id = str(target_artifact["id"])
+                            break
             else:
                 resolved = resolve_markdown_target(str(identity["path"]), target_ref)
                 if resolved:
@@ -658,6 +855,12 @@ def relation_entries(
                 to_id=target_id,
                 evidence_anchor_ids=[evidence_anchor_id],
                 evidence_class=str(reference.get("evidence_class") or "deterministic"),
+                trust_ref=str(
+                    reference.get("trust_ref")
+                    or reference.get("evidence_class")
+                    or anchor_by_id[evidence_anchor_id].get("trust_ref")
+                    or "deterministic"
+                ),
                 source_path=(
                     str(reference["source_path"])
                     if isinstance(reference.get("source_path"), str)

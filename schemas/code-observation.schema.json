@@ -1,0 +1,710 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/code-observation.schema.json",
+  "title": "AoA provider-neutral code observation batch",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "batch_id",
+    "capability_class",
+    "provider",
+    "source",
+    "parse_status",
+    "observations",
+    "diagnostics",
+    "provenance",
+    "qualification"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aoa-code-observation-v1"
+    },
+    "batch_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "capability_class": {
+      "const": "code-structure"
+    },
+    "provider": {
+      "$ref": "#/$defs/provider"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "parse_status": {
+      "enum": [
+        "parsed",
+        "unparseable",
+        "degraded"
+      ]
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/observation"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "qualification": {
+      "$ref": "#/$defs/qualification"
+    },
+    "machine_binding": {
+      "$ref": "#/$defs/machineBinding"
+    },
+    "currentness": {
+      "$ref": "#/$defs/currentness"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "config_digest",
+        "config"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "config_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "config": {
+          "type": "object"
+        },
+        "lane": {
+          "$ref": "#/$defs/providerLane"
+        }
+      }
+    },
+    "machineBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "observation_schema",
+        "consumer_abi",
+        "provider",
+        "candidate_artifact",
+        "source",
+        "provenance",
+        "admission",
+        "semantic",
+        "claim_limit"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "abyss-machine-code-intelligence-provider-binding-v1"
+        },
+        "observation_schema": {
+          "const": "abyss_machine_code_observation_envelope_v1"
+        },
+        "consumer_abi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "owner",
+            "binding_schema",
+            "evidence_schema",
+            "gate_schema",
+            "gate_record_schema",
+            "signed_payload_schema",
+            "public_key_schema",
+            "algorithm",
+            "verification_method",
+            "trust_anchor_ref",
+            "trust_anchor_posture",
+            "provider_neutral",
+            "state_axes",
+            "required_separations"
+          ],
+          "properties": {
+            "owner": {"const": "abyss-stack"},
+            "binding_schema": {"const": "abyss-machine-code-intelligence-provider-binding-v1"},
+            "evidence_schema": {"const": "abyss-stack-machine-code-intelligence-evidence-v1"},
+            "gate_schema": {"const": "abyss-stack-machine-code-intelligence-gate-v1"},
+            "gate_record_schema": {"const": "abyss-machine-admission-gate-v1"},
+            "signed_payload_schema": {"const": "abyss-machine-admission-gate-signed-payload-v1"},
+            "public_key_schema": {"const": "abyss-machine-code-intelligence-gate-public-key-v1"},
+            "algorithm": {"const": "ed25519"},
+            "verification_method": {"const": "ed25519-owner-signature-v1"},
+            "trust_anchor_ref": {"const": "/etc/abyss-machine/trust/code-intelligence-gate-ed25519.json"},
+            "trust_anchor_posture": {"const": "existing_root_owned_anchor_only"},
+            "provider_neutral": {"const": true},
+            "state_axes": {
+              "const": ["candidate", "current", "last_good"]
+            },
+            "required_separations": {
+              "const": [
+                "machine artifact trust vs machine evidence gate",
+                "installation and admission vs deployed runtime lifecycle",
+                "runtime observation vs normalized observation meaning",
+                "runtime evidence vs semantic proof and eval verdict"
+              ]
+            }
+          }
+        },
+        "provider": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "display_name",
+            "owner",
+            "consumer",
+            "version",
+            "artifact_class",
+            "source_ref_required",
+            "subject_digest_required",
+            "trust_gate_required",
+            "config_digest"
+          ],
+          "properties": {
+            "id": {"const": "universal-ctags"},
+            "display_name": {"const": "Universal Ctags"},
+            "owner": {"const": "abyss-machine"},
+            "consumer": {"const": "abyss-stack"},
+            "version": {"const": "6.2.1"},
+            "artifact_class": {"const": "runtime_or_container_artifact"},
+            "source_ref_required": {"const": true},
+            "subject_digest_required": {"const": true},
+            "trust_gate_required": {"const": true},
+            "config_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          }
+        },
+        "candidate_artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "class",
+            "archive_sha256",
+            "subject_digest",
+            "signature_status",
+            "registry_status",
+            "admission_status"
+          ],
+          "properties": {
+            "class": {"const": "runtime_or_container_artifact"},
+            "archive_sha256": {"const": "sha256:fa8a609bc834286a9c9b2e32e2b78791072cefe7956ba7a838b02004b29b0845"},
+            "subject_digest": {"const": "sha256:03e503df1a06356c5db39ce589d07ad161099746b1a0b7e178fbb0feb42cf9"},
+            "signature_status": {"const": "not_signed"},
+            "registry_status": {"const": "not_promoted"},
+            "admission_status": {"const": "not_admitted"}
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "ref", "epoch", "binding_status"],
+          "properties": {
+            "owner": {"const": "abyss-machine"},
+            "ref": {"$ref": "#/$defs/nonEmptyString"},
+            "epoch": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "binding_status": {"const": "bound"}
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["evidence_ref", "binding_status"],
+          "properties": {
+            "evidence_ref": {"$ref": "#/$defs/nonEmptyString"},
+            "binding_status": {"const": "bound"}
+          }
+        },
+        "admission": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "trust_ref", "installation", "activation"],
+          "properties": {
+            "status": {"const": "not_admitted"},
+            "trust_ref": {"const": "untrusted"},
+            "installation": {"const": "not_installed"},
+            "activation": {"const": "not_active"}
+          }
+        },
+        "semantic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "proof_owner"],
+          "properties": {
+            "status": {"const": "unproven"},
+            "proof_owner": {"const": "aoa-evals"}
+          }
+        },
+        "claim_limit": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "providerLane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "availability", "admission", "claim_limit"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {
+          "enum": [
+            "source_local",
+            "source_local_fallback",
+            "supplied_unadmitted",
+            "absent",
+            "unknown_unadmitted"
+          ]
+        },
+        "availability": {"$ref": "#/$defs/nonEmptyString"},
+        "admission": {
+          "enum": ["not_applicable", "not_admitted"]
+        },
+        "claim_limit": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "path",
+        "lineage_path",
+        "source_epoch",
+        "content_digest",
+        "language"
+      ],
+      "properties": {
+        "repo": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "lineage_path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "source_epoch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "language": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_line",
+        "end_line",
+        "start_column",
+        "end_column"
+      ],
+      "properties": {
+        "start_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "start_column": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_column": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbol_id",
+        "qualified_name",
+        "symbol_kind",
+        "label"
+      ],
+      "properties": {
+        "symbol_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "qualified_name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "symbol_kind": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "label": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "roles": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "target_name",
+        "resolution"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "target_name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "resolution": {
+          "enum": [
+            "resolved_local",
+            "unresolved"
+          ]
+        },
+        "target_symbol_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_class",
+        "value"
+      ],
+      "properties": {
+        "evidence_class": {
+          "enum": [
+            "deterministic",
+            "declared",
+            "observed",
+            "inferred"
+          ]
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_lifecycle",
+        "machine_admission",
+        "semantic_confidence",
+        "materialization"
+      ],
+      "properties": {
+        "provider_lifecycle": {
+          "$ref": "#/$defs/providerLifecycle"
+        },
+        "machine_admission": {
+          "$ref": "#/$defs/machineAdmission"
+        },
+        "semantic_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "materialization": {
+          "$ref": "#/$defs/materialization"
+        }
+      }
+    },
+    "providerLifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "health", "evidence_refs"],
+      "properties": {
+        "state": {
+          "enum": ["source_local", "unobserved"]
+        },
+        "health": {
+          "enum": ["source_local", "unobserved"]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "machineAdmission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref", "evidence_refs"],
+      "properties": {
+        "state": {
+          "enum": ["not_applicable", "not_admitted"]
+        },
+        "trust_ref": {
+          "enum": ["not_applicable", "untrusted"]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref"],
+      "properties": {
+        "state": {
+          "enum": ["source_local", "untrusted_observation"]
+        },
+        "trust_ref": {
+          "enum": ["deterministic", "untrusted"]
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_id",
+        "observation_kind",
+        "capability_class",
+        "semantic_key",
+        "subject",
+        "occurrence",
+        "relation",
+        "confidence"
+      ],
+      "properties": {
+        "observation_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "observation_kind": {
+          "enum": [
+            "symbol",
+            "relation"
+          ]
+        },
+        "capability_class": {
+          "const": "code-structure"
+        },
+        "semantic_key": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "subject": {
+          "$ref": "#/$defs/subject"
+        },
+        "occurrence": {
+          "$ref": "#/$defs/occurrence"
+        },
+        "relation": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/relation"
+            }
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "message"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "message": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "encoding": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "byte_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byte_end": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "path",
+        "role",
+        "authority"
+      ],
+      "properties": {
+        "repo": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "role": {
+          "enum": [
+            "primary_source",
+            "supporting_source"
+          ]
+        },
+        "authority": {
+          "enum": [
+            "authored_source",
+            "declared_config",
+            "derived_projection"
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "extractor_ref",
+        "parser_ref",
+        "source_refs"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "deterministic",
+            "declared",
+            "observed",
+            "inferred"
+          ]
+        },
+        "extractor_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "parser_ref": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          }
+        }
+      }
+    },
+    "currentness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "batch_id",
+        "source_epoch",
+        "current_source_epoch",
+        "content_digest",
+        "current_content_digest",
+        "provider",
+        "reasons"
+      ],
+      "properties": {
+        "state": {
+          "enum": ["current", "stale", "degraded", "unparseable"]
+        },
+        "batch_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source_epoch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "current_source_epoch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "current_content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "provider": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "config_digest"],
+          "properties": {
+            "id": {"$ref": "#/$defs/nonEmptyString"},
+            "version": {"$ref": "#/$defs/nonEmptyString"},
+            "config_digest": {"$ref": "#/$defs/digest"}
+          }
+        },
+        "reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    }
+  }
+}

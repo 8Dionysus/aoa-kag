@@ -1,0 +1,171 @@
+{
+  "schema_version": "aoa-code-observation-delta-v1",
+  "delta_id": "aoa:example-repo:code-observation-delta:change",
+  "capability_class": "code-structure",
+  "repository": "example-repo",
+  "provider": {
+    "id": "python-ast",
+    "version": "1",
+    "config_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "change_kind": "modify",
+  "before": {
+    "batch_id": "aoa:example-repo:code-observation-batch:before",
+    "repo": "example-repo",
+    "path": "src/example.py",
+    "lineage_path": "src/example.py",
+    "source_epoch": "git-index:example-before",
+    "content_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "language": "python"
+  },
+  "after": {
+    "batch_id": "aoa:example-repo:code-observation-batch:after",
+    "repo": "example-repo",
+    "path": "src/example.py",
+    "lineage_path": "src/example.py",
+    "source_epoch": "git-index:example-after",
+    "content_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "language": "python"
+  },
+  "observation_delta": {
+    "added_observation_ids": [],
+    "removed_observation_ids": [],
+    "updated_observation_ids": [
+      "aoa:example-repo:code-observation:run"
+    ],
+    "reused_observation_ids": [
+      "aoa:example-repo:code-observation:helper"
+    ],
+    "affected_symbol_ids": [
+      "aoa:example-repo:code-symbol:run"
+    ]
+  },
+  "invalidation": {
+    "scope": "file",
+    "affected_paths": [
+      "src/example.py"
+    ],
+    "recomputed_observation_ids": [
+      "aoa:example-repo:code-observation:run"
+    ],
+    "invalidated_observation_ids": [
+      "aoa:example-repo:code-observation:run"
+    ],
+    "dependency_invalidated_observation_ids": [],
+    "path_reanchored_observation_ids": [],
+    "source_content_changed": true,
+    "blast_radius": 1,
+    "blast_radius_ratio": 0.5,
+    "stable_universe": {
+      "basis": "observation_ids",
+      "declared": true,
+      "path_count": 1,
+      "affected_path_count": 1,
+      "observation_count": 2,
+      "affected_observation_count": 1
+    }
+  },
+  "lineage": {
+    "state": "stable",
+    "before_path": "src/example.py",
+    "after_path": "src/example.py",
+    "before_lineage_path": "src/example.py",
+    "after_lineage_path": "src/example.py",
+    "stable_lineage_path": "src/example.py",
+    "matches": [
+      {
+        "before_observation_id": "aoa:example-repo:code-observation:helper",
+        "after_observation_id": "aoa:example-repo:code-observation:helper",
+        "match_kind": "stable_observation_id",
+        "confidence": {
+          "evidence_class": "deterministic",
+          "value": 1
+        }
+      }
+    ],
+    "alternatives": [],
+    "claim_limit": "explicit and inferred mappings are not provider or owner acceptance"
+  },
+  "affected_graph": {
+    "scope": "supplied_observation_batches",
+    "changed_symbol_ids": ["aoa:example-repo:code-symbol:run"],
+    "affected_symbol_ids": ["aoa:example-repo:code-symbol:run"],
+    "dependent_symbol_ids": [],
+    "affected_observation_ids": ["aoa:example-repo:code-observation:run"],
+    "affected_paths": ["src/example.py"],
+    "edges": [],
+    "max_hops": 64,
+    "truncated": false,
+    "coverage": {
+      "batch_count": 2,
+      "observation_count": 4,
+      "unresolved_edge_count": 0,
+      "claim_limit": "closure is bounded to supplied observation batches"
+    }
+  },
+  "metrics": {
+    "before_observation_count": 2,
+    "after_observation_count": 2,
+    "reused_observation_count": 1,
+    "recomputation_count": 1,
+    "direct_invalidation_count": 1,
+    "dependency_invalidation_count": 0,
+    "affected_symbol_count": 1,
+    "affected_graph_edge_count": 0,
+    "reuse_ratio": 0.5,
+    "blast_radius_ratio": 0.5
+  },
+  "provenance": {
+    "planner_ref": "aoa-kag:scripts/repo_local/code_observations.py",
+    "input_batch_ids": [
+      "aoa:example-repo:code-observation-batch:after",
+      "aoa:example-repo:code-observation-batch:before"
+    ]
+  },
+  "qualification": {
+    "before": {
+      "provider_lifecycle": {
+        "state": "source_local",
+        "health": "source_local",
+        "evidence_refs": [
+          "aoa-kag:scripts/repo_local/code_observations.py"
+        ]
+      },
+      "machine_admission": {
+        "state": "not_applicable",
+        "trust_ref": "not_applicable",
+        "evidence_refs": []
+      },
+      "semantic_confidence": {
+        "evidence_class": "inferred",
+        "value": 0.75
+      },
+      "materialization": {
+        "state": "source_local",
+        "trust_ref": "deterministic"
+      }
+    },
+    "after": {
+      "provider_lifecycle": {
+        "state": "source_local",
+        "health": "source_local",
+        "evidence_refs": [
+          "aoa-kag:scripts/repo_local/code_observations.py"
+        ]
+      },
+      "machine_admission": {
+        "state": "not_applicable",
+        "trust_ref": "not_applicable",
+        "evidence_refs": []
+      },
+      "semantic_confidence": {
+        "evidence_class": "inferred",
+        "value": 0.75
+      },
+      "materialization": {
+        "state": "source_local",
+        "trust_ref": "deterministic"
+      }
+    }
+  }
+}

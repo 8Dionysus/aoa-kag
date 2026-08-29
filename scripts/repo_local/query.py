@@ -10,6 +10,22 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 TOKEN = re.compile(r"\w+", re.UNICODE)
+_QUERY_HANDLE_DEFINITIONS = (
+    ("definitions", "traverse", ("defines",), "implemented", "aoa-kag"),
+    ("references", "traverse", ("references",), "implemented", "aoa-kag"),
+    ("callers", "traverse", ("calls",), "implemented", "aoa-kag"),
+    ("callees", "traverse", ("calls",), "implemented", "aoa-kag"),
+    ("imports", "traverse", ("imports",), "implemented", "aoa-kag"),
+    ("inheritance", "traverse", ("inherits",), "implemented", "aoa-kag"),
+    ("ownership", "read", (), "implemented", "aoa-kag"),
+    ("changed-since", "event", (), "bounded_event_handle", "aoa-kag"),
+    ("affected-by-change", "delta", (), "source_delta_required", "aoa-kag"),
+    ("lineage", "read", (), "source_lineage", "aoa-kag"),
+    ("ambiguity", "delta", (), "candidate_only", "aoa-kag"),
+    ("freshness", "read", (), "source_index_currentness", "aoa-kag"),
+    ("proof-status", "owner-route", (), "owner_route_only", "aoa-evals"),
+    ("mcp-source-readiness", "read", (), "source_declared", "aoa-kag"),
+)
 
 
 def tokenize(value: str) -> tuple[str, ...]:
@@ -339,7 +355,52 @@ class RepoKagQuery:
             evidence_refs = _public_evidence_refs(node.record)
             if evidence_refs:
                 handle["evidence_refs"] = evidence_refs
+        if isinstance(node.record.get("qualification"), dict):
+            handle["qualification"] = copy.deepcopy(node.record["qualification"])
+        if isinstance(node.record.get("semantic_confidence"), dict):
+            handle["semantic_confidence"] = copy.deepcopy(
+                node.record["semantic_confidence"]
+            )
         return handle
+
+    def query_handles(self) -> list[dict[str, Any]]:
+        """Return compact source-bound routes without implying runtime admission."""
+
+        source_index = {
+            "local_id": self.source_index["index_identity"]["local_id"],
+            "content_digest": self.freshness_digest,
+            "git_ref": self.source_index["repo"]["git_ref"],
+        }
+        repo_name = str(self.repo["name"])
+        handles: list[dict[str, Any]] = []
+        for kind, operation, relation_kinds, status, owner_route in _QUERY_HANDLE_DEFINITIONS:
+            handles.append(
+                {
+                    "handle_id": f"aoa:{repo_name}:query-handle:{kind}",
+                    "kind": kind,
+                    "operation": operation,
+                    "relation_kinds": list(relation_kinds),
+                    "status": status,
+                    "owner_route": owner_route,
+                    "source_index": copy.deepcopy(source_index),
+                    "mcp_resource": f"aoa-kag://repo-local/{repo_name}/{kind}",
+                    "claim_limit": (
+                        "proof verdict belongs to aoa-evals"
+                        if kind == "proof-status"
+                        else "delta and ambiguity handles require a source-bound delta input"
+                        if kind in {"affected-by-change", "ambiguity"}
+                        else "source-linked compact route; not runtime serving or owner acceptance"
+                    ),
+                }
+            )
+        return handles
+
+    def query_handle(self, kind: str) -> dict[str, Any] | None:
+        normalized = str(kind).strip().casefold().replace("_", "-")
+        return next(
+            (handle for handle in self.query_handles() if handle["kind"] == normalized),
+            None,
+        )
 
     def _build_nodes(self) -> dict[str, _Node]:
         nodes: dict[str, _Node] = {}
@@ -385,7 +446,8 @@ class RepoKagQuery:
                 label=str(anchor["label"]),
                 text=(
                     f"{anchor['label']} {anchor['semantic_key']} "
-                    f"{anchor['qualified_name']} {path} {anchor['anchor_kind']}"
+                    f"{anchor['qualified_name']} {path} {anchor['anchor_kind']} "
+                    f"{anchor.get('language', '')} {' '.join(anchor.get('roles', []))}"
                 ),
                 path=path,
                 source_record_ids=source_ids,
@@ -419,7 +481,11 @@ class RepoKagQuery:
                 node_class="entity",
                 kind=str(entity["entity_kind"]),
                 label=str(entity["label"]),
-                text=f"{entity['label']} {entity['semantic_key']} {entity['entity_kind']} {path}",
+                text=(
+                    f"{entity['label']} {entity['semantic_key']} "
+                    f"{entity['entity_kind']} {path} {entity.get('language', '')} "
+                    f"{' '.join(entity.get('roles', []))}"
+                ),
                 path=path,
                 source_record_ids=source_ids,
                 anchor_ids=anchor_ids,
@@ -540,6 +606,66 @@ class RepoKagQuery:
     def _allowed(self, node: _Node, *, access_scopes: set[str] | None) -> bool:
         return access_scopes is None or node.access_scope in access_scopes
 
+    def _code_dimensions(self, node: _Node) -> dict[str, set[str]]:
+        dimensions = {
+            "language": set(),
+            "roles": set(),
+            "provider_ref": set(),
+            "currentness_state": set(),
+        }
+
+        def add_record(record: Mapping[str, Any]) -> None:
+            language = record.get("language") or record.get("code_observation_language")
+            if isinstance(language, str) and language:
+                dimensions["language"].add(language)
+            provider_ref = record.get("provider_ref") or record.get(
+                "code_observation_provider_ref"
+            )
+            if isinstance(provider_ref, str) and provider_ref:
+                dimensions["provider_ref"].add(provider_ref)
+            currentness_state = record.get("currentness_state") or record.get(
+                "code_observation_state"
+            )
+            if isinstance(currentness_state, str) and currentness_state:
+                dimensions["currentness_state"].add(currentness_state)
+            roles = record.get("roles")
+            if isinstance(roles, list):
+                dimensions["roles"].update(
+                    str(role) for role in roles if isinstance(role, str) and role
+                )
+
+        add_record(node.record)
+        if node.node_class == "relation":
+            for anchor_id in node.anchor_ids:
+                anchor_node = self._nodes.get(anchor_id)
+                if anchor_node is not None:
+                    add_record(anchor_node.record)
+        return dimensions
+
+    def _matches_code_dimensions(
+        self,
+        node: _Node,
+        *,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
+    ) -> bool:
+        dimensions = self._code_dimensions(node)
+        if language is not None and language not in dimensions["language"]:
+            return False
+        if roles is not None and not roles.intersection(dimensions["roles"]):
+            return False
+        if provider_refs is not None and not provider_refs.intersection(
+            dimensions["provider_ref"]
+        ):
+            return False
+        if currentness_states is not None and not currentness_states.intersection(
+            dimensions["currentness_state"]
+        ):
+            return False
+        return True
+
     def _profile(self, node: _Node, profile_kind: str, profile_ref: str) -> dict[str, Any]:
         profiles = self.family[node.node_class]["profiles"]
         profile = copy.deepcopy(profiles[profile_kind][profile_ref])
@@ -588,6 +714,10 @@ class RepoKagQuery:
         abi_compatibilities: set[str] | None = None,
         sign_states: set[str] | None = None,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> bool:
         if node_classes is not None and node.node_class not in node_classes:
             return False
@@ -596,6 +726,14 @@ class RepoKagQuery:
         if path_prefix and not node.path.startswith(path_prefix):
             return False
         if not self._allowed(node, access_scopes=access_scopes):
+            return False
+        if not self._matches_code_dimensions(
+            node,
+            language=language,
+            roles=roles,
+            provider_refs=provider_refs,
+            currentness_states=currentness_states,
+        ):
             return False
         provenance = self._profile(node, "provenance", node.provenance_ref)
         if provenance_modes is not None and provenance["mode"] not in provenance_modes:
@@ -625,7 +763,7 @@ class RepoKagQuery:
         relation_evidence = set(relation_ids)
         if node.node_class == "relation":
             relation_evidence.add(node.id)
-        return {
+        result = {
             "id": node.id,
             "node_class": node.node_class,
             "kind": node.kind,
@@ -648,6 +786,13 @@ class RepoKagQuery:
                 ),
             },
         }
+        if isinstance(node.record.get("qualification"), dict):
+            result["qualification"] = copy.deepcopy(node.record["qualification"])
+        if isinstance(node.record.get("semantic_confidence"), dict):
+            result["semantic_confidence"] = copy.deepcopy(
+                node.record["semantic_confidence"]
+            )
+        return result
 
     def discover(self) -> dict[str, Any]:
         node_counts = Counter(node.node_class for node in self._nodes.values())
@@ -669,6 +814,9 @@ class RepoKagQuery:
                 "git_ref": self.source_index["repo"]["git_ref"],
             },
             "query_modes": ["exact", "lexical", "graph", "hybrid"],
+            "query_handle_kinds": [
+                handle["kind"] for handle in self.query_handles()
+            ],
             "filter_fields": [
                 "node_class",
                 "kind",
@@ -678,6 +826,10 @@ class RepoKagQuery:
                 "abi_compatibility",
                 "sign_state",
                 "access_scope",
+                "language",
+                "roles",
+                "provider_ref",
+                "currentness_state",
             ],
             "node_counts": dict(sorted(node_counts.items())),
             "kind_counts": kind_counts,
@@ -706,6 +858,10 @@ class RepoKagQuery:
         abi_compatibilities: set[str] | None = None,
         sign_states: set[str] | None = None,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> list[dict[str, Any]]:
         nodes = sorted(
             (
@@ -721,6 +877,10 @@ class RepoKagQuery:
                     abi_compatibilities=abi_compatibilities,
                     sign_states=sign_states,
                     access_scopes=access_scopes,
+                    language=language,
+                    roles=roles,
+                    provider_refs=provider_refs,
+                    currentness_states=currentness_states,
                 )
             ),
             key=lambda node: (node.node_class, node.kind, node.id),
@@ -734,13 +894,23 @@ class RepoKagQuery:
         limit: int = 20,
         node_classes: set[str] | None = None,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> list[dict[str, Any]]:
         needle = value.casefold()
         matches: list[tuple[float, _Node]] = []
         for node in self._nodes.values():
-            if node_classes is not None and node.node_class not in node_classes:
-                continue
-            if not self._allowed(node, access_scopes=access_scopes):
+            if not self._matches(
+                node,
+                node_classes=node_classes,
+                access_scopes=access_scopes,
+                language=language,
+                roles=roles,
+                provider_refs=provider_refs,
+                currentness_states=currentness_states,
+            ):
                 continue
             fields = [node.id.casefold(), node.path.casefold(), node.label.casefold()]
             if node.node_class == "event":
@@ -762,6 +932,10 @@ class RepoKagQuery:
         limit: int = 20,
         node_classes: set[str] | None = None,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> list[dict[str, Any]]:
         query_tokens = tokenize(query)
         if not query_tokens:
@@ -769,8 +943,15 @@ class RepoKagQuery:
         candidates = [
             node
             for node in self._nodes.values()
-            if (node_classes is None or node.node_class in node_classes)
-            and self._allowed(node, access_scopes=access_scopes)
+            if self._matches(
+                node,
+                node_classes=node_classes,
+                access_scopes=access_scopes,
+                language=language,
+                roles=roles,
+                provider_refs=provider_refs,
+                currentness_states=currentness_states,
+            )
         ]
         if not candidates:
             return []
@@ -812,6 +993,10 @@ class RepoKagQuery:
         limit: int = 50,
         relation_kinds: set[str] | None = None,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> list[dict[str, Any]]:
         query_tokens = set(tokenize(query))
         queue = deque((seed_id, 0, (), ()) for seed_id in seed_ids if seed_id in self._nodes)
@@ -826,6 +1011,14 @@ class RepoKagQuery:
                     continue
                 neighbor = self._nodes.get(neighbor_id)
                 if neighbor is None or not self._allowed(neighbor, access_scopes=access_scopes):
+                    continue
+                if not self._matches_code_dimensions(
+                    neighbor,
+                    language=language,
+                    roles=roles,
+                    provider_refs=provider_refs,
+                    currentness_states=currentness_states,
+                ):
                     continue
                 overlap = len(query_tokens & set(self._tokens[neighbor_id]))
                 neighbors.append((overlap, neighbor, relation))
@@ -856,14 +1049,30 @@ class RepoKagQuery:
         limit: int = 20,
         max_hops: int = 2,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> list[dict[str, Any]]:
-        seeds = self.lexical(query, limit=max(limit, 8), access_scopes=access_scopes)
+        seeds = self.lexical(
+            query,
+            limit=max(limit, 8),
+            access_scopes=access_scopes,
+            language=language,
+            roles=roles,
+            provider_refs=provider_refs,
+            currentness_states=currentness_states,
+        )
         traversed = self.traverse(
             [hit["id"] for hit in seeds],
             query=query,
             max_hops=max_hops,
             limit=limit * 2,
             access_scopes=access_scopes,
+            language=language,
+            roles=roles,
+            provider_refs=provider_refs,
+            currentness_states=currentness_states,
         )
         return self._rrf([seeds, traversed], limit=limit)
 
@@ -873,10 +1082,38 @@ class RepoKagQuery:
         *,
         limit: int = 20,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> list[dict[str, Any]]:
-        exact = self.exact(query, limit=limit, access_scopes=access_scopes)
-        lexical = self.lexical(query, limit=limit * 2, access_scopes=access_scopes)
-        graph = self.graph(query, limit=limit * 2, access_scopes=access_scopes)
+        exact = self.exact(
+            query,
+            limit=limit,
+            access_scopes=access_scopes,
+            language=language,
+            roles=roles,
+            provider_refs=provider_refs,
+            currentness_states=currentness_states,
+        )
+        lexical = self.lexical(
+            query,
+            limit=limit * 2,
+            access_scopes=access_scopes,
+            language=language,
+            roles=roles,
+            provider_refs=provider_refs,
+            currentness_states=currentness_states,
+        )
+        graph = self.graph(
+            query,
+            limit=limit * 2,
+            access_scopes=access_scopes,
+            language=language,
+            roles=roles,
+            provider_refs=provider_refs,
+            currentness_states=currentness_states,
+        )
         return self._rrf([exact, lexical, graph], limit=limit)
 
     def _rrf(self, rankings: Sequence[Sequence[dict[str, Any]]], *, limit: int) -> list[dict[str, Any]]:
@@ -907,6 +1144,10 @@ class RepoKagQuery:
         mode: str = "hybrid",
         limit: int = 20,
         access_scopes: set[str] | None = None,
+        language: str | None = None,
+        roles: set[str] | None = None,
+        provider_refs: set[str] | None = None,
+        currentness_states: set[str] | None = None,
     ) -> dict[str, Any]:
         routes = {
             "exact": self.exact,
@@ -916,7 +1157,15 @@ class RepoKagQuery:
         }
         if mode not in routes:
             raise ValueError(f"unsupported query mode: {mode}")
-        hits = routes[mode](query, limit=limit, access_scopes=access_scopes)
+        hits = routes[mode](
+            query,
+            limit=limit,
+            access_scopes=access_scopes,
+            language=language,
+            roles=roles,
+            provider_refs=provider_refs,
+            currentness_states=currentness_states,
+        )
         return {
             "schema_version": "aoa-repo-local-kag-query-result-v1",
             "repo": copy.deepcopy(self.repo),
@@ -928,4 +1177,5 @@ class RepoKagQuery:
                 "git_ref": self.source_index["repo"]["git_ref"],
             },
             "hits": hits,
+            "handles": self.query_handles(),
         }

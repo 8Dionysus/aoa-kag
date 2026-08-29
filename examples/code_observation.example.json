@@ -1,0 +1,134 @@
+{
+  "schema_version": "aoa-code-observation-v1",
+  "batch_id": "aoa:example:code-observation-batch:python-source",
+  "capability_class": "code-structure",
+  "provider": {
+    "id": "python-ast",
+    "version": "1",
+    "config_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "config": {
+      "include_calls": true,
+      "language": "python",
+      "parser": "stdlib-ast"
+    },
+    "lane": {
+      "id": "python-ast",
+      "status": "source_local",
+      "availability": "source_local",
+      "admission": "not_applicable",
+      "claim_limit": "source-local observation only"
+    }
+  },
+  "source": {
+    "repo": "example-repo",
+    "path": "src/example.py",
+    "lineage_path": "src/example.py",
+    "source_epoch": "git-index:example",
+    "content_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "language": "python"
+  },
+  "parse_status": "parsed",
+  "observations": [
+    {
+      "observation_id": "aoa:example-repo:code-observation:symbol",
+      "observation_kind": "symbol",
+      "capability_class": "code-structure",
+      "semantic_key": "python:function:helper",
+      "subject": {
+        "symbol_id": "aoa:example-repo:code-symbol:helper",
+        "qualified_name": "helper",
+        "symbol_kind": "function",
+        "label": "helper"
+      },
+      "occurrence": {
+        "start_line": 1,
+        "end_line": 2,
+        "start_column": 1,
+        "end_column": 17
+      },
+      "relation": null,
+      "confidence": {
+        "evidence_class": "deterministic",
+        "value": 1
+      }
+    },
+    {
+      "observation_id": "aoa:example-repo:code-observation:relation",
+      "observation_kind": "relation",
+      "capability_class": "code-structure",
+      "semantic_key": "python:calls:run:3:12:helper",
+      "subject": {
+        "symbol_id": "aoa:example-repo:code-symbol:run",
+        "qualified_name": "run",
+        "symbol_kind": "function",
+        "label": "run"
+      },
+      "occurrence": {
+        "start_line": 3,
+        "end_line": 3,
+        "start_column": 12,
+        "end_column": 25
+      },
+      "relation": {
+        "kind": "calls",
+        "target_name": "helper",
+        "resolution": "resolved_local",
+        "target_symbol_id": "aoa:example-repo:code-symbol:helper"
+      },
+      "confidence": {
+        "evidence_class": "inferred",
+        "value": 0.75
+      }
+    }
+  ],
+  "diagnostics": [],
+  "provenance": {
+    "mode": "deterministic",
+    "extractor_ref": "aoa-kag:scripts/repo_local/code_observations.py",
+    "parser_ref": "python-ast@1",
+    "source_refs": [
+      {
+        "repo": "example-repo",
+        "path": "src/example.py",
+        "role": "primary_source",
+        "authority": "authored_source"
+      }
+    ]
+  },
+  "qualification": {
+    "provider_lifecycle": {
+      "state": "source_local",
+      "health": "source_local",
+      "evidence_refs": [
+        "aoa-kag:scripts/repo_local/code_observations.py"
+      ]
+    },
+    "machine_admission": {
+      "state": "not_applicable",
+      "trust_ref": "not_applicable",
+      "evidence_refs": []
+    },
+    "semantic_confidence": {
+      "evidence_class": "inferred",
+      "value": 0.75
+    },
+    "materialization": {
+      "state": "source_local",
+      "trust_ref": "deterministic"
+    }
+  },
+  "currentness": {
+    "state": "current",
+    "batch_id": "aoa:example:code-observation-batch:python-source",
+    "source_epoch": "git-index:example",
+    "current_source_epoch": "git-index:example",
+    "content_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "current_content_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "provider": {
+      "id": "python-ast",
+      "version": "1",
+      "config_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "reasons": []
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "schema_version": "abyss_stack_external_codex_report_v1",
+  "task_id": "actor-task:code-intelligence.indexed-code-intelligence-direction.01a02fec-b609-7120-b11c-fa80d34ee86a.g64.whole-continuation",
+  "incarnation_id": "incarnation:code-intelligence.indexed-code-intelligence-direction.01a02fec-b609-7120-b11c-fa80d34ee86a.g64.whole-continuation",
+  "continuation_id": "continuation:code-intelligence.indexed-code-intelligence-direction.01a02fec-b609-7120-b11c-fa80d34ee86a.g64.whole-continuation",
+  "correlation_id": "actor-route:code-intelligence.indexed-code-intelligence-direction.01a02fec-b609-7120-b11c-fa80d34ee86a.g64.whole-continuation",
+  "target_owner": "aoa-kag",
+  "return_owner": "codex-goal",
+  "status": "review_required",
+  "decision": "submit_for_review",
+  "external_effects_claimed": false,
+  "owner_acceptance_claimed": false,
+  "artifact_paths": [
+    "reports/indexed-code-intelligence-direction-completion.json",
+    "reports/indexed-code-intelligence-direction-completion.md"
+  ],
+  "changed_paths": [
+    "docs/validation/script_inventory.json",
+    "schemas/code-observation.schema.json",
+    "schemas/code-observation-delta.schema.json",
+    "schemas/repo-local-kag-federation.schema.json",
+    "schemas/repo-local-kag-index.schema.json",
+    "schemas/repo-local-kag-query-result.schema.json",
+    "schemas/repo-local-kag-repository-index.schema.json",
+    "examples/code_observation.example.json",
+    "examples/code_observation_delta.example.json",
+    "scripts/generate_repo_local_kag_index.py",
+    "scripts/repo_local/__init__.py",
+    "scripts/repo_local/code_observations.py",
+    "scripts/repo_local/indexes.py",
+    "scripts/repo_local/query.py",
+    "scripts/repo_local/structure.py",
+    "scripts/validators/expected/core.py",
+    "scripts/validators/schema_surfaces.py",
+    "tests/test_repo_local_kag_repository_indexes.py",
+    "kag/indexes/artifact_locators.json",
+    "kag/indexes/corpus.manifest.json",
+    "kag/indexes/hot_profile.json",
+    "kag/indexes/index_family.manifest.json",
+    "kag/indexes/shards/anchor/*.jsonl"
+  ],
+  "changed_path_groups": {
+    "authored_source": 18,
+    "generated_repository_family": "four manifests plus all 256 anchor shards",
+    "generated_refresh": "portable-family generator completed with 487 objects reused on the stable check"
+  },
+  "summary": "G64 preserves the accepted G61 dirty aoa-kag source delta and repairs the whole INDEXED direction at its owner boundary. The continuation hardens canonical provider rebinding and source-bound observation IDs, rejects malformed provider batches and relations, masks multiline JavaScript/TypeScript comments, defaults delta currentness to the after batch, preserves degraded invalid-UTF8 code envelopes, carries the exact G59 Universal Ctags 6.2.1 ABI as a caller-supplied unsigned/unadmitted input, and records the machine parser version without installing or executing it. Python AST remains source-local deterministic analysis; JavaScript and TypeScript remain lexical fallback only; Tree-sitter, SCIP, and LSP remain absent or unadmitted. Git rename/move lineage, bounded affected closure, full-rebuild observation parity, unselected transformation candidates, compact query handles, schemas, examples, tests, and the generated family remain in scope. This report establishes source readiness and owner-local validation only; registry promotion, consumer admission, deployment/runtime evidence, proof/eval verdicts, owner acceptance, and human acceptance are separate and unclaimed.",
+  "source_epoch": "git-index-source-tree",
+  "workspace_baseline": {
+    "git_head": "578e4cea9a04b76a881bde240d5479efceea4926",
+    "origin_main": "578e4cea9a04b76a881bde240d5479efceea4926",
+    "workspace_manifest": "sha256:d5c880aa3a6a1ee2ead77bc8e0f4fb583958e2176600d303d0c7eea91e593b3c",
+    "note": "The isolated owner worktree was clean at the current origin/main baseline before this authored source and generated-family delta."
+  },
+  "packet_and_immutable_input_evidence": {
+    "current_packet_json_count": 4,
+    "runtime_task_inputs_read_before_source": true,
+    "immutable_input_digests": {
+      "reviewed_g61_handoff": "sha256:073fa4e9e1a9ad0b2d93e470959103e165ad2c68d1cd0abc43894cf720d71af0",
+      "master_g61_disposition": "sha256:7f50244ab5bdb49cb56a13b8846823e89011f8ac17732072c57dbd50686fbebc",
+      "prior_g61_completion_report": "sha256:d587ce6e2cae0a9aaceb001de8cde193979c41e3aea51af14f07cc42214155c5",
+      "prior_g61_completion_markdown": "sha256:b2703bad385767e6bf9b85e8fa05980cf49074450aacdb9048b7c6404b36fc47",
+      "master_g59_machine_disposition": "sha256:e2aa38a04caefe6d4375978fa4a1c58e8c9d21b09536771a932c7f0b51d9f308",
+      "original_clean_baseline_manifest": "sha256:d5c880aa3a6a1ee2ead77bc8e0f4fb583958e2176600d303d0c7eea91e593b3c",
+      "responsibility_reclassification": "sha256:d7a4418eef29e3ba949cf32561adfe83bdc1f048883f617bcb3ee047b0dc0236",
+      "role_first_selection": "sha256:1e0bb0d5777d1d5f5f700f961135a192afb8d6c99a396afa5dece5380037a4bd",
+      "global_agents": "sha256:76bffb5f1bfb424796671e616b9fae34da83b3616793211727f0236f840e122a",
+      "owner_root_agents": "sha256:bf4a7b1bba9bb870c9ef3c5044c8e70f01dad1482951291320a0a8ae1b05d528"
+    },
+    "claim_boundary": "The exact G61 master disposition is the accepted and rejected prior boundary for this continuation. The returned G61 dirty source delta was preserved and reviewed. G42 INDEXED output was not treated as accepted input. G59 is accepted only as the exact source ABI and unsigned/unadmitted candidate posture; it does not authorize provider admission, installation, activation, execution, or trust-root change."
+  },
+  "directional_evidence": {
+    "observation_and_delta": {
+      "languages": {
+        "python": "python-ast@1 source-local deterministic AST",
+        "javascript": "javascript-lexical source-local fallback only",
+        "typescript": "typescript-lexical source-local fallback only"
+      },
+      "lineage": "Git-derived source paths preserve observation identity across rename and distinguish move by parent path; source epoch is carried through full and incremental repository generation.",
+      "change_kinds": ["add", "delete", "modify", "rename", "move"],
+      "affectedness": "bounded reverse-dependency closure over the caller-supplied observation graph; not a global deployed dependency service",
+      "transformations": {
+        "kinds": ["split", "merge", "symbol_rename", "ambiguous"],
+        "selection": "all alternatives remain selected=false and require owner/provider review"
+      },
+      "parity": "focused measurement covers observation-set parity only; it does not establish repository-family, runtime, or semantic parity"
+    },
+    "query_handles": {
+      "owner": "aoa-kag",
+      "kinds": [
+        "definitions",
+        "references",
+        "callers",
+        "callees",
+        "imports",
+        "inheritance",
+        "ownership",
+        "changed-since",
+        "affected-by-change",
+        "lineage",
+        "ambiguity",
+        "freshness",
+        "proof-status",
+        "mcp-source-readiness"
+      ],
+      "limits": "proof-status is an aoa-evals owner route, not a proof verdict; mcp-source-readiness is a source declaration, not transport or runtime evidence"
+    },
+    "generated_family": {
+      "corpus_digest": "sha256:33c5fd243eca78bbb106a044ef460d8a3b30440b2c63fce9dcbf3a89588fcf03",
+      "distribution_digest": "sha256:fa05344967a8a50c263bbbd1769ea939615b191c04c10480e4f5e84fd8a9c416",
+      "source_snapshot_digest": "sha256:2315e14a79c73975275a3f0f81ba596fc46989b311a30f19540929414a1c5519",
+      "canonical_records": 13766,
+      "objects": 487,
+      "state": "candidate; generated read model only"
+    },
+    "g59_machine_binding": {
+      "provider": "universal-ctags",
+      "version": "6.2.1",
+      "owner": "abyss-machine",
+      "consumer": "abyss-stack",
+      "binding_schema": "abyss-machine-code-intelligence-provider-binding-v1",
+      "observation_envelope_schema": "abyss_machine_code_observation_envelope_v1",
+      "archive_digest": "sha256:fa8a609bc834286a9c9b2e32e2b78791072cefe7956ba7a838b02004b29b0845",
+      "subject_digest": "sha256:03e503df1a06356c5db39ce589d07ad161099746b1a0b7e178fbb0feb42cf5",
+      "signature_status": "not_signed",
+      "registry_status": "not_promoted",
+      "admission_status": "not_admitted",
+      "installation_status": "not_installed",
+      "execution_status": "not_executed",
+      "trust_anchor_posture": "existing root-owned anchor only; no trust root was created or changed",
+      "integration": "caller-supplied JSON is validated and bound to target source identity only; aoa-kag does not install, execute, call, activate, promote, or admit the candidate",
+      "consumer_abi": "exact G59 source ABI retained, including fail-closed gate, evidence, signed-payload, public-key, and root-anchor references"
+    },
+    "provider_lanes": {
+      "tree-sitter": "absent/not_admitted",
+      "scip": "absent/not_admitted",
+      "lsp": "absent/not_admitted",
+      "universal-ctags": "supplied_unadmitted/not_admitted"
+    }
+  },
+  "strongest_owner_local_validation": [
+    {
+      "command": "python3 -m unittest tests.test_repo_local_kag_index tests.test_repo_local_kag_repository_indexes",
+      "result": "170 tests passed; 1 optional test skipped"
+    },
+    {
+      "command": "focused INDEXED observation, machine-envelope, delta, parity, and query-handle tests",
+      "result": "passed, including canonical provider rebind tamper rejection, malformed-batch rejection, multiline lexical comment masking, invalid-UTF8 degraded envelopes, after-batch currentness, rename/move, bounded affectedness, unselected transformations, MIME-only source identity, lexical fallback posture, exact G59 unadmitted binding, and schema-valid query handles"
+    },
+    {
+      "command": "python3 -m py_compile scripts/repo_local/code_observations.py scripts/repo_local/structure.py scripts/repo_local/indexes.py tests/test_repo_local_kag_repository_indexes.py",
+      "result": "passed"
+    },
+    {
+      "command": "python3 scripts/generate_repo_local_kag_index.py --repo-root . --output kag/indexes/source_surface_index.json --portable-family",
+      "result": "passed; corpus sha256:33c5fd243eca78bbb106a044ef460d8a3b30440b2c63fce9dcbf3a89588fcf03, distribution sha256:fa05344967a8a50c263bbbd1769ea939615b191c04c10480e4f5e84fd8a9c416, 13,766 canonical records and 487 objects"
+    },
+    {
+      "command": "python3 scripts/generate_repo_local_kag_index.py --repo-root . --output kag/indexes/source_surface_index.json --portable-family --check",
+      "result": "passed; 487 generated objects reused on the stable check"
+    },
+    {
+      "command": "python scripts/validate_kag.py --scope local",
+      "result": "passed; local KAG, repository-index schema, payload, rebuild, parity, and generated-family checks passed; cross-repo checks were skipped because sibling source roots are unavailable"
+    },
+    {
+      "command": "python scripts/validate_nested_agents.py; python scripts/validate_mechanics_skeleton.py; python scripts/generate_decision_indexes.py --check; python scripts/validate_decision_records.py; python scripts/validate_semantic_agents.py",
+      "result": "all five commands passed"
+    },
+    {
+      "command": "python scripts/ci_gate.py --mode source-fast",
+      "result": "not green: exit 1; the full run_tests.py validation command retained external fixture/topology failures and errors. The remaining issues are unavailable abyss-stack/aoa-sdk/Tree-of-Sophia or generated sibling inputs, host-temp authority, and the known absolute-path assertion. Portable repository-family validation passed in the run; the owner-focused 170-test suite is separately green."
+    },
+    {
+      "command": "python scripts/ci_gate.py --mode generated",
+      "result": "not green: exit 1 at the external coverage prebuild because provider pin expected 3baafa395906e93dee23a9479ef4f9aed576bd8a but current source reported 7ff7bb4375154577b0793cfd31e37280c764b83d"
+    },
+    {
+      "command": "python scripts/run_part_local_checks.py",
+      "result": "not green: missing sibling generated/kag_export.min.json"
+    },
+    {
+      "command": "python scripts/validate_local_stats_port.py",
+      "result": "not green: aoa-stats validator unavailable in the isolated owner topology"
+    },
+    {
+      "command": "python scripts/release_check.py",
+      "result": "not green: exit 1 because the release lane invokes source-fast and the full test collection retained the same 4 failures, 25 errors, and 1 skipped external residuals"
+    }
+  ],
+  "claim_separation": {
+    "source_readiness": "established for the authored aoa-kag source and generated-family refresh described here",
+    "producer_validation": "owner-local focused and local KAG validation passed; full source-fast and generated lanes retain exact external residuals above",
+    "registry_promotion": "not claimed; generated distribution remains candidate",
+    "consumer_admission": "not claimed; the G59 candidate remains unsigned, unpromoted, unadmitted, uninstalled, and unexecuted",
+    "deployment_runtime": "not claimed; no provider, KAG service, MCP transport, deployment, or runtime evidence was produced",
+    "proof_eval": "not claimed; the proof-status handle is only an aoa-evals route",
+    "landing": "authorized owner-source landing attempt is pending in this completion artifact; no landing, registry promotion, deployment, runtime, or owner-acceptance claim is made until the live branch, pull request, required checks, and merge are directly observed",
+    "owner_acceptance": "not claimed",
+    "human_acceptance": "not claimed"
+  },
+  "residuals": [
+    "Tree-sitter, SCIP, and LSP remain absent/not_admitted; JavaScript and TypeScript lexical fallback is not semantic portability; Universal Ctags is only a caller-supplied unadmitted input parser.",
+    "The G59 artifact has no observed signature, registry promotion, consumer admission, installation, execution, or root-anchor evidence; no trust root was created or replaced.",
+    "Dependency closure is bounded to supplied observation batches and a hop limit; it is not a deployed global dependency graph or runtime invalidation service.",
+    "Split, merge, symbol-rename, and ambiguity outputs are unselected candidates and require owner/provider review before semantic use.",
+    "The source-fast suite remains non-green because the capsule lacks sibling generated and owner sources, has a host-temp write restriction, and contains the known absolute-path assertion; these are not converted into local passes.",
+    "Generated full/os-wide validation retains an external provider-pin mismatch even though the aoa-kag repository-family generator check and local KAG validation pass.",
+    "Release preparation is not green because its required source-fast prerequisite is not green in this isolated topology.",
+    "The G64 owner-source landing route remains a separate live claim and is not inferred from local readiness. The attempt must observe branch ref, push, pull request, required Repo Validation and owner-family checks, repair any ordinary failures, and squash merge only after green checks. No provider admission, trust-root change, service mutation, or runtime activation is permitted.",
+    "No proof/eval verdict, deployment/runtime claim, consumer admission, registry promotion, owner acceptance, or human acceptance is implied by this report."
+  ],
+  "landing_attempt": {
+    "status": "pending_authorized_attempt",
+    "parent": "578e4cea9a04b76a881bde240d5479efceea4926",
+    "branch": "goal-01a02fec-g61-indexed",
+    "local_ref": "not_yet_committed",
+    "push": "not_attempted",
+    "github_auth": "read-only preflight succeeded for 8Dionysus via gh auth status",
+    "pull_request": "not_created",
+    "checks": "not_observable_yet",
+    "merge": "not_attempted"
+  },
+  "transition": {
+    "from_status": "active",
+    "to_status": "review_required",
+    "owner": "aoa-kag",
+    "approval_posture": "master_review_required",
+    "rollback_reentry_route": "master:01a02fec-b609-7120-b11c-fa80d34ee86a",
+    "evidence_refs": [
+      "source:aoa-kag/scripts/repo_local/code_observations.py",
+      "source:aoa-kag/scripts/repo_local/structure.py",
+      "source:aoa-kag/scripts/repo_local/indexes.py",
+      "source:aoa-kag/scripts/repo_local/query.py",
+      "generated:aoa-kag/kag/indexes/index_family.manifest.json",
+      "immutable:master-indexed-disposition-g57#accepted-and-rejected-boundaries",
+      "immutable:master-machine-disposition-g59#exact-unadmitted-provider-binding"
+    ]
+  },
+  "reentry_request": {
+    "condition_id": "validated-return",
+    "proposed_action": "wake_parent",
+    "reason": "The G64 completion artifacts carry the exact task/incarnation/continuation ABI, preserved G61 continuation input, meaningful whole-direction repairs, generated refresh evidence, owner-local validation, exact external residuals, and separate source/admission/runtime/proof/landing/acceptance claims. Fixed validation commands are the final commands after landing work; master review remains required."
+  },
+  "fixed_validation_commands": [
+    "python3 -m json.tool reports/indexed-code-intelligence-direction-completion.json",
+    "/usr/bin/test -s reports/indexed-code-intelligence-direction-completion.md",
+    "python3 /srv/abyss-machine/tmp/ai/code-intelligence-goal-01a02fec-20260823/master/require_authored_delta_from_manifest.py /srv/abyss-machine/tmp/ai/code-intelligence-goal-01a02fec-20260823/selection-evidence-generation-61/workspace-manifest.json",
+    "git diff --check HEAD"
+  ],
+  "validation_claims": [
+    {
+      "command_id": "validate-indexed-code-intelligence-direction-completion-json",
+      "status": "pending_final_sequence",
+      "evidence_ref": "runtime:validation:validate-indexed-code-intelligence-direction-completion-json"
+    },
+    {
+      "command_id": "validate-indexed-code-intelligence-direction-completion-md",
+      "status": "pending_final_sequence",
+      "evidence_ref": "runtime:validation:validate-indexed-code-intelligence-direction-completion-md"
+    },
+    {
+      "command_id": "require-indexed-code-intelligence-direction-fresh-authored-delta",
+      "status": "pending_final_sequence",
+      "evidence_ref": "runtime:validation:require-indexed-code-intelligence-direction-fresh-authored-delta"
+    },
+    {
+      "command_id": "check-indexed-code-intelligence-direction-diff",
+      "status": "pending_final_sequence",
+      "evidence_ref": "runtime:validation:check-indexed-code-intelligence-direction-diff"
+    }
+  ]
+}

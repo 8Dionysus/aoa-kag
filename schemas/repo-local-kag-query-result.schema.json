@@ -27,6 +27,10 @@
     "hits": {
       "type": "array",
       "items": {"$ref": "#/$defs/hit"}
+    },
+    "handles": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/queryHandle"}
     }
   },
   "oneOf": [
@@ -168,7 +172,7 @@
         "ref": {"$ref": "#/$defs/nonEmptyString"},
         "class": {
           "type": "string",
-          "enum": ["deterministic", "declared", "observed", "inferred"]
+          "enum": ["deterministic", "declared", "observed", "inferred", "untrusted"]
         },
         "confidence": {"type": "number", "minimum": 0, "maximum": 1}
       }
@@ -305,7 +309,100 @@
           "items": {"$ref": "#/$defs/sourceContext"}
         },
         "record": {"type": "object", "minProperties": 1},
-        "evidence": {"$ref": "#/$defs/evidence"}
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "qualification": {"$ref": "#/$defs/qualification"},
+        "semantic_confidence": {"$ref": "#/$defs/confidence"}
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_class", "value"],
+      "properties": {
+        "evidence_class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "value": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_lifecycle",
+        "machine_admission",
+        "semantic_confidence",
+        "materialization"
+      ],
+      "properties": {
+        "provider_lifecycle": {"$ref": "#/$defs/providerLifecycle"},
+        "machine_admission": {"$ref": "#/$defs/machineAdmission"},
+        "semantic_confidence": {"$ref": "#/$defs/confidence"},
+        "materialization": {"$ref": "#/$defs/materialization"}
+      }
+    },
+    "providerLifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "health", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["source_local", "unobserved"]},
+        "health": {"enum": ["source_local", "unobserved"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "machineAdmission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["not_applicable", "not_admitted"]},
+        "trust_ref": {"enum": ["not_applicable", "untrusted"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref"],
+      "properties": {
+        "state": {"enum": ["source_local", "untrusted_observation"]},
+        "trust_ref": {"enum": ["deterministic", "untrusted"]}
+      }
+    },
+    "queryHandle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "handle_id",
+        "kind",
+        "operation",
+        "relation_kinds",
+        "status",
+        "owner_route",
+        "source_index",
+        "mcp_resource",
+        "claim_limit"
+      ],
+      "properties": {
+        "handle_id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "operation": {"$ref": "#/$defs/nonEmptyString"},
+        "relation_kinds": {"$ref": "#/$defs/stringArray"},
+        "status": {"$ref": "#/$defs/nonEmptyString"},
+        "owner_route": {"$ref": "#/$defs/nonEmptyString"},
+        "source_index": {"$ref": "#/$defs/sourceIndex"},
+        "mcp_resource": {"$ref": "#/$defs/nonEmptyString"},
+        "claim_limit": {"$ref": "#/$defs/nonEmptyString"}
       }
     }
   }

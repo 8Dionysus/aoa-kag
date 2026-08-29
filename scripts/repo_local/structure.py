@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import copy
 import hashlib
 import json
 import posixpath
@@ -9,6 +10,7 @@ from pathlib import PurePosixPath
 from typing import Any, Mapping
 from urllib.parse import unquote, urlsplit
 
+from .code_observations import language_for_path, observe_source
 from .identity import qualified_id
 
 
@@ -48,6 +50,17 @@ def _anchor(
     qualified_name: str = "",
     source_path: str = "",
     parser: str,
+    parser_version: str = "1",
+    observation_id: str = "",
+    source_epoch: str = "",
+    provider_ref: str = "",
+    language: str = "",
+    roles: list[str] | None = None,
+    currentness_state: str = "",
+    evidence_class: str = "",
+    trust_ref: str = "",
+    qualification: dict[str, Any] | None = None,
+    semantic_confidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     key = f"{source_id}:{kind}:{semantic_key}"
     anchor = {
@@ -65,10 +78,30 @@ def _anchor(
         },
         "symbol_kind": symbol_kind,
         "qualified_name": qualified_name,
-        "parser": {"name": parser, "version": "1"},
+        "parser": {"name": parser, "version": parser_version},
     }
     if source_path:
         anchor["source_path"] = source_path
+    if observation_id:
+        anchor["observation_id"] = observation_id
+    if source_epoch:
+        anchor["source_epoch"] = source_epoch
+    if provider_ref:
+        anchor["provider_ref"] = provider_ref
+    if language:
+        anchor["language"] = language
+    if roles:
+        anchor["roles"] = sorted(set(roles))
+    if currentness_state:
+        anchor["currentness_state"] = currentness_state
+    if evidence_class:
+        anchor["evidence_class"] = evidence_class
+    if trust_ref:
+        anchor["trust_ref"] = trust_ref
+    if qualification is not None:
+        anchor["qualification"] = copy.deepcopy(qualification)
+    if semantic_confidence is not None:
+        anchor["semantic_confidence"] = copy.deepcopy(semantic_confidence)
     return anchor
 
 
@@ -702,6 +735,162 @@ def _capability_graph_structure(
     return anchors, outbound
 
 
+def _code_structure(
+    *,
+    repo: str,
+    source_id: str,
+    path: str,
+    lineage_path: str,
+    content: bytes,
+    source_epoch: str,
+    language: str,
+    provider_batch: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Project one validated code-observation batch into structural anchors.
+
+    The observation envelope remains the source of provider, epoch, confidence,
+    and admission posture.  This adapter only creates the existing anchor and
+    outbound-reference shapes consumed by the repository index family.
+    """
+
+    batch = observe_source(
+        repo=repo,
+        path=path,
+        content=content,
+        source_epoch=source_epoch or "unspecified",
+        language=language,
+        lineage_path=lineage_path,
+        provider_batch=provider_batch,
+    )
+    source = batch.get("source")
+    provider = batch.get("provider")
+    qualification = batch.get("qualification")
+    if not isinstance(source, Mapping) or not isinstance(provider, Mapping):
+        raise ValueError("code observation batch identity is incomplete")
+    if not isinstance(qualification, Mapping):
+        raise ValueError("code observation batch qualification is missing")
+    language = str(source.get("language") or "")
+    provider_id = str(provider.get("id") or "")
+    provider_version = str(provider.get("version") or "")
+    parser_ref = f"{provider_id}@{provider_version}"
+    semantic_confidence = qualification.get("semantic_confidence")
+    materialization = qualification.get("materialization")
+    if not isinstance(semantic_confidence, Mapping) or not isinstance(
+        materialization, Mapping
+    ):
+        raise ValueError("code observation batch qualification is incomplete")
+    evidence_class = str(
+        semantic_confidence.get("evidence_class") or "inferred"
+    )
+    trust_ref = str(materialization.get("trust_ref") or "untrusted")
+    currentness = batch.get("currentness")
+    currentness_state = (
+        str(currentness.get("state") or "")
+        if isinstance(currentness, Mapping)
+        else ""
+    )
+    anchors: list[dict[str, Any]] = []
+    outbound: list[dict[str, Any]] = []
+    anchor_by_symbol: dict[str, str] = {}
+    observations = batch.get("observations")
+    if not isinstance(observations, list):
+        raise ValueError("code observation batch observations must be a list")
+    for observation in observations:
+        if not isinstance(observation, Mapping):
+            continue
+        if observation.get("observation_kind") != "symbol":
+            continue
+        subject = observation.get("subject")
+        occurrence = observation.get("occurrence")
+        if not isinstance(subject, Mapping) or not isinstance(occurrence, Mapping):
+            continue
+        observation_confidence = observation.get("confidence")
+        observation_evidence_class = (
+            str(observation_confidence.get("evidence_class") or evidence_class)
+            if isinstance(observation_confidence, Mapping)
+            else evidence_class
+        )
+        anchor = _anchor(
+            repo=repo,
+            source_id=source_id,
+            kind=f"{language}_symbol",
+            semantic_key=str(observation.get("semantic_key") or "symbol"),
+            label=str(subject.get("label") or subject.get("qualified_name") or "symbol"),
+            line=int(occurrence.get("start_line") or 1),
+            end_line=int(occurrence.get("end_line") or occurrence.get("start_line") or 1),
+            column=int(occurrence.get("start_column") or 1),
+            end_column=int(
+                occurrence.get("end_column") or occurrence.get("start_column") or 1
+            ),
+            symbol_kind=str(subject.get("symbol_kind") or "symbol"),
+            qualified_name=str(subject.get("qualified_name") or ""),
+            parser=provider_id,
+            parser_version=provider_version,
+            observation_id=str(observation.get("observation_id") or ""),
+            source_epoch=str(source.get("source_epoch") or ""),
+            provider_ref=parser_ref,
+            language=language,
+            roles=[
+                str(role)
+                for role in subject.get("roles", [])
+                if isinstance(role, str) and role
+            ],
+            currentness_state=currentness_state,
+            evidence_class=observation_evidence_class,
+            trust_ref=trust_ref,
+            qualification=dict(qualification),
+            semantic_confidence=dict(semantic_confidence),
+        )
+        anchors.append(anchor)
+        symbol_id = str(subject.get("symbol_id") or "")
+        if symbol_id:
+            anchor_by_symbol[symbol_id] = str(anchor["id"])
+
+    for observation in observations:
+        if not isinstance(observation, Mapping):
+            continue
+        if observation.get("observation_kind") != "relation":
+            continue
+        subject = observation.get("subject")
+        relation = observation.get("relation")
+        if not isinstance(subject, Mapping) or not isinstance(relation, Mapping):
+            continue
+        source_anchor_id = anchor_by_symbol.get(str(subject.get("symbol_id") or ""))
+        target_name = str(relation.get("target_name") or "")
+        relation_kind = str(relation.get("kind") or "references")
+        if not source_anchor_id or not target_name:
+            continue
+        confidence = observation.get("confidence")
+        relation_evidence = (
+            str(confidence.get("evidence_class") or evidence_class)
+            if isinstance(confidence, Mapping)
+            else evidence_class
+        )
+        outbound.append(
+            {
+                "relation_kind": relation_kind,
+                "source_anchor_id": source_anchor_id,
+                "source_context": f"{language}:{subject.get('qualified_name', '')}",
+                "target_ref": f"{language}:{target_name}",
+                "evidence_class": relation_evidence,
+                "trust_ref": trust_ref,
+            }
+        )
+    anchors.sort(
+        key=lambda item: (
+            item["locator"]["start_line"],
+            item["locator"]["start_column"],
+            item["id"],
+        )
+    )
+    outbound.sort(key=lambda item: (item["source_anchor_id"], item["target_ref"]))
+    return {
+        "anchor_refs": anchors,
+        "outbound_refs": outbound,
+        "code_observation": copy.deepcopy(dict(batch)),
+    }
+
+
 def _json_structure(
     repo: str,
     source_id: str,
@@ -887,9 +1076,51 @@ def extract_structure(
     content: bytes,
     enable_capability_graph: bool = False,
     capability_graph_sources: Mapping[str, bytes] | None = None,
-) -> dict[str, list[dict[str, Any]]]:
+    lineage_path: str | None = None,
+    source_epoch: str = "unspecified",
+    provider_batch: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     anchors = [_artifact_anchor(repo, source_id)]
     outbound: list[dict[str, Any]] = []
+
+    code_language = language_for_path(path)
+    if code_language is None:
+        code_language = {
+            "text/x-python": "python",
+            "text/javascript": "javascript",
+            "text/jsx": "javascript",
+            "application/typescript": "typescript",
+            "text/tsx": "typescript",
+        }.get(mime)
+    if code_language in {"python", "javascript", "typescript"}:
+        structure = _code_structure(
+            repo=repo,
+            source_id=source_id,
+            path=path,
+            lineage_path=lineage_path or path,
+            content=content,
+            source_epoch=source_epoch,
+            language=code_language,
+            provider_batch=provider_batch,
+        )
+        anchors.extend(structure["anchor_refs"])
+        outbound.extend(structure["outbound_refs"])
+        anchors.sort(
+            key=lambda item: (
+                item["locator"]["start_line"],
+                item["locator"]["start_column"],
+                item["id"],
+            )
+        )
+        outbound.sort(
+            key=lambda item: (item["source_anchor_id"], item["target_ref"])
+        )
+        return {
+            "anchor_refs": anchors,
+            "outbound_refs": outbound,
+            "code_observation": structure["code_observation"],
+        }
+
     try:
         text = content.decode("utf-8")
     except UnicodeDecodeError:
@@ -897,10 +1128,6 @@ def extract_structure(
 
     if mime == "text/markdown" or path.endswith(".md"):
         extracted, references = _markdown_structure(repo, source_id, text)
-        anchors.extend(extracted)
-        outbound.extend(references)
-    elif mime == "text/x-python" or path.endswith(".py"):
-        extracted, references = _python_structure(repo, source_id, text)
         anchors.extend(extracted)
         outbound.extend(references)
     elif mime == "application/json" or path.endswith(".json"):

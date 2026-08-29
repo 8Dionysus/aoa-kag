@@ -182,6 +182,59 @@
       "minLength": 1,
       "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
     },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_lifecycle",
+        "machine_admission",
+        "semantic_confidence",
+        "materialization"
+      ],
+      "properties": {
+        "provider_lifecycle": {"$ref": "#/$defs/providerLifecycle"},
+        "machine_admission": {"$ref": "#/$defs/machineAdmission"},
+        "semantic_confidence": {"$ref": "#/$defs/confidence"},
+        "materialization": {"$ref": "#/$defs/materialization"}
+      }
+    },
+    "providerLifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "health", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["source_local", "unobserved"]},
+        "health": {"enum": ["source_local", "unobserved"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "machineAdmission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref", "evidence_refs"],
+      "properties": {
+        "state": {"enum": ["not_applicable", "not_admitted"]},
+        "trust_ref": {"enum": ["not_applicable", "untrusted"]},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "trust_ref"],
+      "properties": {
+        "state": {"enum": ["source_local", "untrusted_observation"]},
+        "trust_ref": {"enum": ["deterministic", "untrusted"]}
+      }
+    },
     "repo": {
       "type": "object",
       "additionalProperties": false,
@@ -318,7 +371,15 @@
         "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
         "trust_ref": {"$ref": "#/$defs/nonEmptyString"},
-        "source_path": {"$ref": "#/$defs/nonEmptyString"}
+        "source_path": {"$ref": "#/$defs/nonEmptyString"},
+        "roles": {"$ref": "#/$defs/stringArray"},
+        "language": {"$ref": "#/$defs/nonEmptyString"},
+        "currentness_state": {
+          "enum": ["current", "stale", "degraded", "unparseable"]
+        },
+        "provider_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "qualification": {"$ref": "#/$defs/qualification"},
+        "semantic_confidence": {"$ref": "#/$defs/confidence"}
       }
     },
     "artifactEntry": {
@@ -350,7 +411,12 @@
         "mime": {"$ref": "#/$defs/nonEmptyString"},
         "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
-        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "code_observation_language": {"$ref": "#/$defs/nonEmptyString"},
+        "code_observation_provider_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "code_observation_state": {
+          "enum": ["current", "stale", "degraded", "unparseable"]
+        }
       }
     },
     "anchorEntry": {
@@ -383,13 +449,23 @@
         "parser_ref": {"$ref": "#/$defs/nonEmptyString"},
         "source_record_id": {"$ref": "#/$defs/nonEmptyString"},
         "source_path": {"$ref": "#/$defs/nonEmptyString"},
+        "observation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_epoch": {"$ref": "#/$defs/nonEmptyString"},
+        "provider_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "language": {"$ref": "#/$defs/nonEmptyString"},
+        "roles": {"$ref": "#/$defs/stringArray"},
+        "currentness_state": {
+          "enum": ["current", "stale", "degraded", "unparseable"]
+        },
+        "qualification": {"$ref": "#/$defs/qualification"},
+        "semantic_confidence": {"$ref": "#/$defs/confidence"},
         "outbound_refs": {
           "type": "array",
           "items": {"$ref": "#/$defs/outboundRef"}
         },
         "evidence_class": {
           "type": "string",
-          "enum": ["deterministic", "declared", "inferred"]
+          "enum": ["deterministic", "declared", "observed", "inferred"]
         },
         "provenance_ref": {"$ref": "#/$defs/nonEmptyString"},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
@@ -500,7 +576,7 @@
         },
         "evidence_class": {
           "type": "string",
-          "enum": ["deterministic", "declared", "inferred"]
+          "enum": ["deterministic", "declared", "observed", "inferred"]
         },
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "quality_state": {
@@ -549,7 +625,7 @@
         },
         "evidence_class": {
           "type": "string",
-          "enum": ["deterministic", "declared", "inferred"]
+          "enum": ["deterministic", "declared", "observed", "inferred"]
         },
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "temporal_ref": {"$ref": "#/$defs/nonEmptyString"},
@@ -582,9 +658,10 @@
         "target_ref": {"$ref": "#/$defs/nonEmptyString"},
         "evidence_class": {
           "type": "string",
-          "enum": ["deterministic", "declared", "inferred"]
+          "enum": ["deterministic", "declared", "observed", "inferred"]
         },
-        "source_path": {"$ref": "#/$defs/nonEmptyString"}
+        "source_path": {"$ref": "#/$defs/nonEmptyString"},
+        "trust_ref": {"$ref": "#/$defs/nonEmptyString"}
       }
     },
     "actor": {
@@ -647,6 +724,9 @@
           "type": "object",
           "minProperties": 1,
           "additionalProperties": {"$ref": "#/$defs/trustProfile"}
+        },
+        "code_observations": {
+          "$ref": "#/$defs/codeObservationProfile"
         }
       }
     },
@@ -714,9 +794,51 @@
       "properties": {
         "class": {
           "type": "string",
-          "enum": ["deterministic", "declared", "observed", "inferred"]
+          "enum": ["deterministic", "declared", "observed", "inferred", "untrusted"]
         },
         "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_class", "value"],
+      "properties": {
+        "evidence_class": {
+          "type": "string",
+          "enum": ["deterministic", "declared", "observed", "inferred"]
+        },
+        "value": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "codeObservationProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_count",
+        "language_counts",
+        "provider_counts",
+        "currentness_counts"
+      ],
+      "properties": {
+        "entry_count": {"type": "integer", "minimum": 0},
+        "language_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "provider_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "currentness_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        }
       }
     },
     "registryOutput": {

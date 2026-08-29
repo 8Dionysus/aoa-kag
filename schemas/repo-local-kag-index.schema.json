@@ -787,7 +787,40 @@
           "items": {
             "$ref": "#/$defs/headingRef"
           }
+        },
+        "code_observation": {
+          "$ref": "#/$defs/codeObservationReference"
         }
+      }
+    },
+    "codeObservationReference": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schema_version",
+        "batch_id",
+        "capability_class",
+        "provider",
+        "source",
+        "parse_status",
+        "observations",
+        "diagnostics",
+        "provenance",
+        "qualification"
+      ],
+      "properties": {
+        "schema_version": {"const": "aoa-code-observation-v1"},
+        "batch_id": {"$ref": "#/$defs/nonEmptyString"},
+        "capability_class": {"const": "code-structure"},
+        "provider": {"type": "object"},
+        "source": {"type": "object"},
+        "parse_status": {
+          "enum": ["parsed", "unparseable", "degraded"]
+        },
+        "observations": {"type": "array"},
+        "diagnostics": {"type": "array"},
+        "provenance": {"type": "object"},
+        "qualification": {"type": "object"}
       }
     },
     "headingRef": {
