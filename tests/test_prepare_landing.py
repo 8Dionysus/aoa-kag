@@ -3644,6 +3644,17 @@ class PrepareLandingTests(unittest.TestCase):
             raised.exception.failure_type,
         )
 
+    def test_portable_family_staging_includes_tiered_control_manifests(self) -> None:
+        self.assertTrue(
+            {
+                "kag/indexes/index_family.manifest.json",
+                "kag/indexes/corpus.manifest.json",
+                "kag/indexes/hot_profile.json",
+                "kag/indexes/artifact_locators.json",
+                "kag/indexes/shards",
+            }.issubset(set(prepare_landing.PORTABLE_FAMILY_PATHS))
+        )
+
     def test_scc_order_is_staged_and_bounded_until_tree_convergence(self) -> None:
         refs = prepare_landing.ResolvedRefs("h", "e", "b")
         trees = iter(("tree-0", "tree-1", "tree-1", "tree-1"))
