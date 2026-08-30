@@ -481,6 +481,10 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             "importlib.metadata.version('jsonschema') == '4.23.0'",
             action,
         )
+        self.assertIn(
+            "optional jsonschema-rs accelerator unavailable",
+            action,
+        )
         self.assertIn("--sentinel-only", action)
         self.assertIn("--sentinel-receipt", action)
         self.assertLess(

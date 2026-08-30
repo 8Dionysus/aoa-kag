@@ -55,6 +55,12 @@ BUDGET_DYNAMIC_IMPORT_ATTRIBUTES = frozenset(
         "spec_from_file_location",
     }
 )
+BUDGET_DECLARED_DYNAMIC_IMPORT_KINDS = frozenset(
+    {
+        "module_from_spec",
+        "spec_from_file_location",
+    }
+)
 BUDGET_DYNAMIC_IMPORT_MAPPING_METHODS = frozenset(
     {
         "get",
@@ -271,6 +277,9 @@ def _budget_load_producer_manifest(
     ):
         if not isinstance(payload.get(key), list) or not payload[key]:
             raise PortableFamilyError(f"producer manifest {key} must be non-empty")
+    dynamic_imports = payload.get("dynamic_imports", [])
+    if not isinstance(dynamic_imports, list):
+        raise PortableFamilyError("producer manifest dynamic_imports must be a list")
     action_path = _budget_relative_path(
         payload.get("action_path"),
         label="producer manifest action_path",
@@ -302,6 +311,16 @@ def _budget_load_producer_manifest(
         raise PortableFamilyError(
             "producer manifest entrypoints must be in the import closure"
         )
+    declared_dynamic_imports = _budget_declared_dynamic_import_targets(
+        root,
+        dynamic_imports,
+    )
+    for source, _kind in declared_dynamic_imports:
+        if source not in closure:
+            raise PortableFamilyError(
+                "producer manifest dynamic import source must be in the import closure: "
+                + source.as_posix()
+            )
     for index, item in enumerate(payload["environment"]):
         if (
             not isinstance(item, dict)
@@ -354,24 +373,20 @@ def _budget_local_module_path(root: Path, module: str) -> Path | None:
 
 
 def _budget_package_initializers(root: Path, relative: Path) -> list[Path]:
-    """Return producer package initializers for a resolved local module.
+    """Return every producer package initializer on a local import path.
 
-    ``scripts.validators`` is a compatibility facade with eager wildcard
-    re-exports. Its leaf validator modules are already explicit producer
-    surfaces; traversing that facade would pull dormant validation-only
-    loaders into the producer closure. Keep that adapter boundary explicit
-    while binding owner packages whose initializers execute in the producer
-    runtime (for example ``scripts.repo_local``).
+    Python executes each package initializer before loading a descendant
+    module, including compatibility facades with eager re-exports. Binding
+    the full ancestor chain keeps the producer identity aligned with the
+    code that the owner-callable runtime actually executes.
     """
-    excluded = {Path("scripts/validators/__init__.py")}
     initializers: list[Path] = []
     parent = relative.parent
     while parent.parts:
         initializer = root / parent / "__init__.py"
         if initializer.is_file():
             candidate = initializer.relative_to(root)
-            if candidate not in excluded:
-                initializers.append(candidate)
+            initializers.append(candidate)
         parent = parent.parent
     return initializers
 
@@ -695,10 +710,69 @@ def _budget_dynamic_import_from(node: ast.ImportFrom) -> str | None:
     return None
 
 
+def _budget_declared_dynamic_import_targets(
+    root: Path,
+    declarations: Sequence[Mapping[str, Any]],
+) -> dict[tuple[Path, str], Path]:
+    """Normalize the small, explicit dynamic-import allowlist.
+
+    Dynamic imports remain rejected by default.  A declaration binds one
+    reviewed call primitive in one source file to one in-root target file;
+    the target is then traversed as part of the same producer closure.
+    """
+    targets: dict[tuple[Path, str], Path] = {}
+    for index, item in enumerate(declarations):
+        if not isinstance(item, Mapping) or set(item) != {"kind", "source", "target"}:
+            raise PortableFamilyError(
+                f"producer manifest dynamic_imports[{index}] is malformed"
+            )
+        kind = item.get("kind")
+        if (
+            not isinstance(kind, str)
+            or kind not in BUDGET_DECLARED_DYNAMIC_IMPORT_KINDS
+        ):
+            raise PortableFamilyError(
+                f"producer manifest dynamic_imports[{index}] kind is unsupported"
+            )
+        source = _budget_relative_path(
+            item.get("source"),
+            label=f"producer manifest dynamic_imports[{index}].source",
+        )
+        target = _budget_relative_path(
+            item.get("target"),
+            label=f"producer manifest dynamic_imports[{index}].target",
+        )
+        _budget_regular_owner_file(
+            root,
+            source,
+            label=f"producer dynamic import source[{index}]",
+        )
+        _budget_regular_owner_file(
+            root,
+            target,
+            label=f"producer dynamic import target[{index}]",
+        )
+        key = (source, kind)
+        if key in targets:
+            raise PortableFamilyError(
+                "producer manifest dynamic_imports contains duplicate source/kind: "
+                f"{source.as_posix()}:{kind}"
+            )
+        targets[key] = target
+    return targets
+
+
 def _budget_import_closure(
     root: Path,
     entrypoints: Sequence[Path],
+    *,
+    declared_dynamic_imports: Sequence[Mapping[str, Any]] = (),
 ) -> list[Path]:
+    declared_dynamic_targets = _budget_declared_dynamic_import_targets(
+        root,
+        declared_dynamic_imports,
+    )
+    used_dynamic_imports: set[tuple[Path, str]] = set()
     seen: set[Path] = set()
     queue = list(entrypoints)
     unresolved: list[str] = []
@@ -719,6 +793,11 @@ def _budget_import_closure(
             raise PortableFamilyError(
                 f"producer import closure cannot parse {relative.as_posix()}"
             ) from exc
+        parents = {
+            id(child): node
+            for node in ast.walk(tree)
+            for child in ast.iter_child_nodes(node)
+        }
         (
             importlib_modules,
             dynamic_imports,
@@ -751,6 +830,9 @@ def _budget_import_closure(
                     builtin_modules=builtin_modules,
                 )
                 if dynamic_import is not None:
+                    parent = parents.get(id(node))
+                    if isinstance(parent, ast.Call) and parent.func is node:
+                        continue
                     raise PortableFamilyError(
                         "producer import closure contains an unresolved dynamic "
                         f"import ({dynamic_import}) in {relative.as_posix()}"
@@ -764,10 +846,15 @@ def _budget_import_closure(
                     builtin_modules=builtin_modules,
                 )
                 if dynamic_import is not None:
-                    raise PortableFamilyError(
-                        "producer import closure contains an unresolved dynamic "
-                        f"import ({dynamic_import}) in {relative.as_posix()}"
-                    )
+                    dynamic_key = (relative, dynamic_import)
+                    dynamic_target = declared_dynamic_targets.get(dynamic_key)
+                    if dynamic_target is None:
+                        raise PortableFamilyError(
+                            "producer import closure contains an unresolved dynamic "
+                            f"import ({dynamic_import}) in {relative.as_posix()}"
+                        )
+                    used_dynamic_imports.add(dynamic_key)
+                    queue.append(dynamic_target)
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     target = _budget_resolve_local_import(
@@ -815,6 +902,18 @@ def _budget_import_closure(
         raise PortableFamilyError(
             "producer import closure has unresolved local imports: "
             + ", ".join(sorted(set(unresolved)))
+        )
+    unused_dynamic_imports = sorted(
+        set(declared_dynamic_targets) - used_dynamic_imports,
+        key=lambda item: (item[0].as_posix(), item[1]),
+    )
+    if unused_dynamic_imports:
+        raise PortableFamilyError(
+            "producer manifest declares unused dynamic imports: "
+            + ", ".join(
+                f"{source.as_posix()}:{kind}"
+                for source, kind in unused_dynamic_imports
+            )
         )
     return sorted(seen)
 
@@ -1137,7 +1236,11 @@ def _budget_producer_identity(
         _budget_relative_path(value, label="producer import closure")
         for value in manifest["python_import_closure"]
     ]
-    actual_closure = _budget_import_closure(root, entrypoints)
+    actual_closure = _budget_import_closure(
+        root,
+        entrypoints,
+        declared_dynamic_imports=manifest.get("dynamic_imports", []),
+    )
     if actual_closure != sorted(declared_closure):
         missing = sorted(set(actual_closure) - set(declared_closure))
         extra = sorted(set(declared_closure) - set(actual_closure))
@@ -1172,6 +1275,7 @@ def _budget_producer_identity(
         "schema_path": BUDGET_RECEIPT_PRODUCER_MANIFEST_SCHEMA_PATH.as_posix(),
         "closure_mode": manifest["closure_mode"],
         "dynamic_import_policy": manifest["dynamic_import_policy"],
+        "dynamic_imports": copy.deepcopy(manifest.get("dynamic_imports", [])),
         "python_entrypoints": [path.as_posix() for path in entrypoints],
         "python_import_closure": [path.as_posix() for path in actual_closure],
         "schema_inputs": [path.as_posix() for path in schema_inputs],

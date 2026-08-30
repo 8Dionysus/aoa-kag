@@ -923,6 +923,59 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 ),
             )
 
+    def test_budget_import_closure_accepts_reviewed_dynamic_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts").mkdir(parents=True)
+            (root / "scripts" / "entry.py").write_text(
+                "import importlib.util\n"
+                "spec = importlib.util.spec_from_file_location(\n"
+                "    '_dynamic', 'scripts/dynamic.py'\n"
+                ")\n"
+                "module = importlib.util.module_from_spec(spec)\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "dynamic.py").write_text(
+                "VALUE = 'dynamic'\n",
+                encoding="utf-8",
+            )
+            declarations = [
+                {
+                    "kind": kind,
+                    "source": "scripts/entry.py",
+                    "target": "scripts/dynamic.py",
+                }
+                for kind in ("spec_from_file_location", "module_from_spec")
+            ]
+            self.assertEqual(
+                [Path("scripts/dynamic.py"), Path("scripts/entry.py")],
+                portable_family_module._budget_import_closure(
+                    root,
+                    [Path("scripts/entry.py")],
+                    declared_dynamic_imports=declarations,
+                ),
+            )
+
+    def test_budget_producer_manifest_binds_validator_facade_dynamic_target(self) -> None:
+        manifest, _ = portable_family_module._budget_load_producer_manifest(REPO_ROOT)
+        closure = portable_family_module._budget_import_closure(
+            REPO_ROOT,
+            [Path(value) for value in manifest["python_entrypoints"]],
+            declared_dynamic_imports=manifest.get("dynamic_imports", []),
+        )
+        self.assertIn(Path("scripts/validators/__init__.py"), closure)
+        self.assertIn(
+            Path(
+                "mechanics/questbook/parts/quest-store/scripts/"
+                "validate_quest_store.py"
+            ),
+            closure,
+        )
+        self.assertEqual(
+            closure,
+            sorted(Path(value) for value in manifest["python_import_closure"]),
+        )
+
     def test_budget_receipt_rejects_legacy_v1_at_the_current_digest_path(self) -> None:
         root, manifest, tmpdir = self._prepare_budget_fixture()
         try:
