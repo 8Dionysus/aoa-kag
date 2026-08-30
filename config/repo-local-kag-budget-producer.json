@@ -18,6 +18,7 @@
   ],
   "python_entrypoints": [
     "scripts/generate_repo_local_kag_index.py",
+    "scripts/assemble_repo_local_kag_family.py",
     "scripts/repo_local/portable_family.py",
     "scripts/repo_local/tiered_family.py",
     "scripts/repo_local_kag_gate.py",
@@ -26,6 +27,7 @@
   ],
   "python_import_closure": [
     "mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py",
+    "scripts/assemble_repo_local_kag_family.py",
     "scripts/coverage_run.py",
     "scripts/generate_repo_local_kag_coverage.py",
     "scripts/generate_repo_local_kag_index.py",

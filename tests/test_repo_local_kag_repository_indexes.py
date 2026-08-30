@@ -1004,6 +1004,10 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             [Path(value) for value in manifest["python_entrypoints"]],
             declared_dynamic_imports=manifest.get("dynamic_imports", []),
         )
+        self.assertIn(
+            Path("scripts/assemble_repo_local_kag_family.py"),
+            [Path(value) for value in manifest["python_entrypoints"]],
+        )
         self.assertIn(Path("scripts/validators/__init__.py"), closure)
         self.assertIn(
             Path(
