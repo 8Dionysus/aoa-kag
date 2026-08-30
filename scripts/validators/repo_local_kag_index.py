@@ -948,6 +948,8 @@ def load_repo_local_kag_repository_index_family_with_manifest(
     label: str | None = None,
     artifact_root: Path | None = None,
     allow_shadow_git: bool = True,
+    require_current_producer_identity: bool = True,
+    allow_legacy_external_receipt: bool = False,
 ) -> tuple[
     dict[str, object],
     dict[str, dict[str, object]],
@@ -967,6 +969,8 @@ def load_repo_local_kag_repository_index_family_with_manifest(
                 manifest_path=portable_manifest_path.relative_to(repo_root),
                 artifact_root=artifact_root,
                 allow_shadow_git=allow_shadow_git,
+                require_current_producer_identity=require_current_producer_identity,
+                allow_legacy_external_receipt=allow_legacy_external_receipt,
             )
         except ValueError as exc:
             fail(str(exc))
@@ -999,6 +1003,8 @@ def load_repo_local_kag_repository_index_family(
     label: str | None = None,
     artifact_root: Path | None = None,
     allow_shadow_git: bool = True,
+    require_current_producer_identity: bool = True,
+    allow_legacy_external_receipt: bool = False,
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
     source_payload, validated, _portable_manifest = (
         load_repo_local_kag_repository_index_family_with_manifest(
@@ -1007,6 +1013,8 @@ def load_repo_local_kag_repository_index_family(
             label=label,
             artifact_root=artifact_root,
             allow_shadow_git=allow_shadow_git,
+            require_current_producer_identity=require_current_producer_identity,
+            allow_legacy_external_receipt=allow_legacy_external_receipt,
         )
     )
     return source_payload, validated

@@ -46,6 +46,7 @@ from scripts.repo_local.portable_family import (
 )
 from scripts.validators.common import ValidationError
 from scripts.validators.repo_local_kag_index import (
+    load_repo_local_kag_repository_index_family_with_manifest,
     repo_local_kag_index_digest_without_self,
     validate_repo_local_kag_repository_index_family,
     validate_repo_local_kag_repository_index_payload,
@@ -597,6 +598,34 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 build_repository_indexes(loaded_source, repo_root=root),
                 loaded_family,
             )
+        finally:
+            tmpdir.cleanup()
+
+    def test_repository_family_loader_forwards_foreign_receipt_mode(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_producer_identity",
+                side_effect=PortableFamilyError("newer executing producer"),
+            ):
+                with self.assertRaisesRegex(
+                    ValidationError,
+                    "newer executing producer",
+                ):
+                    load_repo_local_kag_repository_index_family_with_manifest(
+                        root,
+                    )
+                source, family, loaded_manifest = (
+                    load_repo_local_kag_repository_index_family_with_manifest(
+                        root,
+                        require_current_producer_identity=False,
+                    )
+                )
+
+            self.assertEqual(manifest, loaded_manifest)
+            self.assertEqual(build_index(root), source)
+            self.assertEqual(build_repository_indexes(source, repo_root=root), family)
         finally:
             tmpdir.cleanup()
 

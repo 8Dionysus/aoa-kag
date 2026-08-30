@@ -724,6 +724,18 @@ def _validate_provider_home(
                             "kag/indexes/source_surface_index.json"
                         ),
                         label=f"{label} portable repository family",
+                        # The aoa-kag checkout is the current producer and
+                        # must replay its own receipt strictly.  A foreign
+                        # owner may intentionally retain a pinned producer;
+                        # validate that receipt as an external observation,
+                        # including its historical v1 compatibility route,
+                        # without treating it as current aoa-kag admission.
+                        require_current_producer_identity=(
+                            repo_root.resolve() == REPO_ROOT.resolve()
+                        ),
+                        allow_legacy_external_receipt=(
+                            repo_root.resolve() != REPO_ROOT.resolve()
+                        ),
                     )
                 )
                 if portable_manifest is None:
