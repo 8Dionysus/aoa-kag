@@ -76,10 +76,10 @@
         "domain_index_catalog_ref": "",
         "coverage": {
           "commands": 226,
-          "documents": 354,
+          "documents": 358,
           "generated": 36,
           "mechanics": 421,
-          "schemas": 97,
+          "schemas": 99,
           "scripts": 159,
           "tests": 67,
           "validators": 100
@@ -87,8 +87,8 @@
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
-              "config": 93,
-              "document": 346,
+              "config": 94,
+              "document": 350,
               "generated_readmodel": 42,
               "index": 1,
               "license": 1,
@@ -96,7 +96,7 @@
               "owner_metadata": 2,
               "projection": 1,
               "receipt": 1,
-              "schema": 96,
+              "schema": 98,
               "script": 33,
               "security": 1,
               "source_code": 112,
@@ -106,7 +106,7 @@
             "command_role": {
               "builder": 9,
               "lane_entrypoint": 3,
-              "none": 717,
+              "none": 724,
               "script": 21,
               "test": 65,
               "validator": 16
@@ -115,11 +115,11 @@
               "agents": 58,
               "boundary": 1,
               "changelog": 1,
-              "decision": 51,
+              "decision": 55,
               "design": 1,
               "design_agents": 1,
               "mechanics_doc": 113,
-              "none": 477,
+              "none": 480,
               "parts": 13,
               "provenance": 13,
               "readme": 72,
@@ -134,7 +134,7 @@
               "legacy": 16,
               "mechanic_package": 55,
               "mechanic_part": 94,
-              "none": 410,
+              "none": 417,
               "part_contract": 28,
               "part_doc": 129,
               "part_schema": 62,
@@ -144,11 +144,11 @@
             "primary_kind": {
               "artifact": 40,
               "command": 114,
-              "document": 354,
-              "surface": 323
+              "document": 358,
+              "surface": 326
             },
             "surface_state": {
-              "authored_source": 770,
+              "authored_source": 777,
               "generated_readmodel": 45,
               "legacy": 16
             }
@@ -322,22 +322,22 @@
           "artifact_cold_objects": 0,
           "artifact_locator_ref": "",
           "budget_state": "receipted",
-          "content_digest": "8c79a2a6f792c7fe993f434d9908b37e0c5134d11a50564ba77d5a0ceec90db5",
+          "content_digest": "1a1e52adc7c6225c856b334a56b599c5f83cc036bbcf0fa553e3f7c2bde19599",
           "corpus_digest": "",
-          "corpus_total_bytes": 12246993,
+          "corpus_total_bytes": 30570458,
           "digest_state": "published",
           "distribution_digest": "",
-          "git_hot_bytes": 12246993,
-          "git_hot_objects": 549,
+          "git_hot_bytes": 30570458,
+          "git_hot_objects": 576,
           "hot_profile_ref": "",
           "manifest_ref": "kag/indexes/index_family.manifest.json",
           "measurement_ref": "",
           "measurement_state": "measured",
           "os_git_hot_target_bytes": 234881024,
           "placement_state": "git-full",
-          "receipt_ref": "kag/receipts/index_family_budget/8c79a2a6f792c7fe993f434d9908b37e0c5134d11a50564ba77d5a0ceec90db5.json",
-          "shards": 549,
-          "tracked_bytes": 12246993,
+          "receipt_ref": "kag/receipts/index_family_budget/1a1e52adc7c6225c856b334a56b599c5f83cc036bbcf0fa553e3f7c2bde19599.json",
+          "shards": 576,
+          "tracked_bytes": 30570458,
           "tracked_bytes_max": 11534336
         },
         "repository_index_family": {
@@ -351,24 +351,24 @@
         },
         "domain_index_catalog_ref": "",
         "coverage": {
-          "commands": 87,
-          "documents": 512,
+          "commands": 155,
+          "documents": 692,
           "generated": 1,
           "mechanics": 202,
-          "schemas": 53,
-          "scripts": 54,
-          "tests": 33,
-          "validators": 24
+          "schemas": 122,
+          "scripts": 104,
+          "tests": 51,
+          "validators": 34
         },
         "common_surface_profile": {
           "counts": {
             "artifact_kind": {
               "asset": 50,
-              "config": 454,
+              "config": 1071,
               "data_table": 12,
               "dependency_manifest": 1,
               "directory_marker": 4,
-              "document": 504,
+              "document": 684,
               "generated_readmodel": 9,
               "index": 1,
               "license": 1,
@@ -376,62 +376,64 @@
               "owner_metadata": 2,
               "projection": 1,
               "receipt": 1,
-              "record_log": 62,
-              "schema": 53,
-              "script": 30,
+              "record_log": 230,
+              "schema": 122,
+              "script": 70,
               "security": 1,
               "source_code": 2,
               "spreadsheet": 1,
-              "test": 31,
-              "unknown": 4,
-              "validator": 24
+              "test": 49,
+              "text_artifact": 11,
+              "unknown": 21,
+              "validator": 34
             },
             "command_role": {
-              "builder": 10,
+              "builder": 43,
               "lane_entrypoint": 1,
-              "none": 1166,
-              "script": 19,
-              "test": 31,
-              "validator": 24
+              "none": 2228,
+              "script": 26,
+              "test": 49,
+              "validator": 34
             },
             "document_role": {
-              "agents": 54,
+              "agents": 55,
               "audit": 5,
               "boundary": 1,
               "changelog": 1,
-              "decision": 28,
+              "decision": 42,
               "design": 1,
               "design_agents": 1,
               "mechanics_doc": 36,
-              "none": 739,
+              "none": 1689,
               "parts": 16,
               "provenance": 16,
-              "readme": 130,
+              "readme": 164,
+              "release_notes": 1,
               "roadmap": 17,
               "testing_doc": 1,
-              "unknown_document": 204,
+              "unknown_document": 334,
               "validation_doc": 1
             },
             "mechanics_role": {
               "legacy": 16,
               "mechanic_package": 88,
               "mechanic_part": 17,
-              "none": 1049,
+              "none": 2179,
               "part_doc": 56,
               "part_schema": 15,
               "part_script": 9,
               "part_test": 1
             },
             "primary_kind": {
-              "artifact": 137,
-              "command": 85,
-              "document": 512,
-              "surface": 513,
-              "unknown": 4
+              "artifact": 316,
+              "command": 153,
+              "document": 692,
+              "surface": 1199,
+              "unknown": 21
             },
             "surface_state": {
-              "authored_source": 1221,
-              "generated_readmodel": 13,
+              "authored_source": 2350,
+              "generated_readmodel": 14,
               "legacy": 16,
               "receipt": 1
             }
@@ -443,7 +445,7 @@
             "has_record_classes": true,
             "has_source_index": true,
             "has_validation_route": true,
-            "unknown_count": 4
+            "unknown_count": 21
           },
           "source": "source_surface_index"
         },
@@ -7441,10 +7443,10 @@
       "domain_index_catalog_ref": "",
       "coverage": {
         "commands": 226,
-        "documents": 354,
+        "documents": 358,
         "generated": 36,
         "mechanics": 421,
-        "schemas": 97,
+        "schemas": 99,
         "scripts": 159,
         "tests": 67,
         "validators": 100
@@ -7452,8 +7454,8 @@
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
-            "config": 93,
-            "document": 346,
+            "config": 94,
+            "document": 350,
             "generated_readmodel": 42,
             "index": 1,
             "license": 1,
@@ -7461,7 +7463,7 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "schema": 96,
+            "schema": 98,
             "script": 33,
             "security": 1,
             "source_code": 112,
@@ -7471,7 +7473,7 @@
           "command_role": {
             "builder": 9,
             "lane_entrypoint": 3,
-            "none": 717,
+            "none": 724,
             "script": 21,
             "test": 65,
             "validator": 16
@@ -7480,11 +7482,11 @@
             "agents": 58,
             "boundary": 1,
             "changelog": 1,
-            "decision": 51,
+            "decision": 55,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 113,
-            "none": 477,
+            "none": 480,
             "parts": 13,
             "provenance": 13,
             "readme": 72,
@@ -7499,7 +7501,7 @@
             "legacy": 16,
             "mechanic_package": 55,
             "mechanic_part": 94,
-            "none": 410,
+            "none": 417,
             "part_contract": 28,
             "part_doc": 129,
             "part_schema": 62,
@@ -7509,11 +7511,11 @@
           "primary_kind": {
             "artifact": 40,
             "command": 114,
-            "document": 354,
-            "surface": 323
+            "document": 358,
+            "surface": 326
           },
           "surface_state": {
-            "authored_source": 770,
+            "authored_source": 777,
             "generated_readmodel": 45,
             "legacy": 16
           }
@@ -7546,22 +7548,22 @@
         "artifact_cold_objects": 0,
         "artifact_locator_ref": "",
         "budget_state": "receipted",
-        "content_digest": "8c79a2a6f792c7fe993f434d9908b37e0c5134d11a50564ba77d5a0ceec90db5",
+        "content_digest": "1a1e52adc7c6225c856b334a56b599c5f83cc036bbcf0fa553e3f7c2bde19599",
         "corpus_digest": "",
-        "corpus_total_bytes": 12246993,
+        "corpus_total_bytes": 30570458,
         "digest_state": "published",
         "distribution_digest": "",
-        "git_hot_bytes": 12246993,
-        "git_hot_objects": 549,
+        "git_hot_bytes": 30570458,
+        "git_hot_objects": 576,
         "hot_profile_ref": "",
         "manifest_ref": "kag/indexes/index_family.manifest.json",
         "measurement_ref": "",
         "measurement_state": "measured",
         "os_git_hot_target_bytes": 234881024,
         "placement_state": "git-full",
-        "receipt_ref": "kag/receipts/index_family_budget/8c79a2a6f792c7fe993f434d9908b37e0c5134d11a50564ba77d5a0ceec90db5.json",
-        "shards": 549,
-        "tracked_bytes": 12246993,
+        "receipt_ref": "kag/receipts/index_family_budget/1a1e52adc7c6225c856b334a56b599c5f83cc036bbcf0fa553e3f7c2bde19599.json",
+        "shards": 576,
+        "tracked_bytes": 30570458,
         "tracked_bytes_max": 11534336
       },
       "repository_index_family": {
@@ -7575,24 +7577,24 @@
       },
       "domain_index_catalog_ref": "",
       "coverage": {
-        "commands": 87,
-        "documents": 512,
+        "commands": 155,
+        "documents": 692,
         "generated": 1,
         "mechanics": 202,
-        "schemas": 53,
-        "scripts": 54,
-        "tests": 33,
-        "validators": 24
+        "schemas": 122,
+        "scripts": 104,
+        "tests": 51,
+        "validators": 34
       },
       "common_surface_profile": {
         "counts": {
           "artifact_kind": {
             "asset": 50,
-            "config": 454,
+            "config": 1071,
             "data_table": 12,
             "dependency_manifest": 1,
             "directory_marker": 4,
-            "document": 504,
+            "document": 684,
             "generated_readmodel": 9,
             "index": 1,
             "license": 1,
@@ -7600,62 +7602,64 @@
             "owner_metadata": 2,
             "projection": 1,
             "receipt": 1,
-            "record_log": 62,
-            "schema": 53,
-            "script": 30,
+            "record_log": 230,
+            "schema": 122,
+            "script": 70,
             "security": 1,
             "source_code": 2,
             "spreadsheet": 1,
-            "test": 31,
-            "unknown": 4,
-            "validator": 24
+            "test": 49,
+            "text_artifact": 11,
+            "unknown": 21,
+            "validator": 34
           },
           "command_role": {
-            "builder": 10,
+            "builder": 43,
             "lane_entrypoint": 1,
-            "none": 1166,
-            "script": 19,
-            "test": 31,
-            "validator": 24
+            "none": 2228,
+            "script": 26,
+            "test": 49,
+            "validator": 34
           },
           "document_role": {
-            "agents": 54,
+            "agents": 55,
             "audit": 5,
             "boundary": 1,
             "changelog": 1,
-            "decision": 28,
+            "decision": 42,
             "design": 1,
             "design_agents": 1,
             "mechanics_doc": 36,
-            "none": 739,
+            "none": 1689,
             "parts": 16,
             "provenance": 16,
-            "readme": 130,
+            "readme": 164,
+            "release_notes": 1,
             "roadmap": 17,
             "testing_doc": 1,
-            "unknown_document": 204,
+            "unknown_document": 334,
             "validation_doc": 1
           },
           "mechanics_role": {
             "legacy": 16,
             "mechanic_package": 88,
             "mechanic_part": 17,
-            "none": 1049,
+            "none": 2179,
             "part_doc": 56,
             "part_schema": 15,
             "part_script": 9,
             "part_test": 1
           },
           "primary_kind": {
-            "artifact": 137,
-            "command": 85,
-            "document": 512,
-            "surface": 513,
-            "unknown": 4
+            "artifact": 316,
+            "command": 153,
+            "document": 692,
+            "surface": 1199,
+            "unknown": 21
           },
           "surface_state": {
-            "authored_source": 1221,
-            "generated_readmodel": 13,
+            "authored_source": 2350,
+            "generated_readmodel": 14,
             "legacy": 16,
             "receipt": 1
           }
@@ -7667,7 +7671,7 @@
           "has_record_classes": true,
           "has_source_index": true,
           "has_validation_route": true,
-          "unknown_count": 4
+          "unknown_count": 21
         },
         "source": "source_surface_index"
       },
@@ -10095,8 +10099,8 @@
     "aoa-kag": {
       "counts": {
         "artifact_kind": {
-          "config": 93,
-          "document": 346,
+          "config": 94,
+          "document": 350,
           "generated_readmodel": 42,
           "index": 1,
           "license": 1,
@@ -10104,7 +10108,7 @@
           "owner_metadata": 2,
           "projection": 1,
           "receipt": 1,
-          "schema": 96,
+          "schema": 98,
           "script": 33,
           "security": 1,
           "source_code": 112,
@@ -10114,7 +10118,7 @@
         "command_role": {
           "builder": 9,
           "lane_entrypoint": 3,
-          "none": 717,
+          "none": 724,
           "script": 21,
           "test": 65,
           "validator": 16
@@ -10123,11 +10127,11 @@
           "agents": 58,
           "boundary": 1,
           "changelog": 1,
-          "decision": 51,
+          "decision": 55,
           "design": 1,
           "design_agents": 1,
           "mechanics_doc": 113,
-          "none": 477,
+          "none": 480,
           "parts": 13,
           "provenance": 13,
           "readme": 72,
@@ -10142,7 +10146,7 @@
           "legacy": 16,
           "mechanic_package": 55,
           "mechanic_part": 94,
-          "none": 410,
+          "none": 417,
           "part_contract": 28,
           "part_doc": 129,
           "part_schema": 62,
@@ -10152,11 +10156,11 @@
         "primary_kind": {
           "artifact": 40,
           "command": 114,
-          "document": 354,
-          "surface": 323
+          "document": 358,
+          "surface": 326
         },
         "surface_state": {
-          "authored_source": 770,
+          "authored_source": 777,
           "generated_readmodel": 45,
           "legacy": 16
         }
@@ -10176,11 +10180,11 @@
       "counts": {
         "artifact_kind": {
           "asset": 50,
-          "config": 454,
+          "config": 1071,
           "data_table": 12,
           "dependency_manifest": 1,
           "directory_marker": 4,
-          "document": 504,
+          "document": 684,
           "generated_readmodel": 9,
           "index": 1,
           "license": 1,
@@ -10188,62 +10192,64 @@
           "owner_metadata": 2,
           "projection": 1,
           "receipt": 1,
-          "record_log": 62,
-          "schema": 53,
-          "script": 30,
+          "record_log": 230,
+          "schema": 122,
+          "script": 70,
           "security": 1,
           "source_code": 2,
           "spreadsheet": 1,
-          "test": 31,
-          "unknown": 4,
-          "validator": 24
+          "test": 49,
+          "text_artifact": 11,
+          "unknown": 21,
+          "validator": 34
         },
         "command_role": {
-          "builder": 10,
+          "builder": 43,
           "lane_entrypoint": 1,
-          "none": 1166,
-          "script": 19,
-          "test": 31,
-          "validator": 24
+          "none": 2228,
+          "script": 26,
+          "test": 49,
+          "validator": 34
         },
         "document_role": {
-          "agents": 54,
+          "agents": 55,
           "audit": 5,
           "boundary": 1,
           "changelog": 1,
-          "decision": 28,
+          "decision": 42,
           "design": 1,
           "design_agents": 1,
           "mechanics_doc": 36,
-          "none": 739,
+          "none": 1689,
           "parts": 16,
           "provenance": 16,
-          "readme": 130,
+          "readme": 164,
+          "release_notes": 1,
           "roadmap": 17,
           "testing_doc": 1,
-          "unknown_document": 204,
+          "unknown_document": 334,
           "validation_doc": 1
         },
         "mechanics_role": {
           "legacy": 16,
           "mechanic_package": 88,
           "mechanic_part": 17,
-          "none": 1049,
+          "none": 2179,
           "part_doc": 56,
           "part_schema": 15,
           "part_script": 9,
           "part_test": 1
         },
         "primary_kind": {
-          "artifact": 137,
-          "command": 85,
-          "document": 512,
-          "surface": 513,
-          "unknown": 4
+          "artifact": 316,
+          "command": 153,
+          "document": 692,
+          "surface": 1199,
+          "unknown": 21
         },
         "surface_state": {
-          "authored_source": 1221,
-          "generated_readmodel": 13,
+          "authored_source": 2350,
+          "generated_readmodel": 14,
           "legacy": 16,
           "receipt": 1
         }
@@ -10255,7 +10261,7 @@
         "has_record_classes": true,
         "has_source_index": true,
         "has_validation_route": true,
-        "unknown_count": 4
+        "unknown_count": 21
       },
       "source": "source_surface_index"
     },

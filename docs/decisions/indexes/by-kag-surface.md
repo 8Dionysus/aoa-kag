@@ -27,6 +27,10 @@
 
 - [AOA-KAG-D-0037 - Exact Applied Candidate Seal](../AOA-KAG-D-0037-exact-applied-candidate-seal.md) (`docs/decisions/AOA-KAG-D-0037-exact-applied-candidate-seal.md`)
 
+## candidate seal
+
+- [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+
 ## canonical changelog
 
 - [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
@@ -315,6 +319,10 @@
 
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
 
+## owner-family validation
+
+- [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
+
 ## owner-qualified identity
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
@@ -332,6 +340,19 @@
 ## portable record corpus
 
 - [AOA-KAG-D-0017 - Portable Content-Addressed Repository Family](../AOA-KAG-D-0017-portable-content-addressed-repository-family.md) (`docs/decisions/AOA-KAG-D-0017-portable-content-addressed-repository-family.md`)
+
+## producer action identity
+
+- [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+
+## producer closure
+
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
+
+## producer runtime inputs
+
+- [AOA-KAG-D-0047 - AOA-KAG-D-0047 Budget Producer Runtime Binding And Descriptor Confinement](../AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md) (`docs/decisions/AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md`)
+- [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
 
 ## profile-aware query
 
@@ -402,6 +423,10 @@
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
 - [AOA-KAG-D-0012 - Direct Repo Provider Completion](../AOA-KAG-D-0012-direct-repo-provider-completion.md) (`docs/decisions/AOA-KAG-D-0012-direct-repo-provider-completion.md`)
 
+## receipt I/O
+
+- [AOA-KAG-D-0047 - AOA-KAG-D-0047 Budget Producer Runtime Binding And Descriptor Confinement](../AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md) (`docs/decisions/AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md`)
+
 ## registry/composition input
 
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
@@ -425,6 +450,13 @@
 - [AOA-KAG-D-0028 - Run-Scoped Provider Coverage Fusion](../AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md) (`docs/decisions/AOA-KAG-D-0028-run-scoped-provider-coverage-fusion.md`)
 - [AOA-KAG-D-0029 - Defer Cross-Run Owner Proof Fragments](../AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md) (`docs/decisions/AOA-KAG-D-0029-defer-cross-run-owner-proof-fragments.md`)
 - [AOA-KAG-D-0036 - Bounded Process Provider Audit Wave](../AOA-KAG-D-0036-bounded-process-provider-audit-wave.md) (`docs/decisions/AOA-KAG-D-0036-bounded-process-provider-audit-wave.md`)
+
+## repo-local family budget receipt
+
+- [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
+- [AOA-KAG-D-0047 - AOA-KAG-D-0047 Budget Producer Runtime Binding And Descriptor Confinement](../AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md) (`docs/decisions/AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md`)
+- [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
 
 ## repo-local source index
 
@@ -481,6 +513,10 @@
 ## skill projection provenance
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
+
+## source epoch
+
+- [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 
 ## source refs
 

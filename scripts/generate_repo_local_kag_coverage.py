@@ -771,6 +771,20 @@ def _portable_bundle_from_disk(
                 if artifact_root_value
                 else None
             ),
+            # The self-owner must replay against the executing producer.  A
+            # downstream owner may be validly pinned to an older aoa-kag
+            # action; its receipt remains checked for candidate/source/budget
+            # identity and internal producer consistency by the loader.
+            require_current_producer_identity=(
+                owner_root.resolve() == REPO_ROOT.resolve()
+            ),
+            # v1 receipts are retained historical data.  Coverage may observe
+            # one for a foreign owner until that owner regenerates its
+            # identity-bound receipt, but current budget admission never opts
+            # into this compatibility path.
+            allow_legacy_external_receipt=(
+                owner_root.resolve() != REPO_ROOT.resolve()
+            ),
         )
     except (ValueError, FileNotFoundError, json.JSONDecodeError):
         return None

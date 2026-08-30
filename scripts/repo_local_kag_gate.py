@@ -134,13 +134,20 @@ def candidate_identity(repo_root: Path) -> dict[str, str]:
     }
 
 
-def run_component(component: Component, *, repo_root: Path) -> ComponentResult:
+def run_component(
+    component: Component,
+    *,
+    repo_root: Path,
+    jobs: int | None = None,
+) -> ComponentResult:
     started = time.perf_counter()
     environment = dict(os.environ)
     # Fresh Python checkouts otherwise create ignored __pycache__ directories.
     # Their creation changes protected parent-directory mtimes and violates the
     # same-candidate contract even though every canonical command is --check.
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    if jobs is not None:
+        environment["AOA_REPO_LOCAL_KAG_JOBS"] = str(jobs)
     process = subprocess.run(
         component.command,
         cwd=repo_root,
@@ -313,6 +320,7 @@ def run_sentinel_gate(
     history_ref: str,
     event_history_ref: str,
     budget_base_ref: str,
+    jobs: int = 2,
 ) -> tuple[int, dict[str, object]]:
     started = time.perf_counter()
     initial_identity = candidate_identity(repo_root)
@@ -328,7 +336,7 @@ def run_sentinel_gate(
         externalized=externalized,
         artifact_root=artifact_root,
     )
-    result = run_component(sentinel, repo_root=repo_root)
+    result = run_component(sentinel, repo_root=repo_root, jobs=jobs)
     identity_stable = candidate_identity(repo_root) == initial_identity
     successful = result.returncode == 0 and identity_stable
     receipt: dict[str, object] = {
@@ -432,7 +440,7 @@ def run_gate(
     )
     handoff_error: str | None = None
     if sentinel_receipt is None:
-        sentinel_result = run_component(sentinel, repo_root=repo_root)
+        sentinel_result = run_component(sentinel, repo_root=repo_root, jobs=jobs)
         sentinel_source = "inline"
     else:
         sentinel_source = "same-run-handoff"
@@ -474,10 +482,10 @@ def run_gate(
                 # requested fan-out; otherwise a clean CI run can race its own
                 # generated distribution.
                 producer, *readers = components
-                results.append(run_component(producer, repo_root=repo_root))
+                results.append(run_component(producer, repo_root=repo_root, jobs=jobs))
                 if jobs == 1:
                     results.extend(
-                        run_component(component, repo_root=repo_root)
+                        run_component(component, repo_root=repo_root, jobs=jobs)
                         for component in readers
                     )
                 else:
@@ -489,6 +497,7 @@ def run_gate(
                                 run_component,
                                 component,
                                 repo_root=repo_root,
+                                jobs=jobs,
                             )
                             for component in readers
                         }
@@ -498,7 +507,7 @@ def run_gate(
                         )
             elif jobs == 1:
                 results.extend(
-                    run_component(component, repo_root=repo_root)
+                    run_component(component, repo_root=repo_root, jobs=jobs)
                     for component in components
                 )
             else:
@@ -508,6 +517,7 @@ def run_gate(
                             run_component,
                             component,
                             repo_root=repo_root,
+                            jobs=jobs,
                         )
                         for component in components
                     }
@@ -600,6 +610,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             history_ref=args.history_ref,
             event_history_ref=args.event_history_ref,
             budget_base_ref=budget_base_ref,
+            jobs=args.jobs,
         )
     else:
         sentinel_receipt: object | None = None

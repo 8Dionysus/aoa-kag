@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -41,6 +42,11 @@ try:
         markdown_headings,
         validate_capability_graph_against_sources,
     )
+    from scripts.repo_local.portable_family import (
+        PortableFamilyError as PortableFamilyBoundaryError,
+        capture_budget_source_epoch,
+        capture_budget_producer_execution_inputs,
+    )
 except ImportError:  # pragma: no cover - direct script execution
     from repo_local.identity import (  # type: ignore
         artifact_identity,
@@ -61,6 +67,11 @@ except ImportError:  # pragma: no cover - direct script execution
         extract_structure,
         markdown_headings,
         validate_capability_graph_against_sources,
+    )
+    from repo_local.portable_family import (  # type: ignore
+        PortableFamilyError as PortableFamilyBoundaryError,
+        capture_budget_source_epoch,
+        capture_budget_producer_execution_inputs,
     )
 
 
@@ -593,6 +604,38 @@ def is_portable_family_control_path(path: Path) -> bool:
     )
 
 
+def _git_worktree_has_changes(repo_root: Path) -> bool:
+    """Return whether the effective Git candidate differs from its index."""
+    for command in (
+        ("git", "diff", "--quiet", "--cached"),
+        ("git", "diff", "--quiet"),
+    ):
+        result = subprocess.run(
+            command,
+            cwd=repo_root,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode == 1:
+            return True
+        if result.returncode != 0:
+            raise SourceSnapshotError(
+                f"cannot inspect Git owner candidate at {repo_root}"
+            )
+    result = subprocess.run(
+        ("git", "ls-files", "--others", "--exclude-standard", "-z"),
+        cwd=repo_root,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise SourceSnapshotError(
+            f"cannot enumerate Git owner candidate at {repo_root}"
+        )
+    return bool(result.stdout)
+
+
 class SourceSnapshotError(RuntimeError):
     """The owner source epoch could not be captured exactly."""
 
@@ -620,7 +663,12 @@ class OwnerSourceSnapshot:
     metrics: SourceReadMetrics
 
     @classmethod
-    def capture(cls, repo_root: Path) -> "OwnerSourceSnapshot":
+    def capture(
+        cls,
+        repo_root: Path,
+        *,
+        allow_dirty: bool = False,
+    ) -> "OwnerSourceSnapshot":
         resolved_root = repo_root.resolve()
         started = time.perf_counter()
         git_invocations = 0
@@ -657,6 +705,12 @@ class OwnerSourceSnapshot:
         if Path(top).resolve() != resolved_root:
             raise SourceSnapshotError(
                 f"owner source root must be the Git top level: {resolved_root}"
+            )
+        if allow_dirty and _git_worktree_has_changes(resolved_root):
+            return cls._capture_git_worktree(
+                resolved_root,
+                started=started,
+                git_invocation_count=git_invocations + 3,
             )
         git_invocations += 1
         try:
@@ -805,6 +859,190 @@ class OwnerSourceSnapshot:
                     if entry["mode"] == "160000" and path in path_contents
                 )
             ),
+            metrics=SourceReadMetrics(),
+        )
+
+    @classmethod
+    def _capture_git_worktree(
+        cls,
+        repo_root: Path,
+        *,
+        started: float,
+        git_invocation_count: int,
+    ) -> "OwnerSourceSnapshot":
+        """Capture the effective staged/unstaged/untracked Git candidate.
+
+        The normal clean path remains index-backed and batch-reads Git blobs.
+        This path is used only when generation is explicitly allowed to inspect
+        a dirty candidate; it reads the materialized worktree while retaining
+        Git-compatible modes and blob identities for stable post-commit output.
+        """
+        try:
+            raw_entries = subprocess.run(
+                ("git", "ls-files", "-s", "--cached", "-z"),
+                cwd=repo_root,
+                check=True,
+                capture_output=True,
+            ).stdout
+            git_invocation_count += 1
+            raw_untracked = subprocess.run(
+                ("git", "ls-files", "--others", "--exclude-standard", "-z"),
+                cwd=repo_root,
+                check=True,
+                capture_output=True,
+            ).stdout
+            git_invocation_count += 1
+            object_format = subprocess.run(
+                ("git", "rev-parse", "--show-object-format"),
+                cwd=repo_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            git_invocation_count += 1
+        except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+            raise SourceSnapshotError(
+                f"cannot enumerate Git owner candidate at {repo_root}"
+            ) from exc
+        if object_format not in {"sha1", "sha256"}:
+            raise SourceSnapshotError(
+                f"unsupported Git object format for owner candidate: {object_format}"
+            )
+
+        indexed: dict[Path, dict[str, str]] = {}
+        for item in raw_entries.split(b"\0"):
+            if not item:
+                continue
+            metadata, separator, path_bytes = item.partition(b"\t")
+            fields = metadata.split(b" ")
+            if not separator or len(fields) != 3:
+                raise SourceSnapshotError(
+                    f"malformed Git index entry in {repo_root}"
+                )
+            try:
+                mode, blob_id, stage = (field.decode("ascii") for field in fields)
+                path = Path(path_bytes.decode("utf-8"))
+            except UnicodeDecodeError as exc:
+                raise SourceSnapshotError(
+                    f"invalid Git owner candidate path in {repo_root}"
+                ) from exc
+            if (
+                not re.fullmatch(r"[0-7]{6}", mode)
+                or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", blob_id)
+                or stage != "0"
+                or path.is_absolute()
+                or not path.parts
+                or ".." in path.parts
+            ):
+                raise SourceSnapshotError(
+                    f"unstable Git index entry in owner candidate: {path}"
+                )
+            indexed[path] = {"mode": mode, "blob_id": blob_id}
+
+        paths = set(indexed)
+        for raw_path in raw_untracked.split(b"\0"):
+            if not raw_path:
+                continue
+            try:
+                path = Path(raw_path.decode("utf-8"))
+            except UnicodeDecodeError as exc:
+                raise SourceSnapshotError(
+                    f"invalid untracked Git owner candidate path in {repo_root}"
+                ) from exc
+            if path.is_absolute() or not path.parts or ".." in path.parts:
+                raise SourceSnapshotError(
+                    f"unsafe untracked Git owner candidate path: {path}"
+                )
+            paths.add(path)
+
+        def blob_id(content: bytes) -> str:
+            digest = hashlib.new(object_format)
+            digest.update(f"blob {len(content)}\0".encode("ascii"))
+            digest.update(content)
+            return digest.hexdigest()
+
+        parsed_entries: dict[Path, dict[str, str]] = {}
+        path_contents: dict[Path, bytes] = {}
+        for path in sorted(paths):
+            if not is_source_path(path):
+                continue
+            filesystem_path = repo_root / path
+            try:
+                metadata = filesystem_path.lstat()
+            except FileNotFoundError:
+                # A deleted tracked source is absent from the effective
+                # candidate and therefore absent from this source snapshot.
+                continue
+            indexed_entry = indexed.get(path)
+            if indexed_entry is not None and indexed_entry["mode"] == "160000":
+                try:
+                    content = subprocess.run(
+                        ("git", "show", f":{path.as_posix()}"),
+                        cwd=repo_root,
+                        check=True,
+                        capture_output=True,
+                    ).stdout
+                    git_invocation_count += 1
+                except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+                    raise SourceSnapshotError(
+                        f"cannot read Gitlink source entry {path}"
+                    ) from exc
+                parsed_entries[path] = dict(indexed_entry)
+                path_contents[path] = content
+                continue
+            if stat.S_ISREG(metadata.st_mode):
+                content = filesystem_path.read_bytes()
+                mode = "100755" if metadata.st_mode & stat.S_IXUSR else "100644"
+            elif stat.S_ISLNK(metadata.st_mode):
+                content = os.readlink(filesystem_path).encode(
+                    "utf-8", errors="surrogateescape"
+                )
+                mode = "120000"
+            elif stat.S_ISDIR(metadata.st_mode) and (
+                (filesystem_path / ".git").exists()
+                or (filesystem_path / ".git").is_file()
+            ):
+                # Nested validation checkouts are candidate context, not outer
+                # owner source. Their own identity is handled by preparation.
+                continue
+            else:
+                raise SourceSnapshotError(
+                    f"owner candidate source path is not a file: {path}"
+                )
+            parsed_entries[path] = {
+                "mode": mode,
+                "blob_id": blob_id(content),
+            }
+            path_contents[path] = content
+
+        source_contents = {
+            path: content
+            for path, content in path_contents.items()
+            if not is_portable_family_control_path(path)
+        }
+        frozen_entries = MappingProxyType(
+            {
+                path: MappingProxyType(dict(entry))
+                for path, entry in sorted(parsed_entries.items())
+            }
+        )
+        return cls(
+            repo_root=repo_root,
+            # Keep the canonical backend label stable across candidate
+            # preparation and the subsequent committed index-backed scan.
+            source_ref=GIT_INDEX_SOURCE_REF,
+            entries=frozen_entries,
+            contents=MappingProxyType(dict(sorted(source_contents.items()))),
+            git_invocation_count=git_invocation_count,
+            capture_duration_ms=max(0, round((time.perf_counter() - started) * 1000)),
+            unique_object_count=len(
+                {
+                    entry["blob_id"]
+                    for path, entry in parsed_entries.items()
+                    if not is_portable_family_control_path(path)
+                }
+            ),
+            bytes_read=sum(len(content) for content in source_contents.values()),
             metrics=SourceReadMetrics(),
         )
 
@@ -3514,7 +3752,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     output = Path(args.output)
     output_path = repo_root / output
-    source_snapshot = OwnerSourceSnapshot.capture(repo_root)
+    try:
+        # Generation is also used by owner preparation on an uncommitted
+        # candidate.  Bind both the source scan and any budget receipt to the
+        # effective worktree candidate; receipt admission keeps its strict
+        # clean-source default outside this generation path.
+        source_epoch_before = capture_budget_source_epoch(
+            repo_root,
+            allow_dirty=True,
+        )
+        source_snapshot = OwnerSourceSnapshot.capture(
+            repo_root,
+            allow_dirty=True,
+        )
+        source_epoch = capture_budget_source_epoch(
+            repo_root,
+            allow_dirty=True,
+        )
+    except (PortableFamilyBoundaryError, SourceSnapshotError) as exc:
+        print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+        return 1
+    if source_epoch != source_epoch_before:
+        print(
+            "[repo-local-kag-index] source epoch changed during capture",
+            file=sys.stderr,
+        )
+        return 1
     history_ref = effective_history_ref(
         repo_root,
         args.history_ref,
@@ -3567,6 +3830,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             previous_manifest = loaded_manifest
     provenance_base_ref = args.budget_base_ref or history_ref
+    producer_execution_inputs: dict[str, Any] | None = None
+    if args.budget_base_ref or args.write_budget_receipt:
+        try:
+            producer_execution_inputs = capture_budget_producer_execution_inputs(
+                repo_root,
+                base_ref=provenance_base_ref,
+                history_ref=history_ref,
+                event_history_ref=event_history_ref,
+                output=output,
+                family_mode="tiered" if args.tiered_family else "portable",
+                artifact_root=(
+                    Path(args.artifact_root).resolve()
+                    if args.tiered_family and args.artifact_root
+                    else None
+                ),
+                externalized=args.externalize_cold,
+            )
+        except PortableFamilyBoundaryError as exc:
+            print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+            return 1
     if args.tiered_family:
         try:
             previous_manifest = tiered_previous_portable_manifest(
@@ -3605,6 +3888,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             previous_index, previous_family, _ = load_portable_family(
                 repo_root,
                 artifact_root=previous_artifact_root,
+                producer_execution_inputs=producer_execution_inputs,
             )
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
@@ -3764,6 +4048,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 repo_root,
                                 base_ref=args.budget_base_ref,
                                 manifest=budget_manifest,
+                                producer_execution_inputs=producer_execution_inputs,
+                                allow_dirty=True,
                             )
                         )
                     except (
@@ -3792,6 +4078,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                         base_ref=args.budget_base_ref,
                         manifest=budget_manifest,
                         reason=args.budget_reason,
+                        source_epoch=source_epoch,
+                        producer_execution_inputs=producer_execution_inputs,
+                        allow_dirty=True,
                     )
                 except (
                     PortableFamilyError,
@@ -3808,6 +4097,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             repo_root,
                             base_ref=args.budget_base_ref,
                             manifest=budget_manifest,
+                            producer_execution_inputs=producer_execution_inputs,
+                            allow_dirty=True,
                         )
                     )
                 except (
@@ -3851,6 +4142,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             repo_root,
                             base_ref=args.budget_base_ref,
                             manifest=portable_manifest,
+                            producer_execution_inputs=producer_execution_inputs,
+                            allow_dirty=True,
                         )
                     )
                 except (PortableFamilyError, subprocess.CalledProcessError) as exc:
@@ -3875,6 +4168,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     base_ref=args.budget_base_ref,
                     manifest=portable_manifest,
                     reason=args.budget_reason,
+                    source_epoch=source_epoch,
+                    producer_execution_inputs=producer_execution_inputs,
+                    allow_dirty=True,
                 )
             except (PortableFamilyError, subprocess.CalledProcessError) as exc:
                 print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
@@ -3888,6 +4184,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                         repo_root,
                         base_ref=args.budget_base_ref,
                         manifest=portable_manifest,
+                        producer_execution_inputs=producer_execution_inputs,
+                        allow_dirty=True,
                     )
                 )
             except (PortableFamilyError, subprocess.CalledProcessError) as exc:

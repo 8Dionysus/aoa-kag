@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -29,17 +30,23 @@ from scripts.generate_repo_local_kag_coverage import source_index_matches_owner
 from scripts.generation.provider_map import _is_repo_local_meta_index_payload
 from scripts.repo_local.projections import build_repo_retrieval_documents
 from scripts.repo_local.query import RepoKagQuery
+from scripts.repo_local import portable_family as portable_family_module
 from scripts.repo_local.portable_family import (
+    BUDGET_RECEIPT_SCHEMA_PATH,
     HARD_MAX_SHARD_BYTES,
     MANIFEST_RELATIVE_PATH,
     PortableFamilyError,
+    build_budget_receipt,
     build_portable_family,
+    capture_budget_producer_execution_inputs,
     load_portable_family,
     validate_changed_generated_budget,
+    write_budget_receipt,
     write_portable_output,
 )
 from scripts.validators.common import ValidationError
 from scripts.validators.repo_local_kag_index import (
+    load_repo_local_kag_repository_index_family_with_manifest,
     repo_local_kag_index_digest_without_self,
     validate_repo_local_kag_repository_index_family,
     validate_repo_local_kag_repository_index_payload,
@@ -56,6 +63,7 @@ DOMAIN_INDEX_CATALOG_EXAMPLE_PATH = REPO_ROOT / "examples" / "domain_index_catal
 FAMILY_MANIFEST_SCHEMA_PATH = (
     REPO_ROOT / "schemas" / "repo-local-kag-family-manifest.schema.json"
 )
+BUDGET_RECEIPT_SCHEMA_FILE = REPO_ROOT / BUDGET_RECEIPT_SCHEMA_PATH
 
 
 def load_json(path: Path) -> object:
@@ -517,6 +525,718 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertEqual(family, loaded_family)
         self.assertEqual(manifest, loaded_manifest)
 
+    def _prepare_budget_fixture(self) -> tuple[Path, dict[str, object], tempfile.TemporaryDirectory]:
+        tmpdir = tempfile.TemporaryDirectory()
+        root = Path(tmpdir.name)
+        write_fixture(root)
+        subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+        subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+        subprocess.run(
+            ("git", "config", "user.email", "kag@example.test"),
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(("git", "add", "."), cwd=root, check=True)
+        subprocess.run(("git", "commit", "-qm", "source"), cwd=root, check=True)
+        source_index = build_index(root)
+        family = build_repository_indexes(source_index, repo_root=root)
+        base_manifest, base_shards = build_portable_family(source_index, family)
+        write_portable_output(root, base_manifest, base_shards)
+        subprocess.run(("git", "add", "."), cwd=root, check=True)
+        subprocess.run(
+            ("git", "commit", "-qm", "portable base"),
+            cwd=root,
+            check=True,
+        )
+        manifest, shards = build_portable_family(
+            source_index,
+            family,
+            previous_manifest={"budgets": {"tracked_bytes_max": 1}},
+        )
+        write_portable_output(root, manifest, shards)
+        execution_inputs = capture_budget_producer_execution_inputs(
+            root,
+            base_ref="HEAD",
+            history_ref="HEAD",
+            event_history_ref="HEAD",
+        )
+        receipt_path, receipt = build_budget_receipt(
+            root,
+            base_ref="HEAD",
+            manifest=manifest,
+            reason="identity-bound adversarial test",
+            producer_execution_inputs=execution_inputs,
+        )
+        write_budget_receipt(root, receipt_path, receipt)
+        Draft202012Validator(load_json(BUDGET_RECEIPT_SCHEMA_FILE)).validate(receipt)
+        return root, manifest, tmpdir
+
+    def test_foreign_budget_receipt_can_keep_its_pinned_producer_identity(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_producer_identity",
+                side_effect=PortableFamilyError("newer executing producer"),
+            ):
+                with self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "newer executing producer",
+                ):
+                    load_portable_family(root)
+                loaded_source, loaded_family, loaded_manifest = load_portable_family(
+                    root,
+                    require_current_producer_identity=False,
+                )
+
+            self.assertEqual(manifest, loaded_manifest)
+            self.assertEqual(
+                build_index(root),
+                loaded_source,
+            )
+            self.assertEqual(
+                build_repository_indexes(loaded_source, repo_root=root),
+                loaded_family,
+            )
+        finally:
+            tmpdir.cleanup()
+
+    def test_repository_family_loader_forwards_foreign_receipt_mode(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_producer_identity",
+                side_effect=PortableFamilyError("newer executing producer"),
+            ):
+                with self.assertRaisesRegex(
+                    ValidationError,
+                    "newer executing producer",
+                ):
+                    load_repo_local_kag_repository_index_family_with_manifest(
+                        root,
+                    )
+                source, family, loaded_manifest = (
+                    load_repo_local_kag_repository_index_family_with_manifest(
+                        root,
+                        require_current_producer_identity=False,
+                    )
+                )
+
+            self.assertEqual(manifest, loaded_manifest)
+            self.assertEqual(build_index(root), source)
+            self.assertEqual(build_repository_indexes(source, repo_root=root), family)
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_receipt_rejects_candidate_base_family_and_producer_replay(self) -> None:
+        schema = load_json(BUDGET_RECEIPT_SCHEMA_FILE)
+        Draft202012Validator.check_schema(schema)
+
+        def prepare() -> tuple[Path, dict[str, object], Path]:
+            tmpdir = tempfile.TemporaryDirectory()
+            root = Path(tmpdir.name)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.name", "KAG Test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "source"),
+                cwd=root,
+                check=True,
+            )
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            base_manifest, base_shards = build_portable_family(source_index, family)
+            write_portable_output(root, base_manifest, base_shards)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "portable base"),
+                cwd=root,
+                check=True,
+            )
+            manifest, shards = build_portable_family(
+                source_index,
+                family,
+                previous_manifest={"budgets": {"tracked_bytes_max": 1}},
+            )
+            write_portable_output(root, manifest, shards)
+            execution_inputs = capture_budget_producer_execution_inputs(
+                root,
+                base_ref="HEAD",
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+            )
+            receipt_path, receipt = build_budget_receipt(
+                root,
+                base_ref="HEAD",
+                manifest=manifest,
+                reason="identity-bound adversarial test",
+                producer_execution_inputs=execution_inputs,
+            )
+            write_budget_receipt(root, receipt_path, receipt)
+            Draft202012Validator(schema).validate(receipt)
+            for candidate in root.rglob("*"):
+                if candidate.is_file() and ".git" not in candidate.relative_to(root).parts:
+                    candidate.chmod(0o600)
+            return root, manifest, tmpdir
+
+        root, manifest, tmpdir = prepare()
+        try:
+            accepted = validate_changed_generated_budget(
+                root,
+                base_ref="HEAD",
+                manifest=manifest,
+            )
+            self.assertTrue(accepted[2])
+            (root / "README.md").write_text("candidate replay\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "source epoch",
+            ):
+                validate_changed_generated_budget(root, base_ref="HEAD", manifest=manifest)
+        finally:
+            tmpdir.cleanup()
+
+        for label in ("base", "family", "producer"):
+            root, manifest, tmpdir = prepare()
+            try:
+                receipt_path = root / "kag" / "receipts" / "index_family_budget"
+                receipt_file = next(receipt_path.glob("*.json"))
+                receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+                if label == "base":
+                    receipt["base_ref"] = "0" * 40
+                elif label == "family":
+                    receipt["head_family_digest"] = "f" * 64
+                else:
+                    tampered = dict(receipt["producer_identity"])
+                    tampered["source_digest"] = "f" * 64
+                    receipt["producer_identity"] = tampered
+                receipt_file.write_text(
+                    json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+                with self.subTest(replay=label):
+                    with self.assertRaises(PortableFamilyError):
+                        validate_changed_generated_budget(
+                            root,
+                            base_ref="HEAD",
+                            manifest=manifest,
+                        )
+            finally:
+                tmpdir.cleanup()
+
+        root, manifest, tmpdir = prepare()
+        try:
+            original_producer_identity = portable_family_module._budget_producer_identity
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_producer_identity",
+                side_effect=lambda execution_inputs=None: {
+                    **original_producer_identity(execution_inputs),
+                    "source_digest": "e" * 64,
+                },
+            ):
+                with self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "producer identity does not match",
+                ):
+                    validate_changed_generated_budget(
+                        root,
+                        base_ref="HEAD",
+                        manifest=manifest,
+                    )
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_producer_manifest_rejects_an_omitted_import(self) -> None:
+        original_loader = portable_family_module._budget_load_producer_manifest
+
+        def omit_identity(root: Path) -> tuple[dict[str, object], bytes]:
+            manifest, raw = original_loader(root)
+            changed = copy.deepcopy(manifest)
+            changed["python_import_closure"] = [
+                path
+                for path in changed["python_import_closure"]
+                if path != "scripts/repo_local/identity.py"
+            ]
+            return changed, raw
+
+        with mock.patch.object(
+            portable_family_module,
+            "_budget_load_producer_manifest",
+            side_effect=omit_identity,
+        ):
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "import closure differs",
+            ):
+                portable_family_module._budget_producer_identity()
+
+    def test_budget_producer_rejects_unresolved_dynamic_imports(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts").mkdir()
+            (root / "scripts" / "entry.py").write_text(
+                "import importlib\n"
+                "importlib.import_module('scripts.dynamic')\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "unresolved dynamic import",
+            ):
+                portable_family_module._budget_import_closure(
+                    root,
+                    [Path("scripts/entry.py")],
+                )
+
+    def test_budget_producer_rejects_dynamic_import_aliases_and_nested_forms(
+        self,
+    ) -> None:
+        cases = {
+            "from_import_direct": (
+                "from importlib import import_module\n"
+                "import_module('scripts.dynamic')\n"
+            ),
+            "from_import_alias": (
+                "from importlib import import_module as load\n"
+                "load('scripts.dynamic')\n"
+            ),
+            "getattr_direct": (
+                "import importlib\n"
+                "getattr(importlib, 'import_module')('scripts.dynamic')\n"
+            ),
+            "assigned_attribute_alias": (
+                "import importlib\n"
+                "load = importlib.import_module\n"
+                "load('scripts.dynamic')\n"
+            ),
+            "assigned_getattr_alias": (
+                "import importlib\n"
+                "load = getattr(importlib, 'import_module')\n"
+                "load('scripts.dynamic')\n"
+            ),
+            "nested_getattr_and_indirect_call": (
+                "import importlib as il\n"
+                "get = getattr\n"
+                "load = get(il, 'import_' + 'module')\n"
+                "invoke = load\n"
+                "invoke('scripts.dynamic')\n"
+            ),
+            "builtin_import_alias": (
+                "from builtins import __import__ as load\n"
+                "load('scripts.dynamic')\n"
+            ),
+            "globals_import_lookup": (
+                "globals()['__import__']('scripts.dynamic')\n"
+            ),
+            "importlib_getattribute_lookup": (
+                "import importlib\n"
+                "importlib.__getattribute__('import_module')('scripts.dynamic')\n"
+            ),
+            "operator_getitem_globals_lookup": (
+                "import operator\n"
+                "operator.getitem(globals(), '__import__')('scripts.dynamic')\n"
+            ),
+            "vars_importlib_get_lookup": (
+                "import importlib\n"
+                "vars(importlib).get('import_module')('scripts.dynamic')\n"
+            ),
+        }
+        for name, source in cases.items():
+            with self.subTest(case=name):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    (root / "scripts").mkdir()
+                    (root / "scripts" / "entry.py").write_text(
+                        source,
+                        encoding="utf-8",
+                    )
+                    with self.assertRaisesRegex(
+                        PortableFamilyError,
+                        "unresolved dynamic import",
+                    ):
+                        portable_family_module._budget_import_closure(
+                            root,
+                            [Path("scripts/entry.py")],
+                        )
+
+    def test_budget_import_closure_preserves_static_local_import_resolution(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts").mkdir()
+            (root / "scripts" / "static.py").write_text(
+                "VALUE = 'static'\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "entry.py").write_text(
+                "import scripts.static\n"
+                "from scripts.static import VALUE\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                [Path("scripts/entry.py"), Path("scripts/static.py")],
+                portable_family_module._budget_import_closure(
+                    root,
+                    [Path("scripts/entry.py")],
+                ),
+            )
+
+    def test_budget_import_closure_includes_owner_package_initializers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts" / "repo_local").mkdir(parents=True)
+            (root / "scripts" / "repo_local" / "__init__.py").write_text(
+                "PACKAGE_READY = True\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "repo_local" / "module.py").write_text(
+                "VALUE = 'static'\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "entry.py").parent.mkdir(parents=True, exist_ok=True)
+            (root / "scripts" / "entry.py").write_text(
+                "import scripts.repo_local.module\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                [
+                    Path("scripts/entry.py"),
+                    Path("scripts/repo_local/__init__.py"),
+                    Path("scripts/repo_local/module.py"),
+                ],
+                portable_family_module._budget_import_closure(
+                    root,
+                    [Path("scripts/entry.py")],
+                ),
+            )
+
+    def test_budget_import_closure_accepts_reviewed_dynamic_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts").mkdir(parents=True)
+            (root / "scripts" / "entry.py").write_text(
+                "import importlib.util\n"
+                "spec = importlib.util.spec_from_file_location(\n"
+                "    '_dynamic', 'scripts/dynamic.py'\n"
+                ")\n"
+                "module = importlib.util.module_from_spec(spec)\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "dynamic.py").write_text(
+                "VALUE = 'dynamic'\n",
+                encoding="utf-8",
+            )
+            declarations = [
+                {
+                    "kind": kind,
+                    "source": "scripts/entry.py",
+                    "target": "scripts/dynamic.py",
+                }
+                for kind in ("spec_from_file_location", "module_from_spec")
+            ]
+            self.assertEqual(
+                [Path("scripts/dynamic.py"), Path("scripts/entry.py")],
+                portable_family_module._budget_import_closure(
+                    root,
+                    [Path("scripts/entry.py")],
+                    declared_dynamic_imports=declarations,
+                ),
+            )
+
+    def test_budget_producer_file_accepts_sha256_git_object_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "entry.py").write_text("VALUE = 'sha256'\n", encoding="utf-8")
+            initialized = subprocess.run(
+                ("git", "init", "-q", "--object-format=sha256", "-b", "main"),
+                cwd=root,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if initialized.returncode != 0:
+                self.skipTest("Git SHA-256 object repositories are unavailable")
+            subprocess.run(
+                ("git", "config", "user.name", "KAG Test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "entry.py"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "sha256 source"),
+                cwd=root,
+                check=True,
+            )
+            entry = portable_family_module._budget_producer_file_entry(
+                root,
+                Path("entry.py"),
+            )
+            self.assertRegex(entry["git_blob"], r"^sha256:[0-9a-f]{64}$")
+            self.assertTrue(portable_family_module._budget_valid_git_blob(entry["git_blob"]))
+            self.assertIn(
+                "sha256:[0-9a-f]{64}",
+                load_json(BUDGET_RECEIPT_SCHEMA_FILE)["$defs"]["producerFile"]
+                ["properties"]["git_blob"]["pattern"],
+            )
+
+    def test_budget_producer_manifest_binds_validator_facade_dynamic_target(self) -> None:
+        manifest, _ = portable_family_module._budget_load_producer_manifest(REPO_ROOT)
+        closure = portable_family_module._budget_import_closure(
+            REPO_ROOT,
+            [Path(value) for value in manifest["python_entrypoints"]],
+            declared_dynamic_imports=manifest.get("dynamic_imports", []),
+        )
+        self.assertIn(
+            Path("scripts/assemble_repo_local_kag_family.py"),
+            [Path(value) for value in manifest["python_entrypoints"]],
+        )
+        self.assertIn(Path("scripts/validators/__init__.py"), closure)
+        self.assertIn(
+            Path(
+                "mechanics/questbook/parts/quest-store/scripts/"
+                "validate_quest_store.py"
+            ),
+            closure,
+        )
+        self.assertEqual(
+            closure,
+            sorted(Path(value) for value in manifest["python_import_closure"]),
+        )
+
+    def test_budget_receipt_rejects_legacy_v1_at_the_current_digest_path(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            receipt_file = root / portable_family_module.receipt_path_for(manifest)
+            receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+            legacy = {
+                key: value
+                for key, value in receipt.items()
+                if key
+                not in {
+                    "head_source_snapshot",
+                    "candidate_identity",
+                    "producer_identity",
+                }
+            }
+            legacy["schema_version"] = "aoa-repo-local-kag-budget-receipt-v1"
+            receipt_file.write_text(
+                json.dumps(legacy, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "current identity-bound contract",
+            ):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                )
+            loaded_source, loaded_family, loaded_manifest = load_portable_family(
+                root,
+                require_current_producer_identity=False,
+                allow_legacy_external_receipt=True,
+            )
+            self.assertEqual(manifest, loaded_manifest)
+            self.assertEqual(build_index(root), loaded_source)
+            self.assertEqual(
+                build_repository_indexes(loaded_source, repo_root=root),
+                loaded_family,
+            )
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_receipt_binds_action_and_environment_inputs(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            changed_action = capture_budget_producer_execution_inputs(
+                root,
+                base_ref="HEAD",
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+                output=Path("kag/indexes/other_source_surface_index.json"),
+            )
+            with self.assertRaisesRegex(
+                PortableFamilyError,
+                "producer identity does not match",
+            ):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                    producer_execution_inputs=changed_action,
+                )
+            with mock.patch.dict(
+                portable_family_module.os.environ,
+                {"AOA_KAG_FORCE_COLD_SCHEMA_COMPILATION": "1"},
+                clear=False,
+            ):
+                with self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "producer identity does not match",
+                ):
+                    validate_changed_generated_budget(
+                        root,
+                        base_ref="HEAD",
+                        manifest=manifest,
+                    )
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_producer_runtime_contract_is_checkout_portable(self) -> None:
+        first_root, _, first_tmpdir = self._prepare_budget_fixture()
+        second_root, _, second_tmpdir = self._prepare_budget_fixture()
+        try:
+            first = capture_budget_producer_execution_inputs(
+                first_root,
+                base_ref="HEAD",
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+                jobs=1,
+            )
+            second = capture_budget_producer_execution_inputs(
+                second_root,
+                base_ref="HEAD",
+                history_ref="HEAD",
+                event_history_ref="HEAD",
+                jobs=3,
+            )
+            self.assertEqual(first, second)
+            self.assertNotIn("jobs", first["action_inputs"])
+            self.assertNotIn("jobs", first["command_targets"])
+            rendered = json.dumps(first, sort_keys=True)
+            self.assertNotIn(str(first_root), rendered)
+            self.assertNotIn(str(second_root), rendered)
+            self.assertEqual("declared", next(
+                item for item in first["dependencies"]
+                if item["name"] == "jsonschema-rs"
+            )["state"])
+        finally:
+            first_tmpdir.cleanup()
+            second_tmpdir.cleanup()
+
+    def test_budget_source_epoch_rejects_staged_source_drift(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            (root / "README.md").write_text("staged source drift\n", encoding="utf-8")
+            subprocess.run(("git", "add", "README.md"), cwd=root, check=True)
+            with self.assertRaisesRegex(PortableFamilyError, "source epoch"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                )
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_receipt_rejects_exact_receipt_symlink_and_parent_symlink(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            receipt_file = root / portable_family_module.receipt_path_for(manifest)
+            outside = root.parent / f"{root.name}-outside.json"
+            receipt_file.unlink()
+            receipt_file.symlink_to(outside)
+            with self.assertRaisesRegex(PortableFamilyError, "regular in-root"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                )
+        finally:
+            tmpdir.cleanup()
+
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            receipt_root = root / portable_family_module.BUDGET_RECEIPT_ROOT_RELATIVE_PATH
+            receipt_file = root / portable_family_module.receipt_path_for(manifest)
+            outside_root = root / "receipt-root-outside"
+            outside_root.mkdir()
+            receipt_file.unlink()
+            receipt_root.rmdir()
+            receipt_root.symlink_to(outside_root, target_is_directory=True)
+            with self.assertRaisesRegex(PortableFamilyError, "parent must be"):
+                validate_changed_generated_budget(
+                    root,
+                    base_ref="HEAD",
+                    manifest=manifest,
+                )
+        finally:
+            tmpdir.cleanup()
+
+    def test_budget_receipt_pins_parent_descriptor_across_replacement(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        receipt_root = root / portable_family_module.BUDGET_RECEIPT_ROOT_RELATIVE_PATH
+        relative = portable_family_module.receipt_path_for(manifest)
+        pinned_root = root / "pinned-receipt-parent"
+        outside_root = root.parent / f"{root.name}-receipt-outside"
+        outside_root.mkdir()
+        original_open_parent = portable_family_module._budget_open_receipt_parent
+
+        def replace_parent(
+            owner_root: Path,
+            receipt_path: Path,
+            *,
+            allow_missing: bool,
+        ) -> tuple[int, str]:
+            descriptor, leaf = original_open_parent(
+                owner_root,
+                receipt_path,
+                allow_missing=allow_missing,
+            )
+            receipt_root.rename(pinned_root)
+            receipt_root.symlink_to(outside_root, target_is_directory=True)
+            return descriptor, leaf
+
+        try:
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_open_receipt_parent",
+                side_effect=replace_parent,
+            ):
+                observed = portable_family_module._budget_read_receipt(root, manifest)
+            self.assertEqual("aoa-repo-local-kag-budget-receipt-v2", observed["schema_version"])
+            receipt_root.unlink()
+            pinned_root.rename(receipt_root)
+
+            receipt = dict(observed)
+            receipt["reason"] = "descriptor-pinned replacement test"
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_open_receipt_parent",
+                side_effect=replace_parent,
+            ):
+                portable_family_module.write_budget_receipt(root, relative, receipt)
+            self.assertFalse((outside_root / relative.name).exists())
+            receipt_root.unlink()
+            pinned_root.rename(receipt_root)
+            rewritten = portable_family_module._budget_read_receipt(root, manifest)
+            self.assertEqual(receipt["reason"], rewritten["reason"])
+        finally:
+            if receipt_root.is_symlink():
+                receipt_root.unlink()
+            if pinned_root.exists():
+                pinned_root.rename(receipt_root)
+            shutil.rmtree(outside_root, ignore_errors=True)
+            tmpdir.cleanup()
+
     def test_portable_family_paths_do_not_amplify_repository_event_delta(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -693,6 +1413,175 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             self.assertEqual(
                 0,
                 main(["--repo-root", str(root), "--index-family", "--check"]),
+            )
+
+    def test_generator_reads_a_dirty_candidate_without_mutating_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            base_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+            # Exercise all three candidate partitions that owner preparation
+            # can materialize: unstaged, staged, and non-ignored untracked.
+            readme = root / "README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8") + "\nUnstaged candidate.\n",
+                encoding="utf-8",
+            )
+            usage = root / "docs" / "guides" / "usage.md"
+            usage.write_text(
+                usage.read_text(encoding="utf-8") + "\nStaged candidate.\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", "docs/guides/usage.md"), cwd=root, check=True)
+            untracked = root / "candidate.md"
+            untracked.write_text("Untracked candidate.\n", encoding="utf-8")
+            cached_before = subprocess.run(
+                ("git", "diff", "--cached", "--binary"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            ).stdout
+
+            args = [
+                "--repo-root",
+                str(root),
+                "--index-family",
+                "--history-ref",
+                base_sha,
+                "--event-history-ref",
+                base_sha,
+            ]
+            self.assertEqual(0, main(args))
+            payload = load_json(root / "kag" / "indexes" / "source_surface_index.json")
+            assert isinstance(payload, dict)
+            indexed_paths = {
+                record["identity"]["path"]
+                for record in payload["records"]
+                if isinstance(record, dict) and isinstance(record.get("identity"), dict)
+            }
+            self.assertTrue({"README.md", "docs/guides/usage.md", "candidate.md"} <= indexed_paths)
+            self.assertEqual(
+                cached_before,
+                subprocess.run(
+                    ("git", "diff", "--cached", "--binary"),
+                    cwd=root,
+                    check=True,
+                    capture_output=True,
+                ).stdout,
+            )
+            self.assertEqual(0, main([*args, "--check"]))
+
+    def test_candidate_identity_seals_a_materialized_gitlink_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            with tempfile.TemporaryDirectory() as child_tmpdir:
+                child = Path(child_tmpdir)
+                subprocess.run(("git", "init", "-q", "-b", "main"), cwd=child, check=True)
+                subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=child, check=True)
+                subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=child, check=True)
+                (child / "source.txt").write_text("nested source\n", encoding="utf-8")
+                subprocess.run(("git", "add", "source.txt"), cwd=child, check=True)
+                subprocess.run(("git", "commit", "-qm", "nested source"), cwd=child, check=True)
+                child_sha = subprocess.run(
+                    ("git", "rev-parse", "HEAD"),
+                    cwd=child,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            materialized = root / "vendor" / "child"
+            materialized.mkdir(parents=True)
+            subprocess.run(
+                (
+                    "git",
+                    "update-index",
+                    "--add",
+                    "--cacheinfo",
+                    f"160000,{child_sha},vendor/child",
+                ),
+                cwd=root,
+                check=True,
+            )
+
+            inventory = portable_family_module._budget_candidate_file_inventory(
+                root,
+                excluded_path=Path("kag/receipts/index_family_budget/" + "0" * 64 + ".json"),
+            )
+            gitlink = next(item for item in inventory if item["path"] == "vendor/child")
+            self.assertEqual("gitlink", gitlink["kind"])
+            self.assertEqual("160000", gitlink["mode"])
+            self.assertEqual(child_sha, gitlink["gitlink_commit"])
+            self.assertEqual(0, gitlink["bytes"])
+
+    def test_candidate_identity_is_stable_across_unstaged_deletion_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            manifest, _shards = build_portable_family(source_index, family)
+            deleted = root / "docs" / "guides" / "usage.md"
+            deleted.unlink()
+            before_commit = portable_family_module._budget_candidate_identity(
+                root,
+                resolved_base_ref="HEAD",
+                manifest=manifest,
+                allow_dirty=True,
+            )
+
+            subprocess.run(("git", "commit", "-qam", "delete source"), cwd=root, check=True)
+            after_commit = portable_family_module._budget_candidate_identity(
+                root,
+                resolved_base_ref="HEAD",
+                manifest=manifest,
+                allow_dirty=True,
+            )
+
+            self.assertEqual(before_commit, after_commit)
+            self.assertNotIn(
+                "docs/guides/usage.md",
+                {
+                    item["path"]
+                    for item in portable_family_module._budget_candidate_file_inventory(
+                        root,
+                        excluded_path=Path(
+                            "kag/receipts/index_family_budget/" + "0" * 64 + ".json"
+                        ),
+                    )
+                },
             )
 
     def test_local_default_branch_history_uses_first_parent_not_head(self) -> None:
