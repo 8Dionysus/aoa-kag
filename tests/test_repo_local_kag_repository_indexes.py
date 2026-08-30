@@ -894,6 +894,35 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 ),
             )
 
+    def test_budget_import_closure_includes_owner_package_initializers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "scripts" / "repo_local").mkdir(parents=True)
+            (root / "scripts" / "repo_local" / "__init__.py").write_text(
+                "PACKAGE_READY = True\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "repo_local" / "module.py").write_text(
+                "VALUE = 'static'\n",
+                encoding="utf-8",
+            )
+            (root / "scripts" / "entry.py").parent.mkdir(parents=True, exist_ok=True)
+            (root / "scripts" / "entry.py").write_text(
+                "import scripts.repo_local.module\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                [
+                    Path("scripts/entry.py"),
+                    Path("scripts/repo_local/__init__.py"),
+                    Path("scripts/repo_local/module.py"),
+                ],
+                portable_family_module._budget_import_closure(
+                    root,
+                    [Path("scripts/entry.py")],
+                ),
+            )
+
     def test_budget_receipt_rejects_legacy_v1_at_the_current_digest_path(self) -> None:
         root, manifest, tmpdir = self._prepare_budget_fixture()
         try:
@@ -1287,6 +1316,127 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 0,
                 main(["--repo-root", str(root), "--index-family", "--check"]),
             )
+
+    def test_generator_reads_a_dirty_candidate_without_mutating_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            base_sha = subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+            # Exercise all three candidate partitions that owner preparation
+            # can materialize: unstaged, staged, and non-ignored untracked.
+            readme = root / "README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8") + "\nUnstaged candidate.\n",
+                encoding="utf-8",
+            )
+            usage = root / "docs" / "guides" / "usage.md"
+            usage.write_text(
+                usage.read_text(encoding="utf-8") + "\nStaged candidate.\n",
+                encoding="utf-8",
+            )
+            subprocess.run(("git", "add", "docs/guides/usage.md"), cwd=root, check=True)
+            untracked = root / "candidate.md"
+            untracked.write_text("Untracked candidate.\n", encoding="utf-8")
+            cached_before = subprocess.run(
+                ("git", "diff", "--cached", "--binary"),
+                cwd=root,
+                check=True,
+                capture_output=True,
+            ).stdout
+
+            args = [
+                "--repo-root",
+                str(root),
+                "--index-family",
+                "--history-ref",
+                base_sha,
+                "--event-history-ref",
+                base_sha,
+            ]
+            self.assertEqual(0, main(args))
+            payload = load_json(root / "kag" / "indexes" / "source_surface_index.json")
+            assert isinstance(payload, dict)
+            indexed_paths = {
+                record["identity"]["path"]
+                for record in payload["records"]
+                if isinstance(record, dict) and isinstance(record.get("identity"), dict)
+            }
+            self.assertTrue({"README.md", "docs/guides/usage.md", "candidate.md"} <= indexed_paths)
+            self.assertEqual(
+                cached_before,
+                subprocess.run(
+                    ("git", "diff", "--cached", "--binary"),
+                    cwd=root,
+                    check=True,
+                    capture_output=True,
+                ).stdout,
+            )
+            self.assertEqual(0, main([*args, "--check"]))
+
+    def test_candidate_identity_seals_a_materialized_gitlink_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            with tempfile.TemporaryDirectory() as child_tmpdir:
+                child = Path(child_tmpdir)
+                subprocess.run(("git", "init", "-q", "-b", "main"), cwd=child, check=True)
+                subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=child, check=True)
+                subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=child, check=True)
+                (child / "source.txt").write_text("nested source\n", encoding="utf-8")
+                subprocess.run(("git", "add", "source.txt"), cwd=child, check=True)
+                subprocess.run(("git", "commit", "-qm", "nested source"), cwd=child, check=True)
+                child_sha = subprocess.run(
+                    ("git", "rev-parse", "HEAD"),
+                    cwd=child,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.email", "kag@example.test"), cwd=root, check=True)
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+            materialized = root / "vendor" / "child"
+            materialized.mkdir(parents=True)
+            subprocess.run(
+                (
+                    "git",
+                    "update-index",
+                    "--add",
+                    "--cacheinfo",
+                    f"160000,{child_sha},vendor/child",
+                ),
+                cwd=root,
+                check=True,
+            )
+
+            inventory = portable_family_module._budget_candidate_file_inventory(
+                root,
+                excluded_path=Path("kag/receipts/index_family_budget/" + "0" * 64 + ".json"),
+            )
+            gitlink = next(item for item in inventory if item["path"] == "vendor/child")
+            self.assertEqual("gitlink", gitlink["kind"])
+            self.assertEqual("160000", gitlink["mode"])
+            self.assertEqual(child_sha, gitlink["gitlink_commit"])
+            self.assertEqual(0, gitlink["bytes"])
 
     def test_local_default_branch_history_uses_first_parent_not_head(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

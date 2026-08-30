@@ -353,6 +353,29 @@ def _budget_local_module_path(root: Path, module: str) -> Path | None:
     return None
 
 
+def _budget_package_initializers(root: Path, relative: Path) -> list[Path]:
+    """Return producer package initializers for a resolved local module.
+
+    ``scripts.validators`` is a compatibility facade with eager wildcard
+    re-exports. Its leaf validator modules are already explicit producer
+    surfaces; traversing that facade would pull dormant validation-only
+    loaders into the producer closure. Keep that adapter boundary explicit
+    while binding owner packages whose initializers execute in the producer
+    runtime (for example ``scripts.repo_local``).
+    """
+    excluded = {Path("scripts/validators/__init__.py")}
+    initializers: list[Path] = []
+    parent = relative.parent
+    while parent.parts:
+        initializer = root / parent / "__init__.py"
+        if initializer.is_file():
+            candidate = initializer.relative_to(root)
+            if candidate not in excluded:
+                initializers.append(candidate)
+        parent = parent.parent
+    return initializers
+
+
 def _budget_resolve_local_import(
     root: Path,
     relative: Path,
@@ -689,6 +712,7 @@ def _budget_import_closure(
             label="producer import closure file",
         )
         seen.add(relative)
+        queue.extend(_budget_package_initializers(root, relative))
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         except (SyntaxError, UnicodeDecodeError) as exc:
@@ -1245,7 +1269,122 @@ def _budget_git_nul_paths(root: Path, *arguments: str) -> set[Path]:
     return paths
 
 
-def _budget_source_epoch_files(root: Path) -> tuple[str, list[dict[str, Any]]]:
+def _budget_source_epoch_index_entries(
+    root: Path,
+) -> dict[Path, dict[str, str]]:
+    raw = subprocess.run(
+        ("git", "ls-files", "-s", "--cached", "-z"),
+        cwd=root,
+        check=True,
+        capture_output=True,
+    ).stdout
+    entries: dict[Path, dict[str, str]] = {}
+    for item in raw.split(b"\0"):
+        if not item:
+            continue
+        metadata, separator, path_bytes = item.partition(b"\t")
+        fields = metadata.split(b" ")
+        if not separator or len(fields) != 3:
+            raise PortableFamilyError("source epoch found a malformed Git index entry")
+        try:
+            mode, blob_id, stage = (field.decode("ascii") for field in fields)
+            relative = Path(path_bytes.decode("utf-8", errors="strict"))
+        except UnicodeDecodeError as exc:
+            raise PortableFamilyError(
+                "source epoch found a non-UTF-8 Git index entry"
+            ) from exc
+        if (
+            stage != "0"
+            or relative.is_absolute()
+            or not relative.parts
+            or ".." in relative.parts
+        ):
+            raise PortableFamilyError(
+                f"source epoch found an unstable Git index entry: {relative}"
+            )
+        entries[relative] = {"mode": mode, "blob_id": blob_id}
+    return entries
+
+
+def _budget_worktree_source_epoch_files(
+    root: Path,
+    *,
+    index_entries: Mapping[Path, Mapping[str, str]],
+) -> list[dict[str, Any]]:
+    """Read the effective candidate without mutating its Git index.
+
+    Generation may run against a caller candidate that has staged, unstaged,
+    or non-ignored untracked source.  The regular admission path remains
+    clean-source-only; this candidate path binds the epoch to the bytes that
+    are actually visible in the materialized worktree so preparation can
+    regenerate a family before the caller commits the candidate.
+    """
+    paths = set(index_entries)
+    paths.update(
+        _budget_git_nul_paths(
+            root,
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+        )
+    )
+    entries: list[dict[str, Any]] = []
+    for relative in sorted(paths):
+        if _budget_is_receipt_control_path(relative):
+            continue
+        path = root / relative
+        try:
+            metadata = path.lstat()
+        except FileNotFoundError:
+            # A deleted tracked source is absent from the effective candidate
+            # and therefore must not survive into the candidate epoch.
+            continue
+        if index_entries.get(relative, {}).get("mode") == "160000":
+            entries.append(
+                {
+                    "path": relative.as_posix(),
+                    "mode": "160000",
+                    "blob_id": index_entries[relative]["blob_id"],
+                    "kind": "gitlink",
+                }
+            )
+            continue
+        if stat.S_ISREG(metadata.st_mode):
+            content = path.read_bytes()
+            kind = "file"
+            mode = "100755" if metadata.st_mode & stat.S_IXUSR else "100644"
+        elif stat.S_ISLNK(metadata.st_mode):
+            content = os.readlink(path).encode("utf-8", errors="surrogateescape")
+            kind = "symlink"
+            mode = "120000"
+        elif stat.S_ISDIR(metadata.st_mode) and (
+            (path / ".git").exists()
+            or (path / ".git").is_file()
+        ):
+            # Nested validation checkouts are candidate context, not outer
+            # owner source. Their own identity is handled by preparation.
+            continue
+        else:
+            raise PortableFamilyError(
+                f"source epoch found a non-file source path: {relative.as_posix()}"
+            )
+        entries.append(
+            {
+                "path": relative.as_posix(),
+                "mode": mode,
+                "kind": kind,
+                "bytes": len(content),
+                "content_digest": sha256_bytes(content),
+            }
+        )
+    return sorted(entries, key=lambda item: item["path"])
+
+
+def _budget_source_epoch_files(
+    root: Path,
+    *,
+    allow_dirty: bool = False,
+) -> tuple[str, list[dict[str, Any]]]:
     try:
         head = subprocess.run(
             ("git", "rev-parse", "HEAD"),
@@ -1270,10 +1409,15 @@ def _budget_source_epoch_files(root: Path) -> tuple[str, list[dict[str, Any]]]:
             for path in staged | unstaged | untracked
             if not _budget_is_receipt_control_path(path)
         }
-        if dirty:
+        if dirty and not allow_dirty:
             raise PortableFamilyError(
                 "source epoch is not clean; source drift is present at: "
                 + ", ".join(path.as_posix() for path in sorted(dirty))
+            )
+        if allow_dirty and dirty:
+            return head, _budget_worktree_source_epoch_files(
+                root,
+                index_entries=_budget_source_epoch_index_entries(root),
             )
         raw = subprocess.run(
             ("git", "ls-files", "-s", "--cached", "-z"),
@@ -1338,10 +1482,14 @@ def _budget_source_epoch_files(root: Path) -> tuple[str, list[dict[str, Any]]]:
         raise PortableFamilyError("source epoch cannot inspect the Git worktree") from exc
 
 
-def capture_budget_source_epoch(repo_root: Path) -> str:
-    """Capture one clean source epoch shared by generation and receipt checks."""
+def capture_budget_source_epoch(
+    repo_root: Path,
+    *,
+    allow_dirty: bool = False,
+) -> str:
+    """Capture a source epoch, optionally from an effective dirty candidate."""
     root = repo_root.resolve()
-    _head, files = _budget_source_epoch_files(root)
+    _head, files = _budget_source_epoch_files(root, allow_dirty=allow_dirty)
     return "sha256:" + sha256_bytes(
         canonical_json_bytes(
             {
@@ -1355,8 +1503,10 @@ def capture_budget_source_epoch(repo_root: Path) -> str:
 def _budget_require_source_epoch(
     repo_root: Path,
     expected: str | None = None,
+    *,
+    allow_dirty: bool = False,
 ) -> str:
-    actual = capture_budget_source_epoch(repo_root)
+    actual = capture_budget_source_epoch(repo_root, allow_dirty=allow_dirty)
     if expected is not None and actual != expected:
         raise PortableFamilyError(
             "source epoch changed between generation and receipt construction"
@@ -1381,6 +1531,12 @@ def _budget_candidate_file_inventory(
         raise PortableFamilyError(
             "candidate identity requires a readable Git worktree"
         )
+    try:
+        index_entries = _budget_source_epoch_index_entries(root)
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise PortableFamilyError(
+            "candidate identity requires a readable Git index"
+        ) from exc
     relative_paths: set[str] = set()
     for raw in result.stdout.split(b"\0"):
         if not raw:
@@ -1420,6 +1576,31 @@ def _budget_candidate_file_inventory(
                 }
             )
             continue
+        index_entry = index_entries.get(relative)
+        if index_entry is not None and index_entry.get("mode") == "160000":
+            # A materialized submodule is a directory in the worktree, but its
+            # candidate identity is the commit object recorded by the parent
+            # index. Do not recurse into the nested checkout or hash ambient
+            # files that are outside the parent candidate.
+            gitlink_commit = index_entry.get("blob_id")
+            if not isinstance(gitlink_commit, str) or not gitlink_commit:
+                raise PortableFamilyError(
+                    f"candidate identity has an invalid Gitlink entry {relative_text}"
+                )
+            inventory.append(
+                {
+                    "path": relative_text,
+                    "state": "present",
+                    "kind": "gitlink",
+                    "mode": "160000",
+                    "bytes": 0,
+                    "content_digest": sha256_bytes(
+                        gitlink_commit.encode("ascii")
+                    ),
+                    "gitlink_commit": gitlink_commit,
+                }
+            )
+            continue
         if stat.S_ISREG(metadata.st_mode):
             content = path.read_bytes()
             kind = "file"
@@ -1452,6 +1633,7 @@ def _budget_candidate_identity(
     resolved_base_ref: str,
     manifest: Mapping[str, Any],
     source_epoch: str | None = None,
+    allow_dirty: bool = False,
 ) -> dict[str, Any]:
     family_identity = manifest.get("family_identity")
     if not isinstance(family_identity, Mapping):
@@ -1470,7 +1652,11 @@ def _budget_candidate_identity(
         raise PortableFamilyError(
             "budget candidate needs content-addressed family and source identities"
         )
-    actual_source_epoch = _budget_require_source_epoch(repo_root, source_epoch)
+    actual_source_epoch = _budget_require_source_epoch(
+        repo_root,
+        source_epoch,
+        allow_dirty=allow_dirty,
+    )
     excluded_path = receipt_path_for(manifest)
     inventory = _budget_candidate_file_inventory(
         repo_root,
@@ -1502,8 +1688,13 @@ def _budget_receipt_identities(
     manifest: Mapping[str, Any],
     source_epoch: str | None = None,
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    allow_dirty: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    actual_source_epoch = _budget_require_source_epoch(repo_root, source_epoch)
+    actual_source_epoch = _budget_require_source_epoch(
+        repo_root,
+        source_epoch,
+        allow_dirty=allow_dirty,
+    )
     if producer_execution_inputs is None:
         producer_execution_inputs = capture_budget_producer_execution_inputs(
             repo_root,
@@ -1515,6 +1706,7 @@ def _budget_receipt_identities(
             resolved_base_ref=resolved_base_ref,
             manifest=manifest,
             source_epoch=actual_source_epoch,
+            allow_dirty=allow_dirty,
         ),
         _budget_producer_identity(producer_execution_inputs),
     )
@@ -3020,6 +3212,7 @@ def _validate_budget_receipt_identities(
     resolved_base_ref: str,
     producer_execution_inputs: Mapping[str, Any] | None = None,
     require_current_producer_identity: bool = True,
+    allow_dirty: bool = False,
 ) -> None:
     expected_source_snapshot = manifest["family_identity"]["source_snapshot"]
     if receipt.get("head_source_snapshot") != expected_source_snapshot:
@@ -3030,6 +3223,7 @@ def _validate_budget_receipt_identities(
         repo_root,
         resolved_base_ref=resolved_base_ref,
         manifest=manifest,
+        allow_dirty=allow_dirty,
     )
     if receipt.get("candidate_identity") != candidate_identity:
         raise PortableFamilyError(
@@ -3423,6 +3617,7 @@ def build_budget_receipt(
     approved_by: str = "repository-owner",
     source_epoch: str | None = None,
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    allow_dirty: bool = False,
 ) -> tuple[Path, dict[str, Any]]:
     if not reason.strip():
         raise PortableFamilyError("budget receipt reason must not be empty")
@@ -3452,6 +3647,7 @@ def build_budget_receipt(
         manifest=manifest,
         source_epoch=source_epoch,
         producer_execution_inputs=producer_execution_inputs,
+        allow_dirty=allow_dirty,
     )
     receipt = {
         "schema_version": BUDGET_RECEIPT_SCHEMA_VERSION,
@@ -3566,8 +3762,9 @@ def validate_changed_generated_budget(
     base_ref: str,
     manifest: Mapping[str, Any],
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    allow_dirty: bool = False,
 ) -> tuple[int, int, bool]:
-    _budget_require_source_epoch(repo_root)
+    _budget_require_source_epoch(repo_root, allow_dirty=allow_dirty)
     changed_bytes, changed_files, resolved = changed_generated_bytes(
         repo_root,
         base_ref=base_ref,
@@ -3622,6 +3819,7 @@ def validate_changed_generated_budget(
         receipt=receipt,
         resolved_base_ref=resolved,
         producer_execution_inputs=producer_execution_inputs,
+        allow_dirty=allow_dirty,
     )
     if receipt.get("scope") != expected_scope:
         raise PortableFamilyError(

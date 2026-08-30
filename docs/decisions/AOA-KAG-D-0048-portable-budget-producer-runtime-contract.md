@@ -31,7 +31,9 @@ to their portable v2/v4 forms. Bind receipt identity to:
 - the reviewed AST import closure, schemas, manifest, and composite action
   bytes, including their Git blob identities;
 - logical action and command values, exact history boundaries, output path,
-  family mode, artifact-root role, and bounded job count;
+  family mode, and artifact-root role; scheduler fan-out and job count are
+  deliberately unbound because they change execution scheduling, not
+  generated content;
 - the declared dependency contract, while still requiring every required
   dependency to be installed at its declared version and every supported
   Python runtime to satisfy the declared minimum; and
