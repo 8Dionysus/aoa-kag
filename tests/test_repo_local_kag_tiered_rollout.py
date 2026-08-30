@@ -177,7 +177,7 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
             distribution["distribution_identity"]["content_digest"],
         )
 
-    def test_externalization_preparation_rejects_staged_input(
+    def test_externalization_preparation_accepts_staged_input(
     self,
     ) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -194,14 +194,14 @@ class RepoLocalKagTieredRolloutTests(unittest.TestCase):
                 check=True,
             )
 
-            with self.assertRaisesRegex(
-                TieredRolloutError,
-                "authoritative externalization builder failed",
-            ):
-                prepare_owner_externalization(
-                    OwnerSource(owner="owner-demo", root=root),
-                    artifact_root=base / "cas",
-                )
+            result = prepare_owner_externalization(
+                OwnerSource(owner="owner-demo", root=root),
+                artifact_root=base / "cas",
+            )
+
+        self.assertEqual("owner-demo", result["owner"])
+        self.assertIn("staged-source.md", result["changed_paths"])
+        self.assertTrue(result["budget_receipt"])
 
     def test_externalization_preparation_rejects_unstaged_input(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
