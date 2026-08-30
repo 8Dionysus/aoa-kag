@@ -55,6 +55,13 @@ BUDGET_DYNAMIC_IMPORT_ATTRIBUTES = frozenset(
         "spec_from_file_location",
     }
 )
+BUDGET_DYNAMIC_IMPORT_MAPPING_METHODS = frozenset(
+    {
+        "get",
+        "getitem",
+        "__getitem__",
+    }
+)
 BUDGET_PRODUCER_RUNTIME_INPUTS_VERSION = (
     "aoa-kag:budget-receipt-producer-runtime-inputs-v2"
 )
@@ -622,6 +629,22 @@ def _budget_indirect_dynamic_import_lookup(
             "builtins",
         }:
             return "builtins[...]"
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+        lookup_method = node.func.attr
+        if lookup_method in BUDGET_DYNAMIC_IMPORT_MAPPING_METHODS:
+            if lookup_method == "get":
+                key_argument = 0
+            elif lookup_method == "getitem":
+                key_argument = 1
+            else:
+                key_argument = 1 if len(node.args) > 1 else 0
+            key = (
+                _budget_static_string(node.args[key_argument])
+                if len(node.args) > key_argument
+                else None
+            )
+            if key in BUDGET_DYNAMIC_IMPORT_ATTRIBUTES:
+                return f"{lookup_method}[{key}]"
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
         if node.func.attr not in {"__getattribute__", "__getattr__"}:
             return None

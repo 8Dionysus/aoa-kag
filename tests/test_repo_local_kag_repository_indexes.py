@@ -844,6 +844,14 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 "import importlib\n"
                 "importlib.__getattribute__('import_module')('scripts.dynamic')\n"
             ),
+            "operator_getitem_globals_lookup": (
+                "import operator\n"
+                "operator.getitem(globals(), '__import__')('scripts.dynamic')\n"
+            ),
+            "vars_importlib_get_lookup": (
+                "import importlib\n"
+                "vars(importlib).get('import_module')('scripts.dynamic')\n"
+            ),
         }
         for name, source in cases.items():
             with self.subTest(case=name):
