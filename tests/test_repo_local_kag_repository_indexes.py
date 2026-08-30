@@ -570,6 +570,36 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         Draft202012Validator(load_json(BUDGET_RECEIPT_SCHEMA_FILE)).validate(receipt)
         return root, manifest, tmpdir
 
+    def test_foreign_budget_receipt_can_keep_its_pinned_producer_identity(self) -> None:
+        root, manifest, tmpdir = self._prepare_budget_fixture()
+        try:
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_producer_identity",
+                side_effect=PortableFamilyError("newer executing producer"),
+            ):
+                with self.assertRaisesRegex(
+                    PortableFamilyError,
+                    "newer executing producer",
+                ):
+                    load_portable_family(root)
+                loaded_source, loaded_family, loaded_manifest = load_portable_family(
+                    root,
+                    require_current_producer_identity=False,
+                )
+
+            self.assertEqual(manifest, loaded_manifest)
+            self.assertEqual(
+                build_index(root),
+                loaded_source,
+            )
+            self.assertEqual(
+                build_repository_indexes(loaded_source, repo_root=root),
+                loaded_family,
+            )
+        finally:
+            tmpdir.cleanup()
+
     def test_budget_receipt_rejects_candidate_base_family_and_producer_replay(self) -> None:
         schema = load_json(BUDGET_RECEIPT_SCHEMA_FILE)
         Draft202012Validator.check_schema(schema)
@@ -856,6 +886,17 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                     base_ref="HEAD",
                     manifest=manifest,
                 )
+            loaded_source, loaded_family, loaded_manifest = load_portable_family(
+                root,
+                require_current_producer_identity=False,
+                allow_legacy_external_receipt=True,
+            )
+            self.assertEqual(manifest, loaded_manifest)
+            self.assertEqual(build_index(root), loaded_source)
+            self.assertEqual(
+                build_repository_indexes(loaded_source, repo_root=root),
+                loaded_family,
+            )
         finally:
             tmpdir.cleanup()
 

@@ -84,6 +84,26 @@ BUDGET_RECEIPT_FIELDS = frozenset(
         "decision_ref",
     }
 )
+LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION = "aoa-repo-local-kag-budget-receipt-v1"
+LEGACY_BUDGET_RECEIPT_FIELDS = frozenset(
+    {
+        "schema_version",
+        "repo",
+        "scope",
+        "base_ref",
+        "head_family_digest",
+        "changed_generated_bytes",
+        "changed_generated_files",
+        "default_limit_bytes",
+        "allowed_bytes",
+        "tracked_bytes",
+        "tracked_bytes_max",
+        "allowed_tracked_bytes",
+        "reason",
+        "approved_by",
+        "decision_ref",
+    }
+)
 DECISION_REF = (
     "aoa-kag:docs/decisions/"
     "AOA-KAG-D-0017-portable-content-addressed-repository-family.md"
@@ -2086,6 +2106,8 @@ def _load_rows(
     *,
     require_budget_receipt: bool,
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    require_current_producer_identity: bool = True,
+    allow_legacy_external_receipt: bool = False,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     shards = manifest.get("shards")
@@ -2162,6 +2184,8 @@ def _load_rows(
             repo_root,
             manifest,
             producer_execution_inputs=producer_execution_inputs,
+            require_current_producer_identity=require_current_producer_identity,
+            allow_legacy_external_receipt=allow_legacy_external_receipt,
         )
     return rows
 
@@ -2474,6 +2498,8 @@ def load_portable_family_with_state(
     allow_shadow_git: bool = True,
     require_budget_receipt: bool = True,
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    require_current_producer_identity: bool = True,
+    allow_legacy_external_receipt: bool = False,
 ) -> tuple[
     dict[str, Any],
     dict[str, dict[str, Any]],
@@ -2521,6 +2547,8 @@ def load_portable_family_with_state(
         validated,
         require_budget_receipt=require_budget_receipt,
         producer_execution_inputs=producer_execution_inputs,
+        require_current_producer_identity=require_current_producer_identity,
+        allow_legacy_external_receipt=allow_legacy_external_receipt,
     )
     source, family = reconstruct_compatibility_family(validated, rows)
     state = {
@@ -2548,6 +2576,8 @@ def load_portable_family(
     allow_shadow_git: bool = True,
     require_budget_receipt: bool = True,
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    require_current_producer_identity: bool = True,
+    allow_legacy_external_receipt: bool = False,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
     source, family, manifest, _ = load_portable_family_with_state(
         repo_root,
@@ -2556,6 +2586,8 @@ def load_portable_family(
         allow_shadow_git=allow_shadow_git,
         require_budget_receipt=require_budget_receipt,
         producer_execution_inputs=producer_execution_inputs,
+        require_current_producer_identity=require_current_producer_identity,
+        allow_legacy_external_receipt=allow_legacy_external_receipt,
     )
     return source, family, manifest
 
@@ -2881,9 +2913,19 @@ def _resolve_receipt_base_ref(repo_root: Path, receipt: Mapping[str, Any]) -> st
     return resolved
 
 
-def _validate_budget_receipt_shape(receipt: object) -> dict[str, Any]:
+def _validate_budget_receipt_shape(
+    receipt: object,
+    *,
+    allow_legacy_external_receipt: bool = False,
+) -> dict[str, Any]:
     if not isinstance(receipt, dict):
         raise PortableFamilyError("budget receipt must be a JSON object")
+    if (
+        allow_legacy_external_receipt
+        and receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION
+        and set(receipt) == set(LEGACY_BUDGET_RECEIPT_FIELDS)
+    ):
+        return receipt
     if set(receipt) != set(BUDGET_RECEIPT_FIELDS):
         missing = sorted(BUDGET_RECEIPT_FIELDS - set(receipt))
         extra = sorted(set(receipt) - BUDGET_RECEIPT_FIELDS)
@@ -2954,31 +2996,169 @@ def _validate_budget_receipt_identities(
     receipt: Mapping[str, Any],
     resolved_base_ref: str,
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    require_current_producer_identity: bool = True,
 ) -> None:
-    if producer_execution_inputs is None:
-        producer_execution_inputs = _budget_execution_inputs_from_receipt(
-            repo_root,
-            receipt,
-            resolved_base_ref=resolved_base_ref,
-        )
-    candidate_identity, producer_identity = _budget_receipt_identities(
-        repo_root,
-        resolved_base_ref=resolved_base_ref,
-        manifest=manifest,
-        producer_execution_inputs=producer_execution_inputs,
-    )
     expected_source_snapshot = manifest["family_identity"]["source_snapshot"]
     if receipt.get("head_source_snapshot") != expected_source_snapshot:
         raise PortableFamilyError(
             "budget receipt source snapshot does not match current family"
         )
+    candidate_identity = _budget_candidate_identity(
+        repo_root,
+        resolved_base_ref=resolved_base_ref,
+        manifest=manifest,
+    )
     if receipt.get("candidate_identity") != candidate_identity:
         raise PortableFamilyError(
             "budget receipt candidate identity does not match current candidate"
         )
-    if receipt.get("producer_identity") != producer_identity:
+    recorded_producer = receipt.get("producer_identity")
+    if require_current_producer_identity:
+        if producer_execution_inputs is None:
+            producer_execution_inputs = _budget_execution_inputs_from_receipt(
+                repo_root,
+                receipt,
+                resolved_base_ref=resolved_base_ref,
+            )
+        producer_identity = _budget_producer_identity(producer_execution_inputs)
+        if recorded_producer != producer_identity:
+            raise PortableFamilyError(
+                "budget receipt producer identity does not match executing aoa-kag procedure"
+            )
+    else:
+        _validate_recorded_budget_producer_identity(recorded_producer)
+
+
+def _validate_recorded_budget_producer_identity(identity: object) -> None:
+    """Validate a foreign owner's producer identity without rebinding it.
+
+    A downstream owner may intentionally execute a pinned historical aoa-kag
+    action.  Its receipt still has to be an internally coherent identity-bound
+    object, but it must not be compared with the newer producer currently
+    executing this coverage scan.  Current-owner admission remains strict via
+    ``require_current_producer_identity=True``.
+    """
+    if not isinstance(identity, Mapping):
+        raise PortableFamilyError("budget receipt producer identity is malformed")
+    required = {
+        "contract_version",
+        "owner",
+        "revision_binding",
+        "source_digest",
+        "procedure_manifest",
+        "files",
+        "action",
+        "execution_inputs",
+        "identity_digest",
+    }
+    if set(identity) != required:
         raise PortableFamilyError(
-            "budget receipt producer identity does not match executing aoa-kag procedure"
+            "foreign budget receipt producer identity shape is invalid"
+        )
+    contract_version = identity.get("contract_version")
+    revision_binding = identity.get("revision_binding")
+    valid_bindings = {
+        "aoa-kag:budget-receipt-producer-identity-v3":
+            "content-addressed-procedure-import-closure-runtime-inputs-and-descriptor-io-v1",
+        "aoa-kag:budget-receipt-producer-identity-v4":
+            "content-addressed-procedure-import-closure-portable-runtime-contract-and-descriptor-io-v1",
+    }
+    if (
+        not isinstance(contract_version, str)
+        or valid_bindings.get(contract_version) != revision_binding
+        or identity.get("owner") != "aoa-kag"
+    ):
+        raise PortableFamilyError(
+            "foreign budget receipt producer identity contract is invalid"
+        )
+    source_digest = identity.get("source_digest")
+    files = identity.get("files")
+    action = identity.get("action")
+    procedure_manifest = identity.get("procedure_manifest")
+    execution_inputs = identity.get("execution_inputs")
+    identity_digest = identity.get("identity_digest")
+    if (
+        not isinstance(source_digest, str)
+        or len(source_digest) != 64
+        or any(character not in HEX_DIGITS for character in source_digest)
+        or not isinstance(files, list)
+        or not files
+        or not isinstance(action, Mapping)
+        or not isinstance(procedure_manifest, Mapping)
+        or not isinstance(execution_inputs, Mapping)
+        or not isinstance(identity_digest, str)
+        or len(identity_digest) != 64
+        or any(character not in HEX_DIGITS for character in identity_digest)
+    ):
+        raise PortableFamilyError(
+            "foreign budget receipt producer identity fields are invalid"
+        )
+    normalized_files: list[dict[str, Any]] = []
+    for item in files:
+        if not isinstance(item, Mapping) or set(item) != {
+            "path",
+            "state",
+            "content_digest",
+            "bytes",
+            "git_blob",
+        }:
+            raise PortableFamilyError(
+                "foreign budget receipt producer files are invalid"
+            )
+        path = item.get("path")
+        content_digest = item.get("content_digest")
+        bytes_value = item.get("bytes")
+        git_blob = item.get("git_blob")
+        if (
+            not isinstance(path, str)
+            or not path
+            or item.get("state") != "present"
+            or not isinstance(content_digest, str)
+            or len(content_digest) != 64
+            or any(character not in HEX_DIGITS for character in content_digest)
+            or not isinstance(bytes_value, int)
+            or isinstance(bytes_value, bool)
+            or bytes_value < 0
+            or not isinstance(git_blob, str)
+            or len(git_blob) != 45
+            or not git_blob.startswith("sha1:")
+            or any(character not in HEX_DIGITS for character in git_blob[5:])
+        ):
+            raise PortableFamilyError(
+                "foreign budget receipt producer file entry is invalid"
+            )
+        normalized_files.append(dict(item))
+    if sha256_bytes(canonical_json_bytes(normalized_files)) != source_digest:
+        raise PortableFamilyError(
+            "foreign budget receipt producer source identity is inconsistent"
+        )
+    action_path = action.get("path")
+    if action_path != BUDGET_PRODUCER_ACTION_PATH.as_posix():
+        raise PortableFamilyError(
+            "foreign budget receipt producer action path is invalid"
+        )
+    matching_actions = [
+        item for item in normalized_files if item.get("path") == action_path
+    ]
+    if len(matching_actions) != 1 or matching_actions[0] != dict(action):
+        raise PortableFamilyError(
+            "foreign budget receipt producer action is not in its source identity"
+        )
+    identity_material = {
+        key: identity[key]
+        for key in (
+            "contract_version",
+            "owner",
+            "revision_binding",
+            "source_digest",
+            "procedure_manifest",
+            "action",
+            "execution_inputs",
+        )
+    }
+    if sha256_bytes(canonical_json_bytes(identity_material)) != identity_digest:
+        raise PortableFamilyError(
+            "foreign budget receipt producer identity digest is inconsistent"
         )
 
 
@@ -3180,6 +3360,8 @@ def _budget_open_receipt_leaf(
 def _budget_read_receipt(
     repo_root: Path,
     manifest: Mapping[str, Any],
+    *,
+    allow_legacy_external_receipt: bool = False,
 ) -> dict[str, Any]:
     relative = receipt_path_for(manifest)
     parent_descriptor, leaf = _budget_open_receipt_parent(
@@ -3203,7 +3385,10 @@ def _budget_read_receipt(
         ) from exc
     finally:
         os.close(parent_descriptor)
-    return _validate_budget_receipt_shape(payload)
+    return _validate_budget_receipt_shape(
+        payload,
+        allow_legacy_external_receipt=allow_legacy_external_receipt,
+    )
 
 
 def build_budget_receipt(
@@ -3432,14 +3617,28 @@ def _validate_tracked_size_receipt(
     manifest: Mapping[str, Any],
     *,
     producer_execution_inputs: Mapping[str, Any] | None = None,
+    require_current_producer_identity: bool = True,
+    allow_legacy_external_receipt: bool = False,
 ) -> None:
     try:
-        receipt = _budget_read_receipt(repo_root, manifest)
+        receipt = _budget_read_receipt(
+            repo_root,
+            manifest,
+            allow_legacy_external_receipt=allow_legacy_external_receipt,
+        )
     except PortableFamilyError as exc:
         raise PortableFamilyError(
             "portable tracked byte budget is exceeded without a matching "
             f"digest-bound receipt; {exc}"
         ) from exc
+    if receipt.get("schema_version") == LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION:
+        if not allow_legacy_external_receipt or require_current_producer_identity:
+            raise PortableFamilyError(
+                "legacy budget receipts are historical and require explicit "
+                "foreign-owner observation mode"
+            )
+        _validate_legacy_tracked_size_receipt(repo_root, manifest, receipt)
+        return
     resolved_base_ref = _resolve_receipt_base_ref(repo_root, receipt)
     summary = manifest["summary"]
     budgets = manifest["budgets"]
@@ -3464,6 +3663,7 @@ def _validate_tracked_size_receipt(
         receipt=receipt,
         resolved_base_ref=resolved_base_ref,
         producer_execution_inputs=producer_execution_inputs,
+        require_current_producer_identity=require_current_producer_identity,
     )
     if receipt.get("scope") not in {
         "tracked_size",
@@ -3471,6 +3671,50 @@ def _validate_tracked_size_receipt(
     }:
         raise PortableFamilyError(
             "tracked-size receipt scope does not authorize this exceedance"
+        )
+    _validate_budget_receipt_approval(
+        receipt,
+        changed_bytes=None,
+        tracked_bytes=summary["tracked_bytes"],
+    )
+
+
+def _validate_legacy_tracked_size_receipt(
+    repo_root: Path,
+    manifest: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+) -> None:
+    """Observe a retained external v1 receipt without authorizing current work.
+
+    Historical v1 receipts do not contain the identity-bound candidate and
+    producer fields required by current owner admission.  The explicit
+    external coverage path may still use one as a bounded observation when
+    its old digest, size, base, scope, and approval fields match the current
+    published family.  No current budget validator opts into this path.
+    """
+    resolved_base_ref = _resolve_receipt_base_ref(repo_root, receipt)
+    summary = manifest["summary"]
+    budgets = manifest["budgets"]
+    expected = {
+        "schema_version": LEGACY_BUDGET_RECEIPT_SCHEMA_VERSION,
+        "repo": manifest["repo"]["name"],
+        "base_ref": resolved_base_ref,
+        "head_family_digest": manifest["family_identity"]["content_digest"],
+        "tracked_bytes": summary["tracked_bytes"],
+        "tracked_bytes_max": budgets["tracked_bytes_max"],
+        "decision_ref": _budget_decision_ref(manifest),
+    }
+    for field, value in expected.items():
+        if receipt.get(field) != value:
+            raise PortableFamilyError(
+                f"legacy tracked-size receipt field {field} does not match family"
+            )
+    if receipt.get("scope") not in {
+        "tracked_size",
+        "generated_delta_and_tracked_size",
+    }:
+        raise PortableFamilyError(
+            "legacy tracked-size receipt scope does not authorize this exceedance"
         )
     _validate_budget_receipt_approval(
         receipt,
