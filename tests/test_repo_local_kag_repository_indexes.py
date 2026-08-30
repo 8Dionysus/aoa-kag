@@ -956,6 +956,47 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 ),
             )
 
+    def test_budget_producer_file_accepts_sha256_git_object_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "entry.py").write_text("VALUE = 'sha256'\n", encoding="utf-8")
+            initialized = subprocess.run(
+                ("git", "init", "-q", "--object-format=sha256", "-b", "main"),
+                cwd=root,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if initialized.returncode != 0:
+                self.skipTest("Git SHA-256 object repositories are unavailable")
+            subprocess.run(
+                ("git", "config", "user.name", "KAG Test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "entry.py"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "commit", "-qm", "sha256 source"),
+                cwd=root,
+                check=True,
+            )
+            entry = portable_family_module._budget_producer_file_entry(
+                root,
+                Path("entry.py"),
+            )
+            self.assertRegex(entry["git_blob"], r"^sha256:[0-9a-f]{64}$")
+            self.assertTrue(portable_family_module._budget_valid_git_blob(entry["git_blob"]))
+            self.assertIn(
+                "sha256:[0-9a-f]{64}",
+                load_json(BUDGET_RECEIPT_SCHEMA_FILE)["$defs"]["producerFile"]
+                ["properties"]["git_blob"]["pattern"],
+            )
+
     def test_budget_producer_manifest_binds_validator_facade_dynamic_target(self) -> None:
         manifest, _ = portable_family_module._budget_load_producer_manifest(REPO_ROOT)
         closure = portable_family_module._budget_import_closure(

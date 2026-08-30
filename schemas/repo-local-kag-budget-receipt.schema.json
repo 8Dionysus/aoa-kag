@@ -388,7 +388,7 @@
         },
         "git_blob": {
           "type": "string",
-          "pattern": "^sha1:[0-9a-f]{40}$"
+          "pattern": "^(?:sha1:[0-9a-f]{40}|sha256:[0-9a-f]{64})$"
         }
       }
     },

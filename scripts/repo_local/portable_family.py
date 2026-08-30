@@ -10,6 +10,7 @@ import os
 import stat
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -191,22 +192,61 @@ def _budget_procedure_root() -> Path:
     return root
 
 
-def _budget_git_blob(root: Path, relative: Path) -> str:
+@lru_cache(maxsize=32)
+def _budget_git_object_format(root: str) -> str:
     result = subprocess.run(
-        ("git", "hash-object", "--no-filters", "--", relative.as_posix()),
+        ("git", "rev-parse", "--show-object-format"),
         cwd=root,
         check=False,
         capture_output=True,
         text=True,
     )
+    object_format = result.stdout.strip()
+    if result.returncode != 0 or object_format not in {"sha1", "sha256"}:
+        raise PortableFamilyError(
+            "cannot resolve producer Git object format"
+        )
+    return object_format
+
+
+def _budget_git_blob(root: Path, relative: Path) -> str:
+    resolved_root = root.resolve()
+    object_format = _budget_git_object_format(str(resolved_root))
+    expected_length = {
+        "sha1": 40,
+        "sha256": 64,
+    }[object_format]
+    result = subprocess.run(
+        ("git", "hash-object", "--no-filters", "--", relative.as_posix()),
+        cwd=resolved_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
     blob = result.stdout.strip()
-    if result.returncode != 0 or len(blob) != 40 or any(
+    if result.returncode != 0 or len(blob) != expected_length or any(
         character not in HEX_DIGITS for character in blob
     ):
         raise PortableFamilyError(
             f"cannot resolve producer Git blob for {relative.as_posix()}"
         )
-    return f"sha1:{blob}"
+    return f"{object_format}:{blob}"
+
+
+def _budget_valid_git_blob(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    algorithm, separator, digest = value.partition(":")
+    expected_length = {
+        "sha1": 40,
+        "sha256": 64,
+    }.get(algorithm)
+    return (
+        separator == ":"
+        and expected_length is not None
+        and len(digest) == expected_length
+        and all(character in HEX_DIGITS for character in digest)
+    )
 
 
 def _budget_relative_path(value: object, *, label: str) -> Path:
@@ -3435,10 +3475,7 @@ def _validate_recorded_budget_producer_identity(identity: object) -> None:
             or not isinstance(bytes_value, int)
             or isinstance(bytes_value, bool)
             or bytes_value < 0
-            or not isinstance(git_blob, str)
-            or len(git_blob) != 45
-            or not git_blob.startswith("sha1:")
-            or any(character not in HEX_DIGITS for character in git_blob[5:])
+            or not _budget_valid_git_blob(git_blob)
         ):
             raise PortableFamilyError(
                 "foreign budget receipt producer file entry is invalid"
