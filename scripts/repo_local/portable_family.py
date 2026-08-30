@@ -1565,16 +1565,11 @@ def _budget_candidate_file_inventory(
         try:
             metadata = path.lstat()
         except FileNotFoundError:
-            inventory.append(
-                {
-                    "path": relative_text,
-                    "state": "missing",
-                    "kind": "missing",
-                    "mode": "missing",
-                    "bytes": 0,
-                    "content_digest": ZERO_DIGEST,
-                }
-            )
+            # A deleted tracked path can still be listed by ``git ls-files
+            # --cached`` until the deletion is committed.  Candidate identity
+            # is bound to the effective worktree, so the absent path must stay
+            # absent across the dirty-to-commit boundary instead of changing
+            # from a ``missing`` record to no record at all.
             continue
         index_entry = index_entries.get(relative)
         if index_entry is not None and index_entry.get("mode") == "160000":

@@ -1438,6 +1438,54 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             self.assertEqual(child_sha, gitlink["gitlink_commit"])
             self.assertEqual(0, gitlink["bytes"])
 
+    def test_candidate_identity_is_stable_across_unstaged_deletion_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            write_fixture(root)
+            subprocess.run(("git", "init", "-q", "-b", "main"), cwd=root, check=True)
+            subprocess.run(("git", "config", "user.name", "KAG Test"), cwd=root, check=True)
+            subprocess.run(
+                ("git", "config", "user.email", "kag@example.test"),
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(("git", "add", "."), cwd=root, check=True)
+            subprocess.run(("git", "commit", "-qm", "base"), cwd=root, check=True)
+
+            source_index = build_index(root)
+            family = build_repository_indexes(source_index, repo_root=root)
+            manifest, _shards = build_portable_family(source_index, family)
+            deleted = root / "docs" / "guides" / "usage.md"
+            deleted.unlink()
+            before_commit = portable_family_module._budget_candidate_identity(
+                root,
+                resolved_base_ref="HEAD",
+                manifest=manifest,
+                allow_dirty=True,
+            )
+
+            subprocess.run(("git", "commit", "-qam", "delete source"), cwd=root, check=True)
+            after_commit = portable_family_module._budget_candidate_identity(
+                root,
+                resolved_base_ref="HEAD",
+                manifest=manifest,
+                allow_dirty=True,
+            )
+
+            self.assertEqual(before_commit, after_commit)
+            self.assertNotIn(
+                "docs/guides/usage.md",
+                {
+                    item["path"]
+                    for item in portable_family_module._budget_candidate_file_inventory(
+                        root,
+                        excluded_path=Path(
+                            "kag/receipts/index_family_budget/" + "0" * 64 + ".json"
+                        ),
+                    )
+                },
+            )
+
     def test_local_default_branch_history_uses_first_parent_not_head(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
