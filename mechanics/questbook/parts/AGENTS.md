@@ -28,8 +28,8 @@ quest surface, schema, example, or validator being changed.
 
 ## Validation
 
-Run the target part validation route, then:
-
+The target part `VALIDATION.md` owns the focused route; review quest-source and
+root-compatibility boundaries afterward.
 
 ## Closeout
 

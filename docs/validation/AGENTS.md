@@ -38,7 +38,8 @@ validator inventory, script inventory, lane posture, and failure routes for
 Select the matching on-demand route in root `VALIDATION.md`; the manifest
 remains command authority.
 
-For release-visible lane changes:
+For release-visible lane changes, select the release route from root
+`VALIDATION.md` and preserve the manifest-owned sequence.
 
 
 ## Closeout

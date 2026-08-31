@@ -31,8 +31,8 @@ manifest, or owner surface named by the route.
 
 ## Validation
 
-Run the target part validation route, then:
-
+The target part `VALIDATION.md` owns the focused route; review handoff and
+generated/read-model boundaries afterward.
 
 ## Closeout
 

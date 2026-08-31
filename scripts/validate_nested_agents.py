@@ -170,6 +170,16 @@ def validate(repo_root: Path) -> list[str]:
     inline_command = re.compile(
         r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff|show|log|check)\b|gh\s+|uv\s+|bash\s+|jq\s+)[^`]+`"
     )
+    orphan_extraction_leadin = re.compile(
+        r"(?im)^\s*(?:"
+        r"verify with(?: the [^:\n]+)?|"
+        r"run [^:\n]+ then|"
+        r"for this home|"
+        r"for source-fast coverage|"
+        r"inspect the owner evidence first|"
+        r"use the test runner or lane entrypoint"
+        r"):\s*$\n\s*(?=^#{1,6}\s|\Z)"
+    )
     for path in sorted(repo_root.rglob("AGENTS.md")):
         relative = path.relative_to(repo_root).as_posix()
         text = path.read_text(encoding="utf-8")
@@ -179,12 +189,21 @@ def validate(repo_root: Path) -> list[str]:
             issues.append(f"{relative}: runnable command line is not allowed in an active AGENTS card")
         if inline_command.search(text):
             issues.append(f"{relative}: inline runnable command is not allowed in an active AGENTS card")
+        if orphan_extraction_leadin.search(text):
+            issues.append(f"{relative}: orphan extraction lead-in is not allowed in an active AGENTS card")
         for section in re.findall(
             r"(?ims)^##+\s+(?:Start here|required reading order)\s*$.*?(?=^##+\s+|\Z)",
             text,
         ):
             if "README.md" in section:
                 issues.append(f"{relative}: unconditional README inventory is not allowed")
+        for section in re.finditer(
+            r"(?ims)^##+\s+(?:Validation|Verify|Checks?)\s*$.*?(?=^##+\s+|\Z)",
+            text,
+        ):
+            body = re.sub(r"(?m)^##+\s+[^\n]*$", "", section.group(0), count=1).strip()
+            if not body:
+                issues.append(f"{relative}: procedural validation section must not be empty")
 
     return issues
 

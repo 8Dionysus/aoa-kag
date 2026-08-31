@@ -27,8 +27,8 @@ Read root `AGENTS.md`, `mechanics/AGENTS.md`,
 
 ## Validation
 
-Run the target part test named in `VALIDATION.md`, then:
-
+The target part `VALIDATION.md` owns the focused test route; review degraded-mode
+compatibility and owner boundaries afterward.
 
 ## Closeout
 

@@ -33,8 +33,8 @@ bridge route.
 
 ## Validation
 
-Run the target part validation route, then:
-
+The target part `VALIDATION.md` owns the focused route; review source-owner and
+generated/read-model boundaries afterward.
 
 ## Closeout
 

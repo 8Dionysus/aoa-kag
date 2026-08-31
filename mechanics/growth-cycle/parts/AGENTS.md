@@ -31,8 +31,8 @@ changed.
 
 ## Validation
 
-Run the target part validation route, then:
-
+The target part `VALIDATION.md` owns the focused route; review generated
+compatibility and growth stop-rules afterward.
 
 ## Closeout
 

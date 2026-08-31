@@ -44,6 +44,25 @@ named claim before selecting a broader lane:
 - release support: the release lane and the exact artifact/trust checks named
   by `docs/RELEASING.md`.
 
+## Focused command owners
+
+The following procedures were formerly copied into route cards but are not
+manifest lane sequences. Their exact owners remain explicit here:
+
+- decision-index writes: `docs/decisions/README.md` owns the canonical
+  `python scripts/generate_decision_indexes.py` builder;
+- full compatibility validation: `scripts/validate_kag.py` owns the bare
+  `python scripts/validate_kag.py` compatibility route;
+- focused unit selections: `docs/testing/test_inventory.json` owns each
+  focused target and `scripts/run_tests.py` owns the repository runner;
+- local stats coverage inspection: the generated coverage surface owns the
+  read-only query `jq '.coverage_summary | {owner_count, passed, migration_needed}' generated/repo_local_kag_coverage.min.json`;
+- source-owned evaluation validation: the `aoa-evals` owner route remains the
+  stronger owner of `python ../aoa-evals/scripts/validate_local_eval_port.py --target-root .`.
+
+Part-specific validator commands remain in the matching part `VALIDATION.md`
+when they are not members of a manifest lane.
+
 The 28 active part-local `VALIDATION.md` files are the exact procedure homes
 for their respective builders, validators, fixtures, generated parity, and
 fail-closed warnings. Do not duplicate a manifest-owned lane sequence there.

@@ -63,11 +63,9 @@ through `scripts/query_repo_local_kag.py`.
 
 ## Validation
 
-For this home:
-
-
-For source-fast coverage:
-
+For this home, select the local KAG validator route from root `VALIDATION.md`.
+For source-fast coverage, select the source-fast lane there when a local source
+or route contract changes.
 
 For provider-ready sibling checkouts, run each touched owner route after the
 `aoa-kag` validator names the provider packet clean.

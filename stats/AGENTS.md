@@ -29,10 +29,8 @@ statistical grammar and cross-owner composition remain owned by `aoa-stats`.
 
 ## Validation
 
-Inspect the owner evidence first:
-
-
-Select the central owner validation route through root `VALIDATION.md`.
+Inspect the owner evidence before selecting the central owner validation route
+through root `VALIDATION.md`.
 ## Closeout
 
 Report the question or contract changed, the owner evidence inspected, whether

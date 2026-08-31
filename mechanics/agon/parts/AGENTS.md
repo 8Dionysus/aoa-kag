@@ -31,8 +31,8 @@ target part `CONTRACT.md`, and `VALIDATION.md`.
 
 ## Validation
 
-Run the target part validator and focused test named in `VALIDATION.md`, then:
-
+The target part `VALIDATION.md` owns the focused validator and test route;
+review generated compatibility and owner boundaries afterward.
 
 ## Closeout
 

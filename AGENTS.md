@@ -18,12 +18,7 @@ It does not replace `README.md`, `CHARTER.md`, `DESIGN.md`,
 `docs/SOURCE_POLICY.md`, local `AGENTS.md` cards, manifests, schemas,
 builders, validators, tests, or generated-source owners.
 
-## Select task-relevant sources
-
-Read this root card first. Then read the nearest nested `AGENTS.md` for every
-touched path, followed by the route-mode surface and the nearest source doc,
-manifest, schema, builder, validator, test, generated-source owner, decision,
-or source-owner surface that owns the local claim.
+## Owner-specific source routes
 
 For changes to KAG system form, source versus derived authority, federation
 posture, local `/kag` protocol posture, or root surface roles, also read
@@ -197,7 +192,7 @@ Root `AGENTS.md` owns the repository-wide branch, PR, CI, and merge route.
 `.github/AGENTS.md` owns the GitHub-native files that support it.
 
 When the operator explicitly authorizes landing, use the ordinary branch,
-PR, CI, merge, and post-landing route in `docs/RELEASING.md`:
+PR, CI, merge, and post-landing route in `docs/RELEASING.md`.
 
 That surface preserves source-fast, owner-family, conditional full-audit,
 stable required-summary, preparation-versus-proof, and fail-closed status

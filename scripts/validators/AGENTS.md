@@ -37,5 +37,5 @@ map. Use `config/validation_lanes.json` for lane commands.
 
 ## Validation
 
-
-For lane-visible changes:
+For lane-visible changes, select the focused validator route from root
+`VALIDATION.md` and preserve the manifest-owned lane sequence.

@@ -30,8 +30,8 @@ card, and the target part `CONTRACT.md`, and `VALIDATION.md`.
 
 ## Validation
 
-Run the target part test named in `VALIDATION.md`, then:
-
+The target part `VALIDATION.md` owns the focused test route; review part-local
+contracts and owner boundaries afterward.
 
 ## Closeout
 

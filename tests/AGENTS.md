@@ -20,7 +20,7 @@ unverified pack/blob additions, trusted import code, and any workflow shape
 that lets an owner-family check replace source-fast.
 
 Full validation command sequences live in `config/validation_lanes.json`.
-Use the test runner or lane entrypoint:
+Use the test runner or lane entrypoint selected from root `VALIDATION.md`.
 
 ## Validation
 
