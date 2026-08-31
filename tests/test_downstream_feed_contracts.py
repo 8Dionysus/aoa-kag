@@ -395,7 +395,7 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
         self.assertIn("[KAG_MODEL](docs/KAG_MODEL.md)", readme)
         self.assertIn("[docs](docs/README.md)", readme)
         self.assertIn("docs/validation/COMMAND_AUTHORITY.md", readme)
-        self.assertIn("nearest `AGENTS.md`", readme)
+        self.assertIn("nearest nested `AGENTS.md`", readme)
         self.assertLess(readme.index("## What This Repository Does"), readme.index("## KAG Check"))
         self.assertLess(readme.index("## KAG Check"), readme.index("## Current Contour"))
         self.assertNotIn("## Route by need", readme)
@@ -418,10 +418,12 @@ class KagDownstreamFeedContractsTests(unittest.TestCase):
             "python scripts/release_check.py",
             "git status -sb",
         ):
-            self.assertIn(command, agents)
+            self.assertNotIn(command, agents)
             self.assertNotIn(command, contributing)
+        self.assertIn("VALIDATION.md", agents)
+        self.assertIn("config/validation_lanes.json", agents)
         self.assertIn("docs/validation/COMMAND_AUTHORITY.md", contributing)
-        self.assertIn("nearest `AGENTS.md`", contributing)
+        self.assertIn("nearest owner card", contributing)
 
     def test_consumer_guide_verification_posture_mentions_read_only_and_release_prep(self) -> None:
         guide = (REPO_ROOT / "docs" / "CONSUMER_GUIDE.md").read_text(encoding="utf-8")
