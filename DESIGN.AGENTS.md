@@ -69,12 +69,13 @@ The agent-facing layer has several different surface classes.
 
 ### Root card
 
-The root `AGENTS.md` owns repository identity, owner boundaries, reading order,
-route modes, broad validation posture, decision review, GitHub landing route,
-and closeout expectations.
+The root `AGENTS.md` owns repository identity, owner boundaries,
+task-conditional source selection, route modes, broad validation posture,
+decision review, GitHub landing route, and closeout expectations.
 
 It should route to local truth. It should not contain every KAG pack, manifest,
-schema, script, or generated-surface rule.
+schema, script, or generated-surface rule, runnable command blocks, or an
+unconditional README reading inventory.
 
 ### Local cards
 
@@ -158,7 +159,7 @@ generated coverage evidence, and below the shared grammar owned by
 
 A safe agent move in `aoa-kag` follows this route before content mutation:
 
-1. Read the root card.
+1. Read the root card and select only the task-relevant route.
 2. Read `DESIGN.md` when repository shape, source authority, federation
    posture, or KAG system form changes.
 3. Read this file when agent-facing route law, local cards, reading order,
@@ -185,7 +186,7 @@ Agent guidance in `aoa-kag` may:
 - route work;
 - name local risks;
 - name owner surfaces;
-- require reading order;
+- require task-conditional source selection;
 - require validation;
 - set closeout shape;
 - prevent unsafe source-authority claims.
@@ -254,6 +255,11 @@ form:
 `Validation` turns action into checkable work.
 `Closeout` preserves handoff memory.
 
+The minimum route is a task-conditional source selection, not a package-wide
+README inventory. Exact validation procedure is on demand in root
+`VALIDATION.md` and machine-owned `config/validation_lanes.json`; cards name
+the lane or validator role without copying executable steps.
+
 Optional sections may be added when they sharpen the route: `Purpose`, `Owner
 lane`, `Route modes`, `Source surfaces`, `Generated surfaces`, `Decision
 review`, `Post-change route review`, `Historical reference`, or local
@@ -276,8 +282,9 @@ The target steady state is a source-routed mesh, not background churn.
 
 ## Validation Direction
 
-Executable commands live in root `AGENTS.md` and nearest local cards. This
-design surface names what validation should prove:
+Executable commands remain in `config/validation_lanes.json`; root
+`VALIDATION.md` and nearest local `VALIDATION.md` surfaces expose them on
+demand. This design surface names what validation should prove:
 
 - source-owned authority remains visible;
 - local cards route to the nearest owner surface;

@@ -13,7 +13,7 @@ refs.
 ## Read before editing
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`, `mechanics/recurrence/AGENTS.md`,
-`mechanics/recurrence/PARTS.md`, the target part `README.md`, `CONTRACT.md`,
+`mechanics/recurrence/PARTS.md`, the target part `CONTRACT.md`,
 and `VALIDATION.md`, then read the regrounding, recurrence, generated, schema,
 example, manifest, or owner surface named by the route.
 
@@ -33,10 +33,6 @@ example, manifest, or owner surface named by the route.
 
 Run the target part validation route, then:
 
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
 
 ## Closeout
 

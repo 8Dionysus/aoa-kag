@@ -68,8 +68,8 @@ A strong pull request in this repository should explain:
 
 ## Before opening a PR
 
-Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` before
-opening a PR.
+Use root `VALIDATION.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the
+nearest owner card before opening a PR.
 
 If your change materially affects KAG route rationale, owner-boundary posture,
 source refs, generated-pack policy, maturity, quarantine, or regrounding, add or

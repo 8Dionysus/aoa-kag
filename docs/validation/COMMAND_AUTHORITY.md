@@ -3,6 +3,9 @@
 `aoa-kag` stores validation lane commands in
 `config/validation_lanes.json`.
 
+The on-demand human route map is root [`VALIDATION.md`](../../VALIDATION.md);
+this document remains the command-authority and topology reference.
+
 ## Surfaces
 
 | Surface | Function |

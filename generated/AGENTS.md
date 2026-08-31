@@ -6,10 +6,10 @@
 ## Core rule
 Do not hand-edit files in `generated/`.
 
-Regenerate root KAG packs with `python scripts/generate_kag.py`.
+Regenerate root KAG packs with the canonical KAG generation builder.
 Regenerate repo-local KAG coverage with
-`python scripts/generate_repo_local_kag_coverage.py`. Validate generated
-surfaces with `python scripts/validate_kag.py`.
+the repository-local coverage builder. Validate generated
+surfaces with the KAG validator.
 
 ## Editing posture
 - Expect paired `.json` and `.min.json` surfaces when a pack publishes both full and compact forms.
@@ -28,3 +28,7 @@ Do not:
 - use a generated file as a substitute for source-owned meaning
 - strip provenance, review posture, or activation gates just to simplify a payload
 - introduce framework-specific lock-in here unless the repository canon explicitly chooses it
+
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

@@ -43,6 +43,8 @@ federation as a whole.
   generated decision lookup indexes.
 - Read [validation command authority](validation/COMMAND_AUTHORITY.md) for
   active validation lanes, command storage, and script topology.
+- Read [root validation routes](../VALIDATION.md) for the on-demand human map
+  of lane entrypoints and focused checks.
 - Read [CI evidence DAG](validation/CI_EVIDENCE_DAG.md) for the validation cost
   model, fixed-point SCC, typed telemetry, and optimization experiment
   protocol.

@@ -15,7 +15,7 @@ owner.
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`, `mechanics/agon/AGENTS.md`,
 `mechanics/agon/PARTS.md`, `mechanics/agon/PROVENANCE.md`, this card, and the
-target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`.
+target part `CONTRACT.md`, and `VALIDATION.md`.
 
 ## Boundaries
 
@@ -33,10 +33,6 @@ target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`.
 
 Run the target part validator and focused test named in `VALIDATION.md`, then:
 
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
 
 ## Closeout
 

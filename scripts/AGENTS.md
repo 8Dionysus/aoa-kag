@@ -21,12 +21,6 @@ Validator changes should catch provenance loss, source-ref drift, schema mismatc
 Full validation command sequences live in `config/validation_lanes.json`.
 Use lane entrypoints instead of copying release sequences:
 
-```bash
-python scripts/ci_gate.py --mode source-fast
-python scripts/ci_gate.py --mode generated
-python scripts/ci_release_check.py
-python scripts/validate_abyss_machine_kag_registry_bundle.py
-```
 
 `ci_release_check.py` is CI-only: it accepts the source-fast omission only
 through an exact same-run receipt and otherwise falls back to the complete
@@ -42,3 +36,7 @@ always-required source-fast and self owner-family proofs. Keep its owner-local
 surface an explicit allowlist; invalid, empty, unavailable, or unknown paths
 must route to full audit. Its required-summary mode must distinguish a verified
 audit from one that was correctly not required.
+
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

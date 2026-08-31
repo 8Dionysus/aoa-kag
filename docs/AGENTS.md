@@ -13,6 +13,6 @@ When docs change a bridge or consumer path, check manifests, generated projectio
 Full validation command sequences live in `config/validation_lanes.json`.
 Verify with the nearest lane:
 
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

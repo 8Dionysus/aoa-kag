@@ -13,7 +13,7 @@ derived substrate formation.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the manifest, source policy, generated output, or
 source owner being lifted.
 
@@ -26,7 +26,7 @@ source owner being lifted.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If lift packs move, run the relevant KAG generator, validator, focused tests,
 and release gate.
 

@@ -13,7 +13,7 @@ owner, proof, memory, or routing refs.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and `PROVENANCE.md`.
+this package `PARTS.md`, and `PROVENANCE.md`.
 Then read the current recurrence, regrounding, or generated surface being
 changed.
 
@@ -29,11 +29,11 @@ changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If recurrence payloads move, run the relevant KAG generator, validator, focused
 tests, and release gate.
 For the active return-regrounding part, run
-`python mechanics/recurrence/parts/return-regrounding/scripts/validate_return_regrounding.py`.
+the part-local validator.
 
 ## Closeout
 

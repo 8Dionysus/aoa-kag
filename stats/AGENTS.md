@@ -13,7 +13,7 @@ statistical grammar and cross-owner composition remain owned by `aoa-stats`.
 ## Read before editing
 
 1. Root `AGENTS.md` and `DESIGN.md`.
-2. `stats/README.md` and `stats/port.manifest.json`.
+2. `stats/port.manifest.json`.
 3. The referenced source or generated KAG evidence.
 4. The central measurement and packet contracts under `aoa-stats/stats/`.
 
@@ -31,16 +31,8 @@ statistical grammar and cross-owner composition remain owned by `aoa-stats`.
 
 Inspect the owner evidence first:
 
-```bash
-jq '.coverage_summary | {owner_count, passed, migration_needed}' generated/repo_local_kag_coverage.min.json
-```
 
-Then validate the port and its referenced packets with the central owner:
-
-```bash
-python scripts/validate_local_stats_port.py
-```
-
+Select the central owner validation route through root `VALIDATION.md`.
 ## Closeout
 
 Report the question or contract changed, the owner evidence inspected, whether

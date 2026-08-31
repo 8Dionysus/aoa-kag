@@ -18,7 +18,7 @@ It does not replace `README.md`, `CHARTER.md`, `DESIGN.md`,
 `docs/SOURCE_POLICY.md`, local `AGENTS.md` cards, manifests, schemas,
 builders, validators, tests, or generated-source owners.
 
-## Read before editing
+## Select task-relevant sources
 
 Read this root card first. Then read the nearest nested `AGENTS.md` for every
 touched path, followed by the route-mode surface and the nearest source doc,
@@ -34,16 +34,18 @@ validation posture, closeout expectations, Codex Spark lane placement, or
 agent-facing guidance shape, also read `DESIGN.AGENTS.md`.
 
 For changes to repeatable KAG operation topology or future mechanic packages,
-also read `mechanics/README.md` and `mechanics/AGENTS.md`.
+also read `mechanics/AGENTS.md`.
 
 For changes to the `kag/` source-home preflight, repo-local `/kag` protocol
 shape, local subtree rollout posture, portable graph/index record classes, or
-sibling `/kag` stop-lines, also read `kag/AGENTS.md`, `kag/README.md`,
+sibling `/kag` stop-lines, also read `kag/AGENTS.md`,
 `kag/source_home.manifest.json`, and `kag/LOCAL_SUBTREE_PROTOCOL.md`.
+Consult `kag/README.md` only when its human source-home explanation is needed
+for the named task.
 
 For changes to the repository-owned callable KAG procedure, its capability
 contract, or its OS user exposure, also read `skills/AGENTS.md`,
-`skills/README.md`, `skills/port.manifest.json`, and the selected bundle
+`skills/port.manifest.json`, and the selected bundle
 surface.
 
 For changes to repository authority, owner boundaries, root posture, or claims
@@ -68,31 +70,10 @@ knowledge-architecture content in `Tree-of-Sophia`.
 
 ## Validation
 
-Use the nearest nested `AGENTS.md` for focused owner checks. Full lane command
-sequences live in `config/validation_lanes.json`; do not duplicate them in
-route cards.
-
-For the default read-only integrity pass, run:
-
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
-
-If manifests, packs, or generated KAG surfaces change, regenerate before
-rerunning the same pass:
-
-```bash
-python scripts/ci_gate.py --mode generated
-```
-
-For release-prep parity, also run:
-
-```bash
-python scripts/release_check.py
-git status -sb
-```
-
-Do not claim checks you did not run.
+Use the nearest nested card to select the focused owner check. Exact
+procedures and command arguments are on demand in root `VALIDATION.md` and
+the machine-authoritative `config/validation_lanes.json`; route cards do not
+copy command sequences. Report only checks actually run.
 
 ## Closeout
 
@@ -132,20 +113,11 @@ It does not own:
 - source-replacing world-model sprawl;
 - live graph, vector, embedding, index, runtime, or cache state.
 
-## Start here
+## Task-conditional reading
 
-For first reading or outside orientation, use this route:
-
-1. `README.md`
-2. `CHARTER.md`
-3. `DESIGN.md`
-4. `kag/README.md`
-5. `docs/KAG_MODEL.md`
-6. `docs/BOUNDARIES.md`
-7. `docs/SOURCE_POLICY.md`
-8. `ROADMAP.md`
-
-For agent editing, use this route:
+Use `README.md` only when the named task needs public or human orientation.
+For agent editing, select only the route and owner surfaces relevant to the
+touched claim:
 
 1. this `AGENTS.md`
 2. nearest nested `AGENTS.md` for every touched path
@@ -224,28 +196,13 @@ sibling-owner truth.
 Root `AGENTS.md` owns the repository-wide branch, PR, CI, and merge route.
 `.github/AGENTS.md` owns the GitHub-native files that support it.
 
-When the user asks to commit, push, and merge in this repository, use this
-route:
+When the operator explicitly authorizes landing, use the ordinary branch,
+PR, CI, merge, and post-landing route in `docs/RELEASING.md`:
 
-1. Start from a branch based on the current `origin/main`. If the worktree is
-   already dirty, inventory it first and carry forward only the intended diff.
-2. Commit the intended change with a message that names the changed surface.
-3. Push the branch and open a pull request that states changed surfaces,
-   validation run, skipped checks, and remaining risk.
-4. Wait for GitHub `Repo Validation` and any required GitHub checks.
-   `Repo Validation` always requires source-fast and self owner-family proof;
-   its fail-closed impact route additionally requires the full OS-wide audit
-   for high-impact, mixed, unknown, or unprovable changes. A summary may report
-   that the additional audit was correctly not required, but must never report
-   a skipped required proof as success. If a check fails, fix the branch and
-   wait for the new result.
-5. Merge through GitHub after green validation. Use squash unless repository
-   settings report a different required method; report the method that landed.
-6. Return to `main`, fast-forward from `origin/main`, and confirm the worktree
-   is clean before closeout.
-
-If GitHub status or merge permissions cannot be observed, stop the landing
-route and report the exact blocker instead of guessing.
+That surface preserves source-fast, owner-family, conditional full-audit,
+stable required-summary, preparation-versus-proof, and fail-closed status
+semantics. If GitHub status or merge authority cannot be observed, stop and
+return the exact blocker; never infer a green or landed state.
 
 ## Post-change route review
 

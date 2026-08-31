@@ -23,7 +23,7 @@ For Codex Spark work, read `.agents/spark/AGENTS.md`; use
 `.agents/spark/SWARM.md` only when a Spark swarm is explicitly requested.
 
 For the repository-owned callable KAG procedure, leave this lane and read
-`skills/AGENTS.md`, `skills/README.md`, and `skills/port.manifest.json`.
+`skills/AGENTS.md` and `skills/port.manifest.json`.
 
 ## Boundaries
 
@@ -39,15 +39,9 @@ For the repository-owned callable KAG procedure, leave this lane and read
 
 ## Validation
 
-For agent-lane route changes, run:
-
-```bash
-python scripts/validate_nested_agents.py
-python scripts/validate_semantic_agents.py
-```
-
-Use the touched owner surface's validation when an agent lane points at a
-source, generated, mechanic, quest, or release surface.
+For agent-lane route changes, select the matching on-demand route in root
+`VALIDATION.md`. Use the touched owner surface's validation when an agent lane
+points at a source, generated, mechanic, quest, or release surface.
 
 ## Closeout
 

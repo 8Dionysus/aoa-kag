@@ -15,7 +15,7 @@ the operation owner.
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`, `mechanics/experience/AGENTS.md`,
 `mechanics/experience/PARTS.md`, `mechanics/experience/PROVENANCE.md`, this
-card, and the target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`.
+card, and the target part `CONTRACT.md`, and `VALIDATION.md`.
 
 ## Boundaries
 
@@ -32,10 +32,6 @@ card, and the target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`.
 
 Run the target part test named in `VALIDATION.md`, then:
 
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
 
 ## Closeout
 

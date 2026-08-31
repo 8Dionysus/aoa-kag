@@ -16,7 +16,6 @@ owner-family proof remain always required; new or uncertain surfaces default
 to the full audit instead of widening the owner-local allowlist implicitly.
 Verify with the generated lane, then the source-fast lane:
 
-```bash
-python scripts/ci_gate.py --mode generated
-python scripts/ci_gate.py --mode source-fast
-```
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

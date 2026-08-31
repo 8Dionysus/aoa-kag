@@ -1,6 +1,6 @@
 # Surface Growth Stop Rule Validation
 
-Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
+Use root `VALIDATION.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the nearest `AGENTS.md` for task-conditional validation routes.
 
 The repo-wide generated lane still checks full maturity-pack parity. This part owns
 the focused growth-cycle operation contract around owner waits, blocked growth,

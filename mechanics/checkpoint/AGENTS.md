@@ -12,7 +12,7 @@ that preserve intermediate state without becoming owner truth.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the handoff, return, or checkpoint-adjacent surface
 being changed.
 
@@ -27,10 +27,10 @@ being changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If handoff packs move, run the relevant KAG validator/tests and release gate.
 For the active reasoning handoff part, run
-`python mechanics/checkpoint/parts/reasoning-handoff/scripts/validate_reasoning_handoff.py`.
+the part-local validator.
 
 ## Closeout
 

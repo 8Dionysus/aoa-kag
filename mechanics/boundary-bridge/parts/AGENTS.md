@@ -15,7 +15,7 @@ counterpart edges, federation entries, and derived projections.
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`,
 `mechanics/boundary-bridge/AGENTS.md`, `mechanics/boundary-bridge/PARTS.md`,
-the target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`, then read the
+the target part `CONTRACT.md`, and `VALIDATION.md`, then read the
 source, manifest, generated, schema, example, or owner surface named by the
 bridge route.
 
@@ -35,10 +35,6 @@ bridge route.
 
 Run the target part validation route, then:
 
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
 
 ## Closeout
 

@@ -22,7 +22,6 @@ that lets an owner-family check replace source-fast.
 Full validation command sequences live in `config/validation_lanes.json`.
 Use the test runner or lane entrypoint:
 
-```bash
-python scripts/run_tests.py
-python scripts/ci_gate.py --mode source-fast
-```
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

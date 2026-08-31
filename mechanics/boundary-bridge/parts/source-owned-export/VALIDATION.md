@@ -1,7 +1,7 @@
 # Source-Owned Export Validation
 
-Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for
-focused and repo-wide executable validation commands.
+Use root `VALIDATION.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the nearest `AGENTS.md` for
+task-conditional focused and repo-wide validation routes.
 
 The repo-wide generated lane still checks full source-owned export parity while
 writing this part's local generated registry outputs. This part owns the focused

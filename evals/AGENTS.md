@@ -15,7 +15,7 @@ reports, and source refs.
 
 ## Read before editing
 
-Read the root `AGENTS.md`, then this card, `README.md`, `PORT.yaml`, and the
+Read the root `AGENTS.md`, then this card, `PORT.yaml`, and the
 nearest intake, suites, or reports surface you will touch. For central proof
 adoption rules, read the local eval-port standard in `aoa-evals`.
 
@@ -30,9 +30,7 @@ adoption rules, read the local eval-port standard in `aoa-evals`.
 
 ## Validation
 
-```bash
-python ../aoa-evals/scripts/validate_local_eval_port.py --target-root .
-```
+Select the owning eval-port check through root `VALIDATION.md`.
 
 ## Closeout
 

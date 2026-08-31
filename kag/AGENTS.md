@@ -65,15 +65,9 @@ through `scripts/query_repo_local_kag.py`.
 
 For this home:
 
-```bash
-python -m unittest tests.test_kag_home tests.test_validate_kag
-```
 
 For source-fast coverage:
 
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
 
 For provider-ready sibling checkouts, run each touched owner route after the
 `aoa-kag` validator names the provider packet clean.

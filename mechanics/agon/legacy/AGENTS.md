@@ -12,8 +12,9 @@ edits.
 
 ## Read before editing
 
-Read `../README.md`, `../PARTS.md`, `../PROVENANCE.md`, this `README.md`,
-`INDEX.md`, and the active part route named by the legacy entry.
+Read `../PARTS.md`, `../PROVENANCE.md`, `INDEX.md`, and the active part route
+named by the legacy entry. Consult a README only when the named task needs
+human or public context.
 
 ## Boundaries
 
@@ -26,11 +27,7 @@ Read `../README.md`, `../PARTS.md`, `../PROVENANCE.md`, this `README.md`,
 
 ## Validation
 
-Run:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-```
+Select the nearest active part validation route through root `VALIDATION.md`.
 
 ## Closeout
 
