@@ -57,6 +57,39 @@ class NestedAgentsDocsTests(unittest.TestCase):
                 )
             )
 
+    def test_dependency_agent_cards_are_outside_owner_scope(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            self.materialize_valid_agents(temp_root)
+            dependency_card = temp_root / ".deps" / "foreign-owner" / "AGENTS.md"
+            dependency_card.parent.mkdir(parents=True)
+            dependency_card.write_text(
+                "# AGENTS.md\n\n```bash\npython foreign.py\n```\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual([], validate_nested_agents.validate(temp_root))
+
+    def test_authored_dot_agents_card_remains_in_scope(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            self.materialize_valid_agents(temp_root)
+            authored_card = temp_root / ".agents" / "AGENTS.md"
+            authored_card.write_text(
+                authored_card.read_text(encoding="utf-8")
+                + "\n```bash\npython local.py\n```\n",
+                encoding="utf-8",
+            )
+
+            issues = validate_nested_agents.validate(temp_root)
+
+            self.assertTrue(
+                any(
+                    issue.startswith(".agents/AGENTS.md: fenced procedure")
+                    for issue in issues
+                )
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

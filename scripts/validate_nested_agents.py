@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 import re
@@ -148,6 +149,31 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
     ),
 )
 
+IGNORED_DIRS: frozenset[str] = frozenset(
+    {
+        ".deps",
+        ".git",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".venv",
+        "__pycache__",
+    }
+)
+
+
+def _is_ignored(path: Path, repo_root: Path) -> bool:
+    try:
+        relative_parts = path.relative_to(repo_root).parts
+    except ValueError:
+        return False
+    return any(part in IGNORED_DIRS for part in relative_parts)
+
+
+def _iter_owned_agents(repo_root: Path) -> Iterator[Path]:
+    for path in repo_root.rglob("AGENTS.md"):
+        if not _is_ignored(path, repo_root):
+            yield path
+
 
 def validate(repo_root: Path) -> list[str]:
     issues: list[str] = []
@@ -180,7 +206,7 @@ def validate(repo_root: Path) -> list[str]:
         r"use the test runner or lane entrypoint"
         r"):\s*$\n\s*(?=^#{1,6}\s|\Z)"
     )
-    for path in sorted(repo_root.rglob("AGENTS.md")):
+    for path in sorted(_iter_owned_agents(repo_root)):
         relative = path.relative_to(repo_root).as_posix()
         text = path.read_text(encoding="utf-8")
         if "```" in text:
