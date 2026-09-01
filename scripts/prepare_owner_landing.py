@@ -34,6 +34,9 @@ SCHEMA_VERSION = "aoa-kag-owner-prepare-landing-receipt-v1"
 DEFAULT_OUTPUT = "kag/indexes/source_surface_index.json"
 OWNER_OUTPUT_PATHS = (
     "kag/indexes/index_family.manifest.json",
+    "kag/indexes/corpus.manifest.json",
+    "kag/indexes/hot_profile.json",
+    "kag/indexes/artifact_locators.json",
     "kag/indexes/shards",
     "kag/receipts/index_family_budget",
 )
@@ -220,6 +223,10 @@ def prepare_owner_landing(
             history_ref=history_ref,
             event_history_ref=event_history_ref,
             budget_base_ref=budget_base_ref,
+            # Owner-neutral preparation does not build aoa-kag self coverage.
+            # Bind the expanded shared ABI explicitly without creating a new
+            # owner-family input or exposing a misleading CLI option.
+            coverage_seed_ref=history_ref,
         )
         if temp_root is not None:
             temp_root.mkdir(parents=True, exist_ok=True)

@@ -137,8 +137,40 @@ class PrepareOwnerLandingTests(unittest.TestCase):
             )
             self.assertFalse((repo / "kag" / "receipts" / "index_family_budget").exists())
 
+    def test_stage_outputs_includes_present_tiered_control_files(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = self.make_repo(Path(raw))
+            controls = (
+                "kag/indexes/index_family.manifest.json",
+                "kag/indexes/corpus.manifest.json",
+                "kag/indexes/hot_profile.json",
+                "kag/indexes/artifact_locators.json",
+            )
+            for relative in controls:
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}\n", encoding="utf-8")
+            shard = repo / "kag" / "indexes" / "shards" / "records.jsonl"
+            shard.parent.mkdir(parents=True, exist_ok=True)
+            shard.write_text("{}\n", encoding="utf-8")
+
+            PREPARE.stage_owner_outputs(repo)
+
+            staged = set(
+                git(repo, "diff", "--cached", "--name-only")
+                .decode()
+                .splitlines()
+            )
+            self.assertTrue(set(controls).issubset(staged))
+            self.assertIn("kag/indexes/shards/records.jsonl", staged)
+
     def test_generator_command_preserves_exact_refs_and_budget_authority(self) -> None:
-        refs = PREPARE.isolation.ResolvedRefs("history", "events", "budget")
+        refs = PREPARE.isolation.ResolvedRefs(
+            "history",
+            "events",
+            "budget",
+            "inert-owner-coverage-seed",
+        )
         command = PREPARE.generator_command(
             repo_root=Path("/tmp/owner"),
             output=PREPARE.DEFAULT_OUTPUT,
@@ -150,6 +182,7 @@ class PrepareOwnerLandingTests(unittest.TestCase):
         self.assertEqual("history", command[command.index("--history-ref") + 1])
         self.assertEqual("events", command[command.index("--event-history-ref") + 1])
         self.assertEqual("budget", command[command.index("--budget-base-ref") + 1])
+        self.assertNotIn("inert-owner-coverage-seed", command)
 
 
 if __name__ == "__main__":
