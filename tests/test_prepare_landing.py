@@ -3685,6 +3685,62 @@ class PrepareLandingTests(unittest.TestCase):
             stage_paths.call_args_list,
         )
 
+    def test_final_confirmation_drift_names_first_phase_paths_and_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = self.make_repo(Path(tmpdir))
+            source = repo / "source.txt"
+            source.write_text("drift\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.final_confirmation(
+                    repo,
+                    prepare_landing.ResolvedRefs("h", "e", "b", "s"),
+                )
+
+        self.assertEqual(
+            "generated_cleanliness_failure",
+            raised.exception.failure_type,
+        )
+        self.assertEqual((), raised.exception.command)
+        self.assertEqual(
+            "before_final_confirmation",
+            raised.exception.details["phase"],
+        )
+        self.assertEqual(
+            ["source.txt"],
+            raised.exception.details["changed_paths"],
+        )
+        self.assertGreater(raised.exception.details["diff_bytes"], 0)
+        self.assertRegex(
+            raised.exception.details["diff_digest"],
+            r"^sha256:[0-9a-f]{64}$",
+        )
+
+    def test_final_confirmation_attributes_drift_to_first_mutating_check(self) -> None:
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
+        coverage = prepare_landing.coverage_command(refs, check=True)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = self.make_repo(Path(tmpdir))
+
+            def run(command: tuple[str, ...], *, repo_root: Path) -> None:
+                self.assertEqual(repo, repo_root)
+                if command == coverage:
+                    (repo / "source.txt").write_text("drift\n", encoding="utf-8")
+
+            with patch.object(prepare_landing, "run_command", side_effect=run):
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.final_confirmation(repo, refs)
+
+        self.assertEqual(coverage, raised.exception.command)
+        self.assertEqual(
+            "coverage_check",
+            raised.exception.details["phase"],
+        )
+        self.assertEqual(
+            ["source.txt"],
+            raised.exception.details["changed_paths"],
+        )
+
     def test_preparation_coverage_seed_is_independent_from_history_refs(self) -> None:
         refs = prepare_landing.ResolvedRefs("history", "events", "budget", "seed")
 

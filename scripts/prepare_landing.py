@@ -5513,34 +5513,86 @@ def converge_budgeted_scc(
     )
 
 
+def require_no_unstaged_confirmation_drift(
+    repo_root: Path,
+    *,
+    phase: str,
+    command: Sequence[str] | None = None,
+) -> None:
+    raw_paths = git_bytes(
+        repo_root,
+        "diff",
+        "--no-renames",
+        "--name-only",
+        "-z",
+    )
+    if not raw_paths:
+        return
+    paths = tuple(
+        item
+        for item in raw_paths.decode(
+            "utf-8",
+            errors="surrogateescape",
+        ).split("\0")
+        if item
+    )
+    patch = git_bytes(
+        repo_root,
+        "diff",
+        "--binary",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
+    raise PreparationFailure(
+        "final confirmation left unstaged worktree drift in the isolated candidate",
+        failure_type="generated_cleanliness_failure",
+        action_class="code_fix",
+        command=command,
+        details={
+            "phase": phase,
+            "changed_paths": list(paths),
+            "diff_digest": sha256_bytes(patch),
+            "diff_bytes": len(patch),
+        },
+    )
+
+
 def final_confirmation(
     repo_root: Path,
     refs: ResolvedRefs,
     *,
     full_coverage_cache: Path | None = None,
 ) -> None:
-    run_command(
-        coverage_command(
-            refs,
-            check=True,
-            full_coverage_cache=full_coverage_cache,
+    commands = (
+        (
+            "before_final_confirmation",
+            None,
         ),
-        repo_root=repo_root,
+        (
+            "coverage_check",
+            coverage_command(
+                refs,
+                check=True,
+                full_coverage_cache=full_coverage_cache,
+            ),
+        ),
+        (
+            "portable_family_check",
+            portable_family_command(refs, check=True, enforce_budget=True),
+        ),
+        ("generated_check", generated_command(check=True)),
+        (
+            "local_validation",
+            ("python", "scripts/validate_kag.py", "--scope", "local"),
+        ),
     )
-    run_command(
-        portable_family_command(refs, check=True, enforce_budget=True),
-        repo_root=repo_root,
-    )
-    run_command(generated_command(check=True), repo_root=repo_root)
-    run_command(
-        ("python", "scripts/validate_kag.py", "--scope", "local"),
-        repo_root=repo_root,
-    )
-    if git_bytes(repo_root, "diff", "--binary", "--no-ext-diff", "--no-textconv"):
-        raise PreparationFailure(
-            "final confirmation left unstaged worktree drift in the isolated candidate",
-            failure_type="generated_cleanliness_failure",
-            action_class="code_fix",
+    for phase, command in commands:
+        if command is not None:
+            run_command(command, repo_root=repo_root)
+        require_no_unstaged_confirmation_drift(
+            repo_root,
+            phase=phase,
+            command=command,
         )
 
 
