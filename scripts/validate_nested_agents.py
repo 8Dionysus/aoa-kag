@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -170,6 +171,20 @@ def _is_ignored(path: Path, repo_root: Path) -> bool:
 
 
 def _iter_owned_agents(repo_root: Path) -> Iterator[Path]:
+    tracked = subprocess.run(
+        ("git", "-C", str(repo_root), "ls-files", "-z", "--", "*AGENTS.md"),
+        check=False,
+        capture_output=True,
+    )
+    if tracked.returncode == 0:
+        for raw_path in tracked.stdout.split(b"\0"):
+            if raw_path:
+                relative = Path(raw_path.decode("utf-8", errors="surrogateescape"))
+                if relative.name == "AGENTS.md":
+                    yield repo_root / relative
+        return
+
+    # Non-Git fixture trees retain filesystem discovery for focused unit tests.
     for path in repo_root.rglob("AGENTS.md"):
         if not _is_ignored(path, repo_root):
             yield path

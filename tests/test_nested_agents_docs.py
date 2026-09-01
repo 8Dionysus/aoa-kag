@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -89,6 +90,22 @@ class NestedAgentsDocsTests(unittest.TestCase):
                     for issue in issues
                 )
             )
+
+    def test_git_repo_ignores_ignored_generated_agent_cards(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            self.materialize_valid_agents(temp_root)
+            (temp_root / ".gitignore").write_text("dist/\n", encoding="utf-8")
+            subprocess.run(("git", "init", "-q"), cwd=temp_root, check=True)
+            subprocess.run(("git", "add", "."), cwd=temp_root, check=True)
+            generated_card = temp_root / "dist" / "bundle" / "AGENTS.md"
+            generated_card.parent.mkdir(parents=True)
+            generated_card.write_text(
+                "# AGENTS.md\n\nUse `python arbitrary.py` here.\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual([], validate_nested_agents.validate(temp_root))
 
 
 if __name__ == "__main__":
