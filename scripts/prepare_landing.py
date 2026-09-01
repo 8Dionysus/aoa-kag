@@ -5441,6 +5441,10 @@ def ensure_budget_receipt(
             command=check.command,
             details={"budget_base_ref": refs.budget_base_ref},
         )
+    # Pruning changes the candidate identity bound by the receipt.  It must be
+    # complete before the receipt is issued, otherwise the freshly written
+    # receipt immediately describes a pre-prune candidate.
+    prune_obsolete_budget_receipts(repo_root, refs)
     run_command(
         portable_family_command(
             refs,
@@ -5452,7 +5456,6 @@ def ensure_budget_receipt(
         failure_type="budget_receipt_generation_failure",
         action_class="code_fix",
     )
-    prune_obsolete_budget_receipts(repo_root, refs)
     stage_paths(repo_root, (*PORTABLE_FAMILY_PATHS, *BUDGET_RECEIPT_PATHS))
     run_command(
         portable_family_command(refs, check=True, enforce_budget=True),

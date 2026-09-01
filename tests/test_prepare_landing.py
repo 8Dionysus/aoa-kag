@@ -4447,6 +4447,7 @@ class PrepareLandingTests(unittest.TestCase):
 
     def test_budget_receipt_is_created_only_after_final_check_requests_it(self) -> None:
         refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
+        events: list[str] = []
         failure = prepare_landing.CommandResult(
             ("family", "--check"),
             1,
@@ -4455,13 +4456,28 @@ class PrepareLandingTests(unittest.TestCase):
             10,
         )
         success = prepare_landing.CommandResult(("family",), 0, "", "", 10)
+
+        def run_side_effect(command, **_kwargs):
+            if not events:
+                events.append("initial_check")
+                return failure
+            if "--write-budget-receipt" in command:
+                events.append("write_receipt")
+                return success
+            events.append("final_check")
+            return success
+
+        def prune_side_effect(*_args, **_kwargs) -> None:
+            events.append("prune")
+
         with patch.object(
             prepare_landing,
             "run_command",
-            side_effect=(failure, success, success),
+            side_effect=run_side_effect,
         ) as run_command, patch.object(
             prepare_landing,
             "prune_obsolete_budget_receipts",
+            side_effect=prune_side_effect,
         ) as prune, patch.object(prepare_landing, "stage_paths"):
             result = prepare_landing.ensure_budget_receipt(
                 Path("/candidate"),
@@ -4470,6 +4486,10 @@ class PrepareLandingTests(unittest.TestCase):
             )
 
         self.assertEqual("created", result)
+        self.assertEqual(
+            ["initial_check", "prune", "write_receipt", "final_check"],
+            events,
+        )
         self.assertTrue(run_command.call_args_list[1].args[0].count("--write-budget-receipt"))
         self.assertTrue(run_command.call_args_list[2].args[0].count("--check"))
         prune.assert_called_once_with(Path("/candidate"), refs)
