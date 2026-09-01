@@ -4743,59 +4743,23 @@ def expected_external_portable_family(
     owner_root: Path,
 ) -> dict[str, Any]:
     coverage_generation = coverage_generation_module()
-
-    manifest_path = owner_root / coverage_generation.MANIFEST_RELATIVE_PATH
     try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        family_storage, profile = coverage_generation.portable_family_profile(
+            owner_root,
+            owner_name=owner,
+            status="passed",
+        )
+    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         raise RuntimeError(
-            f"preparation coverage cannot read the external manifest for {owner}"
+            f"preparation coverage cannot read the external family for {owner}"
         ) from exc
-    if not isinstance(manifest, dict):
-        raise RuntimeError(f"external manifest is not an object for {owner}")
-    repo = manifest.get("repo")
-    family = manifest.get("family_identity")
-    summary = manifest.get("summary")
-    budgets = manifest.get("budgets")
     if (
-        not isinstance(repo, dict)
-        or repo.get("name") != owner
-        or not isinstance(family, dict)
-        or not isinstance(summary, dict)
-        or not isinstance(budgets, dict)
+        family_storage != "v3-portable-shards"
+        or not isinstance(profile, dict)
+        or profile.get("digest_state") != "published"
     ):
-        raise RuntimeError(f"external manifest shape or owner is invalid for {owner}")
-    tracked_bytes = summary.get("tracked_bytes")
-    tracked_bytes_max = budgets.get("tracked_bytes_max")
-    shards = summary.get("shards")
-    content_digest = family.get("content_digest")
-    if (
-        not isinstance(tracked_bytes, int)
-        or tracked_bytes < 0
-        or not isinstance(tracked_bytes_max, int)
-        or tracked_bytes_max < 0
-        or not isinstance(shards, int)
-        or shards < 0
-        or not isinstance(content_digest, str)
-        or len(content_digest) != 64
-        or any(char not in "0123456789abcdef" for char in content_digest)
-    ):
-        raise RuntimeError(f"external manifest family identity is invalid for {owner}")
-    receipted = tracked_bytes > tracked_bytes_max
-    return {
-        "manifest_ref": coverage_generation.MANIFEST_RELATIVE_PATH.as_posix(),
-        "content_digest": content_digest,
-        "digest_state": "published",
-        "tracked_bytes": tracked_bytes,
-        "tracked_bytes_max": tracked_bytes_max,
-        "shards": shards,
-        "budget_state": "receipted" if receipted else "passed",
-        "receipt_ref": (
-            coverage_generation.receipt_path_for(manifest).as_posix()
-            if receipted
-            else ""
-        ),
-    }
+        raise RuntimeError(f"external portable family is invalid for {owner}")
+    return profile
 
 
 def build_preparation_coverage(

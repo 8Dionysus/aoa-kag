@@ -3769,6 +3769,56 @@ class PrepareLandingTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "runtime inputs differ"):
                     prepare_landing.require_seed_compatible_runtime(repo, head)
 
+    def test_external_family_identity_uses_canonical_coverage_profile(self) -> None:
+        profile = {
+            "content_digest": "a" * 64,
+            "digest_state": "published",
+            "tracked_bytes": 10,
+            "corpus_total_bytes": 10,
+            "git_hot_bytes": 10,
+            "placement_state": "git-full",
+            "measurement_state": "measured",
+        }
+        coverage = unittest.mock.Mock()
+        coverage.portable_family_profile.return_value = (
+            "v3-portable-shards",
+            profile,
+        )
+
+        with patch.object(
+            prepare_landing,
+            "coverage_generation_module",
+            return_value=coverage,
+        ):
+            observed = prepare_landing.expected_external_portable_family(
+                "owner",
+                Path("/provider"),
+            )
+
+        self.assertIs(profile, observed)
+        coverage.portable_family_profile.assert_called_once_with(
+            Path("/provider"),
+            owner_name="owner",
+            status="passed",
+        )
+
+    def test_external_family_identity_rejects_nonportable_profile(self) -> None:
+        coverage = unittest.mock.Mock()
+        coverage.portable_family_profile.return_value = (
+            "v4-tiered-content-addressed",
+            {"digest_state": "published"},
+        )
+
+        with patch.object(
+            prepare_landing,
+            "coverage_generation_module",
+            return_value=coverage,
+        ), self.assertRaisesRegex(RuntimeError, "portable family is invalid"):
+            prepare_landing.expected_external_portable_family(
+                "owner",
+                Path("/provider"),
+            )
+
     def seeded_coverage_fixture(self):
         seed = json.loads(
             (REPO_ROOT / "generated" / "repo_local_kag_coverage.json").read_text(
