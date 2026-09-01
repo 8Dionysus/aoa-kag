@@ -194,19 +194,54 @@ def _budget_procedure_root() -> Path:
 
 @lru_cache(maxsize=32)
 def _budget_git_object_format(root: str) -> str:
-    result = subprocess.run(
-        ("git", "rev-parse", "--show-object-format"),
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ("git", "rev-parse", "--show-object-format"),
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (FileNotFoundError, OSError) as exc:
+        raise PortableFamilyError(
+            "cannot resolve producer Git object format"
+        ) from exc
     object_format = result.stdout.strip()
-    if result.returncode != 0 or object_format not in {"sha1", "sha256"}:
+    if result.returncode == 0 and object_format in {"sha1", "sha256"}:
+        return object_format
+
+    # GitHub distributes a referenced composite action as a source archive,
+    # without the producer repository's .git directory. Ask the executing Git
+    # binary for its standalone object format so the archive computes the same
+    # blob identities as its SHA-1-backed source checkout. A SHA-256 producer
+    # checkout still takes the repository-backed branch above.
+    try:
+        probe = subprocess.run(
+            ("git", "hash-object", "--no-filters", "--stdin"),
+            cwd=root,
+            check=False,
+            capture_output=True,
+            input=b"",
+        )
+    except (FileNotFoundError, OSError) as exc:
+        raise PortableFamilyError(
+            "cannot resolve producer Git object format"
+        ) from exc
+    digest = probe.stdout.strip().decode("ascii", errors="ignore")
+    empty_blob = b"blob 0\0"
+    inferred_format = next(
+        (
+            algorithm
+            for algorithm in ("sha1", "sha256")
+            if digest == hashlib.new(algorithm, empty_blob).hexdigest()
+        ),
+        None,
+    )
+    if probe.returncode != 0 or inferred_format is None:
         raise PortableFamilyError(
             "cannot resolve producer Git object format"
         )
-    return object_format
+    return inferred_format
 
 
 def _budget_git_blob(root: Path, relative: Path) -> str:
