@@ -1,25 +1,25 @@
 {
-  "allowed_bytes": 13165678,
-  "allowed_tracked_bytes": 2370740,
+  "allowed_bytes": 13254542,
+  "allowed_tracked_bytes": 2370739,
   "approved_by": "repository-owner",
   "base_ref": "36bed324e4206cb913f03a9dc3d041b9ddda3c69",
   "candidate_identity": {
     "algorithm": "sha256:canonical-json-file-inventory-v2",
     "base_ref": "36bed324e4206cb913f03a9dc3d041b9ddda3c69",
     "contract_version": "aoa-kag:budget-receipt-candidate-identity-v2",
-    "excluded_path": "kag/receipts/index_family_budget/3bbb9bbc47fd72a519a14b046fb6dfe43b20b7dc9566676e5883a14eea2f35c6.json",
-    "family_digest": "3bbb9bbc47fd72a519a14b046fb6dfe43b20b7dc9566676e5883a14eea2f35c6",
+    "excluded_path": "kag/receipts/index_family_budget/cd3ed11dcd349156389219a1d3f56426f761a8999db8766a56254709ab85f310.json",
+    "family_digest": "cd3ed11dcd349156389219a1d3f56426f761a8999db8766a56254709ab85f310",
     "file_count": 1478,
-    "seal": "0420153475ec5306ffc91833b893931d96f97d028183ed96121a4ce9c161b98f",
-    "source_epoch": "sha256:e7c0e9dfa959d150996207112080347c32e675c4941f4391176a2ad6b9eba95d",
-    "source_snapshot": "sha256:5fc1f781fb5af531a093c5619706b9b116d74e943b746c5b635124c84d2b6751"
+    "seal": "7a2c71804e869082d20289898221c1e8392b6fdb3e32372a637774cac825f3e4",
+    "source_epoch": "sha256:1233475da8fb2e4290e2db8dc60d83b946fe93949f05dd361fd76db85fb3bd35",
+    "source_snapshot": "sha256:0d96d8558e257005ecf29a09b7d937f90cdf71fbb407e42475e04143656f91b4"
   },
-  "changed_generated_bytes": 13165678,
-  "changed_generated_files": 346,
+  "changed_generated_bytes": 13254542,
+  "changed_generated_files": 348,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "3bbb9bbc47fd72a519a14b046fb6dfe43b20b7dc9566676e5883a14eea2f35c6",
-  "head_source_snapshot": "sha256:5fc1f781fb5af531a093c5619706b9b116d74e943b746c5b635124c84d2b6751",
+  "head_family_digest": "cd3ed11dcd349156389219a1d3f56426f761a8999db8766a56254709ab85f310",
+  "head_source_snapshot": "sha256:0d96d8558e257005ecf29a09b7d937f90cdf71fbb407e42475e04143656f91b4",
   "producer_identity": {
     "action": {
       "bytes": 5200,
@@ -1369,6 +1369,6 @@
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v2",
   "scope": "generated_delta",
-  "tracked_bytes": 2370740,
+  "tracked_bytes": 2370739,
   "tracked_bytes_max": 4194304
 }
