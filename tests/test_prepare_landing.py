@@ -4399,6 +4399,52 @@ class PrepareLandingTests(unittest.TestCase):
 
         self.assertEqual("budget_receipt_authority_required", raised.exception.failure_type)
 
+    def test_current_budget_receipt_path_supports_v3_family_manifest(self) -> None:
+        digest = "a" * 64
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = Path(tmpdir)
+            manifest = repo / prepare_landing.PORTABLE_FAMILY_PATHS[0]
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-repo-local-kag-family-manifest-v3",
+                        "family_identity": {"content_digest": digest},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            observed = prepare_landing._current_budget_receipt_path(repo)
+
+        self.assertEqual(
+            Path(prepare_landing.BUDGET_RECEIPT_PATHS[0]) / f"{digest}.json",
+            observed,
+        )
+
+    def test_current_budget_receipt_path_supports_v4_distribution_manifest(self) -> None:
+        digest = "b" * 64
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = Path(tmpdir)
+            manifest = repo / prepare_landing.PORTABLE_FAMILY_PATHS[0]
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+                        "corpus_manifest": {"content_digest": f"sha256:{digest}"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            observed = prepare_landing._current_budget_receipt_path(repo)
+
+        self.assertEqual(
+            Path(prepare_landing.BUDGET_RECEIPT_PATHS[0]) / f"{digest}.json",
+            observed,
+        )
+
     def test_budget_receipt_is_created_only_after_final_check_requests_it(self) -> None:
         refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         failure = prepare_landing.CommandResult(

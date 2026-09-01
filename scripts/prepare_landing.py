@@ -5344,7 +5344,16 @@ def _current_budget_receipt_path(repo_root: Path) -> Path:
     manifest_path = repo_root / PORTABLE_FAMILY_PATHS[0]
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        digest = manifest["family_identity"]["content_digest"]
+        schema_version = manifest["schema_version"]
+        if schema_version == "aoa-repo-local-kag-family-manifest-v3":
+            digest = manifest["family_identity"]["content_digest"]
+        elif schema_version == "aoa-repo-local-kag-distribution-manifest-v1":
+            digest = manifest["corpus_manifest"]["content_digest"]
+            if not isinstance(digest, str):
+                raise TypeError("tiered corpus digest is not a string")
+            digest = digest.removeprefix("sha256:")
+        else:
+            raise KeyError("unsupported family manifest schema")
     except (FileNotFoundError, KeyError, TypeError, json.JSONDecodeError) as exc:
         raise PreparationFailure(
             "cannot resolve the current portable-family budget receipt path",
