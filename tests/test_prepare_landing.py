@@ -89,6 +89,7 @@ class PrepareLandingTests(unittest.TestCase):
                 history_ref=head,
                 event_history_ref=head,
                 budget_base_ref=head,
+                coverage_seed_ref=head,
                 budget_reason=None,
                 temp_root=temp_root,
             )
@@ -373,6 +374,7 @@ class PrepareLandingTests(unittest.TestCase):
                     history_ref=head,
                     event_history_ref=head,
                     budget_base_ref=head,
+                    coverage_seed_ref=head,
                     budget_reason=None,
                     temp_root=Path(work_tmp),
                 )
@@ -420,6 +422,7 @@ class PrepareLandingTests(unittest.TestCase):
                     history_ref=head,
                     event_history_ref=head,
                     budget_base_ref=head,
+                    coverage_seed_ref=head,
                     budget_reason=None,
                     temp_root=Path(work_tmp),
                 )
@@ -468,6 +471,7 @@ class PrepareLandingTests(unittest.TestCase):
                     history_ref=head,
                     event_history_ref=head,
                     budget_base_ref=head,
+                    coverage_seed_ref=head,
                     budget_reason=None,
                     temp_root=Path(work_tmp),
                 )
@@ -488,6 +492,7 @@ class PrepareLandingTests(unittest.TestCase):
                 history_ref=None,
                 event_history_ref=None,
                 budget_base_ref=None,
+                coverage_seed_ref=None,
                 budget_reason=None,
                 temp_root=Path(work_tmp),
             )
@@ -3645,7 +3650,7 @@ class PrepareLandingTests(unittest.TestCase):
         )
 
     def test_scc_order_is_staged_and_bounded_until_tree_convergence(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         trees = iter(("tree-0", "tree-1", "tree-1", "tree-1"))
         with patch.object(prepare_landing, "git_text", side_effect=lambda *_args: next(trees)), patch.object(
             prepare_landing,
@@ -3680,8 +3685,31 @@ class PrepareLandingTests(unittest.TestCase):
             stage_paths.call_args_list,
         )
 
+    def test_preparation_coverage_seed_is_independent_from_history_refs(self) -> None:
+        refs = prepare_landing.ResolvedRefs("history", "events", "budget", "seed")
+
+        coverage = prepare_landing.coverage_command(refs)
+        family = prepare_landing.portable_family_command(refs, enforce_budget=True)
+
+        self.assertEqual(
+            "seed",
+            coverage[coverage.index("--external-seed-ref") + 1],
+        )
+        self.assertEqual(
+            "history",
+            family[family.index("--history-ref") + 1],
+        )
+        self.assertEqual(
+            "events",
+            family[family.index("--event-history-ref") + 1],
+        )
+        self.assertEqual(
+            "budget",
+            family[family.index("--budget-base-ref") + 1],
+        )
+
     def test_non_convergence_fails_closed(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         trees = iter(("a", "b", "b", "c"))
         with patch.object(prepare_landing, "git_text", side_effect=lambda *_args: next(trees)), patch.object(
             prepare_landing,
@@ -3693,7 +3721,7 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertEqual("fixed_point_non_convergence", raised.exception.failure_type)
 
     def test_budget_receipt_mutation_reenters_scc_until_stable(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         with patch.object(
             prepare_landing,
             "converge_scc",
@@ -4248,7 +4276,7 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertTrue(missing_receipt["fallback_required"])
 
     def test_budget_receipt_requires_explicit_reason_for_final_digest(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         failure = prepare_landing.CommandResult(
             ("family", "--check"),
             1,
@@ -4267,7 +4295,7 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertEqual("budget_receipt_authority_required", raised.exception.failure_type)
 
     def test_budget_receipt_is_created_only_after_final_check_requests_it(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         failure = prepare_landing.CommandResult(
             ("family", "--check"),
             1,

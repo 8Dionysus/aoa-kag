@@ -330,6 +330,7 @@ class ResolvedRefs:
     history_ref: str
     event_history_ref: str
     budget_base_ref: str
+    coverage_seed_ref: str
 
 
 @dataclass(frozen=True)
@@ -4498,6 +4499,7 @@ def resolve_refs(
     history_ref: str | None,
     event_history_ref: str | None,
     budget_base_ref: str | None,
+    coverage_seed_ref: str | None,
 ) -> ResolvedRefs:
     history = resolve_ref(
         repo_root,
@@ -4514,7 +4516,12 @@ def resolve_refs(
         budget_base_ref or history,
         "budget-base-ref",
     )
-    return ResolvedRefs(history, event_history, budget_base)
+    coverage_seed = resolve_ref(
+        repo_root,
+        coverage_seed_ref or history,
+        "coverage-seed-ref",
+    )
+    return ResolvedRefs(history, event_history, budget_base, coverage_seed)
 
 
 def load_provider_entries(repo_root: Path) -> tuple[dict[str, Any], ...]:
@@ -5288,7 +5295,7 @@ def coverage_command(
         "scripts/prepare_landing.py",
         "--prepare-self-coverage",
         "--external-seed-ref",
-        refs.history_ref,
+        refs.coverage_seed_ref,
     ]
     if full_coverage_cache is not None:
         command.extend(("--full-coverage-cache", full_coverage_cache.as_posix()))
@@ -5690,6 +5697,7 @@ def receipt_base(
             "history_ref": refs.history_ref,
             "event_history_ref": refs.event_history_ref,
             "budget_base_ref": refs.budget_base_ref,
+            "coverage_seed_ref": refs.coverage_seed_ref,
         }
     return payload
 
@@ -5702,6 +5710,7 @@ def prepare_landing(
     history_ref: str | None,
     event_history_ref: str | None,
     budget_base_ref: str | None,
+    coverage_seed_ref: str | None,
     budget_reason: str | None,
     temp_root: Path | None,
 ) -> tuple[int, dict[str, object]]:
@@ -5717,6 +5726,7 @@ def prepare_landing(
             history_ref=history_ref,
             event_history_ref=event_history_ref,
             budget_base_ref=budget_base_ref,
+            coverage_seed_ref=coverage_seed_ref,
         )
         if temp_root is not None:
             temp_root.mkdir(parents=True, exist_ok=True)
@@ -6113,6 +6123,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--event-history-ref")
     parser.add_argument("--budget-base-ref")
     parser.add_argument(
+        "--coverage-seed-ref",
+        help=(
+            "Preparation-only coverage seed commit; defaults to history-ref "
+            "without changing history, event, or budget authority."
+        ),
+    )
+    parser.add_argument(
         "--budget-reason",
         help="Explicit repository-owner reason used only if the final digest exceeds its budget.",
     )
@@ -6207,6 +6224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         history_ref=args.history_ref,
         event_history_ref=args.event_history_ref,
         budget_base_ref=args.budget_base_ref,
+        coverage_seed_ref=args.coverage_seed_ref,
         budget_reason=args.budget_reason,
         temp_root=args.temp_root,
     )
