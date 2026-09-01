@@ -735,6 +735,80 @@
       "first_record_classes": []
     },
     {
+      "repo": "aoa-agon",
+      "repo_role": "governed model-formation lineage owner in pre-provider source preparation",
+      "source_home_surfaces": [
+        "source/",
+        "schemas/",
+        "config/",
+        "docs/"
+      ],
+      "surface_inventory": {
+        "evals": false,
+        "memo": false,
+        "mechanics": false,
+        "generated": true,
+        "manifests": false,
+        "schemas": true,
+        "examples": true,
+        "scripts": true,
+        "tests": true
+      },
+      "kag_pressure": [
+        "formation ancestry and material provenance source-return handles",
+        "future owner-qualified lineage navigation without proof, model, runtime, or promotion authority"
+      ],
+      "source_owned_exports": [],
+      "candidate_source_surfaces": [
+        "README.md",
+        "CHARTER.md",
+        "DESIGN.md",
+        "config/owner-ports.json",
+        "docs/EVIDENCE_BOUNDARY.md",
+        "source/"
+      ],
+      "graph_entities": [
+        "formation proposal",
+        "campaign attempt",
+        "model lineage edge",
+        "artifact provenance edge",
+        "evidence claim",
+        "governance event"
+      ],
+      "event_surfaces": [
+        "source/records/"
+      ],
+      "document_surfaces": [
+        "README.md",
+        "CHARTER.md",
+        "DESIGN.md",
+        "docs/EVIDENCE_BOUNDARY.md"
+      ],
+      "validators": [
+        "python scripts/validate_schemas.py",
+        "python scripts/validate_repository.py",
+        "python scripts/build_projections.py --check",
+        "python scripts/run_rehearsal.py",
+        "python -m pytest -q"
+      ],
+      "release_gate": "owner landing, immutable-record validation, and separate repo-local KAG provider admission",
+      "runtime_consumers": [
+        "aoa-models identity routes",
+        "aoa-evals proof references",
+        "future aoa-kag provider route"
+      ],
+      "owner_return_routes": [
+        {
+          "repo": "aoa-agon",
+          "surface": "CHARTER.md",
+          "route_kind": "authored_meaning"
+        }
+      ],
+      "provider_status": "source_preparation",
+      "adoption_order": 26,
+      "first_record_classes": []
+    },
+    {
       "repo": "aoa-playbooks",
       "repo_role": "playbook source home and scenario choreography",
       "source_home_surfaces": [
@@ -2236,6 +2310,7 @@
         "aoa-4pda-connector/",
         "aoa-course-connector/",
         "aoa-discord-connector/",
+        "aoa-gopro-connector/",
         "aoa-stackoverflow-connector/",
         "aoa-telegram-connector/",
         "aoa-xda-connector/"
@@ -2250,6 +2325,7 @@
         "aoa-4pda-connector/README.md",
         "aoa-course-connector/README.md",
         "aoa-discord-connector/README.md",
+        "aoa-gopro-connector/README.md",
         "aoa-stackoverflow-connector/README.md",
         "aoa-telegram-connector/README.md",
         "aoa-xda-connector/README.md"
@@ -2264,6 +2340,7 @@
         "aoa-4pda-connector/README.md",
         "aoa-course-connector/README.md",
         "aoa-discord-connector/README.md",
+        "aoa-gopro-connector/README.md",
         "aoa-stackoverflow-connector/README.md",
         "aoa-telegram-connector/README.md",
         "aoa-xda-connector/README.md"
@@ -2661,6 +2738,65 @@
         "edge",
         "index",
         "projection",
+        "receipt"
+      ]
+    },
+    {
+      "surface_id": "connectors/aoa-gopro-connector",
+      "surface_class": "connector_repo",
+      "root": "/srv/AbyssOS/connectors/aoa-gopro-connector",
+      "surface_role": "operator-authorized physical camera capability and effect boundary",
+      "source_home_surfaces": [
+        "AGENTS.md",
+        "BOUNDARIES.md",
+        "connector/",
+        "docs/"
+      ],
+      "kag_pressure": [
+        "derived camera capability navigation",
+        "device and media provenance routes",
+        "plan and receipt discovery"
+      ],
+      "source_owned_exports": [],
+      "candidate_source_surfaces": [
+        "README.md",
+        "BOUNDARIES.md",
+        "CHARTER.md",
+        "connector/SOURCE_POLICY.md",
+        "STORAGE_POLICY.md",
+        "STATUS.md",
+        "docs/RUNTIME_CONTRACT.md"
+      ],
+      "graph_entities": [
+        "camera connector",
+        "capability profile",
+        "operation plan",
+        "operation receipt",
+        "media manifest"
+      ],
+      "event_surfaces": [],
+      "document_surfaces": [
+        "README.md",
+        "BOUNDARIES.md",
+        "STATUS.md"
+      ],
+      "validators": [
+        "python scripts/validate_connector.py",
+        "python -m pytest -q"
+      ],
+      "runtime_consumers": [
+        "future aoa-kag provider route",
+        "abyss-stack connector runtime"
+      ],
+      "owner_return_route": {
+        "repo": "aoa-gopro-connector",
+        "surface": "BOUNDARIES.md",
+        "route_kind": "authored_meaning"
+      },
+      "provider_status": "source_preparation",
+      "adoption_order": 117,
+      "first_record_classes": [
+        "index",
         "receipt"
       ]
     },
