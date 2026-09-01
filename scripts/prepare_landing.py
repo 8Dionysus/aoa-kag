@@ -4838,9 +4838,9 @@ def build_preparation_coverage_from_payload(
 
         if row.get("root") != display_root.as_posix():
             raise RuntimeError(f"preparation coverage external root drift for {owner}")
-        if row.get("index_status") != "passed":
+        if row.get("index_status") not in coverage_generation.OWNER_STATUS:
             raise RuntimeError(
-                f"preparation coverage seed is not all-owner green for {owner}"
+                f"preparation coverage seed has an invalid index status for {owner}"
             )
         if row.get("family_storage") != "v3-portable-shards":
             raise RuntimeError(

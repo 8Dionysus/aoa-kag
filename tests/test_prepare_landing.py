@@ -3917,6 +3917,61 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertEqual(self_row, rebuilt)
         self.assertEqual(len(order), payload["coverage_summary"]["owner_count"])
 
+    def test_seeded_coverage_preserves_external_migration_residual(self) -> None:
+        seed, order, roots, entries, self_row = self.seeded_coverage_fixture()
+        external = next(row for row in seed["owners"] if row["repo"] != "aoa-kag")
+        external["index_status"] = "migration-needed"
+
+        with patch.object(
+            prepare_landing,
+            "require_seed_compatible_runtime",
+        ), patch.object(
+            prepare_landing,
+            "load_external_coverage_seed",
+            return_value=copy.deepcopy(seed),
+        ), patch.object(
+            coverage_generation,
+            "_validate_coverage_payload_schema",
+        ), patch.object(
+            coverage_generation,
+            "provider_repo_order",
+            return_value=order,
+        ), patch.object(
+            coverage_generation,
+            "provider_by_repo",
+            return_value=entries,
+        ), patch.object(
+            coverage_generation,
+            "configured_owner_roots",
+            return_value=list(roots.items()),
+        ), patch.object(
+            coverage_generation,
+            "_git_head",
+            side_effect=lambda owner, _root: entries[owner]["pinned_ref"],
+        ), patch.object(
+            coverage_generation,
+            "_build_owner_coverage",
+            return_value=(self_row, {"owner": "aoa-kag"}),
+        ), patch.object(
+            coverage_generation,
+            "load_portable_family",
+            return_value=(self_row, {}, {}),
+        ), patch.object(
+            prepare_landing,
+            "expected_external_portable_family",
+            side_effect=lambda owner, _root: next(
+                row["portable_family"] for row in seed["owners"] if row["repo"] == owner
+            ),
+        ):
+            payload = prepare_landing.build_preparation_coverage(
+                REPO_ROOT,
+                external_seed_ref="seed",
+            )
+
+        preserved = next(row for row in payload["owners"] if row["repo"] == external["repo"])
+        self.assertEqual("migration-needed", preserved["index_status"])
+        self.assertGreaterEqual(payload["coverage_summary"]["migration_needed"], 1)
+
     def test_seeded_coverage_rejects_external_manifest_identity_drift(self) -> None:
         seed, order, roots, entries, self_row = self.seeded_coverage_fixture()
         first_external = next(row for row in seed["owners"] if row["repo"] != "aoa-kag")
