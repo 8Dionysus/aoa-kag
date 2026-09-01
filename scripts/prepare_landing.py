@@ -41,6 +41,9 @@ COVERAGE_PATHS = (
 PREPARATION_COVERAGE_SEED_PATH = "generated/repo_local_kag_preparation_seed.json"
 PORTABLE_FAMILY_PATHS = (
     "kag/indexes/index_family.manifest.json",
+    "kag/indexes/corpus.manifest.json",
+    "kag/indexes/hot_profile.json",
+    "kag/indexes/artifact_locators.json",
     "kag/indexes/shards",
 )
 BUDGET_RECEIPT_PATHS = ("kag/receipts/index_family_budget",)

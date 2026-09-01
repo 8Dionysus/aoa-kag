@@ -3685,6 +3685,52 @@ class PrepareLandingTests(unittest.TestCase):
             stage_paths.call_args_list,
         )
 
+    def test_scc_stages_tiered_control_outputs_before_fixed_point(self) -> None:
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
+        tiered_controls = (
+            "kag/indexes/corpus.manifest.json",
+            "kag/indexes/hot_profile.json",
+            "kag/indexes/artifact_locators.json",
+        )
+        self.assertTrue(
+            set(tiered_controls).issubset(prepare_landing.PORTABLE_FAMILY_PATHS)
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = self.make_repo(Path(tmpdir))
+            for relative in prepare_landing.COVERAGE_PATHS:
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}\n", encoding="utf-8")
+            for relative in prepare_landing.PORTABLE_FAMILY_PATHS:
+                path = repo / relative
+                if relative.endswith("shards"):
+                    path.mkdir(parents=True, exist_ok=True)
+                    (path / "base.jsonl").write_text("{}\n", encoding="utf-8")
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("{}\n", encoding="utf-8")
+            git(repo, "add", ".")
+            git(repo, "commit", "-qm", "tiered base")
+
+            def run(command: tuple[str, ...], *, repo_root: Path) -> None:
+                self.assertEqual(repo, repo_root)
+                if command == prepare_landing.portable_family_command(refs):
+                    for relative in tiered_controls:
+                        (repo / relative).write_text(
+                            '{"state":"refreshed"}\n',
+                            encoding="utf-8",
+                        )
+
+            with patch.object(prepare_landing, "run_command", side_effect=run):
+                iterations, _tree = prepare_landing.converge_scc(
+                    repo,
+                    refs,
+                    max_iterations=3,
+                )
+
+            self.assertEqual(2, iterations)
+            self.assertEqual(b"", git(repo, "diff"))
+
     def test_final_confirmation_drift_names_first_phase_paths_and_digest(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo = self.make_repo(Path(tmpdir))
