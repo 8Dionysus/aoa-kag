@@ -25,7 +25,7 @@ It should give them a navigable route mesh:
 - local cards for durable districts such as `docs/`, `docs/decisions/`,
   `kag/`, `mechanics/`, `manifests/`, `generated/`, `schemas/`, `examples/`,
   `scripts/`, `tests/`, `config/`, `evals/`, `stats/`, `skills/`, `.agents/`,
-  `.agents/spark/`, and `.github/`;
+  and `.github/`;
 - source surfaces that keep KAG model, source policy, manifests, schemas,
   builders, and tests stronger than route prose;
 - generated cards that protect derived read models from hand edits;
@@ -331,7 +331,7 @@ Agents should consult this file when a change alters:
 - generated or exported agent-facing companions;
 - closeout requirements;
 - local card placement;
-- Codex Spark lane placement or Spark fast-loop posture;
+- agent companion placement or source-owner routing posture;
 - mechanics root or package posture;
 - cross-repository owner routing;
 - future local `/kag` route posture.
@@ -346,8 +346,8 @@ move:
 
 - root `AGENTS.md`;
 - affected nested `AGENTS.md` cards;
-- `.agents/AGENTS.md` and `.agents/spark/AGENTS.md` when agent-lane placement
-  or Spark fast-loop posture moved;
+- `.agents/AGENTS.md` when agent companion placement or source-owner routing
+  posture moved;
 - `skills/AGENTS.md`, `skills/README.md`, and `skills/port.manifest.json` when
   owner-skill admission or exposure moved;
 - `kag/` protocol cards when local-subtree posture moved;

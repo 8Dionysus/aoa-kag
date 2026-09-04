@@ -7,8 +7,8 @@ This card applies to `.agents/` and all descendants unless a nearer
 
 ## Role
 
-`.agents/` holds non-skill agent-facing companion lanes for `aoa-kag`: Codex Spark guidance,
-handoff prompts, and model-facing support surfaces.
+`.agents/` holds non-skill agent-facing companion lanes for `aoa-kag`:
+handoff prompts and owner-routed support surfaces.
 
 It helps agents operate inside the KAG derived-substrate repository. It does
 not author KAG model meaning, source-owner truth, generated payload truth,
@@ -19,8 +19,8 @@ proof verdicts, runtime state, or mechanics law.
 Read root `AGENTS.md`, `DESIGN.AGENTS.md`, this card, and the nearest lane
 card before changing prompt-like or agent-facing material.
 
-For Codex Spark work, read `.agents/spark/AGENTS.md`; use
-`.agents/spark/SWARM.md` only when a Spark swarm is explicitly requested.
+For a bounded change, use the nearest source-owner card and its validation
+route; a separate model-branded instruction lane is not required.
 
 For the repository-owned callable KAG procedure, leave this lane and read
 `skills/AGENTS.md` and `skills/port.manifest.json`.

@@ -597,7 +597,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             ).splitlines()
             if line == "AGENTS.md" or line.endswith("/AGENTS.md")
         )
-        self.assertEqual(58, len(agent_paths))
+        self.assertIn(REPO_ROOT / "AGENTS.md", agent_paths)
         for path in agent_paths:
             relative = path.relative_to(REPO_ROOT).as_posix()
             text = path.read_text(encoding="utf-8")

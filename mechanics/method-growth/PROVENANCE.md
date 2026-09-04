@@ -16,4 +16,4 @@ pattern-growth route needs lineage trace.
 - `mechanics/method-growth/parts/retirement/`
 
 Former root paths and historical names are accounted for in
-`mechanics/method-growth/legacy/INDEX.md`. They are not active source routes.
+[historical index](https://github.com/8Dionysus/aoa-kag/blob/14ee1e33e43749d23c557b3ef526eca7edb36196/mechanics/method-growth/legacy/INDEX.md). They are not active source routes.
