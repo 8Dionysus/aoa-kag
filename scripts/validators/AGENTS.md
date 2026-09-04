@@ -37,13 +37,5 @@ map. Use `config/validation_lanes.json` for lane commands.
 
 ## Validation
 
-```bash
-python -m unittest tests.test_validator_module_topology tests.test_validate_kag
-python scripts/validate_kag.py
-```
-
-For lane-visible changes:
-
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
+For lane-visible changes, select the focused validator route from root
+`VALIDATION.md` and preserve the manifest-owned lane sequence.

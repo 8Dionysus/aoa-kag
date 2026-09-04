@@ -136,3 +136,7 @@
 ## 2026-08-26
 
 - [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
+
+## 2026-08-31
+
+- [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)

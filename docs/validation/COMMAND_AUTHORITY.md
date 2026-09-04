@@ -3,6 +3,9 @@
 `aoa-kag` stores validation lane commands in
 `config/validation_lanes.json`.
 
+The on-demand human route map is root [`VALIDATION.md`](../../VALIDATION.md);
+this document remains the command-authority and topology reference.
+
 ## Surfaces
 
 | Surface | Function |
@@ -272,7 +275,10 @@ python scripts/prepare_landing.py --verify-applied-seal <apply-receipt>
 ```
 
 Both modes resolve the local default-branch merge base without a hidden network
-call and require exact, clean, complete-history pinned provider roots. Use
+call and require exact, clean, complete-history pinned provider roots. When a
+candidate carries a refreshed preparation-only coverage payload,
+`--coverage-seed-ref` names that exact ancestor without changing the separate
+history, event-history, or budget-base refs required by AOA-KAG-D-0041. Use
 `scripts/sync_provider_checkouts.py` as the explicit materialization route when
 those roots are absent. `--check` leaves the caller worktree and index unchanged;
 `--apply` changes only worktree files in the generated patch and verifies that

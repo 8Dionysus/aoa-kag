@@ -9,6 +9,11 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Fixed
 
+- Keep the live `aoa-gopro-connector` checkout visible as a
+  `source_preparation` OS surface without claiming a KAG provider home before
+  the connector publishes one.
+- Keep the canonical `aoa-agon` owner represented as a `source_preparation`
+  row without converting formation lineage into a KAG-owned provider claim.
 - Keep the canonical `aoa-dashboard` checkout represented as an admitted
   `source_preparation` row in the local KAG readiness matrix, so strict
   federation preflight can resolve the owner root without weakening the

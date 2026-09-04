@@ -22,11 +22,7 @@ Read root `AGENTS.md`, `mechanics/antifragility/AGENTS.md`,
 
 ## Validation
 
-Run:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-```
+Select the nearest active part validation route through root `VALIDATION.md`.
 
 ## Closeout
 

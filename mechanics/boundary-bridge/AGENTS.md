@@ -13,7 +13,7 @@ derived projections.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and `PROVENANCE.md`.
+this package `PARTS.md`, and `PROVENANCE.md`.
 Then read the source, manifest, generated, schema, or owner surface named by
 the bridge.
 
@@ -27,11 +27,11 @@ the bridge.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If bridge-generated surfaces move, run the relevant KAG generator, validator,
 focused tests, and release gate.
 For the active source-owned export part, run
-`python mechanics/boundary-bridge/parts/source-owned-export/scripts/validate_source_owned_export.py`.
+the part-local validator.
 
 ## Closeout
 

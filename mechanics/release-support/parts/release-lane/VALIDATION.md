@@ -1,3 +1,3 @@
 # Release Lane Validation
 
-Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
+Use root `VALIDATION.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the nearest `AGENTS.md` for task-conditional validation routes.

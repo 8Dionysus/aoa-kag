@@ -31,7 +31,7 @@ Do not treat `manifests/` as the source of truth for:
   changes. For part-local manifests, follow the nearest
   `mechanics/<package>/parts/<part>/AGENTS.md` route.
 - Preserve naming, ordering, and field discipline unless a deliberate contract change is being made.
-- Re-run `python scripts/generate_kag.py` and `python scripts/validate_kag.py` after any manifest change.
+- Re-run the canonical KAG generation builder and the KAG validator after any manifest change.
 
 ## Hard NO
 Do not:
@@ -39,3 +39,7 @@ Do not:
 - hide provenance behind vague repo-level references
 - let a manifest overclaim source authority
 - add private, hidden, or non-reviewable donor inputs
+
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

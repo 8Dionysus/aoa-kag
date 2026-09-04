@@ -59,12 +59,8 @@ Do not widen Spark here into:
 ## Validation
 
 Use the narrowest validator named by the touched owner surface. For Spark-lane
-route edits, run:
+route edits, select the matching on-demand route in root `VALIDATION.md`.
 
-```bash
-python scripts/validate_nested_agents.py
-python scripts/validate_semantic_agents.py
-```
 
 ## Local Done Signal
 

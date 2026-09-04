@@ -3,8 +3,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+import re
+import subprocess
 import sys
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -24,8 +27,8 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "agent-facing companion lanes",
             "Codex Spark guidance",
             "Do not restore root `Spark/` as an active lane",
-            "python scripts/validate_nested_agents.py",
-            "python scripts/validate_semantic_agents.py",
+            "on-demand route",
+            "VALIDATION.md",
         ),
     ),
     AgentsDocSpec(
@@ -36,8 +39,8 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "GPT-5.3-Codex-Spark",
             "done-or-handoff",
             "one KAG seam",
-            "python scripts/validate_nested_agents.py",
-            "python scripts/validate_semantic_agents.py",
+            "on-demand route",
+            "VALIDATION.md",
         ),
     ),
     AgentsDocSpec(
@@ -47,7 +50,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "source quest record district",
             "quests/<lane>/<state>/<quest-file>",
             "Do not keep active source records as root `quests/AOA-KAG-Q-*.yaml` aliases",
-            "python mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py",
+            "on-demand route",
         ),
     ),
     AgentsDocSpec(
@@ -56,7 +59,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "# AGENTS.md",
             "AOA-KAG-Q-*.yaml",
             "state directory must match",
-            "Run the quest-store validation route",
+            "validation route",
         ),
     ),
     AgentsDocSpec(
@@ -68,8 +71,8 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "KAG surfaces",
             "Source lanes",
             "Source repositories own authored meaning",
-            "python scripts/generate_decision_indexes.py --check",
-            "python scripts/validate_decision_records.py",
+            "on-demand route",
+            "VALIDATION.md",
         ),
     ),
     AgentsDocSpec(
@@ -80,7 +83,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "command authority",
             "script inventory",
             "config/validation_lanes.json",
-            "python -m unittest tests.test_validation_command_authority tests.test_script_topology",
+            "on-demand route",
         ),
     ),
     AgentsDocSpec(
@@ -89,7 +92,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "# AGENTS.md",
             "test-home topology",
             "test_inventory.json",
-            "scripts/run_tests.py",
+            "test runner",
             "config/validation_lanes.json",
         ),
     ),
@@ -99,8 +102,8 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "# AGENTS.md Guidance for `manifests/`",
             "source-authored control surfaces",
             "generated/",
-            "python scripts/generate_kag.py",
-            "python scripts/validate_kag.py",
+            "KAG generation builder",
+            "KAG validator",
         ),
     ),
     AgentsDocSpec(
@@ -109,8 +112,8 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             "# AGENTS.md Guidance for `generated/`",
             "Do not hand-edit files in `generated/`",
             ".min.json",
-            "python scripts/generate_kag.py",
-            "python scripts/validate_kag.py",
+            "KAG generation builder",
+            "KAG validator",
         ),
     ),
     AgentsDocSpec(
@@ -147,6 +150,45 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
     ),
 )
 
+IGNORED_DIRS: frozenset[str] = frozenset(
+    {
+        ".deps",
+        ".git",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".venv",
+        "__pycache__",
+    }
+)
+
+
+def _is_ignored(path: Path, repo_root: Path) -> bool:
+    try:
+        relative_parts = path.relative_to(repo_root).parts
+    except ValueError:
+        return False
+    return any(part in IGNORED_DIRS for part in relative_parts)
+
+
+def _iter_owned_agents(repo_root: Path) -> Iterator[Path]:
+    tracked = subprocess.run(
+        ("git", "-C", str(repo_root), "ls-files", "-z", "--", "*AGENTS.md"),
+        check=False,
+        capture_output=True,
+    )
+    if tracked.returncode == 0:
+        for raw_path in tracked.stdout.split(b"\0"):
+            if raw_path:
+                relative = Path(raw_path.decode("utf-8", errors="surrogateescape"))
+                if relative.name == "AGENTS.md":
+                    yield repo_root / relative
+        return
+
+    # Non-Git fixture trees retain filesystem discovery for focused unit tests.
+    for path in repo_root.rglob("AGENTS.md"):
+        if not _is_ignored(path, repo_root):
+            yield path
+
 
 def validate(repo_root: Path) -> list[str]:
     issues: list[str] = []
@@ -160,6 +202,49 @@ def validate(repo_root: Path) -> list[str]:
         for snippet in spec.required_snippets:
             if snippet not in text:
                 issues.append(f"{spec.path.as_posix()}: missing snippet {snippet!r}")
+
+    # D-0049 keeps inherited cards prompt-light. Guard syntax only: semantic
+    # owner/source coverage remains in the required snippets and local owners.
+    command_line = re.compile(
+        r"(?im)^\s*(?:[-*]\s*)?(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff|show|log|check)\b|gh\s+|uv\s+|bash\s+|jq\s+)"
+    )
+    inline_command = re.compile(
+        r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff|show|log|check)\b|gh\s+|uv\s+|bash\s+|jq\s+)[^`]+`"
+    )
+    orphan_extraction_leadin = re.compile(
+        r"(?im)^\s*(?:"
+        r"verify with(?: the [^:\n]+)?|"
+        r"run [^:\n]+ then|"
+        r"for this home|"
+        r"for source-fast coverage|"
+        r"inspect the owner evidence first|"
+        r"use the test runner or lane entrypoint"
+        r"):\s*$\n\s*(?=^#{1,6}\s|\Z)"
+    )
+    for path in sorted(_iter_owned_agents(repo_root)):
+        relative = path.relative_to(repo_root).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if "```" in text:
+            issues.append(f"{relative}: fenced procedure is not allowed in an active AGENTS card")
+        if command_line.search(text):
+            issues.append(f"{relative}: runnable command line is not allowed in an active AGENTS card")
+        if inline_command.search(text):
+            issues.append(f"{relative}: inline runnable command is not allowed in an active AGENTS card")
+        if orphan_extraction_leadin.search(text):
+            issues.append(f"{relative}: orphan extraction lead-in is not allowed in an active AGENTS card")
+        for section in re.findall(
+            r"(?ims)^##+\s+(?:Start here|required reading order)\s*$.*?(?=^##+\s+|\Z)",
+            text,
+        ):
+            if "README.md" in section:
+                issues.append(f"{relative}: unconditional README inventory is not allowed")
+        for section in re.finditer(
+            r"(?ims)^##+\s+(?:Validation|Verify|Checks?)\s*$.*?(?=^##+\s+|\Z)",
+            text,
+        ):
+            body = re.sub(r"(?m)^##+\s+[^\n]*$", "", section.group(0), count=1).strip()
+            if not body:
+                issues.append(f"{relative}: procedural validation section must not be empty")
 
     return issues
 

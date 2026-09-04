@@ -10,6 +10,7 @@ import os
 import stat
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -191,14 +192,65 @@ def _budget_procedure_root() -> Path:
     return root
 
 
-def _budget_git_blob(root: Path, relative: Path) -> str:
-    """Hash one producer file in a repository or a packaged action checkout.
+@lru_cache(maxsize=32)
+def _budget_git_object_format(root: str) -> str:
+    try:
+        result = subprocess.run(
+            ("git", "rev-parse", "--show-object-format"),
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (FileNotFoundError, OSError) as exc:
+        raise PortableFamilyError(
+            "cannot resolve producer Git object format"
+        ) from exc
+    object_format = result.stdout.strip()
+    if result.returncode == 0 and object_format in {"sha1", "sha256"}:
+        return object_format
 
-    GitHub installs composite actions without their ``.git`` directory.
-    ``git hash-object`` is still deterministic there, so infer the repository
-    object format from the emitted object ID instead of requiring ``rev-parse``.
-    """
+    # GitHub distributes a referenced composite action as a source archive,
+    # without the producer repository's .git directory. Ask the executing Git
+    # binary for its standalone object format so the archive computes the same
+    # blob identities as its SHA-1-backed source checkout. A SHA-256 producer
+    # checkout still takes the repository-backed branch above.
+    try:
+        probe = subprocess.run(
+            ("git", "hash-object", "--no-filters", "--stdin"),
+            cwd=root,
+            check=False,
+            capture_output=True,
+            input=b"",
+        )
+    except (FileNotFoundError, OSError) as exc:
+        raise PortableFamilyError(
+            "cannot resolve producer Git object format"
+        ) from exc
+    digest = probe.stdout.strip().decode("ascii", errors="ignore")
+    empty_blob = b"blob 0\0"
+    inferred_format = next(
+        (
+            algorithm
+            for algorithm in ("sha1", "sha256")
+            if digest == hashlib.new(algorithm, empty_blob).hexdigest()
+        ),
+        None,
+    )
+    if probe.returncode != 0 or inferred_format is None:
+        raise PortableFamilyError(
+            "cannot resolve producer Git object format"
+        )
+    return inferred_format
+
+
+def _budget_git_blob(root: Path, relative: Path) -> str:
     resolved_root = root.resolve()
+    object_format = _budget_git_object_format(str(resolved_root))
+    expected_length = {
+        "sha1": 40,
+        "sha256": 64,
+    }[object_format]
     result = subprocess.run(
         ("git", "hash-object", "--no-filters", "--", relative.as_posix()),
         cwd=resolved_root,
@@ -207,11 +259,7 @@ def _budget_git_blob(root: Path, relative: Path) -> str:
         text=True,
     )
     blob = result.stdout.strip()
-    object_format = {
-        40: "sha1",
-        64: "sha256",
-    }.get(len(blob))
-    if result.returncode != 0 or object_format is None or any(
+    if result.returncode != 0 or len(blob) != expected_length or any(
         character not in HEX_DIGITS for character in blob
     ):
         raise PortableFamilyError(

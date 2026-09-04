@@ -13,7 +13,7 @@ shape, public index posture, dispatch examples, and validation.
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`,
 `mechanics/questbook/AGENTS.md`, `mechanics/questbook/PARTS.md`, the target
-part `README.md`, `CONTRACT.md`, and `VALIDATION.md`, then read the source
+part `CONTRACT.md`, and `VALIDATION.md`, then read the source
 quest surface, schema, example, or validator being changed.
 
 ## Boundaries
@@ -28,12 +28,8 @@ quest surface, schema, example, or validator being changed.
 
 ## Validation
 
-Run the target part validation route, then:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
+The target part `VALIDATION.md` owns the focused route; review quest-source and
+root-compatibility boundaries afterward.
 
 ## Closeout
 

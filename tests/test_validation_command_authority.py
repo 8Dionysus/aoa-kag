@@ -581,13 +581,90 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
                 with self.subTest(surface=relative_path, marker=marker):
                     self.assertNotIn(marker, text)
 
+    def test_active_agent_cards_are_prompt_light_and_task_conditional(self) -> None:
+        command_line = re.compile(
+            r"(?im)^\s*(?:[-*]\s*)?(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff|show|log|check)\b|gh\s+|uv\s+|bash\s+|jq\s+)"
+        )
+        inline_command = re.compile(
+            r"`(?:python(?:\s+-m)?\s+|pytest\b|git\s+(?:status|diff|show|log|check)\b|gh\s+|uv\s+|bash\s+|jq\s+)[^`]+`"
+        )
+        agent_paths = tuple(
+            REPO_ROOT / line
+            for line in subprocess.check_output(
+                ("git", "ls-files", "*AGENTS.md"),
+                cwd=REPO_ROOT,
+                text=True,
+            ).splitlines()
+            if line == "AGENTS.md" or line.endswith("/AGENTS.md")
+        )
+        self.assertEqual(58, len(agent_paths))
+        for path in agent_paths:
+            relative = path.relative_to(REPO_ROOT).as_posix()
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(surface=relative):
+                self.assertNotIn("```", text)
+                self.assertIsNone(command_line.search(text))
+                self.assertIsNone(inline_command.search(text))
+                self.assertRegex(text, r"(?m)^##+\s+Validation\s*$")
+                for section in re.findall(
+                    r"(?ims)^##+\s+(?:Start here|required reading order)\s*$.*?(?=^##+\s+|\Z)",
+                    text,
+                ):
+                    self.assertNotIn("README.md", section)
+
+    def test_active_agent_cards_have_no_extraction_residue(self) -> None:
+        orphan_leadin = re.compile(
+            r"(?im)^\s*(?:"
+            r"verify with(?: the [^:\n]+)?|"
+            r"run [^:\n]+ then|"
+            r"for this home|"
+            r"for source-fast coverage|"
+            r"inspect the owner evidence first|"
+            r"use the test runner or lane entrypoint"
+            r"):\s*$\n\s*(?=^#{1,6}\s|\Z)"
+        )
+        empty_section = re.compile(
+            r"(?ims)^##+\s+(?:Validation|Verify|Checks?)\s*$.*?(?=^##+\s+|\Z)"
+        )
+        agent_paths = tuple(
+            REPO_ROOT / line
+            for line in subprocess.check_output(
+                ("git", "ls-files", "*AGENTS.md"),
+                cwd=REPO_ROOT,
+                text=True,
+            ).splitlines()
+            if line == "AGENTS.md" or line.endswith("/AGENTS.md")
+        )
+        for path in agent_paths:
+            relative = path.relative_to(REPO_ROOT).as_posix()
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(surface=relative):
+                self.assertIsNone(orphan_leadin.search(text))
+                for section in empty_section.finditer(text):
+                    body = re.sub(
+                        r"(?m)^##+\s+[^\n]*$", "", section.group(0), count=1
+                    ).strip()
+                    self.assertTrue(body, f"empty procedural section in {relative}")
+
+    def test_root_validation_map_exposes_manifest_lane_entries(self) -> None:
+        validation = (REPO_ROOT / "VALIDATION.md").read_text(encoding="utf-8")
+        for lane, command in (
+            ("source-fast", "python scripts/ci_gate.py --mode source-fast"),
+            ("generated", "python scripts/ci_gate.py --mode generated"),
+            ("release", "python scripts/release_check.py"),
+        ):
+            with self.subTest(lane=lane):
+                self.assertIn(f"`{lane}`", validation)
+                self.assertIn(f"`{command}`", validation)
+        self.assertIn("config/validation_lanes.json", validation)
+
     def test_non_agent_markdown_does_not_embed_validation_command_blocks(self) -> None:
         offenders: list[str] = []
         for path in tracked_markdown_paths():
             relative_path = path.relative_to(REPO_ROOT).as_posix()
             if relative_path.endswith("AGENTS.md"):
                 continue
-            if relative_path == "docs/validation/COMMAND_AUTHORITY.md":
+            if path.name == "VALIDATION.md" or relative_path == "docs/validation/COMMAND_AUTHORITY.md":
                 continue
 
             text = path.read_text(encoding="utf-8")
@@ -605,7 +682,7 @@ class ValidationCommandAuthorityTests(unittest.TestCase):
             relative_path = path.relative_to(REPO_ROOT).as_posix()
             if relative_path.endswith("AGENTS.md"):
                 continue
-            if relative_path == "docs/validation/COMMAND_AUTHORITY.md":
+            if path.name == "VALIDATION.md" or relative_path == "docs/validation/COMMAND_AUTHORITY.md":
                 continue
 
             text = path.read_text(encoding="utf-8")

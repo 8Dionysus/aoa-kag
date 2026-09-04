@@ -13,7 +13,7 @@ truth.
 ## Read before editing
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`, `mechanics/checkpoint/AGENTS.md`,
-`mechanics/checkpoint/PARTS.md`, the target part `README.md`, `CONTRACT.md`,
+`mechanics/checkpoint/PARTS.md`, the target part `CONTRACT.md`,
 and `VALIDATION.md`, then read the handoff, return, generated, schema, example,
 manifest, or owner surface named by the route.
 
@@ -31,12 +31,8 @@ manifest, or owner surface named by the route.
 
 ## Validation
 
-Run the target part validation route, then:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
+The target part `VALIDATION.md` owns the focused route; review handoff and
+generated/read-model boundaries afterward.
 
 ## Closeout
 

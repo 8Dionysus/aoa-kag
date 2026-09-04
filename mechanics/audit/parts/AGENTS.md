@@ -12,7 +12,7 @@ routes while leaving verdicts and owner acceptance with stronger owners.
 
 ## Read before editing
 
-Read the package `AGENTS.md`, `README.md`, `PARTS.md`, `PROVENANCE.md`, and the
+Read the package `AGENTS.md`, `PARTS.md`, `PROVENANCE.md`, and the
 nearest part `CONTRACT.md`.
 
 ## Boundaries

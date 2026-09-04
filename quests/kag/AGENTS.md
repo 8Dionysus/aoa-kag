@@ -12,17 +12,14 @@ KAG-local derived-substrate obligations.
 
 Use lifecycle state directories:
 
-```text
-quests/kag/<state>/AOA-KAG-Q-####.yaml
-```
 
 The state directory must match the YAML `state` field.
 
 ## Read before editing
 
-Read root `AGENTS.md`, `QUESTBOOK.md`, `quests/AGENTS.md`,
-`quests/README.md`, this card, `quests/kag/README.md`, and
-`mechanics/questbook/parts/quest-store/CONTRACT.md`.
+Read root `AGENTS.md`, `QUESTBOOK.md`, `quests/AGENTS.md`, this card, and
+`mechanics/questbook/parts/quest-store/CONTRACT.md`. Consult the local README
+only when the named task needs its human contract.
 
 ## Boundaries
 

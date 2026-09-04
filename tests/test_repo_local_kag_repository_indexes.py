@@ -1010,6 +1010,38 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
             self.assertRegex(entry["git_blob"], r"^sha1:[0-9a-f]{40}$")
             self.assertTrue(portable_family_module._budget_valid_git_blob(entry["git_blob"]))
 
+    def test_budget_producer_file_matches_sha1_action_archive_without_git_metadata(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as source_tmpdir:
+            archive_tmpdir = tempfile.TemporaryDirectory()
+            self.addCleanup(archive_tmpdir.cleanup)
+            source_root = Path(source_tmpdir)
+            archive_root = Path(archive_tmpdir.name)
+            relative = Path("scripts/producer.py")
+            (source_root / relative.parent).mkdir(parents=True)
+            (archive_root / relative.parent).mkdir(parents=True)
+            content = "VALUE = 'action archive'\n"
+            (source_root / relative).write_text(content, encoding="utf-8")
+            (archive_root / relative).write_text(content, encoding="utf-8")
+            subprocess.run(
+                ("git", "init", "-q", "--object-format=sha1", "-b", "main"),
+                cwd=source_root,
+                check=True,
+            )
+
+            source_entry = portable_family_module._budget_producer_file_entry(
+                source_root,
+                relative,
+            )
+            archive_entry = portable_family_module._budget_producer_file_entry(
+                archive_root,
+                relative,
+            )
+
+            self.assertEqual(source_entry, archive_entry)
+            self.assertRegex(archive_entry["git_blob"], r"^sha1:[0-9a-f]{40}$")
+
     def test_budget_producer_identity_survives_gitless_action_packaging(self) -> None:
         execution_inputs = capture_budget_producer_execution_inputs(
             REPO_ROOT,

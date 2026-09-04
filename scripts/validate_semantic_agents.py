@@ -23,7 +23,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'Codex Spark guidance',
             'source-owner truth',
             'Do not restore root `Spark/`',
-            'validate_nested_agents.py',
+            'on-demand route',
         ),
     ),
     AgentsDocSpec(
@@ -33,7 +33,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'done-or-handoff',
             'one KAG seam',
             'source-first',
-            'validate_semantic_agents.py',
+            'on-demand route',
         ),
     ),
     AgentsDocSpec(
@@ -51,9 +51,9 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
         (
             'source quest record district',
             'public-safe',
-            'quests/<lane>/<state>',
+            'quests/<lane>/<state>/<quest-file>',
             'mechanics/questbook',
-            'validate_quest_store.py',
+            'on-demand route',
         ),
     ),
     AgentsDocSpec(
@@ -93,7 +93,7 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
             'provenance loss',
             'projection overreach',
             'public-safe',
-            'scripts/run_tests.py',
+            'test runner',
         ),
     ),
 )
