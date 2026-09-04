@@ -33,6 +33,9 @@ KAG_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "aoa-kag-owner-prepare-landing-receipt-v1"
 DEFAULT_OUTPUT = "kag/indexes/source_surface_index.json"
 OWNER_OUTPUT_PATHS = (
+    "kag/indexes/artifact_locators.json",
+    "kag/indexes/corpus.manifest.json",
+    "kag/indexes/hot_profile.json",
     "kag/indexes/index_family.manifest.json",
     "kag/indexes/shards",
     "kag/receipts/index_family_budget",
