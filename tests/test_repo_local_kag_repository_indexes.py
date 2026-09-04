@@ -997,6 +997,60 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
                 ["properties"]["git_blob"]["pattern"],
             )
 
+    def test_budget_producer_file_accepts_gitless_action_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "entry.py").write_text("VALUE = 'action'\n", encoding="utf-8")
+
+            entry = portable_family_module._budget_producer_file_entry(
+                root,
+                Path("entry.py"),
+            )
+
+            self.assertRegex(entry["git_blob"], r"^sha1:[0-9a-f]{40}$")
+            self.assertTrue(portable_family_module._budget_valid_git_blob(entry["git_blob"]))
+
+    def test_budget_producer_identity_survives_gitless_action_packaging(self) -> None:
+        execution_inputs = capture_budget_producer_execution_inputs(
+            REPO_ROOT,
+            base_ref="HEAD",
+            history_ref="HEAD",
+            event_history_ref="HEAD",
+        )
+        expected = portable_family_module._budget_producer_identity(execution_inputs)
+        manifest, _ = portable_family_module._budget_load_producer_manifest(REPO_ROOT)
+        source_paths = {
+            *(
+                Path(value)
+                for value in manifest["python_import_closure"]
+            ),
+            *(
+                Path(value)
+                for value in manifest["schema_inputs"]
+            ),
+            portable_family_module.BUDGET_RECEIPT_PRODUCER_MANIFEST_PATH,
+            portable_family_module.BUDGET_RECEIPT_PRODUCER_MANIFEST_SCHEMA_PATH,
+            portable_family_module.BUDGET_PRODUCER_ACTION_PATH,
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            packaged_root = Path(tmpdir)
+            for relative in source_paths:
+                target = packaged_root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(REPO_ROOT / relative, target)
+
+            with mock.patch.object(
+                portable_family_module,
+                "_budget_procedure_root",
+                return_value=packaged_root,
+            ):
+                observed = portable_family_module._budget_producer_identity(
+                    execution_inputs
+                )
+
+        self.assertEqual(expected, observed)
+
     def test_budget_producer_manifest_binds_validator_facade_dynamic_target(self) -> None:
         manifest, _ = portable_family_module._budget_load_producer_manifest(REPO_ROOT)
         closure = portable_family_module._budget_import_closure(

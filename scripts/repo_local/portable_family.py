@@ -10,7 +10,6 @@ import os
 import stat
 import subprocess
 import sys
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -192,30 +191,14 @@ def _budget_procedure_root() -> Path:
     return root
 
 
-@lru_cache(maxsize=32)
-def _budget_git_object_format(root: str) -> str:
-    result = subprocess.run(
-        ("git", "rev-parse", "--show-object-format"),
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    object_format = result.stdout.strip()
-    if result.returncode != 0 or object_format not in {"sha1", "sha256"}:
-        raise PortableFamilyError(
-            "cannot resolve producer Git object format"
-        )
-    return object_format
-
-
 def _budget_git_blob(root: Path, relative: Path) -> str:
+    """Hash one producer file in a repository or a packaged action checkout.
+
+    GitHub installs composite actions without their ``.git`` directory.
+    ``git hash-object`` is still deterministic there, so infer the repository
+    object format from the emitted object ID instead of requiring ``rev-parse``.
+    """
     resolved_root = root.resolve()
-    object_format = _budget_git_object_format(str(resolved_root))
-    expected_length = {
-        "sha1": 40,
-        "sha256": 64,
-    }[object_format]
     result = subprocess.run(
         ("git", "hash-object", "--no-filters", "--", relative.as_posix()),
         cwd=resolved_root,
@@ -224,7 +207,11 @@ def _budget_git_blob(root: Path, relative: Path) -> str:
         text=True,
     )
     blob = result.stdout.strip()
-    if result.returncode != 0 or len(blob) != expected_length or any(
+    object_format = {
+        40: "sha1",
+        64: "sha256",
+    }.get(len(blob))
+    if result.returncode != 0 or object_format is None or any(
         character not in HEX_DIGITS for character in blob
     ):
         raise PortableFamilyError(
