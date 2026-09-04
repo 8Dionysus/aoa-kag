@@ -37,9 +37,6 @@ OWNER_OUTPUT_PATHS = (
     "kag/indexes/corpus.manifest.json",
     "kag/indexes/hot_profile.json",
     "kag/indexes/index_family.manifest.json",
-    "kag/indexes/corpus.manifest.json",
-    "kag/indexes/hot_profile.json",
-    "kag/indexes/artifact_locators.json",
     "kag/indexes/shards",
     "kag/receipts/index_family_budget",
 )
