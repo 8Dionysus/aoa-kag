@@ -120,6 +120,14 @@ class PrepareOwnerLandingTests(unittest.TestCase):
             repo = self.make_repo(Path(raw))
             shard_dir = repo / "kag" / "indexes" / "shards"
             shard_dir.mkdir(parents=True)
+            for name in (
+                "artifact_locators.json",
+                "corpus.manifest.json",
+                "hot_profile.json",
+            ):
+                (repo / "kag" / "indexes" / name).write_text(
+                    '{"prepared":true}\n', encoding="utf-8"
+                )
             (repo / "kag" / "indexes" / "index_family.manifest.json").write_text(
                 '{"prepared":true}\n', encoding="utf-8"
             )
@@ -130,6 +138,9 @@ class PrepareOwnerLandingTests(unittest.TestCase):
             staged = git(repo, "diff", "--cached", "--name-only").decode().splitlines()
             self.assertEqual(
                 [
+                    "kag/indexes/artifact_locators.json",
+                    "kag/indexes/corpus.manifest.json",
+                    "kag/indexes/hot_profile.json",
                     "kag/indexes/index_family.manifest.json",
                     "kag/indexes/shards/records.jsonl",
                 ],
