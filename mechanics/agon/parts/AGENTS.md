@@ -24,8 +24,10 @@ target part `CONTRACT.md`, and `VALIDATION.md`.
   part-local contract proves they should move.
 - Part-local source configs use functional `.source.json` names, not `seed`
   names.
-- Historical wave or landing names stay in `mechanics/agon/legacy/` accounting,
-  not active part paths or active payload keys.
+- Historical wave or landing names stay in the package `PROVENANCE.md`
+  accounting, not active part paths or active payload keys. If historical
+  source is needed, use the exact baseline Git tree pinned by AOA-KAG-D-0050;
+  no local `mechanics/agon/legacy/` archive is an active route.
 - No part may claim verdict, proof, memory, ToS canon, source truth, runtime
   execution, rank mutation, or scheduler effects.
 

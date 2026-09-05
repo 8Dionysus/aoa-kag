@@ -20,19 +20,8 @@ REQUIRED_DOCS: tuple[AgentsDocSpec, ...] = (
         Path('.agents/AGENTS.md'),
         (
             'agent-facing companion lanes',
-            'Codex Spark guidance',
             'source-owner truth',
             'Do not restore root `Spark/`',
-            'on-demand route',
-        ),
-    ),
-    AgentsDocSpec(
-        Path('.agents/spark/AGENTS.md'),
-        (
-            'GPT-5.3-Codex-Spark',
-            'done-or-handoff',
-            'one KAG seam',
-            'source-first',
             'on-demand route',
         ),
     ),

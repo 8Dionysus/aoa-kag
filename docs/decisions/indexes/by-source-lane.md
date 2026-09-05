@@ -123,6 +123,7 @@
 - [AOA-KAG-D-0047 - AOA-KAG-D-0047 Budget Producer Runtime Binding And Descriptor Confinement](../AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md) (`docs/decisions/AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md`)
 - [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
 - [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
 
 ## aoa-memo
 
@@ -297,6 +298,7 @@
 ## source-owner repositories
 
 - [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
 
 ## Tree-of-Sophia
 

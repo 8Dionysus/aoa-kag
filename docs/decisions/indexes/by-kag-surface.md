@@ -198,6 +198,7 @@
 ## local agent mesh
 
 - [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
 
 ## local integrity
 
@@ -476,6 +477,10 @@
 
 - [AOA-KAG-D-0035 - Bounded Owner-Family Component DAG](../AOA-KAG-D-0035-bounded-owner-family-component-dag.md) (`docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md`)
 
+## repo-self family
+
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+
 ## repo-self index family
 
 - [AOA-KAG-D-0014 - Canonical Repository Knowledge Kernel](../AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md) (`docs/decisions/AOA-KAG-D-0014-canonical-repository-knowledge-kernel.md`)
@@ -534,6 +539,7 @@
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 - [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
 
 ## source-fast handoff
 
