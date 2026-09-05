@@ -24,7 +24,10 @@ Read root `AGENTS.md`, `mechanics/AGENTS.md`,
   owner adoption, proof verdict, ToS canon, memory truth, or route execution.
 - Part-local schemas and examples are contract packets for the owning part.
 - Do not reactivate `seed` or `wave` names in active paths or payload keys.
-- Former root paths belong in `mechanics/method-growth/legacy/` accounting.
+- Former root paths belong in the package `PROVENANCE.md` accounting. If
+  historical source is needed, use the exact baseline Git tree pinned by
+  AOA-KAG-D-0050; no local `mechanics/method-growth/legacy/` archive is an
+  active route.
 
 ## Validation
 

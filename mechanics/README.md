@@ -34,7 +34,8 @@ Do not add root rosters, prep reports, migration ledgers, backlogs, templates,
 notes, `_meta/`, scratch, or root `legacy/` holding areas. Active operation
 detail belongs in the owning package or part. Durable rationale belongs in
 `docs/decisions/`. Former-path accounting belongs in package `PROVENANCE.md`
-and package-local `legacy/` only after an active route exists.
+and immutable Git source history; no package-local `legacy/` archive is
+required for an active route.
 
 ## Current Contour
 
