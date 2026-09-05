@@ -1,5 +1,5 @@
 {
-  "allowed_bytes": 12876696,
+  "allowed_bytes": 13042446,
   "allowed_tracked_bytes": 2327362,
   "approved_by": "repository-owner",
   "base_ref": "14ee1e33e43749d23c557b3ef526eca7edb36196",
@@ -7,19 +7,19 @@
     "algorithm": "sha256:canonical-json-file-inventory-v2",
     "base_ref": "14ee1e33e43749d23c557b3ef526eca7edb36196",
     "contract_version": "aoa-kag:budget-receipt-candidate-identity-v2",
-    "excluded_path": "kag/receipts/index_family_budget/17f9b5ba886247f44bfb4ad202564b127fcf1fb0dfd76217d1f454097b35df7e.json",
-    "family_digest": "17f9b5ba886247f44bfb4ad202564b127fcf1fb0dfd76217d1f454097b35df7e",
+    "excluded_path": "kag/receipts/index_family_budget/f8a8184aac9770b0830359bc63c87404c42d7355a1a27656a6ce2a1f370d6153.json",
+    "family_digest": "f8a8184aac9770b0830359bc63c87404c42d7355a1a27656a6ce2a1f370d6153",
     "file_count": 1468,
-    "seal": "aabbbb9467a45235f12ca329a27cca68b7d444509c74f5e04ab65108e3dba28c",
-    "source_epoch": "sha256:dc54737f71f9e1e96088f058c52c4278f3ae18453b4205477f90aafe66abd2de",
-    "source_snapshot": "sha256:2f32fca8fed320a7ca99f564016e5712c93695839fd88b801615a02197920f57"
+    "seal": "3312cfc08e28e2485af34b4ea9b82a5ed63ee124038a03f2f25098b24e4eda3f",
+    "source_epoch": "sha256:c6803909a620430a24f1086c280e4fd8201534a398eb9253db89156b4b07276e",
+    "source_snapshot": "sha256:6a0bfbf694a387615305f518245c58ce0d1f3abab79a18836eb65096844412a6"
   },
-  "changed_generated_bytes": 12876696,
-  "changed_generated_files": 300,
+  "changed_generated_bytes": 13042446,
+  "changed_generated_files": 304,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "17f9b5ba886247f44bfb4ad202564b127fcf1fb0dfd76217d1f454097b35df7e",
-  "head_source_snapshot": "sha256:2f32fca8fed320a7ca99f564016e5712c93695839fd88b801615a02197920f57",
+  "head_family_digest": "f8a8184aac9770b0830359bc63c87404c42d7355a1a27656a6ce2a1f370d6153",
+  "head_source_snapshot": "sha256:6a0bfbf694a387615305f518245c58ce0d1f3abab79a18836eb65096844412a6",
   "producer_identity": {
     "action": {
       "bytes": 5200,
@@ -1365,7 +1365,7 @@
     "revision_binding": "content-addressed-procedure-import-closure-portable-runtime-contract-and-descriptor-io-v1",
     "source_digest": "df3b43c667409671f5b5fc71b847a54b0f5aed3b4d9cafb2ca7046896f5c2c37"
   },
-  "reason": "AOA-KAG-D-0050 approved history-route cleanup: route former names through package provenance and exact baseline Git recovery; no local legacy archive is an active route; no standing budget change.",
+  "reason": "Owner-reviewed Spark and legacy retirement with preserved exact historical recovery; canonical coverage and family convergence.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v2",
   "scope": "generated_delta",
