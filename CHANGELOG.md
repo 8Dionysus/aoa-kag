@@ -7,6 +7,13 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+### Added
+
+- Add a bounded segmented repository-local KAG family route for owners whose
+  canonical family exceeds the portable single-family budget, with an
+  explicit manifest/schema, per-segment records, bounded compatibility
+  assembly, and owner-gate routing.
+
 ### Fixed
 
 - Keep the live `aoa-gopro-connector` checkout visible as a
