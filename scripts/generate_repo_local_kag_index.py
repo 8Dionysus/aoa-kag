@@ -80,6 +80,7 @@ DEFAULT_OUTPUT = Path("kag/indexes/source_surface_index.json")
 CANONICAL_SELF_INDEX = DEFAULT_OUTPUT
 PORTABLE_FAMILY_MANIFEST = Path("kag/indexes/index_family.manifest.json")
 PORTABLE_FAMILY_SHARD_ROOT = Path("kag/indexes/shards")
+SEGMENTED_FAMILY_SEGMENT_ROOT = Path("kag/indexes/segments")
 PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT = Path(
     "kag/receipts/index_family_budget"
 )
@@ -92,6 +93,7 @@ PORTABLE_FAMILY_CONTROL_PATHS = frozenset(
         Path("kag/indexes/corpus.manifest.json"),
         Path("kag/indexes/hot_profile.json"),
         Path("kag/indexes/artifact_locators.json"),
+        SEGMENTED_FAMILY_SEGMENT_ROOT,
         PREPARATION_COVERAGE_SEED,
     }
 )
@@ -600,6 +602,7 @@ def is_portable_family_control_path(path: Path) -> bool:
     return (
         path in PORTABLE_FAMILY_CONTROL_PATHS
         or PORTABLE_FAMILY_SHARD_ROOT in (path, *path.parents)
+        or SEGMENTED_FAMILY_SEGMENT_ROOT in (path, *path.parents)
         or PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT in (path, *path.parents)
     )
 
@@ -3420,6 +3423,7 @@ def build_repository_indexes(
         source_index_path.as_posix(),
         *(path.as_posix() for path in PORTABLE_FAMILY_CONTROL_PATHS),
         PORTABLE_FAMILY_SHARD_ROOT.as_posix() + "/",
+        SEGMENTED_FAMILY_SEGMENT_ROOT.as_posix() + "/",
         PORTABLE_FAMILY_BUDGET_RECEIPT_ROOT.as_posix() + "/",
         *(
             (source_index_path.parent / filename).as_posix()
@@ -3608,6 +3612,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--segmented-family",
+        action="store_true",
+        help=(
+            "Generate or check the bounded segmented v1 family directly from "
+            "canonical rows, without materialising a v3/v4 full family."
+        ),
+    )
+    parser.add_argument(
         "--artifact-root",
         help=(
             "Content-addressed artifact root used by --tiered-family and by "
@@ -3721,12 +3733,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.index_family,
             args.portable_family,
             args.tiered_family,
+            args.segmented_family,
         )
     )
     if selected_family_modes > 1:
         raise SystemExit(
-            "--index-family, --portable-family, and --tiered-family are "
-            "mutually exclusive"
+            "--index-family, --portable-family, --tiered-family, and "
+            "--segmented-family are mutually exclusive"
         )
     if args.keep_v2 and not args.portable_family:
         raise SystemExit("--keep-v2 requires --portable-family")
@@ -3734,6 +3747,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("--externalize-cold requires --tiered-family")
     if args.tiered_family and not args.artifact_root:
         raise SystemExit("--tiered-family requires --artifact-root")
+    if args.segmented_family and (
+        args.externalize_cold
+        or args.artifact_root
+        or args.materialize_artifact_on_check
+    ):
+        raise SystemExit(
+            "--segmented-family does not accept tiered artifact placement options"
+        )
     if args.materialize_artifact_on_check and not (
         args.tiered_family and args.check
     ):
@@ -3741,7 +3762,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "--materialize-artifact-on-check requires --tiered-family --check"
         )
     if args.write_budget_receipt and (
-        not (args.portable_family or args.tiered_family)
+        not (args.portable_family or args.tiered_family or args.segmented_family)
         or args.check
         or not args.budget_base_ref
         or not args.budget_reason.strip()
@@ -3796,7 +3817,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     previous_corpus: dict[str, Any] | None = None
     previous_tiered_shadow = False
     portable_manifest_path = repo_root / PORTABLE_FAMILY_MANIFEST
-    if (args.portable_family or args.tiered_family) and portable_manifest_path.is_file():
+    if (
+        args.portable_family
+        or args.tiered_family
+        or args.segmented_family
+    ) and portable_manifest_path.is_file():
         try:
             loaded_manifest = json.loads(
                 portable_manifest_path.read_text(encoding="utf-8")
@@ -3809,7 +3834,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if loaded_manifest.get("schema_version") == "aoa-repo-local-kag-family-manifest-v3":
             previous_manifest = loaded_manifest
-        elif args.tiered_family and loaded_manifest.get("schema_version") == (
+        elif (args.tiered_family or args.segmented_family) and loaded_manifest.get("schema_version") == (
             "aoa-repo-local-kag-distribution-manifest-v1"
         ):
             previous_tiered_shadow = (
@@ -3839,7 +3864,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 history_ref=history_ref,
                 event_history_ref=event_history_ref,
                 output=output,
-                family_mode="tiered" if args.tiered_family else "portable",
+                family_mode=(
+                    "tiered"
+                    if args.tiered_family
+                    else "segmented"
+                    if args.segmented_family
+                    else "portable"
+                ),
                 artifact_root=(
                     Path(args.artifact_root).resolve()
                     if args.tiered_family and args.artifact_root
@@ -3900,7 +3931,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if isinstance(loaded_previous, dict):
             previous_index = loaded_previous
         if (
-            (args.index_family or args.portable_family or args.tiered_family)
+            (
+                args.index_family
+                or args.portable_family
+                or args.tiered_family
+                or args.segmented_family
+            )
             and all(path.is_file() for path in family_paths.values())
         ):
             loaded_family: dict[str, dict[str, Any]] = {}
@@ -3919,14 +3955,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         output=output,
         excluded_outputs=(
             tuple(family_paths.values())
-            if args.index_family or args.portable_family or args.tiered_family
+            if (
+                args.index_family
+                or args.portable_family
+                or args.tiered_family
+                or args.segmented_family
+            )
             else ()
         ),
         previous_index=previous_index,
         history_ref=history_ref,
         source_snapshot=source_snapshot,
     )
-    if args.index_family or args.portable_family or args.tiered_family:
+    if (
+        args.index_family
+        or args.portable_family
+        or args.tiered_family
+        or args.segmented_family
+    ):
         try:
             source_index_path = output_path.resolve().relative_to(repo_root)
         except ValueError as exc:
@@ -3942,6 +3988,133 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     else:
         family = {}
+    if args.segmented_family:
+        try:
+            from scripts.repo_local.portable_family import (
+                build_budget_receipt,
+                validate_changed_generated_budget,
+                write_budget_receipt,
+            )
+            from scripts.repo_local.segmented_family import (
+                SegmentedFamilyError,
+                build_segmented_family,
+                check_segmented_output,
+                write_segmented_output,
+            )
+        except ImportError:  # pragma: no cover - direct script execution
+            from repo_local.portable_family import (  # type: ignore
+                build_budget_receipt,
+                validate_changed_generated_budget,
+                write_budget_receipt,
+            )
+            from repo_local.segmented_family import (  # type: ignore
+                SegmentedFamilyError,
+                build_segmented_family,
+                check_segmented_output,
+                write_segmented_output,
+            )
+        try:
+            migration_from = None
+            if isinstance(previous_manifest, Mapping):
+                previous_migration = previous_manifest.get("migration")
+                previous_digest = None
+                if (
+                    previous_manifest.get("schema_version")
+                    == "aoa-repo-local-kag-segmented-family-v1"
+                    and isinstance(previous_migration, Mapping)
+                ):
+                    previous_digest = previous_migration.get("from_family_digest")
+                else:
+                    previous_identity = previous_manifest.get("family_identity")
+                    if not isinstance(previous_identity, Mapping):
+                        previous_identity = previous_manifest.get("distribution_identity")
+                    previous_digest = (
+                        previous_identity.get("content_digest")
+                        if isinstance(previous_identity, Mapping)
+                        else None
+                    )
+                if isinstance(previous_digest, str):
+                    migration_from = {"content_digest": previous_digest.removeprefix("sha256:")}
+            segmented = build_segmented_family(
+                payload,
+                family,
+                previous_manifest=previous_manifest,
+                migration_from=migration_from,
+            )
+        except SegmentedFamilyError as exc:
+            print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+            return 1
+        if args.check:
+            ok = check_segmented_output(repo_root, segmented)
+            if args.budget_base_ref:
+                try:
+                    changed_bytes, changed_files, receipted = (
+                        validate_changed_generated_budget(
+                            repo_root,
+                            base_ref=args.budget_base_ref,
+                            manifest=segmented.manifest,
+                            producer_execution_inputs=producer_execution_inputs,
+                            allow_dirty=True,
+                        )
+                    )
+                except (PortableFamilyBoundaryError, subprocess.CalledProcessError) as exc:
+                    print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                    return 1
+                receipt_label = " receipt=accepted" if receipted else ""
+                print(
+                    "[repo-local-kag-index] segmented generated delta "
+                    f"bytes={changed_bytes} files={changed_files}{receipt_label}"
+                )
+            if not ok:
+                print(
+                    "[repo-local-kag-index] segmented family drifted",
+                    file=sys.stderr,
+                )
+            return 0 if ok else 1
+        write_segmented_output(repo_root, segmented)
+        if args.write_budget_receipt:
+            try:
+                receipt_path, receipt = build_budget_receipt(
+                    repo_root,
+                    base_ref=args.budget_base_ref,
+                    manifest=segmented.manifest,
+                    reason=args.budget_reason,
+                    source_epoch=source_epoch,
+                    producer_execution_inputs=producer_execution_inputs,
+                    allow_dirty=True,
+                )
+            except (PortableFamilyBoundaryError, subprocess.CalledProcessError) as exc:
+                print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                return 1
+            write_budget_receipt(repo_root, receipt_path, receipt)
+            print(f"[repo-local-kag-index] wrote {repo_root / receipt_path}")
+        if args.budget_base_ref:
+            try:
+                changed_bytes, changed_files, receipted = (
+                    validate_changed_generated_budget(
+                        repo_root,
+                        base_ref=args.budget_base_ref,
+                        manifest=segmented.manifest,
+                        producer_execution_inputs=producer_execution_inputs,
+                        allow_dirty=True,
+                    )
+                )
+            except (PortableFamilyBoundaryError, subprocess.CalledProcessError) as exc:
+                print(f"[repo-local-kag-index] {exc}", file=sys.stderr)
+                return 1
+            receipt_label = " receipt=accepted" if receipted else ""
+            print(
+                "[repo-local-kag-index] segmented generated delta "
+                f"bytes={changed_bytes} files={changed_files}{receipt_label}"
+            )
+        print(
+            "[repo-local-kag-index] wrote segmented family "
+            f"family={segmented.manifest['family_identity']['content_digest']} "
+            f"segments={segmented.manifest['summary']['segments']} "
+            f"logical_bytes={segmented.manifest['summary']['logical_bytes']} "
+            f"max_segment_bytes={segmented.manifest['summary']['max_segment_bytes']}"
+        )
+        return 0
     if args.portable_family or args.tiered_family:
         try:
             from scripts.repo_local.portable_family import (
