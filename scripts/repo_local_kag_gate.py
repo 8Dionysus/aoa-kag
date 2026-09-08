@@ -34,21 +34,27 @@ SENTINEL_SCHEMA_VERSION = "aoa-kag-owner-family-sentinel-receipt-v1"
 DEFAULT_OUTPUT = "kag/indexes/source_surface_index.json"
 MAX_OUTPUT_CHARS = 4_000
 TIERED_FAMILY_SCHEMA = "aoa-repo-local-kag-distribution-manifest-v1"
+SEGMENTED_FAMILY_SCHEMA = "aoa-repo-local-kag-segmented-family-v1"
 
 
-def family_route(repo_root: Path) -> tuple[bool, bool]:
-    """Return (tiered, externalized) for the checked-in family manifest."""
+def family_route(repo_root: Path) -> tuple[bool, bool, bool]:
+    """Return (tiered, externalized, segmented) for the family manifest."""
     manifest_path = repo_root / "kag" / "indexes" / "index_family.manifest.json"
     try:
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (FileNotFoundError, IsADirectoryError, json.JSONDecodeError, UnicodeDecodeError):
-        return False, False
-    if not isinstance(payload, dict) or payload.get("schema_version") != TIERED_FAMILY_SCHEMA:
-        return False, False
+        return False, False, False
+    if not isinstance(payload, dict):
+        return False, False, False
+    if payload.get("schema_version") == SEGMENTED_FAMILY_SCHEMA:
+        return False, False, True
+    if payload.get("schema_version") != TIERED_FAMILY_SCHEMA:
+        return False, False, False
     placement = payload.get("placement")
     return (
         True,
         isinstance(placement, dict) and placement.get("state") == "externalized",
+        False,
     )
 
 
@@ -176,6 +182,7 @@ def generator_command(
     incremental: bool,
     tiered: bool = False,
     externalized: bool = False,
+    segmented: bool = False,
     artifact_root: Path | None = None,
 ) -> tuple[str, ...]:
     command = [
@@ -186,7 +193,9 @@ def generator_command(
         "--output",
         output,
     ]
-    if tiered:
+    if segmented:
+        command.append("--segmented-family")
+    elif tiered:
         command.append("--tiered-family")
         if artifact_root is None:
             raise ValueError("tiered owner-family commands require an artifact root")
@@ -222,6 +231,7 @@ def downstream_components(
     compatibility_output: Path,
     tiered: bool = False,
     externalized: bool = False,
+    segmented: bool = False,
     artifact_root: Path | None = None,
 ) -> tuple[Component, ...]:
     validator_args = [
@@ -232,7 +242,9 @@ def downstream_components(
         "--output-dir",
         compatibility_output.as_posix(),
     ]
-    if tiered:
+    if segmented:
+        assembly_args.append("--segmented-family")
+    elif tiered:
         if artifact_root is None:
             raise ValueError("tiered owner-family commands require an artifact root")
         validator_args.extend(("--artifact-root", artifact_root.as_posix()))
@@ -252,6 +264,7 @@ def downstream_components(
                 incremental=False,
                 tiered=tiered,
                 externalized=externalized,
+                segmented=segmented,
                 artifact_root=artifact_root,
             ),
         ),
@@ -287,14 +300,23 @@ def sentinel_component(
     budget_base_ref: str,
     tiered: bool | None = None,
     externalized: bool | None = None,
+    segmented: bool | None = None,
     artifact_root: Path | None = None,
 ) -> Component:
     if tiered is None:
-        tiered, detected_externalized = family_route(repo_root)
+        tiered, detected_externalized, detected_segmented = family_route(repo_root)
         if externalized is None:
             externalized = detected_externalized
+        if segmented is None:
+            segmented = detected_segmented
     elif externalized is None:
         externalized = False
+    if segmented is None:
+        segmented = False
+    if segmented:
+        tiered = False
+        externalized = False
+        artifact_root = None
     if tiered and artifact_root is None:
         artifact_root = tiered_artifact_root(repo_root)
     return Component(
@@ -308,6 +330,7 @@ def sentinel_component(
             incremental=True,
             tiered=tiered,
             externalized=externalized,
+            segmented=segmented,
             artifact_root=artifact_root,
         ),
     )
@@ -324,7 +347,7 @@ def run_sentinel_gate(
 ) -> tuple[int, dict[str, object]]:
     started = time.perf_counter()
     initial_identity = candidate_identity(repo_root)
-    tiered, externalized = family_route(repo_root)
+    tiered, externalized, segmented = family_route(repo_root)
     artifact_root = tiered_artifact_root(repo_root) if tiered else None
     sentinel = sentinel_component(
         repo_root=repo_root,
@@ -334,6 +357,7 @@ def run_sentinel_gate(
         budget_base_ref=budget_base_ref,
         tiered=tiered,
         externalized=externalized,
+        segmented=segmented,
         artifact_root=artifact_root,
     )
     result = run_component(sentinel, repo_root=repo_root, jobs=jobs)
@@ -426,7 +450,7 @@ def run_gate(
         "event_history_ref": event_history_ref,
         "budget_base_ref": budget_base_ref,
     }
-    tiered, externalized = family_route(repo_root)
+    tiered, externalized, segmented = family_route(repo_root)
     artifact_root = tiered_artifact_root(repo_root) if tiered else None
     sentinel = sentinel_component(
         repo_root=repo_root,
@@ -436,6 +460,7 @@ def run_gate(
         budget_base_ref=budget_base_ref,
         tiered=tiered,
         externalized=externalized,
+        segmented=segmented,
         artifact_root=artifact_root,
     )
     handoff_error: str | None = None
@@ -473,6 +498,7 @@ def run_gate(
                 compatibility_output=Path(temp_dir) / "compatibility",
                 tiered=tiered,
                 externalized=externalized,
+                segmented=segmented,
                 artifact_root=artifact_root,
             )
             if tiered:
