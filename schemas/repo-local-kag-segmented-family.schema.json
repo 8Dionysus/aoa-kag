@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa-kag/schemas/repo-local-kag-segmented-family.schema.json",
+  "title": "AoA repo-local KAG bounded segmented family manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "family_identity",
+    "producer_identity",
+    "candidate_identity",
+    "migration",
+    "partitioning",
+    "normalization",
+    "source_index_header",
+    "compatibility",
+    "budgets",
+    "summary",
+    "segments"
+  ],
+  "properties": {
+    "schema_version": {"const": "aoa-repo-local-kag-segmented-family-v1"},
+    "repo": {"$ref": "#/$defs/repo"},
+    "family_identity": {"$ref": "#/$defs/familyIdentity"},
+    "producer_identity": {"$ref": "#/$defs/producerIdentity"},
+    "candidate_identity": {"$ref": "#/$defs/candidateIdentity"},
+    "migration": {"$ref": "#/$defs/migration"},
+    "partitioning": {"$ref": "#/$defs/partitioning"},
+    "normalization": {"$ref": "#/$defs/normalization"},
+    "source_index_header": {
+      "type": "object",
+      "required": ["schema_version", "repo", "index_identity", "toolchain", "coverage_summary", "registry_output"],
+      "not": {"required": ["records"]}
+    },
+    "compatibility": {"$ref": "#/$defs/compatibility"},
+    "budgets": {"$ref": "#/$defs/budgets"},
+    "summary": {"$ref": "#/$defs/summary"},
+    "segments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/segment"}
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sha256Digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "namespace", "owner_type", "root", "git_ref"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "namespace": {"type": "string", "pattern": "^aoa:[a-z0-9_.-]+$"},
+        "owner_type": {"$ref": "#/$defs/nonEmptyString"},
+        "root": {"const": "."},
+        "git_ref": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "familyIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_id", "artifact_kind", "content_digest", "schema_ref", "source_snapshot"],
+      "properties": {
+        "local_id": {"const": "family:repo-local:segmented-record-corpus"},
+        "artifact_kind": {"const": "repo_local_kag_segmented_family"},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "schema_ref": {"const": "aoa-kag:schemas/repo-local-kag-segmented-family.schema.json"},
+        "source_snapshot": {"$ref": "#/$defs/sha256Digest"}
+      }
+    },
+    "producerIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "route", "canonical_rows", "identity_inputs"],
+      "properties": {
+        "version": {"const": "aoa-kag:segmented-family-producer-v1"},
+        "route": {"const": "aoa-kag:scripts/repo_local/segmented_family.py"},
+        "canonical_rows": {"const": "portable-record-normalization-v3"},
+        "identity_inputs": {
+          "const": ["source_index_content_digest", "producer_version", "partition_parameters"]
+        }
+      }
+    },
+    "candidateIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "content_digest", "source_index_content_digest"],
+      "properties": {
+        "version": {"const": "aoa-kag:segmented-family-candidate-v1"},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "source_index_content_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_version", "from_schemas", "from_family_digest", "mode", "rollback", "decision_ref"],
+      "properties": {
+        "contract_version": {"const": "aoa-kag:segmented-family-migration-v1"},
+        "from_schemas": {
+          "const": [
+            "aoa-repo-local-kag-family-manifest-v3",
+            "aoa-repo-local-kag-distribution-manifest-v1"
+          ]
+        },
+        "from_family_digest": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/digest"}
+          ]
+        },
+        "mode": {"const": "explicit-provider-pin-dual-read"},
+        "rollback": {"const": "retain-last-good-manifest-and-select-by-digest"},
+        "decision_ref": {"const": "aoa-kag:docs/decisions/AOA-KAG-D-0040-bounded-segmented-kag-family.md"}
+      }
+    },
+    "partitioning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "target_part_bytes", "part_bytes_max", "max_record_bytes", "split_policy", "merge_policy", "ranges"],
+      "properties": {
+        "algorithm": {"const": "sha256-record-key-adaptive-prefix"},
+        "target_part_bytes": {"type": "integer", "minimum": 131072, "maximum": 50331648},
+        "part_bytes_max": {"type": "integer", "minimum": 131072, "maximum": 50331648},
+        "max_record_bytes": {"const": 131072},
+        "split_policy": {"const": "prefix-split-only"},
+        "merge_policy": {"const": "never-automatic"},
+        "ranges": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^[a-f0-9]{1,64}$"}
+          }
+        }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_record_classes", "derived_compatibility_classes", "anchor_defaults", "chunking"],
+      "properties": {
+        "canonical_record_classes": {"const": ["source", "anchor", "event"]},
+        "derived_compatibility_classes": {"const": ["artifact", "entity", "assertion", "relation"]},
+        "anchor_defaults": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["evidence_class", "provenance_ref", "temporal_ref", "trust_ref"],
+          "properties": {
+            "evidence_class": {"const": "deterministic"},
+            "provenance_ref": {"const": "deterministic"},
+            "temporal_ref": {"const": "current"},
+            "trust_ref": {"const": "deterministic"}
+          }
+        },
+        "chunking": {"type": "object"}
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["view", "assembly", "requires_explicit_provider_pin", "files"],
+      "properties": {
+        "view": {"const": "aoa-repo-local-kag-v2"},
+        "assembly": {"const": "deterministic-on-demand-from-segments"},
+        "requires_explicit_provider_pin": {"const": true},
+        "files": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "path", "schema_version", "content_digest", "records"],
+            "properties": {
+              "kind": {"enum": ["source", "artifact", "anchor", "entity", "event", "assertion", "relation"]},
+              "path": {"type": "string", "pattern": "^kag/indexes/[A-Za-z0-9._/-]+\\.json$"},
+              "schema_version": {"type": "string", "minLength": 1},
+              "content_digest": {"$ref": "#/$defs/digest"},
+              "records": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["part_bytes_max", "request_bytes_max", "max_record_bytes", "logical_bytes_max", "changed_generated_bytes_max", "legacy_owner_hard_bytes_max", "tracked_bytes_max", "fail_closed"],
+      "properties": {
+        "part_bytes_max": {"type": "integer", "minimum": 131072, "maximum": 50331648},
+        "request_bytes_max": {"type": "integer", "minimum": 131072, "maximum": 50331648},
+        "max_record_bytes": {"const": 131072},
+        "logical_bytes_max": {"type": "integer", "minimum": 1, "maximum": 8589934592},
+        "changed_generated_bytes_max": {"type": "integer", "minimum": 0},
+        "legacy_owner_hard_bytes_max": {"const": 50331648},
+        "tracked_bytes_max": {"const": 50331648},
+        "fail_closed": {"const": true}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_records", "canonical_records", "segments", "logical_bytes", "max_segment_bytes", "control_bytes", "tracked_bytes"],
+      "properties": {
+        "source_records": {"type": "integer", "minimum": 1},
+        "canonical_records": {"type": "integer", "minimum": 1},
+        "segments": {"type": "integer", "minimum": 1},
+        "logical_bytes": {"type": "integer", "minimum": 1},
+        "max_segment_bytes": {"type": "integer", "minimum": 1},
+        "control_bytes": {"type": "integer", "minimum": 1},
+        "tracked_bytes": {"type": "integer", "minimum": 1, "maximum": 50331648}
+      }
+    },
+    "segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "range", "path", "digest", "bytes", "records", "request_bytes_max"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "range": {"type": "string", "pattern": "^[a-f0-9]{1,64}$"},
+        "path": {"type": "string", "pattern": "^kag/indexes/segments/[A-Za-z0-9._-]+/[a-f0-9]{1,64}\\.jsonl$"},
+        "digest": {"$ref": "#/$defs/sha256Digest"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 50331648},
+        "records": {"type": "integer", "minimum": 1, "maximum": 250000},
+        "request_bytes_max": {"type": "integer", "minimum": 131072, "maximum": 50331648}
+      }
+    }
+  }
+}

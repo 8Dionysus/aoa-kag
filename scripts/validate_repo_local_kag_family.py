@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -30,12 +31,41 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--artifact-root")
     parser.add_argument("--no-shadow-git", action="store_true")
+    parser.add_argument(
+        "--segmented-manifest",
+        default="kag/indexes/index_family.manifest.json",
+        help="Segmented-family control manifest path, relative to the repository root.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     repo_root = Path(args.repo_root).resolve()
+    segmented_path = repo_root / args.segmented_manifest
+    try:
+        segmented = json.loads(segmented_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError):
+        segmented = None
+    if isinstance(segmented, dict) and segmented.get("schema_version") == (
+        "aoa-repo-local-kag-segmented-family-v1"
+    ):
+        try:
+            from scripts.repo_local.segmented_family import (
+                validate_segmented_manifest,
+                validate_segmented_segments,
+            )
+            validate_segmented_manifest(segmented)
+            counts = validate_segmented_segments(repo_root, segmented)
+        except (ValueError, OSError) as exc:
+            print(f"[repo-local-kag-family] {exc}", file=sys.stderr)
+            return 1
+        print(
+            "[repo-local-kag-family] valid segmented owner="
+            f"{repo_root.name} segments={counts['segments']} "
+            f"records={counts['records']} bytes={counts['bytes']}"
+        )
+        return 0
     try:
         source, family = load_repo_local_kag_repository_index_family(
             repo_root,
