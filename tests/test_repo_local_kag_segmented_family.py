@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import copy
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -91,6 +93,24 @@ class RepoLocalKagSegmentedFamilyTests(unittest.TestCase):
                 root,
                 max_materialized_bytes=build.manifest["summary"]["logical_bytes"] - 1,
             )
+
+    def test_validator_entrypoint_works_from_consumer_repository(self) -> None:
+        root, _, _, build = self._build()
+        write_segmented_output(root, build)
+        completed = subprocess.run(
+            (
+                sys.executable,
+                str(REPO_ROOT / "scripts/validate_repo_local_kag_family.py"),
+                "--repo-root",
+                str(root),
+            ),
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertIn("valid segmented owner=", completed.stdout)
 
 
 if __name__ == "__main__":

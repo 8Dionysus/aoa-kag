@@ -51,10 +51,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         "aoa-repo-local-kag-segmented-family-v1"
     ):
         try:
-            from scripts.repo_local.segmented_family import (
-                validate_segmented_manifest,
-                validate_segmented_segments,
-            )
+            try:
+                from scripts.repo_local.segmented_family import (
+                    validate_segmented_manifest,
+                    validate_segmented_segments,
+                )
+            except ImportError:  # direct script execution from a consumer repo
+                from repo_local.segmented_family import (  # type: ignore
+                    validate_segmented_manifest,
+                    validate_segmented_segments,
+                )
             validate_segmented_manifest(segmented)
             counts = validate_segmented_segments(repo_root, segmented)
         except (ValueError, OSError) as exc:
