@@ -509,6 +509,21 @@
           ]
         },
         {
+          "path": "tests/test_repo_local_kag_segmented_family.py",
+          "family": "kag/segmented-family",
+          "protects": "Bounded segmented repository-local KAG family manifests, canonical segment records, digest and budget invariants, consumer-script validation, and compatibility assembly.",
+          "owner_surface": "schemas/repo-local-kag-segmented-family.schema.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_repo_local_kag_segmented_family.py",
+          "failure_route": "Route through AOA-KAG-D-0040, the segmented-family schema, segmented_family.py, or the owner-family gate.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "source/route-contract",
+            "generated/parity",
+            "release/artifact-trust"
+          ]
+        },
+        {
           "path": "tests/test_validate_semantic_agents.py",
           "family": "AGENTS/route",
           "protects": "Semantic AGENTS route-card requirements.",
