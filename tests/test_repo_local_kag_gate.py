@@ -355,6 +355,37 @@ class RepoLocalKagGateTests(unittest.TestCase):
         self.assertEqual("events", command[command.index("--event-history-ref") + 1])
         self.assertEqual("budget", command[command.index("--budget-base-ref") + 1])
 
+    def test_segmented_route_uses_bounded_generator_and_assembly(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            repo = Path(raw)
+            manifest = repo / "kag/indexes/index_family.manifest.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                '{"schema_version":"aoa-repo-local-kag-segmented-family-v1"}\n',
+                encoding="utf-8",
+            )
+            self.assertEqual((False, False, True), GATE.family_route(repo))
+            sentinel = GATE.sentinel_component(
+                repo_root=repo,
+                output=GATE.DEFAULT_OUTPUT,
+                history_ref="history",
+                event_history_ref="events",
+                budget_base_ref="budget",
+            )
+            self.assertIn("--segmented-family", sentinel.command)
+            self.assertNotIn("--portable-family", sentinel.command)
+            components = GATE.downstream_components(
+                repo_root=repo,
+                output=GATE.DEFAULT_OUTPUT,
+                history_ref="history",
+                event_history_ref="events",
+                budget_base_ref="budget",
+                compatibility_output=repo / "out",
+                segmented=True,
+            )
+            self.assertIn("--segmented-family", components[0].command)
+            self.assertIn("--segmented-family", components[2].command)
+
     def test_component_disables_python_bytecode_side_effects(self) -> None:
         component = GATE.Component("check", ("python", "check.py"))
         completed = subprocess.CompletedProcess(component.command, 0, "ok", "")

@@ -315,9 +315,10 @@
     {
       "path": "scripts/validators/repo_local_kag_index.py",
       "module_type": "repo_local_kag_index_contract",
-      "function": "Expose separate repo-local portable-family, retrieval, example, and generated-parity validation and OS-wide coverage parity, plus a full compatibility composition.",
+      "function": "Expose separate repo-local portable- and segmented-family, retrieval, example, and generated-parity validation and OS-wide coverage parity, plus a full compatibility composition.",
       "inputs": [
         "schemas/repo-local-kag-family-manifest.schema.json",
+        "schemas/repo-local-kag-segmented-family.schema.json",
         "schemas/repo-local-kag-index.schema.json",
         "schemas/repo-local-kag-repository-index.schema.json",
         "schemas/repo-local-kag-query-result.schema.json",
