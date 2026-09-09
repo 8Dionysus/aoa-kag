@@ -17,3 +17,7 @@ live under `mechanics/<package>/parts/<part>/examples/` with their owning part.
 - Update examples when a paired schema or manifest contract changes.
 - Preserve source-first wording and visible provenance cues.
 - Do not let a convenience example drift into an unofficial canonical payload.
+
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

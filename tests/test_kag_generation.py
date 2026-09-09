@@ -547,13 +547,33 @@ class KagGenerationTestCase(unittest.TestCase):
                         }
                     ],
                 },
+                {
+                    "repo": "aoa-agon",
+                    "adoption_order": 26,
+                    "provider_status": "source_preparation",
+                    "candidate_source_surfaces": [
+                        "README.md",
+                        "CHARTER.md",
+                        "DESIGN.md",
+                        "config/owner-ports.json",
+                        "docs/EVIDENCE_BOUNDARY.md",
+                        "source/",
+                    ],
+                    "owner_return_routes": [
+                        {
+                            "repo": "aoa-agon",
+                            "surface": "CHARTER.md",
+                            "route_kind": "authored_meaning",
+                        }
+                    ],
+                },
             ],
             payload["remaining_routes"],
         )
         self.assertNotIn("aoa-routing", {provider["repo"] for provider in payload["providers"]})
         self.assertNotIn("aoa-models", {provider["repo"] for provider in payload["providers"]})
         self.assertEqual(2, payload["provider_status_counts"]["retired_reference"])
-        self.assertEqual(3, payload["provider_status_counts"]["source_preparation"])
+        self.assertEqual(4, payload["provider_status_counts"]["source_preparation"])
         for provider in payload["providers"]:
             with self.subTest(repo=provider["repo"]):
                 self.assertEqual("provider_ready", provider["provider_status"])

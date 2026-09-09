@@ -14,7 +14,7 @@ posture, owner wait states, surface growth stop-rules, and proof-gap visibility.
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`,
 `mechanics/growth-cycle/AGENTS.md`, `mechanics/growth-cycle/PARTS.md`, the
-target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`, then read the
+target part `CONTRACT.md`, and `VALIDATION.md`, then read the
 maturity docs, manifest, generated pack, schema, example, or validator being
 changed.
 
@@ -31,12 +31,8 @@ changed.
 
 ## Validation
 
-Run the target part validation route, then:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
+The target part `VALIDATION.md` owns the focused route; review generated
+compatibility and growth stop-rules afterward.
 
 ## Closeout
 

@@ -18,11 +18,11 @@ memory truth, routing policy, runtime implementation, or framework adapter.
 1. root `AGENTS.md`
 2. `DESIGN.md`
 3. `DESIGN.AGENTS.md`
-4. `mechanics/README.md`
-5. `mechanics/topology.json`
-6. target package `AGENTS.md`, `README.md`, `PARTS.md`, and `PROVENANCE.md`
+4. `mechanics/topology.json`
+6. target package `AGENTS.md`, `PARTS.md`, and `PROVENANCE.md`
    when an active package is touched
-7. target part `README.md` and validation route when a part exists
+7. target part contract and validation route when a part exists; consult its
+   README only when the named task needs human or public context
 8. the stronger source, manifest, generated, schema, script, test, decision, or
    owner-repository surface named by the route
 
@@ -50,13 +50,8 @@ memory truth, routing policy, runtime implementation, or framework adapter.
 
 ## Validation
 
-For mechanics root changes, run:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/validate_nested_agents.py
-```
-
+For mechanics root changes, select the matching on-demand route in root
+`VALIDATION.md`.
 For package-local payload changes, run the package or part validator named by
 the nearest route card, then the repository release gate when the change is
 release-facing.

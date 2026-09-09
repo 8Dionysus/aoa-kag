@@ -13,7 +13,7 @@ derived patterns.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the pattern, promotion, downlink, or retirement
 surface being changed.
 
@@ -29,7 +29,7 @@ surface being changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If pattern candidate surfaces move, run the target part validation route and
 release checks.
 

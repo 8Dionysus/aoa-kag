@@ -13,7 +13,7 @@ KAG can represent without owning lived operation.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the experience doc, schema, example, or test being
 changed.
 
@@ -28,7 +28,7 @@ changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If experience contracts move, run their focused tests and the release gate.
 When changing an active part payload, run that part's `VALIDATION.md`.
 

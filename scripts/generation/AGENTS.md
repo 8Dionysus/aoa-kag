@@ -47,7 +47,5 @@ surface map. Use `generated/AGENTS.md` for generated-output boundaries.
 
 ## Validation
 
-```bash
-python -m unittest tests.test_kag_generation tests.test_script_topology
-python scripts/ci_gate.py --mode generated
-```
+Select the generated lane or focused generation check through root
+`VALIDATION.md`.

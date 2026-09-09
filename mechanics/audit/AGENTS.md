@@ -13,7 +13,7 @@ turning KAG into a proof owner.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the proof, exposure, or owner evidence route being
 changed.
 
@@ -26,7 +26,7 @@ changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If proof expectation or exposure-review surfaces move, run the focused KAG
 validators/tests and release gate.
 

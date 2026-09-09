@@ -41,6 +41,9 @@ COVERAGE_PATHS = (
 PREPARATION_COVERAGE_SEED_PATH = "generated/repo_local_kag_preparation_seed.json"
 PORTABLE_FAMILY_PATHS = (
     "kag/indexes/index_family.manifest.json",
+    "kag/indexes/corpus.manifest.json",
+    "kag/indexes/hot_profile.json",
+    "kag/indexes/artifact_locators.json",
     "kag/indexes/shards",
 )
 BUDGET_RECEIPT_PATHS = ("kag/receipts/index_family_budget",)
@@ -330,6 +333,7 @@ class ResolvedRefs:
     history_ref: str
     event_history_ref: str
     budget_base_ref: str
+    coverage_seed_ref: str
 
 
 @dataclass(frozen=True)
@@ -4498,6 +4502,7 @@ def resolve_refs(
     history_ref: str | None,
     event_history_ref: str | None,
     budget_base_ref: str | None,
+    coverage_seed_ref: str | None,
 ) -> ResolvedRefs:
     history = resolve_ref(
         repo_root,
@@ -4514,7 +4519,12 @@ def resolve_refs(
         budget_base_ref or history,
         "budget-base-ref",
     )
-    return ResolvedRefs(history, event_history, budget_base)
+    coverage_seed = resolve_ref(
+        repo_root,
+        coverage_seed_ref or history,
+        "coverage-seed-ref",
+    )
+    return ResolvedRefs(history, event_history, budget_base, coverage_seed)
 
 
 def load_provider_entries(repo_root: Path) -> tuple[dict[str, Any], ...]:
@@ -4736,59 +4746,23 @@ def expected_external_portable_family(
     owner_root: Path,
 ) -> dict[str, Any]:
     coverage_generation = coverage_generation_module()
-
-    manifest_path = owner_root / coverage_generation.MANIFEST_RELATIVE_PATH
     try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        family_storage, profile = coverage_generation.portable_family_profile(
+            owner_root,
+            owner_name=owner,
+            status="passed",
+        )
+    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         raise RuntimeError(
-            f"preparation coverage cannot read the external manifest for {owner}"
+            f"preparation coverage cannot read the external family for {owner}"
         ) from exc
-    if not isinstance(manifest, dict):
-        raise RuntimeError(f"external manifest is not an object for {owner}")
-    repo = manifest.get("repo")
-    family = manifest.get("family_identity")
-    summary = manifest.get("summary")
-    budgets = manifest.get("budgets")
     if (
-        not isinstance(repo, dict)
-        or repo.get("name") != owner
-        or not isinstance(family, dict)
-        or not isinstance(summary, dict)
-        or not isinstance(budgets, dict)
+        family_storage != "v3-portable-shards"
+        or not isinstance(profile, dict)
+        or profile.get("digest_state") != "published"
     ):
-        raise RuntimeError(f"external manifest shape or owner is invalid for {owner}")
-    tracked_bytes = summary.get("tracked_bytes")
-    tracked_bytes_max = budgets.get("tracked_bytes_max")
-    shards = summary.get("shards")
-    content_digest = family.get("content_digest")
-    if (
-        not isinstance(tracked_bytes, int)
-        or tracked_bytes < 0
-        or not isinstance(tracked_bytes_max, int)
-        or tracked_bytes_max < 0
-        or not isinstance(shards, int)
-        or shards < 0
-        or not isinstance(content_digest, str)
-        or len(content_digest) != 64
-        or any(char not in "0123456789abcdef" for char in content_digest)
-    ):
-        raise RuntimeError(f"external manifest family identity is invalid for {owner}")
-    receipted = tracked_bytes > tracked_bytes_max
-    return {
-        "manifest_ref": coverage_generation.MANIFEST_RELATIVE_PATH.as_posix(),
-        "content_digest": content_digest,
-        "digest_state": "published",
-        "tracked_bytes": tracked_bytes,
-        "tracked_bytes_max": tracked_bytes_max,
-        "shards": shards,
-        "budget_state": "receipted" if receipted else "passed",
-        "receipt_ref": (
-            coverage_generation.receipt_path_for(manifest).as_posix()
-            if receipted
-            else ""
-        ),
-    }
+        raise RuntimeError(f"external portable family is invalid for {owner}")
+    return profile
 
 
 def build_preparation_coverage(
@@ -4867,9 +4841,9 @@ def build_preparation_coverage_from_payload(
 
         if row.get("root") != display_root.as_posix():
             raise RuntimeError(f"preparation coverage external root drift for {owner}")
-        if row.get("index_status") != "passed":
+        if row.get("index_status") not in coverage_generation.OWNER_STATUS:
             raise RuntimeError(
-                f"preparation coverage seed is not all-owner green for {owner}"
+                f"preparation coverage seed has an invalid index status for {owner}"
             )
         if row.get("family_storage") != "v3-portable-shards":
             raise RuntimeError(
@@ -5288,7 +5262,7 @@ def coverage_command(
         "scripts/prepare_landing.py",
         "--prepare-self-coverage",
         "--external-seed-ref",
-        refs.history_ref,
+        refs.coverage_seed_ref,
     ]
     if full_coverage_cache is not None:
         command.extend(("--full-coverage-cache", full_coverage_cache.as_posix()))
@@ -5373,7 +5347,16 @@ def _current_budget_receipt_path(repo_root: Path) -> Path:
     manifest_path = repo_root / PORTABLE_FAMILY_PATHS[0]
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        digest = manifest["family_identity"]["content_digest"]
+        schema_version = manifest["schema_version"]
+        if schema_version == "aoa-repo-local-kag-family-manifest-v3":
+            digest = manifest["family_identity"]["content_digest"]
+        elif schema_version == "aoa-repo-local-kag-distribution-manifest-v1":
+            digest = manifest["corpus_manifest"]["content_digest"]
+            if not isinstance(digest, str):
+                raise TypeError("tiered corpus digest is not a string")
+            digest = digest.removeprefix("sha256:")
+        else:
+            raise KeyError("unsupported family manifest schema")
     except (FileNotFoundError, KeyError, TypeError, json.JSONDecodeError) as exc:
         raise PreparationFailure(
             "cannot resolve the current portable-family budget receipt path",
@@ -5461,6 +5444,10 @@ def ensure_budget_receipt(
             command=check.command,
             details={"budget_base_ref": refs.budget_base_ref},
         )
+    # Pruning changes the candidate identity bound by the receipt.  It must be
+    # complete before the receipt is issued, otherwise the freshly written
+    # receipt immediately describes a pre-prune candidate.
+    prune_obsolete_budget_receipts(repo_root, refs)
     run_command(
         portable_family_command(
             refs,
@@ -5472,7 +5459,6 @@ def ensure_budget_receipt(
         failure_type="budget_receipt_generation_failure",
         action_class="code_fix",
     )
-    prune_obsolete_budget_receipts(repo_root, refs)
     stage_paths(repo_root, (*PORTABLE_FAMILY_PATHS, *BUDGET_RECEIPT_PATHS))
     run_command(
         portable_family_command(refs, check=True, enforce_budget=True),
@@ -5530,34 +5516,86 @@ def converge_budgeted_scc(
     )
 
 
+def require_no_unstaged_confirmation_drift(
+    repo_root: Path,
+    *,
+    phase: str,
+    command: Sequence[str] | None = None,
+) -> None:
+    raw_paths = git_bytes(
+        repo_root,
+        "diff",
+        "--no-renames",
+        "--name-only",
+        "-z",
+    )
+    if not raw_paths:
+        return
+    paths = tuple(
+        item
+        for item in raw_paths.decode(
+            "utf-8",
+            errors="surrogateescape",
+        ).split("\0")
+        if item
+    )
+    patch = git_bytes(
+        repo_root,
+        "diff",
+        "--binary",
+        "--no-ext-diff",
+        "--no-textconv",
+    )
+    raise PreparationFailure(
+        "final confirmation left unstaged worktree drift in the isolated candidate",
+        failure_type="generated_cleanliness_failure",
+        action_class="code_fix",
+        command=command,
+        details={
+            "phase": phase,
+            "changed_paths": list(paths),
+            "diff_digest": sha256_bytes(patch),
+            "diff_bytes": len(patch),
+        },
+    )
+
+
 def final_confirmation(
     repo_root: Path,
     refs: ResolvedRefs,
     *,
     full_coverage_cache: Path | None = None,
 ) -> None:
-    run_command(
-        coverage_command(
-            refs,
-            check=True,
-            full_coverage_cache=full_coverage_cache,
+    commands = (
+        (
+            "before_final_confirmation",
+            None,
         ),
-        repo_root=repo_root,
+        (
+            "coverage_check",
+            coverage_command(
+                refs,
+                check=True,
+                full_coverage_cache=full_coverage_cache,
+            ),
+        ),
+        (
+            "portable_family_check",
+            portable_family_command(refs, check=True, enforce_budget=True),
+        ),
+        ("generated_check", generated_command(check=True)),
+        (
+            "local_validation",
+            ("python", "scripts/validate_kag.py", "--scope", "local"),
+        ),
     )
-    run_command(
-        portable_family_command(refs, check=True, enforce_budget=True),
-        repo_root=repo_root,
-    )
-    run_command(generated_command(check=True), repo_root=repo_root)
-    run_command(
-        ("python", "scripts/validate_kag.py", "--scope", "local"),
-        repo_root=repo_root,
-    )
-    if git_bytes(repo_root, "diff", "--binary", "--no-ext-diff", "--no-textconv"):
-        raise PreparationFailure(
-            "final confirmation left unstaged worktree drift in the isolated candidate",
-            failure_type="generated_cleanliness_failure",
-            action_class="code_fix",
+    for phase, command in commands:
+        if command is not None:
+            run_command(command, repo_root=repo_root)
+        require_no_unstaged_confirmation_drift(
+            repo_root,
+            phase=phase,
+            command=command,
         )
 
 
@@ -5690,6 +5728,7 @@ def receipt_base(
             "history_ref": refs.history_ref,
             "event_history_ref": refs.event_history_ref,
             "budget_base_ref": refs.budget_base_ref,
+            "coverage_seed_ref": refs.coverage_seed_ref,
         }
     return payload
 
@@ -5702,6 +5741,7 @@ def prepare_landing(
     history_ref: str | None,
     event_history_ref: str | None,
     budget_base_ref: str | None,
+    coverage_seed_ref: str | None,
     budget_reason: str | None,
     temp_root: Path | None,
 ) -> tuple[int, dict[str, object]]:
@@ -5717,6 +5757,7 @@ def prepare_landing(
             history_ref=history_ref,
             event_history_ref=event_history_ref,
             budget_base_ref=budget_base_ref,
+            coverage_seed_ref=coverage_seed_ref,
         )
         if temp_root is not None:
             temp_root.mkdir(parents=True, exist_ok=True)
@@ -6113,6 +6154,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--event-history-ref")
     parser.add_argument("--budget-base-ref")
     parser.add_argument(
+        "--coverage-seed-ref",
+        help=(
+            "Preparation-only coverage seed commit; defaults to history-ref "
+            "without changing history, event, or budget authority."
+        ),
+    )
+    parser.add_argument(
         "--budget-reason",
         help="Explicit repository-owner reason used only if the final digest exceeds its budget.",
     )
@@ -6207,6 +6255,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         history_ref=args.history_ref,
         event_history_ref=args.event_history_ref,
         budget_base_ref=args.budget_base_ref,
+        coverage_seed_ref=args.coverage_seed_ref,
         budget_reason=args.budget_reason,
         temp_root=args.temp_root,
     )

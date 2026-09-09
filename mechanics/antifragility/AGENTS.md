@@ -12,7 +12,7 @@ quarantine, and source-first recovery when derived surfaces weaken.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the stress, quarantine, or projection-health surface
 being changed.
 
@@ -26,7 +26,7 @@ being changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 When changing an active part payload, run that part's `VALIDATION.md`.
 
 ## Closeout

@@ -15,7 +15,7 @@ recovery owner.
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`,
 `mechanics/antifragility/AGENTS.md`, this card, and the target part
-`README.md`, `CONTRACT.md`, and `VALIDATION.md`.
+`CONTRACT.md`, and `VALIDATION.md`.
 
 ## Boundaries
 
@@ -27,12 +27,8 @@ Read root `AGENTS.md`, `mechanics/AGENTS.md`,
 
 ## Validation
 
-Run the target part test named in `VALIDATION.md`, then:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
+The target part `VALIDATION.md` owns the focused test route; review degraded-mode
+compatibility and owner boundaries afterward.
 
 ## Closeout
 

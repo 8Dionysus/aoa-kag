@@ -471,6 +471,39 @@ class ValidateKagTestCase(unittest.TestCase):
             course["candidate_source_surfaces"],
         )
 
+    def test_local_kag_readiness_keeps_gopro_in_source_preparation(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        surfaces = {
+            entry["surface_id"]: entry
+            for entry in payload["os_surfaces"]
+        }
+        gopro = surfaces["connectors/aoa-gopro-connector"]
+
+        self.assertEqual("connector_repo", gopro["surface_class"])
+        self.assertEqual("source_preparation", gopro["provider_status"])
+        self.assertEqual(
+            "/srv/AbyssOS/connectors/aoa-gopro-connector",
+            gopro["root"],
+        )
+        self.assertNotIn("kag/", gopro["source_home_surfaces"])
+        self.assertNotIn("kag/manifest.json", gopro["candidate_source_surfaces"])
+        self.assertIn("connector/SOURCE_POLICY.md", gopro["candidate_source_surfaces"])
+        self.assertIn("STORAGE_POLICY.md", gopro["candidate_source_surfaces"])
+        self.assertEqual("BOUNDARIES.md", gopro["owner_return_route"]["surface"])
+
+    def test_local_kag_readiness_keeps_agon_in_source_preparation(self) -> None:
+        payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
+        assert isinstance(payload, dict)
+        repos = {entry["repo"]: entry for entry in payload["repos"]}
+        agon = repos["aoa-agon"]
+
+        self.assertEqual("source_preparation", agon["provider_status"])
+        self.assertNotIn("kag/", agon["source_home_surfaces"])
+        self.assertNotIn("kag/manifest.json", agon["candidate_source_surfaces"])
+        self.assertIn("source/", agon["source_home_surfaces"])
+        self.assertEqual("CHARTER.md", agon["owner_return_routes"][0]["surface"])
+
     def test_local_kag_readiness_keeps_agents_companion_only_boundary(self) -> None:
         payload = load_json(validate_kag.LOCAL_KAG_READINESS_MANIFEST_PATH)
         assert isinstance(payload, dict)

@@ -39,7 +39,12 @@ PROVIDER_AUDIT_WORKER_CHOICES = {1, 2, 3}
 PROVIDER_REPO_ROOTS = configured_provider_roots(os_root=OS_ABYSS_ROOT)
 CANONICAL_PROVIDER_REPO_ROOTS = provider_roots(os_root=OS_ABYSS_ROOT)
 RETIRED_REFERENCE_REPOS = {"Dionysus", "aoa-routing"}
-SOURCE_PREPARATION_REPOS = {"ATM10-Agent", "aoa-dashboard", "aoa-models"}
+SOURCE_PREPARATION_REPOS = {
+    "ATM10-Agent",
+    "aoa-agon",
+    "aoa-dashboard",
+    "aoa-models",
+}
 EXPECTED_DIRECT_REPOS = (
     set(PROVIDER_REPO_ROOTS)
     | RETIRED_REFERENCE_REPOS
@@ -50,6 +55,7 @@ EXPECTED_CONNECTOR_SURFACE_ROOTS = {
     "connectors/aoa-4pda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-4pda-connector",
     "connectors/aoa-course-connector": OS_ABYSS_ROOT / "connectors" / "aoa-course-connector",
     "connectors/aoa-discord-connector": OS_ABYSS_ROOT / "connectors" / "aoa-discord-connector",
+    "connectors/aoa-gopro-connector": OS_ABYSS_ROOT / "connectors" / "aoa-gopro-connector",
     "connectors/aoa-stackoverflow-connector": OS_ABYSS_ROOT / "connectors" / "aoa-stackoverflow-connector",
     "connectors/aoa-telegram-connector": OS_ABYSS_ROOT / "connectors" / "aoa-telegram-connector",
     "connectors/aoa-xda-connector": OS_ABYSS_ROOT / "connectors" / "aoa-xda-connector",

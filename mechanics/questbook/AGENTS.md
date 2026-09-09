@@ -12,7 +12,7 @@ obligations, quest source posture, and quest dispatch or catalog projections.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, `PROVENANCE.md`,
+this package `PARTS.md`, `PROVENANCE.md`,
 `QUESTBOOK.md`, and
 `parts/quest-store/docs/questbook-kag-integration.md`.
 
@@ -29,10 +29,10 @@ Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If quest surfaces move, run
-`python mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py`,
-focused questbook tests, `python scripts/validate_kag.py`, and broader release
+the quest-store validator,
+focused questbook tests, the KAG validator, and broader release
 checks when the change is release-facing.
 
 ## Closeout

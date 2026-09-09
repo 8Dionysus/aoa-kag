@@ -14,7 +14,7 @@ truth.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and `PROVENANCE.md`.
+this package `PARTS.md`, and `PROVENANCE.md`.
 Then read the current owner surface named by the changed route.
 
 ## Boundaries
@@ -29,7 +29,7 @@ Then read the current owner surface named by the changed route.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If Agon KAG registries move, also run the part-local builders, validators, and
 tests before broader release checks.
 

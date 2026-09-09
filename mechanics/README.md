@@ -34,7 +34,8 @@ Do not add root rosters, prep reports, migration ledgers, backlogs, templates,
 notes, `_meta/`, scratch, or root `legacy/` holding areas. Active operation
 detail belongs in the owning package or part. Durable rationale belongs in
 `docs/decisions/`. Former-path accounting belongs in package `PROVENANCE.md`
-and package-local `legacy/` only after an active route exists.
+and immutable Git source history; no package-local `legacy/` archive is
+required for an active route.
 
 ## Current Contour
 
@@ -132,8 +133,9 @@ Use these headings in package READMEs:
 | `### Must not claim` | stop-lines that keep the package below stronger owners |
 | `### Next route` | the next active surface, provenance bridge, or owner route |
 
-Validation commands belong in the nearest `AGENTS.md`, not in the package
-card.
+Validation procedure belongs in root `VALIDATION.md` or the nearest
+part-local `VALIDATION.md`, not in the package card. The manifest remains
+machine command authority.
 
 ## Placement
 
@@ -169,4 +171,5 @@ candidate part pressure in `PARTS.md` without creating directories.
 
 ## Validation
 
-Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
+Use root `VALIDATION.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the
+nearest `AGENTS.md` for task-conditional validation routes.

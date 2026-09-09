@@ -28,10 +28,8 @@ coverage, and command-authority routes for `aoa-kag`.
 
 ## Validation
 
-```bash
-python -m unittest tests.test_test_topology
-python scripts/ci_gate.py --mode source-fast
-```
+The test runner and source-fast lane are selected on demand from root
+`VALIDATION.md`; the manifest remains command authority.
 
 ## Closeout
 

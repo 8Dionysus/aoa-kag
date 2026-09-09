@@ -13,7 +13,7 @@ hidden ontology.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the quest, route, or public-facing KAG surface being
 changed.
 
@@ -27,7 +27,7 @@ changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If quest or public vocabulary surfaces move, run focused KAG validators/tests.
 
 ## Closeout

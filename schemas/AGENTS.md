@@ -15,7 +15,7 @@ Treat every schema edit as a contract change.
 - Keep schemas bounded and source-first. A schema may describe a KAG object, but it must not quietly absorb meaning that belongs in donor repositories.
 
 ## Review rules
-- Make compatibility posture explicit when required fields or enums change.
+- State compatibility posture explicitly when required fields or enums change.
 - Prefer additive, reviewable contract changes over silent breaking rewrites.
 - Keep naming aligned with the corresponding docs and manifest language.
 - Do not add part-owned schemas to root `schemas/` unless a root-publication or
@@ -26,3 +26,7 @@ Do not:
 - remove provenance-related fields without an explicit contract decision
 - widen a schema until it can no longer express bounded KAG intent
 - let a schema imply that derived substrate meaning replaced authored source meaning
+
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

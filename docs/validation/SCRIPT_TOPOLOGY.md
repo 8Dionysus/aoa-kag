@@ -349,4 +349,5 @@ Part-local tests and `scripts/run_tests.py` cover active part scripts.
 
 ## Validation
 
-Use `docs/validation/COMMAND_AUTHORITY.md` and the nearest `AGENTS.md` for executable validation commands.
+Use root `VALIDATION.md`, `docs/validation/COMMAND_AUTHORITY.md`, and the
+nearest `AGENTS.md` for task-conditional validation routes.

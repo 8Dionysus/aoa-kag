@@ -14,9 +14,9 @@ Keep `.github/CODEOWNERS`, PR templates, and workflow names aligned with the roo
 `Repo Validation` is the landing check expected by the root GitHub landing workflow. If that check is added, renamed, or its meaning changes, update the root route, PR expectations, `docs/validation/COMMAND_AUTHORITY.md`, and this file in the same change.
 
 Full lane command sequences live in `config/validation_lanes.json`; GitHub
-workflow YAML should call `python scripts/release_check.py`, the exact-receipt
-`python scripts/ci_release_check.py` continuation, or
-`python scripts/ci_gate.py --mode ...` instead of rebuilding lane meaning
+workflow YAML should call `release` lane, the exact-receipt
+`release` lane continuation, or
+`source-fast` lane instead of rebuilding lane meaning
 inline.
 
 `Repo Validation` is a required summary over an always-required source-fast
@@ -46,3 +46,7 @@ When workflow or repository-policy files change, report:
 ## Verify
 
 Use the root `AGENTS.md` verification path for the changed surface. For GitHub-only edits, inspect the workflow YAML and run the nearest repo-local static, release, or validation check when available.
+
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

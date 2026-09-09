@@ -13,7 +13,7 @@ existing `AOA-K-*` surfaces.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the maturity, owner-wait, or roadmap surface being
 changed.
 
@@ -27,11 +27,11 @@ changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
+Run the mechanics skeleton validator.
 If maturity governance moves, run generated parity, focused tests, and release
 checks.
 For the active stop-rule part, run
-`python mechanics/growth-cycle/parts/surface-growth-stop-rule/scripts/validate_surface_growth_stop_rule.py`.
+the part-local validator.
 
 ## Closeout
 

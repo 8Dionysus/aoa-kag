@@ -10,6 +10,11 @@
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 
+## agent lane
+
+- [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+
 ## agent-lane
 
 - [AOA-KAG-D-0008 - Quest Source Store And Spark Lane Placement](../AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md) (`docs/decisions/AOA-KAG-D-0008-quest-source-store-and-spark-lane-placement.md`)
@@ -89,6 +94,7 @@
 ## docs route
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+- [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
 
 ## docs/decisions
 
@@ -217,6 +223,10 @@
 
 - [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
 
+## mechanics topology
+
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+
 ## mechanics/topology
 
 - [AOA-KAG-D-0006 - Common Mechanics Home Map](../AOA-KAG-D-0006-common-mechanics-home-map.md) (`docs/decisions/AOA-KAG-D-0006-common-mechanics-home-map.md`)
@@ -255,6 +265,10 @@
 
 - [AOA-KAG-D-0036 - Bounded Process Provider Audit Wave](../AOA-KAG-D-0036-bounded-process-provider-audit-wave.md) (`docs/decisions/AOA-KAG-D-0036-bounded-process-provider-audit-wave.md`)
 
+## provenance
+
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+
 ## provider registry
 
 - [AOA-KAG-D-0020 - Routing Provider Succession](../AOA-KAG-D-0020-routing-provider-succession.md) (`docs/decisions/AOA-KAG-D-0020-routing-provider-succession.md`)
@@ -264,6 +278,10 @@
 - [AOA-KAG-D-0041 - AOA-KAG-D-0041 Preparation Seed And History Boundary](../AOA-KAG-D-0041-preparation-seed-history-boundary.md) (`docs/decisions/AOA-KAG-D-0041-preparation-seed-history-boundary.md`)
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
 - [AOA-KAG-D-0043 - AOA-KAG-D-0043 Consolidated V0.5.0 Campaign And Stats Provider Boundary](../AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md) (`docs/decisions/AOA-KAG-D-0043-consolidated-v050-campaign-and-stats-provider-boundary.md`)
+
+## public contract
+
+- [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
 
 ## public example
 
@@ -436,6 +454,8 @@
 - [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 - [AOA-KAG-D-0047 - AOA-KAG-D-0047 Budget Producer Runtime Binding And Descriptor Confinement](../AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md) (`docs/decisions/AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md`)
 - [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
+- [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
+- [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
 
 ## validation workflow
 

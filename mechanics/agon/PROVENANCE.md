@@ -20,4 +20,4 @@ the source route behind an Agon KAG candidate must be audited.
   technical districts under their owning active routes.
 
 Former root paths and historical naming are accounted for in
-`mechanics/agon/legacy/INDEX.md`. They are not active source routes.
+[historical index](https://github.com/8Dionysus/aoa-kag/blob/14ee1e33e43749d23c557b3ef526eca7edb36196/mechanics/agon/legacy/INDEX.md). They are not active source routes.

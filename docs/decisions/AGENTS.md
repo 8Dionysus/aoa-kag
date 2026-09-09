@@ -62,23 +62,14 @@ test maintenance do not need a decision unless they change one of those routes.
 
 ## Verify
 
-Run:
+Use the decision-index builder/check and record validator routes in root
+`VALIDATION.md`.
 
-```bash
-python scripts/generate_decision_indexes.py --check
-python scripts/validate_decision_records.py
-```
+When decision metadata changes, use the canonical builder route in root
+`VALIDATION.md`.
+Select the owning validator through root `VALIDATION.md`.
 
-When decision metadata changes, regenerate first:
+## Validation
 
-```bash
-python scripts/generate_decision_indexes.py
-```
-
-Also run the owning validator for the changed surface, usually:
-
-```bash
-python scripts/validate_kag.py
-python scripts/validate_nested_agents.py
-python -m unittest discover -s tests -p 'test_*.py'
-```
+Select the matching on-demand route in root `VALIDATION.md`; the manifest
+remains command authority.

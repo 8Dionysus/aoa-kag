@@ -14,9 +14,9 @@ Full validation command sequences live in `config/validation_lanes.json`.
 The same manifest owns fail-closed impact rules. `source-fast` and the self
 owner-family proof remain always required; new or uncertain surfaces default
 to the full audit instead of widening the owner-local allowlist implicitly.
-Verify with the generated lane, then the source-fast lane:
+When generated projections are affected, select the generated lane followed by
+the source-fast lane from root `VALIDATION.md`.
 
-```bash
-python scripts/ci_gate.py --mode generated
-python scripts/ci_gate.py --mode source-fast
-```
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

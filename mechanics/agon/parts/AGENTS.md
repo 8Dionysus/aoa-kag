@@ -15,7 +15,7 @@ owner.
 
 Read root `AGENTS.md`, `mechanics/AGENTS.md`, `mechanics/agon/AGENTS.md`,
 `mechanics/agon/PARTS.md`, `mechanics/agon/PROVENANCE.md`, this card, and the
-target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`.
+target part `CONTRACT.md`, and `VALIDATION.md`.
 
 ## Boundaries
 
@@ -24,19 +24,17 @@ target part `README.md`, `CONTRACT.md`, and `VALIDATION.md`.
   part-local contract proves they should move.
 - Part-local source configs use functional `.source.json` names, not `seed`
   names.
-- Historical wave or landing names stay in `mechanics/agon/legacy/` accounting,
-  not active part paths or active payload keys.
+- Historical wave or landing names stay in the package `PROVENANCE.md`
+  accounting, not active part paths or active payload keys. If historical
+  source is needed, use the exact baseline Git tree pinned by AOA-KAG-D-0050;
+  no local `mechanics/agon/legacy/` archive is an active route.
 - No part may claim verdict, proof, memory, ToS canon, source truth, runtime
   execution, rank mutation, or scheduler effects.
 
 ## Validation
 
-Run the target part validator and focused test named in `VALIDATION.md`, then:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
+The target part `VALIDATION.md` owns the focused validator and test route;
+review generated compatibility and owner boundaries afterward.
 
 ## Closeout
 

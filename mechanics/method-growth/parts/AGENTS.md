@@ -16,7 +16,7 @@ their operation owner than in root docs, schemas, examples, or tests.
 Read root `AGENTS.md`, `mechanics/AGENTS.md`,
 `mechanics/method-growth/AGENTS.md`, `mechanics/method-growth/PARTS.md`,
 `mechanics/method-growth/PROVENANCE.md`, this card, and the target part
-`README.md`, `CONTRACT.md`, and `VALIDATION.md`.
+`CONTRACT.md`, and `VALIDATION.md`.
 
 ## Boundaries
 
@@ -24,16 +24,15 @@ Read root `AGENTS.md`, `mechanics/AGENTS.md`,
   owner adoption, proof verdict, ToS canon, memory truth, or route execution.
 - Part-local schemas and examples are contract packets for the owning part.
 - Do not reactivate `seed` or `wave` names in active paths or payload keys.
-- Former root paths belong in `mechanics/method-growth/legacy/` accounting.
+- Former root paths belong in the package `PROVENANCE.md` accounting. If
+  historical source is needed, use the exact baseline Git tree pinned by
+  AOA-KAG-D-0050; no local `mechanics/method-growth/legacy/` archive is an
+  active route.
 
 ## Validation
 
-Run the target part test named in `VALIDATION.md`, then:
-
-```bash
-python scripts/validate_mechanics_skeleton.py
-python scripts/run_tests.py
-```
+The target part `VALIDATION.md` owns the focused test route; review lineage and
+owner-downlink boundaries afterward.
 
 ## Closeout
 

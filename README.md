@@ -31,7 +31,7 @@ page.
 | Current consumer and bridge posture | [CONSUMER_GUIDE](docs/CONSUMER_GUIDE.md), [BRIDGE_CONTRACTS](docs/BRIDGE_CONTRACTS.md), [docs map](docs/README.md) |
 | Manifest, generated, schema, and example surfaces | [manifests](manifests/AGENTS.md), [generated](generated/AGENTS.md), [schemas](schemas/AGENTS.md), [examples](examples/AGENTS.md) |
 | Durable rationale, direction, and obligations | [decisions](docs/decisions/README.md), [ROADMAP](ROADMAP.md), [QUESTBOOK](QUESTBOOK.md), [quests](quests/README.md) |
-| Validation command authority | [COMMAND_AUTHORITY](docs/validation/COMMAND_AUTHORITY.md), plus the nearest `AGENTS.md` |
+| Validation command authority | [VALIDATION](VALIDATION.md), [COMMAND_AUTHORITY](docs/validation/COMMAND_AUTHORITY.md), plus the nearest owner card |
 
 This repository is strongest when it makes a derived surface easier to inspect,
 validate, and return to its source owner. It is weakest when it pretends the
@@ -126,9 +126,9 @@ sibling owner repositories keep authority.
 
 ## Validation
 
-Executable validation routes live in [AGENTS](AGENTS.md#validation),
+Executable validation routes live in root [VALIDATION](VALIDATION.md),
 [COMMAND_AUTHORITY](docs/validation/COMMAND_AUTHORITY.md), and the nearest
-nested `AGENTS.md`.
+owner card. The manifest remains machine command authority.
 
 Use this README to choose the route, not to run the route.
 

@@ -35,16 +35,12 @@ validator inventory, script inventory, lane posture, and failure routes for
 
 ## Validation
 
-```bash
-python -m unittest tests.test_validation_command_authority tests.test_script_topology tests.test_validator_module_topology
-python scripts/ci_gate.py --mode source-fast
-```
+Select the matching on-demand route in root `VALIDATION.md`; the manifest
+remains command authority.
 
-For release-visible lane changes:
+For release-visible lane changes, select the release route from root
+`VALIDATION.md` and preserve the manifest-owned sequence.
 
-```bash
-python scripts/release_check.py
-```
 
 ## Closeout
 

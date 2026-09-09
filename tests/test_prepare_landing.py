@@ -89,6 +89,7 @@ class PrepareLandingTests(unittest.TestCase):
                 history_ref=head,
                 event_history_ref=head,
                 budget_base_ref=head,
+                coverage_seed_ref=head,
                 budget_reason=None,
                 temp_root=temp_root,
             )
@@ -373,6 +374,7 @@ class PrepareLandingTests(unittest.TestCase):
                     history_ref=head,
                     event_history_ref=head,
                     budget_base_ref=head,
+                    coverage_seed_ref=head,
                     budget_reason=None,
                     temp_root=Path(work_tmp),
                 )
@@ -420,6 +422,7 @@ class PrepareLandingTests(unittest.TestCase):
                     history_ref=head,
                     event_history_ref=head,
                     budget_base_ref=head,
+                    coverage_seed_ref=head,
                     budget_reason=None,
                     temp_root=Path(work_tmp),
                 )
@@ -468,6 +471,7 @@ class PrepareLandingTests(unittest.TestCase):
                     history_ref=head,
                     event_history_ref=head,
                     budget_base_ref=head,
+                    coverage_seed_ref=head,
                     budget_reason=None,
                     temp_root=Path(work_tmp),
                 )
@@ -488,6 +492,7 @@ class PrepareLandingTests(unittest.TestCase):
                 history_ref=None,
                 event_history_ref=None,
                 budget_base_ref=None,
+                coverage_seed_ref=None,
                 budget_reason=None,
                 temp_root=Path(work_tmp),
             )
@@ -3645,7 +3650,7 @@ class PrepareLandingTests(unittest.TestCase):
         )
 
     def test_scc_order_is_staged_and_bounded_until_tree_convergence(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         trees = iter(("tree-0", "tree-1", "tree-1", "tree-1"))
         with patch.object(prepare_landing, "git_text", side_effect=lambda *_args: next(trees)), patch.object(
             prepare_landing,
@@ -3680,8 +3685,133 @@ class PrepareLandingTests(unittest.TestCase):
             stage_paths.call_args_list,
         )
 
+    def test_scc_stages_tiered_control_outputs_before_fixed_point(self) -> None:
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
+        tiered_controls = (
+            "kag/indexes/corpus.manifest.json",
+            "kag/indexes/hot_profile.json",
+            "kag/indexes/artifact_locators.json",
+        )
+        self.assertTrue(
+            set(tiered_controls).issubset(prepare_landing.PORTABLE_FAMILY_PATHS)
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = self.make_repo(Path(tmpdir))
+            for relative in prepare_landing.COVERAGE_PATHS:
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}\n", encoding="utf-8")
+            for relative in prepare_landing.PORTABLE_FAMILY_PATHS:
+                path = repo / relative
+                if relative.endswith("shards"):
+                    path.mkdir(parents=True, exist_ok=True)
+                    (path / "base.jsonl").write_text("{}\n", encoding="utf-8")
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("{}\n", encoding="utf-8")
+            git(repo, "add", ".")
+            git(repo, "commit", "-qm", "tiered base")
+
+            def run(command: tuple[str, ...], *, repo_root: Path) -> None:
+                self.assertEqual(repo, repo_root)
+                if command == prepare_landing.portable_family_command(refs):
+                    for relative in tiered_controls:
+                        (repo / relative).write_text(
+                            '{"state":"refreshed"}\n',
+                            encoding="utf-8",
+                        )
+
+            with patch.object(prepare_landing, "run_command", side_effect=run):
+                iterations, _tree = prepare_landing.converge_scc(
+                    repo,
+                    refs,
+                    max_iterations=3,
+                )
+
+            self.assertEqual(2, iterations)
+            self.assertEqual(b"", git(repo, "diff"))
+
+    def test_final_confirmation_drift_names_first_phase_paths_and_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = self.make_repo(Path(tmpdir))
+            source = repo / "source.txt"
+            source.write_text("drift\n", encoding="utf-8")
+
+            with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                prepare_landing.final_confirmation(
+                    repo,
+                    prepare_landing.ResolvedRefs("h", "e", "b", "s"),
+                )
+
+        self.assertEqual(
+            "generated_cleanliness_failure",
+            raised.exception.failure_type,
+        )
+        self.assertEqual((), raised.exception.command)
+        self.assertEqual(
+            "before_final_confirmation",
+            raised.exception.details["phase"],
+        )
+        self.assertEqual(
+            ["source.txt"],
+            raised.exception.details["changed_paths"],
+        )
+        self.assertGreater(raised.exception.details["diff_bytes"], 0)
+        self.assertRegex(
+            raised.exception.details["diff_digest"],
+            r"^sha256:[0-9a-f]{64}$",
+        )
+
+    def test_final_confirmation_attributes_drift_to_first_mutating_check(self) -> None:
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
+        coverage = prepare_landing.coverage_command(refs, check=True)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = self.make_repo(Path(tmpdir))
+
+            def run(command: tuple[str, ...], *, repo_root: Path) -> None:
+                self.assertEqual(repo, repo_root)
+                if command == coverage:
+                    (repo / "source.txt").write_text("drift\n", encoding="utf-8")
+
+            with patch.object(prepare_landing, "run_command", side_effect=run):
+                with self.assertRaises(prepare_landing.PreparationFailure) as raised:
+                    prepare_landing.final_confirmation(repo, refs)
+
+        self.assertEqual(coverage, raised.exception.command)
+        self.assertEqual(
+            "coverage_check",
+            raised.exception.details["phase"],
+        )
+        self.assertEqual(
+            ["source.txt"],
+            raised.exception.details["changed_paths"],
+        )
+
+    def test_preparation_coverage_seed_is_independent_from_history_refs(self) -> None:
+        refs = prepare_landing.ResolvedRefs("history", "events", "budget", "seed")
+
+        coverage = prepare_landing.coverage_command(refs)
+        family = prepare_landing.portable_family_command(refs, enforce_budget=True)
+
+        self.assertEqual(
+            "seed",
+            coverage[coverage.index("--external-seed-ref") + 1],
+        )
+        self.assertEqual(
+            "history",
+            family[family.index("--history-ref") + 1],
+        )
+        self.assertEqual(
+            "events",
+            family[family.index("--event-history-ref") + 1],
+        )
+        self.assertEqual(
+            "budget",
+            family[family.index("--budget-base-ref") + 1],
+        )
+
     def test_non_convergence_fails_closed(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         trees = iter(("a", "b", "b", "c"))
         with patch.object(prepare_landing, "git_text", side_effect=lambda *_args: next(trees)), patch.object(
             prepare_landing,
@@ -3693,7 +3823,7 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertEqual("fixed_point_non_convergence", raised.exception.failure_type)
 
     def test_budget_receipt_mutation_reenters_scc_until_stable(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         with patch.object(
             prepare_landing,
             "converge_scc",
@@ -3740,6 +3870,56 @@ class PrepareLandingTests(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(RuntimeError, "runtime inputs differ"):
                     prepare_landing.require_seed_compatible_runtime(repo, head)
+
+    def test_external_family_identity_uses_canonical_coverage_profile(self) -> None:
+        profile = {
+            "content_digest": "a" * 64,
+            "digest_state": "published",
+            "tracked_bytes": 10,
+            "corpus_total_bytes": 10,
+            "git_hot_bytes": 10,
+            "placement_state": "git-full",
+            "measurement_state": "measured",
+        }
+        coverage = unittest.mock.Mock()
+        coverage.portable_family_profile.return_value = (
+            "v3-portable-shards",
+            profile,
+        )
+
+        with patch.object(
+            prepare_landing,
+            "coverage_generation_module",
+            return_value=coverage,
+        ):
+            observed = prepare_landing.expected_external_portable_family(
+                "owner",
+                Path("/provider"),
+            )
+
+        self.assertIs(profile, observed)
+        coverage.portable_family_profile.assert_called_once_with(
+            Path("/provider"),
+            owner_name="owner",
+            status="passed",
+        )
+
+    def test_external_family_identity_rejects_nonportable_profile(self) -> None:
+        coverage = unittest.mock.Mock()
+        coverage.portable_family_profile.return_value = (
+            "v4-tiered-content-addressed",
+            {"digest_state": "published"},
+        )
+
+        with patch.object(
+            prepare_landing,
+            "coverage_generation_module",
+            return_value=coverage,
+        ), self.assertRaisesRegex(RuntimeError, "portable family is invalid"):
+            prepare_landing.expected_external_portable_family(
+                "owner",
+                Path("/provider"),
+            )
 
     def seeded_coverage_fixture(self):
         seed = json.loads(
@@ -3838,6 +4018,61 @@ class PrepareLandingTests(unittest.TestCase):
         rebuilt = next(row for row in payload["owners"] if row["repo"] == "aoa-kag")
         self.assertEqual(self_row, rebuilt)
         self.assertEqual(len(order), payload["coverage_summary"]["owner_count"])
+
+    def test_seeded_coverage_preserves_external_migration_residual(self) -> None:
+        seed, order, roots, entries, self_row = self.seeded_coverage_fixture()
+        external = next(row for row in seed["owners"] if row["repo"] != "aoa-kag")
+        external["index_status"] = "migration-needed"
+
+        with patch.object(
+            prepare_landing,
+            "require_seed_compatible_runtime",
+        ), patch.object(
+            prepare_landing,
+            "load_external_coverage_seed",
+            return_value=copy.deepcopy(seed),
+        ), patch.object(
+            coverage_generation,
+            "_validate_coverage_payload_schema",
+        ), patch.object(
+            coverage_generation,
+            "provider_repo_order",
+            return_value=order,
+        ), patch.object(
+            coverage_generation,
+            "provider_by_repo",
+            return_value=entries,
+        ), patch.object(
+            coverage_generation,
+            "configured_owner_roots",
+            return_value=list(roots.items()),
+        ), patch.object(
+            coverage_generation,
+            "_git_head",
+            side_effect=lambda owner, _root: entries[owner]["pinned_ref"],
+        ), patch.object(
+            coverage_generation,
+            "_build_owner_coverage",
+            return_value=(self_row, {"owner": "aoa-kag"}),
+        ), patch.object(
+            coverage_generation,
+            "load_portable_family",
+            return_value=(self_row, {}, {}),
+        ), patch.object(
+            prepare_landing,
+            "expected_external_portable_family",
+            side_effect=lambda owner, _root: next(
+                row["portable_family"] for row in seed["owners"] if row["repo"] == owner
+            ),
+        ):
+            payload = prepare_landing.build_preparation_coverage(
+                REPO_ROOT,
+                external_seed_ref="seed",
+            )
+
+        preserved = next(row for row in payload["owners"] if row["repo"] == external["repo"])
+        self.assertEqual("migration-needed", preserved["index_status"])
+        self.assertGreaterEqual(payload["coverage_summary"]["migration_needed"], 1)
 
     def test_seeded_coverage_rejects_external_manifest_identity_drift(self) -> None:
         seed, order, roots, entries, self_row = self.seeded_coverage_fixture()
@@ -4248,7 +4483,7 @@ class PrepareLandingTests(unittest.TestCase):
         self.assertTrue(missing_receipt["fallback_required"])
 
     def test_budget_receipt_requires_explicit_reason_for_final_digest(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
         failure = prepare_landing.CommandResult(
             ("family", "--check"),
             1,
@@ -4266,8 +4501,55 @@ class PrepareLandingTests(unittest.TestCase):
 
         self.assertEqual("budget_receipt_authority_required", raised.exception.failure_type)
 
+    def test_current_budget_receipt_path_supports_v3_family_manifest(self) -> None:
+        digest = "a" * 64
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = Path(tmpdir)
+            manifest = repo / prepare_landing.PORTABLE_FAMILY_PATHS[0]
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-repo-local-kag-family-manifest-v3",
+                        "family_identity": {"content_digest": digest},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            observed = prepare_landing._current_budget_receipt_path(repo)
+
+        self.assertEqual(
+            Path(prepare_landing.BUDGET_RECEIPT_PATHS[0]) / f"{digest}.json",
+            observed,
+        )
+
+    def test_current_budget_receipt_path_supports_v4_distribution_manifest(self) -> None:
+        digest = "b" * 64
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = Path(tmpdir)
+            manifest = repo / prepare_landing.PORTABLE_FAMILY_PATHS[0]
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "aoa-repo-local-kag-distribution-manifest-v1",
+                        "corpus_manifest": {"content_digest": f"sha256:{digest}"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            observed = prepare_landing._current_budget_receipt_path(repo)
+
+        self.assertEqual(
+            Path(prepare_landing.BUDGET_RECEIPT_PATHS[0]) / f"{digest}.json",
+            observed,
+        )
+
     def test_budget_receipt_is_created_only_after_final_check_requests_it(self) -> None:
-        refs = prepare_landing.ResolvedRefs("h", "e", "b")
+        refs = prepare_landing.ResolvedRefs("h", "e", "b", "s")
+        events: list[str] = []
         failure = prepare_landing.CommandResult(
             ("family", "--check"),
             1,
@@ -4276,13 +4558,28 @@ class PrepareLandingTests(unittest.TestCase):
             10,
         )
         success = prepare_landing.CommandResult(("family",), 0, "", "", 10)
+
+        def run_side_effect(command, **_kwargs):
+            if not events:
+                events.append("initial_check")
+                return failure
+            if "--write-budget-receipt" in command:
+                events.append("write_receipt")
+                return success
+            events.append("final_check")
+            return success
+
+        def prune_side_effect(*_args, **_kwargs) -> None:
+            events.append("prune")
+
         with patch.object(
             prepare_landing,
             "run_command",
-            side_effect=(failure, success, success),
+            side_effect=run_side_effect,
         ) as run_command, patch.object(
             prepare_landing,
             "prune_obsolete_budget_receipts",
+            side_effect=prune_side_effect,
         ) as prune, patch.object(prepare_landing, "stage_paths"):
             result = prepare_landing.ensure_budget_receipt(
                 Path("/candidate"),
@@ -4291,6 +4588,10 @@ class PrepareLandingTests(unittest.TestCase):
             )
 
         self.assertEqual("created", result)
+        self.assertEqual(
+            ["initial_check", "prune", "write_receipt", "final_check"],
+            events,
+        )
         self.assertTrue(run_command.call_args_list[1].args[0].count("--write-budget-receipt"))
         self.assertTrue(run_command.call_args_list[2].args[0].count("--check"))
         prune.assert_called_once_with(Path("/candidate"), refs)

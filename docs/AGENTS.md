@@ -11,8 +11,8 @@ Keep provenance, source refs, maturity stop-rules, quarantine posture, and regro
 When docs change a bridge or consumer path, check manifests, generated projections, schemas, examples, and the source owner named by the path.
 
 Full validation command sequences live in `config/validation_lanes.json`.
-Verify with the nearest lane:
+Select the nearest applicable lane from root `VALIDATION.md` for docs changes.
 
-```bash
-python scripts/ci_gate.py --mode source-fast
-```
+## Validation
+
+Select the narrowest applicable lane or focused check from root `VALIDATION.md`; the manifest remains command authority.

@@ -35,7 +35,4 @@ map. Use `docs/validation/VALIDATOR_TOPOLOGY.md` for the human topology map.
 
 ## Validation
 
-```bash
-python -m unittest tests.test_validator_module_topology tests.test_validate_kag
-python scripts/validate_kag.py
-```
+Select the focused projection-parity check through root `VALIDATION.md`.

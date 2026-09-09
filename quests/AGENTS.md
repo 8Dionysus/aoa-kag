@@ -10,18 +10,17 @@ This card applies to `quests/` and all descendants unless a nearer
 `quests/` is the source quest record district for durable KAG-layer obligations.
 It keeps `aoa-kag` follow-through public-safe, lane-first, and lifecycle-aware:
 
-```text
-quests/<lane>/<state>/<quest-file>
-```
+Quest records use `quests/<lane>/<state>/<quest-file>` paths.
+
 
 `QUESTBOOK.md` is the human open-obligation index. `mechanics/questbook/` owns
 questbook operation law, schemas, examples, validators, and focused tests.
 
 ## Read before editing
 
-Read root `AGENTS.md`, `QUESTBOOK.md`, `quests/README.md`, this card, the
-nearest lane route, and `mechanics/questbook/parts/quest-store/README.md`
-before changing quest records.
+Read root `AGENTS.md`, `QUESTBOOK.md`, this card, and the nearest lane route
+before changing quest records. Consult the quest-store README only when the
+named task needs its human contract.
 
 ## Boundaries
 
@@ -36,13 +35,8 @@ before changing quest records.
 
 ## Validation
 
-After changing quests or quest route docs, run:
-
-```bash
-python mechanics/questbook/parts/quest-store/scripts/validate_quest_store.py
-python -m unittest discover -s mechanics/questbook/parts/quest-store/tests -p 'test_*.py'
-python scripts/validate_kag.py
-```
+After changing quests or quest route docs, select the quest-store on-demand route
+in root `VALIDATION.md`.
 
 ## Closeout
 

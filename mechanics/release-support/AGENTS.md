@@ -13,7 +13,7 @@ KAG releases.
 ## Read before editing
 
 Read root `AGENTS.md`, `DESIGN.md`, `mechanics/AGENTS.md`,
-`mechanics/README.md`, this package `README.md`, `PARTS.md`, and
+this package `PARTS.md`, and
 `PROVENANCE.md`. Then read the release, lane, generated, or public claim
 surface being changed.
 
@@ -26,8 +26,8 @@ surface being changed.
 
 ## Validation
 
-Run `python scripts/validate_mechanics_skeleton.py`.
-For release-facing changes, run `python scripts/release_check.py`.
+Run the mechanics skeleton validator.
+For release-facing changes, run `release` lane.
 
 ## Closeout
 
