@@ -270,8 +270,8 @@
         "generated/parity"
       ]
     },
-    {
-      "path": "tests/test_repo_local_kag_repository_indexes.py",
+        {
+          "path": "tests/test_repo_local_kag_repository_indexes.py",
       "family": "kag/repository-index-family",
       "protects": "Portable source, anchor, and event corpus; exact logical source, artifact, anchor, entity, event, assertion, and relation compatibility views; stable shard locality; standing and generated-delta budgets; incremental parity; query; and owner-domain catalog contracts.",
       "owner_surface": "schemas/repo-local-kag-family-manifest.schema.json",
@@ -281,11 +281,26 @@
       "coverage_kinds": [
         "topology/inventory",
         "source/route-contract",
-        "generated/parity"
-      ]
-    },
-    {
-      "path": "tests/test_repo_local_kag_tiered_distribution.py",
+            "generated/parity"
+          ]
+        },
+        {
+          "path": "tests/test_repo_local_kag_segmented_family.py",
+          "family": "kag/segmented-family",
+          "protects": "Bounded segmented repository-local KAG family identity, deterministic partitioning, explicit migration, per-part budgets, and seven-file compatibility assembly.",
+          "owner_surface": "schemas/repo-local-kag-segmented-family.schema.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_repo_local_kag_segmented_family.py",
+          "failure_route": "Route through the segmented family schema, builder, validator, compatibility assembler, or owner-family gate.",
+          "coverage_kinds": [
+            "topology/inventory",
+            "source/route-contract",
+            "generated/parity",
+            "release/artifact-trust"
+          ]
+        },
+        {
+          "path": "tests/test_repo_local_kag_tiered_distribution.py",
       "family": "kag/tiered-family-distribution",
       "protects": "Corpus/distribution identity separation, transport-independent packs and locators, explicit hot-only degradation, offline CAS reuse, artifact release contents, and selective CI impact classification.",
       "owner_surface": "docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",

@@ -255,7 +255,7 @@ def build_segmented_family(
         "rollback": "retain-last-good-manifest-and-select-by-digest",
         "decision_ref": (
             "aoa-kag:docs/decisions/"
-            "AOA-KAG-D-0040-bounded-segmented-kag-family.md"
+            "AOA-KAG-D-0051-bounded-segmented-kag-family.md"
         ),
     }
     manifest: dict[str, Any] = {

@@ -3273,7 +3273,7 @@ def _budget_decision_ref(manifest: Mapping[str, Any]) -> str:
     if manifest.get("schema_version") == "aoa-repo-local-kag-segmented-family-v1":
         return (
             "aoa-kag:docs/decisions/"
-            "AOA-KAG-D-0040-bounded-segmented-kag-family.md"
+            "AOA-KAG-D-0051-bounded-segmented-kag-family.md"
         )
     return (
         TIERED_DECISION_REF

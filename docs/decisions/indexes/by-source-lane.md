@@ -124,6 +124,7 @@
 - [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
 - [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
 - [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## aoa-memo
 
@@ -240,6 +241,10 @@
 
 - [AOA-KAG-D-0018 - Owner Skill Home And OS User Exposure](../AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md) (`docs/decisions/AOA-KAG-D-0018-owner-skill-home-and-os-user-exposure.md`)
 
+## owner-family consumers
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
+
 ## owner-family validation
 
 - [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
@@ -309,3 +314,7 @@
 - [AOA-KAG-D-0010 - Local KAG Provider Activation](../AOA-KAG-D-0010-local-kag-provider-activation.md) (`docs/decisions/AOA-KAG-D-0010-local-kag-provider-activation.md`)
 - [AOA-KAG-D-0011 - Provider Map MCP Handoff](../AOA-KAG-D-0011-provider-map-mcp-handoff.md) (`docs/decisions/AOA-KAG-D-0011-provider-map-mcp-handoff.md`)
 - [AOA-KAG-D-0019 - Bound Route Examples By Review Invariants](../AOA-KAG-D-0019-bounded-route-example-fixture.md) (`docs/decisions/AOA-KAG-D-0019-bounded-route-example-fixture.md`)
+
+## Tree-of-Sophia repository-local KAG
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)

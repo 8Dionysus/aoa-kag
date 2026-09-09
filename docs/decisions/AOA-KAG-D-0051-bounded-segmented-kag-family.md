@@ -1,4 +1,14 @@
-# AOA-KAG-D-0040: bounded segmented KAG family
+# Bounded Segmented KAG Family
+
+## Index Metadata
+
+- Decision ID: AOA-KAG-D-0051
+- Original date: 2026-09-09
+- Surface classes: KAG source-home, schema contract, generated projection, validation guard
+- KAG surfaces: segmented repository-local family, deterministic partitioning, compatibility assembly, migration boundary
+- Source lanes: aoa-kag, owner-family consumers, Tree-of-Sophia repository-local KAG
+- Guard families: source-owned authority, content identity, bounded reads, explicit provider pin, rollback
+- Posture: proposed owner contract
 
 Status: proposed owner contract, implemented in `segmented_family.py`
 

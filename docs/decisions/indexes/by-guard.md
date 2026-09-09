@@ -51,6 +51,10 @@
 
 - [AOA-KAG-D-0036 - Bounded Process Provider Audit Wave](../AOA-KAG-D-0036-bounded-process-provider-audit-wave.md) (`docs/decisions/AOA-KAG-D-0036-bounded-process-provider-audit-wave.md`)
 
+## bounded reads
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
+
 ## bounded scheduling
 
 - [AOA-KAG-D-0035 - Bounded Owner-Family Component DAG](../AOA-KAG-D-0035-bounded-owner-family-component-dag.md) (`docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md`)
@@ -119,6 +123,7 @@
 - [AOA-KAG-D-0037 - Exact Applied Candidate Seal](../AOA-KAG-D-0037-exact-applied-candidate-seal.md) (`docs/decisions/AOA-KAG-D-0037-exact-applied-candidate-seal.md`)
 - [AOA-KAG-D-0045 - AOA-KAG-D-0045 Budget Receipt Candidate and Producer Identity](../AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md) (`docs/decisions/AOA-KAG-D-0045-budget-receipt-candidate-producer-identity.md`)
 - [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## coverage closure
 
@@ -202,6 +207,10 @@
 
 - [AOA-KAG-D-0027 - History-Bounded Source-Fast Donor Checkouts](../AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md) (`docs/decisions/AOA-KAG-D-0027-history-bounded-source-fast-donor-checkouts.md`)
 - [AOA-KAG-D-0035 - Bounded Owner-Family Component DAG](../AOA-KAG-D-0035-bounded-owner-family-component-dag.md) (`docs/decisions/AOA-KAG-D-0035-bounded-owner-family-component-dag.md`)
+
+## explicit provider pin
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## explicit rollback
 
@@ -595,6 +604,7 @@
 ## rollback
 
 - [AOA-KAG-D-0039 - Tiered Content-Addressed KAG Distribution](../AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md) (`docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md`)
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## run-scoped observability
 
@@ -703,6 +713,7 @@
 - [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
 - [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
 - [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## source-return route
 
