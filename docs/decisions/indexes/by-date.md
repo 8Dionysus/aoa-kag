@@ -144,3 +144,7 @@
 ## 2026-09-04
 
 - [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+
+## 2026-09-09
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)

@@ -64,6 +64,10 @@
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
 
+## compatibility assembly
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
+
 ## consumer validation
 
 - [AOA-KAG-D-0042 - AOA-KAG-D-0042 Exact Stats Consumer Pin And Canary Boundary](../AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md) (`docs/decisions/AOA-KAG-D-0042-exact-stats-consumer-pin-and-canary-boundary.md`)
@@ -96,6 +100,10 @@
 
 - [AOA-KAG-D-0003 - Canonical Decision Lane](../AOA-KAG-D-0003-canonical-decision-lane.md) (`docs/decisions/AOA-KAG-D-0003-canonical-decision-lane.md`)
 - [AOA-KAG-D-0004 - Federated Local KAG Preflight](../AOA-KAG-D-0004-federated-local-kag-preflight.md) (`docs/decisions/AOA-KAG-D-0004-federated-local-kag-preflight.md`)
+
+## deterministic partitioning
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## direct repo readiness
 
@@ -252,6 +260,10 @@
 ## mechanics records
 
 - [AOA-KAG-D-0013 - Repo-Local Source Surface Index](../AOA-KAG-D-0013-repo-local-source-surface-index.md) (`docs/decisions/AOA-KAG-D-0013-repo-local-source-surface-index.md`)
+
+## migration boundary
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## offline recovery
 
@@ -522,6 +534,10 @@
 ## script topology
 
 - [AOA-KAG-D-0005 - Validation Command Authority Preflight](../AOA-KAG-D-0005-validation-command-authority-preflight.md) (`docs/decisions/AOA-KAG-D-0005-validation-command-authority-preflight.md`)
+
+## segmented repository-local family
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## skill projection provenance
 

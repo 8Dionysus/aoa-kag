@@ -7,6 +7,13 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+### Added
+
+- Add the bounded segmented repository-local KAG family for owners whose
+  canonical portable corpus exceeds the materialised compatibility ceiling,
+  with deterministic parts, explicit provider-pinned migration, and on-demand
+  seven-file compatibility assembly.
+
 ### Fixed
 
 - Keep the live `aoa-gopro-connector` checkout visible as a

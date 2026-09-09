@@ -2987,7 +2987,10 @@ def expected_portable_paths(
     manifest_path: Path = MANIFEST_RELATIVE_PATH,
 ) -> set[Path]:
     paths = {manifest_path}
-    for descriptor in manifest.get("shards", []):
+    descriptors = manifest.get("shards", [])
+    if manifest.get("schema_version") == "aoa-repo-local-kag-segmented-family-v1":
+        descriptors = manifest.get("segments", [])
+    for descriptor in descriptors:
         if isinstance(descriptor, dict) and isinstance(
             descriptor.get("path"), str
         ):
@@ -3166,6 +3169,22 @@ def _base_portable_paths(repo_root: Path, base_ref: str) -> set[Path]:
                     / f"{range_value}.jsonl"
                 )
         return paths
+    if manifest.get("schema_version") == "aoa-repo-local-kag-segmented-family-v1":
+        descriptors = manifest.get("segments")
+        if not isinstance(descriptors, list):
+            raise PortableFamilyError(
+                f"{base_ref} segmented family segments are malformed"
+            )
+        paths = {MANIFEST_RELATIVE_PATH}
+        for descriptor in descriptors:
+            if not isinstance(descriptor, dict) or not isinstance(
+                descriptor.get("path"), str
+            ):
+                raise PortableFamilyError(
+                    f"{base_ref} segmented family segment path is malformed"
+                )
+            paths.add(Path(descriptor["path"]))
+        return paths
     return expected_portable_paths(manifest)
 
 
@@ -3218,6 +3237,15 @@ def _validate_standing_budget(
     ):
         raise PortableFamilyError("portable family budgets are malformed")
     for field in ("tracked_bytes_max", "changed_generated_bytes_max"):
+        if (
+            field == "tracked_bytes_max"
+            and manifest.get("schema_version")
+            == "aoa-repo-local-kag-segmented-family-v1"
+        ):
+            # Segmented v1 tracks only its bounded control plane.  The logical
+            # corpus is intentionally larger than the legacy materialised v3
+            # ceiling and is governed by its own logical_bytes_max contract.
+            continue
         head_value = head_budgets.get(field)
         base_field = (
             "owner_git_hot_bytes_max"
@@ -3242,6 +3270,11 @@ def _validate_standing_budget(
 
 
 def _budget_decision_ref(manifest: Mapping[str, Any]) -> str:
+    if manifest.get("schema_version") == "aoa-repo-local-kag-segmented-family-v1":
+        return (
+            "aoa-kag:docs/decisions/"
+            "AOA-KAG-D-0051-bounded-segmented-kag-family.md"
+        )
     return (
         TIERED_DECISION_REF
         if manifest.get("schema_version")

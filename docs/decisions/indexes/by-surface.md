@@ -143,6 +143,7 @@
 
 - [AOA-KAG-D-0016 - Owner Skill Projection Provenance](../AOA-KAG-D-0016-owner-skill-projection-provenance.md) (`docs/decisions/AOA-KAG-D-0016-owner-skill-projection-provenance.md`)
 - [AOA-KAG-D-0038 - Capability Projection Owner Return](../AOA-KAG-D-0038-capability-projection-owner-return.md) (`docs/decisions/AOA-KAG-D-0038-capability-projection-owner-return.md`)
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## generated readmodel
 
@@ -178,6 +179,10 @@
 ## impact classifier
 
 - [AOA-KAG-D-0022 - Additive Fail-Closed Impact Routing](../AOA-KAG-D-0022-additive-fail-closed-impact-routing.md) (`docs/decisions/AOA-KAG-D-0022-additive-fail-closed-impact-routing.md`)
+
+## KAG source-home
+
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## kag/source-home
 
@@ -357,6 +362,7 @@
 - [AOA-KAG-D-0046 - AOA-KAG-D-0046 Budget Receipt Producer Closure And Source Epoch](../AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md) (`docs/decisions/AOA-KAG-D-0046-budget-receipt-closure-and-source-epoch.md`)
 - [AOA-KAG-D-0047 - AOA-KAG-D-0047 Budget Producer Runtime Binding And Descriptor Confinement](../AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md) (`docs/decisions/AOA-KAG-D-0047-budget-producer-runtime-binding-and-descriptor-confinement.md`)
 - [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## schema engine
 
@@ -456,6 +462,7 @@
 - [AOA-KAG-D-0048 - AOA-KAG-D-0048 Portable Budget Producer Runtime Contract](../AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md) (`docs/decisions/AOA-KAG-D-0048-portable-budget-producer-runtime-contract.md`)
 - [AOA-KAG-D-0049 - Prompt-Light Agent Routes And On-Demand Validation](../AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md) (`docs/decisions/AOA-KAG-D-0049-prompt-light-agent-routes-and-on-demand-validation.md`)
 - [AOA-KAG-D-0050 - Historical Source Trees Outside Current KAG Navigation](../AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md) (`docs/decisions/AOA-KAG-D-0050-historical-source-trees-outside-current-navigation.md`)
+- [AOA-KAG-D-0051 - Bounded Segmented KAG Family](../AOA-KAG-D-0051-bounded-segmented-kag-family.md) (`docs/decisions/AOA-KAG-D-0051-bounded-segmented-kag-family.md`)
 
 ## validation workflow
 
