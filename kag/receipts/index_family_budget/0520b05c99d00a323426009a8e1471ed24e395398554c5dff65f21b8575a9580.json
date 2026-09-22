@@ -1,5 +1,5 @@
 {
-  "allowed_bytes": 4038439,
+  "allowed_bytes": 4042580,
   "allowed_tracked_bytes": 2354244,
   "approved_by": "repository-owner",
   "base_ref": "1a0342087b18d0a1f5630036937a548b6526e0e9",
@@ -7,19 +7,19 @@
     "algorithm": "sha256:canonical-json-file-inventory-v2",
     "base_ref": "1a0342087b18d0a1f5630036937a548b6526e0e9",
     "contract_version": "aoa-kag:budget-receipt-candidate-identity-v2",
-    "excluded_path": "kag/receipts/index_family_budget/d9b82e1b084063bb88a614e5013d0994a6428503586fa8ff0adf63a0f8508233.json",
-    "family_digest": "d9b82e1b084063bb88a614e5013d0994a6428503586fa8ff0adf63a0f8508233",
+    "excluded_path": "kag/receipts/index_family_budget/0520b05c99d00a323426009a8e1471ed24e395398554c5dff65f21b8575a9580.json",
+    "family_digest": "0520b05c99d00a323426009a8e1471ed24e395398554c5dff65f21b8575a9580",
     "file_count": 1484,
-    "seal": "bff619d612f35118380f9eb3b543cc500e6ffc1a1bbf875d4fd272732dd1afc6",
-    "source_epoch": "sha256:02c518054d7325fb5d37092c1297cf62e8bef37ae852a2e8e62beb448c2e91c0",
-    "source_snapshot": "sha256:f53e96eb9b435b16ceafd3d6e088cf2ba3f1687f670a2bbbb480276548c68ab2"
+    "seal": "f27d4cf6c8a4240c4151eb6060a3024215bfacdd6bedaab79dea7b3625cee727",
+    "source_epoch": "sha256:72955868c7d439a0772d7dbc738578ea890a8b59a0fdcbd4f33118e68a528f7b",
+    "source_snapshot": "sha256:7466986117332b7e5c90a7923976985da444bb94e765fd0f1e9a3f8647624dcf"
   },
-  "changed_generated_bytes": 4038439,
+  "changed_generated_bytes": 4042580,
   "changed_generated_files": 93,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "d9b82e1b084063bb88a614e5013d0994a6428503586fa8ff0adf63a0f8508233",
-  "head_source_snapshot": "sha256:f53e96eb9b435b16ceafd3d6e088cf2ba3f1687f670a2bbbb480276548c68ab2",
+  "head_family_digest": "0520b05c99d00a323426009a8e1471ed24e395398554c5dff65f21b8575a9580",
+  "head_source_snapshot": "sha256:7466986117332b7e5c90a7923976985da444bb94e765fd0f1e9a3f8647624dcf",
   "producer_identity": {
     "action": {
       "bytes": 5200,
@@ -1374,7 +1374,7 @@
     "revision_binding": "content-addressed-procedure-import-closure-portable-runtime-contract-and-descriptor-io-v1",
     "source_digest": "0063e306f778db8a35772a01a2998d2d339f5d50a0fa9ec791052180aca0de66"
   },
-  "reason": "Reviewed source-only SCIP workspace adapter, schema, example and tests at authored commit 6c6f7e54f0851d03465b7bc3e1afb5737f606e46 require repo-self KAG regeneration against base 1a0342087b18d0a1f5630036937a548b6526e0e9. The reviewed fixed point changes only the four root self-coverage/provider-map outputs and the local derived family; other owner rows, policies and limits remain unchanged. The measured generated delta is 4038439 bytes above the 1048576 delta threshold, while Git-hot is 2354244 bytes below the 4194304 hard cap, with net hot growth of 15492 bytes. Authorize only the exact digest-bound generated delta for this source change, not a general budget exemption, runtime admission or landing verdict.",
+  "reason": "The source-only SCIP workspace candidate at corrective commit 63f806540aacc175efa2bc97bcb227f80c397af9 tightens duplicate JSON alias type equality and routes validation documentation to the existing owner inventory. Regenerate only its corresponding repo-self coverage/provider map and portable KAG family against base 1a0342087b18d0a1f5630036937a548b6526e0e9. The earlier derived-only diff was reviewed; this follow-up changes three authored files within the same bounded capability and retains the schema, public example, other owner rows, provider pins, trust closure and hard storage limits. Accept only the exact generated delta measured and bound by this canonical receipt, subject to final diff review; this is not a general budget waiver, runtime admission, independent semantic proof or landing verdict.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v2",
   "scope": "generated_delta",
