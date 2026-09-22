@@ -24,7 +24,10 @@ POSITION_ENCODINGS = {
 
 
 def _field(value: Mapping[str, Any], camel: str, snake: str, default: Any = None) -> Any:
-    if camel in value and snake in value and value[camel] != value[snake]:
+    # Python equality aliases bool/int/float, including inside containers.
+    # Duplicate JSON spellings must agree without erasing those type distinctions.
+    if (camel in value and snake in value
+            and canonical_digest(value[camel]) != canonical_digest(value[snake])):
         raise CodeObservationError(f"conflicting SCIP field aliases: {camel}")
     return value.get(camel, value.get(snake, default))
 

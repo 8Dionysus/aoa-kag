@@ -190,6 +190,24 @@ class CodeWorkspaceTests(unittest.TestCase):
         self.assertTrue(before.to_dict()["symbols"])
         self.assertEqual(before.snapshot_id, build().snapshot_id)
 
+    def test_duplicate_aliases_preserve_json_type_distinctions(self):
+        mutations = [
+            lambda d: d.update(position_encoding=2.0),
+            lambda d: d.update(positionEncoding=1, position_encoding=True),
+            lambda d: d["occurrences"][0].update(symbolRoles=0, symbol_roles=False),
+            lambda d: d["occurrences"][0].update(
+                singleLineRange={"line": 1, "startCharacter": 4, "endCharacter": 10},
+                single_line_range={"line": 1.0, "startCharacter": 4, "endCharacter": 10}),
+        ]
+        for index, mutate in enumerate(mutations):
+            with self.subTest(index=index), self.assertRaisesRegex(CodeObservationError, "aliases"):
+                payload, sources = fixture()
+                mutate(payload["documents"][0])
+                build(payload, sources)
+        payload, sources = fixture()
+        payload["documents"][0]["position_encoding"] = 2
+        self.assertEqual(len(symbol(build(payload, sources))["references"]), 1)
+
     def test_analysis_change_does_not_masquerade_as_source_change(self):
         payload, sources = fixture()
         before = build()

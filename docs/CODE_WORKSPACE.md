@@ -70,10 +70,11 @@ correctness, a complete project index or independent proof.
 
 ## Validation and next owner
 
-`python -m unittest tests.test_code_workspace` checks the contract and its
-public illustrative example. Expected fixture facts are authored separately
-from the normalizer. These regressions protect continuing protocol and source
-boundaries; they are not the independent `aoa-evals` semantic benchmark.
+The code-workspace family in the [test inventory](testing/test_inventory.json)
+checks the contract and its public illustrative example. Expected fixture facts
+are authored separately from the normalizer. These regressions protect continuing
+protocol and source boundaries; they are not the independent `aoa-evals` semantic
+benchmark.
 
 STACK remains responsible for capture/execution/materialization and LIVE
 sessions; MACHINE owns exact provider artifacts and admission; EVALS owns
