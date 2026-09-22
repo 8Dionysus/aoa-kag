@@ -7,6 +7,11 @@ Tracking starts with the community-docs baseline for this repository.
 
 ## [Unreleased]
 
+### Summary
+
+- Add a source-bound, in-memory code-workspace adapter for supplied complete
+  SCIP indexes, with workspace-wide symbol joins and bounded snapshot handles.
+
 ### Added
 
 - Add the bounded segmented repository-local KAG family for owners whose
@@ -16,6 +21,9 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Fixed
 
+- Separate feature-branch validation and PR landing from federation release
+  publication preflight, which requires a clean synchronized `main`; retain
+  the canonical local checks and required GitHub checks before merge.
 - Keep the live `aoa-gopro-connector` checkout visible as a
   `source_preparation` OS surface without claiming a KAG provider home before
   the connector publishes one.
@@ -35,6 +43,18 @@ Tracking starts with the community-docs baseline for this repository.
   than treating whitespace-separated phrases as arbitrary text.
 - Restrict federation `evidence_refs` to event nodes so non-event projections
   cannot masquerade as immutable event coordinates.
+
+### Validation
+
+- Cover the code-workspace boundary with cross-file, exact-source, Unicode
+  coordinate, document-local symbol, unresolved coverage, strict JSON alias,
+  immutable readback and snapshot-bound pagination regression tests.
+
+### Notes
+
+- The code-workspace example is illustrative, not a real provider run. The
+  adapter neither executes nor admits providers and does not claim LIVE state,
+  lineage, complete-project coverage, semantic proof or owner acceptance.
 
 ## [0.5.0] - 2026-08-23
 

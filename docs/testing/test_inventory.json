@@ -285,6 +285,16 @@
           ]
         },
         {
+          "path": "tests/test_code_workspace.py",
+          "family": "kag/code-workspace",
+          "protects": "Exact source and analysis binding, cross-file native SCIP symbols, lossless reference retention, Unicode coordinates, honest unresolved coverage and bounded snapshot reads.",
+          "owner_surface": "schemas/code-workspace.schema.json",
+          "runtime_cost": "fast",
+          "focused_target": "tests/test_code_workspace.py",
+          "failure_route": "Route through the source-bound code workspace contract, coordinate converter or SCIP adapter; runtime and central proof remain separate owners.",
+          "coverage_kinds": ["source/route-contract", "generated/parity"]
+        },
+        {
           "path": "tests/test_repo_local_kag_segmented_family.py",
           "family": "kag/segmented-family",
           "protects": "Bounded segmented repository-local KAG family identity, deterministic partitioning, explicit migration, per-part budgets, and seven-file compatibility assembly.",

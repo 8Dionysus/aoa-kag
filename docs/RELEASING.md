@@ -7,7 +7,10 @@ See also:
 - [README](../README.md)
 - [CHANGELOG](../CHANGELOG.md)
 
-## Recommended release flow
+## Source change and pull-request landing
+
+This route validates and lands source. It does not publish a release or admit
+a runtime artifact.
 
 1. Keep the release bounded to derived KAG surfaces and bridge contracts.
 2. Update `CHANGELOG.md` in the `Summary / Validation / Notes` shape.
@@ -27,8 +30,10 @@ See also:
    duplicate source-fast invocation only when the preceding job's exact
    same-run receipt fully matches; otherwise it falls back to this complete
    release sequence.
-6. Run federation preflight through the owner release route:
-   - `aoa release audit /srv/AbyssOS --phase preflight --repo aoa-kag --strict --json`
+6. Record the exact candidate's source-fast, owner-family, and required
+   full-audit evidence through the routes in `docs/validation/COMMAND_AUTHORITY.md`.
+   Preparation receipts do not replace these checks. The federation
+   publication preflight below is not a feature-branch gate.
 7. Push only after local release evidence is recorded and open a pull request
    with changed surfaces, validation results, skipped checks, and remaining
    risk. Wait for `Repo Validation` and every required check; a skipped
@@ -44,4 +49,18 @@ See also:
    observed remote state, and confirm a clean worktree. Preparation is not
    proof; post-landing sync is not owner acceptance.
 
-Publish only through `aoa release publish`.
+## Release publication
+
+Publication is a separate action after the release-preparation changes have
+landed. It does not follow automatically from a merged source PR.
+
+1. Use the release owner's clean `main` checkout, synchronized with the
+   observed `origin/main`, and verify the intended release metadata.
+2. Run federation publication preflight through the SDK owner route:
+   - `aoa release audit /srv/AbyssOS --phase preflight --repo aoa-kag --strict --json`
+   This audit requires `main` equal to `origin/main` and runs the repository's
+   release verifier. Bind discovery to the intended owner checkout; a pass on
+   another checkout does not validate a feature-branch candidate. Do not bypass
+   a failed publication check or weaken its main-sync requirement.
+3. Publish only through `aoa release publish`, after the required publication
+   checks pass and release publication is authorized.

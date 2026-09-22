@@ -1,0 +1,129 @@
+{
+  "snapshot_id": "8d665653619bf7884f8034329c39d89eada903d9d32b6b4f3fa59f5e5c86f208",
+  "schema_version": "aoa-kag-code-workspace-v1",
+  "source": {
+    "repo": "example",
+    "epoch": "commit:fixture",
+    "manifest": {
+      "api.py": "32e6eb65e7982d1852a20b422899550b6040abc697a65995f1970b0a6f3566b9",
+      "other.py": "7e4fa2eb8c7ac089739d5defc4489fad68a100d92082ca35c6b40a4524821f87",
+      "use.py": "70c370a4182f760e44fc5fee6ae77c208f5c9d0731144f0430a501dedfb5e237"
+    },
+    "digest": "ede032d696a73704c7ce7dd71a421fb38239aa0907277620bb8ba7b98073cdf1"
+  },
+  "analysis": {
+    "provider": "scip-python",
+    "version": "fixture-v1",
+    "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "environment_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "adapter": "scip-workspace-v1",
+    "default_position_encoding": null,
+    "digest": "1a30e20ad7bf460552517e9b8c829924a2e60305e61ada484c8c30092e933b73"
+  },
+  "provenance": {
+    "format": "SCIP",
+    "input_sha256": "e531895c4f46b57b1dc783ad46280998d1f43063448567b46bff4497c9586602",
+    "metadata": {
+      "toolInfo": {
+        "name": "scip-python",
+        "version": "fixture-v1"
+      }
+    }
+  },
+  "coverage": {
+    "scope": "supplied_index_only",
+    "indexed_paths": [
+      "api.py",
+      "use.py"
+    ],
+    "unindexed_paths": [
+      "other.py"
+    ],
+    "native_occurrences": 2,
+    "retained_occurrences": 2,
+    "deduplicated_occurrences": 0,
+    "unresolved_symbols": 0
+  },
+  "symbols": [
+    {
+      "handle": "aoa:example:code-symbol:921c08317d0e0bfb92974837",
+      "native_symbol": "scip-python python example 1 api/Widget#",
+      "scope_path": null,
+      "metadata": [
+        {
+          "path": "api.py",
+          "native": {
+            "symbol": "scip-python python example 1 api/Widget#",
+            "displayName": "Widget",
+            "kind": 7
+          }
+        }
+      ],
+      "definitions": [
+        "aoa:example:code-occurrence:25c7cc5f25e66eed5067706e"
+      ],
+      "references": [
+        "aoa:example:code-occurrence:3450d3c00eb00882eadc6e3c"
+      ],
+      "resolution": "workspace",
+      "external": false
+    }
+  ],
+  "occurrences": [
+    {
+      "handle": "aoa:example:code-occurrence:25c7cc5f25e66eed5067706e",
+      "path": "api.py",
+      "source_sha256": "32e6eb65e7982d1852a20b422899550b6040abc697a65995f1970b0a6f3566b9",
+      "language": "python",
+      "range": {
+        "start_byte": 6,
+        "end_byte": 12,
+        "native_range": [
+          0,
+          6,
+          12
+        ],
+        "position_encoding": "utf-16"
+      },
+      "symbol_handle": "aoa:example:code-symbol:921c08317d0e0bfb92974837",
+      "role": "definition",
+      "native": {
+        "range": [
+          0,
+          6,
+          12
+        ],
+        "symbol": "scip-python python example 1 api/Widget#",
+        "symbolRoles": 1
+      }
+    },
+    {
+      "handle": "aoa:example:code-occurrence:3450d3c00eb00882eadc6e3c",
+      "path": "use.py",
+      "source_sha256": "70c370a4182f760e44fc5fee6ae77c208f5c9d0731144f0430a501dedfb5e237",
+      "language": "python",
+      "range": {
+        "start_byte": 12,
+        "end_byte": 18,
+        "native_range": [
+          1,
+          4,
+          10
+        ],
+        "position_encoding": "utf-16"
+      },
+      "symbol_handle": "aoa:example:code-symbol:921c08317d0e0bfb92974837",
+      "role": "reference",
+      "native": {
+        "range": [
+          1,
+          4,
+          10
+        ],
+        "symbol": "scip-python python example 1 api/Widget#"
+      }
+    }
+  ],
+  "relations": []
+}
