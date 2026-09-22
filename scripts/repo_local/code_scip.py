@@ -103,7 +103,7 @@ def normalize_scip_workspace(
     analysis_identity["digest"] = canonical_digest(analysis_identity)
     input_digest = canonical_digest(payload)
     context = canonical_digest([source["digest"], analysis_identity["digest"], input_digest])
-    documents = _objects(payload.get("documents"), "documents")
+    documents = _objects(payload.get("documents", []), "documents")
     symbols: dict[tuple[str | None, str], dict[str, Any]] = {}
     occurrences: dict[str, dict[str, Any]] = {}
     relations: dict[str, dict[str, Any]] = {}

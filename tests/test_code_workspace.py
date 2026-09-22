@@ -50,6 +50,23 @@ def symbol(workspace, native=SYMBOL, path=None):
 
 
 class CodeWorkspaceTests(unittest.TestCase):
+    def test_empty_workspace_accepts_omitted_documents_without_hiding_sources(self):
+        sources = {"unindexed.py": "value = 1\n"}
+        for payload in ({}, {"documents": []}):
+            with self.subTest(payload=payload):
+                snapshot = build(payload, sources).to_dict()
+                self.assertEqual(snapshot["symbols"], [])
+                self.assertEqual(snapshot["occurrences"], [])
+                self.assertEqual(snapshot["relations"], [])
+                self.assertEqual(snapshot["coverage"], {
+                    "scope": "supplied_index_only", "indexed_paths": [],
+                    "unindexed_paths": ["unindexed.py"], "native_occurrences": 0,
+                    "retained_occurrences": 0, "deduplicated_occurrences": 0,
+                    "unresolved_symbols": 0,
+                })
+        with self.assertRaisesRegex(CodeObservationError, "documents"):
+            build({"documents": {}}, sources)
+
     def test_cross_file_reference_needs_no_enclosing_symbol(self):
         workspace = build()
         row = symbol(workspace)
