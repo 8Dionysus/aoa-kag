@@ -1,25 +1,25 @@
 {
-  "allowed_bytes": 9602565,
-  "allowed_tracked_bytes": 2354525,
+  "allowed_bytes": 9169318,
+  "allowed_tracked_bytes": 2354696,
   "approved_by": "repository-owner",
   "base_ref": "1a0342087b18d0a1f5630036937a548b6526e0e9",
   "candidate_identity": {
     "algorithm": "sha256:canonical-json-file-inventory-v2",
     "base_ref": "1a0342087b18d0a1f5630036937a548b6526e0e9",
     "contract_version": "aoa-kag:budget-receipt-candidate-identity-v2",
-    "excluded_path": "kag/receipts/index_family_budget/5013cabf7824e3f4b20790134a22174a3abd94df4b3e3f1e73e59c0d43f0791f.json",
-    "family_digest": "5013cabf7824e3f4b20790134a22174a3abd94df4b3e3f1e73e59c0d43f0791f",
+    "excluded_path": "kag/receipts/index_family_budget/2bd2aafd44369a08ca4b0557ae81dcce93f0e14f5f1c0491d2ccaa701a11f675.json",
+    "family_digest": "2bd2aafd44369a08ca4b0557ae81dcce93f0e14f5f1c0491d2ccaa701a11f675",
     "file_count": 1484,
-    "seal": "f9e927858b7ccc3c953cb5849e9bdea812dea6696e170d6b0f0751b9220153d8",
-    "source_epoch": "sha256:ca0c04916f0780b8110322dde5a692a38babd79420d8ba4d1a2a9d215e60510a",
-    "source_snapshot": "sha256:520c95ab3c184a56b1ad13b1b5c74f4f41f46af4178377a5cae1b667b1bcef67"
+    "seal": "a39712f16286897babcd3d557d3b459a0a268bbbd59172a3d1201b1babee77ed",
+    "source_epoch": "sha256:45e1f6f700e6ea6001c5eecc2bb1b13006f1e4fc446cfe820f1472ef15c80131",
+    "source_snapshot": "sha256:ef9ebf23d42a7bdc6260c3617552252b83c4e2f978a843f7c6b814ea6f2dba3f"
   },
-  "changed_generated_bytes": 9602565,
-  "changed_generated_files": 215,
+  "changed_generated_bytes": 9169318,
+  "changed_generated_files": 210,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "5013cabf7824e3f4b20790134a22174a3abd94df4b3e3f1e73e59c0d43f0791f",
-  "head_source_snapshot": "sha256:520c95ab3c184a56b1ad13b1b5c74f4f41f46af4178377a5cae1b667b1bcef67",
+  "head_family_digest": "2bd2aafd44369a08ca4b0557ae81dcce93f0e14f5f1c0491d2ccaa701a11f675",
+  "head_source_snapshot": "sha256:ef9ebf23d42a7bdc6260c3617552252b83c4e2f978a843f7c6b814ea6f2dba3f",
   "producer_identity": {
     "action": {
       "bytes": 5200,
@@ -1374,10 +1374,10 @@
     "revision_binding": "content-addressed-procedure-import-closure-portable-runtime-contract-and-descriptor-io-v1",
     "source_digest": "0063e306f778db8a35772a01a2998d2d339f5d50a0fa9ec791052180aca0de66"
   },
-  "reason": "The source-only SCIP workspace candidate at db94bba44e640dc4f767e16c1bf7c163c3d016e6 adds only the required release-visible CHANGELOG description after complete local release and owner-family success on 7115b1967e75703318e74c85e584ac73e771d8ae. Refresh only its corresponding self-owned generated family against base 1a0342087b18d0a1f5630036937a548b6526e0e9. Previously reviewed authored code, schema, tests, example, provider pins, other owner rows, producer trust closure and hard storage limits remain unchanged. Accept only the exact delta measured and digest-bound by this canonical receipt after final diff review; this is not a blanket budget waiver, runtime admission, hosted CI, independent semantic proof or landing verdict.",
+  "reason": "Operator-authorized route correction at baa63714f92000514b9327f006435f76ceb52800 aligns KAG documentation with the existing SDK main-only release-publication preflight. Only CHANGELOG.md and docs/RELEASING.md change after the previously reviewed, owner-family-verified e8dd47ab686cba4a641be8caa3caa53a846a3900 candidate. PR source-fast, owner-family, required full audit and GitHub checks remain mandatory; SDK validation, trust gates, producer closure, provider pins and other owner sources are unchanged. Regenerate only the exact measured self-owned derived family against base 1a0342087b18d0a1f5630036937a548b6526e0e9, review changed rows, and bind this reason to the canonical receipt. Existing hard limits remain unchanged. This is not a general budget waiver, runtime admission, independent semantic proof, publication or acceptance.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v2",
   "scope": "generated_delta",
-  "tracked_bytes": 2354525,
+  "tracked_bytes": 2354696,
   "tracked_bytes_max": 4194304
 }
