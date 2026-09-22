@@ -1,5 +1,5 @@
 {
-  "allowed_bytes": 9169318,
+  "allowed_bytes": 9171016,
   "allowed_tracked_bytes": 2354696,
   "approved_by": "repository-owner",
   "base_ref": "1a0342087b18d0a1f5630036937a548b6526e0e9",
@@ -7,19 +7,19 @@
     "algorithm": "sha256:canonical-json-file-inventory-v2",
     "base_ref": "1a0342087b18d0a1f5630036937a548b6526e0e9",
     "contract_version": "aoa-kag:budget-receipt-candidate-identity-v2",
-    "excluded_path": "kag/receipts/index_family_budget/2bd2aafd44369a08ca4b0557ae81dcce93f0e14f5f1c0491d2ccaa701a11f675.json",
-    "family_digest": "2bd2aafd44369a08ca4b0557ae81dcce93f0e14f5f1c0491d2ccaa701a11f675",
+    "excluded_path": "kag/receipts/index_family_budget/a608d8b81d7fc628cb5aab5a6767ed5c73b11fd48443bc9fb82ad01dcfbf8aa4.json",
+    "family_digest": "a608d8b81d7fc628cb5aab5a6767ed5c73b11fd48443bc9fb82ad01dcfbf8aa4",
     "file_count": 1484,
-    "seal": "a39712f16286897babcd3d557d3b459a0a268bbbd59172a3d1201b1babee77ed",
-    "source_epoch": "sha256:45e1f6f700e6ea6001c5eecc2bb1b13006f1e4fc446cfe820f1472ef15c80131",
-    "source_snapshot": "sha256:ef9ebf23d42a7bdc6260c3617552252b83c4e2f978a843f7c6b814ea6f2dba3f"
+    "seal": "e341ff4a16a9fa571d64063734e2f4331b2f3519f2e66a3228ad69335fcd1d27",
+    "source_epoch": "sha256:ed289f1e2a4830b0ae818a3cf3a5b1fab5f1a51572a0d7d00b4a645566af232a",
+    "source_snapshot": "sha256:2030e4ef19f81732fcc06343c3f8fbdc76a9d190f054215106032601d9ebf7c9"
   },
-  "changed_generated_bytes": 9169318,
+  "changed_generated_bytes": 9171016,
   "changed_generated_files": 210,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "2bd2aafd44369a08ca4b0557ae81dcce93f0e14f5f1c0491d2ccaa701a11f675",
-  "head_source_snapshot": "sha256:ef9ebf23d42a7bdc6260c3617552252b83c4e2f978a843f7c6b814ea6f2dba3f",
+  "head_family_digest": "a608d8b81d7fc628cb5aab5a6767ed5c73b11fd48443bc9fb82ad01dcfbf8aa4",
+  "head_source_snapshot": "sha256:2030e4ef19f81732fcc06343c3f8fbdc76a9d190f054215106032601d9ebf7c9",
   "producer_identity": {
     "action": {
       "bytes": 5200,
@@ -1374,7 +1374,7 @@
     "revision_binding": "content-addressed-procedure-import-closure-portable-runtime-contract-and-descriptor-io-v1",
     "source_digest": "0063e306f778db8a35772a01a2998d2d339f5d50a0fa9ec791052180aca0de66"
   },
-  "reason": "Operator-authorized route correction at baa63714f92000514b9327f006435f76ceb52800 aligns KAG documentation with the existing SDK main-only release-publication preflight. Only CHANGELOG.md and docs/RELEASING.md change after the previously reviewed, owner-family-verified e8dd47ab686cba4a641be8caa3caa53a846a3900 candidate. PR source-fast, owner-family, required full audit and GitHub checks remain mandatory; SDK validation, trust gates, producer closure, provider pins and other owner sources are unchanged. Regenerate only the exact measured self-owned derived family against base 1a0342087b18d0a1f5630036937a548b6526e0e9, review changed rows, and bind this reason to the canonical receipt. Existing hard limits remain unchanged. This is not a general budget waiver, runtime admission, independent semantic proof, publication or acceptance.",
+  "reason": "Reviewed PR #235 correction at 8e02de9d279b0bbe17ec5bf5af88b7c57d277f59 accepts an omitted empty SCIP documents collection and adds one bounded protocol/coverage regression. Only code_scip.py and test_code_workspace.py change after the fully local-and-hosted-validated 4f8c6c2e74400c724122e7da47515e21dc2fc872 candidate. Regenerate only the exact measured self-owned derived family against base 1a0342087b18d0a1f5630036937a548b6526e0e9. Review changed source, anchor and event rows; retain unchanged hard budgets, provider pins, other owners, producer closure, required validation and trust policies. This exact-receipt allowance is not a general waiver, provider execution, runtime admission, publication, semantic proof or Goal acceptance.",
   "repo": "aoa-kag",
   "schema_version": "aoa-repo-local-kag-budget-receipt-v2",
   "scope": "generated_delta",
