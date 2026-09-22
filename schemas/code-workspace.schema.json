@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aoa.dev/schemas/code-workspace.schema.json",
+  "title": "Source-bound unreleased code workspace observation",
+  "description": "KAG-derived observation of one supplied index; not runtime freshness, admission, publication or semantic proof.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "snapshot_id", "source", "analysis", "provenance", "coverage", "symbols", "occurrences", "relations"],
+  "properties": {
+    "schema_version": {"const": "aoa-kag-code-workspace-v1"},
+    "snapshot_id": {"$ref": "#/$defs/digest"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repo", "epoch", "manifest", "digest"],
+      "properties": {
+        "repo": {"type": "string", "minLength": 1},
+        "epoch": {"type": "string", "minLength": 1},
+        "digest": {"$ref": "#/$defs/digest"},
+        "manifest": {"type": "object", "additionalProperties": {"$ref": "#/$defs/digest"}}
+      }
+    },
+    "analysis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "version", "artifact_sha256", "config_sha256", "environment_sha256", "adapter", "default_position_encoding", "digest"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"$ref": "#/$defs/digest"},
+        "config_sha256": {"$ref": "#/$defs/digest"},
+        "environment_sha256": {"$ref": "#/$defs/digest"},
+        "adapter": {"const": "scip-workspace-v1"},
+        "default_position_encoding": {"enum": [null, "utf-8", "utf-16", "utf-32"]},
+        "digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["format", "input_sha256", "metadata"],
+      "properties": {
+        "format": {"const": "SCIP"},
+        "input_sha256": {"$ref": "#/$defs/digest"},
+        "metadata": {"type": "object"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "indexed_paths", "unindexed_paths", "native_occurrences", "retained_occurrences", "deduplicated_occurrences", "unresolved_symbols"],
+      "properties": {
+        "scope": {"const": "supplied_index_only"},
+        "indexed_paths": {"$ref": "#/$defs/paths"},
+        "unindexed_paths": {"$ref": "#/$defs/paths"},
+        "native_occurrences": {"type": "integer", "minimum": 0},
+        "retained_occurrences": {"type": "integer", "minimum": 0},
+        "deduplicated_occurrences": {"type": "integer", "minimum": 0},
+        "unresolved_symbols": {"type": "integer", "minimum": 0}
+      }
+    },
+    "symbols": {"type": "array", "items": {"$ref": "#/$defs/symbol"}},
+    "occurrences": {"type": "array", "items": {"$ref": "#/$defs/occurrence"}},
+    "relations": {"type": "array", "items": {"$ref": "#/$defs/relation"}}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "handle": {"type": "string", "pattern": "^aoa:.+:code-(symbol|occurrence|relation):[a-f0-9]{24}$"},
+    "handles": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/handle"}},
+    "paths": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "symbol": {
+      "type": "object", "additionalProperties": false,
+      "required": ["handle", "native_symbol", "scope_path", "metadata", "definitions", "references", "resolution", "external"],
+      "properties": {
+        "handle": {"$ref": "#/$defs/handle"},
+        "native_symbol": {"type": "string", "minLength": 1},
+        "scope_path": {"type": ["string", "null"]},
+        "metadata": {"type": "array", "items": {
+          "type": "object", "additionalProperties": false, "required": ["path", "native"],
+          "properties": {"path": {"type": ["string", "null"]}, "native": {"type": "object"}}
+        }},
+        "definitions": {"$ref": "#/$defs/handles"},
+        "references": {"$ref": "#/$defs/handles"},
+        "resolution": {"enum": ["workspace", "multiple_definitions", "external", "unresolved"]},
+        "external": {"type": "boolean"}
+      }
+    },
+    "range": {
+      "type": "object", "additionalProperties": false,
+      "required": ["start_byte", "end_byte", "native_range", "position_encoding"],
+      "properties": {
+        "start_byte": {"type": "integer", "minimum": 0},
+        "end_byte": {"type": "integer", "minimum": 0},
+        "native_range": {"type": "array", "minItems": 3, "maxItems": 4, "items": {"type": "integer", "minimum": 0}},
+        "position_encoding": {"enum": ["utf-8", "utf-16", "utf-32"]}
+      }
+    },
+    "occurrence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["handle", "path", "source_sha256", "language", "range", "symbol_handle", "role", "native"],
+      "properties": {
+        "handle": {"$ref": "#/$defs/handle"},
+        "path": {"type": "string", "minLength": 1},
+        "source_sha256": {"$ref": "#/$defs/digest"},
+        "language": {"type": "string"},
+        "range": {"$ref": "#/$defs/range"},
+        "symbol_handle": {"anyOf": [{"$ref": "#/$defs/handle"}, {"type": "null"}]},
+        "role": {"enum": ["definition", "reference", "highlight"]},
+        "native": {"type": "object"}
+      }
+    },
+    "relation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["handle", "source", "target", "native"],
+      "properties": {
+        "handle": {"$ref": "#/$defs/handle"},
+        "source": {"$ref": "#/$defs/handle"},
+        "target": {"$ref": "#/$defs/handle"},
+        "native": {"type": "object"}
+      }
+    }
+  }
+}
