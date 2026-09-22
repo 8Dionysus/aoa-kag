@@ -21,6 +21,9 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Fixed
 
+- Separate feature-branch validation and PR landing from federation release
+  publication preflight, which requires a clean synchronized `main`; retain
+  the canonical local checks and required GitHub checks before merge.
 - Keep the live `aoa-gopro-connector` checkout visible as a
   `source_preparation` OS surface without claiming a KAG provider home before
   the connector publishes one.
