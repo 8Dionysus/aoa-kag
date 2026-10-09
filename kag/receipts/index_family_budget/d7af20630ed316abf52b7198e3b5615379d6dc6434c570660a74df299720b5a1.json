@@ -1,5 +1,5 @@
 {
-  "allowed_bytes": 8295101,
+  "allowed_bytes": 8651509,
   "allowed_tracked_bytes": 2354697,
   "approved_by": "repository-owner",
   "base_ref": "5c732875222265cae5f48f0b119c73823a8e0767",
@@ -7,19 +7,19 @@
     "algorithm": "sha256:canonical-json-file-inventory-v2",
     "base_ref": "5c732875222265cae5f48f0b119c73823a8e0767",
     "contract_version": "aoa-kag:budget-receipt-candidate-identity-v2",
-    "excluded_path": "kag/receipts/index_family_budget/92a53adad7a3d5e9445f937e7a792b65256c355840a5c0abc394dacea4fca92b.json",
-    "family_digest": "92a53adad7a3d5e9445f937e7a792b65256c355840a5c0abc394dacea4fca92b",
+    "excluded_path": "kag/receipts/index_family_budget/d7af20630ed316abf52b7198e3b5615379d6dc6434c570660a74df299720b5a1.json",
+    "family_digest": "d7af20630ed316abf52b7198e3b5615379d6dc6434c570660a74df299720b5a1",
     "file_count": 1485,
-    "seal": "7d236601fd3c24e20c0e7053093cfc582a1624515c9e2c9c2136ccc8c7cabddf",
-    "source_epoch": "sha256:da2c649de10a0055371b2bc98d4a3621b5dee5ade51dcc1b10e6a109854d1b40",
-    "source_snapshot": "sha256:f2d81fa16284e79cda347f09e4dccb21bcd7fc195ea80dc358ab87d6e4dd8197"
+    "seal": "2ed9fea1f000bb057e903969b27e56d57948d3606d04201cb9a774d99c8445cd",
+    "source_epoch": "sha256:b9f1253515355fb952c1930637aade8588732283f584941310212c0cd514aa31",
+    "source_snapshot": "sha256:773444da487bfbeac04e0db5104bc96ea8a30025b9af45b37113d06d792ecf23"
   },
-  "changed_generated_bytes": 8295101,
-  "changed_generated_files": 186,
+  "changed_generated_bytes": 8651509,
+  "changed_generated_files": 195,
   "decision_ref": "aoa-kag:docs/decisions/AOA-KAG-D-0039-tiered-content-addressed-kag-distribution.md",
   "default_limit_bytes": 1048576,
-  "head_family_digest": "92a53adad7a3d5e9445f937e7a792b65256c355840a5c0abc394dacea4fca92b",
-  "head_source_snapshot": "sha256:f2d81fa16284e79cda347f09e4dccb21bcd7fc195ea80dc358ab87d6e4dd8197",
+  "head_family_digest": "d7af20630ed316abf52b7198e3b5615379d6dc6434c570660a74df299720b5a1",
+  "head_source_snapshot": "sha256:773444da487bfbeac04e0db5104bc96ea8a30025b9af45b37113d06d792ecf23",
   "producer_identity": {
     "action": {
       "bytes": 5200,
@@ -617,9 +617,9 @@
         "state": "present"
       },
       {
-        "bytes": 6645,
-        "content_digest": "0689b20db025f049be2e09606f356c8d07dac2f745bf06cd308dddce62faabec",
-        "git_blob": "sha1:7fff04756cc529d7d7e8cbb5f3d9baccfe6e6140",
+        "bytes": 6799,
+        "content_digest": "b1b3fafd117739167e087c823fa9b4848e9a7270a26b65289b96e91f4aa41b60",
+        "git_blob": "sha1:4e0413e25092aca90d0383f9c357bde154d0fd74",
         "path": "scripts/validate_repo_local_kag_family.py",
         "state": "present"
       },
@@ -834,9 +834,9 @@
         "state": "present"
       },
       {
-        "bytes": 47712,
-        "content_digest": "4d5f6a291f1ded875883df45e422a5b3cbccf9b220b0342351fc508fede190a8",
-        "git_blob": "sha1:121bfd8d55e1ebdfd05e914c9394670b44c46a23",
+        "bytes": 47898,
+        "content_digest": "6a7ed9a03f442e2d4de883f7973c93947e334b9010282e12879d59661a1c367d",
+        "git_blob": "sha1:12e9bd9fb7dd6db235900c22f2331bfdc3542ae9",
         "path": "scripts/validators/local_kag_subtree.py",
         "state": "present"
       },
@@ -1170,7 +1170,7 @@
         "state": "present"
       }
     ],
-    "identity_digest": "fb4522139104ea63c0f811b0eb7dabe98e7f0b8aa6e2dd30e671292c1836ce5a",
+    "identity_digest": "6ab5ba0ce9917df1ca196704bf46abe332f5ec3cbf17ca156d99b37ecdf9f575",
     "owner": "aoa-kag",
     "procedure_manifest": {
       "action_inputs": [
@@ -1372,7 +1372,7 @@
       "schema_path": "schemas/repo-local-kag-budget-producer-manifest.schema.json"
     },
     "revision_binding": "content-addressed-procedure-import-closure-portable-runtime-contract-and-descriptor-io-v1",
-    "source_digest": "d76072d1300455b9efdd080024914871011d0722ace276d33c515d1df32e3d94"
+    "source_digest": "36b8fdaba17a476dafc6888bc9cbf6bd2123273ca6b3ec55d1d7b41e21c57442"
   },
   "reason": "Add the owner-native consumer probe entrypoint and its regression coverage. Refresh the source-bound self coverage and family shards required by these five authored changes; preserve pinned provider identities and all family validators. The receipt authorizes only the exact final digest and measured generated delta, not broader source or runtime authority.",
   "repo": "aoa-kag",
