@@ -7,8 +7,10 @@ Read these surfaces as bounded guides to source-owned meaning, not as
 replacements for that meaning.
 
 Native or other language consumers can request one exact source identity through
-`python scripts/validate_repo_local_kag_family.py --repo-root PROVIDER
---artifact-root ARTIFACTS --no-shadow-git --probe-source SOURCE_PATH`.
+the [repo-local family validator](../scripts/validate_repo_local_kag_family.py)
+with `--probe-source SOURCE_PATH`. Select the provider with `--repo-root`, its
+artifact store with `--artifact-root`, and `--no-shadow-git` for an immutable
+export directory.
 The command validates the selected portable family and the provider home without
 coverage prebuild, then emits only `primary_source` (path, content hash and owner
 return route) and `distribution_identity`. Missing, duplicate or incomplete
