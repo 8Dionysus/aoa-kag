@@ -4095,7 +4095,9 @@ class RepoLocalKagConsumerProbeTests(unittest.TestCase):
                                    "--no-shadow-git", "--probe-source", "source/Θ.md"])
             self.assertEqual(result, 0)
             load.assert_called_once_with(root, source_index=Path("kag/indexes/source_surface_index.json"),
-                                         artifact_root=root / "objects", allow_shadow_git=False)
+                                         artifact_root=root / "objects", allow_shadow_git=False,
+                                         require_current_producer_identity=False,
+                                         allow_legacy_external_receipt=True)
             validate.assert_called_once_with("fixture-owner", root, prebuild=False,
                                              artifact_root=root / "objects", allow_shadow_git=False)
             self.assertEqual(json.loads(output.getvalue()), {
@@ -4104,6 +4106,20 @@ class RepoLocalKagConsumerProbeTests(unittest.TestCase):
                 "distribution_identity": distribution,
             })
             self.assertEqual(list(root.iterdir()), [])
+
+    def test_probe_keeps_own_checkout_receipts_strict(self) -> None:
+        from scripts import validate_repo_local_kag_family as cli
+
+        root = Path(cli.__file__).resolve().parents[1]
+        args = cli.parse_args(["--probe-source", "source.md"])
+        with mock.patch.object(
+            cli, "load_repo_local_kag_repository_index_family_with_manifest",
+            side_effect=ValidationError("current receipt required"),
+        ) as load:
+            with self.assertRaisesRegex(ValidationError, "current receipt required"):
+                cli.probe_source(args, root)
+        self.assertTrue(load.call_args.kwargs["require_current_producer_identity"])
+        self.assertFalse(load.call_args.kwargs["allow_legacy_external_receipt"])
 
     def test_probe_rejects_ambiguous_incomplete_or_unowned_sources(self) -> None:
         from scripts import validate_repo_local_kag_family as cli

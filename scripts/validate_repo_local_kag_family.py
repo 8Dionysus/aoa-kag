@@ -62,6 +62,10 @@ def probe_source(args: argparse.Namespace, repo_root: Path) -> dict[str, object]
         source_index=Path(args.source_index),
         artifact_root=Path(args.artifact_root).resolve() if args.artifact_root else None,
         allow_shadow_git=not args.no_shadow_git,
+        # Match provider-home observation: foreign owners can retain their
+        # pinned producer, while this checkout must replay its current receipt.
+        require_current_producer_identity=(repo_root == Path(__file__).resolve().parents[1]),
+        allow_legacy_external_receipt=(repo_root != Path(__file__).resolve().parents[1]),
     )
     try:
         from scripts.validators.local_kag_subtree import _validate_provider_home
