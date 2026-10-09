@@ -258,7 +258,7 @@
       "source_truth": ["schemas/repo-local-kag-family-manifest.schema.json", "schemas/repo-local-kag-index.schema.json", "schemas/repo-local-kag-repository-index.schema.json"],
       "reads": ["repository-owned portable or legacy source/artifact/anchor/entity/event/assertion/relation index family"],
       "writes": [],
-      "side_effects": "prints validation status for the selected repository family",
+      "side_effects": "prints validation status, or an exact source identity after family and provider-home validation with --probe-source; no prebuild or source writes",
       "validation_lane": "generated",
       "ci_inclusion": "repo-local index action and repository-index contract tests",
       "test_target": "tests/test_repo_local_kag_repository_indexes.py",

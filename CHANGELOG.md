@@ -9,6 +9,8 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Summary
 
+- Expose exact source probing through the existing family validator CLI, so
+  native consumers need no private Python import adapter for KAG validation.
 - Add a source-bound, in-memory code-workspace adapter for supplied complete
   SCIP indexes, with workspace-wide symbol joins and bounded snapshot handles.
 
@@ -46,12 +48,16 @@ Tracking starts with the community-docs baseline for this repository.
 
 ### Validation
 
+- Cover exact probe output, provider/family delegation, ambiguous and incomplete
+  records, source-path rejection, failure output and unchanged default behavior.
 - Cover the code-workspace boundary with cross-file, exact-source, Unicode
   coordinate, document-local symbol, unresolved coverage, strict JSON alias,
   immutable readback and snapshot-bound pagination regression tests.
 
 ### Notes
 
+- Source probing reads the selected family and provider home without coverage
+  prebuild; KAG validation retains its existing owner and authority boundaries.
 - The code-workspace example is illustrative, not a real provider run. The
   adapter neither executes nor admits providers and does not claim LIVE state,
   lineage, complete-project coverage, semantic proof or owner acceptance.

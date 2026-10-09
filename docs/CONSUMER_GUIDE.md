@@ -6,6 +6,15 @@ surfaces in `aoa-kag`.
 Read these surfaces as bounded guides to source-owned meaning, not as
 replacements for that meaning.
 
+Native or other language consumers can request one exact source identity through
+`python scripts/validate_repo_local_kag_family.py --repo-root PROVIDER
+--artifact-root ARTIFACTS --no-shadow-git --probe-source SOURCE_PATH`.
+The command validates the selected portable family and the provider home without
+coverage prebuild, then emits only `primary_source` (path, content hash and owner
+return route) and `distribution_identity`. Missing, duplicate or incomplete
+records fail without a JSON result. This read-only route keeps KAG validation
+with its owner; it does not accept authored meaning or publish a provider.
+
 For repo-local family delivery, first inspect the distribution manifest. Read
 Git-hot records directly, then use a verified local CAS or trusted artifact
 route for cold objects. A consumer must expose the corpus and projection
