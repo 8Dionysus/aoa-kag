@@ -653,6 +653,8 @@ def _validate_provider_home(
     repo_root: Path,
     *,
     prebuild: bool = True,
+    artifact_root: Path | None = None,
+    allow_shadow_git: bool = True,
 ) -> tuple[
     dict[str, object],
     dict[str, dict[str, object]],
@@ -730,6 +732,8 @@ def _validate_provider_home(
                             "kag/indexes/source_surface_index.json"
                         ),
                         label=f"{label} portable repository family",
+                        artifact_root=artifact_root,
+                        allow_shadow_git=allow_shadow_git,
                         # The aoa-kag checkout is the current producer and
                         # must replay its own receipt strictly.  A foreign
                         # owner may intentionally retain a pinned producer;

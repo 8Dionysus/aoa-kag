@@ -4067,5 +4067,120 @@ class RepoLocalKagRepositoryIndexTests(unittest.TestCase):
         self.assertTrue(usage["evidence"]["anchor_ids"])
 
 
+class RepoLocalKagConsumerProbeTests(unittest.TestCase):
+    def test_probe_preserves_exact_owner_identity_and_calls_both_validators(self) -> None:
+        import contextlib
+        import io
+        from scripts import validate_repo_local_kag_family as cli
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = {
+                "repo": {"name": "fixture-owner"},
+                "records": [{
+                    "identity": {"path": "source/Θ.md", "content_hash": "a" * 64},
+                    "owner_return_route": {"owner": "fixture-owner", "surface": "source/Θ.md"},
+                    "unrequested_field": "not returned",
+                }],
+            }
+            distribution = {"content_digest": "b" * 64}
+            output = io.StringIO()
+            with (
+                mock.patch.object(cli, "load_repo_local_kag_repository_index_family_with_manifest",
+                                  return_value=(source, {}, {"distribution_identity": distribution})) as load,
+                mock.patch("scripts.validators.local_kag_subtree._validate_provider_home") as validate,
+                contextlib.redirect_stdout(output),
+            ):
+                result = cli.main(["--repo-root", str(root), "--artifact-root", str(root / "objects"),
+                                   "--no-shadow-git", "--probe-source", "source/Θ.md"])
+            self.assertEqual(result, 0)
+            load.assert_called_once_with(root, source_index=Path("kag/indexes/source_surface_index.json"),
+                                         artifact_root=root / "objects", allow_shadow_git=False,
+                                         require_current_producer_identity=False,
+                                         allow_legacy_external_receipt=True)
+            validate.assert_called_once_with("fixture-owner", root, prebuild=False,
+                                             artifact_root=root / "objects", allow_shadow_git=False)
+            self.assertEqual(json.loads(output.getvalue()), {
+                "primary_source": {key: source["records"][0][key]
+                                   for key in ("identity", "owner_return_route")},
+                "distribution_identity": distribution,
+            })
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_probe_keeps_own_checkout_receipts_strict(self) -> None:
+        from scripts import validate_repo_local_kag_family as cli
+
+        root = Path(cli.__file__).resolve().parents[1]
+        args = cli.parse_args(["--probe-source", "source.md"])
+        with mock.patch.object(
+            cli, "load_repo_local_kag_repository_index_family_with_manifest",
+            side_effect=ValidationError("current receipt required"),
+        ) as load:
+            with self.assertRaisesRegex(ValidationError, "current receipt required"):
+                cli.probe_source(args, root)
+        self.assertTrue(load.call_args.kwargs["require_current_producer_identity"])
+        self.assertFalse(load.call_args.kwargs["allow_legacy_external_receipt"])
+
+    def test_probe_rejects_ambiguous_incomplete_or_unowned_sources(self) -> None:
+        from scripts import validate_repo_local_kag_family as cli
+
+        record = {"identity": {"path": "source.md", "content_hash": "a" * 64},
+                  "owner_return_route": {"owner": "fixture-owner"}}
+        cases = [
+            ({"repo": {"name": "fixture-owner"}, "records": []}, {"distribution_identity": {}}),
+            ({"repo": {"name": "fixture-owner"}, "records": [record, record]}, {"distribution_identity": {}}),
+            ({"repo": {"name": "fixture-owner"}, "records": [record]}, {}),
+            ({"records": [record]}, {"distribution_identity": {}}),
+            ({"repo": {"name": "fixture-owner"}, "records": [{"identity": record["identity"]}]},
+             {"distribution_identity": {}}),
+        ]
+        args = cli.parse_args(["--probe-source", "source.md"])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            for source, manifest in cases:
+                with (
+                    self.subTest(source=source, manifest=manifest),
+                    mock.patch.object(cli, "load_repo_local_kag_repository_index_family_with_manifest",
+                                      return_value=(source, {}, manifest)),
+                    mock.patch("scripts.validators.local_kag_subtree._validate_provider_home"),
+                    self.assertRaises(ValidationError),
+                ):
+                    cli.probe_source(args, root)
+            for path in ("../source.md", "/source.md", "source//file", "source\\file", "source\n.md"):
+                with self.subTest(path=path), mock.patch.object(
+                    cli, "load_repo_local_kag_repository_index_family_with_manifest"
+                ) as load:
+                    with self.assertRaises(ValidationError):
+                        cli.probe_source(cli.parse_args(["--probe-source", path]), root)
+                    load.assert_not_called()
+
+    def test_provider_failure_returns_no_probe_and_default_validation_is_unchanged(self) -> None:
+        import contextlib
+        import io
+        from scripts import validate_repo_local_kag_family as cli
+
+        source = {"repo": {"name": "fixture-owner"}, "records": []}
+        with tempfile.TemporaryDirectory() as temporary:
+            output, errors = io.StringIO(), io.StringIO()
+            with (
+                mock.patch.object(cli, "load_repo_local_kag_repository_index_family_with_manifest",
+                                  return_value=(source, {}, {})),
+                mock.patch("scripts.validators.local_kag_subtree._validate_provider_home",
+                           side_effect=ValidationError("controlled source missing")),
+                contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors),
+            ):
+                result = cli.main(["--repo-root", temporary, "--probe-source", "source.md"])
+            self.assertEqual(result, 1)
+            self.assertEqual(output.getvalue(), "")
+            self.assertIn("controlled source missing", errors.getvalue())
+            with (
+                mock.patch.object(cli, "load_repo_local_kag_repository_index_family", return_value=(source, {})),
+                mock.patch.object(cli, "probe_source") as probe,
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(cli.main(["--repo-root", temporary]), 0)
+            probe.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

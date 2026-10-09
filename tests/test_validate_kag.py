@@ -962,14 +962,18 @@ class ValidateKagTestCase(unittest.TestCase):
                     {},
                     {"family_identity": {"content_digest": "0" * 64}},
                 ),
-            ), patch.object(
+            ) as load_family, patch.object(
                 local_kag_subtree,
                 "_validate_record_links",
             ) as validate_links:
                 local_kag_subtree._validate_provider_home(
                     "portable-provider",
                     repo_root,
+                    artifact_root=repo_root / "selected-cas",
+                    allow_shadow_git=False,
                 )
+                self.assertEqual(load_family.call_args.kwargs["artifact_root"], repo_root / "selected-cas")
+                self.assertFalse(load_family.call_args.kwargs["allow_shadow_git"])
 
         packet = validate_links.call_args.args[0]
         indexes = packet["records"]["indexes"]
