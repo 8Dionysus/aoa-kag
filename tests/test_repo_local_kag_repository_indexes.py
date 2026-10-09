@@ -4096,7 +4096,8 @@ class RepoLocalKagConsumerProbeTests(unittest.TestCase):
             self.assertEqual(result, 0)
             load.assert_called_once_with(root, source_index=Path("kag/indexes/source_surface_index.json"),
                                          artifact_root=root / "objects", allow_shadow_git=False)
-            validate.assert_called_once_with("fixture-owner", root, prebuild=False)
+            validate.assert_called_once_with("fixture-owner", root, prebuild=False,
+                                             artifact_root=root / "objects", allow_shadow_git=False)
             self.assertEqual(json.loads(output.getvalue()), {
                 "primary_source": {key: source["records"][0][key]
                                    for key in ("identity", "owner_return_route")},

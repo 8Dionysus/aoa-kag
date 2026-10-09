@@ -71,7 +71,11 @@ def probe_source(args: argparse.Namespace, repo_root: Path) -> dict[str, object]
     owner = owner.get("name") if isinstance(owner, dict) else None
     if not isinstance(owner, str) or not owner:
         raise ValidationError("portable source index must identify its repository owner")
-    _validate_provider_home(owner, repo_root, prebuild=False)
+    _validate_provider_home(
+        owner, repo_root, prebuild=False,
+        artifact_root=Path(args.artifact_root).resolve() if args.artifact_root else None,
+        allow_shadow_git=not args.no_shadow_git,
+    )
     records = source.get("records")
     if not isinstance(records, list):
         raise ValidationError("portable source index must contain records")
